@@ -364,7 +364,7 @@ public class ConditionFactory {
     public static Or eqAndOr(final Collection<?> entities) {
         N.checkArgNotNullOrEmpty(entities, "entities");
 
-        return eqAndOr(entities, QueryUtil.getSelectPropNames(N.firstNonNull(entities).orNull().getClass(), false, null));
+        return eqAndOr(entities, QueryUtil.getSelectPropNames(N.firstNonNull(entities).orElseNull().getClass(), false, null));
     }
 
     /**
@@ -992,7 +992,7 @@ public class ConditionFactory {
     }
 
     /**
-     * 
+     *
      * @param propNameA
      * @param directionA
      * @param propNameB
@@ -1004,7 +1004,7 @@ public class ConditionFactory {
     }
 
     /**
-     * 
+     *
      * @param propNameA
      * @param directionA
      * @param propNameB
@@ -1028,7 +1028,7 @@ public class ConditionFactory {
     }
 
     /**
-     * 
+     *
      * @param orders
      * @return
      */
@@ -1123,7 +1123,7 @@ public class ConditionFactory {
     }
 
     /**
-     * 
+     *
      * @param propNameA
      * @param directionA
      * @param propNameB
@@ -1135,7 +1135,7 @@ public class ConditionFactory {
     }
 
     /**
-     * 
+     *
      * @param propNameA
      * @param directionA
      * @param propNameB
@@ -1732,7 +1732,7 @@ public class ConditionFactory {
     }
 
     /**
-     * 
+     *
      * @param expr
      * @return
      */
