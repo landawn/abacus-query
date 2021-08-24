@@ -47,7 +47,7 @@ public final class NamedProperty {
      * @param propName
      * @return
      */
-    public static final NamedProperty of(String propName) {
+    public static NamedProperty of(String propName) {
         if (N.isNullOrEmpty(propName)) {
             throw new IllegalArgumentException("the property name can't be null or empty string.");
         }
@@ -165,12 +165,18 @@ public final class NamedProperty {
         return CF.isNotNull(propName);
     }
 
+    public Between between(Object minValue, Object maxValue) {
+        return CF.between(propName, minValue, maxValue);
+    }
+
     /**
      *
      * @param minValue
      * @param maxValue
      * @return
+     * @deprecated please use {@link #between(Object, Object)}
      */
+    @Deprecated
     public Between bt(Object minValue, Object maxValue) {
         return CF.between(propName, minValue, maxValue);
     }

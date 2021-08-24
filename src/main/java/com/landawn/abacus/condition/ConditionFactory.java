@@ -701,7 +701,9 @@ public class ConditionFactory {
      * @param minValue
      * @param maxValue
      * @return
+     * @deprecated please use {@link #between(String, Object, Object)}
      */
+    @Deprecated
     public static Between bt(final String propName, final Object minValue, final Object maxValue) {
         return new Between(propName, minValue, maxValue);
     }
@@ -710,9 +712,31 @@ public class ConditionFactory {
      *
      * @param propName
      * @return
+     * @deprecated please use {@link #between(String)}
      */
+    @Deprecated
     public static Between bt(final String propName) {
         return new Between(propName, CF.QME, CF.QME);
+    }
+
+    /**
+     *
+     * @param propName
+     * @param minValue
+     * @param maxValue
+     * @return
+     */
+    public static Not notBetween(final String propName, final Object minValue, final Object maxValue) {
+        return new Between(propName, minValue, maxValue).not();
+    }
+
+    /**
+     *
+     * @param propName
+     * @return
+     */
+    public static Not notBetween(final String propName) {
+        return new Between(propName, CF.QME, CF.QME).not();
     }
 
     /**

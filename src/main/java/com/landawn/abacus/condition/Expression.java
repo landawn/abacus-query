@@ -276,7 +276,9 @@ public class Expression extends AbstractCondition {
      * @param min
      * @param max
      * @return
+     * @deprecated please use {@link #between(String, Object, Object)}
      */
+    @Deprecated
     public static String bt(String literal, Object min, Object max) {
         return link(Operator.BETWEEN, literal, min, max);
     }
