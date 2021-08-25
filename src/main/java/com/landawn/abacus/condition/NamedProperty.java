@@ -195,7 +195,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public Not notLike(Object value) {
+    public NotLike notLike(Object value) {
         return CF.notLike(propName, value);
     }
 

@@ -726,8 +726,8 @@ public class ConditionFactory {
      * @param maxValue
      * @return
      */
-    public static Not notBetween(final String propName, final Object minValue, final Object maxValue) {
-        return new Between(propName, minValue, maxValue).not();
+    public static NotBetween notBetween(final String propName, final Object minValue, final Object maxValue) {
+        return new NotBetween(propName, minValue, maxValue);
     }
 
     /**
@@ -735,8 +735,8 @@ public class ConditionFactory {
      * @param propName
      * @return
      */
-    public static Not notBetween(final String propName) {
-        return new Between(propName, CF.QME, CF.QME).not();
+    public static NotBetween notBetween(final String propName) {
+        return new NotBetween(propName, CF.QME, CF.QME);
     }
 
     /**
@@ -764,8 +764,8 @@ public class ConditionFactory {
      * @param propValue
      * @return
      */
-    public static Not notLike(final String propName, final Object propValue) {
-        return like(propName, propValue).not();
+    public static NotLike notLike(final String propName, final Object propValue) {
+        return new NotLike(propName, propValue);
     }
 
     /**
@@ -773,8 +773,8 @@ public class ConditionFactory {
      * @param propName
      * @return
      */
-    public static Not notLike(final String propName) {
-        return notLike(propName, QME);
+    public static NotLike notLike(final String propName) {
+        return new NotLike(propName, CF.QME);
     }
 
     /**
@@ -793,6 +793,16 @@ public class ConditionFactory {
      * @param propValue
      * @return
      */
+    public static NotLike notContains(final String propName, final Object propValue) {
+        return new NotLike(propName, WD._PERCENT + N.stringOf(propValue) + WD._PERCENT);
+    }
+
+    /**
+     *
+     * @param propName
+     * @param propValue
+     * @return
+     */
     public static Like startsWith(final String propName, final Object propValue) {
         return new Like(propName, N.stringOf(propValue) + WD._PERCENT);
     }
@@ -803,8 +813,28 @@ public class ConditionFactory {
      * @param propValue
      * @return
      */
+    public static NotLike notStartsWith(final String propName, final Object propValue) {
+        return new NotLike(propName, N.stringOf(propValue) + WD._PERCENT);
+    }
+
+    /**
+     *
+     * @param propName
+     * @param propValue
+     * @return
+     */
     public static Like endsWith(final String propName, final Object propValue) {
         return new Like(propName, WD._PERCENT + N.stringOf(propValue));
+    }
+
+    /**
+     *
+     * @param propName
+     * @param propValue
+     * @return
+     */
+    public static NotLike notEndsWith(final String propName, final Object propValue) {
+        return new NotLike(propName, WD._PERCENT + N.stringOf(propValue));
     }
 
     /**

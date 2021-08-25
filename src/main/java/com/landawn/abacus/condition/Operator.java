@@ -56,6 +56,10 @@ public enum Operator {
      */
     LIKE(WD.LIKE),
     /**
+     * Field NOT_LIKE.
+     */
+    NOT_LIKE(NOT + " " + WD.LIKE),
+    /**
      * Field AND.
      */
     AND(WD.AND),
@@ -91,6 +95,10 @@ public enum Operator {
      * Field BETWEEN.
      */
     BETWEEN(WD.BETWEEN),
+    /**
+     * Field NOT_BETWEEN.
+     */
+    NOT_BETWEEN(NOT + " " + WD.BETWEEN),
     /**
      * Field IS.
      */
@@ -128,7 +136,7 @@ public enum Operator {
      */
     ON(WD.ON),
     /**
-     * 
+     *
      */
     USING(WD.USING),
     /**
@@ -184,7 +192,7 @@ public enum Operator {
      */
     OFFSET(WD.OFFSET),
     /**
-     * 
+     *
      * @deprecated
      */
     FOR_UPDATE(WD.FOR_UPDATE),

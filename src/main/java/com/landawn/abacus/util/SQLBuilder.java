@@ -54,6 +54,7 @@ import com.landawn.abacus.condition.InSubQuery;
 import com.landawn.abacus.condition.Join;
 import com.landawn.abacus.condition.Junction;
 import com.landawn.abacus.condition.Limit;
+import com.landawn.abacus.condition.NotBetween;
 import com.landawn.abacus.condition.NotIn;
 import com.landawn.abacus.condition.NotInSubQuery;
 import com.landawn.abacus.condition.SubQuery;
@@ -2800,6 +2801,33 @@ public abstract class SQLBuilder {
             setParameter(propName, propValue);
         } else if (cond instanceof Between) {
             final Between bt = (Between) cond;
+            final String propName = bt.getPropName();
+
+            appendColumnName(propName);
+
+            sb.append(_SPACE);
+            sb.append(bt.getOperator().toString());
+            sb.append(_SPACE);
+
+            Object minValue = bt.getMinValue();
+            if (sqlPolicy == SQLPolicy.NAMED_SQL || sqlPolicy == SQLPolicy.IBATIS_SQL) {
+                setParameter("min" + StringUtil.capitalize(propName), minValue);
+            } else {
+                setParameter(propName, minValue);
+            }
+
+            sb.append(_SPACE);
+            sb.append(WD.AND);
+            sb.append(_SPACE);
+
+            Object maxValue = bt.getMaxValue();
+            if (sqlPolicy == SQLPolicy.NAMED_SQL || sqlPolicy == SQLPolicy.IBATIS_SQL) {
+                setParameter("max" + StringUtil.capitalize(propName), maxValue);
+            } else {
+                setParameter(propName, maxValue);
+            }
+        } else if (cond instanceof NotBetween) {
+            final NotBetween bt = (NotBetween) cond;
             final String propName = bt.getPropName();
 
             appendColumnName(propName);
