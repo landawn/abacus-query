@@ -20,7 +20,7 @@ compile 'com.landawn:abacus-query:0.8.1'
 Please refer to [Wiki](https://github.com/landawn/abacus-query/wiki)
 
 
-## Also See: [abacus-common](https://github.com/landawn/abacus-common), [abacus-jdbc](https://github.com/landawn/abacus-jdbc), [abacus-da](https://github.com/landawn/abacus-da).
+## Also See: [abacus-common](https://github.com/landawn/abacus-common), [abacus-jdbc](https://github.com/landawn/abacus-jdbc).
 
 
 ## Recommended Java programming libraries/frameworks:
