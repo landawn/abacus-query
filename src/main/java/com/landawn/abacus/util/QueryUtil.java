@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.landawn.abacus.DirtyMarker;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.Id;
 import com.landawn.abacus.annotation.Immutable;
@@ -214,19 +213,7 @@ public final class QueryUtil {
     @Internal
     public static Collection<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames) {
         final Class<?> entityClass = entity.getClass();
-        final boolean isDirtyMarker = ClassUtil.isDirtyMarker(entityClass);
 
-        if (isDirtyMarker) {
-            @SuppressWarnings("deprecation")
-            final Collection<String> signedPropNames = ((DirtyMarker) entity).signedPropNames();
-
-            if (N.isNullOrEmpty(excludedPropNames)) {
-                return signedPropNames;
-            }
-            final List<String> tmp = new ArrayList<>(signedPropNames);
-            tmp.removeAll(excludedPropNames);
-            return tmp;
-        }
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
 
         if (!N.isNullOrEmpty(excludedPropNames)) {
@@ -240,6 +227,7 @@ public final class QueryUtil {
         if (N.isNullOrEmpty(idPropNames)) {
             return val[2];
         }
+
         final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
 
         for (String idPropName : idPropNames) {
