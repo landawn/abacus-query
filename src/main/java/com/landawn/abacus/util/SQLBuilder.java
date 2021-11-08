@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.landawn.abacus.DirtyMarker;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.Internal;
 import com.landawn.abacus.annotation.NonUpdatable;
@@ -59,7 +58,6 @@ import com.landawn.abacus.condition.NotIn;
 import com.landawn.abacus.condition.NotInSubQuery;
 import com.landawn.abacus.condition.SubQuery;
 import com.landawn.abacus.condition.Where;
-import com.landawn.abacus.core.DirtyMarkerUtil;
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.parser.ParserUtil;
@@ -2378,15 +2376,11 @@ public abstract class SQLBuilder {
         this.entityClass = entityClass;
         this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(this.entityClass, this.namingPolicy);
         final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
-        final Set<String> dirtyPropNames = DirtyMarkerUtil.isDirtyMarker(entityClass) ? DirtyMarkerUtil.dirtyPropNames((DirtyMarker) entity) : null;
-        final boolean isEmptyDirtyPropNames = N.isNullOrEmpty(dirtyPropNames);
-        final Map<String, Object> props = N.newHashMap(N.isNullOrEmpty(dirtyPropNames) ? propNames.size() : dirtyPropNames.size());
+        final Map<String, Object> props = N.newHashMap(propNames.size());
         final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
 
         for (String propName : propNames) {
-            if (isEmptyDirtyPropNames || dirtyPropNames.contains(propName)) {
-                props.put(propName, entityInfo.getPropValue(entity, propName));
-            }
+            props.put(propName, entityInfo.getPropValue(entity, propName));
         }
 
         return set(props);

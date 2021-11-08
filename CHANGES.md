@@ -1,3 +1,8 @@
+## 1.0
+
+* A new start
+
+
 ## 0.8.2
 
 * Remove supports for `DirtyMarker`.
