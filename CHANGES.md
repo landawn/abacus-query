@@ -1,3 +1,8 @@
+## 1.1
+
+* Improvements
+
+
 ## 1.0
 
 * A new start
