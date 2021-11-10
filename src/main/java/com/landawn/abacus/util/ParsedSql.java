@@ -23,7 +23,7 @@ import com.landawn.abacus.pool.PoolFactory;
 import com.landawn.abacus.pool.PoolableWrapper;
 
 /**
- * 
+ *
  * @author haiyangl
  *
  */
@@ -123,6 +123,8 @@ public final class ParsedSql {
      * @return
      */
     public static ParsedSql parse(String sql) {
+        N.checkArgNotNullOrEmpty(sql, "sql");
+
         ParsedSql result = null;
         PoolableWrapper<ParsedSql> w = pool.get(sql);
 
