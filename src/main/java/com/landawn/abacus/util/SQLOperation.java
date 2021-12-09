@@ -46,6 +46,10 @@ public enum SQLOperation {
      */
     DELETE(WD.DELETE),
     /**
+     * Field MERGE.
+     */
+    MERGE(WD.MERGE),
+    /**
      * Field CREATE.
      */
     CREATE(WD.CREATE),

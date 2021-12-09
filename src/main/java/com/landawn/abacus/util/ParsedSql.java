@@ -35,7 +35,7 @@ public final class ParsedSql {
 
     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
 
-    private static final Set<String> opSqlPrefixSet = N.asSet(WD.INSERT, WD.SELECT, WD.UPDATE, WD.DELETE, WD.WITH, WD.MERGE);
+    private static final Set<String> opSqlPrefixSet = N.asSet(WD.SELECT, WD.INSERT, WD.UPDATE, WD.DELETE, WD.WITH, WD.MERGE);
 
     private static final int factor = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
