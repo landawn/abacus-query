@@ -25,7 +25,7 @@ import com.landawn.abacus.util.WD;
 
 /**
  *
- * @author Haiyang Li 
+ * @author Haiyang Li
  */
 public class NotInSubQuery extends AbstractCondition {
     private static final long serialVersionUID = 3151853530575587557L;
@@ -147,7 +147,7 @@ public class NotInSubQuery extends AbstractCondition {
                 return "(" + StringUtil.join(propNames, ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
                         + WD.PARENTHESES_R;
             } else {
-                final Throwables.Function<String, String, RuntimeException> func = new Throwables.Function<String, String, RuntimeException>() {
+                final Throwables.Function<String, String, RuntimeException> func = new Throwables.Function<>() {
                     @Override
                     public String apply(String t) throws RuntimeException {
                         return namingPolicy.convert(t);

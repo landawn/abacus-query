@@ -148,7 +148,7 @@ public class InSubQuery extends AbstractCondition {
                 return "(" + StringUtil.join(propNames, ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
                         + WD.PARENTHESES_R;
             } else {
-                final Throwables.Function<String, String, RuntimeException> func = new Throwables.Function<String, String, RuntimeException>() {
+                final Throwables.Function<String, String, RuntimeException> func = new Throwables.Function<>() {
                     @Override
                     public String apply(String t) throws RuntimeException {
                         return namingPolicy.convert(t);
