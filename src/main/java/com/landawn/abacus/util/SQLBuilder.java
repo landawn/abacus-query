@@ -3199,7 +3199,7 @@ public abstract class SQLBuilder {
     //
     //    @Override
     //    public boolean equals(Object obj) {
-    //        if (obj == this) {
+    //        if (this == obj) {
     //            return true;
     //        }
     //
