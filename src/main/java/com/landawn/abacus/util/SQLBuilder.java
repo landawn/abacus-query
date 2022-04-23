@@ -1829,6 +1829,53 @@ public abstract class SQLBuilder {
         return this;
     }
 
+    public SQLBuilder appendIf(final boolean b, final Condition cond) {
+        if (b) {
+            append(cond);
+        }
+
+        return this;
+    }
+
+    public SQLBuilder appendIf(final boolean b, final String expr) {
+        if (b) {
+            append(expr);
+        }
+
+        return this;
+    }
+
+    @Beta
+    public SQLBuilder appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
+        if (b) {
+            append(condToAppendForTrue);
+        } else {
+            append(condToAppendForFalse);
+        }
+
+        return this;
+    }
+
+    @Beta
+    public SQLBuilder appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse) {
+        if (b) {
+            append(exprToAppendForTrue);
+        } else {
+            append(exprToAppendForFalse);
+        }
+
+        return this;
+    }
+
+    @Beta
+    public SQLBuilder thenIf(final boolean b, final java.util.function.Consumer<SQLBuilder> append) {
+        if (b) {
+            append.accept(this);
+        }
+
+        return this;
+    }
+
     /**
      *
      * @param sqlBuilder
