@@ -29,6 +29,7 @@ import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.Id;
 import com.landawn.abacus.annotation.Immutable;
 import com.landawn.abacus.annotation.Internal;
+import com.landawn.abacus.annotation.NotColumn;
 import com.landawn.abacus.annotation.ReadOnlyId;
 import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.EntityInfo;
@@ -153,6 +154,10 @@ public final class QueryUtil {
         Map<String, String> propColumnNameMap = N.newHashMap(entityInfo.propInfoList.size() * 2);
 
         for (PropInfo propInfo : entityInfo.propInfoList) {
+            if (propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class)) {
+                continue;
+            }
+
             if (propInfo.columnName.isPresent()) {
                 propColumnNameMap.put(propInfo.name, propInfo.columnName.get());
             } else {
