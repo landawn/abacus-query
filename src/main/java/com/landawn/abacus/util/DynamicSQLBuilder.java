@@ -13,14 +13,15 @@
  */
 package com.landawn.abacus.util;
 
+import java.util.function.Consumer;
+
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
-import com.landawn.abacus.util.function.Consumer;
 
 /**
  * Dynamic SQL builder. Must remember to call {@code build()} to generate target sql and release resources.
- * 
+ *
  * @author haiyangl
  *
  */
@@ -208,7 +209,7 @@ public class DynamicSQLBuilder {
     }
 
     /**
-     * 
+     *
      * @param b
      * @param actionForTrue
      * @return
@@ -223,7 +224,7 @@ public class DynamicSQLBuilder {
     }
 
     /**
-     * 
+     *
      * @param b
      * @param actionForTrue
      * @param actionForFalse
@@ -875,7 +876,6 @@ public class DynamicSQLBuilder {
          * Instantiates a new dsb.
          */
         private DSB() {
-            super();
         }
     }
 }
