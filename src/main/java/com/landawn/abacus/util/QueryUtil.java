@@ -407,14 +407,14 @@ public final class QueryUtil {
 
     static {
         for (int i = 0; i <= 30; i++) {
-            QM_CACHE.put(i, StringUtil.repeat("?", i, ", "));
+            QM_CACHE.put(i, Strings.repeat("?", i, ", "));
         }
 
-        QM_CACHE.put(100, StringUtil.repeat("?", 100, ", "));
-        QM_CACHE.put(200, StringUtil.repeat("?", 200, ", "));
-        QM_CACHE.put(300, StringUtil.repeat("?", 300, ", "));
-        QM_CACHE.put(500, StringUtil.repeat("?", 500, ", "));
-        QM_CACHE.put(1000, StringUtil.repeat("?", 1000, ", "));
+        QM_CACHE.put(100, Strings.repeat("?", 100, ", "));
+        QM_CACHE.put(200, Strings.repeat("?", 200, ", "));
+        QM_CACHE.put(300, Strings.repeat("?", 300, ", "));
+        QM_CACHE.put(500, Strings.repeat("?", 500, ", "));
+        QM_CACHE.put(1000, Strings.repeat("?", 1000, ", "));
     }
 
     /**
@@ -431,7 +431,7 @@ public final class QueryUtil {
         String result = QM_CACHE.get(n);
 
         if (result == null) {
-            result = StringUtil.repeat("?", n, ", ");
+            result = Strings.repeat("?", n, ", ");
         }
 
         return result;

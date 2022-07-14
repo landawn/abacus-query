@@ -263,7 +263,7 @@ public abstract class SQLBuilder {
                 try {
                     final String value = (String) field.get(null);
 
-                    for (String e : StringUtil.split(value, ' ', true)) {
+                    for (String e : Strings.split(value, ' ', true)) {
                         sqlKeyWords.add(e);
                         sqlKeyWords.add(e.toUpperCase());
                         sqlKeyWords.add(e.toLowerCase());
@@ -429,7 +429,7 @@ public abstract class SQLBuilder {
                     subEntityPropNameList.removeAll(getSubEntityPropNames(subEntityClass));
 
                     for (String pn : subEntityPropNameList) {
-                        val[0].add(StringUtil.concat(subEntityPropName, WD.PERIOD, pn));
+                        val[0].add(Strings.concat(subEntityPropName, WD.PERIOD, pn));
                     }
                 }
 
@@ -833,7 +833,7 @@ public abstract class SQLBuilder {
         }
 
         final String tableName = tableNames[0].trim();
-        return from(tableName, StringUtil.join(tableNames, WD.COMMA_SPACE));
+        return from(tableName, Strings.join(tableNames, WD.COMMA_SPACE));
     }
 
     /**
@@ -847,7 +847,7 @@ public abstract class SQLBuilder {
         }
 
         final String tableName = tableNames.iterator().next().trim();
-        return from(tableName, StringUtil.join(tableNames, WD.COMMA_SPACE));
+        return from(tableName, Strings.join(tableNames, WD.COMMA_SPACE));
     }
 
     /**
@@ -2785,7 +2785,7 @@ public abstract class SQLBuilder {
 
             Object minValue = bt.getMinValue();
             if (sqlPolicy == SQLPolicy.NAMED_SQL || sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                setParameter("min" + StringUtil.capitalize(propName), minValue);
+                setParameter("min" + Strings.capitalize(propName), minValue);
             } else {
                 setParameter(propName, minValue);
             }
@@ -2796,7 +2796,7 @@ public abstract class SQLBuilder {
 
             Object maxValue = bt.getMaxValue();
             if (sqlPolicy == SQLPolicy.NAMED_SQL || sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                setParameter("max" + StringUtil.capitalize(propName), maxValue);
+                setParameter("max" + Strings.capitalize(propName), maxValue);
             } else {
                 setParameter(propName, maxValue);
             }
@@ -2812,7 +2812,7 @@ public abstract class SQLBuilder {
 
             Object minValue = bt.getMinValue();
             if (sqlPolicy == SQLPolicy.NAMED_SQL || sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                setParameter("min" + StringUtil.capitalize(propName), minValue);
+                setParameter("min" + Strings.capitalize(propName), minValue);
             } else {
                 setParameter(propName, minValue);
             }
@@ -2823,7 +2823,7 @@ public abstract class SQLBuilder {
 
             Object maxValue = bt.getMaxValue();
             if (sqlPolicy == SQLPolicy.NAMED_SQL || sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                setParameter("max" + StringUtil.capitalize(propName), maxValue);
+                setParameter("max" + Strings.capitalize(propName), maxValue);
             } else {
                 setParameter(propName, maxValue);
             }
@@ -3100,7 +3100,7 @@ public abstract class SQLBuilder {
         for (int i = 0, len = words.size(); i < len; i++) {
             word = words.get(i);
 
-            if (!StringUtil.isAsciiAlpha(word.charAt(0))) {
+            if (!Strings.isAsciiAlpha(word.charAt(0))) {
                 sb.append(word);
             } else if (SQLParser.isFunctionName(words, len, i)) {
                 sb.append(word);

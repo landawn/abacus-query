@@ -208,7 +208,7 @@ public final class SQLParser {
                 }
 
                 //    if (keepComments == -1) {
-                //        keepComments = StringUtil.startsWithIgnoreCase(sql, "-- Keep comments") ? 1 : 0;
+                //        keepComments = Strings.startsWithIgnoreCase(sql, "-- Keep comments") ? 1 : 0;
                 //    }
                 //
                 //    if (keepComments == 1) {
@@ -221,7 +221,7 @@ public final class SQLParser {
                 //            if (c == ENTER || c == ENTER_2) {
                 //                final String tmp = sb.toString();
                 //
-                //                if (!StringUtil.startsWithIgnoreCase(tmp, "-- Keep comments")) {
+                //                if (!Strings.startsWithIgnoreCase(tmp, "-- Keep comments")) {
                 //                    words.add(sb.toString());
                 //                }
                 //
@@ -254,7 +254,7 @@ public final class SQLParser {
                 }
 
                 if (keepComments == -1) {
-                    keepComments = StringUtil.startsWithIgnoreCase(sql, KEEP_COMMENTS) ? 1 : 0;
+                    keepComments = Strings.startsWithIgnoreCase(sql, KEEP_COMMENTS) ? 1 : 0;
                 }
 
                 if (keepComments == 1) {

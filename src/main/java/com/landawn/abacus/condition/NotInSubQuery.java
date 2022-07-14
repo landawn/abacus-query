@@ -19,7 +19,7 @@ import java.util.List;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.StringUtil;
+import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.Throwables;
 import com.landawn.abacus.util.WD;
 
@@ -144,7 +144,7 @@ public class NotInSubQuery extends AbstractCondition {
             }
         } else {
             if (namingPolicy == NamingPolicy.NO_CHANGE) {
-                return "(" + StringUtil.join(propNames, ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
+                return "(" + Strings.join(propNames, ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
                         + WD.PARENTHESES_R;
             } else {
                 final Throwables.Function<String, String, RuntimeException> func = new Throwables.Function<>() {
@@ -154,7 +154,7 @@ public class NotInSubQuery extends AbstractCondition {
                     }
                 };
 
-                return "(" + StringUtil.join(N.map(propNames, func), ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L
+                return "(" + Strings.join(N.map(propNames, func), ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L
                         + subQuery.toString(namingPolicy) + WD.PARENTHESES_R;
             }
         }

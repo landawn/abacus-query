@@ -65,7 +65,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
-import com.landawn.abacus.util.StringUtil;
+import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
@@ -593,13 +593,13 @@ public class Expression extends AbstractCondition {
         }
 
         if (value instanceof String) {
-            return (_QUOTATION_S + StringUtil.quoteEscaped((String) value) + _QUOTATION_S);
+            return (_QUOTATION_S + Strings.quoteEscaped((String) value) + _QUOTATION_S);
         } else if (value instanceof Number) {
             return value.toString();
         } else if (value instanceof Expression) {
             return ((Expression) value).getLiteral();
         } else {
-            return (_QUOTATION_S + StringUtil.quoteEscaped(N.stringOf(value)) + _QUOTATION_S);
+            return (_QUOTATION_S + Strings.quoteEscaped(N.stringOf(value)) + _QUOTATION_S);
         }
     }
 
