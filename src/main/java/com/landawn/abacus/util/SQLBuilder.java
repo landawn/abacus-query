@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.Internal;
@@ -330,6 +331,8 @@ public abstract class SQLBuilder {
     private boolean hasFromBeenSet = false;
     private boolean isForConditionOnly = false;
 
+    private final BiConsumer<StringBuilder, String> appendNamedParameterAction;
+
     SQLBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
             logger.error("Too many(" + activeStringBuilderCounter.get()
@@ -340,6 +343,8 @@ public abstract class SQLBuilder {
 
         this.namingPolicy = namingPolicy == null ? NamingPolicy.LOWER_CASE_WITH_UNDERSCORE : namingPolicy;
         this.sqlPolicy = sqlPolicy == null ? SQLPolicy.SQL : sqlPolicy;
+
+        this.appendNamedParameterAction = appendNamedParameterAction_TL.get();
     }
 
     /**
@@ -719,8 +724,7 @@ public abstract class SQLBuilder {
                             sb.append(_COMMA_SPACE);
                         }
 
-                        sb.append(":");
-                        sb.append(columnName);
+                        appendNamedParameterAction.accept(sb, columnName);
                     }
 
                     break;
@@ -2598,6 +2602,24 @@ public abstract class SQLBuilder {
     }
 
     /**
+     * Sets the parameter for named SQL.
+     *
+     * @param propName
+     * @param propValue
+     */
+    private void setParameterForNamedSQL(final String propName, final Object propValue) {
+        if (CF.QME.equals(propValue)) {
+            appendNamedParameterAction.accept(sb, propName);
+        } else if (propValue instanceof Condition) {
+            appendCondition((Condition) propValue);
+        } else {
+            appendNamedParameterAction.accept(sb, propName);
+
+            parameters.add(propValue);
+        }
+    }
+
+    /**
      * Sets the parameter for ibatis named SQL.
      *
      * @param propName
@@ -2614,26 +2636,6 @@ public abstract class SQLBuilder {
             sb.append("#{");
             sb.append(propName);
             sb.append('}');
-
-            parameters.add(propValue);
-        }
-    }
-
-    /**
-     * Sets the parameter for named SQL.
-     *
-     * @param propName
-     * @param propValue
-     */
-    private void setParameterForNamedSQL(final String propName, final Object propValue) {
-        if (CF.QME.equals(propValue)) {
-            sb.append(":");
-            sb.append(propName);
-        } else if (propValue instanceof Condition) {
-            appendCondition((Condition) propValue);
-        } else {
-            sb.append(":");
-            sb.append(propName);
 
             parameters.add(propValue);
         }
@@ -11381,5 +11383,20 @@ public abstract class SQLBuilder {
         public String toString() {
             return "{sql=" + sql + ", parameters=" + N.toString(parameters) + "}";
         }
+    }
+
+    private static final BiConsumer<StringBuilder, String> defaultAppendNamedParameterAction = (sb, propName) -> sb.append(":").append(propName);
+    // private static final BiConsumer<StringBuilder, String> mybatisAppendNamedParameterAction = (sb, propName) -> sb.append("#{").append(propName).append("}");
+
+    private static final ThreadLocal<BiConsumer<StringBuilder, String>> appendNamedParameterAction_TL = ThreadLocal
+            .withInitial(() -> defaultAppendNamedParameterAction);
+
+    public static void setActionForAppendingNamedParameter(final BiConsumer<StringBuilder, String> action) {
+        N.checkArgNotNull(action, "action");
+        appendNamedParameterAction_TL.set(action);
+    }
+
+    public static void resetActionForAppendingNamedParameter() {
+        appendNamedParameterAction_TL.set(defaultAppendNamedParameterAction);
     }
 }

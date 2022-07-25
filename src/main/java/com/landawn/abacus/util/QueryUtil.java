@@ -309,8 +309,6 @@ public final class QueryUtil {
         return tmp;
     }
 
-    private static final Map<Class<?>, ImmutableList<String>> idPropNamesMap = new ConcurrentHashMap<>();
-
     /**
      * Gets the id field names.
      *
