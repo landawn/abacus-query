@@ -331,7 +331,7 @@ public abstract class SQLBuilder {
     private boolean hasFromBeenSet = false;
     private boolean isForConditionOnly = false;
 
-    private final BiConsumer<StringBuilder, String> appendNamedParameterAction;
+    private final BiConsumer<StringBuilder, String> handlerForNamedParameter;
 
     SQLBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
@@ -344,7 +344,7 @@ public abstract class SQLBuilder {
         this.namingPolicy = namingPolicy == null ? NamingPolicy.LOWER_CASE_WITH_UNDERSCORE : namingPolicy;
         this.sqlPolicy = sqlPolicy == null ? SQLPolicy.SQL : sqlPolicy;
 
-        this.appendNamedParameterAction = appendNamedParameterAction_TL.get();
+        this.handlerForNamedParameter = handlerForNamedParameter_TL.get();
     }
 
     /**
@@ -724,7 +724,7 @@ public abstract class SQLBuilder {
                             sb.append(_COMMA_SPACE);
                         }
 
-                        appendNamedParameterAction.accept(sb, columnName);
+                        handlerForNamedParameter.accept(sb, columnName);
                     }
 
                     break;
@@ -2609,11 +2609,11 @@ public abstract class SQLBuilder {
      */
     private void setParameterForNamedSQL(final String propName, final Object propValue) {
         if (CF.QME.equals(propValue)) {
-            appendNamedParameterAction.accept(sb, propName);
+            handlerForNamedParameter.accept(sb, propName);
         } else if (propValue instanceof Condition) {
             appendCondition((Condition) propValue);
         } else {
-            appendNamedParameterAction.accept(sb, propName);
+            handlerForNamedParameter.accept(sb, propName);
 
             parameters.add(propValue);
         }
@@ -11385,18 +11385,18 @@ public abstract class SQLBuilder {
         }
     }
 
-    private static final BiConsumer<StringBuilder, String> defaultAppendNamedParameterAction = (sb, propName) -> sb.append(":").append(propName);
-    // private static final BiConsumer<StringBuilder, String> mybatisAppendNamedParameterAction = (sb, propName) -> sb.append("#{").append(propName).append("}");
+    private static final BiConsumer<StringBuilder, String> defaultHandlerForNamedParameter = (sb, propName) -> sb.append(":").append(propName);
+    // private static final BiConsumer<StringBuilder, String> mybatisHandlerForNamedParameter = (sb, propName) -> sb.append("#{").append(propName).append("}");
 
-    private static final ThreadLocal<BiConsumer<StringBuilder, String>> appendNamedParameterAction_TL = ThreadLocal
-            .withInitial(() -> defaultAppendNamedParameterAction);
+    private static final ThreadLocal<BiConsumer<StringBuilder, String>> handlerForNamedParameter_TL = ThreadLocal
+            .withInitial(() -> defaultHandlerForNamedParameter);
 
-    public static void setActionForAppendingNamedParameter(final BiConsumer<StringBuilder, String> action) {
-        N.checkArgNotNull(action, "action");
-        appendNamedParameterAction_TL.set(action);
+    public static void setHandlerForNamedParameter(final BiConsumer<StringBuilder, String> handlerForNamedParameter) {
+        N.checkArgNotNull(handlerForNamedParameter, "handlerForNamedParameter");
+        handlerForNamedParameter_TL.set(handlerForNamedParameter);
     }
 
-    public static void resetActionForAppendingNamedParameter() {
-        appendNamedParameterAction_TL.set(defaultAppendNamedParameterAction);
+    public static void resetHandlerForNamedParameter() {
+        handlerForNamedParameter_TL.set(defaultHandlerForNamedParameter);
     }
 }
