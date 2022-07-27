@@ -407,7 +407,7 @@ public abstract class SQLBuilder {
         Set<String>[] val = defaultPropNamesPool.get(entityClass);
 
         if (val == null) {
-            synchronized (entityClass) {
+            synchronized (defaultPropNamesPool) {
                 final Set<String> entityPropNames = N.newLinkedHashSet(ClassUtil.getPropNameList(entityClass));
                 final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
@@ -443,7 +443,7 @@ public abstract class SQLBuilder {
                 final Set<String> transientPropNames = N.newHashSet();
 
                 for (PropInfo propInfo : entityInfo.propInfoList) {
-                    if (propInfo.isAnnotationPresent(ReadOnly.class) || propInfo.isAnnotationPresent(ReadOnlyId.class)) {
+                    if (propInfo.isAnnotationPresent(ReadOnly.class) || propInfo.isAnnotationPresent(ReadOnlyId.class) || propInfo.isMarkedToReadOnlyId) {
                         nonUpdatableNonWritablePropNames.add(propInfo.name);
                     }
 
@@ -490,10 +490,9 @@ public abstract class SQLBuilder {
      * @return
      */
     static ImmutableSet<String> getSubEntityPropNames(final Class<?> entityClass) {
-        synchronized (entityClass) {
-            ImmutableSet<String> subEntityPropNames = subEntityPropNamesPool.get(entityClass);
-
-            if (subEntityPropNames == null) {
+        ImmutableSet<String> subEntityPropNames = subEntityPropNamesPool.get(entityClass);
+        if (subEntityPropNames == null) {
+            synchronized (subEntityPropNamesPool) {
                 final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
                 final ImmutableSet<String> nonSubEntityPropNames = nonSubEntityPropNamesPool.get(entityClass);
                 final Set<String> subEntityPropNameSet = N.newLinkedHashSet();
@@ -509,9 +508,9 @@ public abstract class SQLBuilder {
 
                 subEntityPropNamesPool.put(entityClass, subEntityPropNames);
             }
-
-            return subEntityPropNames;
         }
+
+        return subEntityPropNames;
     }
 
     private static List<String> getSelectTableNames(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames,
