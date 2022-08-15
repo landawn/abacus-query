@@ -1,3 +1,8 @@
+## 1.2.6
+
+* Improvements
+
+
 ## 1.2.5
 
 * Improvements
