@@ -13,9 +13,6 @@
  */
 package com.landawn.abacus.util;
 
-import java.util.function.Consumer;
-
-import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 
@@ -208,38 +205,38 @@ public class DynamicSQLBuilder {
         return this;
     }
 
-    /**
-     *
-     * @param b
-     * @param actionForTrue
-     * @return
-     */
-    @Beta
-    public DynamicSQLBuilder iF(final boolean b, final Consumer<DynamicSQLBuilder> actionForTrue) {
-        if (b) {
-            actionForTrue.accept(this);
-        }
-
-        return this;
-    }
-
-    /**
-     *
-     * @param b
-     * @param actionForTrue
-     * @param actionForFalse
-     * @return
-     */
-    @Beta
-    public DynamicSQLBuilder ifOrElse(final boolean b, final Consumer<DynamicSQLBuilder> actionForTrue, final Consumer<DynamicSQLBuilder> actionForFalse) {
-        if (b) {
-            actionForTrue.accept(this);
-        } else {
-            actionForFalse.accept(this);
-        }
-
-        return this;
-    }
+    //    /**
+    //     *
+    //     * @param b
+    //     * @param actionForTrue
+    //     * @return
+    //     */
+    //    @Beta
+    //    public DynamicSQLBuilder iF(final boolean b, final Consumer<DynamicSQLBuilder> actionForTrue) {
+    //        if (b) {
+    //            actionForTrue.accept(this);
+    //        }
+    //
+    //        return this;
+    //    }
+    //
+    //    /**
+    //     *
+    //     * @param b
+    //     * @param actionForTrue
+    //     * @param actionForFalse
+    //     * @return
+    //     */
+    //    @Beta
+    //    public DynamicSQLBuilder ifOrElse(final boolean b, final Consumer<DynamicSQLBuilder> actionForTrue, final Consumer<DynamicSQLBuilder> actionForFalse) {
+    //        if (b) {
+    //            actionForTrue.accept(this);
+    //        } else {
+    //            actionForFalse.accept(this);
+    //        }
+    //
+    //        return this;
+    //    }
 
     public String build() {
         select.sb.append(" ").append(from.sb);
