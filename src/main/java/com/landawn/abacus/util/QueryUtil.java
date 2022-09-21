@@ -142,6 +142,7 @@ public final class QueryUtil {
             if (registeringClasses.contains(entityClass)) {
                 throw new RuntimeException("Cycling references found among: " + registeringClasses);
             }
+
             registeringClasses.add(entityClass);
         }
 
@@ -172,6 +173,8 @@ public final class QueryUtil {
                         for (Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
                             propColumnNameMap.put(propInfo.name + WD.PERIOD + entry.getKey(), subTableName + WD.PERIOD + entry.getValue());
                         }
+
+                        propColumnNameMap.remove(propInfo.name); // remove sub entity prop.
                     }
                 }
             }
@@ -276,17 +279,8 @@ public final class QueryUtil {
         if (N.isNullOrEmpty(excludedPropNames)) {
             return propNames;
         }
-        final List<String> tmp = new ArrayList<>(N.max(0, propNames.size() - excludedPropNames.size()));
-        int idx = 0;
 
-        for (String propName : propNames) {
-            if (!(excludedPropNames.contains(propName)
-                    || ((idx = propName.indexOf(WD._PERIOD)) > 0 && excludedPropNames.contains(propName.substring(0, idx))))) {
-                tmp.add(propName);
-            }
-        }
-
-        return tmp;
+        return N.excludeAll(propNames, excludedPropNames);
     }
 
     /**

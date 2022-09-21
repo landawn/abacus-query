@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Objects;
 
 import com.landawn.abacus.annotation.Id;
-import com.landawn.abacus.annotation.Transient;
 import com.landawn.abacus.annotation.Type;
 
 /**
@@ -27,9 +26,7 @@ public class Account {
     private int status;
     private Timestamp lastUpdateTime;
     private Timestamp createTime;
-    @Transient
     private AccountContact contact;
-    @Transient
     private List<AccountDevice> devices;
 
     public Account() {
@@ -186,7 +183,7 @@ public class Account {
         return this;
     }
 
-    @Type("com.landawn.abacus.entity.pjo.basic.AccountContact")
+    @Type("com.landawn.abacus.util.entity.AccountContact")
     public AccountContact getContact() {
         return contact;
     }
@@ -197,7 +194,6 @@ public class Account {
         return this;
     }
 
-    @Type("List<com.landawn.abacus.entity.pjo.basic.AccountDevice>")
     public List<AccountDevice> getDevices() {
         return devices;
     }

@@ -65,7 +65,6 @@ import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.EntityInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.util.Tuple.Tuple2;
-import com.landawn.abacus.util.Tuple.Tuple4;
 import com.landawn.abacus.util.u.Optional;
 
 /**
@@ -278,7 +277,7 @@ public abstract class SQLBuilder {
 
     private static final Map<Class<?>, ImmutableSet<String>> subEntityPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
 
-    private static final Map<Class<?>, ImmutableSet<String>> nonSubEntityPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
+    // private static final Map<Class<?>, ImmutableSet<String>> nonSubEntityPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
 
     private static final Map<Class<?>, Set<String>[]> defaultPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
 
@@ -306,13 +305,15 @@ public abstract class SQLBuilder {
 
     private Class<?> entityClass;
 
-    private ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap;
+    private EntityInfo entityInfo;
 
-    private String alias;
+    private ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap;
 
     private OperationType op;
 
     private String tableName;
+
+    private String tableAlias;
 
     private String preselect;
 
@@ -320,7 +321,7 @@ public abstract class SQLBuilder {
 
     private Map<String, String> columnAliases;
 
-    private List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects;
+    private List<Selection> multiSelects;
 
     private Map<String, Map<String, Tuple2<String, Boolean>>> aliasPropColumnNameMap;
 
@@ -494,12 +495,11 @@ public abstract class SQLBuilder {
         if (subEntityPropNames == null) {
             synchronized (subEntityPropNamesPool) {
                 final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
-                final ImmutableSet<String> nonSubEntityPropNames = nonSubEntityPropNamesPool.get(entityClass);
+                // final ImmutableSet<String> nonSubEntityPropNames = nonSubEntityPropNamesPool.get(entityClass);
                 final Set<String> subEntityPropNameSet = N.newLinkedHashSet();
 
                 for (PropInfo propInfo : entityInfo.propInfoList) {
-                    if (!propInfo.isMarkedToColumn && (propInfo.type.isEntity() || (propInfo.type.isCollection() && propInfo.type.getElementType().isEntity()))
-                            && (nonSubEntityPropNames == null || !nonSubEntityPropNames.contains(propInfo.name))) {
+                    if (isEntityProp(propInfo)) {
                         subEntityPropNameSet.add(propInfo.name);
                     }
                 }
@@ -680,7 +680,7 @@ public abstract class SQLBuilder {
                     sb.append(_COMMA_SPACE);
                 }
 
-                appendColumnName(propColumnNameMap, columnName);
+                appendColumnName(columnName);
             }
         } else {
             final Map<String, Object> props = N.isNullOrEmpty(this.props) ? propsList.iterator().next() : this.props;
@@ -691,7 +691,7 @@ public abstract class SQLBuilder {
                     sb.append(_COMMA_SPACE);
                 }
 
-                appendColumnName(propColumnNameMap, columnName);
+                appendColumnName(columnName);
             }
         }
 
@@ -774,8 +774,7 @@ public abstract class SQLBuilder {
      */
     public SQLBuilder into(final Class<?> entityClass) {
         if (this.entityClass == null) {
-            this.entityClass = entityClass;
-            this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(this.entityClass, this.namingPolicy);
+            setEntityClass(entityClass);
         }
 
         return into(getTableName(entityClass, namingPolicy));
@@ -860,8 +859,7 @@ public abstract class SQLBuilder {
      */
     public SQLBuilder from(final Class<?> entityClass) {
         if (this.entityClass == null) {
-            this.entityClass = entityClass;
-            this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(this.entityClass, this.namingPolicy);
+            setEntityClass(entityClass);
         }
 
         return from(getTableName(entityClass, namingPolicy));
@@ -875,8 +873,7 @@ public abstract class SQLBuilder {
      */
     public SQLBuilder from(final Class<?> entityClass, final String alias) {
         if (this.entityClass == null) {
-            this.entityClass = entityClass;
-            this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(this.entityClass, this.namingPolicy);
+            setEntityClass(entityClass);
         }
 
         if (N.isNullOrEmpty(alias)) {
@@ -887,8 +884,7 @@ public abstract class SQLBuilder {
 
     private SQLBuilder from(final Class<?> entityClass, final Collection<String> tableNames) {
         if (this.entityClass == null) {
-            this.entityClass = entityClass;
-            this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(this.entityClass, this.namingPolicy);
+            setEntityClass(entityClass);
         }
 
         return from(tableNames);
@@ -915,13 +911,13 @@ public abstract class SQLBuilder {
 
         if (idx > 0) {
             this.tableName = tableName.substring(0, idx).trim();
-            alias = tableName.substring(idx + 1).trim();
+            this.tableAlias = tableName.substring(idx + 1).trim();
         } else {
             this.tableName = tableName.trim();
         }
 
-        if (entityClass != null && N.notNullOrEmpty(alias)) {
-            addPropColumnMapForAlias(entityClass, alias);
+        if (entityClass != null && N.notNullOrEmpty(tableAlias)) {
+            addPropColumnMapForAlias(entityClass, tableAlias);
         }
 
         sb.append(_SELECT);
@@ -932,7 +928,7 @@ public abstract class SQLBuilder {
             sb.append(_SPACE);
         }
 
-        final boolean withAlias = N.notNullOrEmpty(alias);
+        final boolean withAlias = N.notNullOrEmpty(tableAlias);
         final boolean isForSelect = op == OperationType.QUERY;
 
         if (N.notNullOrEmpty(columnNames)) {
@@ -964,40 +960,13 @@ public abstract class SQLBuilder {
 
                 sb.append(fullSelectParts);
             } else {
-                if (entityClass != null) {
-                    final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
-
-                    if (N.notNullOrEmpty(subEntityPropNames) && N.containsAny(subEntityPropNames, columnNames)) {
-                        final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
-                        final List<String> tmp = new ArrayList<>(columnNames.size() + 16);
-                        PropInfo propInfo = null;
-
-                        for (String propName : columnNames) {
-                            if (subEntityPropNames.contains(propName)) {
-                                propInfo = entityInfo.getPropInfo(propName);
-
-                                final Collection<String> subSelectPropNames = QueryUtil.getSelectPropNames(
-                                        propInfo.type.isCollection() ? propInfo.type.getElementType().clazz() : propInfo.clazz, false, null);
-
-                                for (String subPropName : subSelectPropNames) {
-                                    tmp.add(propName + WD.PERIOD + subPropName);
-                                }
-                            } else {
-                                tmp.add(propName);
-                            }
-                        }
-
-                        columnNames = tmp;
-                    }
-                }
-
                 int i = 0;
                 for (String columnName : columnNames) {
                     if (i++ > 0) {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(propColumnNameMap, columnName, null, false, null, isForSelect);
+                    appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, columnName, null, false, null, isForSelect);
                 }
             }
         } else if (N.notNullOrEmpty(columnAliases)) {
@@ -1007,37 +976,49 @@ public abstract class SQLBuilder {
                     sb.append(_COMMA_SPACE);
                 }
 
-                appendColumnName(propColumnNameMap, entry.getKey(), entry.getValue(), false, null, isForSelect);
+                appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, entry.getKey(), entry.getValue(), false, null, isForSelect);
             }
         } else if (N.notNullOrEmpty(multiSelects)) {
-            aliasPropColumnNameMap = N.newHashMap(multiSelects.size());
+            this.aliasPropColumnNameMap = N.newHashMap(multiSelects.size());
 
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (N.notNullOrEmpty(tp._2)) {
-                    aliasPropColumnNameMap.put(tp._2, QueryUtil.prop2ColumnNameMap(tp._1, namingPolicy));
+            for (Selection selection : multiSelects) {
+                if (N.notNullOrEmpty(selection.tableAlias())) {
+                    this.aliasPropColumnNameMap.put(selection.tableAlias(), QueryUtil.prop2ColumnNameMap(selection.entityClass(), namingPolicy));
                 }
             }
 
-            final String tmp = this.alias;
+            Class<?> selectionEntityClass = null;
+            EntityInfo selectionEntityInfo = null;
+            ImmutableMap<String, Tuple2<String, Boolean>> selectionPropColumnNameMap = null;
+            String selectionTableAlias = null;
+            String selectionClassAlias = null;
+            boolean selectionWithClassAlias = false;
+
             int i = 0;
 
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                this.alias = tp._2;
-                final String classAlias = tp._3;
-                final boolean withClassAlias = N.notNullOrEmpty(classAlias);
-                final ImmutableMap<String, Tuple2<String, Boolean>> eachPropColumnNameMap = QueryUtil.prop2ColumnNameMap(tp._1, namingPolicy);
+            for (Selection selection : multiSelects) {
+                selectionEntityClass = selection.entityClass();
+                selectionEntityInfo = selectionEntityClass == null && ClassUtil.isEntity(selectionEntityClass) == false ? null
+                        : ParserUtil.getEntityInfo(selectionEntityClass);
+                selectionPropColumnNameMap = selectionEntityClass == null && ClassUtil.isEntity(selectionEntityClass) == false ? null
+                        : QueryUtil.prop2ColumnNameMap(selectionEntityClass, namingPolicy);
+                selectionTableAlias = selection.tableAlias();
 
-                for (String propName : QueryUtil.getSelectPropNames(tp._1, false, tp._4)) {
+                selectionClassAlias = selection.classAlias();
+                selectionWithClassAlias = N.notNullOrEmpty(selectionClassAlias);
+
+                final Collection<String> selectPropNames = N.notNullOrEmpty(selection.selectPropNames()) ? selection.selectPropNames()
+                        : QueryUtil.getSelectPropNames(selectionEntityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
+
+                for (String propName : selectPropNames) {
                     if (i++ > 0) {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(eachPropColumnNameMap, propName, null, withClassAlias, classAlias, isForSelect);
-
+                    appendColumnName(selectionEntityClass, selectionEntityInfo, selectionPropColumnNameMap, selectionTableAlias, propName, null,
+                            selectionWithClassAlias, selectionClassAlias, isForSelect);
                 }
             }
-
-            this.alias = tmp;
         } else {
             throw new UnsupportedOperationException("No select part specified");
         }
@@ -1453,7 +1434,7 @@ public abstract class SQLBuilder {
                 sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(propColumnNameMap, columnNames[i]);
+            appendColumnName(columnNames[i]);
         }
 
         return this;
@@ -1488,7 +1469,7 @@ public abstract class SQLBuilder {
                 sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(propColumnNameMap, columnName);
+            appendColumnName(columnName);
         }
 
         return this;
@@ -1524,7 +1505,7 @@ public abstract class SQLBuilder {
                 sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(propColumnNameMap, entry.getKey());
+            appendColumnName(entry.getKey());
 
             sb.append(_SPACE);
             sb.append(entry.getValue().toString());
@@ -1588,7 +1569,7 @@ public abstract class SQLBuilder {
                 sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(propColumnNameMap, columnNames[i]);
+            appendColumnName(columnNames[i]);
         }
 
         return this;
@@ -1623,7 +1604,7 @@ public abstract class SQLBuilder {
                 sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(propColumnNameMap, columnName);
+            appendColumnName(columnName);
         }
 
         return this;
@@ -1659,7 +1640,7 @@ public abstract class SQLBuilder {
                 sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(propColumnNameMap, entry.getKey());
+            appendColumnName(entry.getKey());
 
             sb.append(_SPACE);
             sb.append(entry.getValue().toString());
@@ -2251,7 +2232,7 @@ public abstract class SQLBuilder {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(propColumnNameMap, columnName);
+                    appendColumnName(columnName);
 
                     if (columnName.indexOf('=') < 0) {
                         sb.append(" = ?");
@@ -2268,7 +2249,7 @@ public abstract class SQLBuilder {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(propColumnNameMap, columnName);
+                    appendColumnName(columnName);
 
                     if (columnName.indexOf('=') < 0) {
                         sb.append(" = :");
@@ -2286,7 +2267,7 @@ public abstract class SQLBuilder {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(propColumnNameMap, columnName);
+                    appendColumnName(columnName);
 
                     if (columnName.indexOf('=') < 0) {
                         sb.append(" = #{");
@@ -2323,7 +2304,7 @@ public abstract class SQLBuilder {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(propColumnNameMap, entry.getKey());
+                    appendColumnName(entry.getKey());
 
                     sb.append(_SPACE_EQUAL_SPACE);
 
@@ -2340,7 +2321,7 @@ public abstract class SQLBuilder {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(propColumnNameMap, entry.getKey());
+                    appendColumnName(entry.getKey());
 
                     sb.append(_SPACE_EQUAL_SPACE);
 
@@ -2357,7 +2338,7 @@ public abstract class SQLBuilder {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(propColumnNameMap, entry.getKey());
+                    appendColumnName(entry.getKey());
 
                     sb.append(_SPACE_EQUAL_SPACE);
 
@@ -2374,7 +2355,7 @@ public abstract class SQLBuilder {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(propColumnNameMap, entry.getKey());
+                    appendColumnName(entry.getKey());
 
                     sb.append(_SPACE_EQUAL_SPACE);
 
@@ -2422,9 +2403,9 @@ public abstract class SQLBuilder {
             Maps.removeKeys(props, excludedPropNames);
             return set(props);
         }
+
         final Class<?> entityClass = entity.getClass();
-        this.entityClass = entityClass;
-        this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(this.entityClass, this.namingPolicy);
+        setEntityClass(entityClass);
         final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
         final Map<String, Object> props = N.newHashMap(propNames.size());
         final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
@@ -2442,8 +2423,7 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder set(Class<?> entityClass) {
-        this.entityClass = entityClass;
-        this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(this.entityClass, this.namingPolicy);
+        setEntityClass(entityClass);
 
         return set(entityClass, null);
     }
@@ -2455,8 +2435,7 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder set(Class<?> entityClass, final Set<String> excludedPropNames) {
-        this.entityClass = entityClass;
-        this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(this.entityClass, this.namingPolicy);
+        setEntityClass(entityClass);
 
         return set(QueryUtil.getUpdatePropNames(entityClass, excludedPropNames));
     }
@@ -2565,6 +2544,18 @@ public abstract class SQLBuilder {
             sb.append(deleteFromTableChars);
         } else if (op == OperationType.QUERY && hasFromBeenSet == false && isForConditionOnly == false) {
             throw new RuntimeException("'from' methods has not been called for query: " + op);
+        }
+    }
+
+    private void setEntityClass(final Class<?> entityClass) {
+        this.entityClass = entityClass;
+
+        if (entityClass != null && ClassUtil.isEntity(entityClass)) {
+            this.entityInfo = ParserUtil.getEntityInfo(entityClass);
+            this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(entityClass, namingPolicy);
+        } else {
+            this.entityInfo = null;
+            this.propColumnNameMap = null;
         }
     }
 
@@ -3112,20 +3103,17 @@ public abstract class SQLBuilder {
     }
 
     private void appendColumnName(final String propName) {
-        appendColumnName(propColumnNameMap, propName);
+        appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName, null, false, null, false);
     }
 
-    private void appendColumnName(final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String propName) {
-        appendColumnName(propColumnNameMap, propName, null, false, null, false);
-    }
-
-    private void appendColumnName(final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String propName, final String propAlias,
+    private void appendColumnName(final Class<?> entityClass, final EntityInfo entityInfo,
+            final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String tableAlias, final String propName, final String propAlias,
             final boolean withClassAlias, final String classAlias, final boolean isForSelect) {
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
-            if (tp._2.booleanValue() && alias != null && alias.length() > 0) {
-                sb.append(alias).append(WD._PERIOD);
+            if (tp._2.booleanValue() && tableAlias != null && tableAlias.length() > 0) {
+                sb.append(tableAlias).append(WD._PERIOD);
             }
 
             sb.append(tp._1);
@@ -3144,6 +3132,37 @@ public abstract class SQLBuilder {
 
             return;
         }
+
+        if (N.isNullOrEmpty(propAlias)) {
+            final PropInfo propInfo = entityInfo.getPropInfo(propName);
+
+            if (isEntityProp(propInfo)) {
+                final Class<?> propEntityClass = propInfo.type.isCollection() ? propInfo.type.getElementType().clazz() : propInfo.clazz;
+                final String propEntityTableName = getTableName(propEntityClass, namingPolicy);
+                final ImmutableMap<String, Tuple2<String, Boolean>> subPropColumnNameMap = QueryUtil.prop2ColumnNameMap(propEntityClass, namingPolicy);
+
+                final Collection<String> subSelectPropNames = QueryUtil.getSelectPropNames(propEntityClass, false, null);
+                int i = 0;
+
+                for (String subPropName : subSelectPropNames) {
+                    if (i++ > 0) {
+                        sb.append(_COMMA_SPACE);
+                    }
+
+                    sb.append(propEntityTableName).append(WD._PERIOD).append(subPropColumnNameMap.get(subPropName)._1);
+
+                    if (isForSelect) {
+                        sb.append(_SPACE_AS_SPACE);
+                        sb.append(WD._QUOTATION_D);
+                        sb.append(propInfo.name).append(WD._PERIOD).append(subPropName);
+                        sb.append(WD._QUOTATION_D);
+                    }
+                }
+            }
+
+            return;
+        }
+
         if (aliasPropColumnNameMap != null && aliasPropColumnNameMap.size() > 0) {
             int index = propName.indexOf('.');
 
@@ -3198,8 +3217,8 @@ public abstract class SQLBuilder {
             }
 
             if (index > 0) {
-                appendColumnName(propColumnNameMap, propName.substring(0, index).trim(), propName.substring(index + 4).trim(), withClassAlias, classAlias,
-                        isForSelect);
+                appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName.substring(0, index).trim(),
+                        propName.substring(index + 4).trim(), withClassAlias, classAlias, isForSelect);
             } else {
                 appendStringExpr(propName, true);
 
@@ -3218,6 +3237,13 @@ public abstract class SQLBuilder {
         } else {
             appendStringExpr(propName, true);
         }
+    }
+
+    private static boolean isEntityProp(final PropInfo propInfo) {
+        // final ImmutableSet<String> nonSubEntityPropNames = nonSubEntityPropNamesPool.get(entityClass);
+
+        return propInfo != null
+                && (!propInfo.isMarkedToColumn && (propInfo.type.isEntity() || (propInfo.type.isCollection() && propInfo.type.getElementType().isEntity())));
     }
 
     /**
@@ -3283,8 +3309,8 @@ public abstract class SQLBuilder {
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
-            if (tp._2.booleanValue() && alias != null && alias.length() > 0) {
-                return alias + "." + tp._1;
+            if (tp._2.booleanValue() && tableAlias != null && tableAlias.length() > 0) {
+                return tableAlias + "." + tp._1;
             }
             return tp._1;
         }
@@ -3357,11 +3383,11 @@ public abstract class SQLBuilder {
         return newPropsList;
     }
 
-    static void checkMultiSelects(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+    static void checkMultiSelects(final List<Selection> multiSelects) {
         N.checkArgNotNullOrEmpty(multiSelects, "multiSelects");
 
-        for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-            N.checkArgNotNull(tp._1, "Class can't be null in 'multiSelects'");
+        for (Selection selection : multiSelects) {
+            N.checkArgNotNull(selection.entityClass(), "Class can't be null in 'multiSelects'");
         }
     }
 
@@ -3405,8 +3431,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -3485,8 +3510,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -3512,8 +3536,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -3552,8 +3575,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -3594,8 +3616,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -3625,8 +3646,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
             return instance;
@@ -3736,8 +3756,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -3840,21 +3859,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -3869,35 +3886,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -3939,8 +3938,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -4019,8 +4017,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -4046,8 +4043,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -4086,8 +4082,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -4128,8 +4123,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -4159,8 +4153,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
 
             return instance;
@@ -4270,8 +4263,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -4374,21 +4366,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -4403,35 +4393,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -4475,8 +4447,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -4555,8 +4526,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -4582,8 +4552,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -4622,8 +4591,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -4664,8 +4632,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -4695,8 +4662,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
 
             return instance;
@@ -4806,8 +4772,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -4899,6 +4864,7 @@ public abstract class SQLBuilder {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -4910,21 +4876,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -4939,35 +4903,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -5006,8 +4952,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -5086,8 +5031,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -5113,8 +5057,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -5153,8 +5096,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -5195,8 +5137,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.NO_CHANGE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -5226,8 +5167,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.NO_CHANGE);
 
             return instance;
@@ -5337,8 +5277,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -5441,21 +5380,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -5470,35 +5407,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.NO_CHANGE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -5537,8 +5456,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -5617,8 +5535,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -5644,8 +5561,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -5684,8 +5600,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -5726,8 +5641,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -5757,8 +5671,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
             return instance;
@@ -5868,8 +5781,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -5972,21 +5884,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -6001,35 +5911,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -6068,8 +5960,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -6148,8 +6039,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -6175,8 +6065,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -6215,8 +6104,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -6257,8 +6145,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -6288,8 +6175,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
 
             return instance;
@@ -6399,8 +6285,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -6503,21 +6388,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -6532,35 +6415,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -6599,8 +6464,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -6679,8 +6543,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -6706,8 +6569,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -6746,8 +6608,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -6788,8 +6649,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -6819,8 +6679,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
 
             return instance;
@@ -6930,8 +6789,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -7034,21 +6892,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -7063,35 +6919,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -7130,8 +6968,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -7210,8 +7047,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -7237,8 +7073,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -7277,8 +7112,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -7319,8 +7153,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.NO_CHANGE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -7350,8 +7183,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.NO_CHANGE);
 
             return instance;
@@ -7461,8 +7293,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -7565,21 +7396,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -7594,35 +7423,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.NO_CHANGE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -7661,8 +7472,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -7741,8 +7551,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -7768,8 +7577,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -7808,8 +7616,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -7850,8 +7657,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -7881,8 +7687,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
             return instance;
@@ -7992,8 +7797,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -8096,21 +7900,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -8125,35 +7927,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -8192,8 +7976,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -8272,8 +8055,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -8299,8 +8081,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -8339,8 +8120,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -8381,8 +8161,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -8412,8 +8191,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
 
             return instance;
@@ -8523,8 +8301,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -8627,21 +8404,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -8656,35 +8431,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -8723,8 +8480,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -8803,8 +8559,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -8830,8 +8585,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -8870,8 +8624,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -8912,8 +8665,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -8943,8 +8695,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
 
             return instance;
@@ -9054,8 +8805,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -9158,21 +8908,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -9187,35 +8935,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -9255,8 +8985,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -9335,8 +9064,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -9362,8 +9090,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -9402,8 +9129,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -9444,8 +9170,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.NO_CHANGE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -9475,8 +9200,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.NO_CHANGE);
 
             return instance;
@@ -9586,8 +9310,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -9690,21 +9413,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -9719,35 +9440,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.NO_CHANGE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -9787,8 +9490,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -9867,8 +9569,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -9894,8 +9595,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -9934,8 +9634,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -9976,8 +9675,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -10007,8 +9705,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
             return instance;
@@ -10118,8 +9815,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -10222,21 +9918,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -10251,35 +9945,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -10319,8 +9995,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -10399,8 +10074,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -10426,8 +10100,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -10466,8 +10139,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -10508,8 +10180,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -10539,8 +10210,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
 
             return instance;
@@ -10650,8 +10320,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -10754,21 +10423,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -10783,35 +10450,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -10851,8 +10500,7 @@ public abstract class SQLBuilder {
 
             final SQLBuilder instance = createInstance();
 
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.op = OperationType.QUERY;
             instance.isForConditionOnly = true;
             instance.append(cond);
@@ -10931,8 +10579,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entity.getClass();
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entity.getClass());
 
             parseInsertEntity(instance, entity, excludedPropNames);
 
@@ -10958,8 +10605,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -10998,8 +10644,7 @@ public abstract class SQLBuilder {
             final Optional<?> first = N.firstNonNull(propsList);
 
             if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
-                instance.entityClass = first.get().getClass();
-                instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+                instance.setEntityClass(first.get().getClass());
             }
 
             instance.propsList = toInsertPropsList(propsList);
@@ -11040,8 +10685,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.UPDATE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
             instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
@@ -11071,8 +10715,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.DELETE;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
 
             return instance;
@@ -11182,8 +10825,7 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = entityClass;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(entityClass);
             instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
@@ -11286,21 +10928,19 @@ public abstract class SQLBuilder {
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
 
-        public static SQLBuilder select(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.entityClass = multiSelects.get(0)._1;
-            instance.propColumnNameMap = QueryUtil.prop2ColumnNameMap(instance.entityClass, instance.namingPolicy);
+            instance.setEntityClass(multiSelects.get(0).entityClass());
             instance.multiSelects = multiSelects;
 
             return instance;
@@ -11315,35 +10955,17 @@ public abstract class SQLBuilder {
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
                 final Set<String> excludedPropNamesB) {
 
-            final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects = N.asList(
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassA, tableAliasA, classAliasA, excludedPropNamesA),
-                    Tuple.<Class<?>, String, String, Set<String>> of(entityClassB, tableAliasB, classAliasB, excludedPropNamesB));
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
 
-        public static SQLBuilder selectFrom(final List<Tuple4<Class<?>, String, String, Set<String>>> multiSelects) {
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
-            final StringBuilder sb = Objectory.createStringBuilder();
-            int idx = 0;
-
-            for (Tuple4<Class<?>, String, String, Set<String>> tp : multiSelects) {
-                if (idx++ > 0) {
-                    sb.append(_COMMA_SPACE);
-                }
-
-                sb.append(getTableName(tp._1, namingPolicy));
-
-                if (N.notNullOrEmpty(tp._2)) {
-                    sb.append(' ').append(tp._2);
-                }
-            }
-
-            String fromClause = sb.toString();
-
-            Objectory.recycle(sb);
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
         }
@@ -11397,5 +11019,57 @@ public abstract class SQLBuilder {
 
     public static void resetHandlerForNamedParameter() {
         handlerForNamedParameter_TL.set(defaultHandlerForNamedParameter);
+    }
+
+    private static String getFromClause(final List<Selection> multiSelects, final NamingPolicy namingPolicy) {
+        final StringBuilder sb = Objectory.createStringBuilder();
+        int idx = 0;
+
+        for (Selection selection : multiSelects) {
+            if (idx++ > 0) {
+                sb.append(_COMMA_SPACE);
+            }
+
+            sb.append(getTableName(selection.entityClass(), namingPolicy));
+
+            if (N.notNullOrEmpty(selection.tableAlias())) {
+                sb.append(' ').append(selection.tableAlias());
+            }
+
+            if (N.notNullOrEmpty(selection.selectPropNames()) || selection.includeSubEntityProperties) {
+                final Class<?> entityClass = selection.entityClass();
+                final Collection<String> selectPropNames = selection.selectPropNames();
+                final Set<String> excludedPropNames = selection.excludedPropNames();
+                final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
+
+                if (N.isNullOrEmpty(subEntityPropNames)) {
+                    continue;
+                }
+
+                final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+                PropInfo propInfo = null;
+                Class<?> subEntityClass = null;
+
+                for (String subEntityPropName : subEntityPropNames) {
+                    if (N.notNullOrEmpty(selectPropNames)) {
+                        if (!selectPropNames.contains(subEntityPropName)) {
+                            continue;
+                        }
+                    } else if (excludedPropNames != null && excludedPropNames.contains(subEntityPropName)) {
+                        continue;
+                    }
+
+                    propInfo = entityInfo.getPropInfo(subEntityPropName);
+                    subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
+
+                    sb.append(_COMMA_SPACE).append(getTableName(subEntityClass, namingPolicy));
+                }
+            }
+        }
+
+        String fromClause = sb.toString();
+
+        Objectory.recycle(sb);
+        return fromClause;
     }
 }
