@@ -3158,9 +3158,9 @@ public abstract class SQLBuilder {
                         sb.append(WD._QUOTATION_D);
                     }
                 }
-            }
 
-            return;
+                return;
+            }
         }
 
         if (aliasPropColumnNameMap != null && aliasPropColumnNameMap.size() > 0) {
