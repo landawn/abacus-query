@@ -317,9 +317,9 @@ public abstract class SQLBuilder {
 
     private String preselect;
 
-    private Collection<String> columnNames;
+    private Collection<String> propOrColumnNames;
 
-    private Map<String, String> columnAliases;
+    private Map<String, String> propOrColumnNameAliases;
 
     private List<Selection> multiSelects;
 
@@ -659,7 +659,7 @@ public abstract class SQLBuilder {
             throw new RuntimeException("Invalid operation: " + op);
         }
 
-        if (N.isNullOrEmpty(columnNames) && N.isNullOrEmpty(props) && N.isNullOrEmpty(propsList)) {
+        if (N.isNullOrEmpty(propOrColumnNames) && N.isNullOrEmpty(props) && N.isNullOrEmpty(propsList)) {
             throw new RuntimeException("Column names or props must be set first by insert");
         }
 
@@ -673,9 +673,9 @@ public abstract class SQLBuilder {
         sb.append(_SPACE);
         sb.append(WD._PARENTHESES_L);
 
-        if (N.notNullOrEmpty(columnNames)) {
+        if (N.notNullOrEmpty(propOrColumnNames)) {
             int i = 0;
-            for (String columnName : columnNames) {
+            for (String columnName : propOrColumnNames) {
                 if (i++ > 0) {
                     sb.append(_COMMA_SPACE);
                 }
@@ -701,11 +701,11 @@ public abstract class SQLBuilder {
 
         sb.append(WD._PARENTHESES_L);
 
-        if (N.notNullOrEmpty(columnNames)) {
+        if (N.notNullOrEmpty(propOrColumnNames)) {
             switch (sqlPolicy) {
                 case SQL:
                 case PARAMETERIZED_SQL: {
-                    for (int i = 0, size = columnNames.size(); i < size; i++) {
+                    for (int i = 0, size = propOrColumnNames.size(); i < size; i++) {
                         if (i > 0) {
                             sb.append(_COMMA_SPACE);
                         }
@@ -718,7 +718,7 @@ public abstract class SQLBuilder {
 
                 case NAMED_SQL: {
                     int i = 0;
-                    for (String columnName : columnNames) {
+                    for (String columnName : propOrColumnNames) {
                         if (i++ > 0) {
                             sb.append(_COMMA_SPACE);
                         }
@@ -731,7 +731,7 @@ public abstract class SQLBuilder {
 
                 case IBATIS_SQL: {
                     int i = 0;
-                    for (String columnName : columnNames) {
+                    for (String columnName : propOrColumnNames) {
                         if (i++ > 0) {
                             sb.append(_COMMA_SPACE);
                         }
@@ -903,7 +903,7 @@ public abstract class SQLBuilder {
 
         hasFromBeenSet = true;
 
-        if (N.isNullOrEmpty(columnNames) && N.isNullOrEmpty(columnAliases) && N.isNullOrEmpty(multiSelects)) {
+        if (N.isNullOrEmpty(propOrColumnNames) && N.isNullOrEmpty(propOrColumnNameAliases) && N.isNullOrEmpty(multiSelects)) {
             throw new RuntimeException("Column names or props must be set first by select");
         }
 
@@ -931,15 +931,15 @@ public abstract class SQLBuilder {
         final boolean withAlias = N.notNullOrEmpty(tableAlias);
         final boolean isForSelect = op == OperationType.QUERY;
 
-        if (N.notNullOrEmpty(columnNames)) {
-            if (entityClass != null && withAlias == false && columnNames == QueryUtil.getSelectPropNames(entityClass, false, null)) {
+        if (N.notNullOrEmpty(propOrColumnNames)) {
+            if (entityClass != null && withAlias == false && propOrColumnNames == QueryUtil.getSelectPropNames(entityClass, false, null)) {
                 String fullSelectParts = fullSelectPartsPool.get(namingPolicy).get(entityClass);
 
                 if (N.isNullOrEmpty(fullSelectParts)) {
                     fullSelectParts = "";
 
                     int i = 0;
-                    for (String columnName : columnNames) {
+                    for (String columnName : propOrColumnNames) {
                         if (i++ > 0) {
                             fullSelectParts += WD.COMMA_SPACE;
                         }
@@ -961,7 +961,7 @@ public abstract class SQLBuilder {
                 sb.append(fullSelectParts);
             } else {
                 int i = 0;
-                for (String columnName : columnNames) {
+                for (String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         sb.append(_COMMA_SPACE);
                     }
@@ -969,9 +969,9 @@ public abstract class SQLBuilder {
                     appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, columnName, null, false, null, isForSelect);
                 }
             }
-        } else if (N.notNullOrEmpty(columnAliases)) {
+        } else if (N.notNullOrEmpty(propOrColumnNameAliases)) {
             int i = 0;
-            for (Map.Entry<String, String> entry : columnAliases.entrySet()) {
+            for (Map.Entry<String, String> entry : propOrColumnNameAliases.entrySet()) {
                 if (i++ > 0) {
                     sb.append(_COMMA_SPACE);
                 }
@@ -1422,19 +1422,19 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
     @SafeVarargs
-    public final SQLBuilder groupBy(final String... columnNames) {
+    public final SQLBuilder groupBy(final String... propOrColumnNames) {
         sb.append(_SPACE_GROUP_BY_SPACE);
 
-        for (int i = 0, len = columnNames.length; i < len; i++) {
+        for (int i = 0, len = propOrColumnNames.length; i < len; i++) {
             if (i > 0) {
                 sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(columnNames[i]);
+            appendColumnName(propOrColumnNames[i]);
         }
 
         return this;
@@ -1457,14 +1457,14 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
-    public SQLBuilder groupBy(final Collection<String> columnNames) {
+    public SQLBuilder groupBy(final Collection<String> propOrColumnNames) {
         sb.append(_SPACE_GROUP_BY_SPACE);
 
         int i = 0;
-        for (String columnName : columnNames) {
+        for (String columnName : propOrColumnNames) {
             if (i++ > 0) {
                 sb.append(_COMMA_SPACE);
             }
@@ -1477,12 +1477,12 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @param direction
      * @return
      */
-    public SQLBuilder groupBy(final Collection<String> columnNames, final SortDirection direction) {
-        groupBy(columnNames);
+    public SQLBuilder groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
+        groupBy(propOrColumnNames);
 
         sb.append(_SPACE);
         sb.append(direction.toString());
@@ -1557,19 +1557,19 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
     @SafeVarargs
-    public final SQLBuilder orderBy(final String... columnNames) {
+    public final SQLBuilder orderBy(final String... propOrColumnNames) {
         sb.append(_SPACE_ORDER_BY_SPACE);
 
-        for (int i = 0, len = columnNames.length; i < len; i++) {
+        for (int i = 0, len = propOrColumnNames.length; i < len; i++) {
             if (i > 0) {
                 sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(columnNames[i]);
+            appendColumnName(propOrColumnNames[i]);
         }
 
         return this;
@@ -1592,14 +1592,14 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
-    public SQLBuilder orderBy(final Collection<String> columnNames) {
+    public SQLBuilder orderBy(final Collection<String> propOrColumnNames) {
         sb.append(_SPACE_ORDER_BY_SPACE);
 
         int i = 0;
-        for (String columnName : columnNames) {
+        for (String columnName : propOrColumnNames) {
             if (i++ > 0) {
                 sb.append(_COMMA_SPACE);
             }
@@ -1612,12 +1612,12 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @param direction
      * @return
      */
-    public SQLBuilder orderBy(final Collection<String> columnNames, final SortDirection direction) {
-        orderBy(columnNames);
+    public SQLBuilder orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
+        orderBy(propOrColumnNames);
 
         sb.append(_SPACE);
         sb.append(direction.toString());
@@ -1886,23 +1886,23 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
     @SafeVarargs
-    public final SQLBuilder union(final String... columnNames) {
+    public final SQLBuilder union(final String... propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = Array.asList(columnNames);
-        this.columnAliases = null;
+        this.propOrColumnNames = Array.asList(propOrColumnNames);
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_UNION_SPACE);
 
         // it's sub query
-        if (isSubQuery(columnNames)) {
-            sb.append(columnNames[0]);
+        if (isSubQuery(propOrColumnNames)) {
+            sb.append(propOrColumnNames[0]);
 
-            this.columnNames = null;
+            this.propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -1912,14 +1912,14 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
-    public SQLBuilder union(final Collection<String> columnNames) {
+    public SQLBuilder union(final Collection<String> propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = columnNames;
-        this.columnAliases = null;
+        this.propOrColumnNames = propOrColumnNames;
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_UNION_SPACE);
 
@@ -1952,23 +1952,23 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
     @SafeVarargs
-    public final SQLBuilder unionAll(final String... columnNames) {
+    public final SQLBuilder unionAll(final String... propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = Array.asList(columnNames);
-        this.columnAliases = null;
+        this.propOrColumnNames = Array.asList(propOrColumnNames);
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_UNION_ALL_SPACE);
 
         // it's sub query
-        if (isSubQuery(columnNames)) {
-            sb.append(columnNames[0]);
+        if (isSubQuery(propOrColumnNames)) {
+            sb.append(propOrColumnNames[0]);
 
-            this.columnNames = null;
+            this.propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -1978,14 +1978,14 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
-    public SQLBuilder unionAll(final Collection<String> columnNames) {
+    public SQLBuilder unionAll(final Collection<String> propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = columnNames;
-        this.columnAliases = null;
+        this.propOrColumnNames = propOrColumnNames;
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_UNION_ALL_SPACE);
 
@@ -2018,23 +2018,23 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
     @SafeVarargs
-    public final SQLBuilder intersect(final String... columnNames) {
+    public final SQLBuilder intersect(final String... propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = Array.asList(columnNames);
-        this.columnAliases = null;
+        this.propOrColumnNames = Array.asList(propOrColumnNames);
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_INTERSECT_SPACE);
 
         // it's sub query
-        if (isSubQuery(columnNames)) {
-            sb.append(columnNames[0]);
+        if (isSubQuery(propOrColumnNames)) {
+            sb.append(propOrColumnNames[0]);
 
-            this.columnNames = null;
+            this.propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -2044,14 +2044,14 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
-    public SQLBuilder intersect(final Collection<String> columnNames) {
+    public SQLBuilder intersect(final Collection<String> propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = columnNames;
-        this.columnAliases = null;
+        this.propOrColumnNames = propOrColumnNames;
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_INTERSECT_SPACE);
 
@@ -2084,23 +2084,23 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
     @SafeVarargs
-    public final SQLBuilder except(final String... columnNames) {
+    public final SQLBuilder except(final String... propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = Array.asList(columnNames);
-        this.columnAliases = null;
+        this.propOrColumnNames = Array.asList(propOrColumnNames);
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_EXCEPT_SPACE);
 
         // it's sub query
-        if (isSubQuery(columnNames)) {
-            sb.append(columnNames[0]);
+        if (isSubQuery(propOrColumnNames)) {
+            sb.append(propOrColumnNames[0]);
 
-            this.columnNames = null;
+            this.propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -2110,14 +2110,14 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
-    public SQLBuilder except(final Collection<String> columnNames) {
+    public SQLBuilder except(final Collection<String> propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = columnNames;
-        this.columnAliases = null;
+        this.propOrColumnNames = propOrColumnNames;
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_EXCEPT_SPACE);
 
@@ -2150,23 +2150,23 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
     @SafeVarargs
-    public final SQLBuilder minus(final String... columnNames) {
+    public final SQLBuilder minus(final String... propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = Array.asList(columnNames);
-        this.columnAliases = null;
+        this.propOrColumnNames = Array.asList(propOrColumnNames);
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_EXCEPT2_SPACE);
 
         // it's sub query
-        if (isSubQuery(columnNames)) {
-            sb.append(columnNames[0]);
+        if (isSubQuery(propOrColumnNames)) {
+            sb.append(propOrColumnNames[0]);
 
-            this.columnNames = null;
+            this.propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -2176,14 +2176,14 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
-    public SQLBuilder minus(final Collection<String> columnNames) {
+    public SQLBuilder minus(final Collection<String> propOrColumnNames) {
         op = OperationType.QUERY;
 
-        this.columnNames = columnNames;
-        this.columnAliases = null;
+        this.propOrColumnNames = propOrColumnNames;
+        this.propOrColumnNameAliases = null;
 
         sb.append(_SPACE_EXCEPT2_SPACE);
 
@@ -2207,27 +2207,27 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
     @SafeVarargs
-    public final SQLBuilder set(final String... columnNames) {
-        return set(Array.asList(columnNames));
+    public final SQLBuilder set(final String... propOrColumnNames) {
+        return set(Array.asList(propOrColumnNames));
     }
 
     /**
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return
      */
-    public SQLBuilder set(final Collection<String> columnNames) {
+    public SQLBuilder set(final Collection<String> propOrColumnNames) {
         init(false);
 
         switch (sqlPolicy) {
             case SQL:
             case PARAMETERIZED_SQL: {
                 int i = 0;
-                for (String columnName : columnNames) {
+                for (String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         sb.append(_COMMA_SPACE);
                     }
@@ -2244,7 +2244,7 @@ public abstract class SQLBuilder {
 
             case NAMED_SQL: {
                 int i = 0;
-                for (String columnName : columnNames) {
+                for (String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         sb.append(_COMMA_SPACE);
                     }
@@ -2262,7 +2262,7 @@ public abstract class SQLBuilder {
 
             case IBATIS_SQL: {
                 int i = 0;
-                for (String columnName : columnNames) {
+                for (String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         sb.append(_COMMA_SPACE);
                     }
@@ -2283,7 +2283,7 @@ public abstract class SQLBuilder {
                 throw new RuntimeException("Not supported SQL policy: " + sqlPolicy);
         }
 
-        this.columnNames = null;
+        this.propOrColumnNames = null;
 
         return this;
     }
@@ -2369,7 +2369,7 @@ public abstract class SQLBuilder {
                 throw new RuntimeException("Not supported SQL policy: " + sqlPolicy);
         }
 
-        this.columnNames = null;
+        this.propOrColumnNames = null;
 
         return this;
     }
@@ -2528,8 +2528,8 @@ public abstract class SQLBuilder {
 
             sb.append(_SPACE_SET_SPACE);
 
-            if (setForUpdate && N.notNullOrEmpty(columnNames)) {
-                set(columnNames);
+            if (setForUpdate && N.notNullOrEmpty(propOrColumnNames)) {
+                set(propOrColumnNames);
             }
         } else if (op == OperationType.DELETE) {
             final String newTableName = tableName;
@@ -3249,15 +3249,15 @@ public abstract class SQLBuilder {
     /**
      * Checks if is sub query.
      *
-     * @param columnNames
+     * @param propOrColumnNames
      * @return true, if is sub query
      */
-    private boolean isSubQuery(final String... columnNames) {
-        if (columnNames.length == 1) {
-            int index = SQLParser.indexWord(columnNames[0], WD.SELECT, 0, false);
+    private boolean isSubQuery(final String... propOrColumnNames) {
+        if (propOrColumnNames.length == 1) {
+            int index = SQLParser.indexWord(propOrColumnNames[0], WD.SELECT, 0, false);
 
             if (index >= 0) {
-                index = SQLParser.indexWord(columnNames[0], WD.FROM, index, false);
+                index = SQLParser.indexWord(propOrColumnNames[0], WD.FROM, index, false);
 
                 return index >= 1;
             }
@@ -3338,7 +3338,7 @@ public abstract class SQLBuilder {
 
     private static void parseInsertEntity(final SQLBuilder instance, final Object entity, final Set<String> excludedPropNames) {
         if (entity instanceof String) {
-            instance.columnNames = Array.asList((String) entity);
+            instance.propOrColumnNames = Array.asList((String) entity);
         } else if (entity instanceof Map) {
             if (N.isNullOrEmpty(excludedPropNames)) {
                 instance.props = (Map<String, Object>) entity;
@@ -3450,29 +3450,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -3537,7 +3537,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -3618,7 +3618,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -3663,55 +3663,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -3757,7 +3757,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -3957,29 +3957,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -4044,7 +4044,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -4125,7 +4125,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -4170,55 +4170,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -4264,7 +4264,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -4466,29 +4466,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -4553,7 +4553,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -4634,7 +4634,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -4679,55 +4679,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -4773,7 +4773,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -4971,29 +4971,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -5058,7 +5058,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -5139,7 +5139,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.NO_CHANGE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -5184,55 +5184,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -5278,7 +5278,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -5475,29 +5475,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -5562,7 +5562,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -5643,7 +5643,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -5688,55 +5688,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -5782,7 +5782,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -5979,29 +5979,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -6066,7 +6066,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -6147,7 +6147,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -6192,55 +6192,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -6286,7 +6286,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -6483,29 +6483,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -6570,7 +6570,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -6651,7 +6651,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -6696,55 +6696,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -6790,7 +6790,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -6987,29 +6987,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -7074,7 +7074,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -7155,7 +7155,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.NO_CHANGE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -7200,55 +7200,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -7294,7 +7294,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -7491,29 +7491,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -7578,7 +7578,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -7659,7 +7659,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -7704,55 +7704,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -7798,7 +7798,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -7995,29 +7995,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -8082,7 +8082,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -8163,7 +8163,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -8208,55 +8208,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -8302,7 +8302,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -8499,29 +8499,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -8586,7 +8586,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -8667,7 +8667,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -8712,55 +8712,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -8806,7 +8806,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -9004,29 +9004,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -9091,7 +9091,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -9172,7 +9172,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.NO_CHANGE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -9217,55 +9217,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -9311,7 +9311,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -9509,29 +9509,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -9596,7 +9596,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -9677,7 +9677,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -9722,55 +9722,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -9816,7 +9816,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -10014,29 +10014,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -10101,7 +10101,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -10182,7 +10182,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -10227,55 +10227,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -10321,7 +10321,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
@@ -10519,29 +10519,29 @@ public abstract class SQLBuilder {
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder insert(final String... columnNames) {
+        public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder insert(final Collection<String> columnNames) {
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.ADD;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
@@ -10606,7 +10606,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.ADD;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -10687,7 +10687,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
             instance.tableName = getTableName(entityClass, NamingPolicy.LOWER_CAMEL_CASE);
-            instance.columnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
         }
@@ -10732,55 +10732,55 @@ public abstract class SQLBuilder {
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(selectPart);
+            instance.propOrColumnNames = Array.asList(selectPart);
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
         @SafeVarargs
-        public static SQLBuilder select(final String... columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = Array.asList(columnNames);
+            instance.propOrColumnNames = Array.asList(propOrColumnNames);
 
             return instance;
         }
 
         /**
          *
-         * @param columnNames
+         * @param propOrColumnNames
          * @return
          */
-        public static SQLBuilder select(final Collection<String> columnNames) {
-            N.checkArgNotNullOrEmpty(columnNames, "columnNames");
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnNames = columnNames;
+            instance.propOrColumnNames = propOrColumnNames;
 
             return instance;
         }
 
         /**
          *
-         * @param columnAliases
+         * @param propOrColumnNameAliases
          * @return
          */
-        public static SQLBuilder select(final Map<String, String> columnAliases) {
-            N.checkArgNotNullOrEmpty(columnAliases, "columnAliases");
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
             instance.op = OperationType.QUERY;
-            instance.columnAliases = columnAliases;
+            instance.propOrColumnNameAliases = propOrColumnNameAliases;
 
             return instance;
         }
@@ -10826,7 +10826,7 @@ public abstract class SQLBuilder {
 
             instance.op = OperationType.QUERY;
             instance.setEntityClass(entityClass);
-            instance.columnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+            instance.propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
             return instance;
         }
