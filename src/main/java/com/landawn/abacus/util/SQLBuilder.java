@@ -210,6 +210,8 @@ public abstract class SQLBuilder {
 
     static final char[] _SPACE_OFFSET_SPACE = (WD.SPACE + WD.OFFSET + WD.SPACE).toCharArray();
 
+    static final char[] _SPACE_ROWS_SPACE = (WD.SPACE + WD.ROWS + WD.SPACE).toCharArray();
+
     static final char[] _AND = WD.AND.toCharArray();
 
     static final char[] _SPACE_AND_SPACE = (WD.SPACE + WD.AND + WD.SPACE).toCharArray();
@@ -655,12 +657,18 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder into(final String tableName) {
-        if (op != OperationType.ADD) {
+        if (!(op == OperationType.ADD || op == OperationType.QUERY)) {
             throw new RuntimeException("Invalid operation: " + op);
         }
 
-        if (N.isNullOrEmpty(propOrColumnNames) && N.isNullOrEmpty(props) && N.isNullOrEmpty(propsList)) {
-            throw new RuntimeException("Column names or props must be set first by insert");
+        if (op == OperationType.QUERY) {
+            if (N.isNullOrEmpty(propOrColumnNames) && N.isNullOrEmpty(propOrColumnNameAliases) && N.isNullOrEmpty(multiSelects)) {
+                throw new RuntimeException("Column names or props must be set first by select");
+            }
+        } else {
+            if (N.isNullOrEmpty(propOrColumnNames) && N.isNullOrEmpty(props) && N.isNullOrEmpty(propsList)) {
+                throw new RuntimeException("Column names or props must be set first by insert");
+            }
         }
 
         this.tableName = tableName;
@@ -1686,9 +1694,18 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder offset(final int offset) {
-        sb.append(_SPACE_OFFSET_SPACE);
+        sb.append(_SPACE_OFFSET_SPACE).append(offset);
 
-        sb.append(offset);
+        return this;
+    }
+
+    /**
+     *
+     * @param offset
+     * @return
+     */
+    public SQLBuilder offsetRows(final int offset) {
+        sb.append(_SPACE_OFFSET_SPACE).append(offset).append(_SPACE_ROWS_SPACE);
 
         return this;
     }
