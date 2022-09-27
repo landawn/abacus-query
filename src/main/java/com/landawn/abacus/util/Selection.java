@@ -17,6 +17,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+
+import com.landawn.abacus.annotation.Beta;
+import com.landawn.abacus.util.SQLBuilder.NSC;
+import com.landawn.abacus.util.SQLBuilder.PSC;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -78,6 +83,20 @@ public final class Selection {
 
         public List<Selection> build() {
             return selections;
+        }
+
+        /**
+         *
+         * @param func
+         * @return
+         * @see PSC#select(List)
+         * @see PSC#selectFrom(List)
+         * @see NSC#select(List)
+         * @see NSC#selectFrom(List)
+         */
+        @Beta
+        public SQLBuilder apply(final Function<? super List<Selection>, SQLBuilder> func) {
+            return func.apply(build());
         }
     }
 }
