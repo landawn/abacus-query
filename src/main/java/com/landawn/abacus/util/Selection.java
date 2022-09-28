@@ -87,7 +87,7 @@ public final class Selection {
 
         /**
          *
-         * @param func
+         * @param func it can be: {@code PSC::select}, {@code PSC::selectFrom}, {@code NSC::select}, {@code NSC::selectFrom} or other methods.
          * @return
          * @see PSC#select(List)
          * @see PSC#selectFrom(List)
