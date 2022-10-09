@@ -110,18 +110,6 @@ public class QueryBean {
                     cond = CF.le(propName, propVal);
                     break;
 
-                case in: {
-                    final Collection<Object> c = toCollectionFunc.apply(propVal, param);
-                    cond = CF.in(propName, c);
-                    break;
-                }
-
-                case not_in: {
-                    final Collection<Object> c = toCollectionFunc.apply(propVal, param);
-                    cond = CF.notIn(propName, c);
-                    break;
-                }
-
                 case starts_with:
                     cond = CF.startsWith(propName, propVal);
                     break;
@@ -144,6 +132,18 @@ public class QueryBean {
                 case not_contains:
                     cond = CF.notLike(propName, propVal);
                     break;
+
+                case in: {
+                    final Collection<Object> c = toCollectionFunc.apply(propVal, param);
+                    cond = CF.in(propName, c);
+                    break;
+                }
+
+                case not_in: {
+                    final Collection<Object> c = toCollectionFunc.apply(propVal, param);
+                    cond = CF.notIn(propName, c);
+                    break;
+                }
 
                 case between: {
                     final Collection<Object> c = toCollectionFunc.apply(propVal, param);
@@ -237,37 +237,6 @@ public class QueryBean {
         }
     };
 
-    private static final QuadFunction<StringBuilder, String, Operator, Object, String> sqlConverterForIn = (sb, column, op, param) -> {
-        final Collection<Object> c = (Collection<Object>) param;
-        final Optional<Object> firstEle = N.firstNonNull(c);
-
-        String ret = null;
-
-        if (firstEle.isPresent() && firstEle.get() instanceof Number) {
-            ret = StreamEx.of(c).map(N::stringOf).join(", ", (column == null ? "" : column + " ") + op.sqlOperator + " (", ")");
-        } else {
-            ret = StreamEx.of(c).map(it -> "'" + N.stringOf(it) + "'").join(", ", (column == null ? "" : column + " ") + op.sqlOperator + " (", ")");
-        }
-
-        if (sb != null) {
-            sb.append(ret);
-        }
-
-        return ret;
-    };
-
-    private static final QuadFunction<StringBuilder, String, Operator, Object, String> parameterizedSqlConverterForIn = (sb, column, op, param) -> {
-        final Collection<Object> c = (Collection<Object>) param;
-
-        final String ret = (column == null ? "" : column + " ") + op.sqlOperator + " (" + Strings.repeat("?", c.size(), ", ") + ")";
-
-        if (sb != null) {
-            sb.append(ret);
-        }
-
-        return ret;
-    };
-
     private static final QuadFunction<StringBuilder, String, Operator, Object, String> sqlConverterForLike = (sb, column, op, param) -> {
         if (sb == null) {
             if (column == null) {
@@ -322,8 +291,39 @@ public class QueryBean {
         }
     };
 
+    private static final QuadFunction<StringBuilder, String, Operator, Object, String> sqlConverterForIn = (sb, column, op, param) -> {
+        final Collection<Object> c = param instanceof Collection ? (Collection<Object>) param : toCollectionFunc.apply(param, N.stringOf(param));
+        final Optional<Object> firstEle = N.firstNonNull(c);
+
+        String ret = null;
+
+        if (firstEle.isPresent() && firstEle.get() instanceof Number) {
+            ret = StreamEx.of(c).map(N::stringOf).join(", ", (column == null ? "" : column + " ") + op.sqlOperator + " (", ")");
+        } else {
+            ret = StreamEx.of(c).map(it -> "'" + N.stringOf(it) + "'").join(", ", (column == null ? "" : column + " ") + op.sqlOperator + " (", ")");
+        }
+
+        if (sb != null) {
+            sb.append(ret);
+        }
+
+        return ret;
+    };
+
+    private static final QuadFunction<StringBuilder, String, Operator, Object, String> parameterizedSqlConverterForIn = (sb, column, op, param) -> {
+        final Collection<Object> c = param instanceof Collection ? (Collection<Object>) param : toCollectionFunc.apply(param, N.stringOf(param));
+
+        final String ret = (column == null ? "" : column + " ") + op.sqlOperator + " (" + Strings.repeat("?", c.size(), ", ") + ")";
+
+        if (sb != null) {
+            sb.append(ret);
+        }
+
+        return ret;
+    };
+
     private static final QuadFunction<StringBuilder, String, Operator, Object, String> sqlConverterForBetween = (sb, column, op, param) -> {
-        final Collection<Object> c = (Collection<Object>) param;
+        final Collection<Object> c = param instanceof Collection ? (Collection<Object>) param : toCollectionFunc.apply(param, N.stringOf(param));
         final Optional<Object> firstEle = N.firstNonNull(c);
 
         String ret = null;
@@ -375,14 +375,14 @@ public class QueryBean {
         not_after("<=", generalSqlConverter, generalParameterizedSqlConverter), // same as less_than_or_equals
         after(">", generalSqlConverter, generalParameterizedSqlConverter), // same greater_than
         not_before(">=", generalSqlConverter, generalParameterizedSqlConverter), // same greater_than_or_equals
-        in("IN", sqlConverterForIn, parameterizedSqlConverterForIn),
-        not_in("NOT IN", sqlConverterForIn, parameterizedSqlConverterForIn),
         starts_with("LIKE", sqlConverterForStartsWith, generalParameterizedSqlConverter),
         not_starts_with("NOT LIKE", sqlConverterForStartsWith, generalParameterizedSqlConverter),
         ends_with("LIKE", sqlConverterForEndsWith, generalParameterizedSqlConverter),
         not_ends_with("NOT LIKE", sqlConverterForEndsWith, generalParameterizedSqlConverter),
         contains("LIKE", sqlConverterForLike, generalParameterizedSqlConverter),
         not_contains("NOT LIKE", sqlConverterForLike, generalParameterizedSqlConverter),
+        in("IN", sqlConverterForIn, parameterizedSqlConverterForIn),
+        not_in("NOT IN", sqlConverterForIn, parameterizedSqlConverterForIn),
         between("BETWEEN", sqlConverterForBetween, parameterizedSqlConverterForBetween),
         not_between("NOT BETWEEN", sqlConverterForBetween, parameterizedSqlConverterForBetween);
 
