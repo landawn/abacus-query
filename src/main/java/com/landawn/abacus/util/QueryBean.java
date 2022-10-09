@@ -52,6 +52,7 @@ public class QueryBean {
     private List<FilterField> where;
     private List<FilterField> having;
     private List<OrderByField> orderBy;
+    private boolean distinct;
     private Integer offset;
     private Integer limit;
 
