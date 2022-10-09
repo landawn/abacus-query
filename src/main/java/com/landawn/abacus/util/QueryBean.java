@@ -52,6 +52,8 @@ public class QueryBean {
     private List<QueryField> where;
     private List<QueryField> having;
     private List<OrderByField> orderBy;
+    private Long offset;
+    private Long limit;
 
     @Data
     @NoArgsConstructor
