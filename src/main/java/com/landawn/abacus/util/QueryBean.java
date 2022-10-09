@@ -49,8 +49,8 @@ public class QueryBean {
             param) -> val instanceof Collection ? ((Collection<Object>) val) : strListType.valueOf(param);
 
     private List<String> select;
-    private List<QueryField> where;
-    private List<QueryField> having;
+    private List<FilterField> where;
+    private List<FilterField> having;
     private List<OrderByField> orderBy;
     private Long offset;
     private Long limit;
@@ -58,15 +58,15 @@ public class QueryBean {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static final class QueryField {
+    public static final class FilterField {
         private String fieldName;
         private String fieldType;
         private Operator operator;
         private String parameter;
         private boolean caseInsensitive;
 
-        private List<QueryField> and;
-        private List<QueryField> or;
+        private List<FilterField> and;
+        private List<FilterField> or;
 
         public Condition toCondition() {
             if (N.notNullOrEmpty(and) && N.notNullOrEmpty(or)) {
@@ -162,9 +162,9 @@ public class QueryBean {
             }
 
             if (N.notNullOrEmpty(and)) {
-                cond = CF.and(Stream.of(and).map(QueryField::toCondition).prepend(cond).toList());
+                cond = CF.and(Stream.of(and).map(FilterField::toCondition).prepend(cond).toList());
             } else if (N.notNullOrEmpty(or)) {
-                cond = CF.or(Stream.of(or).map(QueryField::toCondition).prepend(cond).toList());
+                cond = CF.or(Stream.of(or).map(FilterField::toCondition).prepend(cond).toList());
             }
 
             return cond;
