@@ -164,7 +164,7 @@ public class QueryBean {
             if (N.notNullOrEmpty(and)) {
                 cond = CF.and(Stream.of(and).map(QueryField::toCondition).prepend(cond).toList());
             } else if (N.notNullOrEmpty(or)) {
-                cond = CF.and(Stream.of(or).map(QueryField::toCondition).prepend(cond).toList());
+                cond = CF.or(Stream.of(or).map(QueryField::toCondition).prepend(cond).toList());
             }
 
             return cond;
