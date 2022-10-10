@@ -22,6 +22,9 @@ import java.util.function.BiFunction;
 import com.landawn.abacus.condition.Condition;
 import com.landawn.abacus.condition.ConditionFactory.CF;
 import com.landawn.abacus.condition.OrderBy;
+import com.landawn.abacus.parser.ParserUtil;
+import com.landawn.abacus.parser.ParserUtil.EntityInfo;
+import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.type.Type;
 import com.landawn.abacus.util.u.Optional;
 import com.landawn.abacus.util.function.QuadFunction;
@@ -44,6 +47,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class QueryBean {
 
+    private static final Type<Object> strType = Type.of(String.class);
     private static final Type<Collection<Object>> strListType = Type.of("List<String>");
     private static final BiFunction<Object, String, Collection<Object>> toCollectionFunc = (val,
             param) -> val instanceof Collection ? ((Collection<Object>) val) : strListType.valueOf(param);
@@ -70,13 +74,21 @@ public class QueryBean {
         private List<FilterField> or;
 
         public Condition toCondition() {
+            return toCondition(null);
+        }
+
+        public Condition toCondition(final Class<?> resultEntityClass) {
             if (N.notNullOrEmpty(and) && N.notNullOrEmpty(or)) {
                 throw new IllegalArgumentException("'and'/'or' can't have values at the same time");
             }
 
+            final EntityInfo entityInfo = resultEntityClass == null ? null : ParserUtil.getEntityInfo(resultEntityClass);
+            final PropInfo propInfo = entityInfo == null ? null : entityInfo.getPropInfo(fieldName);
+            final Type<Object> propType = N.isNullOrEmpty(fieldType) ? (propInfo == null ? strType : propInfo.type) : Type.of(fieldType);
+
             final String param = caseInsensitive ? Strings.toLowerCase(parameter) : parameter;
             final String propName = caseInsensitive ? "LOWER(" + this.fieldName + ")" : this.fieldName;
-            final Object propVal = N.isNullOrEmpty(fieldType) || "String".equalsIgnoreCase(fieldType) ? param : Type.of(fieldType).valueOf(param);
+            final Object propVal = N.isNullOrEmpty(fieldType) || "String".equalsIgnoreCase(fieldType) ? param : propType.valueOf(param);
 
             Condition cond = null;
 
