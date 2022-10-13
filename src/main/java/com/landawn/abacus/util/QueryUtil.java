@@ -190,6 +190,7 @@ public final class QueryUtil {
             propColumnNameMap = N.<String, String> emptyMap();
         }
 
+        @SuppressWarnings("deprecation")
         final ImmutableMap<String, String> result = ImmutableMap.of(propColumnNameMap);
 
         Map<NamingPolicy, ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
