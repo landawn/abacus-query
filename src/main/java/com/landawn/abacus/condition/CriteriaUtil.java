@@ -56,7 +56,7 @@ public final class CriteriaUtil {
         set.add(Operator.EXCEPT);
         set.add(Operator.MINUS);
 
-        clauseOperators = ImmutableSet.of(set);
+        clauseOperators = ImmutableSet.wrap(set);
     }
 
     private CriteriaUtil() {

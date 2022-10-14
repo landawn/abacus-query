@@ -70,7 +70,7 @@ public final class QueryUtil {
                 }
             }
 
-            result = ImmutableMap.of(newProp2ColumnNameMap);
+            result = ImmutableMap.wrap(newProp2ColumnNameMap);
 
             if (namingPropColumnNameMap == null) {
                 namingPropColumnNameMap = new EnumMap<>(NamingPolicy.class);
@@ -191,7 +191,7 @@ public final class QueryUtil {
         }
 
         @SuppressWarnings("deprecation")
-        final ImmutableMap<String, String> result = ImmutableMap.of(propColumnNameMap);
+        final ImmutableMap<String, String> result = ImmutableMap.wrap(propColumnNameMap);
 
         Map<NamingPolicy, ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
 

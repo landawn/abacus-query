@@ -108,7 +108,7 @@ public final class ParsedSql {
             }
 
             parameterizedSql = sb.toString();
-            namedParameters = ImmutableList.of(namedParameterList);
+            namedParameters = ImmutableList.wrap(namedParameterList);
 
             Objectory.recycle(sb);
         } else {
@@ -295,7 +295,7 @@ public final class ParsedSql {
             }
 
             couchbaseParameterizedSql = sb.toString();
-            couchbaseNamedParameters = ImmutableList.of(couchbaseNamedParameterList);
+            couchbaseNamedParameters = ImmutableList.wrap(couchbaseNamedParameterList);
             couchbaseParameterCount = countOfParameter;
 
             Objectory.recycle(sb);

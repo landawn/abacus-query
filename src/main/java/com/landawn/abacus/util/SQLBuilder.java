@@ -473,11 +473,11 @@ public abstract class SQLBuilder {
                     val[3].remove(ClassUtil.getPropNameByMethod(ClassUtil.getPropGetMethod(entityClass, idPropName)));
                 }
 
-                val[0] = ImmutableSet.of(val[0]); // for select, including sub entity properties.
-                val[1] = ImmutableSet.of(val[1]); // for select, no sub entity properties.
-                val[2] = ImmutableSet.of(val[2]); // for insert with id
-                val[3] = ImmutableSet.of(val[3]); // for insert without id
-                val[4] = ImmutableSet.of(val[4]); // for update.
+                val[0] = ImmutableSet.wrap(val[0]); // for select, including sub entity properties.
+                val[1] = ImmutableSet.wrap(val[1]); // for select, no sub entity properties.
+                val[2] = ImmutableSet.wrap(val[2]); // for insert with id
+                val[3] = ImmutableSet.wrap(val[3]); // for insert without id
+                val[4] = ImmutableSet.wrap(val[4]); // for update.
 
                 defaultPropNamesPool.put(entityClass, val);
             }
@@ -506,7 +506,7 @@ public abstract class SQLBuilder {
                     }
                 }
 
-                subEntityPropNames = ImmutableSet.of(subEntityPropNameSet);
+                subEntityPropNames = ImmutableSet.wrap(subEntityPropNameSet);
 
                 subEntityPropNamesPool.put(entityClass, subEntityPropNames);
             }
@@ -10994,7 +10994,7 @@ public abstract class SQLBuilder {
 
         SP(final String sql, final List<Object> parameters) {
             this.sql = sql;
-            this.parameters = ImmutableList.of(parameters);
+            this.parameters = ImmutableList.wrap(parameters);
         }
 
         @Override
