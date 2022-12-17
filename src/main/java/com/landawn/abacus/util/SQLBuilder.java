@@ -3150,7 +3150,7 @@ public abstract class SQLBuilder {
             return;
         }
 
-        if (N.isNullOrEmpty(propAlias)) {
+        if (N.isNullOrEmpty(propAlias) && entityInfo != null) {
             final PropInfo propInfo = entityInfo.getPropInfo(propName);
 
             if (isEntityProp(propInfo)) {
