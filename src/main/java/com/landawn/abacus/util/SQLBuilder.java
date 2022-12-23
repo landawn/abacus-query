@@ -114,6 +114,8 @@ public abstract class SQLBuilder {
 
     public static final String COUNT_ALL = "count(*)";
 
+    static final List<String> COUNT_ALL_LIST = ImmutableList.of(COUNT_ALL);
+
     public static final String _1 = "1";
 
     @Deprecated
@@ -3922,11 +3924,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -4437,11 +4439,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -4955,11 +4957,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -5467,11 +5469,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -5979,11 +5981,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -6491,11 +6493,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -7003,11 +7005,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -7515,11 +7517,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -8027,11 +8029,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -8539,11 +8541,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -9051,11 +9053,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -9564,11 +9566,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -10077,11 +10079,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -10590,11 +10592,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
@@ -11103,11 +11105,11 @@ public abstract class SQLBuilder {
         }
 
         public static SQLBuilder count(final String tableName) {
-            return select(LIST_1).from(tableName);
+            return select(COUNT_ALL_LIST).from(tableName);
         }
 
         public static SQLBuilder count(final Class<?> entityClass) {
-            return select(LIST_1).from(entityClass);
+            return select(COUNT_ALL_LIST).from(entityClass);
         }
     }
 
