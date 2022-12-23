@@ -3920,6 +3920,14 @@ public abstract class SQLBuilder {
 
             return select(multiSelects).from(fromClause);
         }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
+        }
     }
 
     /**
@@ -4426,6 +4434,14 @@ public abstract class SQLBuilder {
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
+        }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
         }
     }
 
@@ -4937,6 +4953,14 @@ public abstract class SQLBuilder {
 
             return select(multiSelects).from(fromClause);
         }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
+        }
     }
 
     /**
@@ -5440,6 +5464,14 @@ public abstract class SQLBuilder {
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
+        }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
         }
     }
 
@@ -5945,6 +5977,14 @@ public abstract class SQLBuilder {
 
             return select(multiSelects).from(fromClause);
         }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
+        }
     }
 
     /**
@@ -6448,6 +6488,14 @@ public abstract class SQLBuilder {
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
+        }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
         }
     }
 
@@ -6953,6 +7001,14 @@ public abstract class SQLBuilder {
 
             return select(multiSelects).from(fromClause);
         }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
+        }
     }
 
     /**
@@ -7456,6 +7512,14 @@ public abstract class SQLBuilder {
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
+        }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
         }
     }
 
@@ -7961,6 +8025,14 @@ public abstract class SQLBuilder {
 
             return select(multiSelects).from(fromClause);
         }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
+        }
     }
 
     /**
@@ -8465,6 +8537,14 @@ public abstract class SQLBuilder {
 
             return select(multiSelects).from(fromClause);
         }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
+        }
     }
 
     /**
@@ -8968,6 +9048,14 @@ public abstract class SQLBuilder {
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
+        }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
         }
     }
 
@@ -9474,6 +9562,14 @@ public abstract class SQLBuilder {
 
             return select(multiSelects).from(fromClause);
         }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
+        }
     }
 
     /**
@@ -9978,6 +10074,14 @@ public abstract class SQLBuilder {
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
+        }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
         }
     }
 
@@ -10484,6 +10588,14 @@ public abstract class SQLBuilder {
 
             return select(multiSelects).from(fromClause);
         }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
+        }
     }
 
     /**
@@ -10988,6 +11100,14 @@ public abstract class SQLBuilder {
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
+        }
+
+        public static SQLBuilder count(final String tableName) {
+            return select(LIST_1).from(tableName);
+        }
+
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(LIST_1).from(entityClass);
         }
     }
 
