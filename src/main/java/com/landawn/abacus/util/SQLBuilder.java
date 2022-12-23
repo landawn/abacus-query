@@ -116,7 +116,10 @@ public abstract class SQLBuilder {
 
     public static final String _1 = "1";
 
+    @Deprecated
     public static final List<String> _1_list = ImmutableList.of(_1);
+
+    public static final List<String> LIST_1 = ImmutableList.of(_1);
 
     static final char[] _INSERT = WD.INSERT.toCharArray();
 
