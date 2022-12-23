@@ -6,12 +6,20 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.condition.ConditionFactory.CF;
 import com.landawn.abacus.util.SQLBuilder.PSC;
 import com.landawn.abacus.util.SQLBuilder.SP;
 import com.landawn.abacus.util.entity.Account;
 import com.landawn.abacus.util.entity.AccountContact;
 
 class SQLBuilderTest {
+
+    @Test
+    public void test_count() {
+
+        String sql = PSC.count(Account.class).where(CF.eq("id")).sql();
+        N.println(sql);
+    }
 
     @Test
     public void test_multi_select() {
