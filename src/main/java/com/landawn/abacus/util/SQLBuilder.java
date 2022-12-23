@@ -1710,14 +1710,14 @@ public abstract class SQLBuilder {
         return this;
     }
 
-    public SQLBuilder fetchNextNRowsOnly(final int count) {
-        sb.append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
+    public SQLBuilder fetchNextNRowsOnly(final int n) {
+        sb.append(" FETCH NEXT ").append(n).append(" ROWS ONLY");
 
         return this;
     }
 
-    public SQLBuilder fetchFirstNRowsOnly(final int count) {
-        sb.append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
+    public SQLBuilder fetchFirstNRowsOnly(final int n) {
+        sb.append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
 
         return this;
     }
