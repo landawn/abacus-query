@@ -118,10 +118,7 @@ public abstract class SQLBuilder {
 
     public static final String _1 = "1";
 
-    @Deprecated
     public static final List<String> _1_list = ImmutableList.of(_1);
-
-    public static final List<String> LIST_1 = ImmutableList.of(_1);
 
     static final char[] _INSERT = WD.INSERT.toCharArray();
 
@@ -1660,6 +1657,68 @@ public abstract class SQLBuilder {
         }
 
         return this;
+    }
+
+    /**
+     *
+     * @param expr
+     * @return
+     */
+    @Beta
+    public SQLBuilder orderByAsc(final String expr) {
+        return orderBy(expr, SortDirection.ASC);
+    }
+
+    /**
+     *
+     * @param propOrColumnNames
+     * @return
+     */
+    @Beta
+    @SafeVarargs
+    public final SQLBuilder orderByAsc(final String... propOrColumnNames) {
+        return orderBy(N.asList(propOrColumnNames), SortDirection.ASC);
+    }
+
+    /**
+     *
+     * @param propOrColumnNames
+     * @return
+     */
+    @Beta
+    public final SQLBuilder orderByAsc(final Collection<String> propOrColumnNames) {
+        return orderBy(propOrColumnNames, SortDirection.ASC);
+    }
+
+    /**
+     *
+     * @param expr
+     * @return
+     */
+    @Beta
+    public SQLBuilder orderByDesc(final String expr) {
+        return orderBy(expr, SortDirection.DESC);
+    }
+
+    /**
+     *
+     * @param propOrColumnNames
+     * @return
+     */
+    @Beta
+    @SafeVarargs
+    public final SQLBuilder orderByDesc(final String... propOrColumnNames) {
+        return orderBy(N.asList(propOrColumnNames), SortDirection.DESC);
+    }
+
+    /**
+     *
+     * @param propOrColumnNames
+     * @return
+     */
+    @Beta
+    public final SQLBuilder orderByDesc(final Collection<String> propOrColumnNames) {
+        return orderBy(propOrColumnNames, SortDirection.DESC);
     }
 
     /**
@@ -3244,8 +3303,7 @@ public abstract class SQLBuilder {
             } else {
                 appendStringExpr(propName, true);
 
-                if (namingPolicy != NamingPolicy.NO_CHANGE
-                        && !(propName.charAt(propName.length() - 1) == '*' || propName.endsWith("*)") || propName.endsWith("1)"))) {
+                if (namingPolicy != NamingPolicy.NO_CHANGE && !(propName.charAt(propName.length() - 1) == '*' || propName.endsWith(")"))) {
                     sb.append(_SPACE_AS_SPACE);
                     sb.append(WD._QUOTATION_D);
 
