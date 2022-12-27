@@ -116,9 +116,9 @@ public abstract class SQLBuilder {
 
     static final List<String> COUNT_ALL_LIST = ImmutableList.of(COUNT_ALL);
 
-    public static final String _1 = "1";
-
-    public static final List<String> _1_list = ImmutableList.of(_1);
+    //    public static final String _1 = "1";
+    //
+    //    public static final List<String> _1_list = ImmutableList.of(_1);
 
     static final char[] _INSERT = WD.INSERT.toCharArray();
 
