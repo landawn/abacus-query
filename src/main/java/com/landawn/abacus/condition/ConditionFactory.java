@@ -24,7 +24,7 @@ import java.util.Map;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.condition.Expression.Expr;
 import com.landawn.abacus.parser.ParserUtil;
-import com.landawn.abacus.parser.ParserUtil.EntityInfo;
+import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.EntityId;
 import com.landawn.abacus.util.N;
@@ -222,7 +222,7 @@ public class ConditionFactory {
     public static Or eqOr(final Object entity, final Collection<String> selectPropNames) {
         N.checkArgNotNullOrEmpty(selectPropNames, "selectPropNames");
 
-        final EntityInfo entityInfo = ParserUtil.getEntityInfo(entity.getClass());
+        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
         final Iterator<String> iter = selectPropNames.iterator();
 
         if (selectPropNames.size() == 1) {
@@ -303,7 +303,7 @@ public class ConditionFactory {
     public static And eqAnd(final Object entity, final Collection<String> selectPropNames) {
         N.checkArgNotNullOrEmpty(selectPropNames, "selectPropNames");
 
-        final EntityInfo entityInfo = ParserUtil.getEntityInfo(entity.getClass());
+        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
         final Iterator<String> iter = selectPropNames.iterator();
 
         if (selectPropNames.size() == 1) {

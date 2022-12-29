@@ -62,7 +62,7 @@ import com.landawn.abacus.condition.Where;
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.parser.ParserUtil;
-import com.landawn.abacus.parser.ParserUtil.EntityInfo;
+import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.util.Tuple.Tuple2;
 import com.landawn.abacus.util.u.Optional;
@@ -309,7 +309,7 @@ public abstract class SQLBuilder {
 
     private Class<?> entityClass;
 
-    private EntityInfo entityInfo;
+    private BeanInfo entityInfo;
 
     private ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap;
 
@@ -363,7 +363,7 @@ public abstract class SQLBuilder {
         String[] entityTableNames = classTableNameMap.get(entityClass);
 
         if (entityTableNames == null) {
-            final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
 
             if (entityInfo.tableName.isPresent()) {
                 entityTableNames = Array.repeat(entityInfo.tableName.get(), 4);
@@ -427,7 +427,7 @@ public abstract class SQLBuilder {
                 val[3] = N.newLinkedHashSet(entityPropNames);
                 val[4] = N.newLinkedHashSet(entityPropNames);
 
-                final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+                final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
                 Class<?> subEntityClass = null;
                 Set<String> subEntityPropNameList = null;
 
@@ -498,7 +498,7 @@ public abstract class SQLBuilder {
         ImmutableSet<String> subEntityPropNames = subEntityPropNamesPool.get(entityClass);
         if (subEntityPropNames == null) {
             synchronized (subEntityPropNamesPool) {
-                final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+                final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
                 // final ImmutableSet<String> nonSubEntityPropNames = nonSubEntityPropNamesPool.get(entityClass);
                 final Set<String> subEntityPropNameSet = N.newLinkedHashSet();
 
@@ -533,7 +533,7 @@ public abstract class SQLBuilder {
             res.add(getTableName(entityClass, namingPolicy) + " " + alias);
         }
 
-        final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
         PropInfo propInfo = null;
         Class<?> subEntityClass = null;
 
@@ -998,7 +998,7 @@ public abstract class SQLBuilder {
             }
 
             Class<?> selectionEntityClass = null;
-            EntityInfo selectionEntityInfo = null;
+            BeanInfo selectionBeanInfo = null;
             ImmutableMap<String, Tuple2<String, Boolean>> selectionPropColumnNameMap = null;
             String selectionTableAlias = null;
             String selectionClassAlias = null;
@@ -1008,9 +1008,9 @@ public abstract class SQLBuilder {
 
             for (Selection selection : multiSelects) {
                 selectionEntityClass = selection.entityClass();
-                selectionEntityInfo = selectionEntityClass == null && ClassUtil.isEntity(selectionEntityClass) == false ? null
-                        : ParserUtil.getEntityInfo(selectionEntityClass);
-                selectionPropColumnNameMap = selectionEntityClass == null && ClassUtil.isEntity(selectionEntityClass) == false ? null
+                selectionBeanInfo = selectionEntityClass == null && ClassUtil.isBeanClass(selectionEntityClass) == false ? null
+                        : ParserUtil.getBeanInfo(selectionEntityClass);
+                selectionPropColumnNameMap = selectionEntityClass == null && ClassUtil.isBeanClass(selectionEntityClass) == false ? null
                         : QueryUtil.prop2ColumnNameMap(selectionEntityClass, namingPolicy);
                 selectionTableAlias = selection.tableAlias();
 
@@ -1025,7 +1025,7 @@ public abstract class SQLBuilder {
                         sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(selectionEntityClass, selectionEntityInfo, selectionPropColumnNameMap, selectionTableAlias, propName, null,
+                    appendColumnName(selectionEntityClass, selectionBeanInfo, selectionPropColumnNameMap, selectionTableAlias, propName, null,
                             selectionWithClassAlias, selectionClassAlias, isForSelect);
                 }
             }
@@ -1045,7 +1045,7 @@ public abstract class SQLBuilder {
             aliasPropColumnNameMap = new HashMap<>();
         }
 
-        if (N.isNullOrEmpty(propColumnNameMap) && entityClass != null && ClassUtil.isEntity(entityClass)) {
+        if (N.isNullOrEmpty(propColumnNameMap) && entityClass != null && ClassUtil.isBeanClass(entityClass)) {
             propColumnNameMap = QueryUtil.prop2ColumnNameMap(entityClass, namingPolicy);
         }
 
@@ -2489,7 +2489,7 @@ public abstract class SQLBuilder {
         setEntityClass(entityClass);
         final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
         final Map<String, Object> props = N.newHashMap(propNames.size());
-        final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
 
         for (String propName : propNames) {
             props.put(propName, entityInfo.getPropValue(entity, propName));
@@ -2631,8 +2631,8 @@ public abstract class SQLBuilder {
     private void setEntityClass(final Class<?> entityClass) {
         this.entityClass = entityClass;
 
-        if (entityClass != null && ClassUtil.isEntity(entityClass)) {
-            this.entityInfo = ParserUtil.getEntityInfo(entityClass);
+        if (entityClass != null && ClassUtil.isBeanClass(entityClass)) {
+            this.entityInfo = ParserUtil.getBeanInfo(entityClass);
             this.propColumnNameMap = QueryUtil.prop2ColumnNameMap(entityClass, namingPolicy);
         } else {
             this.entityInfo = null;
@@ -3187,9 +3187,9 @@ public abstract class SQLBuilder {
         appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName, null, false, null, false);
     }
 
-    private void appendColumnName(final Class<?> entityClass, final EntityInfo entityInfo,
-            final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String tableAlias, final String propName, final String propAlias,
-            final boolean withClassAlias, final String classAlias, final boolean isForSelect) {
+    private void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo, final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap,
+            final String tableAlias, final String propName, final String propAlias, final boolean withClassAlias, final String classAlias,
+            final boolean isForSelect) {
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
@@ -3324,7 +3324,7 @@ public abstract class SQLBuilder {
         // final ImmutableSet<String> nonSubEntityPropNames = nonSubEntityPropNamesPool.get(entityClass);
 
         return propInfo != null
-                && (!propInfo.isMarkedToColumn && (propInfo.type.isEntity() || (propInfo.type.isCollection() && propInfo.type.getElementType().isEntity())));
+                && (!propInfo.isMarkedToColumn && (propInfo.type.isBean() || (propInfo.type.isCollection() && propInfo.type.getElementType().isBean())));
     }
 
     /**
@@ -3430,7 +3430,7 @@ public abstract class SQLBuilder {
         } else {
             final Collection<String> propNames = QueryUtil.getInsertPropNames(entity, excludedPropNames);
             final Map<String, Object> map = N.newHashMap(propNames.size());
-            final EntityInfo entityInfo = ParserUtil.getEntityInfo(entity.getClass());
+            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
 
             for (String propName : propNames) {
                 map.put(propName, entityInfo.getPropValue(entity, propName));
@@ -3452,7 +3452,7 @@ public abstract class SQLBuilder {
 
         for (Object entity : propsList) {
             final Map<String, Object> props = N.newHashMap(propNames.size());
-            final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
 
             for (String propName : propNames) {
                 props.put(propName, entityInfo.getPropValue(entity, propName));
@@ -3655,7 +3655,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -4170,7 +4170,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -4687,7 +4687,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -5200,7 +5200,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -5712,7 +5712,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -6224,7 +6224,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -6736,7 +6736,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -7248,7 +7248,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -7760,7 +7760,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -8272,7 +8272,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -8784,7 +8784,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -9297,7 +9297,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -9810,7 +9810,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -10323,7 +10323,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -10836,7 +10836,7 @@ public abstract class SQLBuilder {
             instance.op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isEntity(first.get().getClass())) {
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -11247,7 +11247,7 @@ public abstract class SQLBuilder {
                     continue;
                 }
 
-                final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+                final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
                 PropInfo propInfo = null;
                 Class<?> subEntityClass = null;
 

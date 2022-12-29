@@ -27,7 +27,7 @@ import com.landawn.abacus.annotation.Immutable;
 import com.landawn.abacus.annotation.Internal;
 import com.landawn.abacus.annotation.NotColumn;
 import com.landawn.abacus.parser.ParserUtil;
-import com.landawn.abacus.parser.ParserUtil.EntityInfo;
+import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.type.Type;
 import com.landawn.abacus.util.Tuple.Tuple2;
@@ -95,7 +95,7 @@ public final class QueryUtil {
         ImmutableMap<String, String> result = column2PropNameNameMapPool.get(entityClass);
 
         if (result == null) {
-            final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
             final Map<String, String> map = N.newHashMap(entityInfo.propInfoList.size() * 3);
 
             for (PropInfo propInfo : entityInfo.propInfoList) {
@@ -146,7 +146,7 @@ public final class QueryUtil {
             registeringClasses.add(entityClass);
         }
 
-        final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
         Map<String, String> propColumnNameMap = N.newHashMap(entityInfo.propInfoList.size() * 2);
 
         for (PropInfo propInfo : entityInfo.propInfoList) {
@@ -161,7 +161,7 @@ public final class QueryUtil {
 
                 final Type<?> propType = propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type;
 
-                if (propType.isEntity() && (registeringClasses == null || !registeringClasses.contains(propType.clazz()))) {
+                if (propType.isBean() && (registeringClasses == null || !registeringClasses.contains(propType.clazz()))) {
                     final Set<Class<?>> newRegisteringClasses = registeringClasses == null ? N.<Class<?>> newLinkedHashSet() : registeringClasses;
                     newRegisteringClasses.add(entityClass);
 
@@ -232,7 +232,7 @@ public final class QueryUtil {
             return val[2];
         }
 
-        final EntityInfo entityInfo = ParserUtil.getEntityInfo(entityClass);
+        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
 
         for (String idPropName : idPropNames) {
             if (!SQLBuilder.isDefaultIdPropValue(entityInfo.getPropInfo(idPropName))) {
@@ -330,7 +330,7 @@ public final class QueryUtil {
     @Internal
     @Immutable
     public static List<String> getIdFieldNames(final Class<?> targetClass, boolean fakeIdForEmpty) {
-        final ImmutableList<String> idPropNames = ParserUtil.getEntityInfo(targetClass).idPropNameList;
+        final ImmutableList<String> idPropNames = ParserUtil.getBeanInfo(targetClass).idPropNameList;
 
         return N.isNullOrEmpty(idPropNames) && fakeIdForEmpty ? fakeIds : idPropNames;
     }
