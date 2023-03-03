@@ -858,6 +858,26 @@ public class ConditionFactory {
     }
 
     /**
+     * Checks if is empty.
+     *
+     * @param propName
+     * @return
+     */
+    public static Or isEmpty(final String propName) {
+        return isNull(propName).or(equal(propName, ""));
+    }
+
+    /**
+     * Checks if is not empty.
+     *
+     * @param propName
+     * @return
+     */
+    public static And isNotEmpty(final String propName) {
+        return isNotNull(propName).and(notEqual(propName, ""));
+    }
+
+    /**
      * Checks if is na N.
      *
      * @param propName
