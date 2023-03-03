@@ -848,6 +848,28 @@ public class ConditionFactory {
     }
 
     /**
+     * Checks if is null or empty.
+     *
+     * @param propName
+     * @return
+     */
+    @Beta
+    public static Or isNullOrEmpty(final String propName) {
+        return isNull(propName).or(equal(propName, ""));
+    }
+
+    /**
+     * Checks if is null or zero.
+     *
+     * @param propName
+     * @return
+     */
+    @Beta
+    public static Or isNullOrZero(final String propName) {
+        return isNull(propName).or(equal(propName, 0));
+    }
+
+    /**
      * Checks if is not null.
      *
      * @param propName
@@ -855,26 +877,6 @@ public class ConditionFactory {
      */
     public static IsNotNull isNotNull(final String propName) {
         return new IsNotNull(propName);
-    }
-
-    /**
-     * Checks if is empty.
-     *
-     * @param propName
-     * @return
-     */
-    public static Or isEmpty(final String propName) {
-        return isNull(propName).or(equal(propName, ""));
-    }
-
-    /**
-     * Checks if is not empty.
-     *
-     * @param propName
-     * @return
-     */
-    public static And isNotEmpty(final String propName) {
-        return isNotNull(propName).and(notEqual(propName, ""));
     }
 
     /**
