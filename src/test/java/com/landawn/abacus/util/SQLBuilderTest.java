@@ -22,6 +22,19 @@ class SQLBuilderTest {
     }
 
     @Test
+    public void test_expr() {
+
+        String sql = PSC.count(Account.class).where(CF.eq("id")).append(CF.orderBy("firstName", "last_name")).sql();
+        N.println(sql);
+
+        sql = PSC.count(Account.class)
+                .where(CF.eq("id").and(CF.expr("lengTh(firstName) > 0")).and(CF.expr("lengTh (last_Name) > 0")))
+                .append(CF.orderBy("firstName", "last_name"))
+                .sql();
+        N.println(sql);
+    }
+
+    @Test
     public void test_multi_select() {
         SP ps = PSC.select(Account.class, "acc", null, AccountContact.class, "ac", "contact").from(Account.class).pair();
 

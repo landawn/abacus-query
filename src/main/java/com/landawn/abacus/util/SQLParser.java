@@ -555,6 +555,18 @@ public final class SQLParser {
         //    return (i < len - 1 && words.get(i + 1).charAt(0) == WD._PARENTHESES_L)
         //            || (i < len - 2 && WD.SPACE.equals(words.get(i + 1)) && words.get(i + 2).charAt(0) == WD._PARENTHESES_L);
 
-        return (index < len - 1 && words.get(index + 1).charAt(0) == WD._PARENTHESES_L);
+        if ((index < len - 1 && words.get(index + 1).charAt(0) == WD._PARENTHESES_L)) {
+            return true;
+        }
+
+        for (int i = index + 1; i < len; i++) {
+            if (words.get(i).charAt(0) == WD._PARENTHESES_L) {
+                return true;
+            } else if (!WD.SPACE.equals(words.get(i))) {
+                return false;
+            }
+        }
+
+        return false;
     }
 }

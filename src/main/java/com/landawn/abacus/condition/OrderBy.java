@@ -18,7 +18,6 @@ import static com.landawn.abacus.util.WD.COMMA_SPACE;
 import static com.landawn.abacus.util.WD.SPACE;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.landawn.abacus.condition.ConditionFactory.CF;
@@ -60,14 +59,6 @@ public class OrderBy extends Clause {
      * @param orders should be a {@code LinkedHashMap}
      */
     public OrderBy(final Map<String, SortDirection> orders) {
-        this(createCondition(orders));
-    }
-
-    /**
-     * 
-     * @param orders
-     */
-    public OrderBy(final LinkedHashMap<String, SortDirection> orders) {
         this(createCondition(orders));
     }
 

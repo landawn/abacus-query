@@ -17,7 +17,6 @@ package com.landawn.abacus.condition;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -995,6 +994,7 @@ public class ConditionFactory {
      * @param conditions
      * @return
      */
+    @Beta
     @SafeVarargs
     public static Junction junction(final Operator operator, final Condition... conditions) {
         return new Junction(operator, conditions);
@@ -1006,6 +1006,7 @@ public class ConditionFactory {
      * @param conditions
      * @return
      */
+    @Beta
     public static Junction junction(final Operator operator, final Collection<? extends Condition> conditions) {
         return new Junction(operator, conditions);
     }
@@ -1105,15 +1106,6 @@ public class ConditionFactory {
 
     /**
      *
-     * @param orders
-     * @return
-     */
-    public static GroupBy groupBy(final LinkedHashMap<String, SortDirection> orders) {
-        return new GroupBy(orders);
-    }
-
-    /**
-     *
      * @param condition
      * @return
      */
@@ -1164,9 +1156,27 @@ public class ConditionFactory {
      * @param propNames
      * @return
      */
+    public static OrderBy orderByAsc(final Collection<String> propNames) {
+        return new OrderBy(propNames, SortDirection.ASC);
+    }
+
+    /**
+     *
+     * @param propNames
+     * @return
+     */
     @SafeVarargs
     public static OrderBy orderByDesc(final String... propNames) {
         return new OrderBy(Array.asList(propNames), SortDirection.DESC);
+    }
+
+    /**
+     *
+     * @param propNames
+     * @return
+     */
+    public static OrderBy orderByDesc(final Collection<String> propNames) {
+        return new OrderBy(propNames, SortDirection.DESC);
     }
 
     /**
@@ -1231,15 +1241,6 @@ public class ConditionFactory {
      * @return
      */
     public static OrderBy orderBy(final Map<String, SortDirection> orders) {
-        return new OrderBy(orders);
-    }
-
-    /**
-     *
-     * @param orders
-     * @return
-     */
-    public static OrderBy orderBy(final LinkedHashMap<String, SortDirection> orders) {
         return new OrderBy(orders);
     }
 
@@ -1741,6 +1742,7 @@ public class ConditionFactory {
      * @param condition
      * @return
      */
+    @Beta
     public static Cell cell(final Operator operator, final Condition condition) {
         return new Cell(operator, condition);
     }
