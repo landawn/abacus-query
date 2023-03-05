@@ -347,11 +347,7 @@ public final class QueryUtil {
     @Deprecated
     @Internal
     public static boolean isFakeId(List<String> idPropNames) {
-        if (idPropNames != null && idPropNames.size() == 1 && fakeIds.get(0).equals(idPropNames.get(0))) {
-            return true;
-        }
-
-        return false;
+        return idPropNames != null && idPropNames.size() == 1 && fakeIds.get(0).equals(idPropNames.get(0));
     }
 
     private static final Map<Integer, String> QM_CACHE = new HashMap<>();

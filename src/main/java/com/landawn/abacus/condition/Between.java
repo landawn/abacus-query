@@ -27,9 +27,6 @@ import com.landawn.abacus.util.WD;
  * @since 0.8
  */
 public class Between extends AbstractCondition {
-
-    private static final long serialVersionUID = 486757046031623324L;
-
     // For Kryo
     final String propName;
 
@@ -112,13 +109,13 @@ public class Between extends AbstractCondition {
     public List<Object> getParameters() {
         List<Object> parameters = new ArrayList<>();
 
-        if ((minValue != null) && minValue instanceof Condition) {
+        if (minValue instanceof Condition) {
             parameters.addAll(((Condition) minValue).getParameters());
         } else {
             parameters.add(minValue);
         }
 
-        if ((maxValue != null) && maxValue instanceof Condition) {
+        if (maxValue instanceof Condition) {
             parameters.addAll(((Condition) maxValue).getParameters());
         } else {
             parameters.add(maxValue);
@@ -132,13 +129,13 @@ public class Between extends AbstractCondition {
      */
     @Override
     public void clearParameters() {
-        if ((minValue != null) && minValue instanceof Condition) {
+        if (minValue instanceof Condition) {
             ((Condition) minValue).getParameters().clear();
         } else {
             minValue = null;
         }
 
-        if ((maxValue != null) && maxValue instanceof Condition) {
+        if (maxValue instanceof Condition) {
             ((Condition) maxValue).getParameters().clear();
         } else {
             maxValue = null;
@@ -155,11 +152,11 @@ public class Between extends AbstractCondition {
     public <T extends Condition> T copy() {
         Between copy = (Between) super.copy();
 
-        if ((minValue != null) && minValue instanceof Condition) {
+        if (minValue instanceof Condition) {
             copy.minValue = ((Condition) minValue).copy();
         }
 
-        if ((minValue != null) && maxValue instanceof Condition) {
+        if (maxValue instanceof Condition) {
             copy.maxValue = ((Condition) maxValue).copy();
         }
 

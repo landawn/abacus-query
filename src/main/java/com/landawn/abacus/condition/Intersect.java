@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class Intersect extends Clause {
 
-    private static final long serialVersionUID = -6777653082079650004L;
-
     // For Kryo
     Intersect() {
     }

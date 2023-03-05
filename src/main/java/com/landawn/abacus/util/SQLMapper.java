@@ -72,6 +72,7 @@ public final class SQLMapper {
     private final Map<String, ImmutableMap<String, String>> attrsMap = new HashMap<>();
 
     public SQLMapper() {
+        // empty constructor
     }
 
     /**
@@ -91,10 +92,7 @@ public final class SQLMapper {
         for (String subFilePath : filePaths) {
             final File file = Configuration.formatPath(Configuration.findFile(subFilePath));
 
-            InputStream is = null;
-
-            try {
-                is = new FileInputStream(file);
+            try (InputStream is = new FileInputStream(file)) {
 
                 Document doc = XMLUtil.createDOMParser(true, true).parse(is);
                 NodeList sqlMapperEle = doc.getElementsByTagName(SQLMapper.SQL_MAPPER);
@@ -114,8 +112,6 @@ public final class SQLMapper {
                 throw new UncheckedIOException(e);
             } catch (SAXException e) {
                 throw new ParseException(e);
-            } finally {
-                IOUtil.close(is);
             }
         }
 
@@ -220,25 +216,24 @@ public final class SQLMapper {
      * @param file
      */
     public void saveTo(File file) {
-        OutputStream os = null;
 
-        try {
+        try (OutputStream os = new FileOutputStream(file);) {
             Document doc = XMLUtil.createDOMParser(true, true).newDocument();
             Element sqlMapperNode = doc.createElement(SQLMapper.SQL_MAPPER);
 
-            for (String id : sqlMap.keySet()) {
+            for (Map.Entry<String, ParsedSql> sqlEntry : sqlMap.entrySet()) {
                 Element sqlNode = doc.createElement(SQL);
-                sqlNode.setAttribute(ID, id);
+                sqlNode.setAttribute(ID, sqlEntry.getKey());
 
-                if (!N.isNullOrEmpty(attrsMap.get(id))) {
-                    Map<String, String> attrs = attrsMap.get(id);
+                if (!N.isNullOrEmpty(attrsMap.get(sqlEntry.getKey()))) {
+                    Map<String, String> attrs = attrsMap.get(sqlEntry.getKey());
 
-                    for (String key : attrs.keySet()) {
-                        sqlNode.setAttribute(key, attrs.get(key));
+                    for (Map.Entry<String, String> entry : attrs.entrySet()) {
+                        sqlNode.setAttribute(entry.getKey(), entry.getValue());
                     }
                 }
 
-                Text sqlText = doc.createTextNode(sqlMap.get(id).sql());
+                Text sqlText = doc.createTextNode(sqlEntry.getValue().sql());
                 sqlNode.appendChild(sqlText);
                 sqlMapperNode.appendChild(sqlNode);
             }
@@ -246,18 +241,14 @@ public final class SQLMapper {
             doc.appendChild(sqlMapperNode);
 
             if (!file.exists()) {
-                file.createNewFile();
+                file.createNewFile(); //NOSONAR
             }
-
-            os = new FileOutputStream(file);
 
             XMLUtil.transform(doc, os);
 
             os.flush();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } finally {
-            IOUtil.close(os);
         }
     }
 

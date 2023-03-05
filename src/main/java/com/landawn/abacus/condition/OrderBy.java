@@ -31,8 +31,6 @@ import com.landawn.abacus.util.SortDirection;
  */
 public class OrderBy extends Clause {
 
-    private static final long serialVersionUID = 6430369852069478807L;
-
     // For Kryo
     OrderBy() {
     }
@@ -55,7 +53,7 @@ public class OrderBy extends Clause {
     }
 
     /**
-     * 
+     *
      * @param orders should be a {@code LinkedHashMap}
      */
     public OrderBy(final Map<String, SortDirection> orders) {
@@ -138,14 +136,14 @@ public class OrderBy extends Clause {
 
         try {
             int i = 0;
-            for (String propName : orders.keySet()) {
+            for (Map.Entry<String, SortDirection> entry : orders.entrySet()) {
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }
 
-                sb.append(propName);
+                sb.append(entry.getKey());
                 sb.append(SPACE);
-                sb.append(orders.get(propName).toString());
+                sb.append(entry.getValue().toString());
             }
 
             return sb.toString();

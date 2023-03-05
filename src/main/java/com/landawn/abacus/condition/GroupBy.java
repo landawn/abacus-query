@@ -27,8 +27,6 @@ import com.landawn.abacus.util.SortDirection;
  */
 public class GroupBy extends Clause {
 
-    private static final long serialVersionUID = -8805648115111124665L;
-
     // For Kryo
     GroupBy() {
     }

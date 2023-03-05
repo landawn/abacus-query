@@ -28,7 +28,6 @@ import com.landawn.abacus.util.WD;
  * @author Haiyang Li
  */
 public class NotInSubQuery extends AbstractCondition {
-    private static final long serialVersionUID = 3151853530575587557L;
 
     // For Kryo
     final String propName;

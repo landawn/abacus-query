@@ -23,8 +23,6 @@ import com.landawn.abacus.condition.ConditionFactory.CF;
  */
 public class IsNull extends Is {
 
-    private static final long serialVersionUID = -3579906022393069657L;
-
     /**
      * Field NULL.
      */

@@ -25,8 +25,6 @@ import com.landawn.abacus.condition.ConditionFactory.CF;
  */
 public class On extends Cell {
 
-    private static final long serialVersionUID = -2882073517302039100L;
-
     // For Kryo
     On() {
     }
@@ -68,8 +66,8 @@ public class On extends Cell {
         } else {
             And and = CF.and();
 
-            for (String propName : propNamePair.keySet()) {
-                and.add(createOnCondition(propName, propNamePair.get(propName)));
+            for (Map.Entry<String, String> entry : propNamePair.entrySet()) {
+                and.add(createOnCondition(entry.getKey(), entry.getValue()));
             }
 
             return and;

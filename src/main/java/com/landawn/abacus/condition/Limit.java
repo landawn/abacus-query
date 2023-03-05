@@ -29,8 +29,6 @@ import com.landawn.abacus.util.WD;
  */
 public class Limit extends AbstractCondition {
 
-    private static final long serialVersionUID = -8582266239631072254L;
-
     private int count;
 
     private int offset;

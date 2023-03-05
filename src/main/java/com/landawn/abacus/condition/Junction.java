@@ -19,6 +19,7 @@ import static com.landawn.abacus.util.WD._PARENTHESES_R;
 import static com.landawn.abacus.util.WD._SPACE;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -35,8 +36,6 @@ import com.landawn.abacus.util.Objectory;
  * @since 0.8
  */
 public class Junction extends AbstractCondition {
-
-    private static final long serialVersionUID = -5520467185002717755L;
 
     List<Condition> conditionList;
 
@@ -91,9 +90,7 @@ public class Junction extends AbstractCondition {
      */
     @SafeVarargs
     public final void add(Condition... conditions) {
-        for (Condition cond : conditions) {
-            conditionList.add(cond);
-        }
+        conditionList.addAll(Arrays.asList(conditions));
     }
 
     /**

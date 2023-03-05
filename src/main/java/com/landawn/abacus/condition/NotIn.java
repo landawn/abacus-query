@@ -25,10 +25,9 @@ import com.landawn.abacus.util.WD;
 
 /**
  *
- * @author Haiyang Li 
+ * @author Haiyang Li
  */
 public class NotIn extends AbstractCondition {
-    private static final long serialVersionUID = 6819362182648251435L;
 
     // For Kryo
     final String propName;
@@ -64,7 +63,7 @@ public class NotIn extends AbstractCondition {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public List<?> getValues() {
+    public List<?> getValues() { //NOSONAR
         return values;
     }
 

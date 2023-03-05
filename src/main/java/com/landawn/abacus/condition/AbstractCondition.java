@@ -14,7 +14,6 @@
 
 package com.landawn.abacus.condition;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -28,9 +27,7 @@ import com.landawn.abacus.util.WD;
  * @author Haiyang Li
  * @since 0.8
  */
-public abstract class AbstractCondition implements Condition, Serializable, Cloneable {
-
-    private static final long serialVersionUID = -8343776796087792859L;
+public abstract class AbstractCondition implements Condition, Cloneable {
 
     protected final Operator operator;
 

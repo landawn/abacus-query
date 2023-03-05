@@ -23,8 +23,6 @@ import java.util.Collection;
  */
 public class NaturalJoin extends Join {
 
-    private static final long serialVersionUID = -8632289581598653781L;
-
     // For Kryo
     NaturalJoin() {
     }

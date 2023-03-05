@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class IsNotNull extends IsNot {
 
-    private static final long serialVersionUID = -5087506621604713900L;
-
     // For Kryo
     IsNotNull() {
     }

@@ -20,9 +20,6 @@ package com.landawn.abacus.condition;
  * @since 0.8
  */
 public class Not extends Cell {
-
-    private static final long serialVersionUID = 1694705766379057370L;
-
     // For Kryo
     Not() {
     }

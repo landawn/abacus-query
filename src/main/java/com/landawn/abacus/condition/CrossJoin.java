@@ -23,8 +23,6 @@ import java.util.Collection;
  */
 public class CrossJoin extends Join {
 
-    private static final long serialVersionUID = 3676235178912744582L;
-
     // For Kryo
     CrossJoin() {
     }

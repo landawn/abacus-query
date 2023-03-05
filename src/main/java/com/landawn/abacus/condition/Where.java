@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class Where extends Clause {
 
-    private static final long serialVersionUID = 3408850761610296780L;
-
     // For Kryo
     Where() {
     }

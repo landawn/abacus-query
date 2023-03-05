@@ -22,6 +22,7 @@ import com.landawn.abacus.logging.LoggerFactory;
  * @author haiyangl
  *
  */
+@SuppressWarnings("java:S1192")
 public class DynamicSQLBuilder {
 
     static final Logger logger = LoggerFactory.getLogger(DynamicSQLBuilder.class);

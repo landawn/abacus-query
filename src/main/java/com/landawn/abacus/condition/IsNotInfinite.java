@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class IsNotInfinite extends IsNot {
 
-    private static final long serialVersionUID = -3454957673703217646L;
-
     // For Kryo
     IsNotInfinite() {
     }

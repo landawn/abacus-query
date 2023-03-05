@@ -59,6 +59,11 @@ public class ConditionFactory {
         return ALWAYS_TRUE;
     }
 
+    /**
+     *
+     * @return
+     * @deprecated
+     */
     @Deprecated
     public static Expression alwaysFalse() {
         return ALWAYS_FALSE;
@@ -99,7 +104,7 @@ public class ConditionFactory {
      * @param propValue
      * @return
      */
-    public static Equal equal(final String propName, final Object propValue) {
+    public static Equal equal(final String propName, final Object propValue) { //NOSONAR
         return new Equal(propName, propValue);
     }
 
@@ -110,7 +115,7 @@ public class ConditionFactory {
      * @return
      * @see com.landawn.abacus.util.SQLBuilder
      */
-    public static Equal equal(final String propName) {
+    public static Equal equal(final String propName) {//NOSONAR
         return equal(propName, QME);
     }
 
@@ -219,7 +224,7 @@ public class ConditionFactory {
      * @return
      */
     public static Or eqOr(final Object entity, final Collection<String> selectPropNames) {
-        N.checkArgNotNullOrEmpty(selectPropNames, "selectPropNames");
+        N.checkArgNotNullOrEmpty(selectPropNames, "selectPropNames"); //NOSONAR
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
         final Iterator<String> iter = selectPropNames.iterator();
@@ -1295,6 +1300,7 @@ public class ConditionFactory {
      *
      * @param columnNames
      * @return
+     * @deprecated
      */
     @Deprecated
     @SafeVarargs
@@ -1307,6 +1313,7 @@ public class ConditionFactory {
      *
      * @param columnNames
      * @return
+     * @deprecated
      */
     @Deprecated
     public static Using using(final Collection<String> columnNames) {
@@ -1861,7 +1868,7 @@ public class ConditionFactory {
          * @return
          */
         @SafeVarargs
-        public final static Criteria groupBy(String... propNames) {
+        public static final Criteria groupBy(String... propNames) {
             return CF.criteria().groupBy(propNames);
         }
 
@@ -1936,7 +1943,7 @@ public class ConditionFactory {
          * @return
          */
         @SafeVarargs
-        public final static Criteria orderBy(String... propNames) {
+        public static final Criteria orderBy(String... propNames) {
             return CF.criteria().orderBy(propNames);
         }
 

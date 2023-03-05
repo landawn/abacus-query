@@ -25,8 +25,6 @@ import java.util.List;
  */
 public class And extends Junction {
 
-    private static final long serialVersionUID = -1986732707073108410L;
-
     // For Kryo
     And() {
     }

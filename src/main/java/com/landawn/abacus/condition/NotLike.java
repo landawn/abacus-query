@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class NotLike extends Binary {
 
-    private static final long serialVersionUID = 4304684222139290618L;
-
     // For Kryo
     NotLike() {
     }

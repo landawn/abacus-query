@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class XOR extends Binary {
 
-    private static final long serialVersionUID = 1107165965935840896L;
-
     // For Kryo
     XOR() {
     }

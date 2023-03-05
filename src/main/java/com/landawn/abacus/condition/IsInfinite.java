@@ -23,8 +23,6 @@ import com.landawn.abacus.condition.ConditionFactory.CF;
  */
 public class IsInfinite extends Is {
 
-    private static final long serialVersionUID = -5615587022187148300L;
-
     /**
      * Field INFINITE.
      */

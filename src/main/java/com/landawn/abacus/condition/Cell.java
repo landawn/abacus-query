@@ -16,9 +16,9 @@ package com.landawn.abacus.condition;
 
 import java.util.List;
 
-import com.landawn.abacus.util.WD;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.WD;
 
 /**
  *
@@ -26,8 +26,6 @@ import com.landawn.abacus.util.NamingPolicy;
  * @since 0.8
  */
 public class Cell extends AbstractCondition {
-
-    private static final long serialVersionUID = 8889063891169154425L;
 
     private Condition condition;
 

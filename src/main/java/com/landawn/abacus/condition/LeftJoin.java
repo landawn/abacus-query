@@ -23,8 +23,6 @@ import java.util.Collection;
  */
 public class LeftJoin extends Join {
 
-    private static final long serialVersionUID = -2276352219280174973L;
-
     // For Kryo
     LeftJoin() {
     }

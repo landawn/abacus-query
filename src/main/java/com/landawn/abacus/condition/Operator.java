@@ -247,7 +247,7 @@ public enum Operator {
      * @param name
      * @return
      */
-    public synchronized static Operator getOperator(String name) {
+    public static synchronized Operator getOperator(String name) {
         if (operatorMap.size() == 0) {
             Operator[] values = Operator.values();
 

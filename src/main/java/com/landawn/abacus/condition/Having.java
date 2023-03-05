@@ -20,9 +20,6 @@ package com.landawn.abacus.condition;
  * @since 0.8
  */
 public class Having extends Clause {
-
-    private static final long serialVersionUID = -8949030071011185833L;
-
     // For Kryo
     Having() {
     }

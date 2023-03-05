@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class GreaterThan extends Binary {
 
-    private static final long serialVersionUID = 2373254037255944162L;
-
     // For Kryo
     GreaterThan() {
     }

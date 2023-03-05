@@ -23,8 +23,6 @@ import java.util.Collection;
  */
 public class InnerJoin extends Join {
 
-    private static final long serialVersionUID = -3913405148778272631L;
-
     // For Kryo
     InnerJoin() {
     }

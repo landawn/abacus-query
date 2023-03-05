@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class UnionAll extends Clause {
 
-    private static final long serialVersionUID = -4544041837079207168L;
-
     // For Kryo
     UnionAll() {
     }

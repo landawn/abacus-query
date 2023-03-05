@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class Except extends Clause {
 
-    private static final long serialVersionUID = 5640147014734662525L;
-
     // For Kryo
     Except() {
     }

@@ -30,8 +30,6 @@ import com.landawn.abacus.util.N;
 @Deprecated
 public class Using extends Cell {
 
-    private static final long serialVersionUID = -7269824120390077165L;
-
     // For Kryo
     Using() {
     }

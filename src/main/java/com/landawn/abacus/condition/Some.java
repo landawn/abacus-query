@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class Some extends Cell {
 
-    private static final long serialVersionUID = 4763591336208948744L;
-
     // For Kryo
     Some() {
     }

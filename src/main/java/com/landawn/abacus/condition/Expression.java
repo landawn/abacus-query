@@ -75,8 +75,6 @@ import com.landawn.abacus.util.WD;
  */
 public class Expression extends AbstractCondition {
 
-    private static final long serialVersionUID = -1270437226702741887L;
-
     static final String NULL_STRING = "null".intern();
 
     static final char[] NULL_CHAR_ARRAY = NULL_STRING.toCharArray();
@@ -145,7 +143,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String equal(String literal, Object value) {
+    public static String equal(String literal, Object value) { //NOSONAR
         return link(Operator.EQUAL, literal, value);
     }
 
@@ -984,18 +982,13 @@ public class Expression extends AbstractCondition {
      */
     @Override
     public boolean equals(Object obj) {
-
-        return (this == obj) || ((obj != null) && (obj instanceof Expression) && (N.equals(literal, ((Expression) obj).literal)));
+        return (this == obj) || (obj instanceof Expression && N.equals(literal, ((Expression) obj).literal));
     }
 
     /**
      * The Class Expr.
      */
     public static class Expr extends Expression {
-
-        /** The Constant serialVersionUID. */
-        private static final long serialVersionUID = 3865184718953833862L;
-
         /**
          * Instantiates a new expr.
          *

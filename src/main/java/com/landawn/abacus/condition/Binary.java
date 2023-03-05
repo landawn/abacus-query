@@ -27,8 +27,6 @@ import com.landawn.abacus.util.WD;
  */
 public class Binary extends AbstractCondition {
 
-    private static final long serialVersionUID = 1552347171930293343L;
-
     // For Kryo
     final String propName;
 
@@ -86,7 +84,7 @@ public class Binary extends AbstractCondition {
      */
     @Override
     public List<Object> getParameters() {
-        if ((propValue != null) && propValue instanceof Condition) {
+        if (propValue instanceof Condition) {
             return ((Condition) propValue).getParameters();
         } else {
             return N.asList(propValue);
@@ -98,7 +96,7 @@ public class Binary extends AbstractCondition {
      */
     @Override
     public void clearParameters() {
-        if ((propValue != null) && propValue instanceof Condition) {
+        if (propValue instanceof Condition) {
             ((Condition) propValue).clearParameters();
         } else {
             propValue = null;
@@ -115,7 +113,7 @@ public class Binary extends AbstractCondition {
     public <T extends Condition> T copy() {
         Binary copy = (Binary) super.copy();
 
-        if ((propValue != null) && propValue instanceof Condition) {
+        if (propValue instanceof Condition) {
             copy.propValue = ((Condition) propValue).copy();
         }
 

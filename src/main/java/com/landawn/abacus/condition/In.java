@@ -30,8 +30,6 @@ import com.landawn.abacus.util.WD;
  */
 public class In extends AbstractCondition {
 
-    private static final long serialVersionUID = 6765878262342593960L;
-
     // For Kryo
     final String propName;
 
@@ -66,7 +64,7 @@ public class In extends AbstractCondition {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public List<?> getValues() {
+    public List<?> getValues() { //NOSONAR
         return values;
     }
 

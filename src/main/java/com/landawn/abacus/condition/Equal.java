@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class Equal extends Binary {
 
-    private static final long serialVersionUID = 7021976594945773433L;
-
     // For Kryo
     Equal() {
     }

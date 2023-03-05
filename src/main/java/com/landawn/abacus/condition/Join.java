@@ -31,8 +31,6 @@ import com.landawn.abacus.util.NamingPolicy;
  */
 public class Join extends AbstractCondition {
 
-    private static final long serialVersionUID = -6241397386906482856L;
-
     private List<String> joinEntities;
 
     private Condition condition;

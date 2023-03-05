@@ -37,8 +37,6 @@ import com.landawn.abacus.util.WD;
  */
 public class Criteria extends AbstractCondition {
 
-    private static final long serialVersionUID = 7534336752211519239L;
-
     private static final Set<Operator> aggregationOperators = N.newHashSet();
 
     static {
@@ -49,7 +47,7 @@ public class Criteria extends AbstractCondition {
         aggregationOperators.add(Operator.MINUS);
     }
 
-    private boolean distinct = false;
+    private boolean isDistinct = false;
 
     private List<Condition> conditionList;
 
@@ -64,7 +62,7 @@ public class Criteria extends AbstractCondition {
      * @return true, if is distinct
      */
     public boolean isDistinct() {
-        return distinct;
+        return isDistinct;
     }
 
     /**
@@ -265,9 +263,9 @@ public class Criteria extends AbstractCondition {
                 parameters.addAll(having.getParameters());
             }
 
-            List<Cell> conditionList = getAggregation();
+            List<Cell> condList = getAggregation();
 
-            for (Condition cond : conditionList) {
+            for (Condition cond : condList) {
                 parameters.addAll(cond.getParameters());
             }
 
@@ -306,7 +304,7 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     public Criteria distinct(boolean distinct) {
-        this.distinct = distinct;
+        this.isDistinct = distinct;
 
         return this;
     }
@@ -684,7 +682,7 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public String toString(NamingPolicy namingPolicy) {
-        String distinct = isDistinct() ? WD.SPACE + WD.DISTINCT : N.EMPTY_STRING;
+        String distinct = isDistinct() ? WD.SPACE + WD.DISTINCT : N.EMPTY_STRING; //NOSONAR
         String join = N.EMPTY_STRING;
         String where = N.EMPTY_STRING;
         String groupBy = N.EMPTY_STRING;
@@ -696,19 +694,19 @@ public class Criteria extends AbstractCondition {
 
         for (Condition cond : conditionList) {
             if (Operator.WHERE.equals(cond.getOperator())) {
-                where += (WD._SPACE + cond.toString(namingPolicy));
+                where += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (Operator.ORDER_BY.equals(cond.getOperator())) {
-                orderBy += (WD._SPACE + cond.toString(namingPolicy));
+                orderBy += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (Operator.GROUP_BY.equals(cond.getOperator())) {
-                groupBy += (WD._SPACE + cond.toString(namingPolicy));
+                groupBy += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (Operator.HAVING.equals(cond.getOperator())) {
-                having += (WD._SPACE + cond.toString(namingPolicy));
+                having += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (Operator.LIMIT.equals(cond.getOperator())) {
-                limit += (WD._SPACE + cond.toString(namingPolicy));
+                limit += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond instanceof Join) {
-                join += (WD._SPACE + cond.toString(namingPolicy));
+                join += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else {
-                aggregate += (WD._SPACE + cond.toString(namingPolicy));
+                aggregate += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
             }
         }
 
@@ -731,7 +729,7 @@ public class Criteria extends AbstractCondition {
     @Override
     public boolean equals(Object obj) {
         return this == obj
-                || (obj instanceof Criteria && N.equals(((Criteria) obj).distinct, distinct) && N.equals(((Criteria) obj).conditionList, conditionList));
+                || (obj instanceof Criteria && N.equals(((Criteria) obj).isDistinct, isDistinct) && N.equals(((Criteria) obj).conditionList, conditionList));
     }
 
     /**

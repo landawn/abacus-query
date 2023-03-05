@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class LessEqual extends Binary {
 
-    private static final long serialVersionUID = 2830953715407991010L;
-
     // For Kryo
     LessEqual() {
     }

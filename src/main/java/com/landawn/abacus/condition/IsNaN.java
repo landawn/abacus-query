@@ -23,8 +23,6 @@ import com.landawn.abacus.condition.ConditionFactory.CF;
  */
 public class IsNaN extends Is {
 
-    private static final long serialVersionUID = 7088820715466964254L;
-
     /**
      * Field NAN.
      */

@@ -35,8 +35,6 @@ import com.landawn.abacus.util.WD;
  */
 public class SubQuery extends AbstractCondition {
 
-    private static final long serialVersionUID = -2791944344613082244L;
-
     // For Kryo
     final String entityName;
 

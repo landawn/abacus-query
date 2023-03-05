@@ -21,8 +21,6 @@ package com.landawn.abacus.condition;
  */
 public class Minus extends Clause {
 
-    private static final long serialVersionUID = -8632773061797279191L;
-
     // For Kryo
     Minus() {
     }

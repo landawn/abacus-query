@@ -23,8 +23,6 @@ import java.util.Collection;
  */
 public class FullJoin extends Join {
 
-    private static final long serialVersionUID = 685295398958634480L;
-
     // For Kryo
     FullJoin() {
     }
