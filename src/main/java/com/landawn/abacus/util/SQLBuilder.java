@@ -957,11 +957,7 @@ public abstract class SQLBuilder {
                         sb.append(formalizeColumnName(_propColumnNameMap, columnName));
 
                         if ((_namingPolicy != NamingPolicy.LOWER_CAMEL_CASE && _namingPolicy != NamingPolicy.NO_CHANGE) && !WD.ASTERISK.equals(columnName)) {
-                            sb.append(SPACE_AS_SPACE);
-
-                            sb.append(WD.QUOTATION_D);
-                            sb.append(columnName);
-                            sb.append(WD.QUOTATION_D);
+                            sb.append(SPACE_AS_SPACE).append(WD.QUOTATION_D).append(columnName).append(WD.QUOTATION_D);
                         }
                     }
 
@@ -2487,11 +2483,11 @@ public abstract class SQLBuilder {
             return set(localProps);
         }
 
-        final Class<?> entityCls = entity.getClass();
-        setEntityClass(entityCls);
-        final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityCls, excludedPropNames);
+        final Class<?> entityClass = entity.getClass();
+        setEntityClass(entityClass);
+        final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
         final Map<String, Object> localProps = N.newHashMap(propNames.size());
-        final BeanInfo localEntityInfo = ParserUtil.getBeanInfo(entityCls);
+        final BeanInfo localEntityInfo = ParserUtil.getBeanInfo(entityClass);
 
         for (String propName : propNames) {
             localProps.put(propName, localEntityInfo.getPropValue(entity, propName));

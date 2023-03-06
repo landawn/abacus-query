@@ -1,3 +1,8 @@
+## 1.2.17
+
+* Improvements by SonarLint
+
+
 ## 1.2.16
 
 * Improvements
