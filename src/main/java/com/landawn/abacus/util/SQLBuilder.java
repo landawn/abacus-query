@@ -3313,13 +3313,17 @@ public abstract class SQLBuilder {
                 && (!propInfo.isMarkedToColumn && (propInfo.type.isBean() || (propInfo.type.isCollection() && propInfo.type.getElementType().isBean())));
     }
 
+    private static boolean hasSubEntityToInclude(final Class<?> entityClass, final boolean includeSubEntityProperties) {
+        return includeSubEntityProperties && N.notNullOrEmpty(getSubEntityPropNames(entityClass));
+    }
+
     /**
      * Checks if is sub query.
      *
      * @param propOrColumnNames
      * @return true, if is sub query
      */
-    private boolean isSubQuery(final String... propOrColumnNames) {
+    private static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
             int index = SQLParser.indexWord(propOrColumnNames[0], WD.SELECT, 0, false);
 
@@ -3911,10 +3915,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -4426,10 +4431,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -4943,7 +4949,7 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -5456,10 +5462,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.NO_CHANGE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -5968,10 +5975,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -6480,10 +6488,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -6992,10 +7001,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -7504,10 +7514,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.NO_CHANGE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -8016,10 +8027,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -8528,10 +8540,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -9040,10 +9053,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -9554,10 +9568,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.NO_CHANGE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -10068,10 +10083,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -10582,10 +10598,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 
@@ -11096,10 +11113,11 @@ public abstract class SQLBuilder {
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            if (includeSubEntityProperties) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
+
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
         }
 

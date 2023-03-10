@@ -15,6 +15,19 @@ import com.landawn.abacus.util.entity.AccountContact;
 class SQLBuilderTest {
 
     @Test
+    public void test_selectFrom() {
+
+        String sql = PSC.selectFrom(AccountContact.class, true).where(CF.eq("id")).sql();
+        N.println(sql);
+
+        sql = PSC.selectFrom(Account.class, true).where(CF.eq("id")).sql();
+        N.println(sql);
+
+        sql = PSC.selectFrom(Account.class, "acc", true).where(CF.eq("id")).sql();
+        N.println(sql);
+    }
+
+    @Test
     public void test_count() {
 
         String sql = PSC.count(Account.class).where(CF.eq("id")).sql();
