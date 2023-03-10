@@ -168,10 +168,10 @@ public final class QueryUtil {
                     final Map<String, String> subPropColumnNameMap = registerEntityPropColumnNameMap(propType.clazz(), namingPolicy, newRegisteringClasses);
 
                     if (N.notNullOrEmpty(subPropColumnNameMap)) {
-                        final String subTableName = SQLBuilder.getTableName(propType.clazz(), namingPolicy);
+                        final String subTableAliasOrName = SQLBuilder.getTableAliasOrName(propType.clazz(), namingPolicy);
 
                         for (Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
-                            propColumnNameMap.put(propInfo.name + WD.PERIOD + entry.getKey(), subTableName + WD.PERIOD + entry.getValue());
+                            propColumnNameMap.put(propInfo.name + WD.PERIOD + entry.getKey(), subTableAliasOrName + WD.PERIOD + entry.getValue());
                         }
 
                         propColumnNameMap.remove(propInfo.name); // remove sub entity prop.
