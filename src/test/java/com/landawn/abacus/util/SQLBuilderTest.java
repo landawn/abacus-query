@@ -20,6 +20,9 @@ class SQLBuilderTest {
         String sql = PSC.selectFrom(AccountContact.class, true).where(CF.eq("id")).sql();
         N.println(sql);
 
+        sql = PSC.selectFrom(Account.class).where(CF.eq("id")).sql();
+        N.println(sql);
+
         sql = PSC.selectFrom(Account.class, true).where(CF.eq("id")).sql();
         N.println(sql);
 
