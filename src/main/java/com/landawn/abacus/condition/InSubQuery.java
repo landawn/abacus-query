@@ -43,6 +43,12 @@ public class InSubQuery extends AbstractCondition {
         propNames = null;
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param subQuery 
+     */
     public InSubQuery(String propName, SubQuery subQuery) {
         super(Operator.IN);
 
@@ -53,6 +59,12 @@ public class InSubQuery extends AbstractCondition {
         this.propNames = null;
     }
 
+    /**
+     * 
+     *
+     * @param propNames 
+     * @param subQuery 
+     */
     public InSubQuery(Collection<String> propNames, SubQuery subQuery) {
         super(Operator.IN);
 
@@ -64,33 +76,67 @@ public class InSubQuery extends AbstractCondition {
         this.propName = null;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public String getPropName() {
         return propName;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public Collection<String> getPropNames() {
         return propNames;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @SuppressWarnings("unchecked")
     public SubQuery getSubQuery() {
         return subQuery;
     }
 
+    /**
+     * 
+     *
+     * @param subQuery 
+     */
     public void setSubQuery(SubQuery subQuery) {
         this.subQuery = subQuery;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public List<Object> getParameters() {
         return subQuery.getParameters();
     }
 
+    /**
+     * 
+     */
     @Override
     public void clearParameters() {
         subQuery.clearParameters();
     }
 
+    /**
+     * 
+     *
+     * @param <T> 
+     * @return 
+     */
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
@@ -101,6 +147,11 @@ public class InSubQuery extends AbstractCondition {
         return (T) copy;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;
@@ -132,6 +183,12 @@ public class InSubQuery extends AbstractCondition {
         return false;
     }
 
+    /**
+     * 
+     *
+     * @param namingPolicy 
+     * @return 
+     */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         if (N.notNullOrEmpty(propName)) {

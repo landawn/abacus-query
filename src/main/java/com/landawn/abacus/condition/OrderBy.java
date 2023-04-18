@@ -35,19 +35,41 @@ public class OrderBy extends Clause {
     OrderBy() {
     }
 
+    /**
+     * 
+     *
+     * @param condition 
+     */
     public OrderBy(final Condition condition) {
         super(Operator.ORDER_BY, condition);
     }
 
+    /**
+     * 
+     *
+     * @param propNames 
+     */
     @SafeVarargs
     public OrderBy(final String... propNames) {
         this(CF.expr(createCondition(propNames)));
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param direction 
+     */
     public OrderBy(final String propName, final SortDirection direction) {
         this(CF.expr(createCondition(propName, direction)));
     }
 
+    /**
+     * 
+     *
+     * @param propNames 
+     * @param direction 
+     */
     public OrderBy(final Collection<String> propNames, final SortDirection direction) {
         this(CF.expr(createCondition(propNames, direction)));
     }

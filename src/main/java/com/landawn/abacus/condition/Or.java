@@ -29,15 +29,32 @@ public class Or extends Junction {
     Or() {
     }
 
+    /**
+     * 
+     *
+     * @param condition 
+     */
     @SafeVarargs
     public Or(Condition... condition) {
         super(Operator.OR, condition);
     }
 
+    /**
+     * 
+     *
+     * @param conditions 
+     */
     public Or(Collection<? extends Condition> conditions) {
         super(Operator.OR, conditions);
     }
 
+    /**
+     * 
+     *
+     * @param condition 
+     * @return 
+     * @throws UnsupportedOperationException 
+     */
     @Override
     public Or or(Condition condition) throws UnsupportedOperationException {
         final List<Condition> condList = new ArrayList<>(conditionList.size() + 1);

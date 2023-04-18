@@ -27,14 +27,31 @@ public class LeftJoin extends Join {
     LeftJoin() {
     }
 
+    /**
+     * 
+     *
+     * @param joinEntity 
+     */
     public LeftJoin(String joinEntity) {
         super(Operator.LEFT_JOIN, joinEntity);
     }
 
+    /**
+     * 
+     *
+     * @param joinEntity 
+     * @param condition 
+     */
     public LeftJoin(String joinEntity, Condition condition) {
         super(Operator.LEFT_JOIN, joinEntity, condition);
     }
 
+    /**
+     * 
+     *
+     * @param joinEntities 
+     * @param condition 
+     */
     public LeftJoin(Collection<String> joinEntities, Condition condition) {
         super(Operator.LEFT_JOIN, joinEntities, condition);
     }

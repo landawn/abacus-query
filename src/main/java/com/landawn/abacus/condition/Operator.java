@@ -278,6 +278,11 @@ public enum Operator {
         return name;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return name;

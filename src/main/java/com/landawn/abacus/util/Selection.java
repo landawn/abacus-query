@@ -28,9 +28,29 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+/**
+ * 
+ *
+ * @return 
+ */
 @Data
 @Accessors(fluent = true)
+
+/**
+ * 
+ */
 @NoArgsConstructor
+
+/**
+ * 
+ *
+ * @param entityClass 
+ * @param tableAlias 
+ * @param classAlias 
+ * @param selectPropNames 
+ * @param includeSubEntityProperties 
+ * @param excludedPropNames 
+ */
 @AllArgsConstructor
 public final class Selection {
     private Class<?> entityClass;
@@ -40,6 +60,11 @@ public final class Selection {
     boolean includeSubEntityProperties;
     private Set<String> excludedPropNames;
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public static MultiSelectionBuilder multiSelectionBuilder() {
         return new MultiSelectionBuilder();
     }
@@ -51,18 +76,48 @@ public final class Selection {
             //
         }
 
+        /**
+         * 
+         *
+         * @param entityClass 
+         * @return 
+         */
         public MultiSelectionBuilder add(final Class<?> entityClass) {
             return add(entityClass, null, null, null);
         }
 
+        /**
+         * 
+         *
+         * @param entityClass 
+         * @param selectPropNames 
+         * @return 
+         */
         public MultiSelectionBuilder add(final Class<?> entityClass, final Collection<String> selectPropNames) {
             return add(entityClass, null, null, selectPropNames);
         }
 
+        /**
+         * 
+         *
+         * @param entityClass 
+         * @param tableAlias 
+         * @param classAlias 
+         * @return 
+         */
         public MultiSelectionBuilder add(final Class<?> entityClass, final String tableAlias, final String classAlias) {
             return add(entityClass, tableAlias, classAlias, null);
         }
 
+        /**
+         * 
+         *
+         * @param entityClass 
+         * @param tableAlias 
+         * @param classAlias 
+         * @param selectPropNames 
+         * @return 
+         */
         public MultiSelectionBuilder add(final Class<?> entityClass, final String tableAlias, final String classAlias,
                 final Collection<String> selectPropNames) {
             selections.add(new Selection(entityClass, tableAlias, classAlias, selectPropNames, false, null));
@@ -70,10 +125,28 @@ public final class Selection {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param entityClass 
+         * @param includeSubEntityProperties 
+         * @param excludedPropNames 
+         * @return 
+         */
         public MultiSelectionBuilder add(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             return add(entityClass, null, null, includeSubEntityProperties, excludedPropNames);
         }
 
+        /**
+         * 
+         *
+         * @param entityClass 
+         * @param tableAlias 
+         * @param classAlias 
+         * @param includeSubEntityProperties 
+         * @param excludedPropNames 
+         * @return 
+         */
         public MultiSelectionBuilder add(final Class<?> entityClass, final String tableAlias, final String classAlias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             selections.add(new Selection(entityClass, tableAlias, classAlias, null, includeSubEntityProperties, excludedPropNames));
@@ -81,6 +154,11 @@ public final class Selection {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @return 
+         */
         public List<Selection> build() {
             return selections;
         }

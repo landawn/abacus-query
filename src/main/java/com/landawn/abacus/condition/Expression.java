@@ -105,6 +105,11 @@ public class Expression extends AbstractCondition {
         literal = null;
     }
 
+    /**
+     * 
+     *
+     * @param literal 
+     */
     public Expression(String literal) {
         super(Operator.EMPTY);
 
@@ -970,6 +975,11 @@ public class Expression extends AbstractCondition {
         return literal;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         return (literal == null) ? 0 : literal.hashCode();

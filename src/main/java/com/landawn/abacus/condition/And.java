@@ -29,15 +29,32 @@ public class And extends Junction {
     And() {
     }
 
+    /**
+     * 
+     *
+     * @param conditions 
+     */
     @SafeVarargs
     public And(Condition... conditions) {
         super(Operator.AND, conditions);
     }
 
+    /**
+     * 
+     *
+     * @param conditions 
+     */
     public And(Collection<? extends Condition> conditions) {
         super(Operator.AND, conditions);
     }
 
+    /**
+     * 
+     *
+     * @param condition 
+     * @return 
+     * @throws UnsupportedOperationException 
+     */
     @Override
     public And and(Condition condition) throws UnsupportedOperationException {
         final List<Condition> condList = new ArrayList<>(conditionList.size() + 1);

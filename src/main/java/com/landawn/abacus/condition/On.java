@@ -29,14 +29,30 @@ public class On extends Cell {
     On() {
     }
 
+    /**
+     * 
+     *
+     * @param condition 
+     */
     public On(Condition condition) {
         super(Operator.ON, condition);
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param anoPropName 
+     */
     public On(String propName, String anoPropName) {
         this(createOnCondition(propName, anoPropName));
     }
 
+    /**
+     * 
+     *
+     * @param propNamePair 
+     */
     public On(Map<String, String> propNamePair) {
         this(createOnCondition(propNamePair));
     }

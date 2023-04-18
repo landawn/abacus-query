@@ -25,6 +25,12 @@ public class Equal extends Binary {
     Equal() {
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param propValue 
+     */
     public Equal(String propName, Object propValue) {
         super(propName, Operator.EQUAL, propValue);
     }

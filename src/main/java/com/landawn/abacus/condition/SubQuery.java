@@ -58,6 +58,12 @@ public class SubQuery extends AbstractCondition {
         sql = null;
     }
 
+    /**
+     * 
+     *
+     * @param entityName 
+     * @param sql 
+     */
     public SubQuery(String entityName, String sql) {
         super(Operator.EMPTY);
         this.entityName = entityName;
@@ -72,6 +78,13 @@ public class SubQuery extends AbstractCondition {
         this.sql = sql;
     }
 
+    /**
+     * 
+     *
+     * @param entityName 
+     * @param propNames 
+     * @param condition 
+     */
     public SubQuery(String entityName, Collection<String> propNames, Condition condition) {
         super(Operator.EMPTY);
         this.entityName = entityName;
@@ -86,6 +99,13 @@ public class SubQuery extends AbstractCondition {
         this.sql = null;
     }
 
+    /**
+     * 
+     *
+     * @param entityClass 
+     * @param propNames 
+     * @param condition 
+     */
     public SubQuery(Class<?> entityClass, Collection<String> propNames, Condition condition) {
         super(Operator.EMPTY);
         this.entityName = ClassUtil.getSimpleClassName(entityClass);
@@ -109,10 +129,20 @@ public class SubQuery extends AbstractCondition {
         return sql;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public String getEntityName() {
         return entityName;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public Class<?> getEntityClass() {
         return entityClass;
     }
@@ -223,6 +253,11 @@ public class SubQuery extends AbstractCondition {
         }
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;

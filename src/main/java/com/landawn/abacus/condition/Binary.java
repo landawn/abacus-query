@@ -37,6 +37,13 @@ public class Binary extends AbstractCondition {
         propName = null;
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param operator 
+     * @param propValue 
+     */
     public Binary(String propName, Operator operator, Object propValue) {
         super(operator);
 
@@ -134,6 +141,11 @@ public class Binary extends AbstractCondition {
         }
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;

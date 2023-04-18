@@ -43,6 +43,11 @@ public enum SortDirection {
         return name;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return name;

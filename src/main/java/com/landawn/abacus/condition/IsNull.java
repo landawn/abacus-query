@@ -32,6 +32,11 @@ public class IsNull extends Is {
     IsNull() {
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     */
     public IsNull(String propName) {
         super(propName, NULL);
     }

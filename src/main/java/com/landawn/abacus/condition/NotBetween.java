@@ -39,6 +39,13 @@ public class NotBetween extends AbstractCondition {
         propName = null;
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param minValue 
+     * @param maxValue 
+     */
     public NotBetween(String propName, Object minValue, Object maxValue) {
         super(Operator.NOT_BETWEEN);
 
@@ -179,6 +186,11 @@ public class NotBetween extends AbstractCondition {
         }
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;

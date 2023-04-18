@@ -25,6 +25,11 @@ public class IsNotInfinite extends IsNot {
     IsNotInfinite() {
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     */
     public IsNotInfinite(String propName) {
         super(propName, IsInfinite.INFINITE);
     }

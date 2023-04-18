@@ -31,19 +31,41 @@ public class GroupBy extends Clause {
     GroupBy() {
     }
 
+    /**
+     * 
+     *
+     * @param condition 
+     */
     public GroupBy(Condition condition) {
         super(Operator.GROUP_BY, condition);
     }
 
+    /**
+     * 
+     *
+     * @param propNames 
+     */
     @SafeVarargs
     public GroupBy(final String... propNames) {
         this(CF.expr(OrderBy.createCondition(propNames)));
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param direction 
+     */
     public GroupBy(final String propName, final SortDirection direction) {
         this(CF.expr(OrderBy.createCondition(propName, direction)));
     }
 
+    /**
+     * 
+     *
+     * @param propNames 
+     * @param direction 
+     */
     public GroupBy(final Collection<String> propNames, final SortDirection direction) {
         this(CF.expr(OrderBy.createCondition(propNames, direction)));
     }

@@ -47,18 +47,38 @@ public class DynamicSQLBuilder {
 
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public static DynamicSQLBuilder create() {
         return new DynamicSQLBuilder();
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public Select select() {
         return select;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public From from() {
         return from;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public Where where() {
         if (where == null) {
             where = new Where(Objectory.createStringBuilder());
@@ -67,6 +87,11 @@ public class DynamicSQLBuilder {
         return where;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public GroupBy groupBy() {
         if (groupBy == null) {
             groupBy = new GroupBy(Objectory.createStringBuilder());
@@ -75,6 +100,11 @@ public class DynamicSQLBuilder {
         return groupBy;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public Having having() {
         if (having == null) {
             having = new Having(Objectory.createStringBuilder());
@@ -83,6 +113,11 @@ public class DynamicSQLBuilder {
         return having;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public OrderBy orderBy() {
         if (orderBy == null) {
             orderBy = new OrderBy(Objectory.createStringBuilder());
@@ -239,6 +274,11 @@ public class DynamicSQLBuilder {
     //        return this;
     //    }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public String build() {
         select.sb.append(" ").append(from.sb);
 
@@ -341,6 +381,13 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param str 
+         * @return 
+         */
         public Select appendIf(final boolean b, final String str) {
             if (b) {
                 if (sb.length() > 0) {
@@ -355,6 +402,14 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param strToAppendForTrue 
+         * @param strToAppendForFalse 
+         * @return 
+         */
         public Select appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
                 sb.append(", ");
@@ -484,6 +539,13 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param str 
+         * @return 
+         */
         public From appendIf(final boolean b, final String str) {
             if (b) {
                 if (sb.length() > 0) {
@@ -498,6 +560,14 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param strToAppendForTrue 
+         * @param strToAppendForFalse 
+         * @return 
+         */
         public From appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
                 sb.append(", ");
@@ -617,6 +687,13 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param str 
+         * @return 
+         */
         public Where appendIf(final boolean b, final String str) {
             if (b) {
                 if (sb.length() > 0) {
@@ -631,6 +708,14 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param strToAppendForTrue 
+         * @param strToAppendForFalse 
+         * @return 
+         */
         public Where appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
                 sb.append(" ");
@@ -682,6 +767,13 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param str 
+         * @return 
+         */
         public GroupBy appendIf(final boolean b, final String str) {
             if (b) {
                 if (sb.length() > 0) {
@@ -696,6 +788,14 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param strToAppendForTrue 
+         * @param strToAppendForFalse 
+         * @return 
+         */
         public GroupBy appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
                 sb.append(", ");
@@ -769,6 +869,13 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param str 
+         * @return 
+         */
         public Having appendIf(final boolean b, final String str) {
             if (b) {
                 if (sb.length() > 0) {
@@ -783,6 +890,14 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param strToAppendForTrue 
+         * @param strToAppendForFalse 
+         * @return 
+         */
         public Having appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
                 sb.append(" ");
@@ -834,6 +949,13 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param str 
+         * @return 
+         */
         public OrderBy appendIf(final boolean b, final String str) {
             if (b) {
                 if (sb.length() > 0) {
@@ -848,6 +970,14 @@ public class DynamicSQLBuilder {
             return this;
         }
 
+        /**
+         * 
+         *
+         * @param b 
+         * @param strToAppendForTrue 
+         * @param strToAppendForFalse 
+         * @return 
+         */
         public OrderBy appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
                 sb.append(", ");

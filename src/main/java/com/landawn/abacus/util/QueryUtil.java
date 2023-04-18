@@ -117,7 +117,9 @@ public final class QueryUtil {
     /**
      * Gets the prop column name map.
      *
-     * @return
+     * @param entityClass 
+     * @param namingPolicy 
+     * @return 
      */
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         if (entityClass == null || Map.class.isAssignableFrom(entityClass)) {

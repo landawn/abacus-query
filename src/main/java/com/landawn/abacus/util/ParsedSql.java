@@ -311,6 +311,11 @@ public final class ParsedSql {
         return !(ch < '0' || (ch > '9' && ch < 'A') || (ch > 'Z' && ch < 'a') || (ch > 'z' && ch < 128));
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -340,6 +345,11 @@ public final class ParsedSql {
         return false;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return "{sql=" + sql + ", parameterizedSql=" + parameterizedSql + "}";

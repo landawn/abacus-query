@@ -38,6 +38,11 @@ public final class NamedProperty {
         propName = null;
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     */
     public NamedProperty(String propName) {
         this.propName = propName;
     }
@@ -165,6 +170,13 @@ public final class NamedProperty {
         return CF.isNotNull(propName);
     }
 
+    /**
+     * 
+     *
+     * @param minValue 
+     * @param maxValue 
+     * @return 
+     */
     public Between between(Object minValue, Object maxValue) {
         return CF.between(propName, minValue, maxValue);
     }
@@ -245,6 +257,11 @@ public final class NamedProperty {
         return CF.in(propName, values);
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         return propName.hashCode();
@@ -260,6 +277,11 @@ public final class NamedProperty {
         return this == obj || (obj instanceof NamedProperty && N.equals(((NamedProperty) obj).propName, propName));
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return propName;

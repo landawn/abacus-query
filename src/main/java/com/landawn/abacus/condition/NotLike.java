@@ -25,6 +25,12 @@ public class NotLike extends Binary {
     NotLike() {
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param propValue 
+     */
     public NotLike(String propName, Object propValue) {
         super(propName, Operator.NOT_LIKE, propValue);
     }

@@ -27,14 +27,31 @@ public class RightJoin extends Join {
     RightJoin() {
     }
 
+    /**
+     * 
+     *
+     * @param joinEntity 
+     */
     public RightJoin(String joinEntity) {
         super(Operator.RIGHT_JOIN, joinEntity);
     }
 
+    /**
+     * 
+     *
+     * @param joinEntity 
+     * @param condition 
+     */
     public RightJoin(String joinEntity, Condition condition) {
         super(Operator.RIGHT_JOIN, joinEntity, condition);
     }
 
+    /**
+     * 
+     *
+     * @param joinEntities 
+     * @param condition 
+     */
     public RightJoin(Collection<String> joinEntities, Condition condition) {
         super(Operator.RIGHT_JOIN, joinEntities, condition);
     }

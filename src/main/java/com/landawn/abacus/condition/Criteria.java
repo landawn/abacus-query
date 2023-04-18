@@ -51,6 +51,9 @@ public class Criteria extends AbstractCondition {
 
     private List<Condition> conditionList;
 
+    /**
+     * 
+     */
     public Criteria() {
         super(Operator.EMPTY);
         conditionList = new ArrayList<>();
@@ -595,6 +598,12 @@ public class Criteria extends AbstractCondition {
         return this;
     }
 
+    /**
+     * 
+     *
+     * @param expr 
+     * @return 
+     */
     public Criteria limit(final String expr) {
         add(CF.limit(expr));
 
@@ -713,6 +722,11 @@ public class Criteria extends AbstractCondition {
         return distinct + join + where + groupBy + having + aggregate + orderBy + limit + forUpdate;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = isDistinct() ? 17 : 31;

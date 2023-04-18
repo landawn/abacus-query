@@ -40,6 +40,12 @@ public class In extends AbstractCondition {
         propName = null;
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param values 
+     */
     public In(String propName, Collection<?> values) {
         super(Operator.IN);
 
@@ -129,6 +135,11 @@ public class In extends AbstractCondition {
         }
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;

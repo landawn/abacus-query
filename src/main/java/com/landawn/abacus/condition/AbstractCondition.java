@@ -70,6 +70,11 @@ public abstract class AbstractCondition implements Condition, Cloneable {
         return new Or(this, condition);
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public Not not() {
         return new Not(this);
@@ -94,6 +99,11 @@ public abstract class AbstractCondition implements Condition, Cloneable {
         return (T) copy;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return toString(NamingPolicy.NO_CHANGE);

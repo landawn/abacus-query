@@ -25,6 +25,11 @@ public class All extends Cell {
     All() {
     }
 
+    /**
+     * 
+     *
+     * @param condition 
+     */
     public All(SubQuery condition) {
         super(Operator.ALL, condition);
     }

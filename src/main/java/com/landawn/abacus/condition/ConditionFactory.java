@@ -55,6 +55,11 @@ public class ConditionFactory {
         // No instance;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public static Expression alwaysTrue() {
         return ALWAYS_TRUE;
     }
@@ -249,10 +254,30 @@ public class ConditionFactory {
         }
     }
 
+    /**
+     * 
+     *
+     * @param propName1 
+     * @param propValue1 
+     * @param propName2 
+     * @param propValue2 
+     * @return 
+     */
     public static Or eqOr(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return eq(propName1, propValue1).or(eq(propName2, propValue2));
     }
 
+    /**
+     * 
+     *
+     * @param propName1 
+     * @param propValue1 
+     * @param propName2 
+     * @param propValue2 
+     * @param propName3 
+     * @param propValue3 
+     * @return 
+     */
     public static Or eqOr(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
         return or(eq(propName1, propValue1), eq(propName2, propValue2), eq(propName3, propValue3));
@@ -330,10 +355,30 @@ public class ConditionFactory {
         }
     }
 
+    /**
+     * 
+     *
+     * @param propName1 
+     * @param propValue1 
+     * @param propName2 
+     * @param propValue2 
+     * @return 
+     */
     public static And eqAnd(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return eq(propName1, propValue1).and(eq(propName2, propValue2));
     }
 
+    /**
+     * 
+     *
+     * @param propName1 
+     * @param propValue1 
+     * @param propName2 
+     * @param propValue2 
+     * @param propName3 
+     * @param propValue3 
+     * @return 
+     */
     public static And eqAnd(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
         return and(eq(propName1, propValue1), eq(propName2, propValue2), eq(propName3, propValue3));
@@ -393,42 +438,99 @@ public class ConditionFactory {
         return or(conds);
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param minValue 
+     * @param maxValue 
+     * @return 
+     */
     public static And gtAndLt(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(lt(propName, maxValue));
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @return 
+     */
     public static And gtAndLt(final String propName) {
         return gt(propName).and(lt(propName));
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param minValue 
+     * @param maxValue 
+     * @return 
+     */
     public static And geAndLt(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(lt(propName, maxValue));
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @return 
+     */
     public static And geAndLt(final String propName) {
         return ge(propName).and(lt(propName));
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param minValue 
+     * @param maxValue 
+     * @return 
+     */
     public static And geAndLe(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(le(propName, maxValue));
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @return 
+     */
     public static And geAndLe(final String propName) {
         return ge(propName).and(le(propName));
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param minValue 
+     * @param maxValue 
+     * @return 
+     */
     public static And gtAndLe(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(le(propName, maxValue));
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @return 
+     */
     public static And gtAndLe(final String propName) {
         return gt(propName).and(le(propName));
     }
 
     /**
+     * 
      *
-     * @param entity
-     * @return
+     * @param entityId 
+     * @return 
      */
     public static And id2Cond(final EntityId entityId) {
         N.checkArgNotNull(entityId, "entityId");
@@ -456,6 +558,12 @@ public class ConditionFactory {
         }
     }
 
+    /**
+     * 
+     *
+     * @param entityIds 
+     * @return 
+     */
     public static Or id2Cond(final Collection<? extends EntityId> entityIds) {
         N.checkArgNotNullOrEmpty(entityIds, "entityIds");
 
@@ -1573,10 +1681,24 @@ public class ConditionFactory {
         return new In(propName, values);
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param subQuery 
+     * @return 
+     */
     public static InSubQuery in(final String propName, final SubQuery subQuery) {
         return new InSubQuery(propName, subQuery);
     }
 
+    /**
+     * 
+     *
+     * @param propNames 
+     * @param subQuery 
+     * @return 
+     */
     public static InSubQuery in(final Collection<String> propNames, final SubQuery subQuery) {
         return new InSubQuery(propNames, subQuery);
     }
@@ -1649,6 +1771,13 @@ public class ConditionFactory {
         return new NotInSubQuery(propName, subQuery);
     }
 
+    /**
+     * 
+     *
+     * @param propNames 
+     * @param subQuery 
+     * @return 
+     */
     public static NotInSubQuery notIn(final Collection<String> propNames, final SubQuery subQuery) {
         return new NotInSubQuery(propNames, subQuery);
     }
@@ -1825,6 +1954,11 @@ public class ConditionFactory {
         return new Limit(expr);
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public static Criteria criteria() {
         return new Criteria();
     }
@@ -1845,10 +1979,22 @@ public class ConditionFactory {
             // singleton for utility class.
         }
 
+        /**
+         * 
+         *
+         * @param condition 
+         * @return 
+         */
         public static Criteria where(final Condition condition) {
             return CF.criteria().where(condition);
         }
 
+        /**
+         * 
+         *
+         * @param condition 
+         * @return 
+         */
         public static Criteria where(final String condition) {
             return CF.criteria().where(condition);
         }
@@ -2013,6 +2159,12 @@ public class ConditionFactory {
             return CF.criteria().limit(offset, count);
         }
 
+        /**
+         * 
+         *
+         * @param expr 
+         * @return 
+         */
         public static Criteria limit(final String expr) {
             return CF.criteria().limit(expr);
         }

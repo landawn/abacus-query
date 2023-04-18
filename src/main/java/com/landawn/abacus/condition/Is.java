@@ -25,6 +25,12 @@ public class Is extends Binary {
     Is() {
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param propValue 
+     */
     public Is(String propName, Object propValue) {
         super(propName, Operator.IS, propValue);
     }

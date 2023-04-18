@@ -39,6 +39,11 @@ public class Join extends AbstractCondition {
     Join() {
     }
 
+    /**
+     * 
+     *
+     * @param joinEntity 
+     */
     public Join(String joinEntity) {
         this(Operator.JOIN, joinEntity);
     }
@@ -47,6 +52,12 @@ public class Join extends AbstractCondition {
         this(operator, joinEntity, null);
     }
 
+    /**
+     * 
+     *
+     * @param joinEntity 
+     * @param condition 
+     */
     public Join(String joinEntity, Condition condition) {
         this(Operator.JOIN, joinEntity, condition);
     }
@@ -55,6 +66,12 @@ public class Join extends AbstractCondition {
         this(operator, Array.asList(joinEntity), condition);
     }
 
+    /**
+     * 
+     *
+     * @param joinEntities 
+     * @param condition 
+     */
     public Join(Collection<String> joinEntities, Condition condition) {
         this(Operator.JOIN, joinEntities, condition);
     }
@@ -138,6 +155,11 @@ public class Join extends AbstractCondition {
                 + ((condition == null) ? N.EMPTY_STRING : (_SPACE + getCondition().toString(namingPolicy)));
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;

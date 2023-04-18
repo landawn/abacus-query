@@ -43,6 +43,12 @@ public class Junction extends AbstractCondition {
     Junction() {
     }
 
+    /**
+     * 
+     *
+     * @param operator 
+     * @param conditions 
+     */
     @SafeVarargs
     public Junction(Operator operator, Condition... conditions) {
         super(operator);
@@ -50,6 +56,12 @@ public class Junction extends AbstractCondition {
         add(conditions);
     }
 
+    /**
+     * 
+     *
+     * @param operator 
+     * @param conditions 
+     */
     public Junction(Operator operator, Collection<? extends Condition> conditions) {
         super(operator);
         conditionList = new ArrayList<>();
@@ -208,6 +220,11 @@ public class Junction extends AbstractCondition {
         }
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;

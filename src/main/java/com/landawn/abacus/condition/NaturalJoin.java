@@ -27,14 +27,31 @@ public class NaturalJoin extends Join {
     NaturalJoin() {
     }
 
+    /**
+     * 
+     *
+     * @param joinEntity 
+     */
     public NaturalJoin(String joinEntity) {
         super(Operator.NATURAL_JOIN, joinEntity);
     }
 
+    /**
+     * 
+     *
+     * @param joinEntity 
+     * @param condition 
+     */
     public NaturalJoin(String joinEntity, Condition condition) {
         super(Operator.NATURAL_JOIN, joinEntity, condition);
     }
 
+    /**
+     * 
+     *
+     * @param joinEntities 
+     * @param condition 
+     */
     public NaturalJoin(Collection<String> joinEntities, Condition condition) {
         super(Operator.NATURAL_JOIN, joinEntities, condition);
     }

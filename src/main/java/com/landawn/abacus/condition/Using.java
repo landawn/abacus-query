@@ -34,11 +34,21 @@ public class Using extends Cell {
     Using() {
     }
 
+    /**
+     * 
+     *
+     * @param columnNames 
+     */
     @SafeVarargs
     public Using(String... columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
     }
 
+    /**
+     * 
+     *
+     * @param columnNames 
+     */
     public Using(Collection<String> columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
     }

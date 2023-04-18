@@ -25,6 +25,12 @@ public class GreaterEqual extends Binary {
     GreaterEqual() {
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param propValue 
+     */
     public GreaterEqual(String propName, Object propValue) {
         super(propName, Operator.GREATER_EQUAL, propValue);
     }

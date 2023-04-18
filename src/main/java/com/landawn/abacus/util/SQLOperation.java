@@ -133,6 +133,11 @@ public enum SQLOperation {
         return name;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return name;

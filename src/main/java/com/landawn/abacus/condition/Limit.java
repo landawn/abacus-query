@@ -48,18 +48,34 @@ public class Limit extends AbstractCondition {
         this(0, count);
     }
 
+    /**
+     * 
+     *
+     * @param offset 
+     * @param count 
+     */
     public Limit(final int offset, final int count) {
         super(Operator.LIMIT);
         this.count = count;
         this.offset = offset;
     }
 
+    /**
+     * 
+     *
+     * @param expr 
+     */
     public Limit(final String expr) {
         this(0, Integer.MAX_VALUE);
 
         this.expr = expr;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public String getExpr() {
         return expr;
     }
@@ -102,9 +118,11 @@ public class Limit extends AbstractCondition {
     }
 
     /**
+     * 
      *
-     * @param condition
-     * @return
+     * @param condition 
+     * @return 
+     * @throws UnsupportedOperationException 
      */
     @Override
     public And and(Condition condition) throws UnsupportedOperationException {
@@ -112,15 +130,23 @@ public class Limit extends AbstractCondition {
     }
 
     /**
+     * 
      *
-     * @param condition
-     * @return
+     * @param condition 
+     * @return 
+     * @throws UnsupportedOperationException 
      */
     @Override
     public Or or(Condition condition) throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * 
+     *
+     * @return 
+     * @throws UnsupportedOperationException 
+     */
     @Override
     public Not not() throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
@@ -140,6 +166,11 @@ public class Limit extends AbstractCondition {
         }
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         if (N.notNullOrEmpty(expr)) {

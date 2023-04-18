@@ -25,6 +25,11 @@ public class IsNotNull extends IsNot {
     IsNotNull() {
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     */
     public IsNotNull(String propName) {
         super(propName, IsNull.NULL);
     }

@@ -25,6 +25,11 @@ public class Exists extends Cell {
     Exists() {
     }
 
+    /**
+     * 
+     *
+     * @param condition 
+     */
     public Exists(SubQuery condition) {
         super(Operator.EXISTS, condition);
     }

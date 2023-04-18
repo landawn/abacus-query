@@ -39,6 +39,12 @@ public class NotIn extends AbstractCondition {
         propName = null;
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param values 
+     */
     public NotIn(String propName, Collection<?> values) {
         super(Operator.NOT_IN);
 
@@ -128,6 +134,11 @@ public class NotIn extends AbstractCondition {
         }
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;

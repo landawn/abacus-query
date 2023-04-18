@@ -71,6 +71,9 @@ public final class SQLMapper {
 
     private final Map<String, ImmutableMap<String, String>> attrsMap = new HashMap<>();
 
+    /**
+     * 
+     */
     public SQLMapper() {
         // empty constructor
     }
@@ -118,6 +121,11 @@ public final class SQLMapper {
         return sqlMapper;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public Set<String> keySet() {
         return sqlMap.keySet();
     }
@@ -202,6 +210,11 @@ public final class SQLMapper {
         sqlMap.remove(id);
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public SQLMapper copy() {
         final SQLMapper copy = new SQLMapper();
 
@@ -252,10 +265,20 @@ public final class SQLMapper {
         }
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public boolean isEmpty() {
         return sqlMap.isEmpty();
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         return sqlMap.hashCode();
@@ -271,6 +294,11 @@ public final class SQLMapper {
         return this == obj || (obj instanceof SQLMapper && N.equals(((SQLMapper) obj).sqlMap, sqlMap));
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return sqlMap.toString();

@@ -33,6 +33,12 @@ public class Cell extends AbstractCondition {
     Cell() {
     }
 
+    /**
+     * 
+     *
+     * @param operator 
+     * @param condition 
+     */
     public Cell(Operator operator, Condition condition) {
         super(operator);
         this.condition = condition;
@@ -106,6 +112,11 @@ public class Cell extends AbstractCondition {
         return getOperator().toString() + ((condition == null) ? N.EMPTY_STRING : WD._SPACE + condition.toString(namingPolicy));
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;

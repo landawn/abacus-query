@@ -39,6 +39,13 @@ public class Between extends AbstractCondition {
         propName = null;
     }
 
+    /**
+     * 
+     *
+     * @param propName 
+     * @param minValue 
+     * @param maxValue 
+     */
     public Between(String propName, Object minValue, Object maxValue) {
         super(Operator.BETWEEN);
 
@@ -179,6 +186,11 @@ public class Between extends AbstractCondition {
         }
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;

@@ -30,9 +30,11 @@ public abstract class Clause extends Cell {
     }
 
     /**
+     * 
      *
-     * @param condition
-     * @return
+     * @param condition 
+     * @return 
+     * @throws UnsupportedOperationException 
      */
     @Override
     public And and(Condition condition) throws UnsupportedOperationException {
@@ -40,15 +42,23 @@ public abstract class Clause extends Cell {
     }
 
     /**
+     * 
      *
-     * @param condition
-     * @return
+     * @param condition 
+     * @return 
+     * @throws UnsupportedOperationException 
      */
     @Override
     public Or or(Condition condition) throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * 
+     *
+     * @return 
+     * @throws UnsupportedOperationException 
+     */
     @Override
     public Not not() throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
