@@ -1843,10 +1843,10 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param n 
-     * @return 
+     *
+     * @param n
+     * @return
      */
     public SQLBuilder fetchNextNRowsOnly(final int n) {
         _sb.append(" FETCH NEXT ").append(n).append(" ROWS ONLY");
@@ -1855,10 +1855,10 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param n 
-     * @return 
+     *
+     * @param n
+     * @return
      */
     public SQLBuilder fetchFirstNRowsOnly(final int n) {
         _sb.append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
@@ -1969,10 +1969,10 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param expr 
-     * @return 
+     *
+     * @param expr
+     * @return
      */
     public SQLBuilder append(final String expr) {
         _sb.append(expr);
@@ -1981,11 +1981,11 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param b 
-     * @param cond 
-     * @return 
+     *
+     * @param b
+     * @param cond
+     * @return
      */
     public SQLBuilder appendIf(final boolean b, final Condition cond) {
         if (b) {
@@ -1996,11 +1996,11 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param b 
-     * @param expr 
-     * @return 
+     *
+     * @param b
+     * @param expr
+     * @return
      */
     public SQLBuilder appendIf(final boolean b, final String expr) {
         if (b) {
@@ -2011,11 +2011,11 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param b 
-     * @param append 
-     * @return 
+     *
+     * @param b
+     * @param append
+     * @return
      */
     @Beta
     public SQLBuilder appendIf(final boolean b, final java.util.function.Consumer<SQLBuilder> append) {
@@ -2027,12 +2027,12 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param b 
-     * @param condToAppendForTrue 
-     * @param condToAppendForFalse 
-     * @return 
+     *
+     * @param b
+     * @param condToAppendForTrue
+     * @param condToAppendForFalse
+     * @return
      */
     @Beta
     public SQLBuilder appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
@@ -2046,12 +2046,12 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param b 
-     * @param exprToAppendForTrue 
-     * @param exprToAppendForFalse 
-     * @return 
+     *
+     * @param b
+     * @param exprToAppendForTrue
+     * @param exprToAppendForFalse
+     * @return
      */
     @Beta
     public SQLBuilder appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse) {
@@ -2395,9 +2395,9 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public SQLBuilder forUpdate() {
         _sb.append(_SPACE_FOR_UPDATE);
@@ -2680,9 +2680,9 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public List<Object> parameters() {
         return _parameters;
@@ -2700,13 +2700,13 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param <T> 
-     * @param <E> 
-     * @param func 
-     * @return 
-     * @throws E 
+     *
+     * @param <T>
+     * @param <E>
+     * @param func
+     * @return
+     * @throws E
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> func) throws E {
@@ -2714,13 +2714,13 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param <T> 
-     * @param <E> 
-     * @param func 
-     * @return 
-     * @throws E 
+     *
+     * @param <T>
+     * @param <E>
+     * @param func
+     * @return
+     * @throws E
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> func) throws E {
@@ -2730,11 +2730,11 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param <E> 
-     * @param consumer 
-     * @throws E 
+     *
+     * @param <E>
+     * @param consumer
+     * @throws E
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E {
@@ -2742,11 +2742,11 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
      *
-     * @param <E> 
-     * @param consumer 
-     * @throws E 
+     *
+     * @param <E>
+     * @param consumer
+     * @throws E
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E {
@@ -3527,16 +3527,16 @@ public abstract class SQLBuilder {
     //    }
 
     /**
-     * 
+     *
      */
     public void println() {
         N.println(sql());
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {
@@ -3665,26 +3665,6 @@ public abstract class SQLBuilder {
 
         static SCSB createInstance() {
             return new SCSB();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -4101,15 +4081,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -4117,17 +4097,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -4139,10 +4119,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -4157,15 +4137,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -4173,17 +4153,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -4196,10 +4176,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -4211,23 +4191,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -4256,26 +4256,6 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
-        }
-
-        /**
          *
          * @param expr
          * @return
@@ -4689,15 +4669,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -4705,17 +4685,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -4727,10 +4707,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -4745,15 +4725,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -4761,17 +4741,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -4784,10 +4764,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -4799,23 +4779,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -4844,28 +4844,6 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         * @see ConditionFactory
-         * @see ConditionFactory.CF
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
-        }
-
-        /**
          *
          * @param expr
          * @return
@@ -5279,15 +5257,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -5295,17 +5273,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -5317,10 +5295,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -5335,15 +5313,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -5351,17 +5329,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -5374,10 +5352,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -5389,23 +5367,45 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         * @see ConditionFactory
+         * @see ConditionFactory.CF
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -5431,26 +5431,6 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
-        }
-
-        /**
          *
          * @param expr
          * @return
@@ -5864,15 +5844,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -5880,17 +5860,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -5902,10 +5882,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -5920,15 +5900,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -5936,17 +5916,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -5959,10 +5939,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -5974,23 +5954,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -6016,26 +6016,6 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
-        }
-
-        /**
          *
          * @param expr
          * @return
@@ -6449,15 +6429,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -6465,17 +6445,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -6487,10 +6467,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -6505,15 +6485,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -6521,17 +6501,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -6544,10 +6524,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -6559,23 +6539,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -6598,26 +6598,6 @@ public abstract class SQLBuilder {
 
         static PAC createInstance() {
             return new PAC();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -7034,15 +7014,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -7050,17 +7030,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -7072,10 +7052,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -7090,15 +7070,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -7106,17 +7086,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -7129,10 +7109,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -7144,23 +7124,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -7183,26 +7183,6 @@ public abstract class SQLBuilder {
 
         static PLC createInstance() {
             return new PLC();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -7619,15 +7599,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -7635,17 +7615,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -7657,10 +7637,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -7675,15 +7655,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -7691,17 +7671,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -7714,10 +7694,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -7729,23 +7709,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -7768,26 +7768,6 @@ public abstract class SQLBuilder {
 
         static NSB createInstance() {
             return new NSB();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -8204,15 +8184,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -8220,17 +8200,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -8242,10 +8222,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -8260,15 +8240,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -8276,17 +8256,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -8299,10 +8279,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -8314,24 +8294,45 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
         }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
+        }
+
     }
 
     /**
@@ -8353,26 +8354,6 @@ public abstract class SQLBuilder {
 
         static NSC createInstance() {
             return new NSC();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -8789,15 +8770,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -8805,17 +8786,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -8827,10 +8808,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -8845,15 +8826,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -8861,17 +8842,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -8884,10 +8865,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -8899,23 +8880,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -8938,26 +8939,6 @@ public abstract class SQLBuilder {
 
         static NAC createInstance() {
             return new NAC();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -9374,15 +9355,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -9390,17 +9371,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -9412,10 +9393,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -9430,15 +9411,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -9446,17 +9427,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -9469,10 +9450,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -9484,23 +9465,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -9523,26 +9524,6 @@ public abstract class SQLBuilder {
 
         static NLC createInstance() {
             return new NLC();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -9959,15 +9940,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -9975,17 +9956,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -9997,10 +9978,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -10015,15 +9996,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -10031,17 +10012,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -10054,10 +10035,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -10069,23 +10050,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -10113,26 +10114,6 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
-        }
-
-        /**
          *
          * @param expr
          * @return
@@ -10546,15 +10527,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -10562,17 +10543,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -10584,10 +10565,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -10602,15 +10583,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -10618,17 +10599,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -10641,10 +10622,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -10656,23 +10637,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -10697,26 +10698,6 @@ public abstract class SQLBuilder {
 
         static MSC createInstance() {
             return new MSC();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -11133,15 +11114,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -11149,17 +11130,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -11171,10 +11152,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -11189,15 +11170,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -11205,17 +11186,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -11228,10 +11209,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -11243,23 +11224,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -11284,26 +11285,6 @@ public abstract class SQLBuilder {
 
         static MAC createInstance() {
             return new MAC();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -11720,15 +11701,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -11736,17 +11717,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -11758,10 +11739,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -11776,15 +11757,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -11792,17 +11773,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -11815,10 +11796,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -11830,23 +11811,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -11871,26 +11872,6 @@ public abstract class SQLBuilder {
 
         static MLC createInstance() {
             return new MLC();
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
         }
 
         /**
@@ -12307,15 +12288,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -12323,17 +12304,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -12345,10 +12326,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -12363,15 +12344,15 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -12379,17 +12360,17 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param entityClassA 
-         * @param tableAliasA 
-         * @param classAliasA 
-         * @param excludedPropNamesA 
-         * @param entityClassB 
-         * @param tableAliasB 
-         * @param classAliasB 
-         * @param excludedPropNamesB 
-         * @return 
+         *
+         * @param entityClassA
+         * @param tableAliasA
+         * @param classAliasA
+         * @param excludedPropNamesA
+         * @param entityClassB
+         * @param tableAliasB
+         * @param classAliasB
+         * @param excludedPropNamesB
+         * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -12402,10 +12383,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param multiSelects 
-         * @return 
+         *
+         * @param multiSelects
+         * @return
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -12417,23 +12398,43 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param tableName 
-         * @return 
+         *
+         * @param tableName
+         * @return
          */
         public static SQLBuilder count(final String tableName) {
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
         /**
-         * 
          *
-         * @param entityClass 
-         * @return 
+         *
+         * @param entityClass
+         * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * To generate {@code sql} part for the specified {@code cond} only.
+         *
+         * @param cond
+         * @param entityClass
+         * @return
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
         }
     }
 
@@ -12447,9 +12448,9 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @return 
+         *
+         * @return
          */
         @Override
         public int hashCode() {
@@ -12457,10 +12458,10 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param obj 
-         * @return 
+         *
+         * @param obj
+         * @return
          */
         @Override
         public boolean equals(final Object obj) {
@@ -12478,9 +12479,9 @@ public abstract class SQLBuilder {
         }
 
         /**
-         * 
          *
-         * @return 
+         *
+         * @return
          */
         @Override
         public String toString() {
@@ -12495,9 +12496,9 @@ public abstract class SQLBuilder {
             .withInitial(() -> defaultHandlerForNamedParameter);
 
     /**
-     * 
      *
-     * @param handlerForNamedParameter 
+     *
+     * @param handlerForNamedParameter
      */
     public static void setHandlerForNamedParameter(final BiConsumer<StringBuilder, String> handlerForNamedParameter) {
         N.checkArgNotNull(handlerForNamedParameter, "handlerForNamedParameter");
@@ -12505,7 +12506,7 @@ public abstract class SQLBuilder {
     }
 
     /**
-     * 
+     *
      */
     public static void resetHandlerForNamedParameter() {
         handlerForNamedParameter_TL.set(defaultHandlerForNamedParameter);
