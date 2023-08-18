@@ -13,6 +13,9 @@
  */
 package com.landawn.abacus.util;
 
+import java.util.Collection;
+import java.util.Map;
+
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 
@@ -39,8 +42,6 @@ public class DynamicSQLBuilder {
 
     private OrderBy orderBy;
 
-    private String limitCond;
-
     private StringBuilder moreParts = null;
 
     private DynamicSQLBuilder() {
@@ -48,36 +49,36 @@ public class DynamicSQLBuilder {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public static DynamicSQLBuilder create() {
         return new DynamicSQLBuilder();
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public Select select() {
         return select;
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public From from() {
         return from;
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public Where where() {
         if (where == null) {
@@ -88,9 +89,9 @@ public class DynamicSQLBuilder {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public GroupBy groupBy() {
         if (groupBy == null) {
@@ -101,9 +102,9 @@ public class DynamicSQLBuilder {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public Having having() {
         if (having == null) {
@@ -114,9 +115,9 @@ public class DynamicSQLBuilder {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public OrderBy orderBy() {
         if (orderBy == null) {
@@ -132,7 +133,7 @@ public class DynamicSQLBuilder {
      * @return
      */
     public DynamicSQLBuilder limit(String limitCond) {
-        this.limitCond = limitCond;
+        getStringBuilderForMoreParts().append(" ").append(limitCond);
 
         return this;
     }
@@ -143,7 +144,9 @@ public class DynamicSQLBuilder {
      * @return
      */
     public DynamicSQLBuilder limit(final int count) {
-        return limit("LIMIT " + count);
+        getStringBuilderForMoreParts().append(" LIMIT ").append(count);
+
+        return this;
     }
 
     /**
@@ -153,7 +156,9 @@ public class DynamicSQLBuilder {
      * @return
      */
     public DynamicSQLBuilder limit(final int offset, final int count) {
-        return limit("LIMIT " + offset + ", " + count);
+        getStringBuilderForMoreParts().append(" LIMIT ").append(offset).append(", ").append(count);
+
+        return this;
     }
 
     /**
@@ -163,7 +168,52 @@ public class DynamicSQLBuilder {
      * @return
      */
     public DynamicSQLBuilder limitByRowNum(int count) {
-        return limit("ROWNUM < " + count);
+        getStringBuilderForMoreParts().append(" ROWNUM < ").append(count);
+
+        return this;
+    }
+
+    /**
+     *
+     * @param offset
+     * @return
+     */
+    public DynamicSQLBuilder offsetRows(final int offset) {
+        getStringBuilderForMoreParts().append(" OFFSET ").append(offset).append(" ROWS");
+
+        return this;
+    }
+
+    /**
+     *
+     *
+     * @param n
+     * @return
+     */
+    public DynamicSQLBuilder fetchNextNRowsOnly(final int n) {
+        getStringBuilderForMoreParts().append(" FETCH NEXT ").append(n).append(" ROWS ONLY");
+
+        return this;
+    }
+
+    /**
+     *
+     *
+     * @param n
+     * @return
+     */
+    public DynamicSQLBuilder fetchFirstNRowsOnly(final int n) {
+        getStringBuilderForMoreParts().append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
+
+        return this;
+    }
+
+    private StringBuilder getStringBuilderForMoreParts() {
+        if (moreParts == null) {
+            moreParts = Objectory.createStringBuilder();
+        }
+
+        return moreParts;
     }
 
     /**
@@ -172,11 +222,7 @@ public class DynamicSQLBuilder {
      * @return
      */
     public DynamicSQLBuilder union(final String query) {
-        if (moreParts == null) {
-            moreParts = Objectory.createStringBuilder();
-        }
-
-        moreParts.append(" UNION ").append(query);
+        getStringBuilderForMoreParts().append(" UNION ").append(query);
 
         return this;
     }
@@ -187,11 +233,7 @@ public class DynamicSQLBuilder {
      * @return
      */
     public DynamicSQLBuilder unionAll(final String query) {
-        if (moreParts == null) {
-            moreParts = Objectory.createStringBuilder();
-        }
-
-        moreParts.append(" UNION ALL ").append(query);
+        getStringBuilderForMoreParts().append(" UNION ALL ").append(query);
 
         return this;
     }
@@ -202,11 +244,7 @@ public class DynamicSQLBuilder {
      * @return
      */
     public DynamicSQLBuilder intersect(final String query) {
-        if (moreParts == null) {
-            moreParts = Objectory.createStringBuilder();
-        }
-
-        moreParts.append(" INTERSECT ").append(query);
+        getStringBuilderForMoreParts().append(" INTERSECT ").append(query);
 
         return this;
     }
@@ -217,11 +255,7 @@ public class DynamicSQLBuilder {
      * @return
      */
     public DynamicSQLBuilder except(final String query) {
-        if (moreParts == null) {
-            moreParts = Objectory.createStringBuilder();
-        }
-
-        moreParts.append(" EXCEPT ").append(query);
+        getStringBuilderForMoreParts().append(" EXCEPT ").append(query);
 
         return this;
     }
@@ -232,11 +266,7 @@ public class DynamicSQLBuilder {
      * @return
      */
     public DynamicSQLBuilder minus(final String query) {
-        if (moreParts == null) {
-            moreParts = Objectory.createStringBuilder();
-        }
-
-        moreParts.append(" MINUS ").append(query);
+        getStringBuilderForMoreParts().append(" MINUS ").append(query);
 
         return this;
     }
@@ -275,9 +305,9 @@ public class DynamicSQLBuilder {
     //    }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public String build() {
         select.sb.append(" ").append(from.sb);
@@ -304,10 +334,6 @@ public class DynamicSQLBuilder {
             select.sb.append(" ").append(orderBy.sb);
             Objectory.recycle(orderBy.sb);
             orderBy = null;
-        }
-
-        if (N.notNullOrEmpty(limitCond)) {
-            select.sb.append(" ").append(limitCond);
         }
 
         if (moreParts != null) {
@@ -382,11 +408,45 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param str 
-         * @return 
+         * @param columns
+         * @return
+         */
+        public Select append(Collection<String> columns) {
+            if (sb.length() > 0) {
+                sb.append(", ");
+            } else {
+                sb.append("SELECT ");
+            }
+
+            sb.append(Strings.join(columns, ", "));
+
+            return this;
+        }
+
+        /**
+         *
+         * @param column
+         * @return
+         */
+        public Select append(final Map<String, String> columnsAndAliasMap) {
+            if (sb.length() > 0) {
+                sb.append(", ");
+            } else {
+                sb.append("SELECT ");
+            }
+
+            sb.append(Strings.joinEntries(columnsAndAliasMap, " AS ", ", "));
+
+            return this;
+        }
+
+        /**
+         *
+         *
+         * @param b
+         * @param str
+         * @return
          */
         public Select appendIf(final boolean b, final String str) {
             if (b) {
@@ -403,12 +463,12 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param strToAppendForTrue 
-         * @param strToAppendForFalse 
-         * @return 
+         *
+         * @param b
+         * @param strToAppendForTrue
+         * @param strToAppendForFalse
+         * @return
          */
         public Select appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
@@ -540,11 +600,11 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param str 
-         * @return 
+         *
+         * @param b
+         * @param str
+         * @return
          */
         public From appendIf(final boolean b, final String str) {
             if (b) {
@@ -561,12 +621,12 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param strToAppendForTrue 
-         * @param strToAppendForFalse 
-         * @return 
+         *
+         * @param b
+         * @param strToAppendForTrue
+         * @param strToAppendForFalse
+         * @return
          */
         public From appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
@@ -688,11 +748,11 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param str 
-         * @return 
+         *
+         * @param b
+         * @param str
+         * @return
          */
         public Where appendIf(final boolean b, final String str) {
             if (b) {
@@ -709,12 +769,12 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param strToAppendForTrue 
-         * @param strToAppendForFalse 
-         * @return 
+         *
+         * @param b
+         * @param strToAppendForTrue
+         * @param strToAppendForFalse
+         * @return
          */
         public Where appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
@@ -768,11 +828,28 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param str 
-         * @return 
+         * @param columns
+         * @return
+         */
+        public GroupBy append(Collection<String> columns) {
+            if (sb.length() > 0) {
+                sb.append(", ");
+            } else {
+                sb.append("GROUP BY ");
+            }
+
+            sb.append(Strings.join(columns, ", "));
+
+            return this;
+        }
+
+        /**
+         *
+         *
+         * @param b
+         * @param str
+         * @return
          */
         public GroupBy appendIf(final boolean b, final String str) {
             if (b) {
@@ -789,12 +866,12 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param strToAppendForTrue 
-         * @param strToAppendForFalse 
-         * @return 
+         *
+         * @param b
+         * @param strToAppendForTrue
+         * @param strToAppendForFalse
+         * @return
          */
         public GroupBy appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
@@ -870,11 +947,11 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param str 
-         * @return 
+         *
+         * @param b
+         * @param str
+         * @return
          */
         public Having appendIf(final boolean b, final String str) {
             if (b) {
@@ -891,12 +968,12 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param strToAppendForTrue 
-         * @param strToAppendForFalse 
-         * @return 
+         *
+         * @param b
+         * @param strToAppendForTrue
+         * @param strToAppendForFalse
+         * @return
          */
         public Having appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
@@ -950,11 +1027,28 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param str 
-         * @return 
+         * @param columns
+         * @return
+         */
+        public OrderBy append(Collection<String> columns) {
+            if (sb.length() > 0) {
+                sb.append(", ");
+            } else {
+                sb.append("ORDER BY ");
+            }
+
+            sb.append(Strings.join(columns, ", "));
+
+            return this;
+        }
+
+        /**
+         *
+         *
+         * @param b
+         * @param str
+         * @return
          */
         public OrderBy appendIf(final boolean b, final String str) {
             if (b) {
@@ -971,12 +1065,12 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * 
          *
-         * @param b 
-         * @param strToAppendForTrue 
-         * @param strToAppendForFalse 
-         * @return 
+         *
+         * @param b
+         * @param strToAppendForTrue
+         * @param strToAppendForFalse
+         * @return
          */
         public OrderBy appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (sb.length() > 0) {
