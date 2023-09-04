@@ -36,7 +36,6 @@ import java.util.function.BiConsumer;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.Internal;
 import com.landawn.abacus.annotation.NonUpdatable;
-import com.landawn.abacus.annotation.NotColumn;
 import com.landawn.abacus.annotation.ReadOnly;
 import com.landawn.abacus.annotation.ReadOnlyId;
 import com.landawn.abacus.annotation.Table;
@@ -474,6 +473,9 @@ public abstract class SQLBuilder {
                 val[3] = N.newLinkedHashSet(entityPropNames);
                 val[4] = N.newLinkedHashSet(entityPropNames);
 
+                final Table tableAnno = entityClass.getAnnotation(Table.class);
+                final Set<String> columnFields = tableAnno == null ? N.emptySet() : N.asSet(tableAnno.columnFields());
+                final Set<String> nonColumnFields = tableAnno == null ? N.emptySet() : N.asSet(tableAnno.nonColumnFields());
                 final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
                 Class<?> subEntityClass = null;
                 Set<String> subEntityPropNameList = null;
@@ -503,7 +505,7 @@ public abstract class SQLBuilder {
                         nonUpdatablePropNames.add(propInfo.name);
                     }
 
-                    if (propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class)) {
+                    if (QueryUtil.isNotColumn(columnFields, nonColumnFields, propInfo)) {
                         nonUpdatableNonWritablePropNames.add(propInfo.name);
                         transientPropNames.add(propInfo.name);
                     }

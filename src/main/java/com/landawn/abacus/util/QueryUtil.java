@@ -26,6 +26,7 @@ import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.Immutable;
 import com.landawn.abacus.annotation.Internal;
 import com.landawn.abacus.annotation.NotColumn;
+import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
@@ -117,9 +118,9 @@ public final class QueryUtil {
     /**
      * Gets the prop column name map.
      *
-     * @param entityClass 
-     * @param namingPolicy 
-     * @return 
+     * @param entityClass
+     * @param namingPolicy
+     * @return
      */
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         if (entityClass == null || Map.class.isAssignableFrom(entityClass)) {
@@ -148,11 +149,14 @@ public final class QueryUtil {
             registeringClasses.add(entityClass);
         }
 
+        final Table tableAnno = entityClass.getAnnotation(Table.class);
+        final Set<String> columnFields = tableAnno == null ? N.emptySet() : N.asSet(tableAnno.columnFields());
+        final Set<String> nonColumnFields = tableAnno == null ? N.emptySet() : N.asSet(tableAnno.nonColumnFields());
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
         Map<String, String> propColumnNameMap = N.newHashMap(entityInfo.propInfoList.size() * 2);
 
         for (PropInfo propInfo : entityInfo.propInfoList) {
-            if (propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class)) {
+            if (isNotColumn(columnFields, nonColumnFields, propInfo)) {
                 continue;
             }
 
@@ -210,12 +214,12 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the insert prop names by class.
-     *
-     * @param entity
-     * @param excludedPropNames
-     * @return
-     */
+    * Gets the insert prop names by class.
+    *
+    * @param entity
+    * @param excludedPropNames
+    * @return
+    */
     @Internal
     public static Collection<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames) {
         final Class<?> entityClass = entity.getClass();
@@ -335,6 +339,12 @@ public final class QueryUtil {
         final ImmutableList<String> idPropNames = ParserUtil.getBeanInfo(targetClass).idPropNameList;
 
         return N.isNullOrEmpty(idPropNames) && fakeIdForEmpty ? fakeIds : idPropNames;
+    }
+
+    public static boolean isNotColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
+        return propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class)
+                || (N.notNullOrEmpty(columnFields) && !columnFields.contains(propInfo.name))
+                || (N.notNullOrEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
     }
 
     private static final ImmutableList<String> fakeIds = ImmutableList.of("not_defined_fake_id_in_abacus_" + N.uuid());
