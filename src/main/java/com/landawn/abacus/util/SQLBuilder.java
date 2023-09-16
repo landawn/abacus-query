@@ -2768,13 +2768,13 @@ public abstract class SQLBuilder {
      *
      * @param <R>
      * @param dataSource
-     * @param queryOrUpdate
+     * @param queryOrUpdateCall
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R execute(final javax.sql.DataSource dataSource, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdate)
+    public <R> R execute(final javax.sql.DataSource dataSource, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdateCall)
             throws SQLException {
         final SP sp = this.pair();
 
@@ -2785,7 +2785,7 @@ public abstract class SQLBuilder {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryOrUpdate.apply(preparedQuery);
+            return queryOrUpdateCall.apply(preparedQuery);
         }
     }
 
@@ -2793,13 +2793,14 @@ public abstract class SQLBuilder {
      *
      * @param <R>
      * @param dataSource
-     * @param queryOrUpdate
+     * @param queryOrUpdateCall
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R execute(final java.sql.Connection conn, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdate) throws SQLException {
+    public <R> R execute(final java.sql.Connection conn, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdateCall)
+            throws SQLException {
         final SP sp = this.pair();
 
         try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.sql) : JdbcUtil.prepareQuery(conn, sp.sql)) {
@@ -2808,7 +2809,7 @@ public abstract class SQLBuilder {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryOrUpdate.apply(preparedQuery);
+            return queryOrUpdateCall.apply(preparedQuery);
         }
     }
 
@@ -2817,7 +2818,7 @@ public abstract class SQLBuilder {
      * @param <R>
      * @param dataSource
      * @param stmtSetter
-     * @param queryOrUpdate
+     * @param queryOrUpdateCall
      * @return
      * @throws SQLException
      */
@@ -2825,7 +2826,7 @@ public abstract class SQLBuilder {
     @Beta
     public <R> R execute(final javax.sql.DataSource dataSource,
             final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter,
-            final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdate) throws SQLException {
+            final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdateCall) throws SQLException {
         final SP sp = this.pair();
 
         try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
@@ -2837,7 +2838,7 @@ public abstract class SQLBuilder {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryOrUpdate.apply(preparedQuery);
+            return queryOrUpdateCall.apply(preparedQuery);
         }
     }
 
@@ -2846,14 +2847,14 @@ public abstract class SQLBuilder {
      * @param <R>
      * @param conn
      * @param stmtSetter
-     * @param queryOrUpdate
+     * @param queryCall
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
     public <R> R execute(final java.sql.Connection conn, final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter,
-            final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdate) throws SQLException {
+            final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryCall) throws SQLException {
         final SP sp = this.pair();
 
         try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.sql) : JdbcUtil.prepareQuery(conn, sp.sql)) {
@@ -2864,7 +2865,7 @@ public abstract class SQLBuilder {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryOrUpdate.apply(preparedQuery);
+            return queryCall.apply(preparedQuery);
         }
     }
 
@@ -2872,14 +2873,14 @@ public abstract class SQLBuilder {
      *
      * @param <R>
      * @param dataSource
-     * @param queryOrUpdate
+     * @param queryCall
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R executeQueryForBigResult(final javax.sql.DataSource dataSource,
-            final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdate) throws SQLException {
+    public <R> R executeQueryForBigResult(final javax.sql.DataSource dataSource, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryCall)
+            throws SQLException {
         final SP sp = this.pair();
 
         try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.sql)
@@ -2889,7 +2890,7 @@ public abstract class SQLBuilder {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryOrUpdate.apply(preparedQuery);
+            return queryCall.apply(preparedQuery);
         }
     }
 
@@ -2897,13 +2898,13 @@ public abstract class SQLBuilder {
      *
      * @param <R>
      * @param dataSource
-     * @param queryOrUpdate
+     * @param queryOrUpdateCall
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R executeQueryForBigResult(final java.sql.Connection conn, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdate)
+    public <R> R executeQueryForBigResult(final java.sql.Connection conn, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdateCall)
             throws SQLException {
         final SP sp = this.pair();
 
@@ -2914,7 +2915,7 @@ public abstract class SQLBuilder {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryOrUpdate.apply(preparedQuery);
+            return queryOrUpdateCall.apply(preparedQuery);
         }
     }
 
