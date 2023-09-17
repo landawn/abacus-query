@@ -60,8 +60,6 @@ import com.landawn.abacus.condition.NotIn;
 import com.landawn.abacus.condition.NotInSubQuery;
 import com.landawn.abacus.condition.SubQuery;
 import com.landawn.abacus.condition.Where;
-import com.landawn.abacus.jdbc.AbstractPreparedQuery;
-import com.landawn.abacus.jdbc.JdbcUtil;
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.parser.ParserUtil;
@@ -2766,158 +2764,327 @@ public abstract class SQLBuilder {
 
     /**
      *
-     * @param <R>
+     * @param <Q>
      * @param dataSource
-     * @param queryOrUpdateCall
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R execute(final javax.sql.DataSource dataSource, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdateCall)
-            throws SQLException {
-        final SP sp = this.pair();
-
-        try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
-                : JdbcUtil.prepareQuery(dataSource, sp.sql)) {
-
-            if (N.notNullOrEmpty(sp.parameters)) {
-                preparedQuery.setParameters(sp.parameters);
-            }
-
-            return queryOrUpdateCall.apply(preparedQuery);
-        }
+    public <Q extends com.landawn.abacus.jdbc.AbstractPreparedQuery> Q toPreparedQuery(final javax.sql.DataSource dataSource) throws SQLException {
+        return toPreparedQuery(dataSource, null);
     }
 
     /**
      *
-     * @param <R>
-     * @param dataSource
-     * @param queryOrUpdateCall
+     * @param <Q>
+     * @param conn
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R execute(final java.sql.Connection conn, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdateCall)
-            throws SQLException {
-        final SP sp = this.pair();
-
-        try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.sql) : JdbcUtil.prepareQuery(conn, sp.sql)) {
-
-            if (N.notNullOrEmpty(sp.parameters)) {
-                preparedQuery.setParameters(sp.parameters);
-            }
-
-            return queryOrUpdateCall.apply(preparedQuery);
-        }
+    public <Q extends com.landawn.abacus.jdbc.AbstractPreparedQuery> Q toPreparedQuery(final java.sql.Connection conn) throws SQLException {
+        return toPreparedQuery(conn, null);
     }
 
     /**
      *
-     * @param <R>
+     * @param <Q>
      * @param dataSource
      * @param stmtSetter
-     * @param queryOrUpdateCall
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R execute(final javax.sql.DataSource dataSource,
-            final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter,
-            final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdateCall) throws SQLException {
+    public <Q extends com.landawn.abacus.jdbc.AbstractPreparedQuery> Q toPreparedQuery(final javax.sql.DataSource dataSource,
+            final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter) throws SQLException {
         final SP sp = this.pair();
 
-        try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
-                : JdbcUtil.prepareQuery(dataSource, sp.sql)) {
+        final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql()
+                ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
+                : com.landawn.abacus.jdbc.JdbcUtil.prepareQuery(dataSource, sp.sql);
 
-            preparedQuery.configStmt(stmtSetter);
+        boolean noException = false;
+
+        try {
+            if (stmtSetter != null) {
+                preparedQuery.configStmt(stmtSetter);
+            }
 
             if (N.notNullOrEmpty(sp.parameters)) {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryOrUpdateCall.apply(preparedQuery);
+            noException = true;
+        } finally {
+            if (!noException) {
+                preparedQuery.close();
+            }
         }
+
+        return (Q) preparedQuery;
     }
 
     /**
      *
-     * @param <R>
+     * @param <Q>
      * @param conn
      * @param stmtSetter
-     * @param queryCall
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R execute(final java.sql.Connection conn, final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter,
-            final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryCall) throws SQLException {
+    public <Q extends com.landawn.abacus.jdbc.AbstractPreparedQuery> Q toPreparedQuery(final java.sql.Connection conn,
+            final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter) throws SQLException {
         final SP sp = this.pair();
 
-        try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.sql) : JdbcUtil.prepareQuery(conn, sp.sql)) {
+        final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQuery(conn, sp.sql)
+                : com.landawn.abacus.jdbc.JdbcUtil.prepareQuery(conn, sp.sql);
 
-            preparedQuery.configStmt(stmtSetter);
+        boolean noException = false;
+
+        try {
+            if (stmtSetter != null) {
+                preparedQuery.configStmt(stmtSetter);
+            }
 
             if (N.notNullOrEmpty(sp.parameters)) {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryCall.apply(preparedQuery);
+            noException = true;
+        } finally {
+            if (!noException) {
+                preparedQuery.close();
+            }
         }
+
+        return (Q) preparedQuery;
     }
 
     /**
      *
-     * @param <R>
+     * @param <Q>
      * @param dataSource
-     * @param queryCall
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R executeQueryForBigResult(final javax.sql.DataSource dataSource, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryCall)
-            throws SQLException {
+    public <Q extends com.landawn.abacus.jdbc.AbstractPreparedQuery> Q toPreparedQueryForBigResult(final javax.sql.DataSource dataSource) throws SQLException {
         final SP sp = this.pair();
 
-        try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.sql)
-                : JdbcUtil.prepareQueryForBigResult(dataSource, sp.sql)) {
+        final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql()
+                ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.sql)
+                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForBigResult(dataSource, sp.sql);
 
+        boolean noException = false;
+
+        try {
             if (N.notNullOrEmpty(sp.parameters)) {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryCall.apply(preparedQuery);
+            noException = true;
+        } finally {
+            if (!noException) {
+                preparedQuery.close();
+            }
         }
+
+        return (Q) preparedQuery;
     }
 
     /**
      *
-     * @param <R>
-     * @param dataSource
-     * @param queryOrUpdateCall
+     * @param <Q>
+     * @param conn
      * @return
      * @throws SQLException
      */
     @SuppressWarnings("rawtypes")
     @Beta
-    public <R> R executeQueryForBigResult(final java.sql.Connection conn, final Throwables.Function<AbstractPreparedQuery, R, SQLException> queryOrUpdateCall)
-            throws SQLException {
+    public <Q extends com.landawn.abacus.jdbc.AbstractPreparedQuery> Q toPreparedQueryForBigResult(final java.sql.Connection conn) throws SQLException {
         final SP sp = this.pair();
 
-        try (final AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(conn, sp.sql)
-                : JdbcUtil.prepareQueryForBigResult(conn, sp.sql)) {
+        final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql()
+                ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForBigResult(conn, sp.sql)
+                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForBigResult(conn, sp.sql);
 
+        boolean noException = false;
+
+        try {
             if (N.notNullOrEmpty(sp.parameters)) {
                 preparedQuery.setParameters(sp.parameters);
             }
 
-            return queryOrUpdateCall.apply(preparedQuery);
+            noException = true;
+        } finally {
+            if (!noException) {
+                preparedQuery.close();
+            }
         }
+
+        return (Q) preparedQuery;
     }
+
+    //    /**
+    //     *
+    //     * @param <R>
+    //     * @param dataSource
+    //     * @param queryOrUpdateCall
+    //     * @return
+    //     * @throws SQLException
+    //     */
+    //    @SuppressWarnings("rawtypes")
+    //    @Beta
+    //    public <R> R execute(final javax.sql.DataSource dataSource, final Throwables.Function<com.landawn.abacus.jdbc.AbstractPreparedQuery, R, SQLException> queryOrUpdateCall)
+    //            throws SQLException {
+    //        final SP sp = this.pair();
+    //
+    //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
+    //                : JdbcUtil.prepareQuery(dataSource, sp.sql)) {
+    //
+    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //                preparedQuery.setParameters(sp.parameters);
+    //            }
+    //
+    //            return queryOrUpdateCall.apply(preparedQuery);
+    //        }
+    //    }
+    //
+    //    /**
+    //     *
+    //     * @param <R>
+    //     * @param dataSource
+    //     * @param queryOrUpdateCall
+    //     * @return
+    //     * @throws SQLException
+    //     */
+    //    @SuppressWarnings("rawtypes")
+    //    @Beta
+    //    public <R> R execute(final java.sql.Connection conn, final Throwables.Function<com.landawn.abacus.jdbc.AbstractPreparedQuery, R, SQLException> queryOrUpdateCall)
+    //            throws SQLException {
+    //        final SP sp = this.pair();
+    //
+    //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.sql) : JdbcUtil.prepareQuery(conn, sp.sql)) {
+    //
+    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //                preparedQuery.setParameters(sp.parameters);
+    //            }
+    //
+    //            return queryOrUpdateCall.apply(preparedQuery);
+    //        }
+    //    }
+    //
+    //    /**
+    //     *
+    //     * @param <R>
+    //     * @param dataSource
+    //     * @param stmtSetter
+    //     * @param queryOrUpdateCall
+    //     * @return
+    //     * @throws SQLException
+    //     */
+    //    @SuppressWarnings("rawtypes")
+    //    @Beta
+    //    public <R> R execute(final javax.sql.DataSource dataSource,
+    //            final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter,
+    //            final Throwables.Function<com.landawn.abacus.jdbc.AbstractPreparedQuery, R, SQLException> queryOrUpdateCall) throws SQLException {
+    //        final SP sp = this.pair();
+    //
+    //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
+    //                : JdbcUtil.prepareQuery(dataSource, sp.sql)) {
+    //
+    //            preparedQuery.configStmt(stmtSetter);
+    //
+    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //                preparedQuery.setParameters(sp.parameters);
+    //            }
+    //
+    //            return queryOrUpdateCall.apply(preparedQuery);
+    //        }
+    //    }
+    //
+    //    /**
+    //     *
+    //     * @param <R>
+    //     * @param conn
+    //     * @param stmtSetter
+    //     * @param queryCall
+    //     * @return
+    //     * @throws SQLException
+    //     */
+    //    @SuppressWarnings("rawtypes")
+    //    @Beta
+    //    public <R> R execute(final java.sql.Connection conn, final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter,
+    //            final Throwables.Function<com.landawn.abacus.jdbc.AbstractPreparedQuery, R, SQLException> queryCall) throws SQLException {
+    //        final SP sp = this.pair();
+    //
+    //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.sql) : JdbcUtil.prepareQuery(conn, sp.sql)) {
+    //
+    //            preparedQuery.configStmt(stmtSetter);
+    //
+    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //                preparedQuery.setParameters(sp.parameters);
+    //            }
+    //
+    //            return queryCall.apply(preparedQuery);
+    //        }
+    //    }
+    //
+    //    /**
+    //     *
+    //     * @param <R>
+    //     * @param dataSource
+    //     * @param queryCall
+    //     * @return
+    //     * @throws SQLException
+    //     */
+    //    @SuppressWarnings("rawtypes")
+    //    @Beta
+    //    public <R> R executeQueryForBigResult(final javax.sql.DataSource dataSource, final Throwables.Function<com.landawn.abacus.jdbc.AbstractPreparedQuery, R, SQLException> queryCall)
+    //            throws SQLException {
+    //        final SP sp = this.pair();
+    //
+    //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.sql)
+    //                : JdbcUtil.prepareQueryForBigResult(dataSource, sp.sql)) {
+    //
+    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //                preparedQuery.setParameters(sp.parameters);
+    //            }
+    //
+    //            return queryCall.apply(preparedQuery);
+    //        }
+    //    }
+    //
+    //    /**
+    //     *
+    //     * @param <R>
+    //     * @param dataSource
+    //     * @param queryOrUpdateCall
+    //     * @return
+    //     * @throws SQLException
+    //     */
+    //    @SuppressWarnings("rawtypes")
+    //    @Beta
+    //    public <R> R executeQueryForBigResult(final java.sql.Connection conn, final Throwables.Function<com.landawn.abacus.jdbc.AbstractPreparedQuery, R, SQLException> queryOrUpdateCall)
+    //            throws SQLException {
+    //        final SP sp = this.pair();
+    //
+    //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(conn, sp.sql)
+    //                : JdbcUtil.prepareQueryForBigResult(conn, sp.sql)) {
+    //
+    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //                preparedQuery.setParameters(sp.parameters);
+    //            }
+    //
+    //            return queryOrUpdateCall.apply(preparedQuery);
+    //        }
+    //    }
 
     /**
      *
