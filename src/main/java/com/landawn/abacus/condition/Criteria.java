@@ -48,7 +48,7 @@ public class Criteria extends AbstractCondition {
         aggregationOperators.add(Operator.MINUS);
     }
 
-    private String distinct = null;
+    private String preselect = null;
 
     private List<Condition> conditionList;
 
@@ -60,17 +60,8 @@ public class Criteria extends AbstractCondition {
         conditionList = new ArrayList<>();
     }
 
-    /**
-     * Checks if is distinct.
-     *
-     * @return true, if is distinct
-     */
-    public boolean hasDistinct() {
-        return N.notNullOrEmpty(distinct);
-    }
-
-    public String distinct() {
-        return distinct;
+    public String preselect() {
+        return this.preselect;
     }
 
     /**
@@ -311,8 +302,8 @@ public class Criteria extends AbstractCondition {
      * @param distinct
      * @return
      */
-    public Criteria distinct(boolean distinct) {
-        this.distinct = distinct ? WD.DISTINCT : null;
+    public Criteria distinct() {
+        this.preselect = WD.DISTINCT;
 
         return this;
     }
@@ -323,7 +314,7 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     public Criteria distinctBy(String columnNames) {
-        this.distinct = Strings.isEmpty(columnNames) ? WD.DISTINCT : WD.DISTINCT + "(" + columnNames + ")";
+        this.preselect = Strings.isEmpty(columnNames) ? WD.DISTINCT : WD.DISTINCT + "(" + columnNames + ")";
 
         return this;
     }
@@ -333,8 +324,8 @@ public class Criteria extends AbstractCondition {
      * @param distinct
      * @return
      */
-    public Criteria distinctRow(boolean distinct) {
-        this.distinct = distinct ? WD.DISTINCTROW : null;
+    public Criteria distinctRow() {
+        this.preselect = WD.DISTINCTROW;
 
         return this;
     }
@@ -345,7 +336,13 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     public Criteria distinctRowBy(String columnNames) {
-        this.distinct = Strings.isEmpty(columnNames) ? WD.DISTINCTROW : WD.DISTINCTROW + "(" + columnNames + ")";
+        this.preselect = Strings.isEmpty(columnNames) ? WD.DISTINCTROW : WD.DISTINCTROW + "(" + columnNames + ")";
+
+        return this;
+    }
+
+    public Criteria preselect(final String preselect) {
+        this.preselect = preselect;
 
         return this;
     }
@@ -773,7 +770,7 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public String toString(NamingPolicy namingPolicy) {
-        String distinct = Strings.isEmpty(this.distinct) ? N.EMPTY_STRING : WD.SPACE + this.distinct; //NOSONAR
+        String preselect = Strings.isEmpty(this.preselect) ? N.EMPTY_STRING : WD.SPACE + this.preselect; //NOSONAR
         String join = N.EMPTY_STRING;
         String where = N.EMPTY_STRING;
         String groupBy = N.EMPTY_STRING;
@@ -801,7 +798,7 @@ public class Criteria extends AbstractCondition {
             }
         }
 
-        return distinct + join + where + groupBy + having + aggregate + orderBy + limit + forUpdate;
+        return preselect + join + where + groupBy + having + aggregate + orderBy + limit + forUpdate;
     }
 
     /**
@@ -811,7 +808,7 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = Strings.isEmpty(distinct) ? 0 : distinct.hashCode();
+        int h = Strings.isEmpty(preselect) ? 0 : preselect.hashCode();
         h = (h * 31) + conditionList.hashCode();
 
         return h;
@@ -825,7 +822,7 @@ public class Criteria extends AbstractCondition {
     @Override
     public boolean equals(Object obj) {
         return this == obj
-                || (obj instanceof Criteria && N.equals(((Criteria) obj).distinct, distinct) && N.equals(((Criteria) obj).conditionList, conditionList));
+                || (obj instanceof Criteria && N.equals(((Criteria) obj).preselect, preselect) && N.equals(((Criteria) obj).conditionList, conditionList));
     }
 
     /**

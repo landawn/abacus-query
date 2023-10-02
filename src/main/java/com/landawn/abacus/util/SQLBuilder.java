@@ -878,7 +878,7 @@ public abstract class SQLBuilder {
     }
 
     private void appendPreselect(final String preselect) {
-        if (Strings.isNotBlank(preselect)) {
+        if (Strings.isNotEmpty(preselect)) {
             if (N.isNullOrEmpty(this._preselect)) {
                 this._preselect = preselect;
             } else {
