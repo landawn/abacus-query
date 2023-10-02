@@ -866,48 +866,30 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder preselect(final String preselect) {
-        //    N.checkArgNotNull(preselect, "preselect");
+        if (Strings.isNotEmpty(this._preselect)) {
+            throw new IllegalStateException("preselect has been set. Can not set it again");
+        }
 
-        //    if (_sb.length() > 0) {
-        //        throw new IllegalStateException("'distinct|preselect' must be called before 'from' operation");
-        //    }
-
-        appendPreselect(preselect);
-
-        return this;
-    }
-
-    private void appendPreselect(final String preselect) {
         if (Strings.isNotEmpty(preselect)) {
-            if (N.isNullOrEmpty(this._preselect)) {
-                this._preselect = preselect;
-            } else {
-                if (Strings.lastChar(this._preselect).get() == ' ' || Strings.firstChar(preselect).get() == ' ') {
-                    this._preselect += preselect;
-                } else {
-                    this._preselect = this._preselect + WD.SPACE + preselect;
-                }
+            this._preselect = preselect;
+
+            final int selectIdx = _sb.indexOf(WD.SELECT);
+
+            if (selectIdx >= 0) {
+                final int len = _sb.length();
+
+                _sb.append(_SPACE);
+
+                appendStringExpr(this._preselect, false);
+
+                final int newLength = _sb.length();
+
+                _sb.insert(selectIdx + WD.SELECT.length(), _sb.substring(len));
+                _sb.setLength(newLength);
             }
         }
 
-        appendPreselect();
-    }
-
-    private void appendPreselect() {
-        int selectIdx = -1;
-
-        if (Strings.isNotEmpty(this._preselect) && (selectIdx = _sb.indexOf(WD.SELECT)) >= 0) {
-            final int len = _sb.length();
-
-            _sb.append(_SPACE);
-
-            appendStringExpr(this._preselect, false);
-
-            final int newLength = _sb.length();
-
-            _sb.insert(selectIdx + WD.SELECT.length(), _sb.substring(len));
-            _sb.setLength(newLength);
-        }
+        return this;
     }
 
     /**
@@ -1026,9 +1008,7 @@ public abstract class SQLBuilder {
         _sb.append(_SPACE);
 
         if (N.notNullOrEmpty(_preselect)) {
-            // append(_preselect);
-
-            appendColumnName(_preselect);
+            appendStringExpr(this._preselect, false);
 
             _sb.append(_SPACE);
         }
