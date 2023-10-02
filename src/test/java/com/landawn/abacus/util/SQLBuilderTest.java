@@ -21,6 +21,11 @@ class SQLBuilderTest {
         Criteria criteria = CF.criteria().distinctBy("firstName, lastName").where(CF.eq("id"));
         String sql = PSC.select(Account.class).preselect(criteria.preselect()).from(Account.class).append(criteria).sql();
         N.println(sql);
+
+        String sql2 = PSC.selectFrom(Account.class).preselect(criteria.preselect()).append(criteria).sql();
+        N.println(sql2);
+
+        assertEquals(sql, sql2);
     }
 
     @Test

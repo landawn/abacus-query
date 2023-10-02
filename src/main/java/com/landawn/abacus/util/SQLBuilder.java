@@ -868,9 +868,9 @@ public abstract class SQLBuilder {
     public SQLBuilder preselect(final String preselect) {
         //    N.checkArgNotNull(preselect, "preselect");
 
-        if (_sb.length() > 0) {
-            throw new IllegalStateException("'distinct|preselect' must be called before 'from' operation");
-        }
+        //    if (_sb.length() > 0) {
+        //        throw new IllegalStateException("'distinct|preselect' must be called before 'from' operation");
+        //    }
 
         appendPreselect(preselect);
 
@@ -888,6 +888,25 @@ public abstract class SQLBuilder {
                     this._preselect = this._preselect + WD.SPACE + preselect;
                 }
             }
+        }
+
+        appendPreselect();
+    }
+
+    private void appendPreselect() {
+        int selectIdx = -1;
+
+        if (Strings.isNotEmpty(this._preselect) && (selectIdx = _sb.indexOf(WD.SELECT)) >= 0) {
+            final int len = _sb.length();
+
+            _sb.append(_SPACE);
+
+            appendStringExpr(this._preselect, false);
+
+            final int newLength = _sb.length();
+
+            _sb.insert(selectIdx + WD.SELECT.length(), _sb.substring(len));
+            _sb.setLength(newLength);
         }
     }
 
