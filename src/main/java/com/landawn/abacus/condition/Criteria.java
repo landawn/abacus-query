@@ -24,6 +24,7 @@ import com.landawn.abacus.condition.ConditionFactory.CF;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.SortDirection;
+import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
@@ -47,12 +48,12 @@ public class Criteria extends AbstractCondition {
         aggregationOperators.add(Operator.MINUS);
     }
 
-    private boolean isDistinct = false;
+    private String distinct = null;
 
     private List<Condition> conditionList;
 
     /**
-     * 
+     *
      */
     public Criteria() {
         super(Operator.EMPTY);
@@ -64,8 +65,12 @@ public class Criteria extends AbstractCondition {
      *
      * @return true, if is distinct
      */
-    public boolean isDistinct() {
-        return isDistinct;
+    public boolean hasDistinct() {
+        return N.notNullOrEmpty(distinct);
+    }
+
+    public String distinct() {
+        return distinct;
     }
 
     /**
@@ -307,7 +312,40 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     public Criteria distinct(boolean distinct) {
-        this.isDistinct = distinct;
+        this.distinct = distinct ? WD.DISTINCT : null;
+
+        return this;
+    }
+
+    /**
+     *
+     * @param columnNames
+     * @return
+     */
+    public Criteria distinctBy(String columnNames) {
+        this.distinct = Strings.isEmpty(columnNames) ? WD.DISTINCT : WD.DISTINCT + "(" + columnNames + ")";
+
+        return this;
+    }
+
+    /**
+     *
+     * @param distinct
+     * @return
+     */
+    public Criteria distinctRow(boolean distinct) {
+        this.distinct = distinct ? WD.DISTINCTROW : null;
+
+        return this;
+    }
+
+    /**
+     *
+     * @param columnNames
+     * @return
+     */
+    public Criteria distinctRowBy(String columnNames) {
+        this.distinct = Strings.isEmpty(columnNames) ? WD.DISTINCTROW : WD.DISTINCTROW + "(" + columnNames + ")";
 
         return this;
     }
@@ -495,6 +533,50 @@ public class Criteria extends AbstractCondition {
 
     /**
      *
+     * @param propNames
+     * @return
+     */
+    public Criteria orderByAsc(final String... propNames) {
+        add(CF.orderByAsc(propNames));
+
+        return this;
+    }
+
+    /**
+     *
+     * @param propNames
+     * @return
+     */
+    public Criteria orderByAsc(final Collection<String> propNames) {
+        add(CF.orderByAsc(propNames));
+
+        return this;
+    }
+
+    /**
+     *
+     * @param propNames
+     * @return
+     */
+    public Criteria orderByDesc(final String... propNames) {
+        add(CF.orderByDesc(propNames));
+
+        return this;
+    }
+
+    /**
+     *
+     * @param propNames
+     * @return
+     */
+    public Criteria orderByDesc(final Collection<String> propNames) {
+        add(CF.orderByDesc(propNames));
+
+        return this;
+    }
+
+    /**
+     *
      * @param condition
      * @return
      */
@@ -599,10 +681,10 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param expr 
-     * @return 
+     *
+     * @param expr
+     * @return
      */
     public Criteria limit(final String expr) {
         add(CF.limit(expr));
@@ -691,7 +773,7 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public String toString(NamingPolicy namingPolicy) {
-        String distinct = isDistinct() ? WD.SPACE + WD.DISTINCT : N.EMPTY_STRING; //NOSONAR
+        String distinct = Strings.isEmpty(this.distinct) ? N.EMPTY_STRING : WD.SPACE + this.distinct; //NOSONAR
         String join = N.EMPTY_STRING;
         String where = N.EMPTY_STRING;
         String groupBy = N.EMPTY_STRING;
@@ -723,13 +805,13 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {
-        int h = isDistinct() ? 17 : 31;
+        int h = Strings.isEmpty(distinct) ? 0 : distinct.hashCode();
         h = (h * 31) + conditionList.hashCode();
 
         return h;
@@ -743,7 +825,7 @@ public class Criteria extends AbstractCondition {
     @Override
     public boolean equals(Object obj) {
         return this == obj
-                || (obj instanceof Criteria && N.equals(((Criteria) obj).isDistinct, isDistinct) && N.equals(((Criteria) obj).conditionList, conditionList));
+                || (obj instanceof Criteria && N.equals(((Criteria) obj).distinct, distinct) && N.equals(((Criteria) obj).conditionList, conditionList));
     }
 
     /**

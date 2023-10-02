@@ -866,17 +866,13 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder preselect(final String preselect) {
-        N.checkArgNotNull(preselect, "preselect");
+        //    N.checkArgNotNull(preselect, "preselect");
 
         if (_sb.length() > 0) {
             throw new IllegalStateException("'distinct|preselect' must be called before 'from' operation");
         }
 
-        if (N.isNullOrEmpty(this._preselect)) {
-            this._preselect = preselect;
-        } else {
-            this._preselect += preselect;
-        }
+        appendPreselect(preselect);
 
         return this;
     }
@@ -997,7 +993,10 @@ public abstract class SQLBuilder {
         _sb.append(_SPACE);
 
         if (N.notNullOrEmpty(_preselect)) {
-            _sb.append(_preselect);
+            // append(_preselect);
+
+            appendColumnName(_preselect);
+
             _sb.append(_SPACE);
         }
 
@@ -1883,10 +1882,10 @@ public abstract class SQLBuilder {
     public SQLBuilder append(final Condition cond) {
         init(true);
 
-        if (cond instanceof Criteria) {
-            final Criteria criteria = (Criteria) cond;
-
+        if (cond instanceof Criteria criteria) {
             final Collection<Join> joins = criteria.getJoins();
+
+            // appendPreselect(criteria.distinct());
 
             if (N.notNullOrEmpty(joins)) {
                 for (Join join : joins) {
@@ -3121,6 +3120,20 @@ public abstract class SQLBuilder {
             _sb.append(deleteFromTableChars);
         } else if (_op == OperationType.QUERY && _hasFromBeenSet == false && _isForConditionOnly == false) {
             throw new RuntimeException("'from' methods has not been called for query: " + _op);
+        }
+    }
+
+    private void appendPreselect(final String preselect) {
+        if (Strings.isNotBlank(preselect)) {
+            if (N.isNullOrEmpty(this._preselect)) {
+                this._preselect = preselect;
+            } else {
+                if (Strings.lastChar(this._preselect).get() == ' ' || Strings.firstChar(preselect).get() == ' ') {
+                    this._preselect += preselect;
+                } else {
+                    this._preselect = this._preselect + WD.SPACE + preselect;
+                }
+            }
         }
     }
 
