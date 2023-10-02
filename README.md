@@ -12,7 +12,7 @@
 * Gradle:
 ```gradle
 // JDK 1.8 or above:
-compile 'com.landawn:abacus-query:1.2.23'
+compile 'com.landawn:abacus-query:1.3.0'
 ```
 
 

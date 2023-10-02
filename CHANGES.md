@@ -1,3 +1,8 @@
+## 1.3.0
+
+* Improvements
+
+
 ## 1.2.23
 
 * Add  `SQLBuilder.toPreparedQuery`.
