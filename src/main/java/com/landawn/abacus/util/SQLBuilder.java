@@ -877,6 +877,20 @@ public abstract class SQLBuilder {
         return this;
     }
 
+    private void appendPreselect(final String preselect) {
+        if (Strings.isNotBlank(preselect)) {
+            if (N.isNullOrEmpty(this._preselect)) {
+                this._preselect = preselect;
+            } else {
+                if (Strings.lastChar(this._preselect).get() == ' ' || Strings.firstChar(preselect).get() == ' ') {
+                    this._preselect += preselect;
+                } else {
+                    this._preselect = this._preselect + WD.SPACE + preselect;
+                }
+            }
+        }
+    }
+
     /**
      *
      * @param expr
@@ -3120,20 +3134,6 @@ public abstract class SQLBuilder {
             _sb.append(deleteFromTableChars);
         } else if (_op == OperationType.QUERY && _hasFromBeenSet == false && _isForConditionOnly == false) {
             throw new RuntimeException("'from' methods has not been called for query: " + _op);
-        }
-    }
-
-    private void appendPreselect(final String preselect) {
-        if (Strings.isNotBlank(preselect)) {
-            if (N.isNullOrEmpty(this._preselect)) {
-                this._preselect = preselect;
-            } else {
-                if (Strings.lastChar(this._preselect).get() == ' ' || Strings.firstChar(preselect).get() == ' ') {
-                    this._preselect += preselect;
-                } else {
-                    this._preselect = this._preselect + WD.SPACE + preselect;
-                }
-            }
         }
     }
 
