@@ -861,6 +861,7 @@ public abstract class SQLBuilder {
     }
 
     /**
+     * For better performance, this method should be called before {@code from}
      *
      * @param preselect <code>ALL | DISTINCT | DISTINCTROW...</code>
      * @return
