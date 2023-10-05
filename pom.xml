@@ -4,7 +4,7 @@
 
 	<groupId>com.landawn</groupId>
 	<artifactId>abacus-query</artifactId>
-	<version>1.3.3</version>
+	<version>1.3.4</version>
 	<packaging>jar</packaging>
 
 	<name>abacus-query</name>
@@ -22,7 +22,7 @@
 		<dependency>
 			<groupId>com.landawn</groupId>
 			<artifactId>abacus-common</artifactId>
-			<version>3.7.11</version>
+			<version>3.7.12</version>
 			<scope>provided</scope>
 		</dependency>
 
