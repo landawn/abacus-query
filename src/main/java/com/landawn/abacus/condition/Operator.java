@@ -17,7 +17,7 @@ package com.landawn.abacus.condition;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
@@ -220,7 +220,7 @@ public enum Operator {
     /**
      * Field SPACE.
      */
-    EMPTY(N.EMPTY_STRING);
+    EMPTY(Strings.EMPTY_STRING);
 
     /**
      * Field name.
@@ -279,9 +279,9 @@ public enum Operator {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {

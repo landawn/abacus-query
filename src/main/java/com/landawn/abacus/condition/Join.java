@@ -23,6 +23,7 @@ import java.util.List;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Strings;
 
 /**
  *
@@ -40,9 +41,9 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param joinEntity 
+     *
+     * @param joinEntity
      */
     public Join(String joinEntity) {
         this(Operator.JOIN, joinEntity);
@@ -53,10 +54,10 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param joinEntity 
-     * @param condition 
+     *
+     * @param joinEntity
+     * @param condition
      */
     public Join(String joinEntity, Condition condition) {
         this(Operator.JOIN, joinEntity, condition);
@@ -67,10 +68,10 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param joinEntities 
-     * @param condition 
+     *
+     * @param joinEntities
+     * @param condition
      */
     public Join(Collection<String> joinEntities, Condition condition) {
         this(Operator.JOIN, joinEntities, condition);
@@ -152,13 +153,13 @@ public class Join extends AbstractCondition {
     @Override
     public String toString(NamingPolicy namingPolicy) {
         return getOperator().toString() + _SPACE + concatPropNames(joinEntities)
-                + ((condition == null) ? N.EMPTY_STRING : (_SPACE + getCondition().toString(namingPolicy)));
+                + ((condition == null) ? Strings.EMPTY_STRING : (_SPACE + getCondition().toString(namingPolicy)));
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {

@@ -19,6 +19,7 @@ import java.util.List;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
@@ -40,16 +41,16 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param minValue 
-     * @param maxValue 
+     *
+     * @param propName
+     * @param minValue
+     * @param maxValue
      */
     public NotBetween(String propName, Object minValue, Object maxValue) {
         super(Operator.NOT_BETWEEN);
 
-        if (N.isNullOrEmpty(propName)) {
+        if (Strings.isEmpty(propName)) {
             throw new IllegalArgumentException("property name can't be null or empty.");
         }
 
@@ -187,9 +188,9 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {

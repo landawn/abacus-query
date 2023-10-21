@@ -44,10 +44,10 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param subQuery 
+     *
+     * @param propName
+     * @param subQuery
      */
     public InSubQuery(String propName, SubQuery subQuery) {
         super(Operator.IN);
@@ -60,10 +60,10 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param propNames 
-     * @param subQuery 
+     *
+     * @param propNames
+     * @param subQuery
      */
     public InSubQuery(Collection<String> propNames, SubQuery subQuery) {
         super(Operator.IN);
@@ -77,27 +77,27 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public String getPropName() {
         return propName;
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public Collection<String> getPropNames() {
         return propNames;
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @SuppressWarnings("unchecked")
     public SubQuery getSubQuery() {
@@ -105,18 +105,18 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param subQuery 
+     *
+     * @param subQuery
      */
     public void setSubQuery(SubQuery subQuery) {
         this.subQuery = subQuery;
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public List<Object> getParameters() {
@@ -124,7 +124,7 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * 
+     *
      */
     @Override
     public void clearParameters() {
@@ -132,10 +132,10 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param <T> 
-     * @return 
+     *
+     * @param <T>
+     * @return
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -148,14 +148,14 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {
         int h = 17;
-        h = (h * 31) + (N.notNullOrEmpty(propName) ? N.hashCode(propName) : N.hashCode(propNames));
+        h = (h * 31) + (Strings.isNotEmpty(propName) ? N.hashCode(propName) : N.hashCode(propNames));
         h = (h * 31) + operator.hashCode();
         h = (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
 
@@ -184,14 +184,14 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param namingPolicy 
-     * @return 
+     *
+     * @param namingPolicy
+     * @return
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        if (N.notNullOrEmpty(propName)) {
+        if (Strings.isNotEmpty(propName)) {
             if (namingPolicy == NamingPolicy.NO_CHANGE) {
                 return propName + WD._SPACE + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy) + WD.PARENTHESES_R;
             } else {

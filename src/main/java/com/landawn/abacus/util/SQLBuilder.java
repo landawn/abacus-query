@@ -417,7 +417,7 @@ public abstract class SQLBuilder {
     }
 
     static String getTableAlias(final String alias, final Class<?> entityClass) {
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             return alias;
         }
 
@@ -431,11 +431,11 @@ public abstract class SQLBuilder {
     static String getTableAliasOrName(final String alias, final Class<?> entityClass, final NamingPolicy namingPolicy) {
         String tableAliasOrName = alias;
 
-        if (N.isNullOrEmpty(tableAliasOrName)) {
+        if (Strings.isEmpty(tableAliasOrName)) {
             tableAliasOrName = getTableAlias(entityClass);
         }
 
-        if (N.isNullOrEmpty(tableAliasOrName)) {
+        if (Strings.isEmpty(tableAliasOrName)) {
             tableAliasOrName = getTableName(entityClass, namingPolicy);
         }
 
@@ -583,7 +583,7 @@ public abstract class SQLBuilder {
 
         String tableAlias = getTableAlias(alias, entityClass);
 
-        if (N.isNullOrEmpty(tableAlias)) {
+        if (Strings.isNotEmpty(tableAlias)) {
             res.add(getTableName(entityClass, namingPolicy));
         } else {
             res.add(getTableName(entityClass, namingPolicy) + " " + tableAlias);
@@ -602,7 +602,7 @@ public abstract class SQLBuilder {
             subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
             tableAlias = getTableAlias(subEntityClass);
 
-            if (N.isNullOrEmpty(tableAlias)) {
+            if (Strings.isEmpty(tableAlias)) {
                 res.add(getTableName(subEntityClass, namingPolicy));
             } else {
                 res.add(getTableName(subEntityClass, namingPolicy) + " " + tableAlias);
@@ -960,7 +960,7 @@ public abstract class SQLBuilder {
             setEntityClass(entityClass);
         }
 
-        if (N.isNullOrEmpty(alias)) {
+        if (Strings.isEmpty(alias)) {
             return from(getTableName(entityClass, _namingPolicy));
         } else {
             return from(getTableName(entityClass, _namingPolicy) + " " + alias);
@@ -1001,27 +1001,27 @@ public abstract class SQLBuilder {
             this._tableName = tableName.trim();
         }
 
-        if (_entityClass != null && N.notNullOrEmpty(_tableAlias)) {
+        if (_entityClass != null && Strings.isNotEmpty(_tableAlias)) {
             addPropColumnMapForAlias(_entityClass, _tableAlias);
         }
 
         _sb.append(_SELECT);
         _sb.append(_SPACE);
 
-        if (N.notNullOrEmpty(_preselect)) {
+        if (Strings.isNotEmpty(_preselect)) {
             appendStringExpr(this._preselect, false);
 
             _sb.append(_SPACE);
         }
 
-        final boolean withAlias = N.notNullOrEmpty(_tableAlias);
+        final boolean withAlias = Strings.isNotEmpty(_tableAlias);
         final boolean isForSelect = _op == OperationType.QUERY;
 
         if (N.notNullOrEmpty(_propOrColumnNames)) {
             if (_entityClass != null && withAlias == false && _propOrColumnNames == QueryUtil.getSelectPropNames(_entityClass, false, null)) {
                 String fullSelectParts = fullSelectPartsPool.get(_namingPolicy).get(_entityClass);
 
-                if (N.isNullOrEmpty(fullSelectParts)) {
+                if (Strings.isEmpty(fullSelectParts)) {
                     final StringBuilder sb = new StringBuilder();
 
                     int i = 0;
@@ -1066,7 +1066,7 @@ public abstract class SQLBuilder {
             this._aliasPropColumnNameMap = N.newHashMap(_multiSelects.size());
 
             for (Selection selection : _multiSelects) {
-                if (N.notNullOrEmpty(selection.tableAlias())) {
+                if (Strings.isNotEmpty(selection.tableAlias())) {
                     this._aliasPropColumnNameMap.put(selection.tableAlias(), QueryUtil.prop2ColumnNameMap(selection.entityClass(), _namingPolicy));
                 }
             }
@@ -1089,7 +1089,7 @@ public abstract class SQLBuilder {
                 selectionTableAlias = selection.tableAlias();
 
                 selectionClassAlias = selection.classAlias();
-                selectionWithClassAlias = N.notNullOrEmpty(selectionClassAlias);
+                selectionWithClassAlias = Strings.isNotEmpty(selectionClassAlias);
 
                 final Collection<String> selectPropNames = N.notNullOrEmpty(selection.selectPropNames()) ? selection.selectPropNames()
                         : QueryUtil.getSelectPropNames(selectionEntityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
@@ -1155,13 +1155,13 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder join(final Class<?> entityClass, final String alias) {
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             addPropColumnMapForAlias(entityClass, alias);
         }
 
         _sb.append(_SPACE_JOIN_SPACE);
 
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
@@ -1199,13 +1199,13 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder innerJoin(final Class<?> entityClass, final String alias) {
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             addPropColumnMapForAlias(entityClass, alias);
         }
 
         _sb.append(_SPACE_INNER_JOIN_SPACE);
 
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
@@ -1243,13 +1243,13 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder leftJoin(final Class<?> entityClass, final String alias) {
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             addPropColumnMapForAlias(entityClass, alias);
         }
 
         _sb.append(_SPACE_LEFT_JOIN_SPACE);
 
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
@@ -1287,13 +1287,13 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder rightJoin(final Class<?> entityClass, final String alias) {
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             addPropColumnMapForAlias(entityClass, alias);
         }
 
         _sb.append(_SPACE_RIGHT_JOIN_SPACE);
 
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
@@ -1331,13 +1331,13 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder fullJoin(final Class<?> entityClass, final String alias) {
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             addPropColumnMapForAlias(entityClass, alias);
         }
 
         _sb.append(_SPACE_FULL_JOIN_SPACE);
 
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
@@ -1375,13 +1375,13 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder crossJoin(final Class<?> entityClass, final String alias) {
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             addPropColumnMapForAlias(entityClass, alias);
         }
 
         _sb.append(_SPACE_CROSS_JOIN_SPACE);
 
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
@@ -1419,13 +1419,13 @@ public abstract class SQLBuilder {
      * @return
      */
     public SQLBuilder naturalJoin(final Class<?> entityClass, final String alias) {
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             addPropColumnMapForAlias(entityClass, alias);
         }
 
         _sb.append(_SPACE_NATURAL_JOIN_SPACE);
 
-        if (N.notNullOrEmpty(alias)) {
+        if (Strings.isNotEmpty(alias)) {
             _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
@@ -1966,7 +1966,7 @@ public abstract class SQLBuilder {
             final Limit limit = criteria.getLimit();
 
             if (limit != null) {
-                if (N.notNullOrEmpty(limit.getExpr())) {
+                if (Strings.isNotEmpty(limit.getExpr())) {
                     _sb.append(_SPACE).append(limit.getExpr());
                 } else if (limit.getOffset() > 0) {
                     limit(limit.getOffset(), limit.getCount());
@@ -3425,7 +3425,7 @@ public abstract class SQLBuilder {
             final InSubQuery inSubQuery = (InSubQuery) cond;
             final String propName = inSubQuery.getPropName();
 
-            if (N.notNullOrEmpty(propName)) {
+            if (Strings.isNotEmpty(propName)) {
                 appendColumnName(propName);
             } else {
                 _sb.append(WD._PARENTHESES_L);
@@ -3541,7 +3541,7 @@ public abstract class SQLBuilder {
             final SubQuery subQuery = (SubQuery) cond;
             final Condition subCond = subQuery.getCondition();
 
-            if (N.notNullOrEmpty(subQuery.getSql())) {
+            if (Strings.isNotEmpty(subQuery.getSql())) {
                 _sb.append(subQuery.getSql());
             } else if (subQuery.getEntityClass() != null) {
                 if (this instanceof SCSB) {
@@ -3704,14 +3704,14 @@ public abstract class SQLBuilder {
                     _sb.append(classAlias).append(WD._PERIOD);
                 }
 
-                _sb.append(N.notNullOrEmpty(propAlias) ? propAlias : propName);
+                _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
                 _sb.append(WD._QUOTATION_D);
             }
 
             return;
         }
 
-        if (N.isNullOrEmpty(propAlias) && entityInfo != null) {
+        if (Strings.isEmpty(propAlias) && entityInfo != null) {
             final PropInfo propInfo = entityInfo.getPropInfo(propName);
 
             if (isEntityProp(propInfo)) {
@@ -3765,7 +3765,7 @@ public abstract class SQLBuilder {
                                 _sb.append(classAlias).append(WD._PERIOD);
                             }
 
-                            _sb.append(N.notNullOrEmpty(propAlias) ? propAlias : propName);
+                            _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
                             _sb.append(WD._QUOTATION_D);
                         }
 
@@ -3775,7 +3775,7 @@ public abstract class SQLBuilder {
             }
         }
 
-        if (N.notNullOrEmpty(propAlias)) {
+        if (Strings.isNotEmpty(propAlias)) {
             appendStringExpr(propName, true);
 
             if (isForSelect && _namingPolicy != NamingPolicy.NO_CHANGE) {
@@ -12887,7 +12887,7 @@ public abstract class SQLBuilder {
 
             sb.append(getTableName(selection.entityClass(), namingPolicy));
 
-            if (N.notNullOrEmpty(selection.tableAlias())) {
+            if (Strings.isNotEmpty(selection.tableAlias())) {
                 sb.append(' ').append(selection.tableAlias());
             }
 

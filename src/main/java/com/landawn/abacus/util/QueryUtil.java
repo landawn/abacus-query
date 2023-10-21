@@ -347,7 +347,7 @@ public final class QueryUtil {
                 || (N.notNullOrEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
     }
 
-    private static final ImmutableList<String> fakeIds = ImmutableList.of("not_defined_fake_id_in_abacus_" + N.uuid());
+    private static final ImmutableList<String> fakeIds = ImmutableList.of("not_defined_fake_id_in_abacus_" + Strings.uuid());
 
     /**
      * Checks if is fake id.

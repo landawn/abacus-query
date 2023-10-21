@@ -26,6 +26,7 @@ import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
@@ -59,17 +60,17 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param entityName 
-     * @param sql 
+     *
+     * @param entityName
+     * @param sql
      */
     public SubQuery(String entityName, String sql) {
         super(Operator.EMPTY);
         this.entityName = entityName;
         this.entityClass = null;
 
-        if (N.isNullOrEmpty(sql)) {
+        if (Strings.isEmpty(sql)) {
             throw new IllegalArgumentException("The sql script can't be null or empty.");
         }
 
@@ -79,11 +80,11 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param entityName 
-     * @param propNames 
-     * @param condition 
+     *
+     * @param entityName
+     * @param propNames
+     * @param condition
      */
     public SubQuery(String entityName, Collection<String> propNames, Condition condition) {
         super(Operator.EMPTY);
@@ -100,11 +101,11 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param entityClass 
-     * @param propNames 
-     * @param condition 
+     *
+     * @param entityClass
+     * @param propNames
+     * @param condition
      */
     public SubQuery(Class<?> entityClass, Collection<String> propNames, Condition condition) {
         super(Operator.EMPTY);
@@ -130,18 +131,18 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public String getEntityName() {
         return entityName;
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public Class<?> getEntityClass() {
         return entityClass;
@@ -254,9 +255,9 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {

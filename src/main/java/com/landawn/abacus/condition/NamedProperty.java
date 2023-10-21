@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.condition.ConditionFactory.CF;
 import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.Strings;
 
 /**
  *
@@ -39,9 +40,9 @@ public final class NamedProperty {
     }
 
     /**
-     * 
      *
-     * @param propName 
+     *
+     * @param propName
      */
     public NamedProperty(String propName) {
         this.propName = propName;
@@ -53,7 +54,7 @@ public final class NamedProperty {
      * @return
      */
     public static NamedProperty of(String propName) {
-        if (N.isNullOrEmpty(propName)) {
+        if (Strings.isEmpty(propName)) {
             throw new IllegalArgumentException("the property name can't be null or empty string.");
         }
 
@@ -171,11 +172,11 @@ public final class NamedProperty {
     }
 
     /**
-     * 
      *
-     * @param minValue 
-     * @param maxValue 
-     * @return 
+     *
+     * @param minValue
+     * @param maxValue
+     * @return
      */
     public Between between(Object minValue, Object maxValue) {
         return CF.between(propName, minValue, maxValue);
@@ -258,9 +259,9 @@ public final class NamedProperty {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {
@@ -278,9 +279,9 @@ public final class NamedProperty {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {

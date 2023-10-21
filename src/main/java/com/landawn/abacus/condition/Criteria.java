@@ -770,15 +770,15 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public String toString(NamingPolicy namingPolicy) {
-        String preselect = Strings.isEmpty(this.preselect) ? N.EMPTY_STRING : WD.SPACE + this.preselect; //NOSONAR
-        String join = N.EMPTY_STRING;
-        String where = N.EMPTY_STRING;
-        String groupBy = N.EMPTY_STRING;
-        String having = N.EMPTY_STRING;
-        String orderBy = N.EMPTY_STRING;
-        String limit = N.EMPTY_STRING;
-        String forUpdate = N.EMPTY_STRING;
-        String aggregate = N.EMPTY_STRING;
+        String preselect = Strings.isEmpty(this.preselect) ? Strings.EMPTY_STRING : WD.SPACE + this.preselect; //NOSONAR
+        String join = Strings.EMPTY_STRING;
+        String where = Strings.EMPTY_STRING;
+        String groupBy = Strings.EMPTY_STRING;
+        String having = Strings.EMPTY_STRING;
+        String orderBy = Strings.EMPTY_STRING;
+        String limit = Strings.EMPTY_STRING;
+        String forUpdate = Strings.EMPTY_STRING;
+        String aggregate = Strings.EMPTY_STRING;
 
         for (Condition cond : conditionList) {
             if (Operator.WHERE.equals(cond.getOperator())) {

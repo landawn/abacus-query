@@ -75,7 +75,7 @@ public final class ParsedSql {
 
         boolean isOpSqlPrefix = false;
         for (String word : words) {
-            if (N.notNullOrEmpty(word) && !(word.equals(" ") || word.startsWith("--") || word.startsWith("/*"))) {
+            if (Strings.isNotEmpty(word) && !(word.equals(" ") || word.startsWith("--") || word.startsWith("/*"))) {
                 isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase());
                 break;
             }
@@ -166,7 +166,7 @@ public final class ParsedSql {
      */
     public String getParameterizedSql(boolean isForCouchbase) {
         if (isForCouchbase) {
-            if (N.isNullOrEmpty(couchbaseParameterizedSql)) {
+            if (Strings.isEmpty(couchbaseParameterizedSql)) {
                 parseForCouchbase();
             }
 
@@ -193,7 +193,7 @@ public final class ParsedSql {
      */
     public ImmutableList<String> getNamedParameters(boolean isForCouchbase) {
         if (isForCouchbase) {
-            if (N.isNullOrEmpty(couchbaseParameterizedSql)) {
+            if (Strings.isEmpty(couchbaseParameterizedSql)) {
                 parseForCouchbase();
             }
 
@@ -220,7 +220,7 @@ public final class ParsedSql {
      */
     public int getParameterCount(boolean isForCouchbase) {
         if (isForCouchbase) {
-            if (N.isNullOrEmpty(couchbaseParameterizedSql)) {
+            if (Strings.isEmpty(couchbaseParameterizedSql)) {
                 parseForCouchbase();
             }
 
@@ -241,7 +241,7 @@ public final class ParsedSql {
 
         boolean isOpSqlPrefix = false;
         for (String word : words) {
-            if (N.notNullOrEmpty(word)) {
+            if (Strings.isNotEmpty(word)) {
                 isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase());
                 break;
             }
@@ -312,9 +312,9 @@ public final class ParsedSql {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {
@@ -346,9 +346,9 @@ public final class ParsedSql {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {

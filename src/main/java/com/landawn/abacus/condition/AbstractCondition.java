@@ -20,6 +20,7 @@ import java.util.Iterator;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
@@ -71,9 +72,9 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public Not not() {
@@ -100,9 +101,9 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {
@@ -140,7 +141,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      */
     protected static String concatPropNames(String... propNames) {
         if (N.isNullOrEmpty(propNames)) {
-            return N.EMPTY_STRING;
+            return Strings.EMPTY_STRING;
         }
 
         int size = propNames.length;
@@ -187,7 +188,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      */
     protected static String concatPropNames(Collection<String> propNames) {
         if (N.isNullOrEmpty(propNames)) {
-            return N.EMPTY_STRING;
+            return Strings.EMPTY_STRING;
         }
 
         Iterator<String> it = propNames.iterator();

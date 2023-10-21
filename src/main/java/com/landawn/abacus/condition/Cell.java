@@ -18,6 +18,7 @@ import java.util.List;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
@@ -34,10 +35,10 @@ public class Cell extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param operator 
-     * @param condition 
+     *
+     * @param operator
+     * @param condition
      */
     public Cell(Operator operator, Condition condition) {
         super(operator);
@@ -109,13 +110,13 @@ public class Cell extends AbstractCondition {
      */
     @Override
     public String toString(NamingPolicy namingPolicy) {
-        return getOperator().toString() + ((condition == null) ? N.EMPTY_STRING : WD._SPACE + condition.toString(namingPolicy));
+        return getOperator().toString() + ((condition == null) ? Strings.EMPTY_STRING : WD._SPACE + condition.toString(namingPolicy));
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {

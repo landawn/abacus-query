@@ -432,7 +432,7 @@ public final class SQLParser {
                 for (int i = 1; i < subWords.length; i++) {
                     nextWord = nextWord(sql, tmpIndex);
 
-                    if (N.notNullOrEmpty(nextWord) && (nextWord.equals(subWords[i]) || (!caseSensitive && nextWord.equalsIgnoreCase(subWords[i])))) {
+                    if (Strings.isNotEmpty(nextWord) && (nextWord.equals(subWords[i]) || (!caseSensitive && nextWord.equalsIgnoreCase(subWords[i])))) {
                         tmpIndex += (subWords[i].length() + 1);
                     } else {
                         result = -1;

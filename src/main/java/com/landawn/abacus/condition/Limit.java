@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
@@ -49,10 +50,10 @@ public class Limit extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param offset 
-     * @param count 
+     *
+     * @param offset
+     * @param count
      */
     public Limit(final int offset, final int count) {
         super(Operator.LIMIT);
@@ -61,9 +62,9 @@ public class Limit extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param expr 
+     *
+     * @param expr
      */
     public Limit(final String expr) {
         this(0, Integer.MAX_VALUE);
@@ -72,9 +73,9 @@ public class Limit extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public String getExpr() {
         return expr;
@@ -118,11 +119,11 @@ public class Limit extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param condition 
-     * @return 
-     * @throws UnsupportedOperationException 
+     *
+     * @param condition
+     * @return
+     * @throws UnsupportedOperationException
      */
     @Override
     public And and(Condition condition) throws UnsupportedOperationException {
@@ -130,11 +131,11 @@ public class Limit extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param condition 
-     * @return 
-     * @throws UnsupportedOperationException 
+     *
+     * @param condition
+     * @return
+     * @throws UnsupportedOperationException
      */
     @Override
     public Or or(Condition condition) throws UnsupportedOperationException {
@@ -142,10 +143,10 @@ public class Limit extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
-     * @throws UnsupportedOperationException 
+     *
+     * @return
+     * @throws UnsupportedOperationException
      */
     @Override
     public Not not() throws UnsupportedOperationException {
@@ -159,7 +160,7 @@ public class Limit extends AbstractCondition {
      */
     @Override
     public String toString(NamingPolicy namingPolicy) {
-        if (N.notNullOrEmpty(expr)) {
+        if (Strings.isEmpty(expr)) {
             return expr;
         } else {
             return offset > 0 ? WD.LIMIT + _SPACE + count + _SPACE + WD.OFFSET + _SPACE + offset : WD.LIMIT + _SPACE + count;
@@ -167,13 +168,13 @@ public class Limit extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {
-        if (N.notNullOrEmpty(expr)) {
+        if (Strings.isNotEmpty(expr)) {
             return expr.hashCode();
         } else {
             int h = 17;
@@ -198,7 +199,7 @@ public class Limit extends AbstractCondition {
         if (obj instanceof Limit) {
             final Limit other = (Limit) obj;
 
-            if (N.notNullOrEmpty(expr)) {
+            if (Strings.isNotEmpty(expr)) {
                 return this.expr.equals(other.expr);
             } else {
                 return (count == other.count) && (offset == other.offset);

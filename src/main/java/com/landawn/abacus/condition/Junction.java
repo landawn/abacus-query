@@ -26,6 +26,7 @@ import java.util.List;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.Strings;
 
 /**
  * This class is used to join multiple conditions. like {@code And}, {@code Or}. But must not put clause(where, order by
@@ -44,10 +45,10 @@ public class Junction extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param operator 
-     * @param conditions 
+     *
+     * @param operator
+     * @param conditions
      */
     @SafeVarargs
     public Junction(Operator operator, Condition... conditions) {
@@ -57,10 +58,10 @@ public class Junction extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param operator 
-     * @param conditions 
+     *
+     * @param operator
+     * @param conditions
      */
     public Junction(Operator operator, Collection<? extends Condition> conditions) {
         super(operator);
@@ -192,7 +193,7 @@ public class Junction extends AbstractCondition {
     @Override
     public String toString(NamingPolicy namingPolicy) {
         if (N.isNullOrEmpty(conditionList)) {
-            return N.EMPTY_STRING;
+            return Strings.EMPTY_STRING;
         }
 
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -221,9 +222,9 @@ public class Junction extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {

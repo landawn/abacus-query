@@ -72,7 +72,7 @@ public final class SQLMapper {
     private final Map<String, ImmutableMap<String, String>> attrsMap = new HashMap<>();
 
     /**
-     * 
+     *
      */
     public SQLMapper() {
         // empty constructor
@@ -122,9 +122,9 @@ public final class SQLMapper {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public Set<String> keySet() {
         return sqlMap.keySet();
@@ -136,7 +136,7 @@ public final class SQLMapper {
      * @return
      */
     public ParsedSql get(String id) {
-        if (N.isNullOrEmpty(id) || id.length() > MAX_ID_LENGTH) {
+        if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
             return null;
         }
 
@@ -150,7 +150,7 @@ public final class SQLMapper {
      * @return
      */
     public ImmutableMap<String, String> getAttrs(String id) {
-        if (N.isNullOrEmpty(id) || id.length() > MAX_ID_LENGTH) {
+        if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
             return null;
         }
 
@@ -203,7 +203,7 @@ public final class SQLMapper {
      * @param id
      */
     public void remove(String id) {
-        if (N.isNullOrEmpty(id) || id.length() > MAX_ID_LENGTH) {
+        if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
             return;
         }
 
@@ -211,9 +211,9 @@ public final class SQLMapper {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public SQLMapper copy() {
         final SQLMapper copy = new SQLMapper();
@@ -266,18 +266,18 @@ public final class SQLMapper {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public boolean isEmpty() {
         return sqlMap.isEmpty();
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {
@@ -295,9 +295,9 @@ public final class SQLMapper {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {
