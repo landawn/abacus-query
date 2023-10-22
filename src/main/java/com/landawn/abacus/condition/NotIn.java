@@ -98,7 +98,7 @@ public class NotIn extends AbstractCondition {
     @SuppressWarnings("rawtypes")
     @Override
     public void clearParameters() {
-        if (N.notNullOrEmpty(values)) {
+        if (N.notEmpty(values)) {
             N.fill((List) values, null);
         }
     }

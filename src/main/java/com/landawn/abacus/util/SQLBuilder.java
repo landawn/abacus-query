@@ -467,7 +467,7 @@ public abstract class SQLBuilder {
                 final Set<String> entityPropNames = N.newLinkedHashSet(ClassUtil.getPropNameList(entityClass));
                 final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
-                if (N.notNullOrEmpty(subEntityPropNames)) {
+                if (N.notEmpty(subEntityPropNames)) {
                     entityPropNames.removeAll(subEntityPropNames);
                 }
 
@@ -575,7 +575,7 @@ public abstract class SQLBuilder {
             final NamingPolicy namingPolicy) {
         final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
-        if (N.isNullOrEmpty(subEntityPropNames)) {
+        if (N.isEmpty(subEntityPropNames)) {
             return N.emptyList();
         }
 
@@ -726,11 +726,11 @@ public abstract class SQLBuilder {
         }
 
         if (_op == OperationType.QUERY) {
-            if (N.isNullOrEmpty(_propOrColumnNames) && N.isNullOrEmpty(_propOrColumnNameAliases) && N.isNullOrEmpty(_multiSelects)) {
+            if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
                 throw new RuntimeException("Column names or props must be set first by select");
             }
         } else {
-            if (N.isNullOrEmpty(_propOrColumnNames) && N.isNullOrEmpty(_props) && N.isNullOrEmpty(_propsList)) {
+            if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_props) && N.isEmpty(_propsList)) {
                 throw new RuntimeException("Column names or props must be set first by insert");
             }
         }
@@ -745,7 +745,7 @@ public abstract class SQLBuilder {
         _sb.append(_SPACE);
         _sb.append(WD._PARENTHESES_L);
 
-        if (N.notNullOrEmpty(_propOrColumnNames)) {
+        if (N.notEmpty(_propOrColumnNames)) {
             int i = 0;
             for (String columnName : _propOrColumnNames) {
                 if (i++ > 0) {
@@ -755,7 +755,7 @@ public abstract class SQLBuilder {
                 appendColumnName(columnName);
             }
         } else {
-            final Map<String, Object> localProps = N.isNullOrEmpty(this._props) ? _propsList.iterator().next() : this._props;
+            final Map<String, Object> localProps = N.isEmpty(this._props) ? _propsList.iterator().next() : this._props;
 
             int i = 0;
             for (String columnName : localProps.keySet()) {
@@ -773,7 +773,7 @@ public abstract class SQLBuilder {
 
         _sb.append(WD._PARENTHESES_L);
 
-        if (N.notNullOrEmpty(_propOrColumnNames)) {
+        if (N.notEmpty(_propOrColumnNames)) {
             switch (_sqlPolicy) {
                 case SQL:
                 case PARAMETERIZED_SQL: {
@@ -819,7 +819,7 @@ public abstract class SQLBuilder {
                 default:
                     throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy); //NOSONAR
             }
-        } else if (N.notNullOrEmpty(_props)) {
+        } else if (N.notEmpty(_props)) {
             appendInsertProps(_props);
         } else {
             int i = 0;
@@ -988,7 +988,7 @@ public abstract class SQLBuilder {
 
         _hasFromBeenSet = true;
 
-        if (N.isNullOrEmpty(_propOrColumnNames) && N.isNullOrEmpty(_propOrColumnNameAliases) && N.isNullOrEmpty(_multiSelects)) {
+        if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
             throw new RuntimeException("Column names or props must be set first by select");
         }
 
@@ -1017,7 +1017,7 @@ public abstract class SQLBuilder {
         final boolean withAlias = Strings.isNotEmpty(_tableAlias);
         final boolean isForSelect = _op == OperationType.QUERY;
 
-        if (N.notNullOrEmpty(_propOrColumnNames)) {
+        if (N.notEmpty(_propOrColumnNames)) {
             if (_entityClass != null && withAlias == false && _propOrColumnNames == QueryUtil.getSelectPropNames(_entityClass, false, null)) {
                 String fullSelectParts = fullSelectPartsPool.get(_namingPolicy).get(_entityClass);
 
@@ -1053,7 +1053,7 @@ public abstract class SQLBuilder {
                     appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, columnName, null, false, null, isForSelect);
                 }
             }
-        } else if (N.notNullOrEmpty(_propOrColumnNameAliases)) {
+        } else if (N.notEmpty(_propOrColumnNameAliases)) {
             int i = 0;
             for (Map.Entry<String, String> entry : _propOrColumnNameAliases.entrySet()) {
                 if (i++ > 0) {
@@ -1062,7 +1062,7 @@ public abstract class SQLBuilder {
 
                 appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, entry.getKey(), entry.getValue(), false, null, isForSelect);
             }
-        } else if (N.notNullOrEmpty(_multiSelects)) {
+        } else if (N.notEmpty(_multiSelects)) {
             this._aliasPropColumnNameMap = N.newHashMap(_multiSelects.size());
 
             for (Selection selection : _multiSelects) {
@@ -1091,7 +1091,7 @@ public abstract class SQLBuilder {
                 selectionClassAlias = selection.classAlias();
                 selectionWithClassAlias = Strings.isNotEmpty(selectionClassAlias);
 
-                final Collection<String> selectPropNames = N.notNullOrEmpty(selection.selectPropNames()) ? selection.selectPropNames()
+                final Collection<String> selectPropNames = N.notEmpty(selection.selectPropNames()) ? selection.selectPropNames()
                         : QueryUtil.getSelectPropNames(selectionEntityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
 
                 for (String propName : selectPropNames) {
@@ -1119,7 +1119,7 @@ public abstract class SQLBuilder {
             _aliasPropColumnNameMap = new HashMap<>();
         }
 
-        if (N.isNullOrEmpty(_propColumnNameMap) && entityClass != null && ClassUtil.isBeanClass(entityClass)) {
+        if (N.isEmpty(_propColumnNameMap) && entityClass != null && ClassUtil.isBeanClass(entityClass)) {
             _propColumnNameMap = QueryUtil.prop2ColumnNameMap(entityClass, _namingPolicy);
         }
 
@@ -1901,7 +1901,7 @@ public abstract class SQLBuilder {
 
             // appendPreselect(criteria.distinct());
 
-            if (N.notNullOrEmpty(joins)) {
+            if (N.notEmpty(joins)) {
                 for (Join join : joins) {
                     _sb.append(_SPACE).append(join.getOperator()).append(_SPACE);
 
@@ -1949,7 +1949,7 @@ public abstract class SQLBuilder {
 
             List<Cell> aggregations = criteria.getAggregation();
 
-            if (N.notNullOrEmpty(aggregations)) {
+            if (N.notEmpty(aggregations)) {
                 for (Cell aggregation : aggregations) {
                     _sb.append(_SPACE).append(aggregation.getOperator()).append(_SPACE);
                     appendCondition(aggregation.getCondition());
@@ -2092,7 +2092,7 @@ public abstract class SQLBuilder {
     public SQLBuilder union(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
 
-        if (N.notNullOrEmpty(sqlBuilder.parameters())) {
+        if (N.notEmpty(sqlBuilder.parameters())) {
             _parameters.addAll(sqlBuilder.parameters());
         }
 
@@ -2158,7 +2158,7 @@ public abstract class SQLBuilder {
     public SQLBuilder unionAll(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
 
-        if (N.notNullOrEmpty(sqlBuilder.parameters())) {
+        if (N.notEmpty(sqlBuilder.parameters())) {
             _parameters.addAll(sqlBuilder.parameters());
         }
 
@@ -2224,7 +2224,7 @@ public abstract class SQLBuilder {
     public SQLBuilder intersect(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
 
-        if (N.notNullOrEmpty(sqlBuilder.parameters())) {
+        if (N.notEmpty(sqlBuilder.parameters())) {
             _parameters.addAll(sqlBuilder.parameters());
         }
 
@@ -2290,7 +2290,7 @@ public abstract class SQLBuilder {
     public SQLBuilder except(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
 
-        if (N.notNullOrEmpty(sqlBuilder.parameters())) {
+        if (N.notEmpty(sqlBuilder.parameters())) {
             _parameters.addAll(sqlBuilder.parameters());
         }
 
@@ -2356,7 +2356,7 @@ public abstract class SQLBuilder {
     public SQLBuilder minus(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
 
-        if (N.notNullOrEmpty(sqlBuilder.parameters())) {
+        if (N.notEmpty(sqlBuilder.parameters())) {
             _parameters.addAll(sqlBuilder.parameters());
         }
 
@@ -2625,7 +2625,7 @@ public abstract class SQLBuilder {
             return set(N.asArray((String) entity));
         }
         if (entity instanceof Map) {
-            if (N.isNullOrEmpty(excludedPropNames)) {
+            if (N.isEmpty(excludedPropNames)) {
                 return set((Map<String, Object>) entity);
             }
             final Map<String, Object> localProps = new LinkedHashMap<>((Map<String, Object>) entity); //NOSONAR
@@ -2826,7 +2826,7 @@ public abstract class SQLBuilder {
                 preparedQuery.configStmt(stmtSetter);
             }
 
-            if (N.notNullOrEmpty(sp.parameters)) {
+            if (N.notEmpty(sp.parameters)) {
                 preparedQuery.setParameters(sp.parameters);
             }
 
@@ -2864,7 +2864,7 @@ public abstract class SQLBuilder {
                 preparedQuery.configStmt(stmtSetter);
             }
 
-            if (N.notNullOrEmpty(sp.parameters)) {
+            if (N.notEmpty(sp.parameters)) {
                 preparedQuery.setParameters(sp.parameters);
             }
 
@@ -2897,7 +2897,7 @@ public abstract class SQLBuilder {
         boolean noException = false;
 
         try {
-            if (N.notNullOrEmpty(sp.parameters)) {
+            if (N.notEmpty(sp.parameters)) {
                 preparedQuery.setParameters(sp.parameters);
             }
 
@@ -2930,7 +2930,7 @@ public abstract class SQLBuilder {
         boolean noException = false;
 
         try {
-            if (N.notNullOrEmpty(sp.parameters)) {
+            if (N.notEmpty(sp.parameters)) {
                 preparedQuery.setParameters(sp.parameters);
             }
 
@@ -2961,7 +2961,7 @@ public abstract class SQLBuilder {
     //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
     //                : JdbcUtil.prepareQuery(dataSource, sp.sql)) {
     //
-    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
     //            }
     //
@@ -2985,7 +2985,7 @@ public abstract class SQLBuilder {
     //
     //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.sql) : JdbcUtil.prepareQuery(conn, sp.sql)) {
     //
-    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
     //            }
     //
@@ -3014,7 +3014,7 @@ public abstract class SQLBuilder {
     //
     //            preparedQuery.configStmt(stmtSetter);
     //
-    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
     //            }
     //
@@ -3041,7 +3041,7 @@ public abstract class SQLBuilder {
     //
     //            preparedQuery.configStmt(stmtSetter);
     //
-    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
     //            }
     //
@@ -3066,7 +3066,7 @@ public abstract class SQLBuilder {
     //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.sql)
     //                : JdbcUtil.prepareQueryForBigResult(dataSource, sp.sql)) {
     //
-    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
     //            }
     //
@@ -3091,7 +3091,7 @@ public abstract class SQLBuilder {
     //        try (final com.landawn.abacus.jdbc.AbstractPreparedQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(conn, sp.sql)
     //                : JdbcUtil.prepareQueryForBigResult(conn, sp.sql)) {
     //
-    //            if (N.notNullOrEmpty(sp.parameters)) {
+    //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
     //            }
     //
@@ -3118,7 +3118,7 @@ public abstract class SQLBuilder {
 
             _sb.append(_SPACE_SET_SPACE);
 
-            if (setForUpdate && N.notNullOrEmpty(_propOrColumnNames)) {
+            if (setForUpdate && N.notEmpty(_propOrColumnNames)) {
                 set(_propOrColumnNames);
             }
         } else if (_op == OperationType.DELETE) {
@@ -3510,7 +3510,7 @@ public abstract class SQLBuilder {
             final Junction junction = (Junction) cond;
             final List<Condition> conditionList = junction.getConditions();
 
-            if (N.isNullOrEmpty(conditionList)) {
+            if (N.isEmpty(conditionList)) {
                 throw new IllegalArgumentException("The junction condition(" + junction.getOperator().toString() + ") doesn't include any element.");
             }
 
@@ -3827,7 +3827,7 @@ public abstract class SQLBuilder {
     }
 
     private static boolean hasSubEntityToInclude(final Class<?> entityClass, final boolean includeSubEntityProperties) {
-        return includeSubEntityProperties && N.notNullOrEmpty(getSubEntityPropNames(entityClass));
+        return includeSubEntityProperties && N.notEmpty(getSubEntityPropNames(entityClass));
     }
 
     /**
@@ -3932,7 +3932,7 @@ public abstract class SQLBuilder {
         if (entity instanceof String) {
             instance._propOrColumnNames = Array.asList((String) entity);
         } else if (entity instanceof Map) {
-            if (N.isNullOrEmpty(excludedPropNames)) {
+            if (N.isEmpty(excludedPropNames)) {
                 instance._props = (Map<String, Object>) entity;
             } else {
                 instance._props = new LinkedHashMap<>((Map<String, Object>) entity);
@@ -12891,13 +12891,13 @@ public abstract class SQLBuilder {
                 sb.append(' ').append(selection.tableAlias());
             }
 
-            if (N.notNullOrEmpty(selection.selectPropNames()) || selection.includeSubEntityProperties) {
+            if (N.notEmpty(selection.selectPropNames()) || selection.includeSubEntityProperties) {
                 final Class<?> entityClass = selection.entityClass();
                 final Collection<String> selectPropNames = selection.selectPropNames();
                 final Set<String> excludedPropNames = selection.excludedPropNames();
                 final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
-                if (N.isNullOrEmpty(subEntityPropNames)) {
+                if (N.isEmpty(subEntityPropNames)) {
                     continue;
                 }
 
@@ -12906,7 +12906,7 @@ public abstract class SQLBuilder {
                 Class<?> subEntityClass = null;
 
                 for (String subEntityPropName : subEntityPropNames) {
-                    if (N.notNullOrEmpty(selectPropNames)) {
+                    if (N.notEmpty(selectPropNames)) {
                         if (!selectPropNames.contains(subEntityPropName)) {
                             continue;
                         }

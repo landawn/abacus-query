@@ -966,7 +966,7 @@ public class ConditionFactory {
      * @return
      */
     @Beta
-    public static Or isNullOrEmpty(final String propName) {
+    public static Or isEmpty(final String propName) {
         return isNull(propName).or(equal(propName, ""));
     }
 

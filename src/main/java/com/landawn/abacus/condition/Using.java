@@ -60,7 +60,7 @@ public class Using extends Cell {
      * @return
      */
     static Condition createUsingCondition(String... columnNames) {
-        if (N.isNullOrEmpty(columnNames)) {
+        if (N.isEmpty(columnNames)) {
             throw new IllegalArgumentException("To create the using condition, columnNames can't be null or empty");
         }
 
@@ -74,7 +74,7 @@ public class Using extends Cell {
      * @return
      */
     static Condition createUsingCondition(Collection<String> columnNames) {
-        if (N.isNullOrEmpty(columnNames)) {
+        if (N.isEmpty(columnNames)) {
             throw new IllegalArgumentException("To create the using condition, columnNames " + columnNames + " must has one or more than one column name. ");
         }
 

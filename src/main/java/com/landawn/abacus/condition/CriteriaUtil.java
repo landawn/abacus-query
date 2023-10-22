@@ -106,7 +106,7 @@ public final class CriteriaUtil {
         //        if (condition instanceof Expression) {
         //            Expression exp = (Expression) condition;
         //
-        //            if (N.isNullOrEmpty(exp.getLiteral())) {
+        //            if (N.isEmpty(exp.getLiteral())) {
         //                return false;
         //            } else {
         //                SQLParser sqlParser = SQLParser.valueOf(exp.getLiteral());

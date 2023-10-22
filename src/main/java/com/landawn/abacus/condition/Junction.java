@@ -192,7 +192,7 @@ public class Junction extends AbstractCondition {
      */
     @Override
     public String toString(NamingPolicy namingPolicy) {
-        if (N.isNullOrEmpty(conditionList)) {
+        if (N.isEmpty(conditionList)) {
             return Strings.EMPTY_STRING;
         }
 

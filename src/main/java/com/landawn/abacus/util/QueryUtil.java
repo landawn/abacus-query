@@ -173,7 +173,7 @@ public final class QueryUtil {
 
                     final Map<String, String> subPropColumnNameMap = registerEntityPropColumnNameMap(propType.clazz(), namingPolicy, newRegisteringClasses);
 
-                    if (N.notNullOrEmpty(subPropColumnNameMap)) {
+                    if (N.notEmpty(subPropColumnNameMap)) {
                         final String subTableAliasOrName = SQLBuilder.getTableAliasOrName(propType.clazz(), namingPolicy);
 
                         for (Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
@@ -188,11 +188,11 @@ public final class QueryUtil {
 
         //    final Map<String, String> tmp = entityTablePropColumnNameMap.get(entityClass);
         //
-        //    if (N.notNullOrEmpty(tmp)) {
+        //    if (N.notEmpty(tmp)) {
         //        propColumnNameMap.putAll(tmp);
         //    }
 
-        if (N.isNullOrEmpty(propColumnNameMap)) {
+        if (N.isEmpty(propColumnNameMap)) {
             propColumnNameMap = N.<String, String> emptyMap();
         }
 
@@ -226,7 +226,7 @@ public final class QueryUtil {
 
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
 
-        if (!N.isNullOrEmpty(excludedPropNames)) {
+        if (!N.isEmpty(excludedPropNames)) {
             final List<String> tmp = new ArrayList<>(val[2]);
             tmp.removeAll(excludedPropNames);
             return tmp;
@@ -234,7 +234,7 @@ public final class QueryUtil {
 
         final Collection<String> idPropNames = getIdFieldNames(entityClass);
 
-        if (N.isNullOrEmpty(idPropNames)) {
+        if (N.isEmpty(idPropNames)) {
             return val[2];
         }
 
@@ -261,7 +261,7 @@ public final class QueryUtil {
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
         final Collection<String> propNames = val[2];
 
-        if (N.isNullOrEmpty(excludedPropNames)) {
+        if (N.isEmpty(excludedPropNames)) {
             return propNames;
         }
         final List<String> tmp = new ArrayList<>(propNames);
@@ -283,7 +283,7 @@ public final class QueryUtil {
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
         final Collection<String> propNames = includeSubEntityProperties ? val[0] : val[1];
 
-        if (N.isNullOrEmpty(excludedPropNames)) {
+        if (N.isEmpty(excludedPropNames)) {
             return propNames;
         }
 
@@ -302,7 +302,7 @@ public final class QueryUtil {
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
         final Collection<String> propNames = val[4];
 
-        if (N.isNullOrEmpty(excludedPropNames)) {
+        if (N.isEmpty(excludedPropNames)) {
             return propNames;
         }
         final List<String> tmp = new ArrayList<>(propNames);
@@ -338,13 +338,13 @@ public final class QueryUtil {
     public static List<String> getIdFieldNames(final Class<?> targetClass, boolean fakeIdForEmpty) {
         final ImmutableList<String> idPropNames = ParserUtil.getBeanInfo(targetClass).idPropNameList;
 
-        return N.isNullOrEmpty(idPropNames) && fakeIdForEmpty ? fakeIds : idPropNames;
+        return N.isEmpty(idPropNames) && fakeIdForEmpty ? fakeIds : idPropNames;
     }
 
     public static boolean isNotColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
         return propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class)
-                || (N.notNullOrEmpty(columnFields) && !columnFields.contains(propInfo.name))
-                || (N.notNullOrEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
+                || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
+                || (N.notEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
     }
 
     private static final ImmutableList<String> fakeIds = ImmutableList.of("not_defined_fake_id_in_abacus_" + Strings.uuid());
