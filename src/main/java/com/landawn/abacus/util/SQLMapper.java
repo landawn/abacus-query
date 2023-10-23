@@ -187,7 +187,7 @@ public final class SQLMapper {
      * @param id
      */
     private void checkId(String id) {
-        N.checkArgNotNullOrEmpty(id, "id");
+        N.checkArgNotEmpty(id, "id");
 
         if (id.length() > MAX_ID_LENGTH) {
             throw new IllegalArgumentException("Id: " + id + " is too long. The maximum length for id is: " + MAX_ID_LENGTH);

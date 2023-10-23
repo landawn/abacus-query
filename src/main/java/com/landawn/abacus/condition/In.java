@@ -49,7 +49,7 @@ public class In extends AbstractCondition {
     public In(String propName, Collection<?> values) {
         super(Operator.IN);
 
-        N.checkArgNotNullOrEmpty(values, "'values' can't be null or empty");
+        N.checkArgNotEmpty(values, "'values' can't be null or empty");
 
         this.propName = propName;
         this.values = new ArrayList<>(values);

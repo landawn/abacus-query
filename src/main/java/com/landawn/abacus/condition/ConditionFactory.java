@@ -153,7 +153,7 @@ public class ConditionFactory {
      */
     @SafeVarargs
     public static Or eqOr(final String propName, final Object... propValues) {
-        N.checkArgNotNullOrEmpty(propValues, "propValues");
+        N.checkArgNotEmpty(propValues, "propValues");
 
         Or or = CF.or();
 
@@ -171,7 +171,7 @@ public class ConditionFactory {
      * @return
      */
     public static Or eqOr(final String propName, final Collection<?> propValues) {
-        N.checkArgNotNullOrEmpty(propValues, "propValues");
+        N.checkArgNotEmpty(propValues, "propValues");
 
         Or or = CF.or();
 
@@ -188,7 +188,7 @@ public class ConditionFactory {
      * @return
      */
     public static Or eqOr(final Map<String, ?> props) {
-        N.checkArgNotNullOrEmpty(props, "props");
+        N.checkArgNotEmpty(props, "props");
 
         final Collection<String> selectPropNames = props.keySet();
         final Iterator<String> iter = selectPropNames.iterator();
@@ -229,7 +229,7 @@ public class ConditionFactory {
      * @return
      */
     public static Or eqOr(final Object entity, final Collection<String> selectPropNames) {
-        N.checkArgNotNullOrEmpty(selectPropNames, "selectPropNames"); //NOSONAR
+        N.checkArgNotEmpty(selectPropNames, "selectPropNames"); //NOSONAR
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
         final Iterator<String> iter = selectPropNames.iterator();
@@ -289,7 +289,7 @@ public class ConditionFactory {
      * @return
      */
     public static And eqAnd(final Map<String, ?> props) {
-        N.checkArgNotNullOrEmpty(props, "props");
+        N.checkArgNotEmpty(props, "props");
 
         final Collection<String> selectPropNames = props.keySet();
         final Iterator<String> iter = selectPropNames.iterator();
@@ -330,7 +330,7 @@ public class ConditionFactory {
      * @return
      */
     public static And eqAnd(final Object entity, final Collection<String> selectPropNames) {
-        N.checkArgNotNullOrEmpty(selectPropNames, "selectPropNames");
+        N.checkArgNotEmpty(selectPropNames, "selectPropNames");
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
         final Iterator<String> iter = selectPropNames.iterator();
@@ -392,7 +392,7 @@ public class ConditionFactory {
      */
     @Beta
     public static Or eqAndOr(final List<? extends Map<String, ?>> propsList) {
-        N.checkArgNotNullOrEmpty(propsList, "propsList");
+        N.checkArgNotEmpty(propsList, "propsList");
 
         final Condition[] conds = new Condition[propsList.size()];
 
@@ -411,7 +411,7 @@ public class ConditionFactory {
      */
     @Beta
     public static Or eqAndOr(final Collection<?> entities) {
-        N.checkArgNotNullOrEmpty(entities, "entities");
+        N.checkArgNotEmpty(entities, "entities");
 
         return eqAndOr(entities, QueryUtil.getSelectPropNames(N.firstNonNull(entities).orElseNull().getClass(), false, null));
     }
@@ -425,8 +425,8 @@ public class ConditionFactory {
      */
     @Beta
     public static Or eqAndOr(final Collection<?> entities, final Collection<String> selectPropNames) {
-        N.checkArgNotNullOrEmpty(entities, "entities");
-        N.checkArgNotNullOrEmpty(selectPropNames, "selectPropNames");
+        N.checkArgNotEmpty(entities, "entities");
+        N.checkArgNotEmpty(selectPropNames, "selectPropNames");
 
         final Iterator<?> iter = entities.iterator();
         final Condition[] conds = new Condition[entities.size()];
@@ -565,7 +565,7 @@ public class ConditionFactory {
      * @return
      */
     public static Or id2Cond(final Collection<? extends EntityId> entityIds) {
-        N.checkArgNotNullOrEmpty(entityIds, "entityIds");
+        N.checkArgNotEmpty(entityIds, "entityIds");
 
         final Iterator<? extends EntityId> iter = entityIds.iterator();
         final Condition[] conds = new Condition[entityIds.size()];

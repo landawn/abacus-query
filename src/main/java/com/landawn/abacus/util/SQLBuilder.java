@@ -3976,7 +3976,7 @@ public abstract class SQLBuilder {
     }
 
     static void checkMultiSelects(final List<Selection> multiSelects) {
-        N.checkArgNotNullOrEmpty(multiSelects, "multiSelects");
+        N.checkArgNotEmpty(multiSelects, "multiSelects");
 
         for (Selection selection : multiSelects) {
             N.checkArgNotNull(selection.entityClass(), "Class can't be null in 'multiSelects'");
@@ -4230,7 +4230,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart"); //NOSONAR
+            N.checkArgNotEmpty(selectPart, "selectPart"); //NOSONAR
 
             final SQLBuilder instance = createInstance();
 
@@ -4246,7 +4246,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames"); //NOSONAR
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames"); //NOSONAR
 
             final SQLBuilder instance = createInstance();
 
@@ -4262,7 +4262,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -4278,7 +4278,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases"); //NOSONAR
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases"); //NOSONAR
 
             final SQLBuilder instance = createInstance();
 
@@ -4818,7 +4818,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -4834,7 +4834,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -4850,7 +4850,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -4866,7 +4866,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -5406,7 +5406,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -5422,7 +5422,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -5438,7 +5438,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -5454,7 +5454,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -5993,7 +5993,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -6009,7 +6009,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -6025,7 +6025,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -6041,7 +6041,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -6578,7 +6578,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -6594,7 +6594,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -6610,7 +6610,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -6626,7 +6626,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -7163,7 +7163,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -7179,7 +7179,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -7195,7 +7195,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -7211,7 +7211,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -7748,7 +7748,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -7764,7 +7764,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -7780,7 +7780,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -7796,7 +7796,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -8338,7 +8338,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -8354,7 +8354,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -8370,7 +8370,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -8386,7 +8386,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -8929,7 +8929,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -8945,7 +8945,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -8961,7 +8961,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -8977,7 +8977,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -9519,7 +9519,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -9535,7 +9535,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -9551,7 +9551,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -9567,7 +9567,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -10109,7 +10109,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -10125,7 +10125,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -10141,7 +10141,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -10157,7 +10157,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -10696,7 +10696,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -10712,7 +10712,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -10728,7 +10728,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -10744,7 +10744,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -11283,7 +11283,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -11299,7 +11299,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -11315,7 +11315,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -11331,7 +11331,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -11870,7 +11870,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -11886,7 +11886,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -11902,7 +11902,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -11918,7 +11918,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 
@@ -12457,7 +12457,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotNullOrEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, "selectPart");
 
             final SQLBuilder instance = createInstance();
 
@@ -12473,7 +12473,7 @@ public abstract class SQLBuilder {
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -12489,7 +12489,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotNullOrEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
 
             final SQLBuilder instance = createInstance();
 
@@ -12505,7 +12505,7 @@ public abstract class SQLBuilder {
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotNullOrEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
 
             final SQLBuilder instance = createInstance();
 

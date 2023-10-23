@@ -48,7 +48,7 @@ public class NotIn extends AbstractCondition {
     public NotIn(String propName, Collection<?> values) {
         super(Operator.NOT_IN);
 
-        N.checkArgNotNullOrEmpty(values, "'values' can't be null or empty");
+        N.checkArgNotEmpty(values, "'values' can't be null or empty");
 
         this.propName = propName;
         this.values = new ArrayList<>(values);

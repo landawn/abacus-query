@@ -123,7 +123,7 @@ public final class ParsedSql {
      * @return
      */
     public static ParsedSql parse(String sql) {
-        N.checkArgNotNullOrEmpty(sql, "sql");
+        N.checkArgNotEmpty(sql, "sql");
 
         ParsedSql result = null;
         PoolableWrapper<ParsedSql> w = pool.get(sql);
