@@ -95,7 +95,7 @@ import com.landawn.abacus.util.u.Optional;
  * @since 0.8
  */
 @SuppressWarnings("deprecation")
-public abstract class SQLBuilder {
+public abstract class SQLBuilder { // NOSONAR
 
     // TODO performance goal: 80% cases (or maybe sql.length < 1024?) can be composed in 0.1 millisecond. 0.01 millisecond will be fantastic if possible.
 
@@ -1018,7 +1018,7 @@ public abstract class SQLBuilder {
         final boolean isForSelect = _op == OperationType.QUERY;
 
         if (N.notEmpty(_propOrColumnNames)) {
-            if (_entityClass != null && withAlias == false && _propOrColumnNames == QueryUtil.getSelectPropNames(_entityClass, false, null)) {
+            if (_entityClass != null && withAlias == false && _propOrColumnNames == QueryUtil.getSelectPropNames(_entityClass, false, null)) { // NOSONAR
                 String fullSelectParts = fullSelectPartsPool.get(_namingPolicy).get(_entityClass);
 
                 if (Strings.isEmpty(fullSelectParts)) {

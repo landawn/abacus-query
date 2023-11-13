@@ -66,7 +66,7 @@ public class Junction extends AbstractCondition {
     public Junction(Operator operator, Collection<? extends Condition> conditions) {
         super(operator);
         conditionList = new ArrayList<>();
-        add(conditions);
+        add(conditions); // NOSONAR
     }
 
     /**

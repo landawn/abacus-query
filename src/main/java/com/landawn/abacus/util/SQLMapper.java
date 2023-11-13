@@ -151,7 +151,7 @@ public final class SQLMapper {
      */
     public ImmutableMap<String, String> getAttrs(String id) {
         if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
-            return null;
+            return null; // NOSONAR
         }
 
         return attrsMap.get(id);
@@ -230,7 +230,7 @@ public final class SQLMapper {
      */
     public void saveTo(File file) {
 
-        try (OutputStream os = new FileOutputStream(file);) {
+        try (OutputStream os = new FileOutputStream(file)) {
             Document doc = XMLUtil.createDOMParser(true, true).newDocument();
             Element sqlMapperNode = doc.createElement(SQLMapper.SQL_MAPPER);
 

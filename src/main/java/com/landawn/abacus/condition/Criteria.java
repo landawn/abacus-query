@@ -170,7 +170,7 @@ public class Criteria extends AbstractCondition {
         List<Condition> conditions = new ArrayList<>();
 
         for (Condition cond : conditionList) {
-            if (cond.getOperator().equals(operator)) {
+            if (cond.getOperator() == operator) {
                 conditions.add(cond);
             }
         }
@@ -209,7 +209,7 @@ public class Criteria extends AbstractCondition {
      */
     void remove(Condition... conditions) {
         for (Condition cond : conditions) {
-            conditionList.remove(cond);
+            conditionList.remove(cond); // NOSONAR
         }
     }
 
@@ -411,7 +411,7 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     public Criteria where(Condition condition) {
-        if (condition.getOperator().equals(Operator.WHERE)) {
+        if (condition.getOperator() == Operator.WHERE) {
             add(condition);
         } else {
             add(new Where(condition));
@@ -437,7 +437,7 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     public Criteria groupBy(Condition condition) {
-        if (condition.getOperator().equals(Operator.GROUP_BY)) {
+        if (condition.getOperator() == Operator.GROUP_BY) {
             add(condition);
         } else {
             add(new GroupBy(condition));
@@ -508,7 +508,7 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     public Criteria having(Condition condition) {
-        if (condition.getOperator().equals(Operator.HAVING)) {
+        if (condition.getOperator() == Operator.HAVING) {
             add(condition);
         } else {
             add(new Having(condition));
@@ -578,7 +578,7 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     public Criteria orderBy(Condition condition) {
-        if (condition.getOperator().equals(Operator.ORDER_BY)) {
+        if (condition.getOperator() == Operator.ORDER_BY) {
             add(condition);
         } else {
             add(new OrderBy(condition));
@@ -781,15 +781,15 @@ public class Criteria extends AbstractCondition {
         String aggregate = Strings.EMPTY_STRING;
 
         for (Condition cond : conditionList) {
-            if (Operator.WHERE.equals(cond.getOperator())) {
+            if (cond.getOperator() == Operator.WHERE) {
                 where += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (Operator.ORDER_BY.equals(cond.getOperator())) {
+            } else if (cond.getOperator() == Operator.ORDER_BY) {
                 orderBy += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (Operator.GROUP_BY.equals(cond.getOperator())) {
+            } else if (cond.getOperator() == Operator.GROUP_BY) {
                 groupBy += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (Operator.HAVING.equals(cond.getOperator())) {
+            } else if (cond.getOperator() == Operator.HAVING) {
                 having += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (Operator.LIMIT.equals(cond.getOperator())) {
+            } else if (cond.getOperator() == Operator.LIMIT) {
                 limit += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond instanceof Join) {
                 join += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
@@ -888,13 +888,13 @@ public class Criteria extends AbstractCondition {
      * @param cond
      */
     private void addCondition(Condition cond) {
-        if (Operator.WHERE.equals(cond.getOperator()) || Operator.ORDER_BY.equals(cond.getOperator()) || Operator.GROUP_BY.equals(cond.getOperator())
-                || Operator.HAVING.equals(cond.getOperator()) || Operator.LIMIT.equals(cond.getOperator())) {
+        if (cond.getOperator() == Operator.WHERE || cond.getOperator() == Operator.ORDER_BY || cond.getOperator() == Operator.GROUP_BY
+                || cond.getOperator() == Operator.HAVING || cond.getOperator() == Operator.LIMIT) {
 
             Condition cell = find(cond.getOperator());
 
             if (cell != null) {
-                conditionList.remove(cell);
+                conditionList.remove(cell); // NOSONAR
             }
         }
 
@@ -912,7 +912,7 @@ public class Criteria extends AbstractCondition {
         for (int i = 0; i < conditionList.size(); i++) {
             cond = conditionList.get(i);
 
-            if (cond.getOperator().equals(operator)) {
+            if (cond.getOperator() == operator) {
                 return cond;
             }
         }
