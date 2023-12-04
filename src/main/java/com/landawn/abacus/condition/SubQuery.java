@@ -62,12 +62,21 @@ public class SubQuery extends AbstractCondition {
     /**
      *
      *
-     * @param entityName
      * @param sql
      */
     public SubQuery(String sql) {
+        this(Strings.EMPTY_STRING, sql);
+    }
+
+    /**
+     *
+     *
+     * @param entityName
+     * @param sql
+     */
+    public SubQuery(String entityName, String sql) {
         super(Operator.EMPTY);
-        this.entityName = Strings.EMPTY_STRING;
+        this.entityName = entityName;
         this.entityClass = null;
 
         if (Strings.isEmpty(sql)) {

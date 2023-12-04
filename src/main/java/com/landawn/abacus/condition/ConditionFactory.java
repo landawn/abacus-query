@@ -1926,7 +1926,7 @@ public class ConditionFactory {
      */
     @Deprecated
     public static SubQuery subQuery(@SuppressWarnings("unused") final String entityName, final String sql) {
-        return subQuery(sql);
+        return subQuery(entityName, sql);
     }
 
     /**
