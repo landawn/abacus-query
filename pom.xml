@@ -11,11 +11,11 @@
 	<url>https://github.com/landawn/abacus-query</url>
 
 	<properties>
+		<java.version>17</java.version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
-		<java.version>17</java.version>
-		<junit.jupiter.version>5.5.1</junit.jupiter.version>
-		<junit.platform.version>1.5.1</junit.platform.version>
+		<junit.jupiter.version>5.10.1</junit.jupiter.version>
+		<junit.platform.version>1.10.1</junit.platform.version>
 	</properties>
 
 	<dependencies>
@@ -29,7 +29,7 @@
 		<dependency>
 			<groupId>com.landawn</groupId>
 			<artifactId>abacus-jdbc</artifactId>
-			<version>3.3.22</version>
+			<version>3.3.23</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -59,7 +59,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.10.1</version>
+				<version>3.11.0</version>
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
@@ -69,7 +69,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.2.1</version>
+				<version>3.3.0</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -83,7 +83,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.3.2</version>
+				<version>3.6.3</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
