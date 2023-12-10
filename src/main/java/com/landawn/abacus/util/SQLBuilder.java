@@ -1094,7 +1094,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             for (Selection selection : _multiSelects) {
                 if (Strings.isNotEmpty(selection.tableAlias())) {
-                    this._aliasPropColumnNameMap.put(selection.tableAlias(), QueryUtil.prop2ColumnNameMap(selection.entityClass(), _namingPolicy));
+                    this._aliasPropColumnNameMap.put(selection.tableAlias(), prop2ColumnNameMap(selection.entityClass(), _namingPolicy));
                 }
             }
 
@@ -1112,7 +1112,7 @@ public abstract class SQLBuilder { // NOSONAR
                 selectionBeanInfo = selectionEntityClass == null && ClassUtil.isBeanClass(selectionEntityClass) == false ? null
                         : ParserUtil.getBeanInfo(selectionEntityClass);
                 selectionPropColumnNameMap = selectionEntityClass == null && ClassUtil.isBeanClass(selectionEntityClass) == false ? null
-                        : QueryUtil.prop2ColumnNameMap(selectionEntityClass, _namingPolicy);
+                        : prop2ColumnNameMap(selectionEntityClass, _namingPolicy);
                 selectionTableAlias = selection.tableAlias();
 
                 selectionClassAlias = selection.classAlias();
@@ -1147,7 +1147,7 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         if (N.isEmpty(_propColumnNameMap) && entityClass != null && ClassUtil.isBeanClass(entityClass)) {
-            _propColumnNameMap = QueryUtil.prop2ColumnNameMap(entityClass, _namingPolicy);
+            _propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
         }
 
         _aliasPropColumnNameMap.put(alias, _propColumnNameMap);
@@ -2741,10 +2741,9 @@ public abstract class SQLBuilder { // NOSONAR
         setEntityClass(entityClass);
         final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
         final Map<String, Object> localProps = N.newHashMap(propNames.size());
-        final BeanInfo localEntityInfo = ParserUtil.getBeanInfo(entityClass);
 
         for (String propName : propNames) {
-            localProps.put(propName, localEntityInfo.getPropValue(entity, propName));
+            localProps.put(propName, _entityInfo.getPropValue(entity, propName));
         }
 
         return set(localProps);
@@ -3244,7 +3243,7 @@ public abstract class SQLBuilder { // NOSONAR
 
         if (entityClass != null && ClassUtil.isBeanClass(entityClass)) {
             this._entityInfo = ParserUtil.getBeanInfo(entityClass);
-            this._propColumnNameMap = QueryUtil.prop2ColumnNameMap(entityClass, _namingPolicy);
+            this._propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
         } else {
             this._entityInfo = null;
             this._propColumnNameMap = null;
@@ -3821,7 +3820,7 @@ public abstract class SQLBuilder { // NOSONAR
 
                 final String propEntityTableAliasOrName = getTableAliasOrName(propEntityClass, _namingPolicy);
 
-                final ImmutableMap<String, Tuple2<String, Boolean>> subPropColumnNameMap = QueryUtil.prop2ColumnNameMap(propEntityClass, _namingPolicy);
+                final ImmutableMap<String, Tuple2<String, Boolean>> subPropColumnNameMap = prop2ColumnNameMap(propEntityClass, _namingPolicy);
 
                 final Collection<String> subSelectPropNames = QueryUtil.getSelectPropNames(propEntityClass, false, null);
                 int i = 0;
@@ -4083,6 +4082,10 @@ public abstract class SQLBuilder { // NOSONAR
         for (Selection selection : multiSelects) {
             N.checkArgNotNull(selection.entityClass(), "Class can't be null in 'multiSelects'");
         }
+    }
+
+    static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+        return QueryUtil.prop2ColumnNameMap(entityClass, namingPolicy);
     }
 
     enum SQLPolicy {
