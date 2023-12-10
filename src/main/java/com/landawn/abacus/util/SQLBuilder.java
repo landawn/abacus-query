@@ -4310,7 +4310,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -4356,7 +4356,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -4941,7 +4941,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -4987,7 +4987,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -5185,7 +5185,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -5296,7 +5296,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -5572,7 +5572,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -5618,7 +5618,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -5816,7 +5816,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -5927,7 +5927,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -6202,7 +6202,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -6248,7 +6248,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -6446,7 +6446,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.NO_CHANGE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -6557,7 +6557,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.NO_CHANGE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -6830,7 +6830,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -6876,7 +6876,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -7458,7 +7458,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -7504,7 +7504,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -7702,7 +7702,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -7813,7 +7813,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -8086,7 +8086,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -8132,7 +8132,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -8330,7 +8330,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -8441,7 +8441,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -8719,7 +8719,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -8765,7 +8765,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -8963,7 +8963,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.NO_CHANGE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -9074,7 +9074,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.NO_CHANGE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -9353,7 +9353,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -9399,7 +9399,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -9986,7 +9986,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -10032,7 +10032,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -10230,7 +10230,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -10341,7 +10341,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -10619,7 +10619,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -10665,7 +10665,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -10863,7 +10863,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -10974,7 +10974,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -11249,7 +11249,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -11295,7 +11295,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -11493,7 +11493,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.NO_CHANGE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -11604,7 +11604,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.NO_CHANGE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -11879,7 +11879,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -11925,7 +11925,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -12509,7 +12509,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -12555,7 +12555,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -12753,7 +12753,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -12864,7 +12864,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -13139,7 +13139,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.UPDATE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
             instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
 
             return instance;
@@ -13185,7 +13185,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
 
             return instance;
         }
@@ -13383,7 +13383,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -13494,7 +13494,7 @@ public abstract class SQLBuilder { // NOSONAR
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
