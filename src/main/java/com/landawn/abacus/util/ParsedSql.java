@@ -67,7 +67,7 @@ public final class ParsedSql {
 
     private int couchbaseParameterCount;
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    @SuppressWarnings({ "unchecked" })
     private ParsedSql(String sql) {
         this.sql = sql.trim();
 
@@ -233,7 +233,6 @@ public final class ParsedSql {
     /**
      * Parses the for couchbase.
      */
-    @SuppressWarnings("deprecation")
     private void parseForCouchbase() {
         List<String> couchbaseNamedParameterList = new ArrayList<>();
 

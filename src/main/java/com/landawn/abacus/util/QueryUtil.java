@@ -196,7 +196,6 @@ public final class QueryUtil {
             propColumnNameMap = N.<String, String> emptyMap();
         }
 
-        @SuppressWarnings("deprecation")
         final ImmutableMap<String, String> result = ImmutableMap.wrap(propColumnNameMap);
 
         Map<NamingPolicy, ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
@@ -342,8 +341,7 @@ public final class QueryUtil {
     }
 
     public static boolean isNotColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
-        return propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class)
-                || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
+        return propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
                 || (N.notEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
     }
 

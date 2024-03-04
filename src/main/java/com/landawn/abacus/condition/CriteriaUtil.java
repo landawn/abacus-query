@@ -26,7 +26,6 @@ import com.landawn.abacus.util.N;
  * @author Haiyang Li
  * @since 0.8
  */
-@SuppressWarnings("deprecation")
 @Internal
 public final class CriteriaUtil {
 
