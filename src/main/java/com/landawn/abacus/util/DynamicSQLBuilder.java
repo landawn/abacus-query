@@ -425,9 +425,10 @@ public class DynamicSQLBuilder {
         }
 
         /**
+         * 
          *
-         * @param column
-         * @return
+         * @param columnsAndAliasMap 
+         * @return 
          */
         public Select append(final Map<String, String> columnsAndAliasMap) {
             if (sb.length() > 0) {

@@ -1917,12 +1917,13 @@ public class ConditionFactory {
     }
 
     /**
+     * 
      *
-     * @param entityName
-     * @param sql
-     * @return
-     * @deprecated replaced by {@link #subQuery(String)}
+     * @param entityName 
+     * @param sql 
+     * @return 
      * @see #subQuery(String)
+     * @deprecated replaced by {@link #subQuery(String)}
      */
     @Deprecated
     public static SubQuery subQuery(final String entityName, final String sql) {

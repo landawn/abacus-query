@@ -60,6 +60,11 @@ public class Criteria extends AbstractCondition {
         conditionList = new ArrayList<>();
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public String preselect() {
         return this.preselect;
     }
@@ -298,9 +303,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
+     * 
      *
-     * @param distinct
-     * @return
+     * @return 
      */
     public Criteria distinct() {
         this.preselect = WD.DISTINCT;
@@ -320,9 +325,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
+     * 
      *
-     * @param distinct
-     * @return
+     * @return 
      */
     public Criteria distinctRow() {
         this.preselect = WD.DISTINCTROW;
@@ -341,6 +346,12 @@ public class Criteria extends AbstractCondition {
         return this;
     }
 
+    /**
+     * 
+     *
+     * @param preselect 
+     * @return 
+     */
     public Criteria preselect(final String preselect) {
         this.preselect = preselect;
 

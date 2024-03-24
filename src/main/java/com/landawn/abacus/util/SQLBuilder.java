@@ -874,10 +874,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * For better performance, this method should be called before {@code from}
+     * For better performance, this method should be called before {@code from}.
      *
      * @param preselect <code>ALL | DISTINCT | DISTINCTROW...</code>
-     * @return
+     * @return 
      */
     public SQLBuilder preselect(final String preselect) {
         if (Strings.isNotEmpty(this._preselect)) {

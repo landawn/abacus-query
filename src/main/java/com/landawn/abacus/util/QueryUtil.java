@@ -340,6 +340,14 @@ public final class QueryUtil {
         return N.isEmpty(idPropNames) && fakeIdForEmpty ? fakeIds : idPropNames;
     }
 
+    /**
+     * 
+     *
+     * @param columnFields 
+     * @param nonColumnFields 
+     * @param propInfo 
+     * @return 
+     */
     public static boolean isNotColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
         return propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
                 || (N.notEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
