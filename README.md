@@ -1,9 +1,7 @@
 # abacus-query
  
-
 [![Maven Central](https://img.shields.io/maven-central/v/com.landawn/abacus-query.svg)](https://maven-badges.herokuapp.com/maven-central/com.landawn/abacus-query/)
-[![Javadocs](https://www.javadoc.io/badge/com.landawn/abacus-query.svg)](https://www.javadoc.io/doc/com.landawn/abacus-query)
- 
+[![Javadocs](https://img.shields.io/badge/javadoc-1.3.19-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn/abacus-query/1.3.19/index.html)
 
 ## Download/Installation & [Changes](https://github.com/landawn/abacus-query/blob/master/CHANGES.md):
 
