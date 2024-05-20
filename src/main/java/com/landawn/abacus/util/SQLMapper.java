@@ -65,7 +65,7 @@ public final class SQLMapper {
 
     public static final String TIMEOUT = "timeout";
 
-    public static final int MAX_ID_LENGTH = 64;
+    public static final int MAX_ID_LENGTH = 128;
 
     private final Map<String, ParsedSql> sqlMap = new LinkedHashMap<>();
 
@@ -189,8 +189,12 @@ public final class SQLMapper {
     private void checkId(String id) {
         N.checkArgNotEmpty(id, "id");
 
+        if (Strings.containsWhitespace(id)) {
+            throw new IllegalArgumentException("Sql id: " + id + " contains whitespace characters");
+        }
+
         if (id.length() > MAX_ID_LENGTH) {
-            throw new IllegalArgumentException("Id: " + id + " is too long. The maximum length for id is: " + MAX_ID_LENGTH);
+            throw new IllegalArgumentException("Sql id: " + id + " is too long. The maximum length for id is: " + MAX_ID_LENGTH);
         }
 
         if (sqlMap.containsKey(id)) {
