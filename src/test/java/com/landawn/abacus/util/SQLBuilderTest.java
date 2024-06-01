@@ -8,12 +8,20 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.condition.ConditionFactory.CF;
 import com.landawn.abacus.condition.Criteria;
+import com.landawn.abacus.condition.In;
+import com.landawn.abacus.util.SQLBuilder.NSC;
 import com.landawn.abacus.util.SQLBuilder.PSC;
 import com.landawn.abacus.util.SQLBuilder.SP;
 import com.landawn.abacus.util.entity.Account;
 import com.landawn.abacus.util.entity.AccountContact;
 
 class SQLBuilderTest {
+
+    @Test
+    public void test_00() {
+        In cond = CF.in("id", N.asList("a", "b"));
+        N.println(NSC.deleteFrom(Account.class).append(cond).pair());
+    }
 
     @Test
     public void test_distinct() {
