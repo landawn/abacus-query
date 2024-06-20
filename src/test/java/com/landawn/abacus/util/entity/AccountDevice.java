@@ -29,15 +29,39 @@ public class AccountDevice {
     private Timestamp lastUpdateTime;
     private Timestamp createTime;
 
+    /**
+     * 
+     */
     public AccountDevice() {
     }
 
+    /**
+     * 
+     *
+     * @param id 
+     */
     public AccountDevice(long id) {
         this();
 
         setId(id);
     }
 
+    /**
+     * 
+     *
+     * @param accountId 
+     * @param name 
+     * @param udid 
+     * @param platform 
+     * @param model 
+     * @param manufacturer 
+     * @param produceTime 
+     * @param category 
+     * @param description 
+     * @param status 
+     * @param lastUpdateTime 
+     * @param createTime 
+     */
     public AccountDevice(long accountId, String name, String udid, String platform, String model, String manufacturer, Timestamp produceTime, String category,
             String description, int status, Timestamp lastUpdateTime, Timestamp createTime) {
         this();
@@ -56,6 +80,23 @@ public class AccountDevice {
         setCreateTime(createTime);
     }
 
+    /**
+     * 
+     *
+     * @param id 
+     * @param accountId 
+     * @param name 
+     * @param udid 
+     * @param platform 
+     * @param model 
+     * @param manufacturer 
+     * @param produceTime 
+     * @param category 
+     * @param description 
+     * @param status 
+     * @param lastUpdateTime 
+     * @param createTime 
+     */
     public AccountDevice(long id, long accountId, String name, String udid, String platform, String model, String manufacturer, Timestamp produceTime,
             String category, String description, int status, Timestamp lastUpdateTime, Timestamp createTime) {
         this();
@@ -75,149 +116,297 @@ public class AccountDevice {
         setCreateTime(createTime);
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("long")
     public long getId() {
         return id;
     }
 
+    /**
+     * 
+     *
+     * @param id 
+     * @return 
+     */
     public AccountDevice setId(long id) {
         this.id = id;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("long")
     public long getAccountId() {
         return accountId;
     }
 
+    /**
+     * 
+     *
+     * @param accountId 
+     * @return 
+     */
     public AccountDevice setAccountId(long accountId) {
         this.accountId = accountId;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getName() {
         return name;
     }
 
+    /**
+     * 
+     *
+     * @param name 
+     * @return 
+     */
     public AccountDevice setName(String name) {
         this.name = name;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getUDID() {
         return udid;
     }
 
+    /**
+     * 
+     *
+     * @param udid 
+     * @return 
+     */
     public AccountDevice setUDID(String udid) {
         this.udid = udid;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getPlatform() {
         return platform;
     }
 
+    /**
+     * 
+     *
+     * @param platform 
+     * @return 
+     */
     public AccountDevice setPlatform(String platform) {
         this.platform = platform;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getModel() {
         return model;
     }
 
+    /**
+     * 
+     *
+     * @param model 
+     * @return 
+     */
     public AccountDevice setModel(String model) {
         this.model = model;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getManufacturer() {
         return manufacturer;
     }
 
+    /**
+     * 
+     *
+     * @param manufacturer 
+     * @return 
+     */
     public AccountDevice setManufacturer(String manufacturer) {
         this.manufacturer = manufacturer;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("Timestamp")
     public Timestamp getProduceTime() {
         return produceTime;
     }
 
+    /**
+     * 
+     *
+     * @param produceTime 
+     * @return 
+     */
     public AccountDevice setProduceTime(Timestamp produceTime) {
         this.produceTime = produceTime;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getCategory() {
         return category;
     }
 
+    /**
+     * 
+     *
+     * @param category 
+     * @return 
+     */
     public AccountDevice setCategory(String category) {
         this.category = category;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getDescription() {
         return description;
     }
 
+    /**
+     * 
+     *
+     * @param description 
+     * @return 
+     */
     public AccountDevice setDescription(String description) {
         this.description = description;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("int")
     public int getStatus() {
         return status;
     }
 
+    /**
+     * 
+     *
+     * @param status 
+     * @return 
+     */
     public AccountDevice setStatus(int status) {
         this.status = status;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("Timestamp")
     public Timestamp getLastUpdateTime() {
         return lastUpdateTime;
     }
 
+    /**
+     * 
+     *
+     * @param lastUpdateTime 
+     * @return 
+     */
     public AccountDevice setLastUpdateTime(Timestamp lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("Timestamp")
     public Timestamp getCreateTime() {
         return createTime;
     }
 
+    /**
+     * 
+     *
+     * @param createTime 
+     * @return 
+     */
     public AccountDevice setCreateTime(Timestamp createTime) {
         this.createTime = createTime;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;
@@ -236,6 +425,12 @@ public class AccountDevice {
         return 31 * h + Objects.hashCode(createTime);
     }
 
+    /**
+     * 
+     *
+     * @param obj 
+     * @return 
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -253,6 +448,11 @@ public class AccountDevice {
         return false;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return "{id=" + Objects.toString(id) + ", accountId=" + Objects.toString(accountId) + ", name=" + Objects.toString(name) + ", udid="

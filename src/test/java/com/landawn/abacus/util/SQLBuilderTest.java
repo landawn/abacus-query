@@ -17,12 +17,18 @@ import com.landawn.abacus.util.entity.AccountContact;
 
 class SQLBuilderTest {
 
+    /**
+     * 
+     */
     @Test
     public void test_00() {
         In cond = CF.in("id", N.asList("a", "b"));
         N.println(NSC.deleteFrom(Account.class).append(cond).pair());
     }
 
+    /**
+     * 
+     */
     @Test
     public void test_distinct() {
 
@@ -36,6 +42,9 @@ class SQLBuilderTest {
         assertEquals(sql, sql2);
     }
 
+    /**
+     * 
+     */
     @Test
     public void test_selectFrom() {
 
@@ -52,6 +61,9 @@ class SQLBuilderTest {
         N.println(sql);
     }
 
+    /**
+     * 
+     */
     @Test
     public void test_count() {
 
@@ -59,6 +71,9 @@ class SQLBuilderTest {
         N.println(sql);
     }
 
+    /**
+     * 
+     */
     @Test
     public void test_expr() {
 
@@ -72,6 +87,9 @@ class SQLBuilderTest {
         N.println(sql);
     }
 
+    /**
+     * 
+     */
     @Test
     public void test_multi_select() {
         SP ps = PSC.select(Account.class, "acc", null, AccountContact.class, "ac", "contact").from(Account.class).pair();
@@ -102,6 +120,9 @@ class SQLBuilderTest {
         N.println(ps4.sql);
     }
 
+    /**
+     * 
+     */
     @Test
     public void test_multi_select_02() {
         List<Selection> selections = Selection.multiSelectionBuilder()

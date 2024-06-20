@@ -31,15 +31,38 @@ public class Account {
     private AccountContact contact;
     private List<AccountDevice> devices;
 
+    /**
+     * 
+     */
     public Account() {
     }
 
+    /**
+     * 
+     *
+     * @param id 
+     */
     public Account(long id) {
         this();
 
         setId(id);
     }
 
+    /**
+     * 
+     *
+     * @param gui 
+     * @param emailAddress 
+     * @param firstName 
+     * @param middleName 
+     * @param lastName 
+     * @param birthDate 
+     * @param status 
+     * @param lastUpdateTime 
+     * @param createTime 
+     * @param contact 
+     * @param devices 
+     */
     public Account(String gui, String emailAddress, String firstName, String middleName, String lastName, Timestamp birthDate, int status,
             Timestamp lastUpdateTime, Timestamp createTime, AccountContact contact, List<AccountDevice> devices) {
         this();
@@ -57,6 +80,22 @@ public class Account {
         setDevices(devices);
     }
 
+    /**
+     * 
+     *
+     * @param id 
+     * @param gui 
+     * @param emailAddress 
+     * @param firstName 
+     * @param middleName 
+     * @param lastName 
+     * @param birthDate 
+     * @param status 
+     * @param lastUpdateTime 
+     * @param createTime 
+     * @param contact 
+     * @param devices 
+     */
     public Account(long id, String gui, String emailAddress, String firstName, String middleName, String lastName, Timestamp birthDate, int status,
             Timestamp lastUpdateTime, Timestamp createTime, AccountContact contact, List<AccountDevice> devices) {
         this();
@@ -75,137 +114,274 @@ public class Account {
         setDevices(devices);
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("long")
     public long getId() {
         return id;
     }
 
+    /**
+     * 
+     *
+     * @param id 
+     * @return 
+     */
     public Account setId(long id) {
         this.id = id;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getGUI() {
         return gui;
     }
 
+    /**
+     * 
+     *
+     * @param gui 
+     * @return 
+     */
     public Account setGUI(String gui) {
         this.gui = gui;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getEmailAddress() {
         return emailAddress;
     }
 
+    /**
+     * 
+     *
+     * @param emailAddress 
+     * @return 
+     */
     public Account setEmailAddress(String emailAddress) {
         this.emailAddress = emailAddress;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getFirstName() {
         return firstName;
     }
 
+    /**
+     * 
+     *
+     * @param firstName 
+     * @return 
+     */
     public Account setFirstName(String firstName) {
         this.firstName = firstName;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getMiddleName() {
         return middleName;
     }
 
+    /**
+     * 
+     *
+     * @param middleName 
+     * @return 
+     */
     public Account setMiddleName(String middleName) {
         this.middleName = middleName;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getLastName() {
         return lastName;
     }
 
+    /**
+     * 
+     *
+     * @param lastName 
+     * @return 
+     */
     public Account setLastName(String lastName) {
         this.lastName = lastName;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("Timestamp")
     public Timestamp getBirthDate() {
         return birthDate;
     }
 
+    /**
+     * 
+     *
+     * @param birthDate 
+     * @return 
+     */
     public Account setBirthDate(Timestamp birthDate) {
         this.birthDate = birthDate;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("int")
     public int getStatus() {
         return status;
     }
 
+    /**
+     * 
+     *
+     * @param status 
+     * @return 
+     */
     public Account setStatus(int status) {
         this.status = status;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("Timestamp")
     public Timestamp getLastUpdateTime() {
         return lastUpdateTime;
     }
 
+    /**
+     * 
+     *
+     * @param lastUpdateTime 
+     * @return 
+     */
     public Account setLastUpdateTime(Timestamp lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("Timestamp")
     public Timestamp getCreateTime() {
         return createTime;
     }
 
+    /**
+     * 
+     *
+     * @param createTime 
+     * @return 
+     */
     public Account setCreateTime(Timestamp createTime) {
         this.createTime = createTime;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("com.landawn.abacus.util.entity.AccountContact")
     public AccountContact getContact() {
         return contact;
     }
 
+    /**
+     * 
+     *
+     * @param contact 
+     * @return 
+     */
     public Account setContact(AccountContact contact) {
         this.contact = contact;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     public List<AccountDevice> getDevices() {
         return devices;
     }
 
+    /**
+     * 
+     *
+     * @param devices 
+     * @return 
+     */
     public Account setDevices(List<AccountDevice> devices) {
         this.devices = devices;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;
@@ -223,6 +399,12 @@ public class Account {
         return 31 * h + Objects.hashCode(devices);
     }
 
+    /**
+     * 
+     *
+     * @param obj 
+     * @return 
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -240,6 +422,11 @@ public class Account {
         return false;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return "{id=" + Objects.toString(id) + ", gui=" + Objects.toString(gui) + ", emailAddress=" + Objects.toString(emailAddress) + ", firstName="

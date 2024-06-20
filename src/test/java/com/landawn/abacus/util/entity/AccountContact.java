@@ -32,15 +32,42 @@ public class AccountContact {
     private Timestamp lastUpdateTime;
     private Timestamp createTime;
 
+    /**
+     * 
+     */
     public AccountContact() {
     }
 
+    /**
+     * 
+     *
+     * @param id 
+     */
     public AccountContact(long id) {
         this();
 
         setId(id);
     }
 
+    /**
+     * 
+     *
+     * @param accountId 
+     * @param mobile 
+     * @param telephone 
+     * @param email 
+     * @param address 
+     * @param address2 
+     * @param city 
+     * @param state 
+     * @param country 
+     * @param zipCode 
+     * @param category 
+     * @param description 
+     * @param status 
+     * @param lastUpdateTime 
+     * @param createTime 
+     */
     public AccountContact(long accountId, String mobile, String telephone, String email, String address, String address2, String city, String state,
             String country, String zipCode, String category, String description, int status, Timestamp lastUpdateTime, Timestamp createTime) {
         this();
@@ -62,6 +89,26 @@ public class AccountContact {
         setCreateTime(createTime);
     }
 
+    /**
+     * 
+     *
+     * @param id 
+     * @param accountId 
+     * @param mobile 
+     * @param telephone 
+     * @param email 
+     * @param address 
+     * @param address2 
+     * @param city 
+     * @param state 
+     * @param country 
+     * @param zipCode 
+     * @param category 
+     * @param description 
+     * @param status 
+     * @param lastUpdateTime 
+     * @param createTime 
+     */
     public AccountContact(long id, long accountId, String mobile, String telephone, String email, String address, String address2, String city, String state,
             String country, String zipCode, String category, String description, int status, Timestamp lastUpdateTime, Timestamp createTime) {
         this();
@@ -84,182 +131,363 @@ public class AccountContact {
         setCreateTime(createTime);
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("long")
     public long getId() {
         return id;
     }
 
+    /**
+     * 
+     *
+     * @param id 
+     * @return 
+     */
     public AccountContact setId(long id) {
         this.id = id;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("long")
     public long getAccountId() {
         return accountId;
     }
 
+    /**
+     * 
+     *
+     * @param accountId 
+     * @return 
+     */
     public AccountContact setAccountId(long accountId) {
         this.accountId = accountId;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getMobile() {
         return mobile;
     }
 
+    /**
+     * 
+     *
+     * @param mobile 
+     * @return 
+     */
     public AccountContact setMobile(String mobile) {
         this.mobile = mobile;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getTelephone() {
         return telephone;
     }
 
+    /**
+     * 
+     *
+     * @param telephone 
+     * @return 
+     */
     public AccountContact setTelephone(String telephone) {
         this.telephone = telephone;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getEmail() {
         return email;
     }
 
+    /**
+     * 
+     *
+     * @param email 
+     * @return 
+     */
     public AccountContact setEmail(String email) {
         this.email = email;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getAddress() {
         return address;
     }
 
+    /**
+     * 
+     *
+     * @param address 
+     * @return 
+     */
     public AccountContact setAddress(String address) {
         this.address = address;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getAddress2() {
         return address2;
     }
 
+    /**
+     * 
+     *
+     * @param address2 
+     * @return 
+     */
     public AccountContact setAddress2(String address2) {
         this.address2 = address2;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getCity() {
         return city;
     }
 
+    /**
+     * 
+     *
+     * @param city 
+     * @return 
+     */
     public AccountContact setCity(String city) {
         this.city = city;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getState() {
         return state;
     }
 
+    /**
+     * 
+     *
+     * @param state 
+     * @return 
+     */
     public AccountContact setState(String state) {
         this.state = state;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getCountry() {
         return country;
     }
 
+    /**
+     * 
+     *
+     * @param country 
+     * @return 
+     */
     public AccountContact setCountry(String country) {
         this.country = country;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getZipCode() {
         return zipCode;
     }
 
+    /**
+     * 
+     *
+     * @param zipCode 
+     * @return 
+     */
     public AccountContact setZipCode(String zipCode) {
         this.zipCode = zipCode;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getCategory() {
         return category;
     }
 
+    /**
+     * 
+     *
+     * @param category 
+     * @return 
+     */
     public AccountContact setCategory(String category) {
         this.category = category;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("String")
     public String getDescription() {
         return description;
     }
 
+    /**
+     * 
+     *
+     * @param description 
+     * @return 
+     */
     public AccountContact setDescription(String description) {
         this.description = description;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("int")
     public int getStatus() {
         return status;
     }
 
+    /**
+     * 
+     *
+     * @param status 
+     * @return 
+     */
     public AccountContact setStatus(int status) {
         this.status = status;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("Timestamp")
     public Timestamp getLastUpdateTime() {
         return lastUpdateTime;
     }
 
+    /**
+     * 
+     *
+     * @param lastUpdateTime 
+     * @return 
+     */
     public AccountContact setLastUpdateTime(Timestamp lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Type("Timestamp")
     public Timestamp getCreateTime() {
         return createTime;
     }
 
+    /**
+     * 
+     *
+     * @param createTime 
+     * @return 
+     */
     public AccountContact setCreateTime(Timestamp createTime) {
         this.createTime = createTime;
 
         return this;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public int hashCode() {
         int h = 17;
@@ -281,6 +509,12 @@ public class AccountContact {
         return 31 * h + Objects.hashCode(createTime);
     }
 
+    /**
+     * 
+     *
+     * @param obj 
+     * @return 
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -299,6 +533,11 @@ public class AccountContact {
         return false;
     }
 
+    /**
+     * 
+     *
+     * @return 
+     */
     @Override
     public String toString() {
         return "{id=" + Objects.toString(id) + ", accountId=" + Objects.toString(accountId) + ", mobile=" + Objects.toString(mobile) + ", telephone="
