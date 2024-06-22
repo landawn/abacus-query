@@ -41,10 +41,10 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param values 
+     *
+     * @param propName
+     * @param values
      */
     public In(String propName, Collection<?> values) {
         super(Operator.IN);
@@ -78,8 +78,12 @@ public class In extends AbstractCondition {
      * Sets the values.
      *
      * @param values the new values
+     * @deprecated
      */
+    @Deprecated
     public void setValues(List<?> values) {
+        N.checkArgNotEmpty(values, "'values' can't be null or empty");
+
         this.values = values;
     }
 
@@ -136,9 +140,9 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {

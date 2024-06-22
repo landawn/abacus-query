@@ -20,14 +20,10 @@ import com.landawn.abacus.condition.ConditionFactory.CF;
 import com.landawn.abacus.util.N;
 
 /**
- * It's recommended to use {@code On}, instead of {@code Using}. Because {@code Using} is associated with the table
- * column, not the object property.
  *
  * @author Haiyang Li
  * @since 0.8
- * @deprecated Using.
  */
-@Deprecated
 public class Using extends Cell {
 
     // For Kryo

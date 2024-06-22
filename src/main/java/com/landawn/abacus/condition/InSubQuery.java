@@ -108,7 +108,9 @@ public class InSubQuery extends AbstractCondition {
      *
      *
      * @param subQuery
+     * @deprecated
      */
+    @Deprecated
     public void setSubQuery(SubQuery subQuery) {
         this.subQuery = subQuery;
     }

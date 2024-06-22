@@ -117,7 +117,9 @@ public class Junction extends AbstractCondition {
     /**
      *
      * @param conditions
+     * @deprecated
      */
+    @Deprecated
     @SafeVarargs
     public final void remove(Condition... conditions) {
         for (Condition cond : conditions) {
@@ -128,7 +130,9 @@ public class Junction extends AbstractCondition {
     /**
      *
      * @param conditions
+     * @deprecated
      */
+    @Deprecated
     public void remove(Collection<? extends Condition> conditions) {
         conditionList.removeAll(conditions);
     }

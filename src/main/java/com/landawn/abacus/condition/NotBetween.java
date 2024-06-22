@@ -83,7 +83,9 @@ public class NotBetween extends AbstractCondition {
      * Sets the min value.
      *
      * @param minValue the new min value
+     * @deprecated
      */
+    @Deprecated
     public void setMinValue(Object minValue) {
         this.minValue = minValue;
     }
@@ -103,7 +105,9 @@ public class NotBetween extends AbstractCondition {
      * Sets the max value.
      *
      * @param maxValue the new max value
+     * @deprecated
      */
+    @Deprecated
     public void setMaxValue(Object maxValue) {
         this.maxValue = maxValue;
     }

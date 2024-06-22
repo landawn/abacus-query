@@ -60,7 +60,9 @@ public class Cell extends AbstractCondition {
      * Sets the condition.
      *
      * @param condition the new condition
+     * @deprecated
      */
+    @Deprecated
     public void setCondition(Condition condition) {
         this.condition = condition;
     }

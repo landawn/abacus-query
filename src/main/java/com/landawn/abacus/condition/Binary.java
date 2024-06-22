@@ -80,7 +80,9 @@ public class Binary extends AbstractCondition {
      * Sets the prop value.
      *
      * @param propValue the new prop value
+     * @deprecated
      */
+    @Deprecated
     public void setPropValue(Object propValue) {
         this.propValue = propValue;
     }
