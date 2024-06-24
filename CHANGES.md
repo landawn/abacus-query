@@ -1,3 +1,7 @@
+## 2.0.4
+
+* Improvements
+
 ## 2.0.3
 
 * Improvements
