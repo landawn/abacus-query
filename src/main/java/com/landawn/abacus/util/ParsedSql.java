@@ -107,12 +107,14 @@ public final class ParsedSql {
                 sb.append(word);
             }
 
-            parameterizedSql = sb.toString();
+            final String tmpSql = Strings.stripToEmpty(sb.toString());
+            parameterizedSql = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
             namedParameters = ImmutableList.wrap(namedParameterList);
 
             Objectory.recycle(sb);
         } else {
-            parameterizedSql = sql;
+            final String tmpSql = Strings.stripToEmpty(sql);
+            parameterizedSql = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
             namedParameters = ImmutableList.empty();
         }
     }
