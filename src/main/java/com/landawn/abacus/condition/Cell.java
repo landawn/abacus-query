@@ -60,7 +60,7 @@ public class Cell extends AbstractCondition {
      * Sets the condition.
      *
      * @param condition the new condition
-     * @deprecated
+     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
     public void setCondition(Condition condition) {

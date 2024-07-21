@@ -19,6 +19,7 @@ import java.util.List;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
+ * Condition should be immutable except using {@code clearParameter()} to release resources.
  *
  * @author Haiyang Li
  * @since 0.8
@@ -27,7 +28,7 @@ import com.landawn.abacus.util.NamingPolicy;
  */
 public interface Condition {
     /**
-     * 
+     *
      * @return Operator
      */
     Operator getOperator();
@@ -47,7 +48,7 @@ public interface Condition {
     Or or(Condition condition);
 
     /**
-     * 
+     *
      * @return Not
      */
     Not not();
@@ -60,7 +61,7 @@ public interface Condition {
     <T extends Condition> T copy();
 
     /**
-     * 
+     *
      * @return List<Object>
      */
     List<Object> getParameters();

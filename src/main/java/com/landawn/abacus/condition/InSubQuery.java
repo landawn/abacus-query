@@ -16,11 +16,11 @@ package com.landawn.abacus.condition;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.Throwables;
 import com.landawn.abacus.util.WD;
 
 /**
@@ -108,7 +108,7 @@ public class InSubQuery extends AbstractCondition {
      *
      *
      * @param subQuery
-     * @deprecated
+     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
     public void setSubQuery(SubQuery subQuery) {
@@ -205,7 +205,7 @@ public class InSubQuery extends AbstractCondition {
                 return "(" + Strings.join(propNames, ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
                         + WD.PARENTHESES_R;
             } else {
-                final Throwables.Function<String, String, RuntimeException> func = new Throwables.Function<>() {
+                final Function<String, String> func = new Function<>() {
                     @Override
                     public String apply(String t) throws RuntimeException {
                         return namingPolicy.convert(t);

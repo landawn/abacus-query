@@ -83,7 +83,7 @@ public class Between extends AbstractCondition {
      * Sets the min value.
      *
      * @param minValue the new min value
-     * @deprecated
+     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
     public void setMinValue(Object minValue) {
@@ -105,7 +105,7 @@ public class Between extends AbstractCondition {
      * Sets the max value.
      *
      * @param maxValue the new max value
-     * @deprecated
+     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
     public void setMaxValue(Object maxValue) {

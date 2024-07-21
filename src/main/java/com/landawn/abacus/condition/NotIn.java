@@ -40,10 +40,10 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param values 
+     *
+     * @param propName
+     * @param values
      */
     public NotIn(String propName, Collection<?> values) {
         super(Operator.NOT_IN);
@@ -77,7 +77,9 @@ public class NotIn extends AbstractCondition {
      * Sets the values.
      *
      * @param values the new values
+     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
+    @Deprecated
     public void setValues(List<?> values) {
         this.values = values;
     }
@@ -135,9 +137,9 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {

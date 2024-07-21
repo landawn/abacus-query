@@ -117,7 +117,7 @@ public class Junction extends AbstractCondition {
     /**
      *
      * @param conditions
-     * @deprecated
+     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
     @SafeVarargs
@@ -130,7 +130,7 @@ public class Junction extends AbstractCondition {
     /**
      *
      * @param conditions
-     * @deprecated
+     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
     public void remove(Collection<? extends Condition> conditions) {

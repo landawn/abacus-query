@@ -78,7 +78,7 @@ public class In extends AbstractCondition {
      * Sets the values.
      *
      * @param values the new values
-     * @deprecated
+     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
     public void setValues(List<?> values) {
