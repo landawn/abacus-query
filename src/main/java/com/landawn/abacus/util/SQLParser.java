@@ -150,7 +150,7 @@ public final class SQLParser {
         compositeWords.put(WD.NOT_IN, new String[] { "NOT", "IN" });
         compositeWords.put(WD.NOT_EXISTS, new String[] { "NOT", "EXISTS" });
 
-        List<String> list = new ArrayList<>(compositeWords.keySet());
+        final List<String> list = new ArrayList<>(compositeWords.keySet());
 
         for (String e : list) {
             e = e.toLowerCase();
@@ -175,7 +175,7 @@ public final class SQLParser {
      * @param sql
      * @return
      */
-    public static List<String> parse(String sql) {
+    public static List<String> parse(final String sql) {
         final int sqlLength = sql.length();
         final StringBuilder sb = Objectory.createStringBuilder();
         final List<String> words = new ArrayList<>();
@@ -329,7 +329,7 @@ public final class SQLParser {
      * @param caseSensitive
      * @return
      */
-    public static int indexWord(String sql, String word, int fromIndex, boolean caseSensitive) {
+    public static int indexWord(final String sql, final String word, final int fromIndex, final boolean caseSensitive) {
         String[] subWords = compositeWords.get(word);
 
         if (subWords == null) {
@@ -346,7 +346,7 @@ public final class SQLParser {
             char quoteChar = 0;
 
             for (int index = fromIndex; index < sqlLength; index++) {
-                char c = sql.charAt(index);
+                final char c = sql.charAt(index);
 
                 // is it in a quoted identifier?
                 if (quoteChar != 0) {
@@ -452,7 +452,7 @@ public final class SQLParser {
      * @param fromIndex
      * @return
      */
-    public static String nextWord(String sql, int fromIndex) {
+    public static String nextWord(final String sql, final int fromIndex) {
         final int sqlLength = sql.length();
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -460,7 +460,7 @@ public final class SQLParser {
         char quoteChar = 0;
 
         for (int index = fromIndex; index < sqlLength; index++) {
-            char c = sql.charAt(index);
+            final char c = sql.charAt(index);
 
             // is it in a quoted identifier?
             if (quoteChar != 0) {
@@ -495,7 +495,7 @@ public final class SQLParser {
             }
         }
 
-        String st = (sb.length() == 0) ? "" : sb.toString();
+        final String st = (sb.length() == 0) ? "" : sb.toString();
         Objectory.recycle(sb);
 
         return st;
@@ -505,7 +505,7 @@ public final class SQLParser {
      *
      * @param seperator
      */
-    public static void registerSeperator(char seperator) {
+    public static void registerSeperator(final char seperator) {
         N.checkArgPositive(seperator, "seperator");
 
         seperators.add(seperator);
@@ -515,7 +515,7 @@ public final class SQLParser {
      *
      * @param seperator
      */
-    public static void registerSeperator(String seperator) {
+    public static void registerSeperator(final String seperator) {
         N.checkArgNotNull(seperator, "seperator");
 
         seperators.add(seperator);
@@ -534,7 +534,7 @@ public final class SQLParser {
      * @param ch
      * @return true, if is seperator
      */
-    public static boolean isSeperator(String str, int len, int index, char ch) {
+    public static boolean isSeperator(final String str, final int len, final int index, final char ch) {
         // for Ibatis/Mybatis
         if (ch == '#' && index < len - 1 && str.charAt(index + 1) == '{') {
             return false;
@@ -551,7 +551,7 @@ public final class SQLParser {
      * @param index
      * @return true, if is function name
      */
-    public static boolean isFunctionName(final List<String> words, int len, int index) {
+    public static boolean isFunctionName(final List<String> words, final int len, final int index) {
         //    return (i < len - 1 && words.get(i + 1).charAt(0) == WD._PARENTHESES_L)
         //            || (i < len - 2 && WD.SPACE.equals(words.get(i + 1)) && words.get(i + 2).charAt(0) == WD._PARENTHESES_L);
 

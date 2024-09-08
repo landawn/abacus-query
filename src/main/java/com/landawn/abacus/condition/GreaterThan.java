@@ -26,12 +26,12 @@ public class GreaterThan extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public GreaterThan(String propName, Object propValue) {
+    public GreaterThan(final String propName, final Object propValue) {
         super(propName, Operator.GREATER_THAN, propValue);
     }
 }

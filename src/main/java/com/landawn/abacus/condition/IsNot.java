@@ -26,12 +26,12 @@ public class IsNot extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public IsNot(String propName, Object propValue) {
+    public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);
     }
 }

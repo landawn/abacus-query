@@ -26,11 +26,11 @@ public class Minus extends Clause {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
-    public Minus(SubQuery condition) {
+    public Minus(final SubQuery condition) {
         super(Operator.MINUS, condition);
     }
 }

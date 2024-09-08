@@ -106,11 +106,11 @@ public class Expression extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @param literal 
+     *
+     * @param literal
      */
-    public Expression(String literal) {
+    public Expression(final String literal) {
         super(Operator.EMPTY);
 
         this.literal = literal;
@@ -130,7 +130,7 @@ public class Expression extends AbstractCondition {
      * @param literal
      * @return
      */
-    public static Expression of(String literal) {
+    public static Expression of(final String literal) {
         Expression expr = cachedExpression.get(literal);
 
         if (expr == null) {
@@ -148,7 +148,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String equal(String literal, Object value) { //NOSONAR
+    public static String equal(final String literal, final Object value) { //NOSONAR
         return link(Operator.EQUAL, literal, value);
     }
 
@@ -158,7 +158,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String eq(String literal, Object value) {
+    public static String eq(final String literal, final Object value) {
         return link(Operator.EQUAL, literal, value);
     }
 
@@ -168,7 +168,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String notEqual(String literal, Object value) {
+    public static String notEqual(final String literal, final Object value) {
         return link(Operator.NOT_EQUAL, literal, value);
     }
 
@@ -178,7 +178,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String ne(String literal, Object value) {
+    public static String ne(final String literal, final Object value) {
         return link(Operator.NOT_EQUAL, literal, value);
     }
 
@@ -188,7 +188,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String greaterThan(String literal, Object value) {
+    public static String greaterThan(final String literal, final Object value) {
         return link(Operator.GREATER_THAN, literal, value);
     }
 
@@ -198,7 +198,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String gt(String literal, Object value) {
+    public static String gt(final String literal, final Object value) {
         return link(Operator.GREATER_THAN, literal, value);
     }
 
@@ -208,7 +208,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String greaterEqual(String literal, Object value) {
+    public static String greaterEqual(final String literal, final Object value) {
         return link(Operator.GREATER_EQUAL, literal, value);
     }
 
@@ -218,7 +218,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String ge(String literal, Object value) {
+    public static String ge(final String literal, final Object value) {
         return link(Operator.GREATER_EQUAL, literal, value);
     }
 
@@ -228,7 +228,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String lessThan(String literal, Object value) {
+    public static String lessThan(final String literal, final Object value) {
         return link(Operator.LESS_THAN, literal, value);
     }
 
@@ -238,7 +238,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String lt(String literal, Object value) {
+    public static String lt(final String literal, final Object value) {
         return link(Operator.LESS_THAN, literal, value);
     }
 
@@ -248,7 +248,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String lessEqual(String literal, Object value) {
+    public static String lessEqual(final String literal, final Object value) {
         return link(Operator.LESS_EQUAL, literal, value);
     }
 
@@ -258,7 +258,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String le(String literal, Object value) {
+    public static String le(final String literal, final Object value) {
         return link(Operator.LESS_EQUAL, literal, value);
     }
 
@@ -269,7 +269,7 @@ public class Expression extends AbstractCondition {
      * @param max
      * @return
      */
-    public static String between(String literal, Object min, Object max) {
+    public static String between(final String literal, final Object min, final Object max) {
         return link(Operator.BETWEEN, literal, min, max);
     }
 
@@ -282,7 +282,7 @@ public class Expression extends AbstractCondition {
      * @deprecated please use {@link #between(String, Object, Object)}
      */
     @Deprecated
-    public static String bt(String literal, Object min, Object max) {
+    public static String bt(final String literal, final Object min, final Object max) {
         return link(Operator.BETWEEN, literal, min, max);
     }
 
@@ -292,7 +292,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String like(String literal, String value) {
+    public static String like(final String literal, final String value) {
         return link(Operator.LIKE, literal, value);
     }
 
@@ -302,7 +302,7 @@ public class Expression extends AbstractCondition {
      * @param literal
      * @return
      */
-    public static String isNull(String literal) {
+    public static String isNull(final String literal) {
         return link2(Operator.IS, literal, NULL);
     }
 
@@ -312,7 +312,7 @@ public class Expression extends AbstractCondition {
      * @param literal
      * @return
      */
-    public static String isNotNull(String literal) {
+    public static String isNotNull(final String literal) {
         return link2(Operator.IS_NOT, literal, NULL);
     }
 
@@ -322,7 +322,7 @@ public class Expression extends AbstractCondition {
      * @param literal
      * @return
      */
-    public static String isEmpty(String literal) {
+    public static String isEmpty(final String literal) {
         return link2(Operator.IS, literal, EMPTY);
     }
 
@@ -332,7 +332,7 @@ public class Expression extends AbstractCondition {
      * @param literal
      * @return
      */
-    public static String isNotEmpty(String literal) {
+    public static String isNotEmpty(final String literal) {
         return link2(Operator.IS_NOT, literal, EMPTY);
     }
 
@@ -342,7 +342,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String and(String... literals) {
+    public static String and(final String... literals) {
         return link2(Operator.AND, literals);
     }
 
@@ -352,7 +352,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String or(String... literals) {
+    public static String or(final String... literals) {
         return link2(Operator.OR, literals);
     }
 
@@ -362,7 +362,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String plus(Object... objects) {
+    public static String plus(final Object... objects) {
         return link(PLUS, objects);
     }
 
@@ -372,7 +372,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String minus(Object... objects) {
+    public static String minus(final Object... objects) {
         return link(MINUS, objects);
     }
 
@@ -382,7 +382,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String multi(Object... objects) {
+    public static String multi(final Object... objects) {
         return link(ASTERISK, objects);
     }
 
@@ -392,7 +392,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String division(Object... objects) {
+    public static String division(final Object... objects) {
         return link(SLASH, objects);
     }
 
@@ -402,7 +402,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String modulus(Object... objects) {
+    public static String modulus(final Object... objects) {
         return link(PERCENT, objects);
     }
 
@@ -412,7 +412,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String lShift(Object... objects) {
+    public static String lShift(final Object... objects) {
         return link(LEFT_SHIFT, objects);
     }
 
@@ -422,7 +422,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String rShift(Object... objects) {
+    public static String rShift(final Object... objects) {
         return link(RIGTH_SHIFT, objects);
     }
 
@@ -432,7 +432,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String bitwiseAnd(Object... objects) {
+    public static String bitwiseAnd(final Object... objects) {
         return link(AMPERSAND, objects);
     }
 
@@ -442,7 +442,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String bitwiseOr(Object... objects) {
+    public static String bitwiseOr(final Object... objects) {
         return link(VERTICALBAR, objects);
     }
 
@@ -453,7 +453,7 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public static String bitwiseXOr(Object... objects) {
+    public static String bitwiseXOr(final Object... objects) {
         return link(CIRCUMFLEX, objects);
     }
 
@@ -464,7 +464,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    static String link(Operator operator, String literal, Object value) {
+    static String link(final Operator operator, final String literal, final Object value) {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -488,7 +488,7 @@ public class Expression extends AbstractCondition {
      * @param max
      * @return
      */
-    static String link(Operator operator, String literal, Object min, Object max) {
+    static String link(final Operator operator, final String literal, final Object min, final Object max) {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -515,7 +515,7 @@ public class Expression extends AbstractCondition {
      * @param operatorPostfix
      * @return
      */
-    static String link2(Operator operator, String literal, String operatorPostfix) {
+    static String link2(final Operator operator, final String literal, final String operatorPostfix) {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -537,7 +537,7 @@ public class Expression extends AbstractCondition {
      * @param literals
      * @return
      */
-    static String link2(Operator operator, String... literals) {
+    static String link2(final Operator operator, final String... literals) {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -563,7 +563,7 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    static String link(String linkedSymbol, Object... objects) {
+    static String link(String linkedSymbol, final Object... objects) {
         if (!(SPACE.equals(linkedSymbol) || COMMA_SPACE.equals(linkedSymbol))) {
             linkedSymbol = WD._SPACE + linkedSymbol + WD._SPACE;
         }
@@ -590,7 +590,7 @@ public class Expression extends AbstractCondition {
      * @param value
      * @return
      */
-    public static String formalize(Object value) {
+    public static String formalize(final Object value) {
         if (value == null) {
             return NULL_STRING;
         }
@@ -611,7 +611,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String count(String expression) {
+    public static String count(final String expression) {
         return function(COUNT, expression);
     }
 
@@ -620,7 +620,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String average(String expression) {
+    public static String average(final String expression) {
         return function(AVG, expression);
     }
 
@@ -629,7 +629,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String sum(String expression) {
+    public static String sum(final String expression) {
         return function(SUM, expression);
     }
 
@@ -638,7 +638,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String min(String expression) {
+    public static String min(final String expression) {
         return function(MIN, expression);
     }
 
@@ -647,7 +647,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String max(String expression) {
+    public static String max(final String expression) {
         return function(MAX, expression);
     }
 
@@ -656,7 +656,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String abs(String expression) {
+    public static String abs(final String expression) {
         return function(ABS, expression);
     }
 
@@ -665,7 +665,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String acos(String expression) {
+    public static String acos(final String expression) {
         return function(ACOS, expression);
     }
 
@@ -674,7 +674,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String asin(String expression) {
+    public static String asin(final String expression) {
         return function(ASIN, expression);
     }
 
@@ -683,7 +683,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String atan(String expression) {
+    public static String atan(final String expression) {
         return function(ATAN, expression);
     }
 
@@ -692,7 +692,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String ceil(String expression) {
+    public static String ceil(final String expression) {
         return function(CEIL, expression);
     }
 
@@ -701,7 +701,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String cos(String expression) {
+    public static String cos(final String expression) {
         return function(COS, expression);
     }
 
@@ -710,7 +710,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String exp(String expression) {
+    public static String exp(final String expression) {
         return function(EXP, expression);
     }
 
@@ -719,7 +719,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String floor(String expression) {
+    public static String floor(final String expression) {
         return function(FLOOR, expression);
     }
 
@@ -729,7 +729,7 @@ public class Expression extends AbstractCondition {
      * @param x
      * @return
      */
-    public static String log(String b, String x) {
+    public static String log(final String b, final String x) {
         return function(LOG, b, x);
     }
 
@@ -738,7 +738,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String ln(String expression) {
+    public static String ln(final String expression) {
         return function(LN, expression);
     }
 
@@ -748,7 +748,7 @@ public class Expression extends AbstractCondition {
      * @param n2
      * @return
      */
-    public static String mod(String n1, String n2) {
+    public static String mod(final String n1, final String n2) {
         return function(MOD, n1, n2);
     }
 
@@ -758,7 +758,7 @@ public class Expression extends AbstractCondition {
      * @param n2
      * @return
      */
-    public static String power(String n1, String n2) {
+    public static String power(final String n1, final String n2) {
         return function(POWER, n1, n2);
     }
 
@@ -767,7 +767,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String sign(String expression) {
+    public static String sign(final String expression) {
         return function(SIGN, expression);
     }
 
@@ -776,7 +776,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String sin(String expression) {
+    public static String sin(final String expression) {
         return function(SIN, expression);
     }
 
@@ -785,7 +785,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String sqrt(String expression) {
+    public static String sqrt(final String expression) {
         return function(SQRT, expression);
     }
 
@@ -794,7 +794,7 @@ public class Expression extends AbstractCondition {
      * @param expression
      * @return
      */
-    public static String tan(String expression) {
+    public static String tan(final String expression) {
         return function(TAN, expression);
     }
 
@@ -804,7 +804,7 @@ public class Expression extends AbstractCondition {
      * @param st2
      * @return
      */
-    public static String concat(String st1, String st2) {
+    public static String concat(final String st1, final String st2) {
         return function(CONCAT, st1, st2);
     }
 
@@ -815,7 +815,7 @@ public class Expression extends AbstractCondition {
      * @param replacement
      * @return
      */
-    public static String replace(String st, String oldString, String replacement) {
+    public static String replace(final String st, final String oldString, final String replacement) {
         return function(REPLACE, st, oldString, replacement);
     }
 
@@ -824,7 +824,7 @@ public class Expression extends AbstractCondition {
      * @param st
      * @return
      */
-    public static String stringLength(String st) {
+    public static String stringLength(final String st) {
         return function(LENGTH, st);
     }
 
@@ -834,7 +834,7 @@ public class Expression extends AbstractCondition {
      * @param fromIndex
      * @return
      */
-    public static String subString(String st, int fromIndex) {
+    public static String subString(final String st, final int fromIndex) {
         return function(SUBSTR, st, fromIndex);
     }
 
@@ -845,7 +845,7 @@ public class Expression extends AbstractCondition {
      * @param length
      * @return
      */
-    public static String subString(String st, int fromIndex, int length) {
+    public static String subString(final String st, final int fromIndex, final int length) {
         return function(SUBSTR, st, fromIndex, length);
     }
 
@@ -854,7 +854,7 @@ public class Expression extends AbstractCondition {
      * @param st
      * @return
      */
-    public static String trim(String st) {
+    public static String trim(final String st) {
         return function(TRIM, st);
     }
 
@@ -863,7 +863,7 @@ public class Expression extends AbstractCondition {
      * @param st
      * @return
      */
-    public static String lTrim(String st) {
+    public static String lTrim(final String st) {
         return function(LTRIM, st);
     }
 
@@ -872,7 +872,7 @@ public class Expression extends AbstractCondition {
      * @param st
      * @return
      */
-    public static String rTrim(String st) {
+    public static String rTrim(final String st) {
         return function(RTRIM, st);
     }
 
@@ -883,7 +883,7 @@ public class Expression extends AbstractCondition {
      * @param padStr
      * @return
      */
-    public static String lPad(String st, int length, String padStr) {
+    public static String lPad(final String st, final int length, final String padStr) {
         return function(LPAD, st, length, padStr);
     }
 
@@ -894,7 +894,7 @@ public class Expression extends AbstractCondition {
      * @param padStr
      * @return
      */
-    public static String rPad(String st, int length, String padStr) {
+    public static String rPad(final String st, final int length, final String padStr) {
         return function(RPAD, st, length, padStr);
     }
 
@@ -903,7 +903,7 @@ public class Expression extends AbstractCondition {
      * @param st
      * @return
      */
-    public static String lower(String st) {
+    public static String lower(final String st) {
         return function(LOWER, st);
     }
 
@@ -912,7 +912,7 @@ public class Expression extends AbstractCondition {
      * @param st
      * @return
      */
-    public static String upper(String st) {
+    public static String upper(final String st) {
         return function(UPPER, st);
     }
 
@@ -941,7 +941,7 @@ public class Expression extends AbstractCondition {
      * @param args
      * @return
      */
-    private static String function(String functionName, Object... args) {
+    private static String function(final String functionName, final Object... args) {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -971,14 +971,14 @@ public class Expression extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
+    public String toString(final NamingPolicy namingPolicy) {
         return literal;
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {
@@ -991,7 +991,7 @@ public class Expression extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         return (this == obj) || (obj instanceof Expression && N.equals(literal, ((Expression) obj).literal));
     }
 
@@ -1004,7 +1004,7 @@ public class Expression extends AbstractCondition {
          *
          * @param literal
          */
-        public Expr(String literal) {
+        public Expr(final String literal) {
             super(literal);
         }
     }

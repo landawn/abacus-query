@@ -49,14 +49,14 @@ public class NotInSubQuery extends AbstractCondition {
      * @param propName
      * @param subQuery
      */
-    public NotInSubQuery(String propName, SubQuery subQuery) {
+    public NotInSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.NOT_IN);
 
         N.checkArgNotNull(subQuery, "'subQuery' can't be null or empty");
 
         this.propName = propName;
         this.subQuery = subQuery;
-        this.propNames = null;
+        propNames = null;
     }
 
     /**
@@ -65,7 +65,7 @@ public class NotInSubQuery extends AbstractCondition {
      * @param propNames
      * @param subQuery
      */
-    public NotInSubQuery(Collection<String> propNames, SubQuery subQuery) {
+    public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.NOT_IN);
 
         N.checkArgNotEmpty(propNames, "propNames");
@@ -73,7 +73,7 @@ public class NotInSubQuery extends AbstractCondition {
 
         this.propNames = propNames;
         this.subQuery = subQuery;
-        this.propName = null;
+        propName = null;
     }
 
     /**
@@ -109,7 +109,7 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * @param subQuery
      */
-    public void setSubQuery(SubQuery subQuery) {
+    public void setSubQuery(final SubQuery subQuery) {
         this.subQuery = subQuery;
     }
 
@@ -140,7 +140,7 @@ public class NotInSubQuery extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        NotInSubQuery copy = (NotInSubQuery) super.copy();
+        final NotInSubQuery copy = (NotInSubQuery) super.copy();
 
         copy.subQuery = subQuery.copy();
 
@@ -157,9 +157,7 @@ public class NotInSubQuery extends AbstractCondition {
         int h = 17;
         h = (h * 31) + (Strings.isNotEmpty(propName) ? N.hashCode(propName) : N.hashCode(propNames));
         h = (h * 31) + operator.hashCode();
-        h = (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
-
-        return h;
+        return (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
     }
 
     /**
@@ -168,14 +166,12 @@ public class NotInSubQuery extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof NotInSubQuery) {
-            NotInSubQuery other = (NotInSubQuery) obj;
-
+        if (obj instanceof final NotInSubQuery other) {
             return N.equals(propName, other.propName) && N.equals(propNames, other.propNames) && N.equals(operator, other.operator)
                     && N.equals(subQuery, other.subQuery);
         }

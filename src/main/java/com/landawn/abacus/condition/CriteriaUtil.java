@@ -77,7 +77,7 @@ public final class CriteriaUtil {
      * @param operator
      * @return true, if is clause
      */
-    public static boolean isClause(Operator operator) {
+    public static boolean isClause(final Operator operator) {
         return (operator == null) ? false : clauseOperators.contains(operator);
     }
 
@@ -87,7 +87,7 @@ public final class CriteriaUtil {
      * @param operator
      * @return true, if is clause
      */
-    public static boolean isClause(String operator) {
+    public static boolean isClause(final String operator) {
         return isClause(Operator.getOperator(operator));
     }
 
@@ -97,7 +97,7 @@ public final class CriteriaUtil {
      * @param condition
      * @return true, if is clause
      */
-    public static boolean isClause(Condition condition) {
+    public static boolean isClause(final Condition condition) {
         //        if (condition == null) {
         //            return false;
         //        }
@@ -125,7 +125,7 @@ public final class CriteriaUtil {
      * @param conditions
      */
     @SafeVarargs
-    public static void add(Criteria criteria, Condition... conditions) {
+    public static void add(final Criteria criteria, final Condition... conditions) {
         criteria.add(conditions);
     }
 
@@ -134,7 +134,7 @@ public final class CriteriaUtil {
      * @param criteria
      * @param conditions
      */
-    public static void add(Criteria criteria, Collection<Condition> conditions) {
+    public static void add(final Criteria criteria, final Collection<Condition> conditions) {
         criteria.add(conditions);
     }
 
@@ -143,7 +143,7 @@ public final class CriteriaUtil {
      * @param criteria
      * @param operator
      */
-    public static void remove(Criteria criteria, Operator operator) {
+    public static void remove(final Criteria criteria, final Operator operator) {
         criteria.remove(operator);
     }
 
@@ -153,7 +153,7 @@ public final class CriteriaUtil {
      * @param conditions
      */
     @SafeVarargs
-    public static void remove(Criteria criteria, Condition... conditions) {
+    public static void remove(final Criteria criteria, final Condition... conditions) {
         criteria.remove(conditions);
     }
 
@@ -162,7 +162,7 @@ public final class CriteriaUtil {
      * @param criteria
      * @param conditions
      */
-    public static void remove(Criteria criteria, Collection<Condition> conditions) {
+    public static void remove(final Criteria criteria, final Collection<Condition> conditions) {
         criteria.remove(conditions);
     }
 }

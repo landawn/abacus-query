@@ -28,31 +28,31 @@ public class CrossJoin extends Join {
     }
 
     /**
-     * 
      *
-     * @param joinEntity 
+     *
+     * @param joinEntity
      */
-    public CrossJoin(String joinEntity) {
+    public CrossJoin(final String joinEntity) {
         super(Operator.CROSS_JOIN, joinEntity);
     }
 
     /**
-     * 
      *
-     * @param joinEntity 
-     * @param condition 
+     *
+     * @param joinEntity
+     * @param condition
      */
-    public CrossJoin(String joinEntity, Condition condition) {
+    public CrossJoin(final String joinEntity, final Condition condition) {
         super(Operator.CROSS_JOIN, joinEntity, condition);
     }
 
     /**
-     * 
      *
-     * @param joinEntities 
-     * @param condition 
+     *
+     * @param joinEntities
+     * @param condition
      */
-    public CrossJoin(Collection<String> joinEntities, Condition condition) {
+    public CrossJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.CROSS_JOIN, joinEntities, condition);
     }
 }

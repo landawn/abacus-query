@@ -26,12 +26,12 @@ public class NotEqual extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public NotEqual(String propName, Object propValue) {
+    public NotEqual(final String propName, final Object propValue) {
         super(propName, Operator.NOT_EQUAL, propValue);
     }
 }

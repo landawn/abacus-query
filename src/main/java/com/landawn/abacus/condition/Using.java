@@ -31,21 +31,21 @@ public class Using extends Cell {
     }
 
     /**
-     * 
      *
-     * @param columnNames 
+     *
+     * @param columnNames
      */
     @SafeVarargs
-    public Using(String... columnNames) {
+    public Using(final String... columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
     }
 
     /**
-     * 
      *
-     * @param columnNames 
+     *
+     * @param columnNames
      */
-    public Using(Collection<String> columnNames) {
+    public Using(final Collection<String> columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
     }
 
@@ -55,7 +55,7 @@ public class Using extends Cell {
      * @param columnNames
      * @return
      */
-    static Condition createUsingCondition(String... columnNames) {
+    static Condition createUsingCondition(final String... columnNames) {
         if (N.isEmpty(columnNames)) {
             throw new IllegalArgumentException("To create the using condition, columnNames can't be null or empty");
         }
@@ -69,7 +69,7 @@ public class Using extends Cell {
      * @param columnNames
      * @return
      */
-    static Condition createUsingCondition(Collection<String> columnNames) {
+    static Condition createUsingCondition(final Collection<String> columnNames) {
         if (N.isEmpty(columnNames)) {
             throw new IllegalArgumentException("To create the using condition, columnNames " + columnNames + " must has one or more than one column name. ");
         }

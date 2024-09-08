@@ -26,12 +26,12 @@ public class LessThan extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public LessThan(String propName, Object propValue) {
+    public LessThan(final String propName, final Object propValue) {
         super(propName, Operator.LESS_THAN, propValue);
     }
 }

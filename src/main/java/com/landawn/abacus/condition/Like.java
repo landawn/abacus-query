@@ -26,12 +26,12 @@ public class Like extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public Like(String propName, Object propValue) {
+    public Like(final String propName, final Object propValue) {
         super(propName, Operator.LIKE, propValue);
     }
 }

@@ -30,7 +30,7 @@ public enum SortDirection {
     SortDirection() {
     }
 
-    SortDirection(String name) {
+    SortDirection(final String name) {
         this.name = name;
     }
 
@@ -44,9 +44,9 @@ public enum SortDirection {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {

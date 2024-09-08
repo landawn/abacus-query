@@ -98,19 +98,19 @@ public enum SQLOperation {
      */
     UNKNOWN("UNKNOWN");
 
-    private String name;
+    private final String name;
 
-    SQLOperation(String name) {
+    SQLOperation(final String name) {
         this.name = name;
     }
 
     private static final Map<String, SQLOperation> operationMap = new HashMap<>();
 
     static {
-        SQLOperation[] values = SQLOperation.values();
+        final SQLOperation[] values = SQLOperation.values();
 
-        for (int i = 0; i < values.length; i++) {
-            operationMap.put(values[i].name, values[i]);
+        for (final SQLOperation value : values) {
+            operationMap.put(value.name, value);
         }
     }
 
@@ -120,7 +120,7 @@ public enum SQLOperation {
      * @param name
      * @return
      */
-    public static SQLOperation getOperation(String name) {
+    public static SQLOperation getOperation(final String name) {
         return operationMap.get(name);
     }
 
@@ -134,9 +134,9 @@ public enum SQLOperation {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {

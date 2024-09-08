@@ -260,19 +260,19 @@ public abstract class SQLBuilder { // NOSONAR
         final Field[] fields = WD.class.getDeclaredFields();
         int m = 0;
 
-        for (Field field : fields) {
+        for (final Field field : fields) {
             m = field.getModifiers();
 
             if (Modifier.isPublic(m) && Modifier.isStatic(m) && Modifier.isFinal(m) && field.getType().equals(String.class)) {
                 try {
                     final String value = (String) field.get(null);
 
-                    for (String e : Strings.split(value, ' ', true)) {
+                    for (final String e : Strings.split(value, ' ', true)) {
                         sqlKeyWords.add(e);
                         sqlKeyWords.add(e.toUpperCase());
                         sqlKeyWords.add(e.toLowerCase());
                     }
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     // ignore, should never happen.
                 }
             }
@@ -288,7 +288,7 @@ public abstract class SQLBuilder { // NOSONAR
     private static final Map<NamingPolicy, Map<Class<?>, String>> fullSelectPartsPool = N.newHashMap(NamingPolicy.values().length);
 
     static {
-        for (NamingPolicy np : NamingPolicy.values()) {
+        for (final NamingPolicy np : NamingPolicy.values()) {
             fullSelectPartsPool.put(np, new ConcurrentHashMap<>());
         }
     }
@@ -346,12 +346,12 @@ public abstract class SQLBuilder { // NOSONAR
                     + ") StringBuilder instances are created in SQLBuilder. The method sql()/pair() must be called to release resources and close SQLBuilder");
         }
 
-        this._sb = Objectory.createStringBuilder();
+        _sb = Objectory.createStringBuilder();
 
-        this._namingPolicy = namingPolicy == null ? NamingPolicy.LOWER_CASE_WITH_UNDERSCORE : namingPolicy;
-        this._sqlPolicy = sqlPolicy == null ? SQLPolicy.SQL : sqlPolicy;
+        _namingPolicy = namingPolicy == null ? NamingPolicy.LOWER_CASE_WITH_UNDERSCORE : namingPolicy;
+        _sqlPolicy = sqlPolicy == null ? SQLPolicy.SQL : sqlPolicy;
 
-        this._handlerForNamedParameter = handlerForNamedParameter_TL.get();
+        _handlerForNamedParameter = handlerForNamedParameter_TL.get();
     }
 
     protected boolean isNamedSql() {
@@ -484,14 +484,14 @@ public abstract class SQLBuilder { // NOSONAR
                 Class<?> subEntityClass = null;
                 Set<String> subEntityPropNameList = null;
 
-                for (String subEntityPropName : subEntityPropNames) {
-                    PropInfo propInfo = entityInfo.getPropInfo(subEntityPropName);
+                for (final String subEntityPropName : subEntityPropNames) {
+                    final PropInfo propInfo = entityInfo.getPropInfo(subEntityPropName);
                     subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
 
                     subEntityPropNameList = N.newLinkedHashSet(ClassUtil.getPropNameList(subEntityClass));
                     subEntityPropNameList.removeAll(getSubEntityPropNames(subEntityClass));
 
-                    for (String pn : subEntityPropNameList) {
+                    for (final String pn : subEntityPropNameList) {
                         val[0].add(Strings.concat(subEntityPropName, WD.PERIOD, pn));
                     }
                 }
@@ -500,7 +500,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> nonUpdatablePropNames = N.newHashSet();
                 final Set<String> transientPropNames = N.newHashSet();
 
-                for (PropInfo propInfo : entityInfo.propInfoList) {
+                for (final PropInfo propInfo : entityInfo.propInfoList) {
                     if (propInfo.isAnnotationPresent(ReadOnly.class) || propInfo.isAnnotationPresent(ReadOnlyId.class) || propInfo.isMarkedToReadOnlyId) {
                         nonUpdatableNonWritablePropNames.add(propInfo.name);
                     }
@@ -523,7 +523,7 @@ public abstract class SQLBuilder { // NOSONAR
                 val[3].removeAll(nonUpdatableNonWritablePropNames);
                 val[4].removeAll(nonUpdatablePropNames);
 
-                for (String idPropName : QueryUtil.getIdFieldNames(entityClass)) {
+                for (final String idPropName : QueryUtil.getIdFieldNames(entityClass)) {
                     val[3].remove(idPropName);
                     val[3].remove(ClassUtil.getPropNameByMethod(ClassUtil.getPropGetMethod(entityClass, idPropName)));
                 }
@@ -555,7 +555,7 @@ public abstract class SQLBuilder { // NOSONAR
                 // final ImmutableSet<String> nonSubEntityPropNames = nonSubEntityPropNamesPool.get(entityClass);
                 final Set<String> subEntityPropNameSet = N.newLinkedHashSet();
 
-                for (PropInfo propInfo : entityInfo.propInfoList) {
+                for (final PropInfo propInfo : entityInfo.propInfoList) {
                     if (isEntityProp(propInfo)) {
                         subEntityPropNameSet.add(propInfo.name);
                     }
@@ -592,7 +592,7 @@ public abstract class SQLBuilder { // NOSONAR
         PropInfo propInfo = null;
         Class<?> subEntityClass = null;
 
-        for (String subEntityPropName : subEntityPropNames) {
+        for (final String subEntityPropName : subEntityPropNames) {
             if (excludedPropNames != null && excludedPropNames.contains(subEntityPropName)) {
                 continue;
             }
@@ -691,7 +691,7 @@ public abstract class SQLBuilder { // NOSONAR
     static Map<String, Expression> named(final String... propNames) {
         final Map<String, Expression> m = N.newLinkedHashMap(propNames.length);
 
-        for (String propName : propNames) {
+        for (final String propName : propNames) {
             m.put(propName, CF.QME);
         }
 
@@ -707,7 +707,7 @@ public abstract class SQLBuilder { // NOSONAR
     static Map<String, Expression> named(final Collection<String> propNames) {
         final Map<String, Expression> m = N.newLinkedHashMap(propNames.size());
 
-        for (String propName : propNames) {
+        for (final String propName : propNames) {
             m.put(propName, CF.QME);
         }
 
@@ -734,7 +734,7 @@ public abstract class SQLBuilder { // NOSONAR
             }
         }
 
-        this._tableName = tableName;
+        _tableName = tableName;
 
         _sb.append(_INSERT);
         _sb.append(_SPACE_INTO_SPACE);
@@ -746,7 +746,7 @@ public abstract class SQLBuilder { // NOSONAR
 
         if (N.notEmpty(_propOrColumnNames)) {
             int i = 0;
-            for (String columnName : _propOrColumnNames) {
+            for (final String columnName : _propOrColumnNames) {
                 if (i++ > 0) {
                     _sb.append(_COMMA_SPACE);
                 }
@@ -754,10 +754,10 @@ public abstract class SQLBuilder { // NOSONAR
                 appendColumnName(columnName);
             }
         } else {
-            final Map<String, Object> localProps = N.isEmpty(this._props) ? _propsList.iterator().next() : this._props;
+            final Map<String, Object> localProps = N.isEmpty(_props) ? _propsList.iterator().next() : _props;
 
             int i = 0;
-            for (String columnName : localProps.keySet()) {
+            for (final String columnName : localProps.keySet()) {
                 if (i++ > 0) {
                     _sb.append(_COMMA_SPACE);
                 }
@@ -789,7 +789,7 @@ public abstract class SQLBuilder { // NOSONAR
 
                 case NAMED_SQL: {
                     int i = 0;
-                    for (String columnName : _propOrColumnNames) {
+                    for (final String columnName : _propOrColumnNames) {
                         if (i++ > 0) {
                             _sb.append(_COMMA_SPACE);
                         }
@@ -802,7 +802,7 @@ public abstract class SQLBuilder { // NOSONAR
 
                 case IBATIS_SQL: {
                     int i = 0;
-                    for (String columnName : _propOrColumnNames) {
+                    for (final String columnName : _propOrColumnNames) {
                         if (i++ > 0) {
                             _sb.append(_COMMA_SPACE);
                         }
@@ -822,7 +822,7 @@ public abstract class SQLBuilder { // NOSONAR
             appendInsertProps(_props);
         } else {
             int i = 0;
-            for (Map<String, Object> localProps : _propsList) {
+            for (final Map<String, Object> localProps : _propsList) {
                 if (i++ > 0) {
                     _sb.append(WD._PARENTHESES_R);
                     _sb.append(_COMMA_SPACE);
@@ -844,7 +844,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder into(final Class<?> entityClass) {
-        if (this._entityClass == null) {
+        if (_entityClass == null) {
             setEntityClass(entityClass);
         }
 
@@ -879,12 +879,12 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder preselect(final String preselect) {
-        if (Strings.isNotEmpty(this._preselect)) {
+        if (Strings.isNotEmpty(_preselect)) {
             throw new IllegalStateException("preselect has been set. Can not set it again");
         }
 
         if (Strings.isNotEmpty(preselect)) {
-            this._preselect = preselect;
+            _preselect = preselect;
 
             final int selectIdx = _sb.indexOf(WD.SELECT);
 
@@ -893,7 +893,7 @@ public abstract class SQLBuilder { // NOSONAR
 
                 _sb.append(_SPACE);
 
-                appendStringExpr(this._preselect, false);
+                appendStringExpr(_preselect, false);
 
                 final int newLength = _sb.length();
 
@@ -968,7 +968,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder from(final Class<?> entityClass) {
-        if (this._entityClass == null) {
+        if (_entityClass == null) {
             setEntityClass(entityClass);
         }
 
@@ -982,7 +982,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder from(final Class<?> entityClass, final String alias) {
-        if (this._entityClass == null) {
+        if (_entityClass == null) {
             setEntityClass(entityClass);
         }
 
@@ -994,7 +994,7 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     private SQLBuilder from(final Class<?> entityClass, final Collection<String> tableNames) {
-        if (this._entityClass == null) {
+        if (_entityClass == null) {
             setEntityClass(entityClass);
         }
 
@@ -1018,13 +1018,13 @@ public abstract class SQLBuilder { // NOSONAR
             throw new RuntimeException("Column names or props must be set first by select");
         }
 
-        int idx = tableName.indexOf(' ');
+        final int idx = tableName.indexOf(' ');
 
         if (idx > 0) {
-            this._tableName = tableName.substring(0, idx).trim();
-            this._tableAlias = tableName.substring(idx + 1).trim();
+            _tableName = tableName.substring(0, idx).trim();
+            _tableAlias = tableName.substring(idx + 1).trim();
         } else {
-            this._tableName = tableName.trim();
+            _tableName = tableName.trim();
         }
 
         if (_entityClass != null && Strings.isNotEmpty(_tableAlias)) {
@@ -1035,7 +1035,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE);
 
         if (Strings.isNotEmpty(_preselect)) {
-            appendStringExpr(this._preselect, false);
+            appendStringExpr(_preselect, false);
 
             _sb.append(_SPACE);
         }
@@ -1051,7 +1051,7 @@ public abstract class SQLBuilder { // NOSONAR
                     final StringBuilder sb = new StringBuilder();
 
                     int i = 0;
-                    for (String columnName : _propOrColumnNames) {
+                    for (final String columnName : _propOrColumnNames) {
                         if (i++ > 0) {
                             sb.append(WD.COMMA_SPACE);
                         }
@@ -1071,7 +1071,7 @@ public abstract class SQLBuilder { // NOSONAR
                 _sb.append(fullSelectParts);
             } else {
                 int i = 0;
-                for (String columnName : _propOrColumnNames) {
+                for (final String columnName : _propOrColumnNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -1081,7 +1081,7 @@ public abstract class SQLBuilder { // NOSONAR
             }
         } else if (N.notEmpty(_propOrColumnNameAliases)) {
             int i = 0;
-            for (Map.Entry<String, String> entry : _propOrColumnNameAliases.entrySet()) {
+            for (final Map.Entry<String, String> entry : _propOrColumnNameAliases.entrySet()) {
                 if (i++ > 0) {
                     _sb.append(_COMMA_SPACE);
                 }
@@ -1089,11 +1089,11 @@ public abstract class SQLBuilder { // NOSONAR
                 appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, entry.getKey(), entry.getValue(), false, null, isForSelect);
             }
         } else if (N.notEmpty(_multiSelects)) {
-            this._aliasPropColumnNameMap = N.newHashMap(_multiSelects.size());
+            _aliasPropColumnNameMap = N.newHashMap(_multiSelects.size());
 
-            for (Selection selection : _multiSelects) {
+            for (final Selection selection : _multiSelects) {
                 if (Strings.isNotEmpty(selection.tableAlias())) {
-                    this._aliasPropColumnNameMap.put(selection.tableAlias(), prop2ColumnNameMap(selection.entityClass(), _namingPolicy));
+                    _aliasPropColumnNameMap.put(selection.tableAlias(), prop2ColumnNameMap(selection.entityClass(), _namingPolicy));
                 }
             }
 
@@ -1106,7 +1106,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             int i = 0;
 
-            for (Selection selection : _multiSelects) {
+            for (final Selection selection : _multiSelects) {
                 selectionEntityClass = selection.entityClass();
                 selectionBeanInfo = selectionEntityClass == null && ClassUtil.isBeanClass(selectionEntityClass) == false ? null
                         : ParserUtil.getBeanInfo(selectionEntityClass);
@@ -1120,7 +1120,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Collection<String> selectPropNames = N.notEmpty(selection.selectPropNames()) ? selection.selectPropNames()
                         : QueryUtil.getSelectPropNames(selectionEntityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
 
-                for (String propName : selectPropNames) {
+                for (final String propName : selectPropNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -1665,7 +1665,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         int i = 0;
-        for (String columnName : propOrColumnNames) {
+        for (final String columnName : propOrColumnNames) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
@@ -1700,7 +1700,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         int i = 0;
-        for (Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+        for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
             if (i++ > 0) {
 
                 _sb.append(_COMMA_SPACE);
@@ -1800,7 +1800,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_ORDER_BY_SPACE);
 
         int i = 0;
-        for (String columnName : propOrColumnNames) {
+        for (final String columnName : propOrColumnNames) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
@@ -1836,7 +1836,7 @@ public abstract class SQLBuilder { // NOSONAR
 
         int i = 0;
 
-        for (Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+        for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
@@ -1999,13 +1999,13 @@ public abstract class SQLBuilder { // NOSONAR
     public SQLBuilder append(final Condition cond) {
         init(true);
 
-        if (cond instanceof Criteria criteria) {
+        if (cond instanceof final Criteria criteria) {
             final Collection<Join> joins = criteria.getJoins();
 
             // appendPreselect(criteria.distinct());
 
             if (N.notEmpty(joins)) {
-                for (Join join : joins) {
+                for (final Join join : joins) {
                     _sb.append(_SPACE).append(join.getOperator()).append(_SPACE);
 
                     if (join.getJoinEntities().size() == 1) {
@@ -2014,7 +2014,7 @@ public abstract class SQLBuilder { // NOSONAR
                         _sb.append(WD._PARENTHESES_L);
                         int idx = 0;
 
-                        for (String joinTableName : join.getJoinEntities()) {
+                        for (final String joinTableName : join.getJoinEntities()) {
                             if (idx++ > 0) {
                                 _sb.append(_COMMA_SPACE);
                             }
@@ -2050,10 +2050,10 @@ public abstract class SQLBuilder { // NOSONAR
                 appendCondition(having.getCondition());
             }
 
-            List<Cell> aggregations = criteria.getAggregation();
+            final List<Cell> aggregations = criteria.getAggregation();
 
             if (N.notEmpty(aggregations)) {
-                for (Cell aggregation : aggregations) {
+                for (final Cell aggregation : aggregations) {
                     _sb.append(_SPACE).append(aggregation.getOperator()).append(_SPACE);
                     appendCondition(aggregation.getCondition());
                 }
@@ -2220,8 +2220,8 @@ public abstract class SQLBuilder { // NOSONAR
     public final SQLBuilder union(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = Array.asList(propOrColumnNames);
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = Array.asList(propOrColumnNames);
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_UNION_SPACE);
 
@@ -2229,7 +2229,7 @@ public abstract class SQLBuilder { // NOSONAR
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
-            this._propOrColumnNames = null;
+            _propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -2245,8 +2245,8 @@ public abstract class SQLBuilder { // NOSONAR
     public SQLBuilder union(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = propOrColumnNames;
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = propOrColumnNames;
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_UNION_SPACE);
 
@@ -2286,8 +2286,8 @@ public abstract class SQLBuilder { // NOSONAR
     public final SQLBuilder unionAll(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = Array.asList(propOrColumnNames);
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = Array.asList(propOrColumnNames);
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_UNION_ALL_SPACE);
 
@@ -2295,7 +2295,7 @@ public abstract class SQLBuilder { // NOSONAR
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
-            this._propOrColumnNames = null;
+            _propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -2311,8 +2311,8 @@ public abstract class SQLBuilder { // NOSONAR
     public SQLBuilder unionAll(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = propOrColumnNames;
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = propOrColumnNames;
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_UNION_ALL_SPACE);
 
@@ -2352,8 +2352,8 @@ public abstract class SQLBuilder { // NOSONAR
     public final SQLBuilder intersect(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = Array.asList(propOrColumnNames);
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = Array.asList(propOrColumnNames);
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_INTERSECT_SPACE);
 
@@ -2361,7 +2361,7 @@ public abstract class SQLBuilder { // NOSONAR
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
-            this._propOrColumnNames = null;
+            _propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -2377,8 +2377,8 @@ public abstract class SQLBuilder { // NOSONAR
     public SQLBuilder intersect(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = propOrColumnNames;
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = propOrColumnNames;
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_INTERSECT_SPACE);
 
@@ -2418,8 +2418,8 @@ public abstract class SQLBuilder { // NOSONAR
     public final SQLBuilder except(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = Array.asList(propOrColumnNames);
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = Array.asList(propOrColumnNames);
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_EXCEPT_SPACE);
 
@@ -2427,7 +2427,7 @@ public abstract class SQLBuilder { // NOSONAR
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
-            this._propOrColumnNames = null;
+            _propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -2443,8 +2443,8 @@ public abstract class SQLBuilder { // NOSONAR
     public SQLBuilder except(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = propOrColumnNames;
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = propOrColumnNames;
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_EXCEPT_SPACE);
 
@@ -2484,8 +2484,8 @@ public abstract class SQLBuilder { // NOSONAR
     public final SQLBuilder minus(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = Array.asList(propOrColumnNames);
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = Array.asList(propOrColumnNames);
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_EXCEPT2_SPACE);
 
@@ -2493,7 +2493,7 @@ public abstract class SQLBuilder { // NOSONAR
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
-            this._propOrColumnNames = null;
+            _propOrColumnNames = null;
         } else {
             // build in from method.
         }
@@ -2509,8 +2509,8 @@ public abstract class SQLBuilder { // NOSONAR
     public SQLBuilder minus(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
 
-        this._propOrColumnNames = propOrColumnNames;
-        this._propOrColumnNameAliases = null;
+        _propOrColumnNames = propOrColumnNames;
+        _propOrColumnNameAliases = null;
 
         _sb.append(_SPACE_EXCEPT2_SPACE);
 
@@ -2559,7 +2559,7 @@ public abstract class SQLBuilder { // NOSONAR
             case SQL:
             case PARAMETERIZED_SQL: {
                 int i = 0;
-                for (String columnName : propOrColumnNames) {
+                for (final String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -2576,7 +2576,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             case NAMED_SQL: {
                 int i = 0;
-                for (String columnName : propOrColumnNames) {
+                for (final String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -2594,7 +2594,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             case IBATIS_SQL: {
                 int i = 0;
-                for (String columnName : propOrColumnNames) {
+                for (final String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -2615,7 +2615,7 @@ public abstract class SQLBuilder { // NOSONAR
                 throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy);
         }
 
-        this._propOrColumnNames = null;
+        _propOrColumnNames = null;
 
         return this;
     }
@@ -2631,7 +2631,7 @@ public abstract class SQLBuilder { // NOSONAR
         switch (_sqlPolicy) {
             case SQL: {
                 int i = 0;
-                for (Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -2648,7 +2648,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             case PARAMETERIZED_SQL: {
                 int i = 0;
-                for (Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -2665,7 +2665,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             case NAMED_SQL: {
                 int i = 0;
-                for (Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -2682,7 +2682,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             case IBATIS_SQL: {
                 int i = 0;
-                for (Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -2701,7 +2701,7 @@ public abstract class SQLBuilder { // NOSONAR
                 throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy);
         }
 
-        this._propOrColumnNames = null;
+        _propOrColumnNames = null;
 
         return this;
     }
@@ -2741,7 +2741,7 @@ public abstract class SQLBuilder { // NOSONAR
         final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
         final Map<String, Object> localProps = N.newHashMap(propNames.size());
 
-        for (String propName : propNames) {
+        for (final String propName : propNames) {
             localProps.put(propName, _entityInfo.getPropValue(entity, propName));
         }
 
@@ -2753,7 +2753,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param entityClass
      * @return
      */
-    public SQLBuilder set(Class<?> entityClass) {
+    public SQLBuilder set(final Class<?> entityClass) {
         setEntityClass(entityClass);
 
         return set(entityClass, null);
@@ -2765,7 +2765,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param excludedPropNames
      * @return
      */
-    public SQLBuilder set(Class<?> entityClass, final Set<String> excludedPropNames) {
+    public SQLBuilder set(final Class<?> entityClass, final Set<String> excludedPropNames) {
         setEntityClass(entityClass);
 
         return set(QueryUtil.getUpdatePropNames(entityClass, excludedPropNames));
@@ -2832,7 +2832,7 @@ public abstract class SQLBuilder { // NOSONAR
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> func) throws E {
-        return func.apply(this.pair());
+        return func.apply(pair());
     }
 
     /**
@@ -2846,7 +2846,7 @@ public abstract class SQLBuilder { // NOSONAR
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> func) throws E {
-        final SP sp = this.pair();
+        final SP sp = pair();
 
         return func.apply(sp.sql, sp.parameters);
     }
@@ -2860,7 +2860,7 @@ public abstract class SQLBuilder { // NOSONAR
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E {
-        consumer.accept(this.pair());
+        consumer.accept(pair());
     }
 
     /**
@@ -2872,7 +2872,7 @@ public abstract class SQLBuilder { // NOSONAR
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E {
-        final SP sp = this.pair();
+        final SP sp = pair();
 
         consumer.accept(sp.sql, sp.parameters);
     }
@@ -3203,7 +3203,7 @@ public abstract class SQLBuilder { // NOSONAR
      *
      * @param setForUpdate
      */
-    void init(boolean setForUpdate) {
+    void init(final boolean setForUpdate) {
         // Note: any change, please take a look at: parse(final Class<?> entityClass, final Condition cond) first.
 
         if (_sb.length() > 0) {
@@ -3238,14 +3238,14 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     private void setEntityClass(final Class<?> entityClass) {
-        this._entityClass = entityClass;
+        _entityClass = entityClass;
 
         if (entityClass != null && ClassUtil.isBeanClass(entityClass)) {
-            this._entityInfo = ParserUtil.getBeanInfo(entityClass);
-            this._propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
+            _entityInfo = ParserUtil.getBeanInfo(entityClass);
+            _propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
         } else {
-            this._entityInfo = null;
-            this._propColumnNameMap = null;
+            _entityInfo = null;
+            _propColumnNameMap = null;
         }
     }
 
@@ -3367,7 +3367,7 @@ public abstract class SQLBuilder { // NOSONAR
         switch (_sqlPolicy) {
             case SQL: {
                 int i = 0;
-                for (Object propValue : props.values()) {
+                for (final Object propValue : props.values()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -3380,7 +3380,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             case PARAMETERIZED_SQL: {
                 int i = 0;
-                for (Object propValue : props.values()) {
+                for (final Object propValue : props.values()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -3393,7 +3393,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             case NAMED_SQL: {
                 int i = 0;
-                for (Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -3406,7 +3406,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             case IBATIS_SQL: {
                 int i = 0;
-                for (Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -3431,8 +3431,7 @@ public abstract class SQLBuilder { // NOSONAR
         //        sb.append(_SPACE);
         //    }
 
-        if (cond instanceof Binary) {
-            final Binary binary = (Binary) cond;
+        if (cond instanceof final Binary binary) {
             final String propName = binary.getPropName();
 
             appendColumnName(propName);
@@ -3441,10 +3440,9 @@ public abstract class SQLBuilder { // NOSONAR
             _sb.append(binary.getOperator().toString());
             _sb.append(_SPACE);
 
-            Object propValue = binary.getPropValue();
+            final Object propValue = binary.getPropValue();
             setParameter(propName, propValue);
-        } else if (cond instanceof Between) {
-            final Between bt = (Between) cond;
+        } else if (cond instanceof final Between bt) {
             final String propName = bt.getPropName();
 
             appendColumnName(propName);
@@ -3453,7 +3451,7 @@ public abstract class SQLBuilder { // NOSONAR
             _sb.append(bt.getOperator().toString());
             _sb.append(_SPACE);
 
-            Object minValue = bt.getMinValue();
+            final Object minValue = bt.getMinValue();
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("min" + Strings.capitalize(propName), minValue);
             } else {
@@ -3464,14 +3462,13 @@ public abstract class SQLBuilder { // NOSONAR
             _sb.append(WD.AND);
             _sb.append(_SPACE);
 
-            Object maxValue = bt.getMaxValue();
+            final Object maxValue = bt.getMaxValue();
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("max" + Strings.capitalize(propName), maxValue);
             } else {
                 setParameter(propName, maxValue);
             }
-        } else if (cond instanceof NotBetween) {
-            final NotBetween bt = (NotBetween) cond;
+        } else if (cond instanceof final NotBetween bt) {
             final String propName = bt.getPropName();
 
             appendColumnName(propName);
@@ -3480,7 +3477,7 @@ public abstract class SQLBuilder { // NOSONAR
             _sb.append(bt.getOperator().toString());
             _sb.append(_SPACE);
 
-            Object minValue = bt.getMinValue();
+            final Object minValue = bt.getMinValue();
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("min" + Strings.capitalize(propName), minValue);
             } else {
@@ -3491,14 +3488,13 @@ public abstract class SQLBuilder { // NOSONAR
             _sb.append(WD.AND);
             _sb.append(_SPACE);
 
-            Object maxValue = bt.getMaxValue();
+            final Object maxValue = bt.getMaxValue();
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("max" + Strings.capitalize(propName), maxValue);
             } else {
                 setParameter(propName, maxValue);
             }
-        } else if (cond instanceof In) {
-            final In in = (In) cond;
+        } else if (cond instanceof final In in) {
             final String propName = in.getPropName();
             final List<Object> params = in.getParameters();
 
@@ -3521,8 +3517,7 @@ public abstract class SQLBuilder { // NOSONAR
             }
 
             _sb.append(WD._PARENTHESES_R);
-        } else if (cond instanceof InSubQuery) {
-            final InSubQuery inSubQuery = (InSubQuery) cond;
+        } else if (cond instanceof final InSubQuery inSubQuery) {
             final String propName = inSubQuery.getPropName();
 
             if (Strings.isNotEmpty(propName)) {
@@ -3532,7 +3527,7 @@ public abstract class SQLBuilder { // NOSONAR
 
                 int idx = 0;
 
-                for (String e : inSubQuery.getPropNames()) {
+                for (final String e : inSubQuery.getPropNames()) {
                     if (idx++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -3551,8 +3546,7 @@ public abstract class SQLBuilder { // NOSONAR
             appendCondition(inSubQuery.getSubQuery());
 
             _sb.append(WD._PARENTHESES_R);
-        } else if (cond instanceof NotIn) {
-            final NotIn notIn = (NotIn) cond;
+        } else if (cond instanceof final NotIn notIn) {
             final String propName = notIn.getPropName();
             final List<Object> params = notIn.getParameters();
 
@@ -3575,8 +3569,7 @@ public abstract class SQLBuilder { // NOSONAR
             }
 
             _sb.append(WD._PARENTHESES_R);
-        } else if (cond instanceof NotInSubQuery) {
-            final NotInSubQuery notInSubQuery = (NotInSubQuery) cond;
+        } else if (cond instanceof final NotInSubQuery notInSubQuery) {
             final String propName = notInSubQuery.getPropName();
 
             appendColumnName(propName);
@@ -3596,9 +3589,7 @@ public abstract class SQLBuilder { // NOSONAR
             _sb.append(_SPACE);
 
             appendCondition(cell.getCondition());
-        } else if (cond instanceof Cell) {
-            final Cell cell = (Cell) cond;
-
+        } else if (cond instanceof final Cell cell) {
             _sb.append(_SPACE);
             _sb.append(cell.getOperator().toString());
             _sb.append(_SPACE);
@@ -3606,8 +3597,7 @@ public abstract class SQLBuilder { // NOSONAR
             _sb.append(_PARENTHESES_L);
             appendCondition(cell.getCondition());
             _sb.append(_PARENTHESES_R);
-        } else if (cond instanceof Junction) {
-            final Junction junction = (Junction) cond;
+        } else if (cond instanceof final Junction junction) {
             final List<Condition> conditionList = junction.getConditions();
 
             if (N.isEmpty(conditionList)) {
@@ -3637,8 +3627,7 @@ public abstract class SQLBuilder { // NOSONAR
 
                 // sb.append(_PARENTHESES_R);
             }
-        } else if (cond instanceof SubQuery) {
-            final SubQuery subQuery = (SubQuery) cond;
+        } else if (cond instanceof final SubQuery subQuery) {
             final Condition subCond = subQuery.getCondition();
 
             if (Strings.isNotEmpty(subQuery.getSql())) {
@@ -3770,9 +3759,7 @@ public abstract class SQLBuilder { // NOSONAR
         for (int i = 0, len = words.size(); i < len; i++) {
             word = words.get(i);
 
-            if (!Strings.isAsciiAlpha(word.charAt(0))) {
-                _sb.append(word);
-            } else if (SQLParser.isFunctionName(words, len, i)) {
+            if (!Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
                 _sb.append(word);
             } else {
                 _sb.append(formalizeColumnName(_propColumnNameMap, word));
@@ -3824,7 +3811,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Collection<String> subSelectPropNames = QueryUtil.getSelectPropNames(propEntityClass, false, null);
                 int i = 0;
 
-                for (String subPropName : subSelectPropNames) {
+                for (final String subPropName : subSelectPropNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -3844,7 +3831,7 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         if (_aliasPropColumnNameMap != null && _aliasPropColumnNameMap.size() > 0) {
-            int index = propName.indexOf('.');
+            final int index = propName.indexOf('.');
 
             if (index > 0) {
                 final String propTableAlias = propName.substring(0, index);
@@ -4008,7 +3995,7 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         if (_aliasPropColumnNameMap != null && _aliasPropColumnNameMap.size() > 0) {
-            int index = propName.indexOf('.');
+            final int index = propName.indexOf('.');
 
             if (index > 0) {
                 final String propTableAlias = propName.substring(0, index);
@@ -4043,7 +4030,7 @@ public abstract class SQLBuilder { // NOSONAR
             final Map<String, Object> map = N.newHashMap(propNames.size());
             final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
 
-            for (String propName : propNames) {
+            for (final String propName : propNames) {
                 map.put(propName, entityInfo.getPropValue(entity, propName));
             }
 
@@ -4061,11 +4048,11 @@ public abstract class SQLBuilder { // NOSONAR
         final Collection<String> propNames = QueryUtil.getInsertPropNames(entityClass, null);
         final List<Map<String, Object>> newPropsList = new ArrayList<>(propsList.size());
 
-        for (Object entity : propsList) {
+        for (final Object entity : propsList) {
             final Map<String, Object> props = N.newHashMap(propNames.size());
             final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
 
-            for (String propName : propNames) {
+            for (final String propName : propNames) {
                 props.put(propName, entityInfo.getPropValue(entity, propName));
             }
 
@@ -4078,7 +4065,7 @@ public abstract class SQLBuilder { // NOSONAR
     static void checkMultiSelects(final List<Selection> multiSelects) {
         N.checkArgNotEmpty(multiSelects, "multiSelects");
 
-        for (Selection selection : multiSelects) {
+        for (final Selection selection : multiSelects) {
             N.checkArgNotNull(selection.entityClass(), "Class can't be null in 'multiSelects'");
         }
     }
@@ -13582,9 +13569,7 @@ public abstract class SQLBuilder { // NOSONAR
                 return true;
             }
 
-            if (obj instanceof SP) {
-                SP other = (SP) obj;
-
+            if (obj instanceof final SP other) {
                 return N.equals(other.sql, sql) && N.equals(other.parameters, parameters);
             }
 
@@ -13629,7 +13614,7 @@ public abstract class SQLBuilder { // NOSONAR
         final StringBuilder sb = Objectory.createStringBuilder();
         int idx = 0;
 
-        for (Selection selection : multiSelects) {
+        for (final Selection selection : multiSelects) {
             if (idx++ > 0) {
                 sb.append(_COMMA_SPACE);
             }
@@ -13654,7 +13639,7 @@ public abstract class SQLBuilder { // NOSONAR
                 PropInfo propInfo = null;
                 Class<?> subEntityClass = null;
 
-                for (String subEntityPropName : subEntityPropNames) {
+                for (final String subEntityPropName : subEntityPropNames) {
                     if (N.notEmpty(selectPropNames)) {
                         if (!selectPropNames.contains(subEntityPropName)) {
                             continue;
@@ -13671,7 +13656,7 @@ public abstract class SQLBuilder { // NOSONAR
             }
         }
 
-        String fromClause = sb.toString();
+        final String fromClause = sb.toString();
 
         Objectory.recycle(sb);
         return fromClause;

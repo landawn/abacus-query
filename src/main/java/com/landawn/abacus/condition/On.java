@@ -30,30 +30,30 @@ public class On extends Cell {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
-    public On(Condition condition) {
+    public On(final Condition condition) {
         super(Operator.ON, condition);
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param anoPropName 
+     *
+     * @param propName
+     * @param anoPropName
      */
-    public On(String propName, String anoPropName) {
+    public On(final String propName, final String anoPropName) {
         this(createOnCondition(propName, anoPropName));
     }
 
     /**
-     * 
      *
-     * @param propNamePair 
+     *
+     * @param propNamePair
      */
-    public On(Map<String, String> propNamePair) {
+    public On(final Map<String, String> propNamePair) {
         this(createOnCondition(propNamePair));
     }
 
@@ -64,7 +64,7 @@ public class On extends Cell {
      * @param anoPropName
      * @return
      */
-    static Condition createOnCondition(String propName, String anoPropName) {
+    static Condition createOnCondition(final String propName, final String anoPropName) {
         return new Equal(propName, CF.expr(anoPropName));
     }
 
@@ -74,15 +74,15 @@ public class On extends Cell {
      * @param propNamePair
      * @return
      */
-    static Condition createOnCondition(Map<String, String> propNamePair) {
+    static Condition createOnCondition(final Map<String, String> propNamePair) {
         if (propNamePair.size() == 1) {
-            Map.Entry<String, String> entry = propNamePair.entrySet().iterator().next();
+            final Map.Entry<String, String> entry = propNamePair.entrySet().iterator().next();
 
             return createOnCondition(entry.getKey(), entry.getValue());
         } else {
-            And and = CF.and();
+            final And and = CF.and();
 
-            for (Map.Entry<String, String> entry : propNamePair.entrySet()) {
+            for (final Map.Entry<String, String> entry : propNamePair.entrySet()) {
                 and.add(createOnCondition(entry.getKey(), entry.getValue()));
             }
 

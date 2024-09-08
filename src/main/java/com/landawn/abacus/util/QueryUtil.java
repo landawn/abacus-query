@@ -63,7 +63,7 @@ public final class QueryUtil {
             final ImmutableMap<String, String> prop2ColumnNameMap = getProp2ColumnNameMap(entityClass, namingPolicy);
             final Map<String, Tuple2<String, Boolean>> newProp2ColumnNameMap = N.newHashMap(prop2ColumnNameMap.size() * 2);
 
-            for (Map.Entry<String, String> entry : prop2ColumnNameMap.entrySet()) {
+            for (final Map.Entry<String, String> entry : prop2ColumnNameMap.entrySet()) {
                 newProp2ColumnNameMap.put(entry.getKey(), Tuple.of(entry.getValue(), entry.getKey().indexOf('.') < 0));
 
                 if (!prop2ColumnNameMap.containsKey(entry.getValue())) {
@@ -92,14 +92,14 @@ public final class QueryUtil {
      * @param entityClass
      * @return
      */
-    public static ImmutableMap<String, String> getColumn2PropNameMap(Class<?> entityClass) {
+    public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
         ImmutableMap<String, String> result = column2PropNameNameMapPool.get(entityClass);
 
         if (result == null) {
             final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
             final Map<String, String> map = N.newHashMap(entityInfo.propInfoList.size() * 3);
 
-            for (PropInfo propInfo : entityInfo.propInfoList) {
+            for (final PropInfo propInfo : entityInfo.propInfoList) {
                 if (propInfo.columnName.isPresent()) {
                     map.put(propInfo.columnName.get(), propInfo.name);
                     map.put(propInfo.columnName.get().toLowerCase(), propInfo.name);
@@ -155,7 +155,7 @@ public final class QueryUtil {
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
         Map<String, String> propColumnNameMap = N.newHashMap(entityInfo.propInfoList.size() * 2);
 
-        for (PropInfo propInfo : entityInfo.propInfoList) {
+        for (final PropInfo propInfo : entityInfo.propInfoList) {
             if (isNotColumn(columnFields, nonColumnFields, propInfo)) {
                 continue;
             }
@@ -176,7 +176,7 @@ public final class QueryUtil {
                     if (N.notEmpty(subPropColumnNameMap)) {
                         final String subTableAliasOrName = SQLBuilder.getTableAliasOrName(propType.clazz(), namingPolicy);
 
-                        for (Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
+                        for (final Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
                             propColumnNameMap.put(propInfo.name + WD.PERIOD + entry.getKey(), subTableAliasOrName + WD.PERIOD + entry.getValue());
                         }
 
@@ -213,12 +213,12 @@ public final class QueryUtil {
     }
 
     /**
-    * Gets the insert prop names by class.
-    *
-    * @param entity
-    * @param excludedPropNames
-    * @return
-    */
+     * Gets the insert prop names by class.
+     *
+     * @param entity
+     * @param excludedPropNames
+     * @return
+     */
     @Internal
     public static Collection<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames) {
         final Class<?> entityClass = entity.getClass();
@@ -239,7 +239,7 @@ public final class QueryUtil {
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
 
-        for (String idPropName : idPropNames) {
+        for (final String idPropName : idPropNames) {
             if (!SQLBuilder.isDefaultIdPropValue(entityInfo.getPropInfo(idPropName))) {
                 return val[2];
             }
@@ -334,19 +334,19 @@ public final class QueryUtil {
     @Deprecated
     @Internal
     @Immutable
-    public static List<String> getIdFieldNames(final Class<?> targetClass, boolean fakeIdForEmpty) {
+    public static List<String> getIdFieldNames(final Class<?> targetClass, final boolean fakeIdForEmpty) {
         final ImmutableList<String> idPropNames = ParserUtil.getBeanInfo(targetClass).idPropNameList;
 
         return N.isEmpty(idPropNames) && fakeIdForEmpty ? fakeIds : idPropNames;
     }
 
     /**
-     * 
      *
-     * @param columnFields 
-     * @param nonColumnFields 
-     * @param propInfo 
-     * @return 
+     *
+     * @param columnFields
+     * @param nonColumnFields
+     * @param propInfo
+     * @return
      */
     public static boolean isNotColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
         return propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
@@ -364,7 +364,7 @@ public final class QueryUtil {
      */
     @Deprecated
     @Internal
-    public static boolean isFakeId(List<String> idPropNames) {
+    public static boolean isFakeId(final List<String> idPropNames) {
         return idPropNames != null && idPropNames.size() == 1 && fakeIds.get(0).equals(idPropNames.get(0));
     }
 
@@ -390,7 +390,7 @@ public final class QueryUtil {
      * @param n
      * @return
      */
-    public static String repeatQM(int n) {
+    public static String repeatQM(final int n) {
         N.checkArgNotNegative(n, "count");
 
         String result = QM_CACHE.get(n);

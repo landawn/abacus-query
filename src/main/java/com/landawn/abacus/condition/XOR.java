@@ -26,12 +26,12 @@ public class XOR extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public XOR(String propName, Object propValue) {
+    public XOR(final String propName, final Object propValue) {
         super(propName, Operator.XOR, propValue);
     }
 }

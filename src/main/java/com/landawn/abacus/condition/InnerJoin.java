@@ -28,31 +28,31 @@ public class InnerJoin extends Join {
     }
 
     /**
-     * 
      *
-     * @param joinEntity 
+     *
+     * @param joinEntity
      */
-    public InnerJoin(String joinEntity) {
+    public InnerJoin(final String joinEntity) {
         super(Operator.INNER_JOIN, joinEntity);
     }
 
     /**
-     * 
      *
-     * @param joinEntity 
-     * @param condition 
+     *
+     * @param joinEntity
+     * @param condition
      */
-    public InnerJoin(String joinEntity, Condition condition) {
+    public InnerJoin(final String joinEntity, final Condition condition) {
         super(Operator.INNER_JOIN, joinEntity, condition);
     }
 
     /**
-     * 
      *
-     * @param joinEntities 
-     * @param condition 
+     *
+     * @param joinEntities
+     * @param condition
      */
-    public InnerJoin(Collection<String> joinEntities, Condition condition) {
+    public InnerJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.INNER_JOIN, joinEntities, condition);
     }
 }

@@ -16,6 +16,7 @@ package com.landawn.abacus.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import com.landawn.abacus.pool.KeyedObjectPool;
@@ -68,13 +69,13 @@ public final class ParsedSql {
     private int couchbaseParameterCount;
 
     @SuppressWarnings({ "unchecked" })
-    private ParsedSql(String sql) {
+    private ParsedSql(final String sql) {
         this.sql = sql.trim();
 
         final List<String> words = SQLParser.parse(this.sql);
 
         boolean isOpSqlPrefix = false;
-        for (String word : words) {
+        for (final String word : words) {
             if (Strings.isNotEmpty(word) && !(word.equals(" ") || word.startsWith("--") || word.startsWith("/*"))) {
                 isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase());
                 break;
@@ -124,11 +125,11 @@ public final class ParsedSql {
      * @param sql
      * @return
      */
-    public static ParsedSql parse(String sql) {
+    public static ParsedSql parse(final String sql) {
         N.checkArgNotEmpty(sql, "sql");
 
         ParsedSql result = null;
-        PoolableWrapper<ParsedSql> w = pool.get(sql);
+        final PoolableWrapper<ParsedSql> w = pool.get(sql);
 
         if ((w == null) || (w.value() == null)) {
             synchronized (pool) {
@@ -166,7 +167,7 @@ public final class ParsedSql {
      * @param isForCouchbase
      * @return
      */
-    public String getParameterizedSql(boolean isForCouchbase) {
+    public String getParameterizedSql(final boolean isForCouchbase) {
         if (isForCouchbase) {
             if (Strings.isEmpty(couchbaseParameterizedSql)) {
                 parseForCouchbase();
@@ -193,7 +194,7 @@ public final class ParsedSql {
      * @param isForCouchbase
      * @return
      */
-    public ImmutableList<String> getNamedParameters(boolean isForCouchbase) {
+    public ImmutableList<String> getNamedParameters(final boolean isForCouchbase) {
         if (isForCouchbase) {
             if (Strings.isEmpty(couchbaseParameterizedSql)) {
                 parseForCouchbase();
@@ -220,7 +221,7 @@ public final class ParsedSql {
      * @param isForCouchbase
      * @return
      */
-    public int getParameterCount(boolean isForCouchbase) {
+    public int getParameterCount(final boolean isForCouchbase) {
         if (isForCouchbase) {
             if (Strings.isEmpty(couchbaseParameterizedSql)) {
                 parseForCouchbase();
@@ -236,12 +237,12 @@ public final class ParsedSql {
      * Parses the for couchbase.
      */
     private void parseForCouchbase() {
-        List<String> couchbaseNamedParameterList = new ArrayList<>();
+        final List<String> couchbaseNamedParameterList = new ArrayList<>();
 
         final List<String> words = SQLParser.parse(sql);
 
         boolean isOpSqlPrefix = false;
-        for (String word : words) {
+        for (final String word : words) {
             if (Strings.isNotEmpty(word)) {
                 isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase());
                 break;
@@ -284,7 +285,7 @@ public final class ParsedSql {
                         isNamedParametersByNum = false;
                         break;
                     }
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     // ignore;
                     isNamedParametersByNum = false;
                     break;
@@ -319,11 +320,7 @@ public final class ParsedSql {
      */
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = (prime * result) + ((sql == null) ? 0 : sql.hashCode());
-
-        return result;
+        return Objects.hash(sql);
     }
 
     /**
@@ -332,14 +329,12 @@ public final class ParsedSql {
      * @return
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof ParsedSql) {
-            ParsedSql other = (ParsedSql) obj;
-
+        if (obj instanceof final ParsedSql other) {
             return N.equals(sql, other.sql);
         }
 

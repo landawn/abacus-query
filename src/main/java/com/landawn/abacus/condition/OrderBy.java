@@ -36,18 +36,18 @@ public class OrderBy extends Clause {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
     public OrderBy(final Condition condition) {
         super(Operator.ORDER_BY, condition);
     }
 
     /**
-     * 
      *
-     * @param propNames 
+     *
+     * @param propNames
      */
     @SafeVarargs
     public OrderBy(final String... propNames) {
@@ -55,20 +55,20 @@ public class OrderBy extends Clause {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param direction 
+     *
+     * @param propName
+     * @param direction
      */
     public OrderBy(final String propName, final SortDirection direction) {
         this(CF.expr(createCondition(propName, direction)));
     }
 
     /**
-     * 
      *
-     * @param propNames 
-     * @param direction 
+     *
+     * @param propNames
+     * @param direction
      */
     public OrderBy(final Collection<String> propNames, final SortDirection direction) {
         this(CF.expr(createCondition(propNames, direction)));
@@ -88,12 +88,12 @@ public class OrderBy extends Clause {
      * @param propNames
      * @return
      */
-    static String createCondition(String... propNames) {
+    static String createCondition(final String... propNames) {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
             int i = 0;
-            for (String propName : propNames) {
+            for (final String propName : propNames) {
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }
@@ -114,7 +114,7 @@ public class OrderBy extends Clause {
      * @param direction
      * @return
      */
-    static String createCondition(String propName, SortDirection direction) {
+    static String createCondition(final String propName, final SortDirection direction) {
         return propName + SPACE + direction.toString();
     }
 
@@ -125,12 +125,12 @@ public class OrderBy extends Clause {
      * @param direction
      * @return
      */
-    static String createCondition(Collection<String> propNames, SortDirection direction) {
+    static String createCondition(final Collection<String> propNames, final SortDirection direction) {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
             int i = 0;
-            for (String propName : propNames) {
+            for (final String propName : propNames) {
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }
@@ -153,12 +153,12 @@ public class OrderBy extends Clause {
      * @param orders
      * @return
      */
-    static String createCondition(Map<String, SortDirection> orders) {
+    static String createCondition(final Map<String, SortDirection> orders) {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
             int i = 0;
-            for (Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+            for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }

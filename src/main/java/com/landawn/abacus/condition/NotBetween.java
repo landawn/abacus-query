@@ -47,7 +47,7 @@ public class NotBetween extends AbstractCondition {
      * @param minValue
      * @param maxValue
      */
-    public NotBetween(String propName, Object minValue, Object maxValue) {
+    public NotBetween(final String propName, final Object minValue, final Object maxValue) {
         super(Operator.NOT_BETWEEN);
 
         if (Strings.isEmpty(propName)) {
@@ -86,7 +86,7 @@ public class NotBetween extends AbstractCondition {
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
-    public void setMinValue(Object minValue) {
+    public void setMinValue(final Object minValue) {
         this.minValue = minValue;
     }
 
@@ -108,7 +108,7 @@ public class NotBetween extends AbstractCondition {
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
-    public void setMaxValue(Object maxValue) {
+    public void setMaxValue(final Object maxValue) {
         this.maxValue = maxValue;
     }
 
@@ -119,7 +119,7 @@ public class NotBetween extends AbstractCondition {
      */
     @Override
     public List<Object> getParameters() {
-        List<Object> parameters = new ArrayList<>();
+        final List<Object> parameters = new ArrayList<>();
 
         if (minValue instanceof Condition) {
             parameters.addAll(((Condition) minValue).getParameters());
@@ -162,7 +162,7 @@ public class NotBetween extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        NotBetween copy = (NotBetween) super.copy();
+        final NotBetween copy = (NotBetween) super.copy();
 
         if (minValue instanceof Condition) {
             copy.minValue = ((Condition) minValue).copy();
@@ -181,7 +181,7 @@ public class NotBetween extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
+    public String toString(final NamingPolicy namingPolicy) {
         if (namingPolicy == NamingPolicy.NO_CHANGE) {
             return propName + WD._SPACE + getOperator().toString() + WD.SPACE_PARENTHESES_L + parameter2String(minValue, namingPolicy) + WD.COMMA_SPACE
                     + parameter2String(maxValue, namingPolicy) + WD._PARENTHESES_R;
@@ -202,9 +202,7 @@ public class NotBetween extends AbstractCondition {
         h = (h * 31) + propName.hashCode();
         h = (h * 31) + operator.hashCode();
         h = (h * 31) + ((minValue == null) ? 0 : minValue.hashCode());
-        h = (h * 31) + ((maxValue == null) ? 0 : maxValue.hashCode());
-
-        return h;
+        return (h * 31) + ((maxValue == null) ? 0 : maxValue.hashCode());
     }
 
     /**
@@ -213,14 +211,12 @@ public class NotBetween extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof NotBetween) {
-            NotBetween other = (NotBetween) obj;
-
+        if (obj instanceof final NotBetween other) {
             return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(minValue, other.minValue)
                     && N.equals(maxValue, other.maxValue);
         }

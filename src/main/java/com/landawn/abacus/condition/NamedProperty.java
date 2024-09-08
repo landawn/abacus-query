@@ -44,7 +44,7 @@ public final class NamedProperty {
      *
      * @param propName
      */
-    public NamedProperty(String propName) {
+    public NamedProperty(final String propName) {
         this.propName = propName;
     }
 
@@ -53,7 +53,7 @@ public final class NamedProperty {
      * @param propName
      * @return
      */
-    public static NamedProperty of(String propName) {
+    public static NamedProperty of(final String propName) {
         if (Strings.isEmpty(propName)) {
             throw new IllegalArgumentException("the property name can't be null or empty string.");
         }
@@ -73,7 +73,7 @@ public final class NamedProperty {
      * @param values
      * @return
      */
-    public Equal eq(Object values) {
+    public Equal eq(final Object values) {
         return CF.eq(propName, values);
     }
 
@@ -83,10 +83,10 @@ public final class NamedProperty {
      * @return
      */
     @SafeVarargs
-    public final Or eqOr(Object... values) {
-        Or or = CF.or();
+    public final Or eqOr(final Object... values) {
+        final Or or = CF.or();
 
-        for (Object propValue : values) {
+        for (final Object propValue : values) {
             or.add(CF.eq(propName, propValue));
         }
 
@@ -98,10 +98,10 @@ public final class NamedProperty {
      * @param values
      * @return
      */
-    public Or eqOr(Collection<?> values) {
-        Or or = CF.or();
+    public Or eqOr(final Collection<?> values) {
+        final Or or = CF.or();
 
-        for (Object propValue : values) {
+        for (final Object propValue : values) {
             or.add(CF.eq(propName, propValue));
         }
 
@@ -113,7 +113,7 @@ public final class NamedProperty {
      * @param values
      * @return
      */
-    public NotEqual ne(Object values) {
+    public NotEqual ne(final Object values) {
         return CF.ne(propName, values);
     }
 
@@ -122,7 +122,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public GreaterThan gt(Object value) {
+    public GreaterThan gt(final Object value) {
         return CF.gt(propName, value);
     }
 
@@ -131,7 +131,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public GreaterEqual ge(Object value) {
+    public GreaterEqual ge(final Object value) {
         return CF.ge(propName, value);
     }
 
@@ -140,7 +140,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public LessThan lt(Object value) {
+    public LessThan lt(final Object value) {
         return CF.lt(propName, value);
     }
 
@@ -149,7 +149,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public LessEqual le(Object value) {
+    public LessEqual le(final Object value) {
         return CF.le(propName, value);
     }
 
@@ -178,7 +178,7 @@ public final class NamedProperty {
      * @param maxValue
      * @return
      */
-    public Between between(Object minValue, Object maxValue) {
+    public Between between(final Object minValue, final Object maxValue) {
         return CF.between(propName, minValue, maxValue);
     }
 
@@ -190,7 +190,7 @@ public final class NamedProperty {
      * @deprecated please use {@link #between(Object, Object)}
      */
     @Deprecated
-    public Between bt(Object minValue, Object maxValue) {
+    public Between bt(final Object minValue, final Object maxValue) {
         return CF.between(propName, minValue, maxValue);
     }
 
@@ -199,7 +199,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public Like like(Object value) {
+    public Like like(final Object value) {
         return CF.like(propName, value);
     }
 
@@ -208,7 +208,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public NotLike notLike(Object value) {
+    public NotLike notLike(final Object value) {
         return CF.notLike(propName, value);
     }
 
@@ -217,7 +217,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public Like startsWith(Object value) {
+    public Like startsWith(final Object value) {
         return CF.startsWith(propName, value);
     }
 
@@ -226,7 +226,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public Like endsWith(Object value) {
+    public Like endsWith(final Object value) {
         return CF.endsWith(propName, value);
     }
 
@@ -235,7 +235,7 @@ public final class NamedProperty {
      * @param value
      * @return
      */
-    public Like contains(Object value) {
+    public Like contains(final Object value) {
         return CF.contains(propName, value);
     }
 
@@ -245,7 +245,7 @@ public final class NamedProperty {
      * @return
      */
     @SafeVarargs
-    public final In in(Object... values) {
+    public final In in(final Object... values) {
         return CF.in(propName, values);
     }
 
@@ -254,7 +254,7 @@ public final class NamedProperty {
      * @param values
      * @return
      */
-    public In in(Collection<?> values) {
+    public In in(final Collection<?> values) {
         return CF.in(propName, values);
     }
 
@@ -274,7 +274,7 @@ public final class NamedProperty {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         return this == obj || (obj instanceof NamedProperty && N.equals(((NamedProperty) obj).propName, propName));
     }
 

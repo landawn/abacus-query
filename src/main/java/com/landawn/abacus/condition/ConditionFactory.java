@@ -155,9 +155,9 @@ public class ConditionFactory {
     public static Or eqOr(final String propName, final Object... propValues) {
         N.checkArgNotEmpty(propValues, "propValues");
 
-        Or or = CF.or();
+        final Or or = CF.or();
 
-        for (Object propValue : propValues) {
+        for (final Object propValue : propValues) {
             or.add(eq(propName, propValue));
         }
 
@@ -173,9 +173,9 @@ public class ConditionFactory {
     public static Or eqOr(final String propName, final Collection<?> propValues) {
         N.checkArgNotEmpty(propValues, "propValues");
 
-        Or or = CF.or();
+        final Or or = CF.or();
 
-        for (Object propValue : propValues) {
+        for (final Object propValue : propValues) {
             or.add(eq(propName, propValue));
         }
 
@@ -1917,11 +1917,11 @@ public class ConditionFactory {
     }
 
     /**
-     * 
      *
-     * @param entityName 
-     * @param sql 
-     * @return 
+     *
+     * @param entityName
+     * @param sql
+     * @return
      * @see #subQuery(String)
      * @deprecated replaced by {@link #subQuery(String)}
      */
@@ -2017,7 +2017,7 @@ public class ConditionFactory {
          * @param condition
          * @return
          */
-        public static Criteria groupBy(Condition condition) {
+        public static Criteria groupBy(final Condition condition) {
             return CF.criteria().groupBy(condition);
         }
 
@@ -2027,7 +2027,7 @@ public class ConditionFactory {
          * @return
          */
         @SafeVarargs
-        public static final Criteria groupBy(String... propNames) {
+        public static final Criteria groupBy(final String... propNames) {
             return CF.criteria().groupBy(propNames);
         }
 
@@ -2037,7 +2037,7 @@ public class ConditionFactory {
          * @param direction
          * @return
          */
-        public static Criteria groupBy(String propName, SortDirection direction) {
+        public static Criteria groupBy(final String propName, final SortDirection direction) {
             return CF.criteria().groupBy(propName, direction);
         }
 
@@ -2046,7 +2046,7 @@ public class ConditionFactory {
          * @param propNames
          * @return
          */
-        public static Criteria groupBy(Collection<String> propNames) {
+        public static Criteria groupBy(final Collection<String> propNames) {
             return CF.criteria().groupBy(propNames);
         }
 
@@ -2056,7 +2056,7 @@ public class ConditionFactory {
          * @param direction
          * @return
          */
-        public static Criteria groupBy(Collection<String> propNames, SortDirection direction) {
+        public static Criteria groupBy(final Collection<String> propNames, final SortDirection direction) {
             return CF.criteria().groupBy(propNames, direction);
         }
 
@@ -2065,7 +2065,7 @@ public class ConditionFactory {
          * @param orders
          * @return
          */
-        public static Criteria groupBy(Map<String, SortDirection> orders) {
+        public static Criteria groupBy(final Map<String, SortDirection> orders) {
             return CF.criteria().groupBy(orders);
         }
 
@@ -2074,7 +2074,7 @@ public class ConditionFactory {
          * @param condition
          * @return
          */
-        public static Criteria having(Condition condition) {
+        public static Criteria having(final Condition condition) {
             return CF.criteria().having(condition);
         }
 
@@ -2083,7 +2083,7 @@ public class ConditionFactory {
          * @param condition
          * @return
          */
-        public static Criteria having(String condition) {
+        public static Criteria having(final String condition) {
             return CF.criteria().having(condition);
         }
 
@@ -2128,7 +2128,7 @@ public class ConditionFactory {
          * @param condition
          * @return
          */
-        public static Criteria orderBy(Condition condition) {
+        public static Criteria orderBy(final Condition condition) {
             return CF.criteria().orderBy(condition);
         }
 
@@ -2138,7 +2138,7 @@ public class ConditionFactory {
          * @return
          */
         @SafeVarargs
-        public static final Criteria orderBy(String... propNames) {
+        public static final Criteria orderBy(final String... propNames) {
             return CF.criteria().orderBy(propNames);
         }
 
@@ -2148,7 +2148,7 @@ public class ConditionFactory {
          * @param direction
          * @return
          */
-        public static Criteria orderBy(String propName, SortDirection direction) {
+        public static Criteria orderBy(final String propName, final SortDirection direction) {
             return CF.criteria().orderBy(propName, direction);
         }
 
@@ -2157,7 +2157,7 @@ public class ConditionFactory {
          * @param propNames
          * @return
          */
-        public static Criteria orderBy(Collection<String> propNames) {
+        public static Criteria orderBy(final Collection<String> propNames) {
             return CF.criteria().orderBy(propNames);
         }
 
@@ -2167,7 +2167,7 @@ public class ConditionFactory {
          * @param direction
          * @return
          */
-        public static Criteria orderBy(Collection<String> propNames, SortDirection direction) {
+        public static Criteria orderBy(final Collection<String> propNames, final SortDirection direction) {
             return CF.criteria().orderBy(propNames, direction);
         }
 
@@ -2176,7 +2176,7 @@ public class ConditionFactory {
          * @param orders
          * @return
          */
-        public static Criteria orderBy(Map<String, SortDirection> orders) {
+        public static Criteria orderBy(final Map<String, SortDirection> orders) {
             return CF.criteria().orderBy(orders);
         }
 
@@ -2185,7 +2185,7 @@ public class ConditionFactory {
          * @param condition
          * @return
          */
-        public static Criteria limit(Limit condition) {
+        public static Criteria limit(final Limit condition) {
             return CF.criteria().limit(condition);
         }
 

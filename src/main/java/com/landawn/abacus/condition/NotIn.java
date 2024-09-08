@@ -45,7 +45,7 @@ public class NotIn extends AbstractCondition {
      * @param propName
      * @param values
      */
-    public NotIn(String propName, Collection<?> values) {
+    public NotIn(final String propName, final Collection<?> values) {
         super(Operator.NOT_IN);
 
         N.checkArgNotEmpty(values, "'values' can't be null or empty");
@@ -80,7 +80,7 @@ public class NotIn extends AbstractCondition {
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
-    public void setValues(List<?> values) {
+    public void setValues(final List<?> values) {
         this.values = values;
     }
 
@@ -113,7 +113,7 @@ public class NotIn extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        NotIn copy = (NotIn) super.copy();
+        final NotIn copy = (NotIn) super.copy();
 
         copy.values = new ArrayList<>(values);
 
@@ -126,7 +126,7 @@ public class NotIn extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
+    public String toString(final NamingPolicy namingPolicy) {
         if (namingPolicy == NamingPolicy.NO_CHANGE) {
             return propName + WD._SPACE + getOperator().toString()
                     + Joiner.with(WD.COMMA_SPACE, WD.SPACE_PARENTHESES_L, WD.PARENTHESES_R).reuseCachedBuffer().appendAll(values).toString();
@@ -146,9 +146,7 @@ public class NotIn extends AbstractCondition {
         int h = 17;
         h = (h * 31) + propName.hashCode();
         h = (h * 31) + operator.hashCode();
-        h = (h * 31) + ((values == null) ? 0 : values.hashCode());
-
-        return h;
+        return (h * 31) + ((values == null) ? 0 : values.hashCode());
     }
 
     /**
@@ -157,14 +155,12 @@ public class NotIn extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof NotIn) {
-            NotIn other = (NotIn) obj;
-
+        if (obj instanceof final NotIn other) {
             return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(values, other.values);
         }
 

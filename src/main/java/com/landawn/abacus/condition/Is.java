@@ -26,12 +26,12 @@ public class Is extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public Is(String propName, Object propValue) {
+    public Is(final String propName, final Object propValue) {
         super(propName, Operator.IS, propValue);
     }
 }

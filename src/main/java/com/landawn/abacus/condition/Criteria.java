@@ -61,12 +61,12 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public String preselect() {
-        return this.preselect;
+        return preselect;
     }
 
     /**
@@ -75,9 +75,9 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     public List<Join> getJoins() {
-        List<Join> joins = new ArrayList<>();
+        final List<Join> joins = new ArrayList<>();
 
-        for (Condition cond : conditionList) {
+        for (final Condition cond : conditionList) {
             if (cond instanceof Join) {
                 joins.add((Join) cond);
             }
@@ -122,7 +122,7 @@ public class Criteria extends AbstractCondition {
     public List<Cell> getAggregation() {
         List<Cell> result = null;
 
-        for (Condition cond : conditionList) {
+        for (final Condition cond : conditionList) {
             if (aggregationOperators.contains(cond.getOperator())) {
                 if (result == null) {
                     result = new ArrayList<>();
@@ -171,10 +171,10 @@ public class Criteria extends AbstractCondition {
      * @param operator
      * @return
      */
-    public List<Condition> get(Operator operator) {
-        List<Condition> conditions = new ArrayList<>();
+    public List<Condition> get(final Operator operator) {
+        final List<Condition> conditions = new ArrayList<>();
 
-        for (Condition cond : conditionList) {
+        for (final Condition cond : conditionList) {
             if (cond.getOperator() == operator) {
                 conditions.add(cond);
             }
@@ -187,7 +187,7 @@ public class Criteria extends AbstractCondition {
      *
      * @param conditions
      */
-    void add(Condition... conditions) {
+    void add(final Condition... conditions) {
         addConditions(conditions);
     }
 
@@ -195,7 +195,7 @@ public class Criteria extends AbstractCondition {
      *
      * @param conditions
      */
-    void add(Collection<? extends Condition> conditions) {
+    void add(final Collection<? extends Condition> conditions) {
         addConditions(conditions);
     }
 
@@ -203,8 +203,8 @@ public class Criteria extends AbstractCondition {
      *
      * @param operator
      */
-    void remove(Operator operator) {
-        List<Condition> conditions = get(operator);
+    void remove(final Operator operator) {
+        final List<Condition> conditions = get(operator);
         remove(conditions);
     }
 
@@ -212,8 +212,8 @@ public class Criteria extends AbstractCondition {
      *
      * @param conditions
      */
-    void remove(Condition... conditions) {
-        for (Condition cond : conditions) {
+    void remove(final Condition... conditions) {
+        for (final Condition cond : conditions) {
             conditionList.remove(cond); // NOSONAR
         }
     }
@@ -222,7 +222,7 @@ public class Criteria extends AbstractCondition {
      *
      * @param conditions
      */
-    void remove(Collection<? extends Condition> conditions) {
+    void remove(final Collection<? extends Condition> conditions) {
         conditionList.removeAll(conditions);
     }
 
@@ -242,14 +242,14 @@ public class Criteria extends AbstractCondition {
     @Override
     public List<Object> getParameters() {
         if (conditionList.size() > 0) {
-            List<Object> parameters = new ArrayList<>();
-            Collection<Join> joins = getJoins();
+            final List<Object> parameters = new ArrayList<>();
+            final Collection<Join> joins = getJoins();
 
-            for (Join join : joins) {
+            for (final Join join : joins) {
                 parameters.addAll(join.getParameters());
             }
 
-            Cell where = getWhere();
+            final Cell where = getWhere();
 
             if (where != null) {
                 parameters.addAll(where.getParameters());
@@ -261,15 +261,15 @@ public class Criteria extends AbstractCondition {
              *
              * if (groupBy != null) { parameters.addAll(groupBy.getParameters()); }
              */
-            Cell having = getHaving();
+            final Cell having = getHaving();
 
             if (having != null) {
                 parameters.addAll(having.getParameters());
             }
 
-            List<Cell> condList = getAggregation();
+            final List<Cell> condList = getAggregation();
 
-            for (Condition cond : condList) {
+            for (final Condition cond : condList) {
                 parameters.addAll(cond.getParameters());
             }
 
@@ -297,18 +297,18 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public void clearParameters() {
-        for (Condition condition : conditionList) {
+        for (final Condition condition : conditionList) {
             condition.clearParameters();
         }
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public Criteria distinct() {
-        this.preselect = WD.DISTINCT;
+        preselect = WD.DISTINCT;
 
         return this;
     }
@@ -318,19 +318,19 @@ public class Criteria extends AbstractCondition {
      * @param columnNames
      * @return
      */
-    public Criteria distinctBy(String columnNames) {
-        this.preselect = Strings.isEmpty(columnNames) ? WD.DISTINCT : WD.DISTINCT + "(" + columnNames + ")";
+    public Criteria distinctBy(final String columnNames) {
+        preselect = Strings.isEmpty(columnNames) ? WD.DISTINCT : WD.DISTINCT + "(" + columnNames + ")";
 
         return this;
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     public Criteria distinctRow() {
-        this.preselect = WD.DISTINCTROW;
+        preselect = WD.DISTINCTROW;
 
         return this;
     }
@@ -340,17 +340,17 @@ public class Criteria extends AbstractCondition {
      * @param columnNames
      * @return
      */
-    public Criteria distinctRowBy(String columnNames) {
-        this.preselect = Strings.isEmpty(columnNames) ? WD.DISTINCTROW : WD.DISTINCTROW + "(" + columnNames + ")";
+    public Criteria distinctRowBy(final String columnNames) {
+        preselect = Strings.isEmpty(columnNames) ? WD.DISTINCTROW : WD.DISTINCTROW + "(" + columnNames + ")";
 
         return this;
     }
 
     /**
-     * 
      *
-     * @param preselect 
-     * @return 
+     *
+     * @param preselect
+     * @return
      */
     public Criteria preselect(final String preselect) {
         this.preselect = preselect;
@@ -364,7 +364,7 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public final Criteria join(Join... joins) {
+    public final Criteria join(final Join... joins) {
         add(joins);
 
         return this;
@@ -375,7 +375,7 @@ public class Criteria extends AbstractCondition {
      * @param joins
      * @return
      */
-    public Criteria join(Collection<Join> joins) {
+    public Criteria join(final Collection<Join> joins) {
         add(joins);
 
         return this;
@@ -386,7 +386,7 @@ public class Criteria extends AbstractCondition {
      * @param joinEntity
      * @return
      */
-    public Criteria join(String joinEntity) {
+    public Criteria join(final String joinEntity) {
         add(new Join(joinEntity));
 
         return this;
@@ -398,7 +398,7 @@ public class Criteria extends AbstractCondition {
      * @param condition
      * @return
      */
-    public Criteria join(String joinEntity, Condition condition) {
+    public Criteria join(final String joinEntity, final Condition condition) {
         add(new Join(joinEntity, condition));
 
         return this;
@@ -410,7 +410,7 @@ public class Criteria extends AbstractCondition {
      * @param condition
      * @return
      */
-    public Criteria join(Collection<String> joinEntities, Condition condition) {
+    public Criteria join(final Collection<String> joinEntities, final Condition condition) {
         add(new Join(joinEntities, condition));
 
         return this;
@@ -421,7 +421,7 @@ public class Criteria extends AbstractCondition {
      * @param condition
      * @return
      */
-    public Criteria where(Condition condition) {
+    public Criteria where(final Condition condition) {
         if (condition.getOperator() == Operator.WHERE) {
             add(condition);
         } else {
@@ -436,7 +436,7 @@ public class Criteria extends AbstractCondition {
      * @param condition
      * @return
      */
-    public Criteria where(String condition) {
+    public Criteria where(final String condition) {
         add(new Where(CF.expr(condition)));
 
         return this;
@@ -447,7 +447,7 @@ public class Criteria extends AbstractCondition {
      * @param condition
      * @return
      */
-    public Criteria groupBy(Condition condition) {
+    public Criteria groupBy(final Condition condition) {
         if (condition.getOperator() == Operator.GROUP_BY) {
             add(condition);
         } else {
@@ -463,7 +463,7 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public final Criteria groupBy(String... propNames) {
+    public final Criteria groupBy(final String... propNames) {
         add(new GroupBy(propNames));
 
         return this;
@@ -475,7 +475,7 @@ public class Criteria extends AbstractCondition {
      * @param direction
      * @return
      */
-    public Criteria groupBy(String propName, SortDirection direction) {
+    public Criteria groupBy(final String propName, final SortDirection direction) {
         add(new GroupBy(propName, direction));
 
         return this;
@@ -486,7 +486,7 @@ public class Criteria extends AbstractCondition {
      * @param propNames
      * @return
      */
-    public Criteria groupBy(Collection<String> propNames) {
+    public Criteria groupBy(final Collection<String> propNames) {
         return groupBy(propNames, SortDirection.ASC);
     }
 
@@ -496,7 +496,7 @@ public class Criteria extends AbstractCondition {
      * @param direction
      * @return
      */
-    public Criteria groupBy(Collection<String> propNames, SortDirection direction) {
+    public Criteria groupBy(final Collection<String> propNames, final SortDirection direction) {
         add(new GroupBy(propNames, direction));
 
         return this;
@@ -507,7 +507,7 @@ public class Criteria extends AbstractCondition {
      * @param orders
      * @return
      */
-    public Criteria groupBy(Map<String, SortDirection> orders) {
+    public Criteria groupBy(final Map<String, SortDirection> orders) {
         add(new GroupBy(orders));
 
         return this;
@@ -518,7 +518,7 @@ public class Criteria extends AbstractCondition {
      * @param condition
      * @return
      */
-    public Criteria having(Condition condition) {
+    public Criteria having(final Condition condition) {
         if (condition.getOperator() == Operator.HAVING) {
             add(condition);
         } else {
@@ -533,7 +533,7 @@ public class Criteria extends AbstractCondition {
      * @param condition
      * @return
      */
-    public Criteria having(String condition) {
+    public Criteria having(final String condition) {
         add(new Having(CF.expr(condition)));
 
         return this;
@@ -588,7 +588,7 @@ public class Criteria extends AbstractCondition {
      * @param condition
      * @return
      */
-    public Criteria orderBy(Condition condition) {
+    public Criteria orderBy(final Condition condition) {
         if (condition.getOperator() == Operator.ORDER_BY) {
             add(condition);
         } else {
@@ -604,7 +604,7 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     @SafeVarargs
-    public final Criteria orderBy(String... propNames) {
+    public final Criteria orderBy(final String... propNames) {
         add(new OrderBy(propNames));
 
         return this;
@@ -616,7 +616,7 @@ public class Criteria extends AbstractCondition {
      * @param direction
      * @return
      */
-    public Criteria orderBy(String propName, SortDirection direction) {
+    public Criteria orderBy(final String propName, final SortDirection direction) {
         add(new OrderBy(propName, direction));
 
         return this;
@@ -627,7 +627,7 @@ public class Criteria extends AbstractCondition {
      * @param propNames
      * @return
      */
-    public Criteria orderBy(Collection<String> propNames) {
+    public Criteria orderBy(final Collection<String> propNames) {
         return orderBy(propNames, SortDirection.ASC);
     }
 
@@ -637,7 +637,7 @@ public class Criteria extends AbstractCondition {
      * @param direction
      * @return
      */
-    public Criteria orderBy(Collection<String> propNames, SortDirection direction) {
+    public Criteria orderBy(final Collection<String> propNames, final SortDirection direction) {
         add(new OrderBy(propNames, direction));
 
         return this;
@@ -648,7 +648,7 @@ public class Criteria extends AbstractCondition {
      * @param orders
      * @return
      */
-    public Criteria orderBy(Map<String, SortDirection> orders) {
+    public Criteria orderBy(final Map<String, SortDirection> orders) {
         add(new OrderBy(orders));
 
         return this;
@@ -659,7 +659,7 @@ public class Criteria extends AbstractCondition {
      * @param condition
      * @return
      */
-    public Criteria limit(Limit condition) {
+    public Criteria limit(final Limit condition) {
         add(condition);
 
         return this;
@@ -705,7 +705,7 @@ public class Criteria extends AbstractCondition {
      * @param subQuery
      * @return
      */
-    public Criteria union(SubQuery subQuery) {
+    public Criteria union(final SubQuery subQuery) {
         add(new Union(subQuery));
 
         return this;
@@ -716,7 +716,7 @@ public class Criteria extends AbstractCondition {
      * @param subQuery
      * @return
      */
-    public Criteria unionAll(SubQuery subQuery) {
+    public Criteria unionAll(final SubQuery subQuery) {
         add(new UnionAll(subQuery));
 
         return this;
@@ -727,7 +727,7 @@ public class Criteria extends AbstractCondition {
      * @param subQuery
      * @return
      */
-    public Criteria intersect(SubQuery subQuery) {
+    public Criteria intersect(final SubQuery subQuery) {
         add(new Intersect(subQuery));
 
         return this;
@@ -738,7 +738,7 @@ public class Criteria extends AbstractCondition {
      * @param subQuery
      * @return
      */
-    public Criteria except(SubQuery subQuery) {
+    public Criteria except(final SubQuery subQuery) {
         add(new Except(subQuery));
 
         return this;
@@ -749,7 +749,7 @@ public class Criteria extends AbstractCondition {
      * @param subQuery
      * @return
      */
-    public Criteria minus(SubQuery subQuery) {
+    public Criteria minus(final SubQuery subQuery) {
         add(new Minus(subQuery));
 
         return this;
@@ -763,11 +763,11 @@ public class Criteria extends AbstractCondition {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Condition> T copy() {
-        Criteria result = (Criteria) super.copy();
+        final Criteria result = (Criteria) super.copy();
 
         result.conditionList = new ArrayList<>();
 
-        for (Condition cond : conditionList) {
+        for (final Condition cond : conditionList) {
             result.conditionList.add(cond.copy());
         }
 
@@ -780,18 +780,18 @@ public class Criteria extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
-        String preselect = Strings.isEmpty(this.preselect) ? Strings.EMPTY_STRING : WD.SPACE + this.preselect; //NOSONAR
+    public String toString(final NamingPolicy namingPolicy) {
+        final String preselect = Strings.isEmpty(this.preselect) ? Strings.EMPTY_STRING : WD.SPACE + this.preselect; //NOSONAR
         String join = Strings.EMPTY_STRING;
         String where = Strings.EMPTY_STRING;
         String groupBy = Strings.EMPTY_STRING;
         String having = Strings.EMPTY_STRING;
         String orderBy = Strings.EMPTY_STRING;
         String limit = Strings.EMPTY_STRING;
-        String forUpdate = Strings.EMPTY_STRING;
+        final String forUpdate = Strings.EMPTY_STRING;
         String aggregate = Strings.EMPTY_STRING;
 
-        for (Condition cond : conditionList) {
+        for (final Condition cond : conditionList) {
             if (cond.getOperator() == Operator.WHERE) {
                 where += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.getOperator() == Operator.ORDER_BY) {
@@ -820,9 +820,7 @@ public class Criteria extends AbstractCondition {
     @Override
     public int hashCode() {
         int h = Strings.isEmpty(preselect) ? 0 : preselect.hashCode();
-        h = (h * 31) + conditionList.hashCode();
-
-        return h;
+        return (h * 31) + conditionList.hashCode();
     }
 
     /**
@@ -831,7 +829,7 @@ public class Criteria extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         return this == obj
                 || (obj instanceof Criteria && N.equals(((Criteria) obj).preselect, preselect) && N.equals(((Criteria) obj).conditionList, conditionList));
     }
@@ -840,8 +838,8 @@ public class Criteria extends AbstractCondition {
      *
      * @param conditions
      */
-    private void checkConditions(Collection<? extends Condition> conditions) {
-        for (Condition cond : conditions) {
+    private void checkConditions(final Collection<? extends Condition> conditions) {
+        for (final Condition cond : conditions) {
             checkCondition(cond);
         }
     }
@@ -850,8 +848,8 @@ public class Criteria extends AbstractCondition {
      *
      * @param conditions
      */
-    private void checkConditions(Condition... conditions) {
-        for (Condition cond : conditions) {
+    private void checkConditions(final Condition... conditions) {
+        for (final Condition cond : conditions) {
             checkCondition(cond);
         }
     }
@@ -860,7 +858,7 @@ public class Criteria extends AbstractCondition {
      *
      * @param cond
      */
-    private void checkCondition(Condition cond) {
+    private void checkCondition(final Condition cond) {
         if (!CriteriaUtil.isClause(cond.getOperator())) {
             throw new IllegalArgumentException(
                     "Criteria only accepts condition: " + CriteriaUtil.getClauseOperators() + ". Doesn't accept[" + cond.getOperator() + "]. ");
@@ -872,10 +870,10 @@ public class Criteria extends AbstractCondition {
      *
      * @param conditions
      */
-    private void addConditions(Collection<? extends Condition> conditions) {
+    private void addConditions(final Collection<? extends Condition> conditions) {
         checkConditions(conditions);
 
-        for (Condition cond : conditions) {
+        for (final Condition cond : conditions) {
             addCondition(cond);
         }
     }
@@ -885,10 +883,10 @@ public class Criteria extends AbstractCondition {
      *
      * @param conditions
      */
-    private void addConditions(Condition... conditions) {
+    private void addConditions(final Condition... conditions) {
         checkConditions(conditions);
 
-        for (Condition cond : conditions) {
+        for (final Condition cond : conditions) {
             addCondition(cond);
         }
     }
@@ -898,11 +896,11 @@ public class Criteria extends AbstractCondition {
      *
      * @param cond
      */
-    private void addCondition(Condition cond) {
+    private void addCondition(final Condition cond) {
         if (cond.getOperator() == Operator.WHERE || cond.getOperator() == Operator.ORDER_BY || cond.getOperator() == Operator.GROUP_BY
                 || cond.getOperator() == Operator.HAVING || cond.getOperator() == Operator.LIMIT) {
 
-            Condition cell = find(cond.getOperator());
+            final Condition cell = find(cond.getOperator());
 
             if (cell != null) {
                 conditionList.remove(cell); // NOSONAR
@@ -917,11 +915,11 @@ public class Criteria extends AbstractCondition {
      * @param operator
      * @return
      */
-    private Condition find(Operator operator) {
+    private Condition find(final Operator operator) {
         Condition cond = null;
 
-        for (int i = 0; i < conditionList.size(); i++) {
-            cond = conditionList.get(i);
+        for (final Condition element : conditionList) {
+            cond = element;
 
             if (cond.getOperator() == operator) {
                 return cond;

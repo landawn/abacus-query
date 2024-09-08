@@ -26,11 +26,11 @@ public class IsNotNull extends IsNot {
     }
 
     /**
-     * 
      *
-     * @param propName 
+     *
+     * @param propName
      */
-    public IsNotNull(String propName) {
+    public IsNotNull(final String propName) {
         super(propName, IsNull.NULL);
     }
 }

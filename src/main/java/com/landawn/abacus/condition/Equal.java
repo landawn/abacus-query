@@ -26,12 +26,12 @@ public class Equal extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public Equal(String propName, Object propValue) {
+    public Equal(final String propName, final Object propValue) {
         super(propName, Operator.EQUAL, propValue);
     }
 }

@@ -49,14 +49,14 @@ public class InSubQuery extends AbstractCondition {
      * @param propName
      * @param subQuery
      */
-    public InSubQuery(String propName, SubQuery subQuery) {
+    public InSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.IN);
 
         N.checkArgNotNull(subQuery, "'subQuery' can't be null or empty");
 
         this.propName = propName;
         this.subQuery = subQuery;
-        this.propNames = null;
+        propNames = null;
     }
 
     /**
@@ -65,7 +65,7 @@ public class InSubQuery extends AbstractCondition {
      * @param propNames
      * @param subQuery
      */
-    public InSubQuery(Collection<String> propNames, SubQuery subQuery) {
+    public InSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.IN);
 
         N.checkArgNotEmpty(propNames, "propNames");
@@ -73,7 +73,7 @@ public class InSubQuery extends AbstractCondition {
 
         this.propNames = propNames;
         this.subQuery = subQuery;
-        this.propName = null;
+        propName = null;
     }
 
     /**
@@ -111,7 +111,7 @@ public class InSubQuery extends AbstractCondition {
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
-    public void setSubQuery(SubQuery subQuery) {
+    public void setSubQuery(final SubQuery subQuery) {
         this.subQuery = subQuery;
     }
 
@@ -142,7 +142,7 @@ public class InSubQuery extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        InSubQuery copy = (InSubQuery) super.copy();
+        final InSubQuery copy = (InSubQuery) super.copy();
 
         copy.subQuery = subQuery.copy();
 
@@ -159,9 +159,7 @@ public class InSubQuery extends AbstractCondition {
         int h = 17;
         h = (h * 31) + (Strings.isNotEmpty(propName) ? N.hashCode(propName) : N.hashCode(propNames));
         h = (h * 31) + operator.hashCode();
-        h = (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
-
-        return h;
+        return (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
     }
 
     /**
@@ -170,14 +168,12 @@ public class InSubQuery extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof InSubQuery) {
-            InSubQuery other = (InSubQuery) obj;
-
+        if (obj instanceof final InSubQuery other) {
             return N.equals(propName, other.propName) && N.equals(propNames, other.propNames) && N.equals(operator, other.operator)
                     && N.equals(subQuery, other.subQuery);
         }
@@ -205,12 +201,7 @@ public class InSubQuery extends AbstractCondition {
                 return "(" + Strings.join(propNames, ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
                         + WD.PARENTHESES_R;
             } else {
-                final Function<String, String> func = new Function<>() {
-                    @Override
-                    public String apply(String t) throws RuntimeException {
-                        return namingPolicy.convert(t);
-                    }
-                };
+                final Function<String, String> func = t -> namingPolicy.convert(t);
 
                 return "(" + Strings.join(N.map(propNames, func), ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L
                         + subQuery.toString(namingPolicy) + WD.PARENTHESES_R;

@@ -26,11 +26,11 @@ public class Union extends Clause {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
-    public Union(SubQuery condition) {
+    public Union(final SubQuery condition) {
         super(Operator.UNION, condition);
     }
 }

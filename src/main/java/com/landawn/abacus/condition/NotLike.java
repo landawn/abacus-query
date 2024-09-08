@@ -26,12 +26,12 @@ public class NotLike extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public NotLike(String propName, Object propValue) {
+    public NotLike(final String propName, final Object propValue) {
         super(propName, Operator.NOT_LIKE, propValue);
     }
 }

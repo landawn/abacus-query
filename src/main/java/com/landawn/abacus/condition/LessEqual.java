@@ -26,12 +26,12 @@ public class LessEqual extends Binary {
     }
 
     /**
-     * 
      *
-     * @param propName 
-     * @param propValue 
+     *
+     * @param propName
+     * @param propValue
      */
-    public LessEqual(String propName, Object propValue) {
+    public LessEqual(final String propName, final Object propValue) {
         super(propName, Operator.LESS_EQUAL, propValue);
     }
 }

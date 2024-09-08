@@ -26,11 +26,11 @@ public class UnionAll extends Clause {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
-    public UnionAll(SubQuery condition) {
+    public UnionAll(final SubQuery condition) {
         super(Operator.UNION_ALL, condition);
     }
 }

@@ -524,7 +524,7 @@ public class QueryBean {
          * @param parameter
          * @return
          */
-        public String toParameterizedSql(Object parameter) {
+        public String toParameterizedSql(final Object parameter) {
             return parameterizedSqlConverter.apply(null, null, this, parameter);
         }
 
@@ -535,7 +535,7 @@ public class QueryBean {
          * @param parameter
          * @return
          */
-        public String toParameterizedSql(String columnName, Object parameter) {
+        public String toParameterizedSql(final String columnName, final Object parameter) {
             return parameterizedSqlConverter.apply(null, columnName, this, parameter);
         }
 

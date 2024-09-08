@@ -28,31 +28,31 @@ public class FullJoin extends Join {
     }
 
     /**
-     * 
      *
-     * @param joinEntity 
+     *
+     * @param joinEntity
      */
-    public FullJoin(String joinEntity) {
+    public FullJoin(final String joinEntity) {
         super(Operator.FULL_JOIN, joinEntity);
     }
 
     /**
-     * 
      *
-     * @param joinEntity 
-     * @param condition 
+     *
+     * @param joinEntity
+     * @param condition
      */
-    public FullJoin(String joinEntity, Condition condition) {
+    public FullJoin(final String joinEntity, final Condition condition) {
         super(Operator.FULL_JOIN, joinEntity, condition);
     }
 
     /**
-     * 
      *
-     * @param joinEntities 
-     * @param condition 
+     *
+     * @param joinEntities
+     * @param condition
      */
-    public FullJoin(Collection<String> joinEntities, Condition condition) {
+    public FullJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.FULL_JOIN, joinEntities, condition);
     }
 }

@@ -126,7 +126,7 @@ public class Limit extends AbstractCondition {
      * @throws UnsupportedOperationException
      */
     @Override
-    public And and(Condition condition) throws UnsupportedOperationException {
+    public And and(final Condition condition) throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
@@ -138,7 +138,7 @@ public class Limit extends AbstractCondition {
      * @throws UnsupportedOperationException
      */
     @Override
-    public Or or(Condition condition) throws UnsupportedOperationException {
+    public Or or(final Condition condition) throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
@@ -159,7 +159,7 @@ public class Limit extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
+    public String toString(final NamingPolicy namingPolicy) {
         if (Strings.isEmpty(expr)) {
             return expr;
         } else {
@@ -179,9 +179,7 @@ public class Limit extends AbstractCondition {
         } else {
             int h = 17;
             h = (h * 31) + count;
-            h = (h * 31) + offset;
-
-            return h;
+            return (h * 31) + offset;
         }
     }
 
@@ -191,16 +189,14 @@ public class Limit extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof Limit) {
-            final Limit other = (Limit) obj;
-
+        if (obj instanceof final Limit other) {
             if (Strings.isNotEmpty(expr)) {
-                return this.expr.equals(other.expr);
+                return expr.equals(other.expr);
             } else {
                 return (count == other.count) && (offset == other.offset);
             }

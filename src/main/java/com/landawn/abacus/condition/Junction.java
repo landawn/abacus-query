@@ -51,7 +51,7 @@ public class Junction extends AbstractCondition {
      * @param conditions
      */
     @SafeVarargs
-    public Junction(Operator operator, Condition... conditions) {
+    public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
         conditionList = new ArrayList<>();
         add(conditions);
@@ -63,7 +63,7 @@ public class Junction extends AbstractCondition {
      * @param operator
      * @param conditions
      */
-    public Junction(Operator operator, Collection<? extends Condition> conditions) {
+    public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
         conditionList = new ArrayList<>();
         add(conditions); // NOSONAR
@@ -83,7 +83,7 @@ public class Junction extends AbstractCondition {
      * @param conditions
      */
     @SafeVarargs
-    public final void set(Condition... conditions) {
+    public final void set(final Condition... conditions) {
         conditionList.clear();
         add(conditions);
     }
@@ -92,7 +92,7 @@ public class Junction extends AbstractCondition {
      *
      * @param conditions
      */
-    public void set(Collection<? extends Condition> conditions) {
+    public void set(final Collection<? extends Condition> conditions) {
         conditionList.clear();
         add(conditions);
     }
@@ -102,7 +102,7 @@ public class Junction extends AbstractCondition {
      * @param conditions
      */
     @SafeVarargs
-    public final void add(Condition... conditions) {
+    public final void add(final Condition... conditions) {
         conditionList.addAll(Arrays.asList(conditions));
     }
 
@@ -110,7 +110,7 @@ public class Junction extends AbstractCondition {
      *
      * @param conditions
      */
-    public void add(Collection<? extends Condition> conditions) {
+    public void add(final Collection<? extends Condition> conditions) {
         conditionList.addAll(conditions);
     }
 
@@ -121,8 +121,8 @@ public class Junction extends AbstractCondition {
      */
     @Deprecated
     @SafeVarargs
-    public final void remove(Condition... conditions) {
-        for (Condition cond : conditions) {
+    public final void remove(final Condition... conditions) {
+        for (final Condition cond : conditions) {
             conditionList.remove(cond);
         }
     }
@@ -133,7 +133,7 @@ public class Junction extends AbstractCondition {
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
-    public void remove(Collection<? extends Condition> conditions) {
+    public void remove(final Collection<? extends Condition> conditions) {
         conditionList.removeAll(conditions);
     }
 
@@ -151,9 +151,9 @@ public class Junction extends AbstractCondition {
      */
     @Override
     public List<Object> getParameters() {
-        List<Object> parameters = new ArrayList<>();
+        final List<Object> parameters = new ArrayList<>();
 
-        for (Condition condition : conditionList) {
+        for (final Condition condition : conditionList) {
             parameters.addAll(condition.getParameters());
         }
 
@@ -165,7 +165,7 @@ public class Junction extends AbstractCondition {
      */
     @Override
     public void clearParameters() {
-        for (Condition condition : conditionList) {
+        for (final Condition condition : conditionList) {
             condition.clearParameters();
         }
     }
@@ -178,11 +178,11 @@ public class Junction extends AbstractCondition {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Condition> T copy() {
-        Junction result = (Junction) super.copy();
+        final Junction result = (Junction) super.copy();
 
         result.conditionList = new ArrayList<>();
 
-        for (Condition cond : conditionList) {
+        for (final Condition cond : conditionList) {
             result.conditionList.add(cond.copy());
         }
 
@@ -195,7 +195,7 @@ public class Junction extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
+    public String toString(final NamingPolicy namingPolicy) {
         if (N.isEmpty(conditionList)) {
             return Strings.EMPTY_STRING;
         }
@@ -234,9 +234,7 @@ public class Junction extends AbstractCondition {
     public int hashCode() {
         int h = 17;
         h = (h * 31) + operator.hashCode();
-        h = (h * 31) + conditionList.hashCode();
-
-        return h;
+        return (h * 31) + conditionList.hashCode();
     }
 
     /**
@@ -245,14 +243,12 @@ public class Junction extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof Junction) {
-            Junction other = (Junction) obj;
-
+        if (obj instanceof final Junction other) {
             return N.equals(operator, other.operator) && N.equals(conditionList, other.conditionList);
 
         }

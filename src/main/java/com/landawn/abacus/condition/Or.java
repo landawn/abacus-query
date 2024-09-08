@@ -30,33 +30,33 @@ public class Or extends Junction {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
     @SafeVarargs
-    public Or(Condition... condition) {
+    public Or(final Condition... condition) {
         super(Operator.OR, condition);
     }
 
     /**
-     * 
      *
-     * @param conditions 
+     *
+     * @param conditions
      */
-    public Or(Collection<? extends Condition> conditions) {
+    public Or(final Collection<? extends Condition> conditions) {
         super(Operator.OR, conditions);
     }
 
     /**
-     * 
      *
-     * @param condition 
-     * @return 
-     * @throws UnsupportedOperationException 
+     *
+     * @param condition
+     * @return
+     * @throws UnsupportedOperationException
      */
     @Override
-    public Or or(Condition condition) throws UnsupportedOperationException {
+    public Or or(final Condition condition) throws UnsupportedOperationException {
         final List<Condition> condList = new ArrayList<>(conditionList.size() + 1);
 
         condList.addAll(conditionList);

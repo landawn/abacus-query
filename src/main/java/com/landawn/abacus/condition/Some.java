@@ -26,11 +26,11 @@ public class Some extends Cell {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
-    public Some(SubQuery condition) {
+    public Some(final SubQuery condition) {
         super(Operator.SOME, condition);
     }
 }

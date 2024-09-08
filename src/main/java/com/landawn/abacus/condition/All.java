@@ -26,11 +26,11 @@ public class All extends Cell {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
-    public All(SubQuery condition) {
+    public All(final SubQuery condition) {
         super(Operator.ALL, condition);
     }
 }

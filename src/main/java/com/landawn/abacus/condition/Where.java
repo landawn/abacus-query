@@ -26,11 +26,11 @@ public class Where extends Clause {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
-    public Where(Condition condition) {
+    public Where(final Condition condition) {
         super(Operator.WHERE, condition);
     }
 }

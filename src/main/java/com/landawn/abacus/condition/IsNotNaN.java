@@ -26,11 +26,11 @@ public class IsNotNaN extends IsNot {
     }
 
     /**
-     * 
      *
-     * @param propName 
+     *
+     * @param propName
      */
-    public IsNotNaN(String propName) {
+    public IsNotNaN(final String propName) {
         super(propName, IsNaN.NAN);
     }
 }

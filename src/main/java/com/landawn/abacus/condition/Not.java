@@ -29,7 +29,7 @@ public class Not extends Cell {
      *
      * @param condition
      */
-    public Not(Condition condition) {
+    public Not(final Condition condition) {
         super(Operator.NOT, condition);
     }
 }

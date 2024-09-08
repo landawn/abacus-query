@@ -33,11 +33,11 @@ public class IsNaN extends Is {
     }
 
     /**
-     * 
      *
-     * @param propName 
+     *
+     * @param propName
      */
-    public IsNaN(String propName) {
+    public IsNaN(final String propName) {
         super(propName, NAN);
     }
 }

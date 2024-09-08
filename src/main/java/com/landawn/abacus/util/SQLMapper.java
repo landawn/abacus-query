@@ -83,7 +83,7 @@ public final class SQLMapper {
      * @param filePath it could be multiple file paths separated by ',' or ';'
      * @return
      */
-    public static SQLMapper fromFile(String filePath) {
+    public static SQLMapper fromFile(final String filePath) {
         String[] filePaths = Splitter.with(WD.COMMA).trimResults().splitToArray(filePath);
 
         if (filePaths.length == 1) {
@@ -92,28 +92,28 @@ public final class SQLMapper {
 
         final SQLMapper sqlMapper = new SQLMapper();
 
-        for (String subFilePath : filePaths) {
+        for (final String subFilePath : filePaths) {
             final File file = Configuration.formatPath(Configuration.findFile(subFilePath));
 
             try (InputStream is = new FileInputStream(file)) {
 
-                Document doc = XMLUtil.createDOMParser(true, true).parse(is);
-                NodeList sqlMapperEle = doc.getElementsByTagName(SQLMapper.SQL_MAPPER);
+                final Document doc = XMLUtil.createDOMParser(true, true).parse(is);
+                final NodeList sqlMapperEle = doc.getElementsByTagName(SQLMapper.SQL_MAPPER);
 
                 if (0 == sqlMapperEle.getLength()) {
                     throw new RuntimeException("There is no 'sqlMapper' element. ");
                 }
 
-                List<Element> sqlElementList = XMLUtil.getElementsByTagName((Element) sqlMapperEle.item(0), SQL);
+                final List<Element> sqlElementList = XMLUtil.getElementsByTagName((Element) sqlMapperEle.item(0), SQL);
 
-                for (Element sqlElement : sqlElementList) {
-                    Map<String, String> attrMap = XMLUtil.readAttributes(sqlElement);
+                for (final Element sqlElement : sqlElementList) {
+                    final Map<String, String> attrMap = XMLUtil.readAttributes(sqlElement);
 
                     sqlMapper.add(attrMap.remove(ID), Configuration.getTextContent(sqlElement), attrMap);
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 throw new UncheckedIOException(e);
-            } catch (SAXException e) {
+            } catch (final SAXException e) {
                 throw new ParseException(e);
             }
         }
@@ -135,7 +135,7 @@ public final class SQLMapper {
      * @param id
      * @return
      */
-    public ParsedSql get(String id) {
+    public ParsedSql get(final String id) {
         if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
             return null;
         }
@@ -149,7 +149,7 @@ public final class SQLMapper {
      * @param id
      * @return
      */
-    public ImmutableMap<String, String> getAttrs(String id) {
+    public ImmutableMap<String, String> getAttrs(final String id) {
         if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
             return null; // NOSONAR
         }
@@ -163,7 +163,7 @@ public final class SQLMapper {
      * @param sql
      * @return
      */
-    public ParsedSql add(String id, ParsedSql sql) {
+    public ParsedSql add(final String id, final ParsedSql sql) {
         checkId(id);
 
         return sqlMap.put(id, sql);
@@ -175,7 +175,7 @@ public final class SQLMapper {
      * @param sql
      * @param attrs
      */
-    public void add(String id, String sql, Map<String, String> attrs) {
+    public void add(final String id, final String sql, final Map<String, String> attrs) {
         checkId(id);
 
         sqlMap.put(id, ParsedSql.parse(sql));
@@ -186,7 +186,7 @@ public final class SQLMapper {
      *
      * @param id
      */
-    private void checkId(String id) {
+    private void checkId(final String id) {
         N.checkArgNotEmpty(id, "id");
 
         if (Strings.containsWhitespace(id)) {
@@ -206,7 +206,7 @@ public final class SQLMapper {
      *
      * @param id
      */
-    public void remove(String id) {
+    public void remove(final String id) {
         if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
             return;
         }
@@ -222,8 +222,8 @@ public final class SQLMapper {
     public SQLMapper copy() {
         final SQLMapper copy = new SQLMapper();
 
-        copy.sqlMap.putAll(this.sqlMap);
-        copy.attrsMap.putAll(this.attrsMap);
+        copy.sqlMap.putAll(sqlMap);
+        copy.attrsMap.putAll(attrsMap);
 
         return copy;
     }
@@ -232,25 +232,25 @@ public final class SQLMapper {
      *
      * @param file
      */
-    public void saveTo(File file) {
+    public void saveTo(final File file) {
 
         try (OutputStream os = new FileOutputStream(file)) {
-            Document doc = XMLUtil.createDOMParser(true, true).newDocument();
-            Element sqlMapperNode = doc.createElement(SQLMapper.SQL_MAPPER);
+            final Document doc = XMLUtil.createDOMParser(true, true).newDocument();
+            final Element sqlMapperNode = doc.createElement(SQLMapper.SQL_MAPPER);
 
-            for (Map.Entry<String, ParsedSql> sqlEntry : sqlMap.entrySet()) {
-                Element sqlNode = doc.createElement(SQL);
+            for (final Map.Entry<String, ParsedSql> sqlEntry : sqlMap.entrySet()) {
+                final Element sqlNode = doc.createElement(SQL);
                 sqlNode.setAttribute(ID, sqlEntry.getKey());
 
                 if (!N.isEmpty(attrsMap.get(sqlEntry.getKey()))) {
-                    Map<String, String> attrs = attrsMap.get(sqlEntry.getKey());
+                    final Map<String, String> attrs = attrsMap.get(sqlEntry.getKey());
 
-                    for (Map.Entry<String, String> entry : attrs.entrySet()) {
+                    for (final Map.Entry<String, String> entry : attrs.entrySet()) {
                         sqlNode.setAttribute(entry.getKey(), entry.getValue());
                     }
                 }
 
-                Text sqlText = doc.createTextNode(sqlEntry.getValue().sql());
+                final Text sqlText = doc.createTextNode(sqlEntry.getValue().sql());
                 sqlNode.appendChild(sqlText);
                 sqlMapperNode.appendChild(sqlNode);
             }
@@ -264,7 +264,7 @@ public final class SQLMapper {
             XMLUtil.transform(doc, os);
 
             os.flush();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new UncheckedIOException(e);
         }
     }
@@ -294,7 +294,7 @@ public final class SQLMapper {
      * @return
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         return this == obj || (obj instanceof SQLMapper && N.equals(((SQLMapper) obj).sqlMap, sqlMap));
     }
 

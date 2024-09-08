@@ -30,7 +30,7 @@ public class Intersect extends Clause {
      *
      * @param condition
      */
-    public Intersect(SubQuery condition) {
+    public Intersect(final SubQuery condition) {
         super(Operator.INTERSECT, condition);
     }
 }

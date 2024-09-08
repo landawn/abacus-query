@@ -225,7 +225,7 @@ public enum Operator {
     /**
      * Field name.
      */
-    private String name;
+    private final String name;
 
     /**
      * Field operatorMap.
@@ -237,7 +237,7 @@ public enum Operator {
      *
      * @param name
      */
-    Operator(String name) {
+    Operator(final String name) {
         this.name = name;
     }
 
@@ -247,12 +247,12 @@ public enum Operator {
      * @param name
      * @return
      */
-    public static synchronized Operator getOperator(String name) {
+    public static synchronized Operator getOperator(final String name) {
         if (operatorMap.size() == 0) {
-            Operator[] values = Operator.values();
+            final Operator[] values = Operator.values();
 
-            for (int i = 0; i < values.length; i++) {
-                operatorMap.put(values[i].name, values[i]);
+            for (final Operator value : values) {
+                operatorMap.put(value.name, value);
             }
         }
 

@@ -25,11 +25,11 @@ public class Having extends Clause {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
-    public Having(Condition condition) {
+    public Having(final Condition condition) {
         super(Operator.HAVING, condition);
     }
 }

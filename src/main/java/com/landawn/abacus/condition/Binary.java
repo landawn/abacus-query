@@ -45,7 +45,7 @@ public class Binary extends AbstractCondition {
      * @param operator
      * @param propValue
      */
-    public Binary(String propName, Operator operator, Object propValue) {
+    public Binary(final String propName, final Operator operator, final Object propValue) {
         super(operator);
 
         if (Strings.isEmpty(propName)) {
@@ -83,7 +83,7 @@ public class Binary extends AbstractCondition {
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
-    public void setPropValue(Object propValue) {
+    public void setPropValue(final Object propValue) {
         this.propValue = propValue;
     }
 
@@ -121,7 +121,7 @@ public class Binary extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        Binary copy = (Binary) super.copy();
+        final Binary copy = (Binary) super.copy();
 
         if (propValue instanceof Condition) {
             copy.propValue = ((Condition) propValue).copy();
@@ -136,7 +136,7 @@ public class Binary extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
+    public String toString(final NamingPolicy namingPolicy) {
         if (namingPolicy == NamingPolicy.NO_CHANGE) {
             return propName + WD._SPACE + getOperator().toString() + WD._SPACE + parameter2String(propValue, namingPolicy);
         } else {
@@ -154,9 +154,7 @@ public class Binary extends AbstractCondition {
         int h = 17;
         h = (h * 31) + propName.hashCode();
         h = (h * 31) + operator.hashCode();
-        h = (h * 31) + ((propValue == null) ? 0 : propValue.hashCode());
-
-        return h;
+        return (h * 31) + ((propValue == null) ? 0 : propValue.hashCode());
     }
 
     /**
@@ -165,14 +163,12 @@ public class Binary extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof Binary) {
-            Binary other = (Binary) obj;
-
+        if (obj instanceof final Binary other) {
             return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(propValue, other.propValue);
         }
 

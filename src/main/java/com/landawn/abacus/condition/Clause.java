@@ -25,39 +25,39 @@ public abstract class Clause extends Cell {
     Clause() {
     }
 
-    protected Clause(Operator operator, Condition condition) {
+    protected Clause(final Operator operator, final Condition condition) {
         super(operator, condition);
     }
 
     /**
-     * 
      *
-     * @param condition 
-     * @return 
-     * @throws UnsupportedOperationException 
+     *
+     * @param condition
+     * @return
+     * @throws UnsupportedOperationException
      */
     @Override
-    public And and(Condition condition) throws UnsupportedOperationException {
+    public And and(final Condition condition) throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * 
      *
-     * @param condition 
-     * @return 
-     * @throws UnsupportedOperationException 
+     *
+     * @param condition
+     * @return
+     * @throws UnsupportedOperationException
      */
     @Override
-    public Or or(Condition condition) throws UnsupportedOperationException {
+    public Or or(final Condition condition) throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * 
      *
-     * @return 
-     * @throws UnsupportedOperationException 
+     *
+     * @return
+     * @throws UnsupportedOperationException
      */
     @Override
     public Not not() throws UnsupportedOperationException {

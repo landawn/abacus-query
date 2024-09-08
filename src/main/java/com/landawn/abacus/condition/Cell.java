@@ -40,7 +40,7 @@ public class Cell extends AbstractCondition {
      * @param operator
      * @param condition
      */
-    public Cell(Operator operator, Condition condition) {
+    public Cell(final Operator operator, final Condition condition) {
         super(operator);
         this.condition = condition;
     }
@@ -63,7 +63,7 @@ public class Cell extends AbstractCondition {
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
-    public void setCondition(Condition condition) {
+    public void setCondition(final Condition condition) {
         this.condition = condition;
     }
 
@@ -96,7 +96,7 @@ public class Cell extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        Cell copy = (Cell) super.copy();
+        final Cell copy = (Cell) super.copy();
 
         if (condition != null) {
             copy.condition = condition.copy();
@@ -111,7 +111,7 @@ public class Cell extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
+    public String toString(final NamingPolicy namingPolicy) {
         return getOperator().toString() + ((condition == null) ? Strings.EMPTY_STRING : WD._SPACE + condition.toString(namingPolicy));
     }
 
@@ -124,9 +124,7 @@ public class Cell extends AbstractCondition {
     public int hashCode() {
         int h = 17;
         h = (h * 31) + operator.hashCode();
-        h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
-
-        return h;
+        return (h * 31) + ((condition == null) ? 0 : condition.hashCode());
     }
 
     /**
@@ -135,14 +133,12 @@ public class Cell extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof Cell) {
-            Cell other = (Cell) obj;
-
+        if (obj instanceof final Cell other) {
             return N.equals(operator, other.operator) && N.equals(condition, other.condition);
         }
 

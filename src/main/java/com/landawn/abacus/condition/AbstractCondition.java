@@ -37,7 +37,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
         operator = null;
     }
 
-    protected AbstractCondition(Operator operator) {
+    protected AbstractCondition(final Operator operator) {
         this.operator = operator;
     }
 
@@ -57,7 +57,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * @return
      */
     @Override
-    public And and(Condition condition) {
+    public And and(final Condition condition) {
         return new And(this, condition);
     }
 
@@ -67,7 +67,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * @return
      */
     @Override
-    public Or or(Condition condition) {
+    public Or or(final Condition condition) {
         return new Or(this, condition);
     }
 
@@ -93,7 +93,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
 
         try {
             copy = (AbstractCondition) super.clone();
-        } catch (CloneNotSupportedException e) {
+        } catch (final CloneNotSupportedException e) {
             // ignore, won't happen.
         }
 
@@ -117,7 +117,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * @param namingPolicy
      * @return
      */
-    protected static String parameter2String(Object parameter, NamingPolicy namingPolicy) {
+    protected static String parameter2String(final Object parameter, final NamingPolicy namingPolicy) {
         if (parameter == null) {
             return null;
         }
@@ -139,12 +139,12 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * @param propNames
      * @return
      */
-    protected static String concatPropNames(String... propNames) {
+    protected static String concatPropNames(final String... propNames) {
         if (N.isEmpty(propNames)) {
             return Strings.EMPTY_STRING;
         }
 
-        int size = propNames.length;
+        final int size = propNames.length;
 
         switch (size) {
             case 1:
@@ -186,13 +186,13 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * @param propNames
      * @return
      */
-    protected static String concatPropNames(Collection<String> propNames) {
+    protected static String concatPropNames(final Collection<String> propNames) {
         if (N.isEmpty(propNames)) {
             return Strings.EMPTY_STRING;
         }
 
-        Iterator<String> it = propNames.iterator();
-        int size = propNames.size();
+        final Iterator<String> it = propNames.iterator();
+        final int size = propNames.size();
 
         switch (size) {
             case 1:

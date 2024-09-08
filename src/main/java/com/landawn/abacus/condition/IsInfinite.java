@@ -29,11 +29,11 @@ public class IsInfinite extends Is {
     static final Expression INFINITE = CF.expr("INFINITE");
 
     /**
-     * 
      *
-     * @param propName 
+     *
+     * @param propName
      */
-    public IsInfinite(String propName) {
+    public IsInfinite(final String propName) {
         super(propName, INFINITE);
     }
 }

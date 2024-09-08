@@ -45,11 +45,11 @@ public class Join extends AbstractCondition {
      *
      * @param joinEntity
      */
-    public Join(String joinEntity) {
+    public Join(final String joinEntity) {
         this(Operator.JOIN, joinEntity);
     }
 
-    protected Join(Operator operator, String joinEntity) {
+    protected Join(final Operator operator, final String joinEntity) {
         this(operator, joinEntity, null);
     }
 
@@ -59,11 +59,11 @@ public class Join extends AbstractCondition {
      * @param joinEntity
      * @param condition
      */
-    public Join(String joinEntity, Condition condition) {
+    public Join(final String joinEntity, final Condition condition) {
         this(Operator.JOIN, joinEntity, condition);
     }
 
-    protected Join(Operator operator, String joinEntity, Condition condition) {
+    protected Join(final Operator operator, final String joinEntity, final Condition condition) {
         this(operator, Array.asList(joinEntity), condition);
     }
 
@@ -73,11 +73,11 @@ public class Join extends AbstractCondition {
      * @param joinEntities
      * @param condition
      */
-    public Join(Collection<String> joinEntities, Condition condition) {
+    public Join(final Collection<String> joinEntities, final Condition condition) {
         this(Operator.JOIN, joinEntities, condition);
     }
 
-    protected Join(Operator operator, Collection<String> joinEntities, Condition condition) {
+    protected Join(final Operator operator, final Collection<String> joinEntities, final Condition condition) {
         super(operator);
         this.joinEntities = new ArrayList<>(joinEntities);
         this.condition = condition;
@@ -132,7 +132,7 @@ public class Join extends AbstractCondition {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Condition> T copy() {
-        Join copy = (Join) super.copy();
+        final Join copy = (Join) super.copy();
 
         if (joinEntities != null) {
             copy.joinEntities = new ArrayList<>(joinEntities);
@@ -151,7 +151,7 @@ public class Join extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
+    public String toString(final NamingPolicy namingPolicy) {
         return getOperator().toString() + _SPACE + concatPropNames(joinEntities)
                 + ((condition == null) ? Strings.EMPTY_STRING : (_SPACE + getCondition().toString(namingPolicy)));
     }
@@ -180,14 +180,12 @@ public class Join extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof Join) {
-            Join other = (Join) obj;
-
+        if (obj instanceof final Join other) {
             return N.equals(operator, other.operator) && N.equals(joinEntities, other.joinEntities) && N.equals(condition, other.condition);
         }
 

@@ -64,7 +64,7 @@ public class SubQuery extends AbstractCondition {
      *
      * @param sql
      */
-    public SubQuery(String sql) {
+    public SubQuery(final String sql) {
         this(Strings.EMPTY_STRING, sql);
     }
 
@@ -74,17 +74,17 @@ public class SubQuery extends AbstractCondition {
      * @param entityName
      * @param sql
      */
-    public SubQuery(String entityName, String sql) {
+    public SubQuery(final String entityName, final String sql) {
         super(Operator.EMPTY);
         this.entityName = entityName;
-        this.entityClass = null;
+        entityClass = null;
 
         if (Strings.isEmpty(sql)) {
             throw new IllegalArgumentException("The sql script can't be null or empty.");
         }
 
-        this.propNames = null;
-        this.condition = null;
+        propNames = null;
+        condition = null;
         this.sql = sql;
     }
 
@@ -95,10 +95,10 @@ public class SubQuery extends AbstractCondition {
      * @param propNames
      * @param condition
      */
-    public SubQuery(String entityName, Collection<String> propNames, Condition condition) {
+    public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
         this.entityName = entityName;
-        this.entityClass = null;
+        entityClass = null;
         this.propNames = propNames;
         if (condition == null || CriteriaUtil.isClause(condition) || condition instanceof Expression) {
             this.condition = condition;
@@ -106,7 +106,7 @@ public class SubQuery extends AbstractCondition {
             this.condition = CF.where(condition);
         }
 
-        this.sql = null;
+        sql = null;
     }
 
     /**
@@ -116,9 +116,9 @@ public class SubQuery extends AbstractCondition {
      * @param propNames
      * @param condition
      */
-    public SubQuery(Class<?> entityClass, Collection<String> propNames, Condition condition) {
+    public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
-        this.entityName = ClassUtil.getSimpleClassName(entityClass);
+        entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
         this.propNames = propNames;
         if (condition == null || CriteriaUtil.isClause(condition) || condition instanceof Expression) {
@@ -127,7 +127,7 @@ public class SubQuery extends AbstractCondition {
             this.condition = CF.where(condition);
         }
 
-        this.sql = null;
+        sql = null;
     }
 
     /**
@@ -204,7 +204,7 @@ public class SubQuery extends AbstractCondition {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Condition> T copy() {
-        SubQuery result = (SubQuery) super.copy();
+        final SubQuery result = (SubQuery) super.copy();
 
         if (propNames != null) {
             result.propNames = new ArrayList<>(propNames);
@@ -223,7 +223,7 @@ public class SubQuery extends AbstractCondition {
      * @return
      */
     @Override
-    public String toString(NamingPolicy namingPolicy) {
+    public String toString(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -233,7 +233,7 @@ public class SubQuery extends AbstractCondition {
 
                 int i = 0;
 
-                for (String propName : propNames) {
+                for (final String propName : propNames) {
                     if (i++ > 0) {
                         sb.append(COMMA_SPACE);
                     }
@@ -274,9 +274,7 @@ public class SubQuery extends AbstractCondition {
         h = (h * 31) + ((sql == null) ? 0 : sql.hashCode());
         h = (h * 31) + ((entityName == null) ? 0 : entityName.hashCode());
         h = (h * 31) + ((propNames == null) ? 0 : propNames.hashCode());
-        h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
-
-        return h;
+        return (h * 31) + ((condition == null) ? 0 : condition.hashCode());
     }
 
     /**
@@ -285,14 +283,12 @@ public class SubQuery extends AbstractCondition {
      * @return true, if successful
      */
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof SubQuery) {
-            SubQuery other = (SubQuery) obj;
-
+        if (obj instanceof final SubQuery other) {
             return N.equals(sql, other.sql) && N.equals(entityName, other.entityName) && N.equals(propNames, other.propNames)
                     && N.equals(condition, other.condition);
         }

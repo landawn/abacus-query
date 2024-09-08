@@ -26,11 +26,11 @@ public class Except extends Clause {
     }
 
     /**
-     * 
      *
-     * @param condition 
+     *
+     * @param condition
      */
-    public Except(SubQuery condition) {
+    public Except(final SubQuery condition) {
         super(Operator.EXCEPT, condition);
     }
 }
