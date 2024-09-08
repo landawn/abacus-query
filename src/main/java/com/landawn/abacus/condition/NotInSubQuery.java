@@ -199,7 +199,7 @@ public class NotInSubQuery extends AbstractCondition {
                 return "(" + Strings.join(propNames, ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
                         + WD.PARENTHESES_R;
             } else {
-                final Function<String, String> func = t -> namingPolicy.convert(t);
+                final Function<String, String> func = namingPolicy::convert;
 
                 return "(" + Strings.join(N.map(propNames, func), ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L
                         + subQuery.toString(namingPolicy) + WD.PARENTHESES_R;
