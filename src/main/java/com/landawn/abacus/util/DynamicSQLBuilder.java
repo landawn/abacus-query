@@ -22,8 +22,6 @@ import com.landawn.abacus.logging.LoggerFactory;
 /**
  * Dynamic SQL builder. Must remember to call {@code build()} to generate target sql and release resources.
  *
- * @author haiyangl
- *
  */
 @SuppressWarnings("java:S1192")
 public class DynamicSQLBuilder {

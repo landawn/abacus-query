@@ -16,8 +16,6 @@ package com.landawn.abacus.condition;
 
 /**
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public abstract class Clause extends Cell {
 

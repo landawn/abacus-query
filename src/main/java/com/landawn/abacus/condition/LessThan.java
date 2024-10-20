@@ -16,8 +16,6 @@ package com.landawn.abacus.condition;
 
 /**
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public class LessThan extends Binary {
 

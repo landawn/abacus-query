@@ -25,8 +25,6 @@ import com.landawn.abacus.util.WD;
 
 /**
  *
- * @author Haiyang Li
- * @since 1.10.12
  */
 public class InSubQuery extends AbstractCondition {
     // For Kryo

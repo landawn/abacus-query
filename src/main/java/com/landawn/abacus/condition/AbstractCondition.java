@@ -25,8 +25,6 @@ import com.landawn.abacus.util.WD;
 
 /**
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public abstract class AbstractCondition implements Condition, Cloneable {
 

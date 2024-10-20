@@ -84,14 +84,12 @@ import com.landawn.abacus.util.u.Optional;
  *
  * <br />
  *
- * @author Haiyang Li
  * @see {@link com.landawn.abacus.annotation.ReadOnly}
  * @see {@link com.landawn.abacus.annotation.ReadOnlyId}
  * @see {@link com.landawn.abacus.annotation.NonUpdatable}
  * @see {@link com.landawn.abacus.annotation.Transient}
  * @see {@link com.landawn.abacus.annotation.Table}
  * @see {@link com.landawn.abacus.annotation.Column}
- * @since 0.8
  */
 @SuppressWarnings("deprecation")
 public abstract class SQLBuilder { // NOSONAR

@@ -26,8 +26,6 @@ import com.landawn.abacus.util.SortDirection;
 
 /**
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public class OrderBy extends Clause {
 

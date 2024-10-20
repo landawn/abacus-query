@@ -34,8 +34,6 @@ import com.landawn.abacus.util.WD;
 /**
  * A factory for creating Condition objects.
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public class ConditionFactory {
     /**

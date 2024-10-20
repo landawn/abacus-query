@@ -20,8 +20,6 @@ import java.util.List;
 
 /**
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public class And extends Junction {
 

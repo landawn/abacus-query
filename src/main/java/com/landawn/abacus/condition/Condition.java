@@ -21,8 +21,6 @@ import com.landawn.abacus.util.NamingPolicy;
 /**
  * Condition should be immutable except using {@code clearParameter()} to release resources.
  *
- * @author Haiyang Li
- * @since 0.8
  * @see ConditionFactory
  * @see ConditionFactory.CF
  */

@@ -23,8 +23,6 @@ import com.landawn.abacus.util.WD;
 /**
  * The Enum Operator.
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public enum Operator {
     /**

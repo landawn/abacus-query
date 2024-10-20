@@ -18,8 +18,6 @@ import java.util.Collection;
 
 /**
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public class LeftJoin extends Join {
 

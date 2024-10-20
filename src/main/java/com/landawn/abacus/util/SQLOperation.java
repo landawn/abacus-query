@@ -24,8 +24,6 @@ import com.landawn.abacus.annotation.Internal;
 /**
  * The Enum SQLOperation.
  *
- * @author Haiyang Li
- * @since 0.8
  */
 @Internal
 public enum SQLOperation {

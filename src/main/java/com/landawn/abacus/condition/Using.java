@@ -21,8 +21,6 @@ import com.landawn.abacus.util.N;
 
 /**
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public class Using extends Cell {
 

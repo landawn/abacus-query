@@ -21,8 +21,6 @@ import java.util.Set;
 
 /**
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public final class SQLParser {
 

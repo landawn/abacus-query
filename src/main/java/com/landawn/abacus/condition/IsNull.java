@@ -18,8 +18,6 @@ import com.landawn.abacus.condition.ConditionFactory.CF;
 
 /**
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public class IsNull extends Is {
 

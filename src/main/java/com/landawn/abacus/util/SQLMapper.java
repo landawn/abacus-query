@@ -43,8 +43,6 @@ import com.landawn.abacus.exception.UncheckedIOException;
  * {@code <sql id="updateAccountNameById">update account set name=? where id=?</sql>} <br>
  * {@code </sqlMapper>}
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public final class SQLMapper {
 
@@ -97,19 +95,19 @@ public final class SQLMapper {
 
             try (InputStream is = new FileInputStream(file)) {
 
-                final Document doc = XMLUtil.createDOMParser(true, true).parse(is);
+                final Document doc = XmlUtil.createDOMParser(true, true).parse(is);
                 final NodeList sqlMapperEle = doc.getElementsByTagName(SQLMapper.SQL_MAPPER);
 
                 if (0 == sqlMapperEle.getLength()) {
                     throw new RuntimeException("There is no 'sqlMapper' element. ");
                 }
 
-                final List<Element> sqlElementList = XMLUtil.getElementsByTagName((Element) sqlMapperEle.item(0), SQL);
+                final List<Element> sqlElementList = XmlUtil.getElementsByTagName((Element) sqlMapperEle.item(0), SQL);
 
                 for (final Element sqlElement : sqlElementList) {
-                    final Map<String, String> attrMap = XMLUtil.readAttributes(sqlElement);
+                    final Map<String, String> attrMap = XmlUtil.readAttributes(sqlElement);
 
-                    sqlMapper.add(attrMap.remove(ID), Configuration.getTextContent(sqlElement), attrMap);
+                    sqlMapper.add(attrMap.remove(ID), XmlUtil.getTextContent(sqlElement), attrMap);
                 }
             } catch (final IOException e) {
                 throw new UncheckedIOException(e);
@@ -235,7 +233,7 @@ public final class SQLMapper {
     public void saveTo(final File file) {
 
         try (OutputStream os = new FileOutputStream(file)) {
-            final Document doc = XMLUtil.createDOMParser(true, true).newDocument();
+            final Document doc = XmlUtil.createDOMParser(true, true).newDocument();
             final Element sqlMapperNode = doc.createElement(SQLMapper.SQL_MAPPER);
 
             for (final Map.Entry<String, ParsedSql> sqlEntry : sqlMap.entrySet()) {
@@ -261,7 +259,7 @@ public final class SQLMapper {
                 file.createNewFile(); //NOSONAR
             }
 
-            XMLUtil.transform(doc, os);
+            XmlUtil.transform(doc, os);
 
             os.flush();
         } catch (final IOException e) {

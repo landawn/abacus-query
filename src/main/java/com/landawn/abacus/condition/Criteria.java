@@ -33,8 +33,6 @@ import com.landawn.abacus.util.WD;
  * {@code clause} is independent. A {@code clause} should not be included in another {@code clause}. If there more than
  * one {@code clause}, they should be composed in one {@code Criteria} condition.
  *
- * @author Haiyang Li
- * @since 0.8
  */
 public class Criteria extends AbstractCondition {
 

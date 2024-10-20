@@ -25,7 +25,6 @@ import com.landawn.abacus.pool.PoolableWrapper;
 
 /**
  *
- * @author haiyangl
  *
  */
 public final class ParsedSql {

@@ -32,9 +32,7 @@ import com.landawn.abacus.util.Strings;
  * This class is used to join multiple conditions. like {@code And}, {@code Or}. But must not put clause(where, order by
  * ...) into it. Those clauses are joined by {@code Criteria}.
  *
- * @author Haiyang Li
  * @see com.landawn.abacus.condition.Criteria
- * @since 0.8
  */
 public class Junction extends AbstractCondition {
 

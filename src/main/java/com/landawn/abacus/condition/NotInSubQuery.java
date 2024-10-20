@@ -25,7 +25,6 @@ import com.landawn.abacus.util.WD;
 
 /**
  *
- * @author Haiyang Li
  */
 public class NotInSubQuery extends AbstractCondition {
 
