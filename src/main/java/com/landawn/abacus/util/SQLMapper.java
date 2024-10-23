@@ -69,9 +69,6 @@ public final class SQLMapper {
 
     private final Map<String, ImmutableMap<String, String>> attrsMap = new HashMap<>();
 
-    /**
-     *
-     */
     public SQLMapper() {
         // empty constructor
     }

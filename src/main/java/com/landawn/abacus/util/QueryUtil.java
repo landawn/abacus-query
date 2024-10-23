@@ -401,4 +401,25 @@ public final class QueryUtil {
 
         return result;
     }
+
+    public static String getTableAlias(final Class<?> entityClass) {
+        final Table anno = entityClass.getAnnotation(Table.class);
+        return anno == null ? null : anno.alias();
+    }
+
+    public static String getTableNameAndAlias(final Class<?> entityClass) {
+        return getTableNameAndAlias(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+    }
+
+    public static String getTableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+        final Table anno = entityClass.getAnnotation(Table.class);
+
+        if (anno == null) {
+            return namingPolicy.convert(ClassUtil.getSimpleClassName(entityClass));
+        } else {
+            final String tableName = anno.name();
+            final String alias = anno.alias();
+            return Strings.isEmpty(alias) ? tableName : Strings.concat(tableName, WD.SPACE, alias);
+        }
+    }
 }

@@ -123,9 +123,6 @@ public class InSubQuery extends AbstractCondition {
         return subQuery.getParameters();
     }
 
-    /**
-     *
-     */
     @Override
     public void clearParameters() {
         subQuery.clearParameters();

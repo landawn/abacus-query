@@ -17,34 +17,28 @@ import com.landawn.abacus.util.entity.AccountContact;
 
 class SQLBuilderTest {
 
-    /**
-     * 
-     */
     @Test
     public void test_00() {
-        In cond = CF.in("id", N.asList("a", "b"));
+        final In cond = CF.in("id", N.asList("a", "b"));
         N.println(NSC.deleteFrom(Account.class).append(cond).pair());
+
+        N.println(NSC.selectFrom(Account.class).append(cond).sql());
+        N.println(NSC.selectFrom(AccountContact.class).append(cond).sql());
     }
 
-    /**
-     * 
-     */
     @Test
     public void test_distinct() {
 
-        Criteria criteria = CF.criteria().distinctBy("firstName, lastName").where(CF.eq("id"));
-        String sql = PSC.select(Account.class).preselect(criteria.preselect()).from(Account.class).append(criteria).sql();
+        final Criteria criteria = CF.criteria().distinctBy("firstName, lastName").where(CF.eq("id"));
+        final String sql = PSC.select(Account.class).preselect(criteria.preselect()).from(Account.class).append(criteria).sql();
         N.println(sql);
 
-        String sql2 = PSC.selectFrom(Account.class).preselect(criteria.preselect()).append(criteria).sql();
+        final String sql2 = PSC.selectFrom(Account.class).preselect(criteria.preselect()).append(criteria).sql();
         N.println(sql2);
 
         assertEquals(sql, sql2);
     }
 
-    /**
-     * 
-     */
     @Test
     public void test_selectFrom() {
 
@@ -61,19 +55,13 @@ class SQLBuilderTest {
         N.println(sql);
     }
 
-    /**
-     * 
-     */
     @Test
     public void test_count() {
 
-        String sql = PSC.count(Account.class).where(CF.eq("id")).sql();
+        final String sql = PSC.count(Account.class).where(CF.eq("id")).sql();
         N.println(sql);
     }
 
-    /**
-     * 
-     */
     @Test
     public void test_expr() {
 
@@ -87,9 +75,6 @@ class SQLBuilderTest {
         N.println(sql);
     }
 
-    /**
-     * 
-     */
     @Test
     public void test_multi_select() {
         SP ps = PSC.select(Account.class, "acc", null, AccountContact.class, "ac", "contact").from(Account.class).pair();
@@ -101,7 +86,7 @@ class SQLBuilderTest {
 
         List<Selection> selections = Selection.multiSelectionBuilder().add(Account.class, "acc", null).add(AccountContact.class, "ac", "contact").build();
 
-        SP ps2 = PSC.selectFrom(selections).pair();
+        final SP ps2 = PSC.selectFrom(selections).pair();
         N.println(ps2.sql);
 
         assertEquals(ps, ps2);
@@ -111,29 +96,26 @@ class SQLBuilderTest {
                 .add(AccountContact.class, "ac", "contact")
                 .build();
 
-        SP ps3 = PSC.selectFrom(selections).pair();
+        final SP ps3 = PSC.selectFrom(selections).pair();
         N.println(ps3.sql);
 
         // assertEquals(ps, ps3);
 
-        SP ps4 = PSC.selectFrom(Account.class, "acc", true).pair();
+        final SP ps4 = PSC.selectFrom(Account.class, "acc", true).pair();
         N.println(ps4.sql);
     }
 
-    /**
-     * 
-     */
     @Test
     public void test_multi_select_02() {
-        List<Selection> selections = Selection.multiSelectionBuilder()
+        final List<Selection> selections = Selection.multiSelectionBuilder()
                 .add(Account.class, "acc", null, N.asList("firstName", "devices", "lastName"))
                 .add(AccountContact.class, "ac", "contact")
                 .build();
 
-        SP ps3 = PSC.selectFrom(selections).pair();
+        final SP ps3 = PSC.selectFrom(selections).pair();
         N.println(ps3.sql);
 
-        String sql = "SELECT acc.first_name AS \"firstName\", device.id AS \"devices.id\", device.account_id AS \"devices.accountId\", device.name AS \"devices.name\", device.udid AS \"devices.udid\", device.platform AS \"devices.platform\", device.model AS \"devices.model\", device.manufacturer AS \"devices.manufacturer\", device.produce_time AS \"devices.produceTime\", device.category AS \"devices.category\", device.description AS \"devices.description\", device.status AS \"devices.status\", device.last_update_time AS \"devices.lastUpdateTime\", device.create_time AS \"devices.createTime\", acc.last_name AS \"lastName\", ac.id AS \"contact.id\", ac.account_id AS \"contact.accountId\", ac.mobile AS \"contact.mobile\", ac.telephone AS \"contact.telephone\", ac.email AS \"contact.email\", ac.address AS \"contact.address\", ac.address2 AS \"contact.address2\", ac.city AS \"contact.city\", ac.state AS \"contact.state\", ac.country AS \"contact.country\", ac.zip_code AS \"contact.zipCode\", ac.category AS \"contact.category\", ac.description AS \"contact.description\", ac.status AS \"contact.status\", ac.last_update_time AS \"contact.lastUpdateTime\", ac.create_time AS \"contact.createTime\" FROM account acc, device, account_contact ac";
+        final String sql = "SELECT acc.first_name AS \"firstName\", device.id AS \"devices.id\", device.account_id AS \"devices.accountId\", device.name AS \"devices.name\", device.udid AS \"devices.udid\", device.platform AS \"devices.platform\", device.model AS \"devices.model\", device.manufacturer AS \"devices.manufacturer\", device.produce_time AS \"devices.produceTime\", device.category AS \"devices.category\", device.description AS \"devices.description\", device.status AS \"devices.status\", device.last_update_time AS \"devices.lastUpdateTime\", device.create_time AS \"devices.createTime\", acc.last_name AS \"lastName\", ac.id AS \"contact.id\", ac.account_id AS \"contact.accountId\", ac.mobile AS \"contact.mobile\", ac.telephone AS \"contact.telephone\", ac.email AS \"contact.email\", ac.address AS \"contact.address\", ac.address2 AS \"contact.address2\", ac.city AS \"contact.city\", ac.state AS \"contact.state\", ac.country AS \"contact.country\", ac.zip_code AS \"contact.zipCode\", ac.category AS \"contact.category\", ac.description AS \"contact.description\", ac.status AS \"contact.status\", ac.last_update_time AS \"contact.lastUpdateTime\", ac.create_time AS \"contact.createTime\" FROM account acc, device, account_contact ac";
 
         assertEquals(sql, ps3.sql);
     }

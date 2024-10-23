@@ -122,9 +122,6 @@ public class NotInSubQuery extends AbstractCondition {
         return subQuery.getParameters();
     }
 
-    /**
-     *
-     */
     @Override
     public void clearParameters() {
         subQuery.clearParameters();

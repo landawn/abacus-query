@@ -133,9 +133,7 @@ public enum Operator {
      * Field ON.
      */
     ON(WD.ON),
-    /**
-     *
-     */
+
     USING(WD.USING),
     /**
      * Field JOIN.

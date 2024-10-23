@@ -50,9 +50,6 @@ public class Criteria extends AbstractCondition {
 
     private List<Condition> conditionList;
 
-    /**
-     *
-     */
     public Criteria() {
         super(Operator.EMPTY);
         conditionList = new ArrayList<>();

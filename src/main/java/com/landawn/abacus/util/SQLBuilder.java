@@ -904,23 +904,13 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Sets the FROM clause of the SQL query with multiple table names.
+     * <p>
+     * This method sets the table names to be used in the FROM clause of the SQL query.
+     * </p>
      *
-     * @param expr
-     * @return
-     */
-    public SQLBuilder from(String expr) {
-        expr = expr.trim();
-
-        final int idx = expr.indexOf(WD._COMMA);
-        final String localTableName = idx > 0 ? expr.substring(0, idx) : expr;
-
-        return from(localTableName.trim(), expr);
-    }
-
-    /**
-     *
-     * @param tableNames
-     * @return
+     * @param tableNames the table names to be used in the FROM clause
+     * @return the current instance of {@code SQLBuilder}
      */
     @SafeVarargs
     public final SQLBuilder from(final String... tableNames) {
@@ -933,9 +923,13 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Sets the FROM clause of the SQL query with multiple table names.
+     * <p>
+     * This method sets the table names to be used in the FROM clause of the SQL query.
+     * </p>
      *
-     * @param tableNames
-     * @return
+     * @param tableNames the collection of table names to be used in the FROM clause
+     * @return the current instance of {@code SQLBuilder}
      */
     public SQLBuilder from(final Collection<String> tableNames) {
         if (tableNames.size() == 1) {
@@ -947,17 +941,40 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Sets the FROM clause of the SQL query.
+     * <p>
+     * This method sets the table name or sub query to be used in the FROM clause of the SQL query.
+     * </p>
      *
-     * @param tableName
-     * @param entityClass
-     * @return
+     * @param expr the table name or sub query to be used in the FROM clause
+     * @return the current instance of {@code SQLBuilder}
      */
-    public SQLBuilder from(final String tableName, final Class<?> entityClass) {
+    public SQLBuilder from(String expr) {
+        expr = expr.trim();
+
+        final int idx = expr.indexOf(WD._COMMA);
+        final String localTableName = idx > 0 ? expr.substring(0, idx) : expr;
+
+        return from(localTableName.trim(), expr);
+    }
+
+    /**
+     * Sets the FROM clause of the SQL query with the specified expression and entity class.
+     * <p>
+     * This method sets the table name or sub query to be used in the FROM clause of the SQL query
+     * and associates it with the specified entity class.
+     * </p>
+     *
+     * @param expr the table name or sub query to be used in the FROM clause
+     * @param entityClass the entity class to be associated with the table name or sub query
+     * @return the current instance of {@code SQLBuilder}
+     */
+    public SQLBuilder from(final String expr, final Class<?> entityClass) {
         if (entityClass != null) {
             setEntityClass(entityClass);
         }
 
-        return from(tableName);
+        return from(expr);
     }
 
     /**
@@ -966,11 +983,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder from(final Class<?> entityClass) {
-        if (_entityClass == null) {
-            setEntityClass(entityClass);
-        }
-
-        return from(getTableName(entityClass, _namingPolicy));
+        return from(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
@@ -1180,7 +1193,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder join(final Class<?> entityClass) {
-        return join(entityClass, null);
+        return join(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
@@ -1235,7 +1248,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder innerJoin(final Class<?> entityClass) {
-        return innerJoin(entityClass, null);
+        return innerJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
@@ -1290,7 +1303,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder leftJoin(final Class<?> entityClass) {
-        return leftJoin(entityClass, null);
+        return leftJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
@@ -1345,7 +1358,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder rightJoin(final Class<?> entityClass) {
-        return rightJoin(entityClass, null);
+        return rightJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
@@ -1400,7 +1413,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder fullJoin(final Class<?> entityClass) {
-        return fullJoin(entityClass, null);
+        return fullJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
@@ -1455,7 +1468,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder crossJoin(final Class<?> entityClass) {
-        return crossJoin(entityClass, null);
+        return crossJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
@@ -1510,7 +1523,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     public SQLBuilder naturalJoin(final Class<?> entityClass) {
-        return naturalJoin(entityClass, null);
+        return naturalJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
@@ -3466,16 +3479,16 @@ public abstract class SQLBuilder { // NOSONAR
             } else {
                 setParameter(propName, maxValue);
             }
-        } else if (cond instanceof final NotBetween bt) {
-            final String propName = bt.getPropName();
+        } else if (cond instanceof final NotBetween nbt) {
+            final String propName = nbt.getPropName();
 
             appendColumnName(propName);
 
             _sb.append(_SPACE);
-            _sb.append(bt.getOperator().toString());
+            _sb.append(nbt.getOperator().toString());
             _sb.append(_SPACE);
 
-            final Object minValue = bt.getMinValue();
+            final Object minValue = nbt.getMinValue();
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("min" + Strings.capitalize(propName), minValue);
             } else {
@@ -3486,7 +3499,7 @@ public abstract class SQLBuilder { // NOSONAR
             _sb.append(WD.AND);
             _sb.append(_SPACE);
 
-            final Object maxValue = bt.getMaxValue();
+            final Object maxValue = nbt.getMaxValue();
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("max" + Strings.capitalize(propName), maxValue);
             } else {
@@ -3955,9 +3968,6 @@ public abstract class SQLBuilder { // NOSONAR
     //        return false;
     //    }
 
-    /**
-     *
-     */
     public void println() {
         N.println(sql());
     }
@@ -4524,7 +4534,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -5155,7 +5165,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -5786,7 +5796,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -6416,7 +6426,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -7044,7 +7054,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -7672,7 +7682,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -8300,7 +8310,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -8933,7 +8943,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -9567,7 +9577,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -10200,7 +10210,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -10833,7 +10843,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -11463,7 +11473,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -12093,7 +12103,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -12723,7 +12733,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -13353,7 +13363,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, null, includeSubEntityProperties, excludedPropNames);
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
@@ -13601,9 +13611,6 @@ public abstract class SQLBuilder { // NOSONAR
         handlerForNamedParameter_TL.set(handlerForNamedParameter);
     }
 
-    /**
-     *
-     */
     public static void resetHandlerForNamedParameter() {
         handlerForNamedParameter_TL.set(defaultHandlerForNamedParameter);
     }
