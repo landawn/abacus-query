@@ -550,15 +550,7 @@ public abstract class SQLBuilder { // NOSONAR
         if (subEntityPropNames == null) {
             synchronized (subEntityPropNamesPool) {
                 final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
-                // final ImmutableSet<String> nonSubEntityPropNames = nonSubEntityPropNamesPool.get(entityClass);
-                final Set<String> subEntityPropNameSet = N.newLinkedHashSet();
-
-                for (final PropInfo propInfo : entityInfo.propInfoList) {
-                    if (isEntityProp(propInfo)) {
-                        subEntityPropNameSet.add(propInfo.name);
-                    }
-                }
-
+                final Set<String> subEntityPropNameSet = N.newLinkedHashSet(entityInfo.subEntityPropNameList);
                 subEntityPropNames = ImmutableSet.wrap(subEntityPropNameSet);
 
                 subEntityPropNamesPool.put(entityClass, subEntityPropNames);
@@ -3812,7 +3804,7 @@ public abstract class SQLBuilder { // NOSONAR
         if (Strings.isEmpty(propAlias) && entityInfo != null) {
             final PropInfo propInfo = entityInfo.getPropInfo(propName);
 
-            if (isEntityProp(propInfo)) {
+            if (propInfo != null && propInfo.isSubEntity) {
                 final Class<?> propEntityClass = propInfo.type.isCollection() ? propInfo.type.getElementType().clazz() : propInfo.clazz;
 
                 final String propEntityTableAliasOrName = getTableAliasOrName(propEntityClass, _namingPolicy);
@@ -3915,13 +3907,6 @@ public abstract class SQLBuilder { // NOSONAR
         } else {
             appendStringExpr(propName, true);
         }
-    }
-
-    private static boolean isEntityProp(final PropInfo propInfo) {
-        // final ImmutableSet<String> nonSubEntityPropNames = nonSubEntityPropNamesPool.get(entityClass);
-
-        return propInfo != null
-                && (!propInfo.isMarkedToColumn && (propInfo.type.isBean() || (propInfo.type.isCollection() && propInfo.type.getElementType().isBean())));
     }
 
     private static boolean hasSubEntityToInclude(final Class<?> entityClass, final boolean includeSubEntityProperties) {
