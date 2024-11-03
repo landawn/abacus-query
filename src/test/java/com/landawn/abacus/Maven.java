@@ -17,11 +17,11 @@ public class Maven {
      * @param args
      * @throws Exception
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(final String[] args) throws Exception {
         N.println(new File(".").getAbsolutePath());
 
         final String sourceVersion = "0.0.1-SNAPSHOT";
-        final String targetVersion = StreamEx.lines(new File("./pom.xml"))
+        final String targetVersion = StreamEx.ofLines(new File("./pom.xml"))
                 .filter(line -> line.indexOf("<version>") > 0 && line.indexOf("</version>") > 0)
                 .first()
                 .map(line -> Strings.substringsBetween(line, "<version>", "</version>").get(0))
@@ -52,7 +52,7 @@ public class Maven {
                 .forEach(file -> {
                     final List<String> lines = IOUtil.readAllLines(file);
                     final List<String> newLines = new ArrayList<>(lines.size());
-                    for (String line : lines) {
+                    for (final String line : lines) {
                         newLines.add(line.replaceAll(sourceVersion, targetVersion));
                     }
                     IOUtil.writeLines(newLines, file);
