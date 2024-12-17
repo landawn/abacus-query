@@ -98,7 +98,6 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * @return
      */
-    @SuppressWarnings("unchecked")
     public SubQuery getSubQuery() {
         return subQuery;
     }
@@ -136,7 +135,7 @@ public class NotInSubQuery extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        final NotInSubQuery copy = (NotInSubQuery) super.copy();
+        final NotInSubQuery copy = super.copy();
 
         copy.subQuery = subQuery.copy();
 

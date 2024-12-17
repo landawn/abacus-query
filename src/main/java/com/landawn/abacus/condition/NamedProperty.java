@@ -32,18 +32,13 @@ public final class NamedProperty {
     // for Kryo
     final String propName;
 
-    // For Kryo
-    NamedProperty() {
-        propName = null;
-    }
-
     /**
      *
      *
      * @param propName
      */
     public NamedProperty(final String propName) {
-        this.propName = propName;
+        this.propName = N.requireNonNull(propName);
     }
 
     /**
@@ -56,14 +51,7 @@ public final class NamedProperty {
             throw new IllegalArgumentException("the property name can't be null or empty string.");
         }
 
-        NamedProperty instance = instancePool.get(propName);
-
-        if (instance == null) {
-            instance = new NamedProperty(propName);
-            instancePool.put(propName, instance);
-        }
-
-        return instance;
+        return instancePool.computeIfAbsent(propName, NamedProperty::new);
     }
 
     /**

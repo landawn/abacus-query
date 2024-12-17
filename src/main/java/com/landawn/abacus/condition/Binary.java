@@ -119,7 +119,7 @@ public class Binary extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        final Binary copy = (Binary) super.copy();
+        final Binary copy = super.copy();
 
         if (propValue instanceof Condition) {
             copy.propValue = ((Condition) propValue).copy();

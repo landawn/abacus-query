@@ -376,7 +376,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public Select append(final String column) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("SELECT ");
@@ -394,7 +394,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public Select append(final String column, final String alias) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("SELECT ");
@@ -411,7 +411,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public Select append(final Collection<String> columns) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("SELECT ");
@@ -429,7 +429,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public Select append(final Map<String, String> columnsAndAliasMap) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("SELECT ");
@@ -449,7 +449,7 @@ public class DynamicSQLBuilder {
          */
         public Select appendIf(final boolean b, final String str) {
             if (b) {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
                     sb.append("SELECT ");
@@ -470,7 +470,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public Select appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("SELECT ");
@@ -509,7 +509,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public From append(final String table) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("FROM ");
@@ -527,7 +527,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public From append(final String table, final String alias) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("FROM");
@@ -607,7 +607,7 @@ public class DynamicSQLBuilder {
          */
         public From appendIf(final boolean b, final String str) {
             if (b) {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
                     sb.append("FROM ");
@@ -628,7 +628,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public From appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("FROM ");
@@ -667,7 +667,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public Where append(final String cond) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
                 sb.append("WHERE ");
@@ -755,7 +755,7 @@ public class DynamicSQLBuilder {
          */
         public Where appendIf(final boolean b, final String str) {
             if (b) {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     sb.append(" ");
                 } else {
                     sb.append("WHERE ");
@@ -776,7 +776,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public Where appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
                 sb.append("WHERE ");
@@ -815,7 +815,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public GroupBy append(final String column) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("GROUP BY ");
@@ -832,7 +832,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public GroupBy append(final Collection<String> columns) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("GROUP BY ");
@@ -852,7 +852,7 @@ public class DynamicSQLBuilder {
          */
         public GroupBy appendIf(final boolean b, final String str) {
             if (b) {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
                     sb.append("GROUP BY ");
@@ -873,7 +873,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public GroupBy appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("GROUP BY ");
@@ -912,7 +912,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public Having append(final String cond) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
                 sb.append("HAVING ");
@@ -954,7 +954,7 @@ public class DynamicSQLBuilder {
          */
         public Having appendIf(final boolean b, final String str) {
             if (b) {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     sb.append(" ");
                 } else {
                     sb.append("HAVING ");
@@ -975,7 +975,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public Having appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
                 sb.append("HAVING ");
@@ -1014,7 +1014,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public OrderBy append(final String column) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("ORDER BY ");
@@ -1031,7 +1031,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public OrderBy append(final Collection<String> columns) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("ORDER BY ");
@@ -1051,7 +1051,7 @@ public class DynamicSQLBuilder {
          */
         public OrderBy appendIf(final boolean b, final String str) {
             if (b) {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
                     sb.append("ORDER BY ");
@@ -1072,7 +1072,7 @@ public class DynamicSQLBuilder {
          * @return
          */
         public OrderBy appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("ORDER BY ");

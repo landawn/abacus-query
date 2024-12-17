@@ -102,7 +102,6 @@ public class Limit extends AbstractCondition {
      *
      * @return
      */
-    @SuppressWarnings("unchecked")
     @Override
     public List<Object> getParameters() {
         return N.emptyList();

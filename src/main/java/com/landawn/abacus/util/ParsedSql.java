@@ -67,7 +67,6 @@ public final class ParsedSql {
 
     private int couchbaseParameterCount;
 
-    @SuppressWarnings({ "unchecked" })
     private ParsedSql(final String sql) {
         this.sql = sql.trim();
 

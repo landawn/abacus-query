@@ -168,7 +168,7 @@ public final class QueryUtil {
                 final Type<?> propType = propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type;
 
                 if (propType.isBean() && (registeringClasses == null || !registeringClasses.contains(propType.clazz()))) {
-                    final Set<Class<?>> newRegisteringClasses = registeringClasses == null ? N.<Class<?>> newLinkedHashSet() : registeringClasses;
+                    final Set<Class<?>> newRegisteringClasses = registeringClasses == null ? N.newLinkedHashSet() : registeringClasses;
                     newRegisteringClasses.add(entityClass);
 
                     final Map<String, String> subPropColumnNameMap = registerEntityPropColumnNameMap(propType.clazz(), namingPolicy, newRegisteringClasses);
@@ -193,7 +193,7 @@ public final class QueryUtil {
         //    }
 
         if (N.isEmpty(propColumnNameMap)) {
-            propColumnNameMap = N.<String, String> emptyMap();
+            propColumnNameMap = N.emptyMap();
         }
 
         final ImmutableMap<String, String> result = ImmutableMap.wrap(propColumnNameMap);

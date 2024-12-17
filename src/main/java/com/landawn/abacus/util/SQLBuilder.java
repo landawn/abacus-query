@@ -33,12 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
+import com.landawn.abacus.annotation.*;
 import com.landawn.abacus.annotation.Beta;
-import com.landawn.abacus.annotation.Internal;
-import com.landawn.abacus.annotation.NonUpdatable;
-import com.landawn.abacus.annotation.ReadOnly;
-import com.landawn.abacus.annotation.ReadOnlyId;
-import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.condition.Between;
 import com.landawn.abacus.condition.Binary;
 import com.landawn.abacus.condition.Cell;
@@ -251,6 +247,10 @@ public abstract class SQLBuilder { // NOSONAR
     static final char[] _COMMA_SPACE = WD.COMMA_SPACE.toCharArray();
 
     static final String SPACE_AS_SPACE = WD.SPACE + WD.AS + WD.SPACE;
+
+    static final String SELECT_PART = "selectPart";
+    static final String PROP_OR_COLUMN_NAMES = "propOrColumnNames";
+    static final String PROP_OR_COLUMN_NAME_ALIASES = "propOrColumnNameAliases";
 
     private static final Set<String> sqlKeyWords = N.newHashSet(1024);
 
@@ -1047,7 +1047,7 @@ public abstract class SQLBuilder { // NOSONAR
         final boolean isForSelect = _op == OperationType.QUERY;
 
         if (N.notEmpty(_propOrColumnNames)) {
-            if (_entityClass != null && withAlias == false && _propOrColumnNames == QueryUtil.getSelectPropNames(_entityClass, false, null)) { // NOSONAR
+            if (_entityClass != null && !withAlias && _propOrColumnNames == QueryUtil.getSelectPropNames(_entityClass, false, null)) { // NOSONAR
                 String fullSelectParts = fullSelectPartsPool.get(_namingPolicy).get(_entityClass);
 
                 if (Strings.isEmpty(fullSelectParts)) {
@@ -1111,10 +1111,8 @@ public abstract class SQLBuilder { // NOSONAR
 
             for (final Selection selection : _multiSelects) {
                 selectionEntityClass = selection.entityClass();
-                selectionBeanInfo = selectionEntityClass == null && ClassUtil.isBeanClass(selectionEntityClass) == false ? null
-                        : ParserUtil.getBeanInfo(selectionEntityClass);
-                selectionPropColumnNameMap = selectionEntityClass == null && ClassUtil.isBeanClass(selectionEntityClass) == false ? null
-                        : prop2ColumnNameMap(selectionEntityClass, _namingPolicy);
+                selectionBeanInfo = ClassUtil.isBeanClass(selectionEntityClass) ? ParserUtil.getBeanInfo(selectionEntityClass) : null;
+                selectionPropColumnNameMap = ClassUtil.isBeanClass(selectionEntityClass) ? prop2ColumnNameMap(selectionEntityClass, _namingPolicy) : null;
                 selectionTableAlias = selection.tableAlias();
 
                 selectionClassAlias = selection.classAlias();
@@ -1148,7 +1146,7 @@ public abstract class SQLBuilder { // NOSONAR
             _aliasPropColumnNameMap = new HashMap<>();
         }
 
-        if (N.isEmpty(_propColumnNameMap) && entityClass != null && ClassUtil.isBeanClass(entityClass)) {
+        if (N.isEmpty(_propColumnNameMap) && ClassUtil.isBeanClass(entityClass)) {
             _propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
         }
 
@@ -1202,7 +1200,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_JOIN_SPACE);
 
         if (Strings.isNotEmpty(alias)) {
-            _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
+            _sb.append(getTableName(entityClass, _namingPolicy)).append(" ").append(alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
         }
@@ -1257,7 +1255,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_INNER_JOIN_SPACE);
 
         if (Strings.isNotEmpty(alias)) {
-            _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
+            _sb.append(getTableName(entityClass, _namingPolicy)).append(" ").append(alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
         }
@@ -1312,7 +1310,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_LEFT_JOIN_SPACE);
 
         if (Strings.isNotEmpty(alias)) {
-            _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
+            _sb.append(getTableName(entityClass, _namingPolicy)).append(" ").append(alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
         }
@@ -1367,7 +1365,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_RIGHT_JOIN_SPACE);
 
         if (Strings.isNotEmpty(alias)) {
-            _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
+            _sb.append(getTableName(entityClass, _namingPolicy)).append(" ").append(alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
         }
@@ -1422,7 +1420,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_FULL_JOIN_SPACE);
 
         if (Strings.isNotEmpty(alias)) {
-            _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
+            _sb.append(getTableName(entityClass, _namingPolicy)).append(" ").append(alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
         }
@@ -1477,7 +1475,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_CROSS_JOIN_SPACE);
 
         if (Strings.isNotEmpty(alias)) {
-            _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
+            _sb.append(getTableName(entityClass, _namingPolicy)).append(" ").append(alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
         }
@@ -1532,7 +1530,7 @@ public abstract class SQLBuilder { // NOSONAR
         _sb.append(_SPACE_NATURAL_JOIN_SPACE);
 
         if (Strings.isNotEmpty(alias)) {
-            _sb.append(getTableName(entityClass, _namingPolicy) + " " + alias);
+            _sb.append(getTableName(entityClass, _namingPolicy)).append(" ").append(alias);
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
         }
@@ -3209,7 +3207,7 @@ public abstract class SQLBuilder { // NOSONAR
     void init(final boolean setForUpdate) {
         // Note: any change, please take a look at: parse(final Class<?> entityClass, final Condition cond) first.
 
-        if (_sb.length() > 0) {
+        if (!_sb.isEmpty()) {
             return;
         }
 
@@ -3227,15 +3225,10 @@ public abstract class SQLBuilder { // NOSONAR
         } else if (_op == OperationType.DELETE) {
             final String newTableName = _tableName;
 
-            char[] deleteFromTableChars = tableDeleteFrom.get(newTableName);
-
-            if (deleteFromTableChars == null) {
-                deleteFromTableChars = (WD.DELETE + WD.SPACE + WD.FROM + WD.SPACE + newTableName).toCharArray();
-                tableDeleteFrom.put(newTableName, deleteFromTableChars);
-            }
+            char[] deleteFromTableChars = tableDeleteFrom.computeIfAbsent(newTableName, n -> (WD.DELETE + WD.SPACE + WD.FROM + WD.SPACE + n).toCharArray());
 
             _sb.append(deleteFromTableChars);
-        } else if (_op == OperationType.QUERY && _hasFromBeenSet == false && _isForConditionOnly == false) {
+        } else if (_op == OperationType.QUERY && !_hasFromBeenSet && !_isForConditionOnly) {
             throw new RuntimeException("'from' methods has not been called for query: " + _op);
         }
     }
@@ -3243,7 +3236,7 @@ public abstract class SQLBuilder { // NOSONAR
     private void setEntityClass(final Class<?> entityClass) {
         _entityClass = entityClass;
 
-        if (entityClass != null && ClassUtil.isBeanClass(entityClass)) {
+        if (ClassUtil.isBeanClass(entityClass)) {
             _entityInfo = ParserUtil.getBeanInfo(entityClass);
             _propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
         } else {
@@ -3665,7 +3658,7 @@ public abstract class SQLBuilder { // NOSONAR
                 } else if (this instanceof NSB) {
                     _sb.append(NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
                 } else {
-                    throw new RuntimeException("Unsupproted subQuery condition: " + cond);
+                    throw new RuntimeException("Unsupported subQuery condition: " + cond);
                 }
             } else if (this instanceof SCSB) {
                 _sb.append(SCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
@@ -3696,7 +3689,7 @@ public abstract class SQLBuilder { // NOSONAR
             } else if (this instanceof NSB) {
                 _sb.append(NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
             } else {
-                throw new RuntimeException("Unsupproted subQuery condition: " + cond);
+                throw new RuntimeException("Unsupported subQuery condition: " + cond);
             }
         } else if (cond instanceof Expression) {
             // ==== version 1
@@ -3724,7 +3717,7 @@ public abstract class SQLBuilder { // NOSONAR
             // ==== version 3
             appendStringExpr(((Expression) cond).getLiteral(), false);
         } else {
-            throw new IllegalArgumentException("Unsupported condtion: " + cond.toString());
+            throw new IllegalArgumentException("Unsupported condition: " + cond.toString());
         }
     }
 
@@ -3780,7 +3773,7 @@ public abstract class SQLBuilder { // NOSONAR
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
-            if (tp._2.booleanValue() && tableAlias != null && tableAlias.length() > 0) {
+            if (tp._2 && tableAlias != null && !tableAlias.isEmpty()) {
                 _sb.append(tableAlias).append(WD._PERIOD);
             }
 
@@ -3833,7 +3826,7 @@ public abstract class SQLBuilder { // NOSONAR
             }
         }
 
-        if (_aliasPropColumnNameMap != null && _aliasPropColumnNameMap.size() > 0) {
+        if (_aliasPropColumnNameMap != null && !_aliasPropColumnNameMap.isEmpty()) {
             final int index = propName.indexOf('.');
 
             if (index > 0) {
@@ -3887,6 +3880,7 @@ public abstract class SQLBuilder { // NOSONAR
             }
 
             if (index > 0) {
+                //noinspection ConstantValue
                 appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName.substring(0, index).trim(),
                         propName.substring(index + 4).trim(), withClassAlias, classAlias, isForSelect);
             } else {
@@ -3981,13 +3975,13 @@ public abstract class SQLBuilder { // NOSONAR
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
-            if (tp._2.booleanValue() && _tableAlias != null && _tableAlias.length() > 0) {
+            if (tp._2 && _tableAlias != null && !_tableAlias.isEmpty()) {
                 return _tableAlias + "." + tp._1;
             }
             return tp._1;
         }
 
-        if (_aliasPropColumnNameMap != null && _aliasPropColumnNameMap.size() > 0) {
+        if (_aliasPropColumnNameMap != null && !_aliasPropColumnNameMap.isEmpty()) {
             final int index = propName.indexOf('.');
 
             if (index > 0) {
@@ -4031,12 +4025,13 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private static Collection<Map<String, Object>> toInsertPropsList(final Collection<?> propsList) {
+    private static List<Map<String, Object>> toInsertPropsList(final Collection<?> propsList) {
         final Optional<?> first = N.firstNonNull(propsList);
 
         if (first.isPresent() && first.get() instanceof Map) {
             return (List<Map<String, Object>>) propsList;
         }
+
         final Class<?> entityClass = first.get().getClass();
         final Collection<String> propNames = QueryUtil.getInsertPropNames(entityClass, null);
         final List<Map<String, Object>> newPropsList = new ArrayList<>(propsList.size());
@@ -4068,7 +4063,7 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     enum SQLPolicy {
-        SQL, PARAMETERIZED_SQL, NAMED_SQL, IBATIS_SQL;
+        SQL, PARAMETERIZED_SQL, NAMED_SQL, IBATIS_SQL
     }
 
     /**
@@ -4346,7 +4341,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -4362,7 +4357,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -4378,7 +4373,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -4394,7 +4389,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -4534,6 +4529,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -4977,7 +4973,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -4993,7 +4989,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -5009,7 +5005,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -5025,7 +5021,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -5165,6 +5161,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -5608,7 +5605,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -5624,7 +5621,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -5640,7 +5637,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -5656,7 +5653,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -5796,6 +5793,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -6238,7 +6236,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -6254,7 +6252,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -6270,7 +6268,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -6286,7 +6284,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -6426,6 +6424,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.NO_CHANGE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -6866,7 +6865,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -6882,7 +6881,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -6898,7 +6897,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -6914,7 +6913,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -7054,6 +7053,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -7494,7 +7494,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -7510,7 +7510,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -7526,7 +7526,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -7542,7 +7542,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -7682,6 +7682,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -8122,7 +8123,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -8138,7 +8139,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -8154,7 +8155,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -8170,7 +8171,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -8310,6 +8311,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -8755,7 +8757,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -8771,7 +8773,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -8787,7 +8789,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -8803,7 +8805,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -8943,6 +8945,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.NO_CHANGE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -9389,7 +9392,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -9405,7 +9408,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -9421,7 +9424,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -9437,7 +9440,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -9577,6 +9580,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -10022,7 +10026,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -10038,7 +10042,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -10054,7 +10058,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -10070,7 +10074,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -10210,6 +10214,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -10655,7 +10660,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -10671,7 +10676,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -10687,7 +10692,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -10703,7 +10708,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -10843,6 +10848,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -11285,7 +11291,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -11301,7 +11307,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -11317,7 +11323,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -11333,7 +11339,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -11473,6 +11479,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.NO_CHANGE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -11915,7 +11922,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -11931,7 +11938,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -11947,7 +11954,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -11963,7 +11970,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -12103,6 +12110,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -12545,7 +12553,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -12561,7 +12569,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -12577,7 +12585,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -12593,7 +12601,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -12733,6 +12741,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -13175,7 +13184,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, "selectPart");
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
 
             final SQLBuilder instance = createInstance();
 
@@ -13191,7 +13200,7 @@ public abstract class SQLBuilder { // NOSONAR
          */
         @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -13207,7 +13216,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
 
@@ -13223,7 +13232,7 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, "propOrColumnNameAliases");
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
 
             final SQLBuilder instance = createInstance();
 
@@ -13363,6 +13372,7 @@ public abstract class SQLBuilder { // NOSONAR
                 final Set<String> excludedPropNames) {
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
                 final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
+                //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 

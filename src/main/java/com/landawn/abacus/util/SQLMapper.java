@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.landawn.abacus.annotation.SuppressFBWarnings;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -227,6 +228,7 @@ public final class SQLMapper {
      *
      * @param file
      */
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void saveTo(final File file) {
 
         try (OutputStream os = new FileOutputStream(file)) {
@@ -253,6 +255,7 @@ public final class SQLMapper {
             doc.appendChild(sqlMapperNode);
 
             if (!file.exists()) {
+                //noinspection ResultOfMethodCallIgnored
                 file.createNewFile(); //NOSONAR
             }
 

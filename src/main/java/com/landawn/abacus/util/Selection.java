@@ -28,28 +28,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-/**
- *
- *
- */
 @Data
 @Accessors(fluent = true)
-
-/**
- *
- */
 @NoArgsConstructor
-
-/**
- *
- *
- * @param entityClass
- * @param tableAlias
- * @param classAlias
- * @param selectPropNames
- * @param includeSubEntityProperties
- * @param excludedPropNames
- */
 @AllArgsConstructor
 public final class Selection {
     private Class<?> entityClass;
@@ -59,11 +40,6 @@ public final class Selection {
     boolean includeSubEntityProperties;
     private Set<String> excludedPropNames;
 
-    /**
-     *
-     *
-     * @return
-     */
     public static MultiSelectionBuilder multiSelectionBuilder() {
         return new MultiSelectionBuilder();
     }

@@ -30,7 +30,7 @@ import com.landawn.abacus.util.WD;
 /**
  * At present, Supports
  * {@code Where, OrderBy, GroupBy, Having, Join, Limit, ForUpdate, Union, UnionAll, Intersect, Except} clause. Each
- * {@code clause} is independent. A {@code clause} should not be included in another {@code clause}. If there more than
+ * {@code clause} is independent. A {@code clause} should not be included in another {@code clause}. If there are more than
  * one {@code clause}, they should be composed in one {@code Criteria} condition.
  *
  */
@@ -113,7 +113,6 @@ public class Criteria extends AbstractCondition {
      *
      * @return
      */
-    @SuppressWarnings("unchecked")
     public List<Cell> getAggregation() {
         List<Cell> result = null;
 
@@ -233,7 +232,6 @@ public class Criteria extends AbstractCondition {
      *
      * @return
      */
-    @SuppressWarnings("unchecked")
     @Override
     public List<Object> getParameters() {
         if (conditionList.size() > 0) {
@@ -758,7 +756,7 @@ public class Criteria extends AbstractCondition {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Condition> T copy() {
-        final Criteria result = (Criteria) super.copy();
+        final Criteria result = super.copy();
 
         result.conditionList = new ArrayList<>();
 
@@ -774,6 +772,7 @@ public class Criteria extends AbstractCondition {
      * @param namingPolicy
      * @return
      */
+    @SuppressWarnings("StringConcatenationInLoop")
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final String preselect = Strings.isEmpty(this.preselect) ? Strings.EMPTY_STRING : WD.SPACE + this.preselect; //NOSONAR

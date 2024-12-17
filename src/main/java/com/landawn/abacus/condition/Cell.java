@@ -70,10 +70,9 @@ public class Cell extends AbstractCondition {
      *
      * @return
      */
-    @SuppressWarnings("unchecked")
     @Override
     public List<Object> getParameters() {
-        return (condition == null) ? N.<Object> emptyList() : condition.getParameters();
+        return (condition == null) ? N.emptyList() : condition.getParameters();
     }
 
     /**
@@ -94,7 +93,7 @@ public class Cell extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        final Cell copy = (Cell) super.copy();
+        final Cell copy = super.copy();
 
         if (condition != null) {
             copy.condition = condition.copy();
@@ -121,7 +120,7 @@ public class Cell extends AbstractCondition {
     @Override
     public int hashCode() {
         int h = 17;
-        h = (h * 31) + operator.hashCode();
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         return (h * 31) + ((condition == null) ? 0 : condition.hashCode());
     }
 

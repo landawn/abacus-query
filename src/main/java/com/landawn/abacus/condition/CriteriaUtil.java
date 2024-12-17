@@ -76,7 +76,7 @@ public final class CriteriaUtil {
      * @return true, if is clause
      */
     public static boolean isClause(final Operator operator) {
-        return (operator == null) ? false : clauseOperators.contains(operator);
+        return operator != null && clauseOperators.contains(operator);
     }
 
     /**
@@ -114,7 +114,7 @@ public final class CriteriaUtil {
         //        } else {
         //            return isClause(condition.getOperator());
         //        }
-        return (condition == null) ? false : isClause(condition.getOperator());
+        return condition != null && isClause(condition.getOperator());
     }
 
     /**

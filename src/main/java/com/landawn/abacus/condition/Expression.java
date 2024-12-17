@@ -73,7 +73,7 @@ import com.landawn.abacus.util.WD;
  */
 public class Expression extends AbstractCondition {
 
-    static final String NULL_STRING = "null".intern();
+    static final String NULL_STRING = "null";
 
     static final char[] NULL_CHAR_ARRAY = NULL_STRING.toCharArray();
 
@@ -87,7 +87,7 @@ public class Expression extends AbstractCondition {
 
     private static final String LEFT_SHIFT = "<<";
 
-    private static final String RIGTH_SHIFT = ">>";
+    private static final String RIGHT_SHIFT = ">>";
 
     private static final String NULL = "NULL";
 
@@ -421,7 +421,7 @@ public class Expression extends AbstractCondition {
      */
     @SafeVarargs
     public static String rShift(final Object... objects) {
-        return link(RIGTH_SHIFT, objects);
+        return link(RIGHT_SHIFT, objects);
     }
 
     /**
@@ -919,7 +919,6 @@ public class Expression extends AbstractCondition {
      *
      * @return
      */
-    @SuppressWarnings("unchecked")
     @Override
     public List<Object> getParameters() {
         return N.emptyList();

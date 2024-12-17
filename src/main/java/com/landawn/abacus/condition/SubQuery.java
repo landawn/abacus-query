@@ -178,10 +178,9 @@ public class SubQuery extends AbstractCondition {
      *
      * @return
      */
-    @SuppressWarnings("unchecked")
     @Override
     public List<Object> getParameters() {
-        return condition == null ? N.<Object> emptyList() : condition.getParameters();
+        return condition == null ? N.emptyList() : condition.getParameters();
     }
 
     /**
@@ -202,7 +201,7 @@ public class SubQuery extends AbstractCondition {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Condition> T copy() {
-        final SubQuery result = (SubQuery) super.copy();
+        final SubQuery result = super.copy();
 
         if (propNames != null) {
             result.propNames = new ArrayList<>(propNames);

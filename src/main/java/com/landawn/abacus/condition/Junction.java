@@ -176,7 +176,7 @@ public class Junction extends AbstractCondition {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Condition> T copy() {
-        final Junction result = (Junction) super.copy();
+        final Junction result = super.copy();
 
         result.conditionList = new ArrayList<>();
 

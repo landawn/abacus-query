@@ -188,23 +188,22 @@ public class ConditionFactory {
     public static Or eqOr(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
 
-        final Collection<String> selectPropNames = props.keySet();
-        final Iterator<String> iter = selectPropNames.iterator();
+        final Iterator<? extends Map.Entry<String, ?>> propIter = props.entrySet().iterator();
 
-        if (selectPropNames.size() == 1) {
-            final String propName = iter.next();
-            return or(eq(propName, props.get(propName)));
-        } else if (selectPropNames.size() == 2) {
-            final String propName1 = iter.next();
-            final String propName2 = iter.next();
-            return eq(propName1, props.get(propName1)).or(eq(propName2, props.get(propName2)));
+        if (props.size() == 1) {
+            final Map.Entry<String, ?> prop = propIter.next();
+            return or(eq(prop.getKey(), prop.getValue()));
+        } else if (props.size() == 2) {
+            final Map.Entry<String, ?> prop1 = propIter.next();
+            final Map.Entry<String, ?> prop2 = propIter.next();
+            return eq(prop1.getKey(), prop1.getValue()).or(eq(prop2.getKey(), prop2.getValue()));
         } else {
-            final Condition[] conds = new Condition[selectPropNames.size()];
-            String propName = null;
+            final Condition[] conds = new Condition[props.size()];
+            Map.Entry<String, ?> prop = null;
 
-            for (int i = 0, size = selectPropNames.size(); i < size; i++) {
-                propName = iter.next();
-                conds[i] = CF.eq(propName, props.get(propName));
+            for (int i = 0, size = props.size(); i < size; i++) {
+                prop = propIter.next();
+                conds[i] = CF.eq(prop.getKey(), prop.getValue());
             }
 
             return or(conds);
@@ -289,27 +288,27 @@ public class ConditionFactory {
     public static And eqAnd(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
 
-        final Collection<String> selectPropNames = props.keySet();
-        final Iterator<String> iter = selectPropNames.iterator();
+        final Iterator<? extends Map.Entry<String, ?>> propIter = props.entrySet().iterator();
 
-        if (selectPropNames.size() == 1) {
-            final String propName = iter.next();
-            return and(eq(propName, props.get(propName)));
-        } else if (selectPropNames.size() == 2) {
-            final String propName1 = iter.next();
-            final String propName2 = iter.next();
-            return eq(propName1, props.get(propName1)).and(eq(propName2, props.get(propName2)));
+        if (props.size() == 1) {
+            final Map.Entry<String, ?> prop = propIter.next();
+            return and(eq(prop.getKey(), prop.getValue()));
+        } else if (props.size() == 2) {
+            final Map.Entry<String, ?> prop1 = propIter.next();
+            final Map.Entry<String, ?> prop2 = propIter.next();
+            return eq(prop1.getKey(), prop1.getValue()).and(eq(prop2.getKey(), prop2.getValue()));
         } else {
-            final Condition[] conds = new Condition[selectPropNames.size()];
-            String propName = null;
+            final Condition[] conds = new Condition[props.size()];
+            Map.Entry<String, ?> prop = null;
 
-            for (int i = 0, size = selectPropNames.size(); i < size; i++) {
-                propName = iter.next();
-                conds[i] = CF.eq(propName, props.get(propName));
+            for (int i = 0, size = props.size(); i < size; i++) {
+                prop = propIter.next();
+                conds[i] = CF.eq(prop.getKey(), prop.getValue());
             }
 
             return and(conds);
         }
+
     }
 
     /**
@@ -1188,7 +1187,7 @@ public class ConditionFactory {
      * @return
      */
     public static GroupBy groupBy(final String propNameA, final SortDirection directionA, final String propNameB, final SortDirection directionB) {
-        return groupBy(N.<String, SortDirection> asLinkedHashMap(propNameA, directionA, propNameB, directionB));
+        return groupBy(N.asLinkedHashMap(propNameA, directionA, propNameB, directionB));
     }
 
     /**
@@ -1203,7 +1202,7 @@ public class ConditionFactory {
      */
     public static GroupBy groupBy(final String propNameA, final SortDirection directionA, final String propNameB, final SortDirection directionB,
             final String propNameC, final SortDirection directionC) {
-        return groupBy(N.<String, SortDirection> asLinkedHashMap(propNameA, directionA, propNameB, directionB, propNameC, directionC));
+        return groupBy(N.asLinkedHashMap(propNameA, directionA, propNameB, directionB, propNameC, directionC));
     }
 
     /**
@@ -1328,7 +1327,7 @@ public class ConditionFactory {
      * @return
      */
     public static OrderBy orderBy(final String propNameA, final SortDirection directionA, final String propNameB, final SortDirection directionB) {
-        return orderBy(N.<String, SortDirection> asLinkedHashMap(propNameA, directionA, propNameB, directionB));
+        return orderBy(N.asLinkedHashMap(propNameA, directionA, propNameB, directionB));
     }
 
     /**
@@ -1343,7 +1342,7 @@ public class ConditionFactory {
      */
     public static OrderBy orderBy(final String propNameA, final SortDirection directionA, final String propNameB, final SortDirection directionB,
             final String propNameC, final SortDirection directionC) {
-        return orderBy(N.<String, SortDirection> asLinkedHashMap(propNameA, directionA, propNameB, directionB, propNameC, directionC));
+        return orderBy(N.asLinkedHashMap(propNameA, directionA, propNameB, directionB, propNameC, directionC));
     }
 
     /**
@@ -2025,7 +2024,7 @@ public class ConditionFactory {
          * @return
          */
         @SafeVarargs
-        public static final Criteria groupBy(final String... propNames) {
+        public static Criteria groupBy(final String... propNames) {
             return CF.criteria().groupBy(propNames);
         }
 
@@ -2090,7 +2089,7 @@ public class ConditionFactory {
          * @param propNames
          * @return
          */
-        public static final Criteria orderByAsc(final String... propNames) {
+        public static Criteria orderByAsc(final String... propNames) {
             return CF.criteria().orderByAsc(propNames);
         }
 
@@ -2108,7 +2107,7 @@ public class ConditionFactory {
          * @param propNames
          * @return
          */
-        public static final Criteria orderByDesc(final String... propNames) {
+        public static Criteria orderByDesc(final String... propNames) {
             return CF.criteria().orderByDesc(propNames);
         }
 
@@ -2136,7 +2135,7 @@ public class ConditionFactory {
          * @return
          */
         @SafeVarargs
-        public static final Criteria orderBy(final String... propNames) {
+        public static Criteria orderBy(final String... propNames) {
             return CF.criteria().orderBy(propNames);
         }
 

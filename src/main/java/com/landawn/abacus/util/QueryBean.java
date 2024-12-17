@@ -368,8 +368,10 @@ public class QueryBean {
         String ret = null;
 
         if (firstEle.isPresent() && firstEle.get() instanceof Number) {
+            //noinspection resource,DuplicateExpressions
             ret = StreamEx.of(c).map(N::stringOf).join(", ", (column == null ? "" : column + " ") + op.sqlOperator + " (", ")");
         } else {
+            //noinspection resource,DuplicateExpressions
             ret = StreamEx.of(c).map(it -> "'" + N.stringOf(it) + "'").join(", ", (column == null ? "" : column + " ") + op.sqlOperator + " (", ")");
         }
 

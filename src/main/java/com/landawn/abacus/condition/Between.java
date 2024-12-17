@@ -160,7 +160,7 @@ public class Between extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        final Between copy = (Between) super.copy();
+        final Between copy = super.copy();
 
         if (minValue instanceof Condition) {
             copy.minValue = ((Condition) minValue).copy();

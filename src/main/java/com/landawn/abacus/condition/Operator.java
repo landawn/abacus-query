@@ -244,7 +244,7 @@ public enum Operator {
      * @return
      */
     public static synchronized Operator getOperator(final String name) {
-        if (operatorMap.size() == 0) {
+        if (operatorMap.isEmpty()) {
             final Operator[] values = Operator.values();
 
             for (final Operator value : values) {

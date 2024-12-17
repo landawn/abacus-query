@@ -32,93 +32,87 @@ public final class SQLParser {
 
     private static final char ENTER_2 = '\r';
 
-    private static final Set<Object> seperators = N.newHashSet();
+    private static final Set<Object> separators = N.newHashSet();
 
     static {
-        seperators.add(TAB);
-        seperators.add(ENTER);
-        seperators.add(ENTER_2);
-        seperators.add(' ');
-        seperators.add('?');
-        seperators.add(',');
-        seperators.add('~');
-        seperators.add('!');
-        seperators.add('@');
-        seperators.add('^');
-        seperators.add('#');
-        seperators.add("!!");
-        seperators.add(';');
-        seperators.add('(');
-        seperators.add(')');
-        seperators.add('=');
-        seperators.add("==");
-        seperators.add(":=");
-        seperators.add("^=");
-        seperators.add("~=");
-        seperators.add("+=");
-        seperators.add("-=");
-        seperators.add("*=");
-        seperators.add("/=");
-        seperators.add("%=");
-        seperators.add("&=");
-        seperators.add("|=");
-        seperators.add("!=");
-        seperators.add("!<");
-        seperators.add("!>");
-        seperators.add('>');
-        seperators.add(">>");
-        seperators.add(">=");
-        seperators.add("@>");
-        seperators.add("&>");
-        seperators.add(">^");
-        seperators.add('<');
-        seperators.add("<<");
-        seperators.add("<=");
-        seperators.add("<@");
-        seperators.add("&<");
-        seperators.add("<^");
-        seperators.add('+');
-        seperators.add('-');
-        seperators.add('%');
-        seperators.add('/');
-        seperators.add('*');
-        seperators.add('&');
-        seperators.add("&&");
-        seperators.add('|');
-        seperators.add("||");
-        seperators.add("|/");
-        seperators.add("||/");
-        seperators.add('^');
-        seperators.add('~');
-        seperators.add('!');
-        seperators.add("->");
-        seperators.add('#');
-        seperators.add("##");
-        seperators.add("@@");
-        seperators.add("@-@");
-        seperators.add("@@@");
-        seperators.add("->>");
-        seperators.add("<->");
-        seperators.add("<=>");
-        seperators.add(">>=");
-        seperators.add("<<=");
-        seperators.add("<<|");
-        seperators.add("|>>");
-        seperators.add("&<|");
-        seperators.add("|&>");
-        seperators.add("|>>");
-        seperators.add("(+)");
-        seperators.add("?#");
-        seperators.add("?-");
-        seperators.add("?-");
-        seperators.add("?|");
-        seperators.add("?-|");
-        seperators.add("?||");
-        seperators.add("~*");
-        seperators.add("!~");
-        seperators.add("!~*");
-        seperators.add("^-=");
-        seperators.add("|*=");
+        separators.add(TAB);
+        separators.add(ENTER);
+        separators.add(ENTER_2);
+        separators.add(' ');
+        separators.add('?');
+        separators.add(',');
+        separators.add('~');
+        separators.add('!');
+        separators.add('@');
+        separators.add('^');
+        separators.add('#');
+        separators.add("!!");
+        separators.add(';');
+        separators.add('(');
+        separators.add(')');
+        separators.add('=');
+        separators.add("==");
+        separators.add(":=");
+        separators.add("^=");
+        separators.add("~=");
+        separators.add("+=");
+        separators.add("-=");
+        separators.add("*=");
+        separators.add("/=");
+        separators.add("%=");
+        separators.add("&=");
+        separators.add("|=");
+        separators.add("!=");
+        separators.add("!<");
+        separators.add("!>");
+        separators.add('>');
+        separators.add(">>");
+        separators.add(">=");
+        separators.add("@>");
+        separators.add("&>");
+        separators.add(">^");
+        separators.add('<');
+        separators.add("<<");
+        separators.add("<=");
+        separators.add("<@");
+        separators.add("&<");
+        separators.add("<^");
+        separators.add('+');
+        separators.add('-');
+        separators.add('%');
+        separators.add('/');
+        separators.add('*');
+        separators.add('&');
+        separators.add("&&");
+        separators.add('|');
+        separators.add("||");
+        separators.add("|/");
+        separators.add("||/");
+        separators.add("->");
+        separators.add("##");
+        separators.add("@@");
+        separators.add("@-@");
+        separators.add("@@@");
+        separators.add("->>");
+        separators.add("<->");
+        separators.add("<=>");
+        separators.add(">>=");
+        separators.add("<<=");
+        separators.add("<<|");
+        separators.add("&<|");
+        separators.add("|&>");
+        separators.add("|>>");
+        separators.add("(+)");
+        separators.add("?#");
+        separators.add("?-");
+        separators.add("?|");
+        separators.add("?-|");
+        separators.add("?||");
+        separators.add("~*");
+        separators.add("!~");
+        separators.add("!~*");
+        separators.add("^-=");
+        separators.add("|*=");
     }
 
     private static final Map<String, String[]> compositeWords = new ObjectPool<>(64);
@@ -128,7 +122,6 @@ public final class SQLParser {
         compositeWords.put(WD.RIGHT_JOIN, new String[] { "RIGHT", "JOIN" });
         compositeWords.put(WD.FULL_JOIN, new String[] { "FULL", "JOIN" });
         compositeWords.put(WD.CROSS_JOIN, new String[] { "CROSS", "JOIN" });
-        compositeWords.put(WD.INNER_JOIN, new String[] { "INNER", "JOIN" });
         compositeWords.put(WD.NATURAL_JOIN, new String[] { "NATURAL", "JOIN" });
         compositeWords.put(WD.INNER_JOIN, new String[] { "INNER", "JOIN" });
         compositeWords.put(WD.GROUP_BY, new String[] { "GROUP", "BY" });
@@ -200,7 +193,7 @@ public final class SQLParser {
                     quoteChar = 0;
                 }
             } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     words.add(sb.toString());
                     sb.setLength(0);
                 }
@@ -246,7 +239,7 @@ public final class SQLParser {
                     }
                 }
             } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     words.add(sb.toString());
                     sb.setLength(0);
                 }
@@ -281,16 +274,16 @@ public final class SQLParser {
                         }
                     }
                 }
-            } else if (isSeperator(sql, sqlLength, index, c)) {
-                if (sb.length() > 0) {
+            } else if (isSeparator(sql, sqlLength, index, c)) {
+                if (!sb.isEmpty()) {
                     words.add(sb.toString());
                     sb.setLength(0);
                 }
 
-                if ((index < (sqlLength - 2)) && seperators.contains(temp = sql.substring(index, index + 3))) {
+                if ((index < (sqlLength - 2)) && separators.contains(temp = sql.substring(index, index + 3))) {
                     words.add(temp);
                     index += 2;
-                } else if ((index < (sqlLength - 1)) && seperators.contains(temp = sql.substring(index, index + 2))) {
+                } else if ((index < (sqlLength - 1)) && separators.contains(temp = sql.substring(index, index + 2))) {
                     words.add(temp);
                     index += 1;
                 } else if (c == WD._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
@@ -309,7 +302,7 @@ public final class SQLParser {
             }
         }
 
-        if (sb.length() > 0) {
+        if (!sb.isEmpty()) {
             words.add(sb.toString());
             sb.setLength(0);
         }
@@ -335,6 +328,7 @@ public final class SQLParser {
             compositeWords.put(word, subWords);
         }
 
+        //noinspection IfStatementWithIdenticalBranches
         if ((subWords == null) || (subWords.length <= 1)) {
             int result = N.INDEX_NOT_FOUND;
 
@@ -363,8 +357,8 @@ public final class SQLParser {
                         sb.setLength(0);
                         quoteChar = 0;
                     }
-                } else if (isSeperator(sql, sqlLength, index, c)) {
-                    if (sb.length() > 0) {
+                } else if (isSeparator(sql, sqlLength, index, c)) {
+                    if (!sb.isEmpty()) {
                         temp = sb.toString();
 
                         if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
@@ -379,7 +373,7 @@ public final class SQLParser {
                         continue;
                     }
 
-                    if ((index < (sqlLength - 2)) && seperators.contains(temp = sql.substring(index, index + 3))) {
+                    if ((index < (sqlLength - 2)) && separators.contains(temp = sql.substring(index, index + 3))) {
                         if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
                             result = index;
 
@@ -387,7 +381,7 @@ public final class SQLParser {
                         }
 
                         index += 2;
-                    } else if ((index < (sqlLength - 1)) && seperators.contains(temp = sql.substring(index, index + 2))) {
+                    } else if ((index < (sqlLength - 1)) && separators.contains(temp = sql.substring(index, index + 2))) {
                         if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
                             result = index;
 
@@ -409,7 +403,7 @@ public final class SQLParser {
                 }
             }
 
-            if (result < 0 && sb.length() > 0) {
+            if (result < 0 && !sb.isEmpty()) {
                 temp = sb.toString();
 
                 if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
@@ -468,16 +462,16 @@ public final class SQLParser {
                 if (c == quoteChar) {
                     break;
                 }
-            } else if (isSeperator(sql, sqlLength, index, c)) {
-                if (sb.length() > 0) {
+            } else if (isSeparator(sql, sqlLength, index, c)) {
+                if (!sb.isEmpty()) {
                     break;
                 } else if (c == WD._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
                     // skip white char
                     continue;
                 }
 
-                if (((index < (sqlLength - 2)) && seperators.contains(temp = sql.substring(index, index + 3)))
-                        || ((index < (sqlLength - 1)) && seperators.contains(temp = sql.substring(index, index + 2)))) {
+                if (((index < (sqlLength - 2)) && separators.contains(temp = sql.substring(index, index + 3)))
+                        || ((index < (sqlLength - 1)) && separators.contains(temp = sql.substring(index, index + 2)))) {
                     sb.append(temp);
                 } else {
                     sb.append(c);
@@ -493,7 +487,7 @@ public final class SQLParser {
             }
         }
 
-        final String st = (sb.length() == 0) ? "" : sb.toString();
+        final String st = (sb.isEmpty()) ? "" : sb.toString();
         Objectory.recycle(sb);
 
         return st;
@@ -501,44 +495,44 @@ public final class SQLParser {
 
     /**
      *
-     * @param seperator
+     * @param separator
      */
-    public static void registerSeperator(final char seperator) {
-        N.checkArgPositive(seperator, "seperator");
+    public static void registerSeparator(final char separator) {
+        N.checkArgPositive(separator, "separator");
 
-        seperators.add(seperator);
+        separators.add(separator);
     }
 
     /**
      *
-     * @param seperator
+     * @param separator
      */
-    public static void registerSeperator(final String seperator) {
-        N.checkArgNotNull(seperator, "seperator");
+    public static void registerSeparator(final String separator) {
+        N.checkArgNotNull(separator, "separator");
 
-        seperators.add(seperator);
+        separators.add(separator);
 
-        if (seperator.length() == 1) {
-            seperators.add(seperator.charAt(0));
+        if (separator.length() == 1) {
+            separators.add(separator.charAt(0));
         }
     }
 
     /**
-     * Checks if is seperator.
+     * Checks if is separator.
      *
      * @param str
      * @param len
      * @param index
      * @param ch
-     * @return true, if is seperator
+     * @return true, if is separator
      */
-    public static boolean isSeperator(final String str, final int len, final int index, final char ch) {
+    public static boolean isSeparator(final String str, final int len, final int index, final char ch) {
         // for Ibatis/Mybatis
         if (ch == '#' && index < len - 1 && str.charAt(index + 1) == '{') {
             return false;
         }
 
-        return seperators.contains(ch);
+        return separators.contains(ch);
     }
 
     /**

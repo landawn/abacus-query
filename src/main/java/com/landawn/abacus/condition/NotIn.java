@@ -67,7 +67,6 @@ public class NotIn extends AbstractCondition {
      *
      * @return
      */
-    @SuppressWarnings("unchecked")
     public List<?> getValues() { //NOSONAR
         return values;
     }
@@ -112,7 +111,7 @@ public class NotIn extends AbstractCondition {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        final NotIn copy = (NotIn) super.copy();
+        final NotIn copy = super.copy();
 
         copy.values = new ArrayList<>(values);
 
@@ -126,13 +125,11 @@ public class NotIn extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        if (namingPolicy == NamingPolicy.NO_CHANGE) {
-            return propName + WD._SPACE + getOperator().toString()
-                    + Joiner.with(WD.COMMA_SPACE, WD.SPACE_PARENTHESES_L, WD.PARENTHESES_R).reuseCachedBuffer().appendAll(values).toString();
-        } else {
-            return namingPolicy.convert(propName) + WD._SPACE + getOperator().toString()
-                    + Joiner.with(WD.COMMA_SPACE, WD.SPACE_PARENTHESES_L, WD.PARENTHESES_R).reuseCachedBuffer().appendAll(values).toString();
-        }
+        //noinspection resource
+        return Joiner.with(WD.COMMA_SPACE, namingPolicy.convert(propName) + WD._SPACE + getOperator().toString() + WD.SPACE_PARENTHESES_L, WD.PARENTHESES_R)
+                .reuseCachedBuffer()
+                .appendAll(values)
+                .toString();
     }
 
     /**
