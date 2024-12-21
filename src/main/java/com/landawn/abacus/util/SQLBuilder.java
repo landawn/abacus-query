@@ -33,8 +33,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
-import com.landawn.abacus.annotation.*;
 import com.landawn.abacus.annotation.Beta;
+import com.landawn.abacus.annotation.Internal;
+import com.landawn.abacus.annotation.NonUpdatable;
+import com.landawn.abacus.annotation.ReadOnly;
+import com.landawn.abacus.annotation.ReadOnlyId;
+import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.condition.Between;
 import com.landawn.abacus.condition.Binary;
 import com.landawn.abacus.condition.Cell;
@@ -622,7 +626,7 @@ public abstract class SQLBuilder { // NOSONAR
     //                registerColumnName(entityName, propColumnNameMap);
     //            }
     //        } catch (Exception e) {
-    //            throw N.toRuntimeException(e);
+    //            ExceptionUtil.toRuntimeException(e, true);
     //        }
     //    }
 
@@ -3225,7 +3229,7 @@ public abstract class SQLBuilder { // NOSONAR
         } else if (_op == OperationType.DELETE) {
             final String newTableName = _tableName;
 
-            char[] deleteFromTableChars = tableDeleteFrom.computeIfAbsent(newTableName, n -> (WD.DELETE + WD.SPACE + WD.FROM + WD.SPACE + n).toCharArray());
+            final char[] deleteFromTableChars = tableDeleteFrom.computeIfAbsent(newTableName, n -> (WD.DELETE + WD.SPACE + WD.FROM + WD.SPACE + n).toCharArray());
 
             _sb.append(deleteFromTableChars);
         } else if (_op == OperationType.QUERY && !_hasFromBeenSet && !_isForConditionOnly) {
