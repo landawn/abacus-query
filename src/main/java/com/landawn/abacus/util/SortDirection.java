@@ -20,34 +20,13 @@ package com.landawn.abacus.util;
  */
 public enum SortDirection {
 
-    ASC("ASC"), DESC("DESC");
-
-    private String name;
+    ASC, DESC;
 
     // For Kryo
     SortDirection() {
     }
 
-    SortDirection(final String name) {
-        this.name = name;
-    }
-
-    /**
-     * Gets the name.
-     *
-     * @return
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     *
-     *
-     * @return
-     */
-    @Override
-    public String toString() {
-        return name;
+    public boolean isAscending() {
+        return this == SortDirection.ASC;
     }
 }
