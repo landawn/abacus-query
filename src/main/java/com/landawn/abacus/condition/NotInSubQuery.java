@@ -183,22 +183,13 @@ public class NotInSubQuery extends AbstractCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         if (Strings.isNotEmpty(propName)) {
-            if (namingPolicy == NamingPolicy.NO_CHANGE) {
-                return propName + WD._SPACE + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy) + WD.PARENTHESES_R;
-            } else {
-                return namingPolicy.convert(propName) + WD._SPACE + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
-                        + WD.PARENTHESES_R;
-            }
+            return namingPolicy.convert(propName) + WD._SPACE + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
+                    + WD.PARENTHESES_R;
         } else {
-            if (namingPolicy == NamingPolicy.NO_CHANGE) {
-                return "(" + Strings.join(propNames, ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
-                        + WD.PARENTHESES_R;
-            } else {
-                final Function<String, String> func = namingPolicy::convert;
+            final Function<String, String> func = namingPolicy::convert;
 
-                return "(" + Strings.join(N.map(propNames, func), ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L
-                        + subQuery.toString(namingPolicy) + WD.PARENTHESES_R;
-            }
+            return "(" + Strings.join(N.map(propNames, func), ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
+                    + WD.PARENTHESES_R;
         }
     }
 
