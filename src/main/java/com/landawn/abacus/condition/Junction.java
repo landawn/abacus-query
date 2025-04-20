@@ -195,7 +195,7 @@ public class Junction extends AbstractCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         if (N.isEmpty(conditionList)) {
-            return Strings.EMPTY_STRING;
+            return Strings.EMPTY;
         }
 
         final StringBuilder sb = Objectory.createStringBuilder();

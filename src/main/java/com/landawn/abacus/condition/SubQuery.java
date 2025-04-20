@@ -63,7 +63,7 @@ public class SubQuery extends AbstractCondition {
      * @param sql
      */
     public SubQuery(final String sql) {
-        this(Strings.EMPTY_STRING, sql);
+        this(Strings.EMPTY, sql);
     }
 
     /**

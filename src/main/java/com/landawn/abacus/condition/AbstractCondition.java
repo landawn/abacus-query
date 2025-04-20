@@ -139,7 +139,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      */
     protected static String concatPropNames(final String... propNames) {
         if (N.isEmpty(propNames)) {
-            return Strings.EMPTY_STRING;
+            return Strings.EMPTY;
         }
 
         final int size = propNames.length;
@@ -186,7 +186,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      */
     protected static String concatPropNames(final Collection<String> propNames) {
         if (N.isEmpty(propNames)) {
-            return Strings.EMPTY_STRING;
+            return Strings.EMPTY;
         }
 
         final Iterator<String> it = propNames.iterator();

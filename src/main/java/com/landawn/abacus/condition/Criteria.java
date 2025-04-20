@@ -775,15 +775,15 @@ public class Criteria extends AbstractCondition {
     @SuppressWarnings("StringConcatenationInLoop")
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        final String preselect = Strings.isEmpty(this.preselect) ? Strings.EMPTY_STRING : WD.SPACE + this.preselect; //NOSONAR
-        String join = Strings.EMPTY_STRING;
-        String where = Strings.EMPTY_STRING;
-        String groupBy = Strings.EMPTY_STRING;
-        String having = Strings.EMPTY_STRING;
-        String orderBy = Strings.EMPTY_STRING;
-        String limit = Strings.EMPTY_STRING;
-        final String forUpdate = Strings.EMPTY_STRING;
-        String aggregate = Strings.EMPTY_STRING;
+        final String preselect = Strings.isEmpty(this.preselect) ? Strings.EMPTY : WD.SPACE + this.preselect; //NOSONAR
+        String join = Strings.EMPTY;
+        String where = Strings.EMPTY;
+        String groupBy = Strings.EMPTY;
+        String having = Strings.EMPTY;
+        String orderBy = Strings.EMPTY;
+        String limit = Strings.EMPTY;
+        final String forUpdate = Strings.EMPTY;
+        String aggregate = Strings.EMPTY;
 
         for (final Condition cond : conditionList) {
             if (cond.getOperator() == Operator.WHERE) {

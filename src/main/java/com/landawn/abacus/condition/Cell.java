@@ -109,7 +109,7 @@ public class Cell extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        return getOperator().toString() + ((condition == null) ? Strings.EMPTY_STRING : WD._SPACE + condition.toString(namingPolicy));
+        return getOperator().toString() + ((condition == null) ? Strings.EMPTY : WD._SPACE + condition.toString(namingPolicy));
     }
 
     /**

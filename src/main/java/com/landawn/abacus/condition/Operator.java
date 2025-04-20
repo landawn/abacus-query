@@ -216,7 +216,7 @@ public enum Operator {
     /**
      * Field SPACE.
      */
-    EMPTY(Strings.EMPTY_STRING);
+    EMPTY(Strings.EMPTY);
 
     /**
      * Field name.
