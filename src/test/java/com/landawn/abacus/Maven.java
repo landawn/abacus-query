@@ -11,12 +11,6 @@ import com.landawn.abacus.util.stream.Stream.StreamEx;
 
 public class Maven {
 
-    /**
-     *
-     *
-     * @param args
-     * @throws Exception
-     */
     public static void main(final String[] args) throws Exception {
         N.println(new File(".").getAbsolutePath());
 

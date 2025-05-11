@@ -356,7 +356,6 @@ public class Criteria extends AbstractCondition {
      * @param joins
      * @return
      */
-    @SafeVarargs
     public final Criteria join(final Join... joins) {
         add(joins);
 
@@ -455,7 +454,6 @@ public class Criteria extends AbstractCondition {
      * @param propNames
      * @return
      */
-    @SafeVarargs
     public final Criteria groupBy(final String... propNames) {
         add(new GroupBy(propNames));
 
@@ -596,7 +594,6 @@ public class Criteria extends AbstractCondition {
      * @param propNames
      * @return
      */
-    @SafeVarargs
     public final Criteria orderBy(final String... propNames) {
         add(new OrderBy(propNames));
 

@@ -32,7 +32,6 @@ public class And extends Junction {
      *
      * @param conditions
      */
-    @SafeVarargs
     public And(final Condition... conditions) {
         super(Operator.AND, conditions);
     }

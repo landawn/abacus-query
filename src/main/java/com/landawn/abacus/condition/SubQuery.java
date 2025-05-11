@@ -129,7 +129,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Gets the sql.
+     * Returns SQL script
      *
      * @return
      */

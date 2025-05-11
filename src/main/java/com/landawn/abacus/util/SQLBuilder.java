@@ -68,7 +68,7 @@ import com.landawn.abacus.util.Tuple.Tuple2;
 import com.landawn.abacus.util.u.Optional;
 
 /**
- * It's easier to write/maintain the sql by <code>SQLBuilder</code> and more efficient, comparing to write sql in plain text.
+ * It's easier to write/maintain the SQL by <code>SQLBuilder</code> and more efficient, comparing to write SQL in plain text.
  * <br>The <code>sql()</code> or <code>pair()</code> method must be called to release resources.
  * <br />Here is a sample:
  * <p>
@@ -94,7 +94,7 @@ import com.landawn.abacus.util.u.Optional;
 @SuppressWarnings("deprecation")
 public abstract class SQLBuilder { // NOSONAR
 
-    // TODO performance goal: 80% cases (or maybe sql.length < 1024?) can be composed in 0.1 millisecond. 0.01 millisecond will be fantastic if possible.
+    // TODO performance goal: 80% cases (or maybe SQL.length < 1024?) can be composed in 0.1 millisecond. 0.01 millisecond will be fantastic if possible.
 
     private static final Logger logger = LoggerFactory.getLogger(SQLBuilder.class);
 
@@ -908,7 +908,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @param tableNames the table names to be used in the FROM clause
      * @return the current instance of {@code SQLBuilder}
      */
-    @SafeVarargs
     public final SQLBuilder from(final String... tableNames) {
         if (tableNames.length == 1) {
             return from(tableNames[0].trim());
@@ -939,10 +938,10 @@ public abstract class SQLBuilder { // NOSONAR
     /**
      * Sets the FROM clause of the SQL query.
      * <p>
-     * This method sets the table name or sub query to be used in the FROM clause of the SQL query.
+     * This method sets the table name or subquery to be used in the FROM clause of the SQL query.
      * </p>
      *
-     * @param expr the table name or sub query to be used in the FROM clause
+     * @param expr the table name or subquery to be used in the FROM clause
      * @return the current instance of {@code SQLBuilder}
      */
     public SQLBuilder from(String expr) {
@@ -957,12 +956,12 @@ public abstract class SQLBuilder { // NOSONAR
     /**
      * Sets the FROM clause of the SQL query with the specified expression and entity class.
      * <p>
-     * This method sets the table name or sub query to be used in the FROM clause of the SQL query
+     * This method sets the table name or subquery to be used in the FROM clause of the SQL query
      * and associates it with the specified entity class.
      * </p>
      *
-     * @param expr the table name or sub query to be used in the FROM clause
-     * @param entityClass the entity class to be associated with the table name or sub query
+     * @param expr the table name or subquery to be used in the FROM clause
+     * @param entityClass the entity class to be associated with the table name or subquery
      * @return the current instance of {@code SQLBuilder}
      */
     public SQLBuilder from(final String expr, final Class<?> entityClass) {
@@ -1631,7 +1630,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propOrColumnNames
      * @return
      */
-    @SafeVarargs
     public final SQLBuilder groupBy(final String... propOrColumnNames) {
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
@@ -1766,7 +1764,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propOrColumnNames
      * @return
      */
-    @SafeVarargs
     public final SQLBuilder orderBy(final String... propOrColumnNames) {
         _sb.append(_SPACE_ORDER_BY_SPACE);
 
@@ -1871,7 +1868,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     @Beta
-    @SafeVarargs
     public final SQLBuilder orderByAsc(final String... propOrColumnNames) {
         return orderBy(N.asList(propOrColumnNames), SortDirection.ASC);
     }
@@ -1902,7 +1898,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @return
      */
     @Beta
-    @SafeVarargs
     public final SQLBuilder orderByDesc(final String... propOrColumnNames) {
         return orderBy(N.asList(propOrColumnNames), SortDirection.DESC);
     }
@@ -2221,7 +2216,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propOrColumnNames
      * @return
      */
-    @SafeVarargs
     public final SQLBuilder union(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
@@ -2230,7 +2224,7 @@ public abstract class SQLBuilder { // NOSONAR
 
         _sb.append(_SPACE_UNION_SPACE);
 
-        // it's sub query
+        // it's subquery
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
@@ -2287,7 +2281,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propOrColumnNames
      * @return
      */
-    @SafeVarargs
     public final SQLBuilder unionAll(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
@@ -2296,7 +2289,7 @@ public abstract class SQLBuilder { // NOSONAR
 
         _sb.append(_SPACE_UNION_ALL_SPACE);
 
-        // it's sub query
+        // it's subquery
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
@@ -2353,7 +2346,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propOrColumnNames
      * @return
      */
-    @SafeVarargs
     public final SQLBuilder intersect(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
@@ -2362,7 +2354,7 @@ public abstract class SQLBuilder { // NOSONAR
 
         _sb.append(_SPACE_INTERSECT_SPACE);
 
-        // it's sub query
+        // it's subquery
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
@@ -2419,7 +2411,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propOrColumnNames
      * @return
      */
-    @SafeVarargs
     public final SQLBuilder except(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
@@ -2428,7 +2419,7 @@ public abstract class SQLBuilder { // NOSONAR
 
         _sb.append(_SPACE_EXCEPT_SPACE);
 
-        // it's sub query
+        // it's subquery
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
@@ -2485,7 +2476,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propOrColumnNames
      * @return
      */
-    @SafeVarargs
     public final SQLBuilder minus(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
 
@@ -2494,7 +2484,7 @@ public abstract class SQLBuilder { // NOSONAR
 
         _sb.append(_SPACE_EXCEPT2_SPACE);
 
-        // it's sub query
+        // it's subquery
         if (isSubQuery(propOrColumnNames)) {
             _sb.append(propOrColumnNames[0]);
 
@@ -2547,7 +2537,6 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propOrColumnNames
      * @return
      */
-    @SafeVarargs
     public final SQLBuilder set(final String... propOrColumnNames) {
         return set(Array.asList(propOrColumnNames));
     }
@@ -3229,7 +3218,8 @@ public abstract class SQLBuilder { // NOSONAR
         } else if (_op == OperationType.DELETE) {
             final String newTableName = _tableName;
 
-            final char[] deleteFromTableChars = tableDeleteFrom.computeIfAbsent(newTableName, n -> (WD.DELETE + WD.SPACE + WD.FROM + WD.SPACE + n).toCharArray());
+            final char[] deleteFromTableChars = tableDeleteFrom.computeIfAbsent(newTableName,
+                    n -> (WD.DELETE + WD.SPACE + WD.FROM + WD.SPACE + n).toCharArray());
 
             _sb.append(deleteFromTableChars);
         } else if (_op == OperationType.QUERY && !_hasFromBeenSet && !_isForConditionOnly) {
@@ -3912,10 +3902,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Checks if is sub query.
+     * Checks if is subquery.
      *
      * @param propOrColumnNames
-     * @return true, if is sub query
+     * @return true, if is subquery
      */
     private static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
@@ -4108,7 +4098,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -4217,9 +4206,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties map.
          * @return
          */
         @Beta
@@ -4359,7 +4348,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -4703,7 +4691,7 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Un-parameterized SQL builder with all capitals case (upper case with underscore) field/column naming strategy.
+     * Un-parameterized SQL builder with all capital case (upper case with underscore) field/column naming strategy.
      *
      * For example:
      * <pre>
@@ -4740,7 +4728,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -4849,9 +4836,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -4991,7 +4978,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -5372,7 +5358,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -5481,9 +5466,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -5623,7 +5608,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -6003,7 +5987,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -6112,9 +6095,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -6254,7 +6237,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -6632,7 +6614,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -6741,9 +6722,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -6883,7 +6864,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -7227,7 +7207,7 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Parameterized('?') SQL builder with all capitals case (upper case with underscore) field/column naming strategy.
+     * Parameterized('?') SQL builder with all capital case (upper case with underscore) field/column naming strategy.
      *
      * For example:
      * <pre>
@@ -7261,7 +7241,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -7370,9 +7349,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -7512,7 +7491,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -7890,7 +7868,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -7999,9 +7976,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -8141,7 +8118,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -8524,7 +8500,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -8633,9 +8608,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -8775,7 +8750,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -9159,7 +9133,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -9268,9 +9241,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -9410,7 +9383,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -9754,7 +9726,7 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Named SQL builder with all capitals case (upper case with underscore) field/column naming strategy.
+     * Named SQL builder with all capital case (upper case with underscore) field/column naming strategy.
      *
      * For example:
      * <pre>
@@ -9793,7 +9765,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -9902,9 +9873,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -10044,7 +10015,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -10427,7 +10397,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -10536,9 +10505,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -10678,7 +10647,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -11058,7 +11026,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -11167,9 +11134,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -11309,7 +11276,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -11689,7 +11655,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -11798,9 +11763,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -11940,7 +11905,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -12284,7 +12248,7 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * MyBatis-style SQL builder with all capitals case (upper case with underscore) field/column naming strategy.
+     * MyBatis-style SQL builder with all capital case (upper case with underscore) field/column naming strategy.
      *
      * For example:
      * <pre>
@@ -12320,7 +12284,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -12429,9 +12392,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -12571,7 +12534,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
@@ -12951,7 +12913,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
 
@@ -13060,9 +13021,9 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
-         * Generate the MySQL style batch insert sql.
+         * Generate the MySQL style batch insert SQL.
          *
-         * @param propsList list of entity or properties map.
+         * @param propsList list of entities or properties maps.
          * @return
          */
         @Beta
@@ -13202,7 +13163,6 @@ public abstract class SQLBuilder { // NOSONAR
          * @param propOrColumnNames
          * @return
          */
-        @SafeVarargs
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 

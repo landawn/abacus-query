@@ -32,7 +32,6 @@ public class Or extends Junction {
      *
      * @param condition
      */
-    @SafeVarargs
     public Or(final Condition... condition) {
         super(Operator.OR, condition);
     }

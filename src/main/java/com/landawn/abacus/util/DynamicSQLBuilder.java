@@ -20,7 +20,7 @@ import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 
 /**
- * Dynamic SQL builder. Must remember to call {@code build()} to generate target sql and release resources.
+ * Dynamic SQL builder. Must remember to call {@code build()} to generate target SQL and release resources.
  *
  */
 @SuppressWarnings("java:S1192")
@@ -353,19 +353,10 @@ public class DynamicSQLBuilder {
         return sql;
     }
 
-    /**
-     * The Class Select.
-     */
     public static class Select {
 
-        /** The sb. */
         final StringBuilder sb;
 
-        /**
-         * Instantiates a new select.
-         *
-         * @param sb
-         */
         Select(final StringBuilder sb) {
             this.sb = sb;
         }
@@ -491,14 +482,8 @@ public class DynamicSQLBuilder {
      */
     public static class From {
 
-        /** The sb. */
         final StringBuilder sb;
 
-        /**
-         * Instantiates a new from.
-         *
-         * @param sb
-         */
         From(final StringBuilder sb) {
             this.sb = sb;
         }

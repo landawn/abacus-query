@@ -33,7 +33,6 @@ public class Using extends Cell {
      *
      * @param columnNames
      */
-    @SafeVarargs
     public Using(final String... columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
     }

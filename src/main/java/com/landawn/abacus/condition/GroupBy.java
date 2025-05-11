@@ -43,7 +43,6 @@ public class GroupBy extends Clause {
      *
      * @param propNames
      */
-    @SafeVarargs
     public GroupBy(final String... propNames) {
         this(CF.expr(OrderBy.createCondition(propNames)));
     }

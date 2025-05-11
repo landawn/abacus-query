@@ -45,7 +45,7 @@ public final class CriteriaUtil {
         set.add(Operator.ORDER_BY);
         set.add(Operator.LIMIT);
         // clauseOperators.add(Operator.FOR_UPDATE);
-        // Notice: If there are several connection operator,
+        // Notice: If there are several connection operators,
         // this is their order.
         set.add(Operator.UNION_ALL);
         set.add(Operator.UNION);
@@ -122,7 +122,6 @@ public final class CriteriaUtil {
      * @param criteria
      * @param conditions
      */
-    @SafeVarargs
     public static void add(final Criteria criteria, final Condition... conditions) {
         criteria.add(conditions);
     }
@@ -150,7 +149,6 @@ public final class CriteriaUtil {
      * @param criteria
      * @param conditions
      */
-    @SafeVarargs
     public static void remove(final Criteria criteria, final Condition... conditions) {
         criteria.remove(conditions);
     }

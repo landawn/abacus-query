@@ -47,7 +47,6 @@ public class OrderBy extends Clause {
      *
      * @param propNames
      */
-    @SafeVarargs
     public OrderBy(final String... propNames) {
         this(CF.expr(createCondition(propNames)));
     }

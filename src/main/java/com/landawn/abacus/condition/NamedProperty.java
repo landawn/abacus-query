@@ -68,8 +68,7 @@ public final class NamedProperty {
      * @param values
      * @return
      */
-    @SafeVarargs
-    public final Or eqOr(final Object... values) {
+    public Or eqOr(final Object... values) {
         final Or or = CF.or();
 
         for (final Object propValue : values) {
@@ -230,8 +229,7 @@ public final class NamedProperty {
      * @param values
      * @return
      */
-    @SafeVarargs
-    public final In in(final Object... values) {
+    public In in(final Object... values) {
         return CF.in(propName, values);
     }
 

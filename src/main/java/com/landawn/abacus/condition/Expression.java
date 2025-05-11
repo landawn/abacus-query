@@ -339,7 +339,6 @@ public class Expression extends AbstractCondition {
      * @param literals
      * @return
      */
-    @SafeVarargs
     public static String and(final String... literals) {
         return link2(Operator.AND, literals);
     }
@@ -349,7 +348,6 @@ public class Expression extends AbstractCondition {
      * @param literals
      * @return
      */
-    @SafeVarargs
     public static String or(final String... literals) {
         return link2(Operator.OR, literals);
     }
@@ -359,7 +357,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String plus(final Object... objects) {
         return link(PLUS, objects);
     }
@@ -369,7 +366,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String minus(final Object... objects) {
         return link(MINUS, objects);
     }
@@ -379,7 +375,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String multi(final Object... objects) {
         return link(ASTERISK, objects);
     }
@@ -389,7 +384,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String division(final Object... objects) {
         return link(SLASH, objects);
     }
@@ -399,7 +393,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String modulus(final Object... objects) {
         return link(PERCENT, objects);
     }
@@ -409,7 +402,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String lShift(final Object... objects) {
         return link(LEFT_SHIFT, objects);
     }
@@ -419,7 +411,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String rShift(final Object... objects) {
         return link(RIGHT_SHIFT, objects);
     }
@@ -429,7 +420,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String bitwiseAnd(final Object... objects) {
         return link(AMPERSAND, objects);
     }
@@ -439,7 +429,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String bitwiseOr(final Object... objects) {
         return link(VERTICALBAR, objects);
     }
@@ -450,7 +439,6 @@ public class Expression extends AbstractCondition {
      * @param objects
      * @return
      */
-    @SafeVarargs
     public static String bitwiseXOr(final Object... objects) {
         return link(CIRCUMFLEX, objects);
     }

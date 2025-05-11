@@ -29,7 +29,7 @@ import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
 
 /**
- * This class is used to join multiple conditions. like {@code And}, {@code Or}. But must not put clause(where, order by
+ * This class is used to join multiple conditions, e.g., {@code And}, {@code Or}. But must not put clause (where, order by
  * ...) into it. Those clauses are joined by {@code Criteria}.
  *
  * @see com.landawn.abacus.condition.Criteria
@@ -48,7 +48,6 @@ public class Junction extends AbstractCondition {
      * @param operator
      * @param conditions
      */
-    @SafeVarargs
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
         conditionList = new ArrayList<>();
@@ -80,7 +79,6 @@ public class Junction extends AbstractCondition {
      *
      * @param conditions
      */
-    @SafeVarargs
     public final void set(final Condition... conditions) {
         conditionList.clear();
         add(conditions);
@@ -99,7 +97,6 @@ public class Junction extends AbstractCondition {
      *
      * @param conditions
      */
-    @SafeVarargs
     public final void add(final Condition... conditions) {
         conditionList.addAll(Arrays.asList(conditions));
     }
@@ -118,7 +115,6 @@ public class Junction extends AbstractCondition {
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
-    @SafeVarargs
     public final void remove(final Condition... conditions) {
         for (final Condition cond : conditions) {
             conditionList.remove(cond);

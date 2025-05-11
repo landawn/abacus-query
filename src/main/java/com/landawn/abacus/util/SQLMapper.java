@@ -38,7 +38,7 @@ import com.landawn.abacus.exception.ParseException;
 import com.landawn.abacus.exception.UncheckedIOException;
 
 /**
- * the sql scripts are configured in xml file and mapped to short ids referenced in program. for example: <br>
+ * The SQL scripts are configured in XML file and mapped to short ids referenced in program. For example: <br>
  * {@code <sqlMapper>} <br>
  * {@code <sql id="findAccountById">select * from account where id=1</sql>} <br>
  * {@code <sql id="updateAccountNameById">update account set name=? where id=?</sql>} <br>

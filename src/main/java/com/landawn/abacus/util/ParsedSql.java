@@ -231,9 +231,6 @@ public final class ParsedSql {
         }
     }
 
-    /**
-     * Parses the for couchbase.
-     */
     private void parseForCouchbase() {
         final List<String> couchbaseNamedParameterList = new ArrayList<>();
 

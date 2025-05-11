@@ -149,7 +149,6 @@ public class ConditionFactory {
      * @param propValues
      * @return
      */
-    @SafeVarargs
     public static Or eqOr(final String propName, final Object... propValues) {
         N.checkArgNotEmpty(propValues, "propValues");
 
@@ -1065,7 +1064,6 @@ public class ConditionFactory {
      * @param conditions
      * @return
      */
-    @SafeVarargs
     public static Or or(final Condition... conditions) {
         return new Or(conditions);
     }
@@ -1084,7 +1082,6 @@ public class ConditionFactory {
      * @param conditions
      * @return
      */
-    @SafeVarargs
     public static And and(final Condition... conditions) {
         return new And(conditions);
     }
@@ -1105,7 +1102,6 @@ public class ConditionFactory {
      * @return
      */
     @Beta
-    @SafeVarargs
     public static Junction junction(final Operator operator, final Condition... conditions) {
         return new Junction(operator, conditions);
     }
@@ -1144,7 +1140,6 @@ public class ConditionFactory {
      * @param propNames
      * @return
      */
-    @SafeVarargs
     public static GroupBy groupBy(final String... propNames) {
         return new GroupBy(propNames);
     }
@@ -1246,7 +1241,6 @@ public class ConditionFactory {
      * @param propNames
      * @return
      */
-    @SafeVarargs
     public static OrderBy orderBy(final String... propNames) {
         return new OrderBy(propNames);
     }
@@ -1256,7 +1250,6 @@ public class ConditionFactory {
      * @param propNames
      * @return
      */
-    @SafeVarargs
     public static OrderBy orderByAsc(final String... propNames) {
         return new OrderBy(Array.asList(propNames), SortDirection.ASC);
     }
@@ -1275,7 +1268,6 @@ public class ConditionFactory {
      * @param propNames
      * @return
      */
-    @SafeVarargs
     public static OrderBy orderByDesc(final String... propNames) {
         return new OrderBy(Array.asList(propNames), SortDirection.DESC);
     }
@@ -1408,7 +1400,6 @@ public class ConditionFactory {
      * @deprecated
      */
     @Deprecated
-    @SafeVarargs
     public static Using using(final String... columnNames) {
         return new Using(columnNames);
     }
@@ -2023,7 +2014,6 @@ public class ConditionFactory {
          * @param propNames
          * @return
          */
-        @SafeVarargs
         public static Criteria groupBy(final String... propNames) {
             return CF.criteria().groupBy(propNames);
         }
@@ -2134,7 +2124,6 @@ public class ConditionFactory {
          * @param propNames
          * @return
          */
-        @SafeVarargs
         public static Criteria orderBy(final String... propNames) {
             return CF.criteria().orderBy(propNames);
         }
