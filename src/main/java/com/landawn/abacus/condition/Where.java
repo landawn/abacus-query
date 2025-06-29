@@ -15,7 +15,24 @@
 package com.landawn.abacus.condition;
 
 /**
- *
+ * Represents a WHERE clause in SQL queries.
+ * This class is used to specify conditions that filter records in a query result.
+ * 
+ * <p>The WHERE clause is used to extract only those records that fulfill a specified condition.
+ * It can contain simple conditions or complex combinations of conditions using AND, OR, and other operators.</p>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * // Simple condition
+ * Condition condition = new Equal("status", "active");
+ * Where where = new Where(condition);
+ * // Results in: WHERE status = 'active'
+ * 
+ * // Complex condition
+ * And and = new And(new Equal("age", 25), new GreaterThan("salary", 50000));
+ * Where where2 = new Where(and);
+ * // Results in: WHERE age = 25 AND salary > 50000
+ * }</pre>
  */
 public class Where extends Clause {
 
@@ -24,9 +41,16 @@ public class Where extends Clause {
     }
 
     /**
-     *
-     *
-     * @param condition
+     * Constructs a WHERE clause with the specified condition.
+     * 
+     * @param condition the condition to be used in the WHERE clause
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * Condition condition = new Like("name", "%John%");
+     * Where where = new Where(condition);
+     * // Results in: WHERE name LIKE '%John%'
+     * }</pre>
      */
     public Where(final Condition condition) {
         super(Operator.WHERE, condition);

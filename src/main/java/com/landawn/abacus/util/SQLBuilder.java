@@ -68,22 +68,49 @@ import com.landawn.abacus.util.Tuple.Tuple2;
 import com.landawn.abacus.util.u.Optional;
 
 /**
- * It's easier to write/maintain the SQL by <code>SQLBuilder</code> and more efficient, comparing to write SQL in plain text.
- * <br>The <code>sql()</code> or <code>pair()</code> method must be called to release resources.
- * <br />Here is a sample:
- * <p>
- * String sql = NE.insert("gui", "firstName", "lastName").into("account").sql();
- * <br />// SQL: INSERT INTO account (gui, first_name, last_name) VALUES (:gui, :firstName, :lastName)
- * </p>
- *
- * The {@code tableName} will NOT be formalized.
- * <li>{@code select(...).from(String tableName).where(...)}</li>
- * <li>{@code insert(...).into(String tableName).values(...)}</li>
- * <li>{@code update(String tableName).set(...).where(...)}</li>
- * <li>{@code deleteFrom(String tableName).where(...)}</li>
- *
- * <br />
- *
+ * A fluent SQL builder for constructing SQL statements programmatically.
+ * 
+ * <p>This builder provides a type-safe way to construct SQL statements with support for:</p>
+ * <ul>
+ *   <li>SELECT, INSERT, UPDATE, DELETE operations</li>
+ *   <li>Multiple naming policies (snake_case, UPPER_CASE, camelCase)</li>
+ *   <li>Parameterized and named SQL generation</li>
+ *   <li>Entity class mapping with annotations</li>
+ *   <li>Complex joins, subqueries, and conditions</li>
+ * </ul>
+ * 
+ * <p>The builder must be finalized by calling {@code sql()} or {@code pair()} to generate 
+ * the SQL string and release resources.</p>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * // Simple SELECT
+ * String sql = PSC.select("firstName", "lastName")
+ *                 .from("account")
+ *                 .where(CF.eq("id", 1))
+ *                 .sql();
+ * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = ?
+ * 
+ * // INSERT with entity
+ * String sql = PSC.insert(account).into("account").sql();
+ * 
+ * // UPDATE with conditions
+ * String sql = PSC.update("account")
+ *                 .set("name", "status")
+ *                 .where(CF.eq("id", 1))
+ *                 .sql();
+ * }</pre>
+ * 
+ * <p>The builder supports different naming policies through its subclasses:</p>
+ * <ul>
+ *   <li>{@link PSC} - Parameterized SQL with snake_case naming</li>
+ *   <li>{@link PAC} - Parameterized SQL with UPPER_CASE naming</li>
+ *   <li>{@link PLC} - Parameterized SQL with lowerCamelCase naming</li>
+ *   <li>{@link NSC} - Named SQL with snake_case naming</li>
+ *   <li>{@link NAC} - Named SQL with UPPER_CASE naming</li>
+ *   <li>{@link NLC} - Named SQL with lowerCamelCase naming</li>
+ * </ul>
+ * 
  * @see {@link com.landawn.abacus.annotation.ReadOnly}
  * @see {@link com.landawn.abacus.annotation.ReadOnlyId}
  * @see {@link com.landawn.abacus.annotation.NonUpdatable}
@@ -98,18 +125,25 @@ public abstract class SQLBuilder { // NOSONAR
 
     private static final Logger logger = LoggerFactory.getLogger(SQLBuilder.class);
 
+    /** Constant for selecting all columns in SQL queries. */
     public static final String ALL = WD.ALL;
 
+    /** Constant for TOP clause in SQL queries. */
     public static final String TOP = WD.TOP;
 
+    /** Constant for UNIQUE clause in SQL queries. */
     public static final String UNIQUE = WD.UNIQUE;
 
+    /** Constant for DISTINCT clause in SQL queries. */
     public static final String DISTINCT = WD.DISTINCT;
 
+    /** Constant for DISTINCTROW clause in SQL queries. */
     public static final String DISTINCTROW = WD.DISTINCTROW;
 
+    /** Constant for asterisk (*) wildcard in SQL queries. */
     public static final String ASTERISK = WD.ASTERISK;
 
+    /** Constant for COUNT(*) aggregate function. */
     public static final String COUNT_ALL = "count(*)";
 
     static final List<String> COUNT_ALL_LIST = ImmutableList.of(COUNT_ALL);
@@ -342,6 +376,12 @@ public abstract class SQLBuilder { // NOSONAR
 
     private final BiConsumer<StringBuilder, String> _handlerForNamedParameter; //NOSONAR
 
+    /**
+     * Constructs a new SQLBuilder with the specified naming policy and SQL policy.
+     * 
+     * @param namingPolicy the naming policy for column names, defaults to LOWER_CASE_WITH_UNDERSCORE if null
+     * @param sqlPolicy the SQL generation policy, defaults to SQL if null
+     */
     SQLBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
             logger.error("Too many(" + activeStringBuilderCounter.get()
@@ -356,16 +396,23 @@ public abstract class SQLBuilder { // NOSONAR
         _handlerForNamedParameter = handlerForNamedParameter_TL.get();
     }
 
+    /**
+     * Checks if this SQL builder generates named SQL (with named parameters).
+     * 
+     * @return true if this builder generates named SQL, false otherwise
+     */
     protected boolean isNamedSql() {
         return false;
     }
 
     /**
-     * Gets the table name.
+     * Gets the table name for the specified entity class based on the naming policy.
+     * If the entity class has a @Table annotation with a name attribute, that name is used.
+     * Otherwise, the class name is converted according to the naming policy.
      *
-     * @param entityClass
-     * @param namingPolicy
-     * @return
+     * @param entityClass the entity class
+     * @param namingPolicy the naming policy to apply
+     * @return the table name
      */
     static String getTableName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         String[] entityTableNames = classTableNameMap.get(entityClass);
@@ -399,6 +446,13 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
+    /**
+     * Gets the table alias for the specified entity class.
+     * The alias is retrieved from the @Table annotation's alias attribute.
+     * 
+     * @param entityClass the entity class
+     * @return the table alias, or empty string if not defined
+     */
     static String getTableAlias(final Class<?> entityClass) {
         String alis = classTableAliasMap.get(entityClass);
 
@@ -417,6 +471,13 @@ public abstract class SQLBuilder { // NOSONAR
         return alis;
     }
 
+    /**
+     * Gets the table alias if specified, otherwise returns the default table alias for the entity class.
+     * 
+     * @param alias the specified alias
+     * @param entityClass the entity class
+     * @return the table alias
+     */
     static String getTableAlias(final String alias, final Class<?> entityClass) {
         if (Strings.isNotEmpty(alias)) {
             return alias;
@@ -425,10 +486,26 @@ public abstract class SQLBuilder { // NOSONAR
         return getTableAlias(entityClass);
     }
 
+    /**
+     * Gets the table alias or table name for the specified entity class.
+     * 
+     * @param entityClass the entity class
+     * @param namingPolicy the naming policy to apply
+     * @return the table alias if defined, otherwise the table name
+     */
     static String getTableAliasOrName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         return getTableAliasOrName(null, entityClass, namingPolicy);
     }
 
+    /**
+     * Gets the table alias or table name for the specified entity class.
+     * Priority: specified alias > class-defined alias > table name
+     * 
+     * @param alias the specified alias
+     * @param entityClass the entity class
+     * @param namingPolicy the naming policy to apply
+     * @return the table alias if specified or defined, otherwise the table name
+     */
     static String getTableAliasOrName(final String alias, final Class<?> entityClass, final NamingPolicy namingPolicy) {
         String tableAliasOrName = alias;
 
@@ -444,10 +521,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Checks if is default id prop value.
+     * Checks if the given property value is a default ID property value.
+     * A value is considered default if it's null or a number equal to 0.
      *
-     * @param propValue
-     * @return true, if is default id prop value
+     * @param propValue the property value to check
+     * @return true if the value is null or a number equal to 0, false otherwise
      */
     @Internal
     static boolean isDefaultIdPropValue(final Object propValue) {
@@ -455,10 +533,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Load prop names by class.
+     * Loads property names for the specified entity class, categorized by their usage.
+     * Returns an array of 5 sets:
+     * <ul>
+     *   <li>[0] - All selectable properties including sub-entity properties</li>
+     *   <li>[1] - All selectable properties excluding sub-entity properties</li>
+     *   <li>[2] - Properties for INSERT operations with ID</li>
+     *   <li>[3] - Properties for INSERT operations without ID</li>
+     *   <li>[4] - Properties for UPDATE operations</li>
+     * </ul>
      *
-     * @param entityClass
-     * @return
+     * @param entityClass the entity class to analyze
+     * @return an array of property name sets categorized by usage
      */
     static Set<String>[] loadPropNamesByClass(final Class<?> entityClass) {
         Set<String>[] val = defaultPropNamesPool.get(entityClass);
@@ -544,10 +630,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Gets the sub entity prop names.
+     * Gets the sub-entity property names for the specified entity class.
+     * Sub-entity properties are properties that represent related entities.
      *
-     * @param entityClass
-     * @return
+     * @param entityClass the entity class
+     * @return an immutable set of sub-entity property names
      */
     static ImmutableSet<String> getSubEntityPropNames(final Class<?> entityClass) {
         ImmutableSet<String> subEntityPropNames = subEntityPropNamesPool.get(entityClass);
@@ -677,9 +764,16 @@ public abstract class SQLBuilder { // NOSONAR
     //    }
 
     /**
-     *
-     * @param propNames
-     * @return
+     * Creates a map with property names as keys and {@code CF.QME} (question mark expression) as values.
+     * <p>This is useful for creating parameterized queries with named parameters.</p>
+     * 
+     * <pre>{@code
+     * Map<String, Expression> params = SQLBuilder.named("firstName", "lastName");
+     * // Returns: {"firstName": CF.QME, "lastName": CF.QME}
+     * }</pre>
+     * 
+     * @param propNames the property names
+     * @return a map with property names mapped to question mark expressions
      */
     @Beta
     static Map<String, Expression> named(final String... propNames) {
@@ -693,9 +787,16 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propNames
-     * @return
+     * Creates a map with property names as keys and {@code CF.QME} (question mark expression) as values.
+     * <p>This is useful for creating parameterized queries with named parameters.</p>
+     * 
+     * <pre>{@code
+     * Map<String, Expression> params = SQLBuilder.named(Arrays.asList("firstName", "lastName"));
+     * // Returns: {"firstName": CF.QME, "lastName": CF.QME}
+     * }</pre>
+     * 
+     * @param propNames the collection of property names
+     * @return a map with property names mapped to question mark expressions
      */
     @Beta
     static Map<String, Expression> named(final Collection<String> propNames) {
@@ -709,9 +810,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param tableName
-     * @return
+     * Specifies the target table for an INSERT operation.
+     * <p>Must be called after setting the columns/values to insert.</p>
+     * 
+     * <pre>{@code
+     * String sql = PSC.insert("firstName", "lastName")
+     *                 .into("account")
+     *                 .sql();
+     * // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
+     * }</pre>
+     * 
+     * @param tableName the name of the table to insert into
+     * @return this SQLBuilder instance for method chaining
+     * @throws RuntimeException if called on non-INSERT operation or if columns/values not set
      */
     public SQLBuilder into(final String tableName) {
         if (!(_op == OperationType.ADD || _op == OperationType.QUERY)) {
@@ -833,9 +944,16 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param entityClass
-     * @return
+     * Specifies the target table for an INSERT operation using an entity class.
+     * <p>The table name will be derived from the entity class based on the naming policy.</p>
+     * 
+     * <pre>{@code
+     * String sql = PSC.insert(account).into(Account.class).sql();
+     * // Table name derived from Account class based on naming policy
+     * }</pre>
+     * 
+     * @param entityClass the entity class representing the target table
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder into(final Class<?> entityClass) {
         if (_entityClass == null) {
@@ -846,9 +964,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * @param tableName
-     * @param entityClass
-     * @return
+     * Specifies the target table for an INSERT operation with explicit table name and entity class.
+     * 
+     * @param tableName the name of the table to insert into
+     * @param entityClass the entity class for property mapping (can be null)
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder into(final String tableName, final Class<?> entityClass) {
         if (entityClass != null) {
@@ -859,18 +979,32 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @return
+     * Adds DISTINCT clause to the SELECT statement.
+     * <p>This method is equivalent to calling {@code preselect(DISTINCT)}.</p>
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("name").distinct().from("account").sql();
+     * // Output: SELECT DISTINCT name FROM account
+     * }</pre>
+     * 
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder distinct() { //NOSONAR
         return preselect(DISTINCT);
     }
 
     /**
-     * For better performance, this method should be called before {@code from}.
-     *
-     * @param preselect <code>ALL | DISTINCT | DISTINCTROW...</code>
-     * @return
+     * Adds a pre-select modifier to the SELECT statement.
+     * <p>For better performance, this method should be called before {@code from}.</p>
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*").preselect("TOP 10").from("account").sql();
+     * // Output: SELECT TOP 10 * FROM account
+     * }</pre>
+     * 
+     * @param preselect modifiers like ALL, DISTINCT, DISTINCTROW, TOP, etc.
+     * @return this SQLBuilder instance for method chaining
+     * @throws IllegalStateException if preselect has already been set
      */
     public SQLBuilder preselect(final String preselect) {
         if (Strings.isNotEmpty(_preselect)) {
@@ -900,13 +1034,15 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Sets the FROM clause of the SQL query with multiple table names.
-     * <p>
-     * This method sets the table names to be used in the FROM clause of the SQL query.
-     * </p>
-     *
-     * @param tableNames the table names to be used in the FROM clause
-     * @return the current instance of {@code SQLBuilder}
+     * Sets the FROM clause with multiple table names.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users", "orders").sql();
+     * // Output: SELECT * FROM users, orders
+     * }</pre>
+     * 
+     * @param tableNames the table names to use in the FROM clause
+     * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder from(final String... tableNames) {
         if (tableNames.length == 1) {
@@ -918,13 +1054,16 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Sets the FROM clause of the SQL query with multiple table names.
-     * <p>
-     * This method sets the table names to be used in the FROM clause of the SQL query.
-     * </p>
-     *
-     * @param tableNames the collection of table names to be used in the FROM clause
-     * @return the current instance of {@code SQLBuilder}
+     * Sets the FROM clause with a collection of table names.
+     * 
+     * <pre>{@code
+     * List<String> tables = Arrays.asList("users", "orders");
+     * String sql = PSC.select("*").from(tables).sql();
+     * // Output: SELECT * FROM users, orders
+     * }</pre>
+     * 
+     * @param tableNames the collection of table names to use in the FROM clause
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder from(final Collection<String> tableNames) {
         if (tableNames.size() == 1) {
@@ -936,13 +1075,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Sets the FROM clause of the SQL query.
-     * <p>
-     * This method sets the table name or subquery to be used in the FROM clause of the SQL query.
-     * </p>
-     *
-     * @param expr the table name or subquery to be used in the FROM clause
-     * @return the current instance of {@code SQLBuilder}
+     * Sets the FROM clause with a single expression.
+     * <p>The expression can be a table name, subquery, or multiple tables separated by comma.</p>
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users u").sql();
+     * // Output: SELECT * FROM users u
+     * 
+     * String sql2 = PSC.select("*").from("(SELECT * FROM users) t").sql();
+     * // Output: SELECT * FROM (SELECT * FROM users) t
+     * }</pre>
+     * 
+     * @param expr the FROM clause expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder from(String expr) {
         expr = expr.trim();
@@ -954,15 +1099,16 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * Sets the FROM clause of the SQL query with the specified expression and entity class.
-     * <p>
-     * This method sets the table name or subquery to be used in the FROM clause of the SQL query
-     * and associates it with the specified entity class.
-     * </p>
-     *
-     * @param expr the table name or subquery to be used in the FROM clause
-     * @param entityClass the entity class to be associated with the table name or subquery
-     * @return the current instance of {@code SQLBuilder}
+     * Sets the FROM clause with an expression and associates it with an entity class.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users u", User.class).sql();
+     * // Associates the User class for property mapping
+     * }</pre>
+     * 
+     * @param expr the FROM clause expression
+     * @param entityClass the entity class for property mapping
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder from(final String expr, final Class<?> entityClass) {
         if (entityClass != null) {
@@ -973,19 +1119,32 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param entityClass
-     * @return
+     * Sets the FROM clause using an entity class.
+     * <p>The table name will be derived from the entity class.</p>
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class).sql();
+     * // Table name derived from User class based on naming policy
+     * }</pre>
+     * 
+     * @param entityClass the entity class representing the table
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder from(final Class<?> entityClass) {
         return from(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
-     *
-     * @param entityClass
-     * @param alias
-     * @return
+     * Sets the FROM clause using an entity class with an alias.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class, "u").sql();
+     * // Output: SELECT * FROM users u (table name based on naming policy)
+     * }</pre>
+     * 
+     * @param entityClass the entity class representing the table
+     * @param alias the table alias
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder from(final Class<?> entityClass, final String alias) {
         if (_entityClass == null) {
@@ -1157,9 +1316,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a JOIN clause to the SQL statement.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users u")
+     *                 .join("orders o ON u.id = o.user_id")
+     *                 .sql();
+     * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     * 
+     * @param expr the join expression (e.g., "orders o ON u.id = o.user_id")
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder join(final String expr) {
         _sb.append(_SPACE_JOIN_SPACE);
@@ -1170,10 +1338,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param tableName
-     * @param entityClass
-     * @return
+     * Adds a JOIN clause with a table name and entity class.
+     * 
+     * @param tableName the table name to join
+     * @param entityClass the entity class (currently unused but reserved for future use)
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder join(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
@@ -1181,19 +1350,37 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param entityClass
-     * @return
+     * Adds a JOIN clause using an entity class.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from(User.class)
+     *                 .join(Order.class)
+     *                 .on("users.id = orders.user_id")
+     *                 .sql();
+     * }</pre>
+     * 
+     * @param entityClass the entity class to join
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder join(final Class<?> entityClass) {
         return join(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
-     *
-     * @param entityClass
-     * @param alias
-     * @return
+     * Adds a JOIN clause using an entity class with an alias.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from(User.class, "u")
+     *                 .join(Order.class, "o")
+     *                 .on("u.id = o.user_id")
+     *                 .sql();
+     * }</pre>
+     * 
+     * @param entityClass the entity class to join
+     * @param alias the table alias
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder join(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1212,9 +1399,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds an INNER JOIN clause to the SQL statement.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users u")
+     *                 .innerJoin("orders o ON u.id = o.user_id")
+     *                 .sql();
+     * // Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     * 
+     * @param expr the join expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder innerJoin(final String expr) {
         _sb.append(_SPACE_INNER_JOIN_SPACE);
@@ -1225,10 +1421,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param tableName
-     * @param entityClass
-     * @return
+     * Adds an INNER JOIN clause with a table name and entity class.
+     * 
+     * @param tableName the table name to join
+     * @param entityClass the entity class (currently unused but reserved for future use)
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder innerJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
@@ -1236,19 +1433,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param entityClass
-     * @return
+     * Adds an INNER JOIN clause using an entity class.
+     * 
+     * @param entityClass the entity class to join
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder innerJoin(final Class<?> entityClass) {
         return innerJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
-     *
-     * @param entityClass
-     * @param alias
-     * @return
+     * Adds an INNER JOIN clause using an entity class with an alias.
+     * 
+     * @param entityClass the entity class to join
+     * @param alias the table alias
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder innerJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1267,9 +1466,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a LEFT JOIN clause to the SQL statement.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users u")
+     *                 .leftJoin("orders o ON u.id = o.user_id")
+     *                 .sql();
+     * // Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     * 
+     * @param expr the join expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder leftJoin(final String expr) {
         _sb.append(_SPACE_LEFT_JOIN_SPACE);
@@ -1280,10 +1488,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param tableName
-     * @param entityClass
-     * @return
+     * Adds a LEFT JOIN clause with a table name and entity class.
+     * 
+     * @param tableName the table name to join
+     * @param entityClass the entity class (currently unused but reserved for future use)
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder leftJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
@@ -1291,19 +1500,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param entityClass
-     * @return
+     * Adds a LEFT JOIN clause using an entity class.
+     * 
+     * @param entityClass the entity class to join
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder leftJoin(final Class<?> entityClass) {
         return leftJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
-     *
-     * @param entityClass
-     * @param alias
-     * @return
+     * Adds a LEFT JOIN clause using an entity class with an alias.
+     * 
+     * @param entityClass the entity class to join
+     * @param alias the table alias
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder leftJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1322,9 +1533,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a RIGHT JOIN clause to the SQL statement.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users u")
+     *                 .rightJoin("orders o ON u.id = o.user_id")
+     *                 .sql();
+     * // Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     * 
+     * @param expr the join expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder rightJoin(final String expr) {
         _sb.append(_SPACE_RIGHT_JOIN_SPACE);
@@ -1335,10 +1555,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param tableName
-     * @param entityClass
-     * @return
+     * Adds a RIGHT JOIN clause with a table name and entity class.
+     * 
+     * @param tableName the table name to join
+     * @param entityClass the entity class (currently unused but reserved for future use)
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder rightJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
@@ -1346,19 +1567,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param entityClass
-     * @return
+     * Adds a RIGHT JOIN clause using an entity class.
+     * 
+     * @param entityClass the entity class to join
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder rightJoin(final Class<?> entityClass) {
         return rightJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
-     *
-     * @param entityClass
-     * @param alias
-     * @return
+     * Adds a RIGHT JOIN clause using an entity class with an alias.
+     * 
+     * @param entityClass the entity class to join
+     * @param alias the table alias
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder rightJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1377,9 +1600,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a FULL JOIN clause to the SQL statement.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users u")
+     *                 .fullJoin("orders o ON u.id = o.user_id")
+     *                 .sql();
+     * // Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     * 
+     * @param expr the join expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder fullJoin(final String expr) {
         _sb.append(_SPACE_FULL_JOIN_SPACE);
@@ -1390,10 +1622,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param tableName
-     * @param entityClass
-     * @return
+     * Adds a FULL JOIN clause with a table name and entity class.
+     * 
+     * @param tableName the table name to join
+     * @param entityClass the entity class (currently unused but reserved for future use)
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder fullJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
@@ -1401,19 +1634,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param entityClass
-     * @return
+     * Adds a FULL JOIN clause using an entity class.
+     * 
+     * @param entityClass the entity class to join
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder fullJoin(final Class<?> entityClass) {
         return fullJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
-     *
-     * @param entityClass
-     * @param alias
-     * @return
+     * Adds a FULL JOIN clause using an entity class with an alias.
+     * 
+     * @param entityClass the entity class to join
+     * @param alias the table alias
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder fullJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1432,9 +1667,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a CROSS JOIN clause to the SQL statement.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .crossJoin("orders")
+     *                 .sql();
+     * // Output: SELECT * FROM users CROSS JOIN orders
+     * }</pre>
+     * 
+     * @param expr the join expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder crossJoin(final String expr) {
         _sb.append(_SPACE_CROSS_JOIN_SPACE);
@@ -1445,10 +1689,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param tableName
-     * @param entityClass
-     * @return
+     * Adds a CROSS JOIN clause with a table name and entity class.
+     * 
+     * @param tableName the table name to join
+     * @param entityClass the entity class (currently unused but reserved for future use)
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder crossJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
@@ -1456,19 +1701,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param entityClass
-     * @return
+     * Adds a CROSS JOIN clause using an entity class.
+     * 
+     * @param entityClass the entity class to join
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder crossJoin(final Class<?> entityClass) {
         return crossJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
-     *
-     * @param entityClass
-     * @param alias
-     * @return
+     * Adds a CROSS JOIN clause using an entity class with an alias.
+     * 
+     * @param entityClass the entity class to join
+     * @param alias the table alias
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder crossJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1487,9 +1734,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a NATURAL JOIN clause to the SQL statement.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .naturalJoin("orders")
+     *                 .sql();
+     * // Output: SELECT * FROM users NATURAL JOIN orders
+     * }</pre>
+     * 
+     * @param expr the join expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder naturalJoin(final String expr) {
         _sb.append(_SPACE_NATURAL_JOIN_SPACE);
@@ -1500,10 +1756,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param tableName
-     * @param entityClass
-     * @return
+     * Adds a NATURAL JOIN clause with a table name and entity class.
+     * 
+     * @param tableName the table name to join
+     * @param entityClass the entity class (currently unused but reserved for future use)
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder naturalJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
@@ -1511,19 +1768,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param entityClass
-     * @return
+     * Adds a NATURAL JOIN clause using an entity class.
+     * 
+     * @param entityClass the entity class to join
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder naturalJoin(final Class<?> entityClass) {
         return naturalJoin(entityClass, QueryUtil.getTableAlias(entityClass));
     }
 
     /**
-     *
-     * @param entityClass
-     * @param alias
-     * @return
+     * Adds a NATURAL JOIN clause using an entity class with an alias.
+     * 
+     * @param entityClass the entity class to join
+     * @param alias the table alias
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder naturalJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1542,9 +1801,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds an ON clause for join conditions.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users u")
+     *                 .join("orders o")
+     *                 .on("u.id = o.user_id")
+     *                 .sql();
+     * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     * 
+     * @param expr the join condition expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder on(final String expr) {
         _sb.append(_SPACE_ON_SPACE);
@@ -1555,9 +1824,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param cond any literal written in <code>Expression</code> condition won't be formalized
-     * @return
+     * Adds an ON clause with a condition object for join conditions.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users u")
+     *                 .join("orders o")
+     *                 .on(CF.eq("u.id", "o.user_id"))
+     *                 .sql();
+     * }</pre>
+     * 
+     * @param cond the join condition
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder on(final Condition cond) {
         _sb.append(_SPACE_ON_SPACE);
@@ -1568,9 +1846,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a USING clause for join conditions.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .join("orders")
+     *                 .using("user_id")
+     *                 .sql();
+     * // Output: SELECT * FROM users JOIN orders USING (user_id)
+     * }</pre>
+     * 
+     * @param expr the column name(s) for the USING clause
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder using(final String expr) {
         _sb.append(_SPACE_USING_SPACE);
@@ -1581,9 +1869,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a WHERE clause with a string expression.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .where("age > 18")
+     *                 .sql();
+     * // Output: SELECT * FROM users WHERE age > 18
+     * }</pre>
+     * 
+     * @param expr the WHERE condition expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder where(final String expr) {
         init(true);
@@ -1596,9 +1893,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param cond
-     * @return
+     * Adds a WHERE clause with a condition object.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .where(CF.gt("age", 18))
+     *                 .sql();
+     * // Output: SELECT * FROM users WHERE age > ?
+     * }</pre>
+     * 
+     * @param cond the WHERE condition
+     * @return this SQLBuilder instance for method chaining
      * @see ConditionFactory
      * @see ConditionFactory.CF
      */
@@ -1613,9 +1919,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a GROUP BY clause with a single column.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("category", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupBy("category")
+     *                 .sql();
+     * // Output: SELECT category, COUNT(*) FROM products GROUP BY category
+     * }</pre>
+     * 
+     * @param expr the column to group by
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder groupBy(final String expr) {
         _sb.append(_SPACE_GROUP_BY_SPACE);
@@ -1626,9 +1941,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Adds a GROUP BY clause with multiple columns.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("category", "brand", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupBy("category", "brand")
+     *                 .sql();
+     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category, brand
+     * }</pre>
+     * 
+     * @param propOrColumnNames the columns to group by
+     * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder groupBy(final String... propOrColumnNames) {
         _sb.append(_SPACE_GROUP_BY_SPACE);
@@ -1645,10 +1969,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param columnName
-     * @param direction
-     * @return
+     * Adds a GROUP BY clause with a single column and sort direction.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("category", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupBy("category", SortDirection.DESC)
+     *                 .sql();
+     * // Output: SELECT category, COUNT(*) FROM products GROUP BY category DESC
+     * }</pre>
+     * 
+     * @param columnName the column to group by
+     * @param direction the sort direction
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder groupBy(final String columnName, final SortDirection direction) {
         groupBy(columnName);
@@ -1660,9 +1993,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Adds a GROUP BY clause with a collection of columns.
+     * 
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("category", "brand");
+     * String sql = PSC.select("category", "brand", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupBy(columns)
+     *                 .sql();
+     * }</pre>
+     * 
+     * @param propOrColumnNames the collection of columns to group by
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder groupBy(final Collection<String> propOrColumnNames) {
         _sb.append(_SPACE_GROUP_BY_SPACE);
@@ -1680,10 +2022,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @param direction
-     * @return
+     * Adds a GROUP BY clause with a collection of columns and sort direction.
+     * 
+     * @param propOrColumnNames the collection of columns to group by
+     * @param direction the sort direction for all columns
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
         groupBy(propOrColumnNames);
@@ -1695,9 +2038,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param orders
-     * @return
+     * Adds a GROUP BY clause with columns and individual sort directions.
+     * 
+     * <pre>{@code
+     * Map<String, SortDirection> orders = new LinkedHashMap<>();
+     * orders.put("category", SortDirection.ASC);
+     * orders.put("brand", SortDirection.DESC);
+     * String sql = PSC.select("category", "brand", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupBy(orders)
+     *                 .sql();
+     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand DESC
+     * }</pre>
+     * 
+     * @param orders map of columns to their sort directions
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder groupBy(final Map<String, SortDirection> orders) {
         _sb.append(_SPACE_GROUP_BY_SPACE);
@@ -1719,9 +2074,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds a HAVING clause with a string expression.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("category", "COUNT(*) as count")
+     *                 .from("products")
+     *                 .groupBy("category")
+     *                 .having("COUNT(*) > 10")
+     *                 .sql();
+     * // Output: SELECT category, COUNT(*) as count FROM products GROUP BY category HAVING COUNT(*) > 10
+     * }</pre>
+     * 
+     * @param expr the HAVING condition expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder having(final String expr) {
         _sb.append(_SPACE_HAVING_SPACE);
@@ -1732,9 +2097,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param cond any literal written in <code>Expression</code> condition won't be formalized
-     * @return
+     * Adds a HAVING clause with a condition object.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("category", "COUNT(*) as count")
+     *                 .from("products")
+     *                 .groupBy("category")
+     *                 .having(CF.gt("COUNT(*)", 10))
+     *                 .sql();
+     * // Output: SELECT category, COUNT(*) as count FROM products GROUP BY category HAVING COUNT(*) > ?
+     * }</pre>
+     * 
+     * @param cond the HAVING condition
+     * @return this SQLBuilder instance for method chaining
      * @see ConditionFactory
      * @see ConditionFactory.CF
      */
@@ -1747,9 +2122,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds an ORDER BY clause with a single column.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderBy("name")
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY name
+     * }</pre>
+     * 
+     * @param expr the column to order by
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder orderBy(final String expr) {
         _sb.append(_SPACE_ORDER_BY_SPACE);
@@ -1760,9 +2144,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Adds an ORDER BY clause with multiple columns.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderBy("lastName", "firstName")
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY last_name, first_name
+     * }</pre>
+     * 
+     * @param propOrColumnNames the columns to order by
+     * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder orderBy(final String... propOrColumnNames) {
         _sb.append(_SPACE_ORDER_BY_SPACE);
@@ -1779,10 +2172,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param columnName
-     * @param direction
-     * @return
+     * Adds an ORDER BY clause with a single column and sort direction.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderBy("name", SortDirection.DESC)
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY name DESC
+     * }</pre>
+     * 
+     * @param columnName the column to order by
+     * @param direction the sort direction
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder orderBy(final String columnName, final SortDirection direction) {
         orderBy(columnName);
@@ -1794,9 +2196,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Adds an ORDER BY clause with a collection of columns.
+     * 
+     * @param propOrColumnNames the collection of columns to order by
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder orderBy(final Collection<String> propOrColumnNames) {
         _sb.append(_SPACE_ORDER_BY_SPACE);
@@ -1814,10 +2217,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @param direction
-     * @return
+     * Adds an ORDER BY clause with a collection of columns and sort direction.
+     * 
+     * @param propOrColumnNames the collection of columns to order by
+     * @param direction the sort direction for all columns
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
         orderBy(propOrColumnNames);
@@ -1829,9 +2233,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param orders
-     * @return
+     * Adds an ORDER BY clause with columns and individual sort directions.
+     * 
+     * <pre>{@code
+     * Map<String, SortDirection> orders = new LinkedHashMap<>();
+     * orders.put("lastName", SortDirection.ASC);
+     * orders.put("firstName", SortDirection.DESC);
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderBy(orders)
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name DESC
+     * }</pre>
+     * 
+     * @param orders map of columns to their sort directions
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder orderBy(final Map<String, SortDirection> orders) {
         _sb.append(_SPACE_ORDER_BY_SPACE);
@@ -1853,9 +2269,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds an ORDER BY ASC clause with a single column.
+     * Convenience method equivalent to {@code orderBy(expr, SortDirection.ASC)}.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByAsc("name")
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY name ASC
+     * }</pre>
+     * 
+     * @param expr the column to order by ascending
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder orderByAsc(final String expr) {
@@ -1863,9 +2289,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Adds an ORDER BY ASC clause with multiple columns.
+     * 
+     * @param propOrColumnNames the columns to order by ascending
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public final SQLBuilder orderByAsc(final String... propOrColumnNames) {
@@ -1873,9 +2300,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Adds an ORDER BY ASC clause with a collection of columns.
+     * 
+     * @param propOrColumnNames the collection of columns to order by ascending
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public final SQLBuilder orderByAsc(final Collection<String> propOrColumnNames) {
@@ -1883,9 +2311,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Adds an ORDER BY DESC clause with a single column.
+     * Convenience method equivalent to {@code orderBy(expr, SortDirection.DESC)}.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByDesc("createdDate")
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY created_date DESC
+     * }</pre>
+     * 
+     * @param expr the column to order by descending
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder orderByDesc(final String expr) {
@@ -1893,9 +2331,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Adds an ORDER BY DESC clause with multiple columns.
+     * 
+     * @param propOrColumnNames the columns to order by descending
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public final SQLBuilder orderByDesc(final String... propOrColumnNames) {
@@ -1903,9 +2342,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Adds an ORDER BY DESC clause with a collection of columns.
+     * 
+     * @param propOrColumnNames the collection of columns to order by descending
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public final SQLBuilder orderByDesc(final Collection<String> propOrColumnNames) {
@@ -1913,9 +2353,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param count
-     * @return
+     * Adds a LIMIT clause to restrict the number of rows returned.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .limit(10)
+     *                 .sql();
+     * // Output: SELECT * FROM users LIMIT 10
+     * }</pre>
+     * 
+     * @param count the maximum number of rows to return
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder limit(final int count) {
         _sb.append(_SPACE_LIMIT_SPACE);
@@ -1926,10 +2375,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param offset
-     * @param count
-     * @return
+     * Adds a LIMIT clause with an offset for pagination.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .limit(20, 10)  // offset 20, limit 10
+     *                 .sql();
+     * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
+     * }</pre>
+     * 
+     * @param offset the number of rows to skip
+     * @param count the maximum number of rows to return
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder limit(final int offset, final int count) {
         _sb.append(_SPACE_LIMIT_SPACE);
@@ -1944,9 +2402,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param offset
-     * @return
+     * Adds an OFFSET clause to skip a number of rows.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .limit(10)
+     *                 .offset(20)
+     *                 .sql();
+     * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
+     * }</pre>
+     * 
+     * @param offset the number of rows to skip
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder offset(final int offset) {
         _sb.append(_SPACE_OFFSET_SPACE).append(offset);
@@ -1955,9 +2423,20 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param offset
-     * @return
+     * Adds an OFFSET ROWS clause (SQL Server syntax).
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderBy("id")
+     *                 .offsetRows(20)
+     *                 .fetchNextNRowsOnly(10)
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
+     * }</pre>
+     * 
+     * @param offset the number of rows to skip
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder offsetRows(final int offset) {
         _sb.append(_SPACE_OFFSET_SPACE).append(offset).append(_SPACE_ROWS_SPACE);
@@ -1966,10 +2445,20 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     *
-     * @param n
-     * @return
+     * Adds a FETCH NEXT N ROWS ONLY clause (SQL Server syntax).
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderBy("id")
+     *                 .offsetRows(0)
+     *                 .fetchNextNRowsOnly(10)
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
+     * }</pre>
+     * 
+     * @param n the number of rows to fetch
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder fetchNextNRowsOnly(final int n) {
         _sb.append(" FETCH NEXT ").append(n).append(" ROWS ONLY");
@@ -1978,10 +2467,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     *
-     * @param n
-     * @return
+     * Adds a FETCH FIRST N ROWS ONLY clause (SQL standard syntax).
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderBy("id")
+     *                 .fetchFirstNRowsOnly(10)
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY
+     * }</pre>
+     * 
+     * @param n the number of rows to fetch
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder fetchFirstNRowsOnly(final int n) {
         _sb.append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
@@ -1990,9 +2488,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param cond
-     * @return
+     * Appends a condition to the SQL statement.
+     * Automatically adds WHERE clause if not already present.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .append(CF.and(CF.gt("age", 18), CF.lt("age", 65)))
+     *                 .sql();
+     * // Output: SELECT * FROM users WHERE ((age > ?) AND (age < ?))
+     * }</pre>
+     * 
+     * @param cond the condition to append
+     * @return this SQLBuilder instance for method chaining
      * @see ConditionFactory
      * @see ConditionFactory.CF
      */
@@ -2092,10 +2600,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     *
-     * @param expr
-     * @return
+     * Appends a string expression to the SQL statement.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .append(" FOR UPDATE")
+     *                 .sql();
+     * // Output: SELECT * FROM users FOR UPDATE
+     * }</pre>
+     * 
+     * @param expr the expression to append
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder append(final String expr) {
         _sb.append(expr);
@@ -2104,11 +2620,20 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     *
-     * @param b
-     * @param cond
-     * @return
+     * Conditionally appends a condition to the SQL statement.
+     * 
+     * <pre>{@code
+     * boolean includeAgeFilter = true;
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .appendIf(includeAgeFilter, CF.gt("age", 18))
+     *                 .sql();
+     * // Output: SELECT * FROM users WHERE age > ?
+     * }</pre>
+     * 
+     * @param b if true, the condition will be appended
+     * @param cond the condition to append
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder appendIf(final boolean b, final Condition cond) {
         if (b) {
@@ -2119,11 +2644,11 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     *
-     * @param b
-     * @param expr
-     * @return
+     * Conditionally appends a string expression to the SQL statement.
+     * 
+     * @param b if true, the expression will be appended
+     * @param expr the expression to append
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder appendIf(final boolean b, final String expr) {
         if (b) {
@@ -2134,11 +2659,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     *
-     * @param b
-     * @param append
-     * @return
+     * Conditionally executes an append operation using a consumer function.
+     * 
+     * <pre>{@code
+     * boolean complexFilter = true;
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .appendIf(complexFilter, builder -> 
+     *                     builder.where(CF.gt("age", 18))
+     *                            .orderBy("name"))
+     *                 .sql();
+     * }</pre>
+     * 
+     * @param b if true, the consumer will be executed
+     * @param append the consumer function to execute
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder appendIf(final boolean b, final java.util.function.Consumer<SQLBuilder> append) {
@@ -2150,12 +2685,23 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     *
-     * @param b
-     * @param condToAppendForTrue
-     * @param condToAppendForFalse
-     * @return
+     * Conditionally appends one of two conditions based on a boolean value.
+     * 
+     * <pre>{@code
+     * boolean isActive = true;
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .appendIfOrElse(isActive, 
+     *                     CF.eq("status", "active"),
+     *                     CF.eq("status", "inactive"))
+     *                 .sql();
+     * // Output: SELECT * FROM users WHERE status = ?
+     * }</pre>
+     * 
+     * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
+     * @param condToAppendForTrue the condition to append if b is true
+     * @param condToAppendForFalse the condition to append if b is false
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
@@ -2169,12 +2715,12 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     *
-     * @param b
-     * @param exprToAppendForTrue
-     * @param exprToAppendForFalse
-     * @return
+     * Conditionally appends one of two string expressions based on a boolean value.
+     * 
+     * @param b if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
+     * @param exprToAppendForTrue the expression to append if b is true
+     * @param exprToAppendForFalse the expression to append if b is false
+     * @return this SQLBuilder instance for method chaining
      */
     @Beta
     public SQLBuilder appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse) {
@@ -2188,9 +2734,17 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param sqlBuilder
-     * @return
+     * Adds a UNION clause with another SQL query.
+     * 
+     * <pre>{@code
+     * SQLBuilder query1 = PSC.select("id", "name").from("users");
+     * SQLBuilder query2 = PSC.select("id", "name").from("customers");
+     * String sql = query1.union(query2).sql();
+     * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
+     * }</pre>
+     * 
+     * @param sqlBuilder the SQL builder containing the query to union
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder union(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
@@ -2203,18 +2757,29 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param query
-     * @return
+     * Adds a UNION clause with a SQL query string.
+     * 
+     * @param query the SQL query to union
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder union(final String query) {
         return union(N.asArray(query));
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for UNION operation.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .union("id", "name")
+     *                 .from("customers")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
+     * }</pre>
+     * 
+     * @param propOrColumnNames the columns for the union query
+     * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder union(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2237,9 +2802,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for UNION operation with a collection of columns.
+     * 
+     * @param propOrColumnNames the collection of columns for the union query
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder union(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2253,9 +2819,17 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param sqlBuilder
-     * @return
+     * Adds a UNION ALL clause with another SQL query.
+     * 
+     * <pre>{@code
+     * SQLBuilder query1 = PSC.select("id", "name").from("users");
+     * SQLBuilder query2 = PSC.select("id", "name").from("customers");
+     * String sql = query1.unionAll(query2).sql();
+     * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
+     * }</pre>
+     * 
+     * @param sqlBuilder the SQL builder containing the query to union all
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder unionAll(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
@@ -2268,18 +2842,20 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param query
-     * @return
+     * Adds a UNION ALL clause with a SQL query string.
+     * 
+     * @param query the SQL query to union all
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder unionAll(final String query) {
         return unionAll(N.asArray(query));
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for UNION ALL operation.
+     * 
+     * @param propOrColumnNames the columns for the union all query
+     * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder unionAll(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2302,9 +2878,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for UNION ALL operation with a collection of columns.
+     * 
+     * @param propOrColumnNames the collection of columns for the union all query
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder unionAll(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2318,9 +2895,17 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param sqlBuilder
-     * @return
+     * Adds an INTERSECT clause with another SQL query.
+     * 
+     * <pre>{@code
+     * SQLBuilder query1 = PSC.select("id", "name").from("users");
+     * SQLBuilder query2 = PSC.select("id", "name").from("customers");
+     * String sql = query1.intersect(query2).sql();
+     * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM customers
+     * }</pre>
+     * 
+     * @param sqlBuilder the SQL builder containing the query to intersect
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder intersect(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
@@ -2333,18 +2918,20 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param query
-     * @return
+     * Adds an INTERSECT clause with a SQL query string.
+     * 
+     * @param query the SQL query to intersect
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder intersect(final String query) {
         return intersect(N.asArray(query));
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for INTERSECT operation.
+     * 
+     * @param propOrColumnNames the columns for the intersect query
+     * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder intersect(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2367,9 +2954,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for INTERSECT operation with a collection of columns.
+     * 
+     * @param propOrColumnNames the collection of columns for the intersect query
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder intersect(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2383,9 +2971,17 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param sqlBuilder
-     * @return
+     * Adds an EXCEPT clause with another SQL query.
+     * 
+     * <pre>{@code
+     * SQLBuilder query1 = PSC.select("id", "name").from("users");
+     * SQLBuilder query2 = PSC.select("id", "name").from("customers");
+     * String sql = query1.except(query2).sql();
+     * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM customers
+     * }</pre>
+     * 
+     * @param sqlBuilder the SQL builder containing the query to except
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder except(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
@@ -2398,18 +2994,20 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param query
-     * @return
+     * Adds an EXCEPT clause with a SQL query string.
+     * 
+     * @param query the SQL query to except
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder except(final String query) {
         return except(N.asArray(query));
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for EXCEPT operation.
+     * 
+     * @param propOrColumnNames the columns for the except query
+     * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder except(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2432,9 +3030,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for EXCEPT operation with a collection of columns.
+     * 
+     * @param propOrColumnNames the collection of columns for the except query
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder except(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2448,9 +3047,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param sqlBuilder
-     * @return
+     * Adds a MINUS clause with another SQL query (Oracle syntax).
+     * 
+     * @param sqlBuilder the SQL builder containing the query to minus
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder minus(final SQLBuilder sqlBuilder) {
         final String sql = sqlBuilder.sql();
@@ -2463,18 +3063,20 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param query
-     * @return
+     * Adds a MINUS clause with a SQL query string (Oracle syntax).
+     * 
+     * @param query the SQL query to minus
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder minus(final String query) {
         return minus(N.asArray(query));
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for MINUS operation (Oracle syntax).
+     * 
+     * @param propOrColumnNames the columns for the minus query
+     * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder minus(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2497,9 +3099,10 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Starts a new SELECT query for MINUS operation with a collection of columns (Oracle syntax).
+     * 
+     * @param propOrColumnNames the collection of columns for the minus query
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder minus(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -2513,9 +3116,18 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     *
-     * @return
+     * Adds a FOR UPDATE clause to lock selected rows.
+     * 
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .where(CF.eq("id", 1))
+     *                 .forUpdate()
+     *                 .sql();
+     * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
+     * }</pre>
+     * 
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder forUpdate() {
         _sb.append(_SPACE_FOR_UPDATE);
@@ -2524,27 +3136,46 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param expr
-     * @return
+     * Sets columns for UPDATE operation with a single expression.
+     * 
+     * <pre>{@code
+     * String sql = PSC.update("users")
+     *                 .set("name = 'John'")
+     *                 .where(CF.eq("id", 1))
+     *                 .sql();
+     * // Output: UPDATE users SET name = 'John' WHERE id = ?
+     * }</pre>
+     * 
+     * @param expr the SET expression
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder set(final String expr) {
         return set(Array.asList(expr));
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Sets columns for UPDATE operation.
+     * 
+     * <pre>{@code
+     * String sql = PSC.update("users")
+     *                 .set("firstName", "lastName", "email")
+     *                 .where(CF.eq("id", 1))
+     *                 .sql();
+     * // Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?
+     * }</pre>
+     * 
+     * @param propOrColumnNames the columns to update
+     * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder set(final String... propOrColumnNames) {
         return set(Array.asList(propOrColumnNames));
     }
 
     /**
-     *
-     * @param propOrColumnNames
-     * @return
+     * Sets columns for UPDATE operation with a collection.
+     * 
+     * @param propOrColumnNames the collection of columns to update
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder set(final Collection<String> propOrColumnNames) {
         init(false);
@@ -2615,9 +3246,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     *
-     * @param props
-     * @return
+     * Sets columns and values for UPDATE operation using a map.
+     * 
+     * <pre>{@code
+     * Map<String, Object> values = new HashMap<>();
+     * values.put("firstName", "John");
+     * values.put("lastName", "Doe");
+     * String sql = PSC.update("users")
+     *                 .set(values)
+     *                 .where(CF.eq("id", 1))
+     *                 .sql();
+     * // Output: UPDATE users SET first_name = ?, last_name = ? WHERE id = ?
+     * }</pre>
+     * 
+     * @param props map of column names to values
+     * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder set(final Map<String, Object> props) {
         init(false);
@@ -2701,21 +3344,40 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Sets properties to update from an entity object.
      * Only the dirty properties will be set into the result SQL if the specified entity is a dirty marker entity.
-     *
-     * @param entity
-     * @return
+     * 
+     * @param entity the entity object containing properties to set
+     * @return this SQLBuilder instance for method chaining
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * String sql = PSC.update("account")
+     *                 .set(accountEntity)
+     *                 .where(CF.eq("id", 1))
+     *                 .sql();
+     * }</pre>
      */
     public SQLBuilder set(final Object entity) {
         return set(entity, null);
     }
 
     /**
+     * Sets properties to update from an entity object, excluding specified properties.
      * Only the dirty properties will be set into the result SQL if the specified entity is a dirty marker entity.
-     *
-     * @param entity
-     * @param excludedPropNames
-     * @return
+     * 
+     * @param entity the entity object containing properties to set
+     * @param excludedPropNames properties to exclude from the update
+     * @return this SQLBuilder instance for method chaining
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * Set<String> excluded = N.asSet("createdDate", "version");
+     * String sql = PSC.update("account")
+     *                 .set(accountEntity, excluded)
+     *                 .where(CF.eq("id", 1))
+     *                 .sql();
+     * }</pre>
      */
     public SQLBuilder set(final Object entity, final Set<String> excludedPropNames) {
         if (entity instanceof String) {
@@ -2743,9 +3405,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Sets all updatable properties from an entity class for UPDATE operation.
+     * Properties marked with @NonUpdatable, @ReadOnly, @ReadOnlyId, or @Transient annotations are excluded.
      *
-     * @param entityClass
-     * @return
+     * @param entityClass the entity class to get properties from
+     * @return this SQLBuilder instance for method chaining
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * String sql = PSC.update("account")
+     *                 .set(Account.class)
+     *                 .where(CF.eq("id", 1))
+     *                 .sql();
+     * }</pre>
      */
     public SQLBuilder set(final Class<?> entityClass) {
         setEntityClass(entityClass);
@@ -2754,10 +3426,21 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
+     * Properties marked with @NonUpdatable, @ReadOnly, @ReadOnlyId, or @Transient annotations are automatically excluded.
      *
-     * @param entityClass
-     * @param excludedPropNames
-     * @return
+     * @param entityClass the entity class to get properties from
+     * @param excludedPropNames additional properties to exclude from the update
+     * @return this SQLBuilder instance for method chaining
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * Set<String> excluded = N.asSet("lastModified");
+     * String sql = PSC.update("account")
+     *                 .set(Account.class, excluded)
+     *                 .where(CF.eq("id", 1))
+     *                 .sql();
+     * }</pre>
      */
     public SQLBuilder set(final Class<?> entityClass, final Set<String> excludedPropNames) {
         setEntityClass(entityClass);
@@ -2766,9 +3449,20 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
-     * This SQLBuilder will be closed after <code>sql()</code> is called.
+     * Generates the final SQL string from this builder.
+     * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
      *
-     * @return
+     * @return the generated SQL string
+     * @throws RuntimeException if the builder has already been closed
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * String sql = PSC.select("id", "name")
+     *                 .from("account")
+     *                 .where(CF.gt("age", 18))
+     *                 .sql();
+     * // Result: SELECT id, name FROM account WHERE age > ?
+     * }</pre>
      */
     public String sql() {
         if (_sb == null) {
@@ -2796,18 +3490,41 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Returns the list of parameter values for the generated SQL.
+     * For parameterized SQL (using ?), this list contains the actual values in order.
+     * For named SQL, this list contains the values corresponding to named parameters.
      *
-     *
-     * @return
+     * @return an immutable list of parameter values
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * SQLBuilder builder = PSC.select("*")
+     *                        .from("account")
+     *                        .where(CF.eq("name", "John"))
+     *                        .where(CF.gt("age", 25));
+     * List<Object> params = builder.parameters();
+     * // params contains: ["John", 25]
+     * }</pre>
      */
     public List<Object> parameters() {
         return _parameters;
     }
 
     /**
-     *  This SQLBuilder will be closed after <code>pair()</code> is called.
+     * Generates both the SQL string and its parameters as a pair.
+     * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
      *
-     * @return
+     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * SP sqlPair = PSC.select("*")
+     *                 .from("account")
+     *                 .where(CF.eq("status", "ACTIVE"))
+     *                 .pair();
+     * // sqlPair.sql contains: "SELECT * FROM account WHERE status = ?"
+     * // sqlPair.parameters contains: ["ACTIVE"]
+     * }</pre>
      */
     public SP pair() {
         final String sql = sql();
@@ -2816,13 +3533,22 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Applies a function to the SQL-Parameters pair and returns the result.
+     * This is useful for executing the SQL directly with a data access framework.
      *
-     *
-     * @param <T>
-     * @param <E>
-     * @param func
-     * @return
-     * @throws E
+     * @param <T> the return type of the function
+     * @param <E> the exception type that may be thrown
+     * @param func the function to apply to the SP pair
+     * @return the result of applying the function
+     * @throws E if the function throws an exception
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * List<Account> accounts = PSC.select("*")
+     *     .from("account")
+     *     .where(CF.eq("status", "ACTIVE"))
+     *     .apply(sp -> jdbcTemplate.query(sp.sql, sp.parameters, accountRowMapper));
+     * }</pre>
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> func) throws E {
@@ -2830,13 +3556,22 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Applies a bi-function to the SQL string and parameters separately and returns the result.
+     * This is useful for executing the SQL directly with a data access framework that takes SQL and parameters separately.
      *
-     *
-     * @param <T>
-     * @param <E>
-     * @param func
-     * @return
-     * @throws E
+     * @param <T> the return type of the function
+     * @param <E> the exception type that may be thrown
+     * @param func the bi-function to apply to the SQL and parameters
+     * @return the result of applying the function
+     * @throws E if the function throws an exception
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * int count = PSC.update("account")
+     *     .set("status", "INACTIVE")
+     *     .where(CF.lt("lastLogin", oneYearAgo))
+     *     .apply((sql, params) -> jdbcTemplate.update(sql, params.toArray()));
+     * }</pre>
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> func) throws E {
@@ -2846,11 +3581,19 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Accepts a consumer for the SQL-Parameters pair.
+     * This is useful for executing the SQL with a data access framework when no return value is needed.
      *
-     *
-     * @param <E>
-     * @param consumer
-     * @throws E
+     * @param <E> the exception type that may be thrown
+     * @param consumer the consumer to accept the SP pair
+     * @throws E if the consumer throws an exception
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * PSC.insert("account")
+     *    .values("name", "email", "status")
+     *    .accept(sp -> jdbcTemplate.update(sp.sql, sp.parameters.toArray()));
+     * }</pre>
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E {
@@ -2858,11 +3601,23 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     /**
+     * Accepts a bi-consumer for the SQL string and parameters separately.
+     * This is useful for executing the SQL with a data access framework when no return value is needed.
      *
-     *
-     * @param <E>
-     * @param consumer
-     * @throws E
+     * @param <E> the exception type that may be thrown
+     * @param consumer the bi-consumer to accept the SQL and parameters
+     * @throws E if the consumer throws an exception
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * PSC.delete()
+     *    .from("account")
+     *    .where(CF.eq("status", "DELETED"))
+     *    .accept((sql, params) -> {
+     *        logger.info("Executing: {} with params: {}", sql, params);
+     *        jdbcTemplate.update(sql, params.toArray());
+     *    });
+     * }</pre>
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E {
@@ -2871,6 +3626,33 @@ public abstract class SQLBuilder { // NOSONAR
         consumer.accept(sp.sql, sp.parameters);
     }
 
+    /**
+     * Prints the generated SQL to standard output.
+     * This is useful for debugging and development.
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * PSC.select("*")
+     *    .from("account")
+     *    .where(CF.between("age", 18, 65))
+     *    .println();
+     * // Prints: SELECT * FROM account WHERE age BETWEEN ? AND ?
+     * }</pre>
+     */
+    public void println() {
+        N.println(sql());
+    }
+
+    /**
+     * Returns the generated SQL string representation of this builder.
+     * Note: This method finalizes the builder and it cannot be used afterwards.
+     *
+     * @return the generated SQL string
+     */
+    @Override
+    public String toString() {
+        return sql();
+    }
     //    /**
     //     *
     //     * @param <Q>
@@ -3921,40 +4703,6 @@ public abstract class SQLBuilder { // NOSONAR
         return false;
     }
 
-    //    @Override
-    //    public int hashCode() {
-    //        return sb.hashCode();
-    //    }
-    //
-    //    @Override
-    //    public boolean equals(Object obj) {
-    //        if (this == obj) {
-    //            return true;
-    //        }
-    //
-    //        if (obj instanceof SQLBuilder) {
-    //            final SQLBuilder other = (SQLBuilder) obj;
-    //
-    //            return N.equals(this.sb, other.sb) && N.equals(this.parameters, other.parameters);
-    //        }
-    //
-    //        return false;
-    //    }
-
-    public void println() {
-        N.println(sql());
-    }
-
-    /**
-     *
-     *
-     * @return
-     */
-    @Override
-    public String toString() {
-        return sql();
-    }
-
     static String formalizeColumnName(final String word, final NamingPolicy namingPolicy) {
         if (sqlKeyWords.contains(word) || namingPolicy == NamingPolicy.NO_CHANGE) {
             return word;
@@ -4062,6 +4810,7 @@ public abstract class SQLBuilder { // NOSONAR
 
     /**
      * Un-parameterized SQL builder with snake case (lower case with underscore) field/column naming strategy.
+     * This builder generates SQL with actual values embedded directly in the SQL string (not recommended for production use).
      *
      * For example:
      * <pre>
@@ -4071,7 +4820,7 @@ public abstract class SQLBuilder { // NOSONAR
      * </code>
      * </pre>
      *
-     * @deprecated {@code PSC or NSC} is preferred.
+     * @deprecated {@code PSC or NSC} is preferred for better security and performance
      */
     @Deprecated
     public static class SCSB extends SQLBuilder {
@@ -4085,18 +4834,34 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates an INSERT SQL builder for a single column.
          *
-         * @param expr
-         * @return
+         * @param expr the column name or expression
+         * @return a new SQLBuilder instance for INSERT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.insert("name").into("account").sql();
+         * // Output: INSERT INTO account (name)
+         * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
             return insert(N.asArray(expr));
         }
 
         /**
+         * Creates an INSERT SQL builder for multiple columns.
          *
-         * @param propOrColumnNames
-         * @return
+         * @param propOrColumnNames the column names to insert
+         * @return a new SQLBuilder instance for INSERT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.insert("name", "email", "status")
+         *                  .into("account")
+         *                  .sql();
+         * // Output: INSERT INTO account (name, email, status)
+         * }</pre>
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
             final SQLBuilder instance = createInstance();
@@ -4108,9 +4873,17 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates an INSERT SQL builder for a collection of columns.
          *
-         * @param propOrColumnNames
-         * @return
+         * @param propOrColumnNames the collection of column names to insert
+         * @return a new SQLBuilder instance for INSERT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * List<String> columns = Arrays.asList("name", "email", "status");
+         * String sql = SCSB.insert(columns).into("account").sql();
+         * // Output: INSERT INTO account (name, email, status)
+         * }</pre>
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             final SQLBuilder instance = createInstance();
@@ -4122,9 +4895,17 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates an INSERT SQL builder with column-value mappings.
          *
-         * @param props
-         * @return
+         * @param props map of column names to values
+         * @return a new SQLBuilder instance for INSERT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * Map<String, Object> props = N.asMap("name", "John", "age", 25);
+         * String sql = SCSB.insert(props).into("account").sql();
+         * // Output: INSERT INTO account (name, age) VALUES ('John', 25)
+         * }</pre>
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
             final SQLBuilder instance = createInstance();
@@ -4136,19 +4917,36 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates an INSERT SQL builder from an entity object.
+         * Properties marked with @Transient, @ReadOnly, or similar annotations are excluded.
          *
-         * @param entity
-         * @return
+         * @param entity the entity object to insert
+         * @return a new SQLBuilder instance for INSERT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * Account account = new Account("John", "john@email.com");
+         * String sql = SCSB.insert(account).into("account").sql();
+         * // Output: INSERT INTO account (name, email) VALUES ('John', 'john@email.com')
+         * }</pre>
          */
         public static SQLBuilder insert(final Object entity) {
             return insert(entity, null);
         }
 
         /**
+         * Creates an INSERT SQL builder from an entity object, excluding specified properties.
          *
-         * @param entity
-         * @param excludedPropNames
-         * @return
+         * @param entity the entity object to insert
+         * @param excludedPropNames properties to exclude from the insert
+         * @return a new SQLBuilder instance for INSERT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * Account account = new Account("John", "john@email.com");
+         * Set<String> excluded = N.asSet("createdDate");
+         * String sql = SCSB.insert(account, excluded).into("account").sql();
+         * }</pre>
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
             final SQLBuilder instance = createInstance();
@@ -4162,19 +4960,28 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates an INSERT SQL builder from an entity class.
+         * Generates INSERT statement for all insertable properties of the class.
          *
-         * @param entityClass
-         * @return
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for INSERT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.insert(Account.class).into("account").sql();
+         * // Output: INSERT INTO account (name, email, status, created_date)
+         * }</pre>
          */
         public static SQLBuilder insert(final Class<?> entityClass) {
             return insert(entityClass, null);
         }
 
         /**
+         * Creates an INSERT SQL builder from an entity class, excluding specified properties.
          *
-         * @param entityClass
-         * @param excludedPropNames
-         * @return
+         * @param entityClass the entity class
+         * @param excludedPropNames properties to exclude from the insert
+         * @return a new SQLBuilder instance for INSERT operation
          */
         public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
             final SQLBuilder instance = createInstance();
@@ -4187,29 +4994,48 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates an INSERT INTO SQL builder for an entity class.
+         * Convenience method that combines insert() and into() operations.
          *
-         * @param entityClass
-         * @return
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for INSERT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.insertInto(Account.class).values(...).sql();
+         * }</pre>
          */
         public static SQLBuilder insertInto(final Class<?> entityClass) {
             return insertInto(entityClass, null);
         }
 
         /**
+         * Creates an INSERT INTO SQL builder for an entity class, excluding specified properties.
          *
-         * @param entityClass
-         * @param excludedPropNames
-         * @return
+         * @param entityClass the entity class
+         * @param excludedPropNames properties to exclude from the insert
+         * @return a new SQLBuilder instance for INSERT operation
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return insert(entityClass, excludedPropNames).into(entityClass);
         }
 
         /**
-         * Generate the MySQL style batch insert SQL.
+         * Creates a batch INSERT SQL builder for multiple entities or property maps.
+         * Generates MySQL-style batch insert SQL.
          *
-         * @param propsList list of entities or properties map.
-         * @return
+         * @param propsList list of entities or property maps to insert
+         * @return a new SQLBuilder instance for batch INSERT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * List<Account> accounts = Arrays.asList(
+         *     new Account("John", "john@email.com"),
+         *     new Account("Jane", "jane@email.com")
+         * );
+         * String sql = SCSB.batchInsert(accounts).into("account").sql();
+         * // Output: INSERT INTO account (name, email) VALUES ('John', 'john@email.com'), ('Jane', 'jane@email.com')
+         * }</pre>
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -4228,9 +5054,19 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates an UPDATE SQL builder for a table.
          *
-         * @param tableName
-         * @return
+         * @param tableName the table name to update
+         * @return a new SQLBuilder instance for UPDATE operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.update("account")
+         *                  .set("status", "'ACTIVE'")
+         *                  .where(CF.eq("id", 1))
+         *                  .sql();
+         * // Output: UPDATE account SET status = 'ACTIVE' WHERE id = 1
+         * }</pre>
          */
         public static SQLBuilder update(final String tableName) {
             final SQLBuilder instance = createInstance();
@@ -4242,10 +5078,12 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates an UPDATE SQL builder for a table with entity class context.
+         * The entity class provides property-to-column name mapping.
          *
-         * @param tableName
-         * @param entityClass
-         * @return
+         * @param tableName the table name to update
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance for UPDATE operation
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
             final SQLBuilder instance = createInstance();
@@ -4258,19 +5096,31 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates an UPDATE SQL builder for an entity class.
+         * The table name is derived from the entity class.
          *
-         * @param entityClass
-         * @return
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for UPDATE operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.update(Account.class)
+         *                  .set("status", "'INACTIVE'")
+         *                  .where(CF.lt("lastLogin", "2023-01-01"))
+         *                  .sql();
+         * }</pre>
          */
         public static SQLBuilder update(final Class<?> entityClass) {
             return update(entityClass, null);
         }
 
         /**
+         * Creates an UPDATE SQL builder for an entity class, excluding specified properties.
+         * Properties marked with @NonUpdatable, @ReadOnly, etc. are automatically excluded.
          *
-         * @param entityClass
-         * @param excludedPropNames
-         * @return
+         * @param entityClass the entity class
+         * @param excludedPropNames additional properties to exclude from updates
+         * @return a new SQLBuilder instance for UPDATE operation
          */
         public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
             final SQLBuilder instance = createInstance();
@@ -4284,9 +5134,18 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates a DELETE FROM SQL builder for a table.
          *
-         * @param tableName
-         * @return
+         * @param tableName the table name to delete from
+         * @return a new SQLBuilder instance for DELETE operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.deleteFrom("account")
+         *                  .where(CF.eq("status", "'DELETED'"))
+         *                  .sql();
+         * // Output: DELETE FROM account WHERE status = 'DELETED'
+         * }</pre>
          */
         public static SQLBuilder deleteFrom(final String tableName) {
             final SQLBuilder instance = createInstance();
@@ -4298,10 +5157,11 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates a DELETE FROM SQL builder for a table with entity class context.
          *
-         * @param tableName
-         * @param entityClass
-         * @return
+         * @param tableName the table name to delete from
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance for DELETE operation
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             final SQLBuilder instance = createInstance();
@@ -4314,9 +5174,21 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates a DELETE FROM SQL builder for an entity class.
+         * The table name is derived from the entity class.
          *
-         * @param entityClass
-         * @return
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for DELETE operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.deleteFrom(Account.class)
+         *                  .where(CF.and(
+         *                      CF.eq("status", "'INACTIVE'"),
+         *                      CF.lt("lastLogin", "2022-01-01")
+         *                  ))
+         *                  .sql();
+         * }</pre>
          */
         public static SQLBuilder deleteFrom(final Class<?> entityClass) {
             final SQLBuilder instance = createInstance();
@@ -4329,9 +5201,18 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates a SELECT SQL builder with a custom select expression.
          *
-         * @param selectPart
-         * @return
+         * @param selectPart the select expression (e.g., "COUNT(*)", "DISTINCT name")
+         * @return a new SQLBuilder instance for SELECT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.select("COUNT(DISTINCT customer_id)")
+         *                  .from("orders")
+         *                  .where(CF.between("order_date", "2023-01-01", "2023-12-31"))
+         *                  .sql();
+         * }</pre>
          */
         public static SQLBuilder select(final String selectPart) {
             N.checkArgNotEmpty(selectPart, SELECT_PART);
@@ -4344,9 +5225,781 @@ public abstract class SQLBuilder { // NOSONAR
         }
 
         /**
+         * Creates a SELECT SQL builder for multiple columns.
          *
-         * @param propOrColumnNames
-         * @return
+         * @param propOrColumnNames the column names to select
+         * @return a new SQLBuilder instance for SELECT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.select("firstName", "lastName", "email")
+         *                  .from("account")
+         *                  .where(CF.eq("status", "'ACTIVE'"))
+         *                  .sql();
+         * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
+         * }</pre>
+         */
+        public static SQLBuilder select(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
+
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.QUERY;
+            instance._propOrColumnNames = Array.asList(propOrColumnNames);
+
+            return instance;
+        }
+
+        /**
+         * Creates a SELECT SQL builder for a collection of columns.
+         *
+         * @param propOrColumnNames the collection of column names to select
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
+
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.QUERY;
+            instance._propOrColumnNames = propOrColumnNames;
+
+            return instance;
+        }
+
+        /**
+         * Creates a SELECT SQL builder with column aliases.
+         *
+         * @param propOrColumnNameAliases map of column names to their aliases
+         * @return a new SQLBuilder instance for SELECT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * Map<String, String> aliases = N.asMap(
+         *     "firstName", "fname",
+         *     "lastName", "lname"
+         * );
+         * String sql = SCSB.select(aliases).from("account").sql();
+         * // Output: SELECT first_name AS fname, last_name AS lname FROM account
+         * }</pre>
+         */
+        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
+            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
+
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.QUERY;
+            instance._propOrColumnNameAliases = propOrColumnNameAliases;
+
+            return instance;
+        }
+
+        /**
+         * Creates a SELECT SQL builder for all properties of an entity class.
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for SELECT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.select(Account.class)
+         *                  .from("account")
+         *                  .sql();
+         * // Selects all columns mapped to Account properties
+         * }</pre>
+         */
+        public static SQLBuilder select(final Class<?> entityClass) {
+            return select(entityClass, false);
+        }
+
+        /**
+         * Creates a SELECT SQL builder for an entity class with optional sub-entity properties.
+         *
+         * @param entityClass the entity class
+         * @param includeSubEntityProperties whether to include properties from related entities
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
+            return select(entityClass, includeSubEntityProperties, null);
+        }
+
+        /**
+         * Creates a SELECT SQL builder for an entity class, excluding specified properties.
+         *
+         * @param entityClass the entity class
+         * @param excludedPropNames properties to exclude from selection
+         * @return a new SQLBuilder instance for SELECT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * Set<String> excluded = N.asSet("password", "salt");
+         * String sql = SCSB.select(Account.class, excluded)
+         *                  .from("account")
+         *                  .sql();
+         * }</pre>
+         */
+        public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
+            return select(entityClass, false, excludedPropNames);
+        }
+
+        /**
+         * Creates a SELECT SQL builder for an entity class with full control over property inclusion.
+         *
+         * @param entityClass the entity class
+         * @param includeSubEntityProperties whether to include properties from related entities
+         * @param excludedPropNames properties to exclude from selection
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.QUERY;
+            instance.setEntityClass(entityClass);
+            instance._propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+
+            return instance;
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder for an entity class.
+         * Convenience method that combines select() and from() operations.
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for SELECT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.selectFrom(Account.class)
+         *                  .where(CF.eq("status", "'ACTIVE'"))
+         *                  .sql();
+         * // Automatically determines table name from entity class
+         * }</pre>
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClass) {
+            return selectFrom(entityClass, false);
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder for an entity class with table alias.
+         *
+         * @param entityClass the entity class
+         * @param alias the table alias
+         * @return a new SQLBuilder instance for SELECT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.selectFrom(Account.class, "a")
+         *                  .innerJoin("orders", "o").on("a.id = o.account_id")
+         *                  .sql();
+         * }</pre>
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
+            return selectFrom(entityClass, alias, false);
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder with sub-entity inclusion option.
+         *
+         * @param entityClass the entity class
+         * @param includeSubEntityProperties whether to include properties from related entities
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
+            return selectFrom(entityClass, includeSubEntityProperties, null);
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder with alias and sub-entity inclusion option.
+         *
+         * @param entityClass the entity class
+         * @param alias the table alias
+         * @param includeSubEntityProperties whether to include properties from related entities
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
+            return selectFrom(entityClass, alias, includeSubEntityProperties, null);
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder excluding specified properties.
+         *
+         * @param entityClass the entity class
+         * @param excludedPropNames properties to exclude from selection
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
+            return selectFrom(entityClass, false, excludedPropNames);
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder with alias, excluding specified properties.
+         *
+         * @param entityClass the entity class
+         * @param alias the table alias
+         * @param excludedPropNames properties to exclude from selection
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
+            return selectFrom(entityClass, alias, false, excludedPropNames);
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder with sub-entity inclusion and property exclusion.
+         *
+         * @param entityClass the entity class
+         * @param includeSubEntityProperties whether to include properties from related entities
+         * @param excludedPropNames properties to exclude from selection
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
+            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder with full control over all options.
+         *
+         * @param entityClass the entity class
+         * @param alias the table alias
+         * @param includeSubEntityProperties whether to include properties from related entities
+         * @param excludedPropNames properties to exclude from selection
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
+                final Set<String> excludedPropNames) {
+            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                //noinspection ConstantValue
+                return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
+            }
+
+            return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
+        }
+
+        /**
+         * Creates a SELECT SQL builder for joining two entity classes.
+         *
+         * @param entityClassA the first entity class
+         * @param tableAliasA table alias for the first entity
+         * @param classAliasA property prefix for the first entity in results
+         * @param entityClassB the second entity class
+         * @param tableAliasB table alias for the second entity
+         * @param classAliasB property prefix for the second entity in results
+         * @return a new SQLBuilder instance for SELECT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.select(Account.class, "a", "account",
+         *                         Order.class, "o", "order")
+         *                  .from("account a")
+         *                  .innerJoin("orders o").on("a.id = o.account_id")
+         *                  .sql();
+         * // Selects columns like: a.name AS "account.name", o.total AS "order.total"
+         * }</pre>
+         */
+        public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
+                final String tableAliasB, final String classAliasB) {
+            return select(entityClassA, tableAliasA, classAliasA, null, entityClassB, tableAliasB, classAliasB, null);
+        }
+
+        /**
+         * Creates a SELECT SQL builder for joining two entity classes with property exclusions.
+         *
+         * @param entityClassA the first entity class
+         * @param tableAliasA table alias for the first entity
+         * @param classAliasA property prefix for the first entity in results
+         * @param excludedPropNamesA properties to exclude from the first entity
+         * @param entityClassB the second entity class
+         * @param tableAliasB table alias for the second entity
+         * @param classAliasB property prefix for the second entity in results
+         * @param excludedPropNamesB properties to exclude from the second entity
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
+                final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
+
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+
+            return select(multiSelects);
+        }
+
+        /**
+         * Creates a SELECT SQL builder for multiple entity selections.
+         * Used for complex joins involving multiple tables.
+         *
+         * @param multiSelects list of Selection objects defining what to select from each entity
+         * @return a new SQLBuilder instance for SELECT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * List<Selection> selections = Arrays.asList(
+         *     new Selection(Account.class, "a", "account"),
+         *     new Selection(Order.class, "o", "order"),
+         *     new Selection(Product.class, "p", "product")
+         * );
+         * String sql = SCSB.select(selections)
+         *                  .from("account a")
+         *                  .innerJoin("orders o").on("a.id = o.account_id")
+         *                  .innerJoin("products p").on("o.product_id = p.id")
+         *                  .sql();
+         * }</pre>
+         */
+        public static SQLBuilder select(final List<Selection> multiSelects) {
+            checkMultiSelects(multiSelects);
+
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.QUERY;
+            instance.setEntityClass(multiSelects.get(0).entityClass());
+            instance._multiSelects = multiSelects;
+
+            return instance;
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder for joining two entity classes.
+         * Convenience method that combines select() and from() for joins.
+         *
+         * @param entityClassA the first entity class
+         * @param tableAliasA table alias for the first entity
+         * @param classAliasA property prefix for the first entity in results
+         * @param entityClassB the second entity class
+         * @param tableAliasB table alias for the second entity
+         * @param classAliasB property prefix for the second entity in results
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
+                final String tableAliasB, final String classAliasB) {
+            return selectFrom(entityClassA, tableAliasA, classAliasA, null, entityClassB, tableAliasB, classAliasB, null);
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder for joining two entity classes with property exclusions.
+         *
+         * @param entityClassA the first entity class
+         * @param tableAliasA table alias for the first entity
+         * @param classAliasA property prefix for the first entity in results
+         * @param excludedPropNamesA properties to exclude from the first entity
+         * @param entityClassB the second entity class
+         * @param tableAliasB table alias for the second entity
+         * @param classAliasB property prefix for the second entity in results
+         * @param excludedPropNamesB properties to exclude from the second entity
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
+                final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
+                final Set<String> excludedPropNamesB) {
+
+            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
+                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+
+            return selectFrom(multiSelects);
+        }
+
+        /**
+         * Creates a SELECT FROM SQL builder for multiple entity selections.
+         * Automatically generates the FROM clause based on the entity classes.
+         *
+         * @param multiSelects list of Selection objects defining what to select from each entity
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
+            checkMultiSelects(multiSelects);
+
+            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final String fromClause = getFromClause(multiSelects, namingPolicy);
+
+            return select(multiSelects).from(fromClause);
+        }
+
+        /**
+         * Creates a COUNT(*) SQL builder for a table.
+         *
+         * @param tableName the table name to count rows from
+         * @return a new SQLBuilder instance for COUNT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.count("account")
+         *                  .where(CF.eq("status", "'ACTIVE'"))
+         *                  .sql();
+         * // Output: SELECT COUNT(*) FROM account WHERE status = 'ACTIVE'
+         * }</pre>
+         */
+        public static SQLBuilder count(final String tableName) {
+            return select(COUNT_ALL_LIST).from(tableName);
+        }
+
+        /**
+         * Creates a COUNT(*) SQL builder for a table with entity class context.
+         *
+         * @param tableName the table name to count rows from
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance for COUNT operation
+         */
+        public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            return select(COUNT_ALL_LIST).from(tableName, entityClass);
+        }
+
+        /**
+         * Creates a COUNT(*) SQL builder for an entity class.
+         * The table name is derived from the entity class.
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for COUNT operation
+         * 
+         * <pre>{@code
+         * // Example:
+         * String sql = SCSB.count(Account.class)
+         *                  .where(CF.between("createdDate", "2023-01-01", "2023-12-31"))
+         *                  .sql();
+         * }</pre>
+         */
+        public static SQLBuilder count(final Class<?> entityClass) {
+            return select(COUNT_ALL_LIST).from(entityClass);
+        }
+
+        /**
+         * Parses a condition into SQL with entity class context.
+         * Used to generate SQL fragments for conditions only.
+         *
+         * @param cond the condition to parse
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance containing the condition SQL
+         * 
+         * <pre>{@code
+         * // Example:
+         * Condition cond = CF.and(
+         *     CF.eq("status", "'ACTIVE'"),
+         *     CF.gt("balance", 1000)
+         * );
+         * String sql = SCSB.parse(cond, Account.class).sql();
+         * // Output: status = 'ACTIVE' AND balance > 1000
+         * }</pre>
+         */
+        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
+            N.checkArgNotNull(cond, "cond");
+
+            final SQLBuilder instance = createInstance();
+
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(cond);
+
+            return instance;
+        }
+    }
+
+    /**
+     * Un-parameterized SQL builder with all capital case (upper case with underscore) field/column naming strategy.
+     * This builder generates SQL with actual values embedded directly in the SQL string (not recommended for production use).
+     *
+     * For example:
+     * <pre>
+     * <code>
+     * N.println(ACSB.select("firstName", "lastName").from("account").where(CF.eq("id", 1)).sql());
+     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = 1
+     * </code>
+     * </pre>
+     *
+     * @deprecated {@code PAC or NAC} is preferred for better security and performance
+     */
+    @Deprecated
+    public static class ACSB extends SQLBuilder {
+
+        ACSB() {
+            super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.SQL);
+        }
+
+        static ACSB createInstance() {
+            return new ACSB();
+        }
+
+        /**
+         * Creates an INSERT SQL builder for a single column.
+         *
+         * @param expr the column name or expression
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insert(final String expr) {
+            return insert(N.asArray(expr));
+        }
+
+        /**
+         * Creates an INSERT SQL builder for multiple columns.
+         *
+         * @param propOrColumnNames the column names to insert
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insert(final String... propOrColumnNames) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.ADD;
+            instance._propOrColumnNames = Array.asList(propOrColumnNames);
+
+            return instance;
+        }
+
+        /**
+         * Creates an INSERT SQL builder for a collection of columns.
+         *
+         * @param propOrColumnNames the collection of column names to insert
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.ADD;
+            instance._propOrColumnNames = propOrColumnNames;
+
+            return instance;
+        }
+
+        /**
+         * Creates an INSERT SQL builder with column-value mappings.
+         *
+         * @param props map of column names to values
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insert(final Map<String, Object> props) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.ADD;
+            instance._props = props;
+
+            return instance;
+        }
+
+        /**
+         * Creates an INSERT SQL builder from an entity object.
+         *
+         * @param entity the entity object to insert
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insert(final Object entity) {
+            return insert(entity, null);
+        }
+
+        /**
+         * Creates an INSERT SQL builder from an entity object, excluding specified properties.
+         *
+         * @param entity the entity object to insert
+         * @param excludedPropNames properties to exclude from the insert
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.ADD;
+            instance.setEntityClass(entity.getClass());
+
+            parseInsertEntity(instance, entity, excludedPropNames);
+
+            return instance;
+        }
+
+        /**
+         * Creates an INSERT SQL builder from an entity class.
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insert(final Class<?> entityClass) {
+            return insert(entityClass, null);
+        }
+
+        /**
+         * Creates an INSERT SQL builder from an entity class, excluding specified properties.
+         *
+         * @param entityClass the entity class
+         * @param excludedPropNames properties to exclude from the insert
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.ADD;
+            instance.setEntityClass(entityClass);
+            instance._propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+
+            return instance;
+        }
+
+        /**
+         * Creates an INSERT INTO SQL builder for an entity class.
+         * Convenience method that combines insert() and into() operations.
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insertInto(final Class<?> entityClass) {
+            return insertInto(entityClass, null);
+        }
+
+        /**
+         * Creates an INSERT INTO SQL builder for an entity class, excluding specified properties.
+         *
+         * @param entityClass the entity class
+         * @param excludedPropNames properties to exclude from the insert
+         * @return a new SQLBuilder instance for INSERT operation
+         */
+        public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
+            return insert(entityClass, excludedPropNames).into(entityClass);
+        }
+
+        /**
+         * Creates a batch INSERT SQL builder for multiple entities or property maps.
+         * Generates MySQL-style batch insert SQL.
+         *
+         * @param propsList list of entities or property maps to insert
+         * @return a new SQLBuilder instance for batch INSERT operation
+         */
+        @Beta
+        public static SQLBuilder batchInsert(final Collection<?> propsList) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.ADD;
+            final Optional<?> first = N.firstNonNull(propsList);
+
+            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+                instance.setEntityClass(first.get().getClass());
+            }
+
+            instance._propsList = toInsertPropsList(propsList);
+
+            return instance;
+        }
+
+        /**
+         * Creates an UPDATE SQL builder for a table.
+         *
+         * @param tableName the table name to update
+         * @return a new SQLBuilder instance for UPDATE operation
+         */
+        public static SQLBuilder update(final String tableName) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.UPDATE;
+            instance._tableName = tableName;
+
+            return instance;
+        }
+
+        /**
+         * Creates an UPDATE SQL builder for a table with entity class context.
+         *
+         * @param tableName the table name to update
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance for UPDATE operation
+         */
+        public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.UPDATE;
+            instance._tableName = tableName;
+            instance.setEntityClass(entityClass);
+
+            return instance;
+        }
+
+        /**
+         * Creates an UPDATE SQL builder for an entity class.
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for UPDATE operation
+         */
+        public static SQLBuilder update(final Class<?> entityClass) {
+            return update(entityClass, null);
+        }
+
+        /**
+         * Creates an UPDATE SQL builder for an entity class, excluding specified properties.
+         *
+         * @param entityClass the entity class
+         * @param excludedPropNames additional properties to exclude from updates
+         * @return a new SQLBuilder instance for UPDATE operation
+         */
+        public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.UPDATE;
+            instance.setEntityClass(entityClass);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
+            instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+
+            return instance;
+        }
+
+        /**
+         * Creates a DELETE FROM SQL builder for a table.
+         *
+         * @param tableName the table name to delete from
+         * @return a new SQLBuilder instance for DELETE operation
+         */
+        public static SQLBuilder deleteFrom(final String tableName) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.DELETE;
+            instance._tableName = tableName;
+
+            return instance;
+        }
+
+        /**
+         * Creates a DELETE FROM SQL builder for a table with entity class context.
+         *
+         * @param tableName the table name to delete from
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance for DELETE operation
+         */
+        public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.DELETE;
+            instance._tableName = tableName;
+            instance.setEntityClass(entityClass);
+
+            return instance;
+        }
+
+        /**
+         * Creates a DELETE FROM SQL builder for an entity class.
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for DELETE operation
+         */
+        public static SQLBuilder deleteFrom(final Class<?> entityClass) {
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.DELETE;
+            instance.setEntityClass(entityClass);
+            instance._tableName = getTableName(entityClass, instance._namingPolicy);
+
+            return instance;
+        }
+
+        /**
+         * Creates a SELECT SQL builder with a custom select expression.
+         *
+         * @param selectPart the select expression
+         * @return a new SQLBuilder instance for SELECT operation
+         */
+        public static SQLBuilder select(final String selectPart) {
+            N.checkArgNotEmpty(selectPart, SELECT_PART);
+
+            final SQLBuilder instance = createInstance();
+
+            instance._op = OperationType.QUERY;
+            instance._propOrColumnNames = Array.asList(selectPart);
+            return instance;
+        }
+
+        /**
+         * Creates a SELECT SQL builder for multiple columns.
+         *
+         * @param propOrColumnNames the column names to select
+         * @return a new SQLBuilder instance for SELECT operation
          */
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
@@ -4633,636 +6286,6 @@ public abstract class SQLBuilder { // NOSONAR
             checkMultiSelects(multiSelects);
 
             final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
-            final String fromClause = getFromClause(multiSelects, namingPolicy);
-
-            return select(multiSelects).from(fromClause);
-        }
-
-        /**
-         *
-         *
-         * @param tableName
-         * @return
-         */
-        public static SQLBuilder count(final String tableName) {
-            return select(COUNT_ALL_LIST).from(tableName);
-        }
-
-        /**
-         *
-         *
-         * @param tableName
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
-            return select(COUNT_ALL_LIST).from(tableName, entityClass);
-        }
-
-        /**
-         *
-         *
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder count(final Class<?> entityClass) {
-            return select(COUNT_ALL_LIST).from(entityClass);
-        }
-
-        /**
-         * To generate {@code sql} part for the specified {@code cond} only.
-         *
-         * @param cond
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
-            N.checkArgNotNull(cond, "cond");
-
-            final SQLBuilder instance = createInstance();
-
-            instance.setEntityClass(entityClass);
-            instance._op = OperationType.QUERY;
-            instance._isForConditionOnly = true;
-            instance.append(cond);
-
-            return instance;
-        }
-    }
-
-    /**
-     * Un-parameterized SQL builder with all capital case (upper case with underscore) field/column naming strategy.
-     *
-     * For example:
-     * <pre>
-     * <code>
-     * N.println(ACSB.select("firstName", "lastName").from("account").where(CF.eq("id", 1)).sql());
-     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = 1
-     * </code>
-     * </pre>
-     *
-     * @deprecated {@code PAC or NAC} is preferred.
-     */
-    @Deprecated
-    public static class ACSB extends SQLBuilder {
-
-        ACSB() {
-            super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.SQL);
-        }
-
-        static ACSB createInstance() {
-            return new ACSB();
-        }
-
-        /**
-         *
-         * @param expr
-         * @return
-         */
-        public static SQLBuilder insert(final String expr) {
-            return insert(N.asArray(expr));
-        }
-
-        /**
-         *
-         * @param propOrColumnNames
-         * @return
-         */
-        public static SQLBuilder insert(final String... propOrColumnNames) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.ADD;
-            instance._propOrColumnNames = Array.asList(propOrColumnNames);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param propOrColumnNames
-         * @return
-         */
-        public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.ADD;
-            instance._propOrColumnNames = propOrColumnNames;
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param props
-         * @return
-         */
-        public static SQLBuilder insert(final Map<String, Object> props) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.ADD;
-            instance._props = props;
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param entity
-         * @return
-         */
-        public static SQLBuilder insert(final Object entity) {
-            return insert(entity, null);
-        }
-
-        /**
-         *
-         * @param entity
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.ADD;
-            instance.setEntityClass(entity.getClass());
-
-            parseInsertEntity(instance, entity, excludedPropNames);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder insert(final Class<?> entityClass) {
-            return insert(entityClass, null);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.ADD;
-            instance.setEntityClass(entityClass);
-            instance._propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder insertInto(final Class<?> entityClass) {
-            return insertInto(entityClass, null);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
-            return insert(entityClass, excludedPropNames).into(entityClass);
-        }
-
-        /**
-         * Generate the MySQL style batch insert SQL.
-         *
-         * @param propsList list of entities or properties maps.
-         * @return
-         */
-        @Beta
-        public static SQLBuilder batchInsert(final Collection<?> propsList) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.ADD;
-            final Optional<?> first = N.firstNonNull(propsList);
-
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
-                instance.setEntityClass(first.get().getClass());
-            }
-
-            instance._propsList = toInsertPropsList(propsList);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param tableName
-         * @return
-         */
-        public static SQLBuilder update(final String tableName) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.UPDATE;
-            instance._tableName = tableName;
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param tableName
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.UPDATE;
-            instance._tableName = tableName;
-            instance.setEntityClass(entityClass);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder update(final Class<?> entityClass) {
-            return update(entityClass, null);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.UPDATE;
-            instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, instance._namingPolicy);
-            instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param tableName
-         * @return
-         */
-        public static SQLBuilder deleteFrom(final String tableName) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.DELETE;
-            instance._tableName = tableName;
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param tableName
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.DELETE;
-            instance._tableName = tableName;
-            instance.setEntityClass(entityClass);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder deleteFrom(final Class<?> entityClass) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.DELETE;
-            instance.setEntityClass(entityClass);
-            instance._tableName = getTableName(entityClass, instance._namingPolicy);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param selectPart
-         * @return
-         */
-        public static SQLBuilder select(final String selectPart) {
-            N.checkArgNotEmpty(selectPart, SELECT_PART);
-
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.QUERY;
-            instance._propOrColumnNames = Array.asList(selectPart);
-            return instance;
-        }
-
-        /**
-         *
-         * @param propOrColumnNames
-         * @return
-         */
-        public static SQLBuilder select(final String... propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
-
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.QUERY;
-            instance._propOrColumnNames = Array.asList(propOrColumnNames);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param propOrColumnNames
-         * @return
-         */
-        public static SQLBuilder select(final Collection<String> propOrColumnNames) {
-            N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
-
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.QUERY;
-            instance._propOrColumnNames = propOrColumnNames;
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param propOrColumnNameAliases
-         * @return
-         */
-        public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
-            N.checkArgNotEmpty(propOrColumnNameAliases, PROP_OR_COLUMN_NAME_ALIASES);
-
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.QUERY;
-            instance._propOrColumnNameAliases = propOrColumnNameAliases;
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder select(final Class<?> entityClass) {
-            return select(entityClass, false);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param includeSubEntityProperties
-         * @return
-         */
-        public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
-            return select(entityClass, includeSubEntityProperties, null);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
-            return select(entityClass, false, excludedPropNames);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param includeSubEntityProperties
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.QUERY;
-            instance.setEntityClass(entityClass);
-            instance._propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
-
-            return instance;
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClass) {
-            return selectFrom(entityClass, false);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param alias
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
-            return selectFrom(entityClass, alias, false);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param includeSubEntityProperties
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
-            return selectFrom(entityClass, includeSubEntityProperties, null);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param alias
-         * @param includeSubEntityProperties
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
-            return selectFrom(entityClass, alias, includeSubEntityProperties, null);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, false, excludedPropNames);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param alias
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, alias, false, excludedPropNames);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param includeSubEntityProperties
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-            return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
-        }
-
-        /**
-         *
-         * @param entityClass
-         * @param alias
-         * @param includeSubEntityProperties
-         * @param excludedPropNames
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
-                final Set<String> excludedPropNames) {
-            if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-                //noinspection ConstantValue
-                return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
-            }
-
-            return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
-        }
-
-        /**
-         *
-         *
-         * @param entityClassA
-         * @param tableAliasA
-         * @param classAliasA
-         * @param entityClassB
-         * @param tableAliasB
-         * @param classAliasB
-         * @return
-         */
-        public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
-                final String tableAliasB, final String classAliasB) {
-            return select(entityClassA, tableAliasA, classAliasA, null, entityClassB, tableAliasB, classAliasB, null);
-        }
-
-        /**
-         *
-         *
-         * @param entityClassA
-         * @param tableAliasA
-         * @param classAliasA
-         * @param excludedPropNamesA
-         * @param entityClassB
-         * @param tableAliasB
-         * @param classAliasB
-         * @param excludedPropNamesB
-         * @return
-         */
-        public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
-                final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
-
-            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
-
-            return select(multiSelects);
-        }
-
-        /**
-         *
-         *
-         * @param multiSelects
-         * @return
-         */
-        public static SQLBuilder select(final List<Selection> multiSelects) {
-            checkMultiSelects(multiSelects);
-
-            final SQLBuilder instance = createInstance();
-
-            instance._op = OperationType.QUERY;
-            instance.setEntityClass(multiSelects.get(0).entityClass());
-            instance._multiSelects = multiSelects;
-
-            return instance;
-        }
-
-        /**
-         *
-         *
-         * @param entityClassA
-         * @param tableAliasA
-         * @param classAliasA
-         * @param entityClassB
-         * @param tableAliasB
-         * @param classAliasB
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
-                final String tableAliasB, final String classAliasB) {
-            return selectFrom(entityClassA, tableAliasA, classAliasA, null, entityClassB, tableAliasB, classAliasB, null);
-        }
-
-        /**
-         *
-         *
-         * @param entityClassA
-         * @param tableAliasA
-         * @param classAliasA
-         * @param excludedPropNamesA
-         * @param entityClassB
-         * @param tableAliasB
-         * @param classAliasB
-         * @param excludedPropNamesB
-         * @return
-         */
-        public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
-                final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
-                final Set<String> excludedPropNamesB) {
-
-            final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
-
-            return selectFrom(multiSelects);
-        }
-
-        /**
-         *
-         *
-         * @param multiSelects
-         * @return
-         */
-        public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
-            checkMultiSelects(multiSelects);
-
-            final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);

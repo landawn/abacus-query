@@ -24,25 +24,68 @@ import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.WD;
 
 /**
- *
+ * Represents an IN condition in SQL-like queries.
+ * This class is used to check if a property value matches any value in a specified collection.
+ * It's equivalent to multiple OR conditions but more concise and often more efficient.
+ * 
+ * <p>The IN condition is commonly used for:
+ * <ul>
+ *   <li>Checking membership in a list of values</li>
+ *   <li>Filtering by multiple possible values</li>
+ *   <li>Replacing multiple OR conditions</li>
+ * </ul>
+ * 
+ * <p>Example usage:
+ * <pre>{@code
+ * // Check if status is one of several values
+ * In condition = new In("status", Arrays.asList("active", "pending", "approved"));
+ * // This would generate: status IN ('active', 'pending', 'approved')
+ * 
+ * // Check if user_id is in a list
+ * In userCondition = new In("user_id", Arrays.asList(1, 2, 3, 5, 8));
+ * // This would generate: user_id IN (1, 2, 3, 5, 8)
+ * }</pre>
+ * 
+ * @see NotIn
+ * @see InSubQuery
  */
 public class In extends AbstractCondition {
 
-    // For Kryo
+    /**
+     * The property name to check.
+     * This field is used for serialization frameworks like Kryo.
+     */
     final String propName;
 
     private List<?> values;
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor should not be used directly in application code.
+     */
     In() {
         propName = null;
     }
 
     /**
+     * Creates a new IN condition with the specified property name and collection of values.
+     * The condition checks if the property value matches any value in the collection.
      *
-     *
-     * @param propName
-     * @param values
+     * @param propName the name of the property to check. Must not be null.
+     * @param values the collection of values to check against. Must not be null or empty.
+     * 
+     * <p>Example:
+     * <pre>{@code
+     * // Filter by multiple categories
+     * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers", "phones"));
+     * In categoryFilter = new In("category", categories);
+     * // Generates: category IN ('electronics', 'computers', 'phones')
+     * 
+     * // Filter by specific IDs
+     * List<Long> ids = Arrays.asList(101L, 102L, 103L);
+     * In idFilter = new In("product_id", ids);
+     * // Generates: product_id IN (101, 102, 103)
+     * }</pre>
      */
     public In(final String propName, final Collection<?> values) {
         super(Operator.IN);
@@ -54,27 +97,27 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * Gets the prop name.
+     * Gets the property name being checked.
      *
-     * @return
+     * @return the property name
      */
     public String getPropName() {
         return propName;
     }
 
     /**
-     * Gets the values.
+     * Gets the collection of values to check against.
      *
-     * @return
+     * @return the list of values
      */
     public List<?> getValues() { //NOSONAR
         return values;
     }
 
     /**
-     * Sets the values.
+     * Sets new values for this IN condition.
      *
-     * @param values the new values
+     * @param values the new collection of values. Must not be null or empty.
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
@@ -85,9 +128,10 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * Gets the parameters.
+     * Gets all parameter values from this IN condition.
+     * The returned list contains all the values that the property is being checked against.
      *
-     * @return
+     * @return the list of values as parameters, or an empty list if no values are set
      */
     @Override
     public List<Object> getParameters() {
@@ -95,7 +139,8 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * Clear parameters.
+     * Clears all parameter values in this condition.
+     * This sets all values in the list to null to release resources.
      */
     @SuppressWarnings("rawtypes")
     @Override
@@ -106,9 +151,10 @@ public class In extends AbstractCondition {
     }
 
     /**
+     * Creates a deep copy of this IN condition.
      *
-     * @param <T>
-     * @return
+     * @param <T> the type of the condition
+     * @return a new IN instance with a copy of all values
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -121,9 +167,11 @@ public class In extends AbstractCondition {
     }
 
     /**
+     * Converts this IN condition to its string representation according to the specified naming policy.
+     * The output format is: propName IN (value1, value2, ..., valueN)
      *
-     * @param namingPolicy
-     * @return
+     * @param namingPolicy the naming policy to apply to the property name
+     * @return the string representation, e.g., "status IN ('active', 'pending')"
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -135,9 +183,9 @@ public class In extends AbstractCondition {
     }
 
     /**
+     * Computes the hash code for this IN condition.
      *
-     *
-     * @return
+     * @return the hash code based on property name, operator, and values
      */
     @Override
     public int hashCode() {
@@ -148,9 +196,10 @@ public class In extends AbstractCondition {
     }
 
     /**
+     * Checks if this IN condition is equal to another object.
      *
-     * @param obj
-     * @return true, if successful
+     * @param obj the object to compare with
+     * @return true if the object is an IN condition with the same property name, operator, and values
      */
     @Override
     public boolean equals(final Object obj) {

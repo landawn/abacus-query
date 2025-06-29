@@ -20,7 +20,18 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
+ * A utility class for parsing SQL statements into individual words and tokens.
+ * This parser recognizes SQL keywords, operators, identifiers, and various SQL-specific
+ * separators while preserving the structure and meaning of the SQL statement.
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * String sql = "SELECT * FROM users WHERE age > 25 ORDER BY name";
+ * List<String> words = SQLParser.parse(sql);
+ * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER BY", " ", "name"]
+ * }</pre>
+ * 
+ * @author HaiYang Li
  */
 public final class SQLParser {
 
@@ -162,9 +173,18 @@ public final class SQLParser {
     }
 
     /**
-     *
-     * @param sql
-     * @return
+     * Parses a SQL statement into a list of individual words and tokens.
+     * This method tokenizes the SQL string while preserving the semantic meaning
+     * of SQL constructs such as keywords, operators, identifiers, and literals.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * List<String> words = SQLParser.parse("SELECT name, age FROM users WHERE age >= 18");
+     * // Result: ["SELECT", " ", "name", ",", " ", "age", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">=", " ", "18"]
+     * }</pre>
+     * 
+     * @param sql the SQL statement to parse
+     * @return a list of tokens representing the parsed SQL statement
      */
     public static List<String> parse(final String sql) {
         final int sqlLength = sql.length();
@@ -313,12 +333,34 @@ public final class SQLParser {
     }
 
     /**
-     *
-     * @param sql
-     * @param word
-     * @param fromIndex
-     * @param caseSensitive
-     * @return
+     * Finds the index of a specific word within a SQL statement starting from a given position.
+     * This method is capable of finding both simple words and composite keywords (like "LEFT JOIN").
+     * It respects SQL syntax rules, including quoted identifiers and case sensitivity options.
+     * 
+     * <p>The method handles:</p>
+     * <ul>
+     *   <li>Simple words and operators</li>
+     *   <li>Composite keywords (e.g., "GROUP BY", "LEFT JOIN")</li>
+     *   <li>Case-sensitive and case-insensitive matching</li>
+     *   <li>Quoted identifiers (preserving exact matches within quotes)</li>
+     *   <li>Multi-character operators</li>
+     * </ul>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
+     * int index = SQLParser.indexWord(sql, "ORDER BY", 0, false);
+     * // Returns: 41 (the position where "ORDER BY" starts)
+     * 
+     * int whereIndex = SQLParser.indexWord(sql, "WHERE", 0, false);
+     * // Returns: 21 (the position where "WHERE" starts)
+     * }</pre>
+     * 
+     * @param sql the SQL statement to search within
+     * @param word the word or composite keyword to find
+     * @param fromIndex the starting position for the search (0-based)
+     * @param caseSensitive whether the search should be case-sensitive
+     * @return the index of the word if found, or -1 if not found
      */
     public static int indexWord(final String sql, final String word, final int fromIndex, final boolean caseSensitive) {
         String[] subWords = compositeWords.get(word);
@@ -439,10 +481,29 @@ public final class SQLParser {
     }
 
     /**
-     *
-     * @param sql
-     * @param fromIndex
-     * @return
+     * Extracts the next word or token from a SQL statement starting at the specified index.
+     * This method skips leading whitespace and returns the next meaningful token,
+     * which could be a keyword, identifier, operator, or separator.
+     * 
+     * <p>The method handles:</p>
+     * <ul>
+     *   <li>Whitespace skipping</li>
+     *   <li>Quoted identifiers (returns the entire quoted string)</li>
+     *   <li>Multi-character operators (e.g., >=, !=)</li>
+     *   <li>Single-character tokens</li>
+     * </ul>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * String sql = "SELECT   name,   age FROM users";
+     * String word1 = SQLParser.nextWord(sql, 6);  // Returns: "name" (skips spaces after SELECT)
+     * String word2 = SQLParser.nextWord(sql, 10); // Returns: ","
+     * String word3 = SQLParser.nextWord(sql, 11); // Returns: "age" (skips spaces after comma)
+     * }</pre>
+     * 
+     * @param sql the SQL statement to extract the word from
+     * @param fromIndex the starting position for extraction (0-based)
+     * @return the next word or token found, or an empty string if no more tokens exist
      */
     public static String nextWord(final String sql, final int fromIndex) {
         final int sqlLength = sql.length();
@@ -494,8 +555,19 @@ public final class SQLParser {
     }
 
     /**
-     *
-     * @param separator
+     * Registers a single character as a SQL separator.
+     * Once registered, this character will be recognized as a token separator
+     * during SQL parsing operations.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * SQLParser.registerSeparator('$'); // Register $ as a separator
+     * List<String> words = SQLParser.parse("SELECT$FROM$users");
+     * // Result: ["SELECT", "$", "FROM", "$", "users"]
+     * }</pre>
+     * 
+     * @param separator the character to register as a separator
+     * @throws IllegalArgumentException if separator is not a positive char value
      */
     public static void registerSeparator(final char separator) {
         N.checkArgPositive(separator, "separator");
@@ -504,8 +576,21 @@ public final class SQLParser {
     }
 
     /**
-     *
-     * @param separator
+     * Registers a string as a SQL separator.
+     * This can be used to register multi-character operators or separators
+     * that should be recognized as single tokens during parsing.
+     * 
+     * <p>If the separator is a single character, it will also be registered
+     * as a character separator for efficiency.</p>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * SQLParser.registerSeparator("<=>"); // Register the NULL-safe equal operator
+     * SQLParser.registerSeparator("::"); // Register PostgreSQL cast operator
+     * }</pre>
+     * 
+     * @param separator the string to register as a separator
+     * @throws IllegalArgumentException if separator is null
      */
     public static void registerSeparator(final String separator) {
         N.checkArgNotNull(separator, "separator");
@@ -518,13 +603,28 @@ public final class SQLParser {
     }
 
     /**
-     * Checks if is separator.
-     *
-     * @param str
-     * @param len
-     * @param index
-     * @param ch
-     * @return true, if is separator
+     * Checks if a character at a specific position in a SQL string is a separator.
+     * This method performs context-aware checking, handling special cases like
+     * MyBatis/iBatis parameter markers (#{...}).
+     * 
+     * <p>Special handling:</p>
+     * <ul>
+     *   <li># followed by { is not considered a separator (MyBatis/iBatis syntax)</li>
+     *   <li>All registered separators are checked</li>
+     * </ul>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * String sql = "WHERE id = #{userId} AND age > 25";
+     * boolean isSep1 = SQLParser.isSeparator(sql, sql.length(), 10, '=');  // Returns: true
+     * boolean isSep2 = SQLParser.isSeparator(sql, sql.length(), 11, '#');  // Returns: false (part of #{userId})
+     * }</pre>
+     * 
+     * @param str the SQL string being parsed
+     * @param len the length of the SQL string
+     * @param index the current position in the string
+     * @param ch the character to check
+     * @return true if the character is a separator in this context, false otherwise
      */
     public static boolean isSeparator(final String str, final int len, final int index, final char ch) {
         // for Ibatis/Mybatis
@@ -536,12 +636,25 @@ public final class SQLParser {
     }
 
     /**
-     * Checks if is function name.
-     *
-     * @param words
-     * @param len
-     * @param index
-     * @return true, if is function name
+     * Determines if a word at a specific position in a parsed word list represents a function name.
+     * A word is considered a function name if it is followed by an opening parenthesis,
+     * either immediately or after whitespace.
+     * 
+     * <p>This method is useful for identifying SQL function calls during parsing or analysis.</p>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * List<String> words = SQLParser.parse("SELECT COUNT(*), MAX(age) FROM users");
+     * // Assuming words = ["SELECT", " ", "COUNT", "(", "*", ")", ",", " ", "MAX", "(", "age", ")", " ", "FROM", " ", "users"]
+     * boolean isFunc1 = SQLParser.isFunctionName(words, words.size(), 2);  // Returns: true (COUNT)
+     * boolean isFunc2 = SQLParser.isFunctionName(words, words.size(), 8);  // Returns: true (MAX)
+     * boolean isFunc3 = SQLParser.isFunctionName(words, words.size(), 15); // Returns: false (users)
+     * }</pre>
+     * 
+     * @param words the list of parsed SQL words/tokens
+     * @param len the total length of the words list
+     * @param index the index of the word to check
+     * @return true if the word at the specified index is a function name, false otherwise
      */
     public static boolean isFunctionName(final List<String> words, final int len, final int index) {
         //    return (i < len - 1 && words.get(i + 1).charAt(0) == WD._PARENTHESES_L)

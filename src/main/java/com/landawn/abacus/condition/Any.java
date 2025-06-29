@@ -15,7 +15,35 @@
 package com.landawn.abacus.condition;
 
 /**
- *
+ * Represents the SQL ANY operator for use with subqueries.
+ * The ANY operator returns true if the comparison is true for ANY of the values returned by the subquery.
+ * 
+ * <p>ANY is typically used with comparison operators (=, !=, >, <, >=, <=) and a subquery.
+ * The condition is satisfied if the comparison is true for at least one value from the subquery.</p>
+ * 
+ * <p>Usage example:</p>
+ * <pre>{@code
+ * // Find products with price greater than ANY product in category 'Electronics'
+ * SubQuery electronicsQuery = new SubQuery("SELECT price FROM products WHERE category = 'Electronics'");
+ * Any anyPrice = new Any(electronicsQuery);
+ * // Use with: price > ANY (subquery)
+ * 
+ * // Find employees whose salary equals ANY manager salary
+ * SubQuery managerSalaries = new SubQuery("SELECT salary FROM employees WHERE is_manager = true");
+ * Any anyManagerSalary = new Any(managerSalaries);
+ * // Use with: salary = ANY (subquery)
+ * }</pre>
+ * 
+ * <p>Note: ANY is equivalent to SOME in SQL. The behavior with different operators:</p>
+ * <ul>
+ *   <li>= ANY: true if equal to any value in the subquery (equivalent to IN)</li>
+ *   <li>> ANY: true if greater than at least one value</li>
+ *   <li>< ANY: true if less than at least one value</li>
+ * </ul>
+ * 
+ * @see All
+ * @see SubQuery
+ * @see Cell
  */
 public class Any extends Cell {
 
@@ -24,9 +52,21 @@ public class Any extends Cell {
     }
 
     /**
-     *
-     *
-     * @param condition
+     * Creates a new ANY condition with the specified subquery.
+     * 
+     * @param condition the subquery that returns values to compare against
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * // Create a subquery for department budgets
+     * SubQuery budgetQuery = new SubQuery(
+     *     "SELECT budget FROM departments WHERE region = 'West'"
+     * );
+     * Any anyBudget = new Any(budgetQuery);
+     * 
+     * // Can be used in conditions like:
+     * // expense > ANY (SELECT budget FROM departments WHERE region = 'West')
+     * }</pre>
      */
     public Any(final SubQuery condition) {
         super(Operator.ANY, condition);

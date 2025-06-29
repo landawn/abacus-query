@@ -214,6 +214,7 @@ public class ConditionFactory {
      * @param entity
      * @return
      */
+    @SuppressWarnings("deprecation")
     public static Or eqOr(final Object entity) {
         return eqOr(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
     }
@@ -315,6 +316,7 @@ public class ConditionFactory {
      * @param entity
      * @return
      */
+    @SuppressWarnings("deprecation")
     public static And eqAnd(final Object entity) {
         return eqAnd(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
     }
@@ -405,6 +407,7 @@ public class ConditionFactory {
      * @param entities
      * @return
      */
+    @SuppressWarnings("deprecation")
     @Beta
     public static Or eqAndOr(final Collection<?> entities) {
         N.checkArgNotEmpty(entities, "entities");

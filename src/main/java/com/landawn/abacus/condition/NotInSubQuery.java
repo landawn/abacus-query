@@ -24,7 +24,23 @@ import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
- *
+ * Represents a NOT IN subquery condition used in SQL WHERE clauses.
+ * This condition checks if a property value (or multiple property values) is NOT contained 
+ * in the result set of a subquery.
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * // Single property NOT IN subquery
+ * SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+ * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
+ * // Generates: userId NOT IN (SELECT id FROM inactive_users)
+ * 
+ * // Multiple properties NOT IN subquery
+ * List<String> props = Arrays.asList("firstName", "lastName");
+ * SubQuery subQuery2 = new SubQuery("SELECT fname, lname FROM blacklist");
+ * NotInSubQuery condition2 = new NotInSubQuery(props, subQuery2);
+ * // Generates: (firstName, lastName) NOT IN (SELECT fname, lname FROM blacklist)
+ * }</pre>
  */
 public class NotInSubQuery extends AbstractCondition {
 
@@ -43,10 +59,17 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     *
-     *
-     * @param propName
-     * @param subQuery
+     * Constructs a NOT IN subquery condition for a single property.
+     * 
+     * @param propName the property name to check against the subquery results
+     * @param subQuery the subquery that returns the values to check against
+     * @throws IllegalArgumentException if subQuery is null
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM deleted_items");
+     * NotInSubQuery condition = new NotInSubQuery("itemId", subQuery);
+     * }</pre>
      */
     public NotInSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.NOT_IN);
@@ -59,10 +82,20 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     *
-     *
-     * @param propNames
-     * @param subQuery
+     * Constructs a NOT IN subquery condition for multiple properties.
+     * Used for composite key comparisons where multiple columns need to be
+     * checked against a subquery returning multiple columns.
+     * 
+     * @param propNames collection of property names to check against the subquery results
+     * @param subQuery the subquery that returns the values to check against
+     * @throws IllegalArgumentException if propNames is empty or subQuery is null
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * List<String> props = Arrays.asList("country", "city");
+     * SubQuery subQuery = new SubQuery("SELECT country, city FROM restricted_locations");
+     * NotInSubQuery condition = new NotInSubQuery(props, subQuery);
+     * }</pre>
      */
     public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.NOT_IN);
@@ -76,61 +109,64 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     *
-     *
-     * @return
+     * Gets the property name for single-property NOT IN conditions.
+     * 
+     * @return the property name, or null if this is a multi-property condition
      */
     public String getPropName() {
         return propName;
     }
 
     /**
-     *
-     *
-     * @return
+     * Gets the property names for multi-property NOT IN conditions.
+     * 
+     * @return collection of property names, or null if this is a single-property condition
      */
     public Collection<String> getPropNames() {
         return propNames;
     }
 
     /**
-     *
-     *
-     * @return
+     * Gets the subquery used in this NOT IN condition.
+     * 
+     * @return the subquery
      */
     public SubQuery getSubQuery() {
         return subQuery;
     }
 
     /**
-     *
-     *
-     * @param subQuery
+     * Sets a new subquery for this NOT IN condition.
+     * 
+     * @param subQuery the new subquery to set
      */
     public void setSubQuery(final SubQuery subQuery) {
         this.subQuery = subQuery;
     }
 
     /**
-     *
-     *
-     * @return
+     * Gets the list of parameters from the subquery.
+     * 
+     * @return list of parameter values from the subquery
      */
     @Override
     public List<Object> getParameters() {
         return subQuery.getParameters();
     }
 
+    /**
+     * Clears all parameters from the subquery.
+     */
     @Override
     public void clearParameters() {
         subQuery.clearParameters();
     }
 
     /**
-     *
-     *
-     * @param <T>
-     * @return
+     * Creates a deep copy of this NOT IN subquery condition.
+     * 
+     * @param <T> the type of condition to return
+     * @return a new instance with copied values
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -143,9 +179,9 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     *
-     *
-     * @return
+     * Generates the hash code for this NOT IN subquery condition.
+     * 
+     * @return hash code based on property name(s), operator, and subquery
      */
     @Override
     public int hashCode() {
@@ -156,9 +192,10 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     *
-     * @param obj
-     * @return true, if successful
+     * Checks if this NOT IN subquery condition is equal to another object.
+     * 
+     * @param obj the object to compare with
+     * @return true if the objects are equal, false otherwise
      */
     @Override
     public boolean equals(final Object obj) {
@@ -175,10 +212,16 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     *
-     *
-     * @param namingPolicy
-     * @return
+     * Converts this NOT IN subquery condition to its string representation using the specified naming policy.
+     * 
+     * @param namingPolicy the naming policy to apply to property names
+     * @return string representation of the NOT IN subquery condition
+     * 
+     * <p>Example output:</p>
+     * <pre>{@code
+     * // Single property: "user_id NOT IN (SELECT id FROM inactive_users)"
+     * // Multiple properties: "(first_name, last_name) NOT IN (SELECT fname, lname FROM blacklist)"
+     * }</pre>
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {

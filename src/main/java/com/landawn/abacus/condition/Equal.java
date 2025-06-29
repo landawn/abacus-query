@@ -15,7 +15,32 @@
 package com.landawn.abacus.condition;
 
 /**
- *
+ * Represents an equality (=) condition in a query.
+ * This condition checks if a property value equals a specified value.
+ * 
+ * <p>This is one of the most commonly used conditions in queries.
+ * It supports comparison with literal values, null values, and subqueries.</p>
+ * 
+ * <p>Usage example:</p>
+ * <pre>{@code
+ * // Simple equality check
+ * Equal condition = new Equal("status", "active");
+ * 
+ * // Use in a query
+ * query.where(new Equal("userId", 12345));
+ * 
+ * // Compare with null (though IsNull is preferred)
+ * Equal nullCheck = new Equal("deletedDate", null);
+ * 
+ * // Compare with subquery result
+ * SubQuery maxSalary = new SubQuery("SELECT MAX(salary) FROM employees");
+ * Equal maxSalaryCheck = new Equal("salary", maxSalary);
+ * }</pre>
+ * 
+ * @see Binary
+ * @see NotEqual
+ * @see IsNull
+ * @see Condition
  */
 public class Equal extends Binary {
 
@@ -24,10 +49,23 @@ public class Equal extends Binary {
     }
 
     /**
-     *
-     *
-     * @param propName
-     * @param propValue
+     * Creates a new Equal condition.
+     * 
+     * @param propName the name of the property to compare
+     * @param propValue the value to compare against (can be null, literal value, or subquery)
+     * @throws IllegalArgumentException if propName is null or empty
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * // Check if name equals "John"
+     * Equal nameCheck = new Equal("name", "John");
+     * 
+     * // Check if count equals 0
+     * Equal countCheck = new Equal("count", 0);
+     * 
+     * // Check if date equals specific date
+     * Equal dateCheck = new Equal("createdDate", someDate);
+     * }</pre>
      */
     public Equal(final String propName, final Object propValue) {
         super(propName, Operator.EQUAL, propValue);

@@ -19,7 +19,25 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- *
+ * Represents a logical AND condition that combines multiple conditions.
+ * All conditions within an AND must evaluate to true for the AND condition to be true.
+ * 
+ * <p>Usage example:</p>
+ * <pre>{@code
+ * // Create an AND condition with multiple sub-conditions
+ * And and = new And(
+ *     CF.eq("status", "active"),
+ *     CF.gt("age", 18),
+ *     CF.lt("age", 65)
+ * );
+ * 
+ * // Chain additional conditions
+ * And newAnd = and.and(CF.eq("country", "USA"));
+ * }</pre>
+ * 
+ * @see Junction
+ * @see Or
+ * @see Condition
  */
 public class And extends Junction {
 
@@ -28,29 +46,55 @@ public class And extends Junction {
     }
 
     /**
-     *
-     *
-     * @param conditions
+     * Creates a new AND condition with the specified conditions.
+     * 
+     * @param conditions the conditions to combine with AND logic
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * And and = new And(
+     *     CF.eq("department", "Sales"),
+     *     CF.gte("salary", 50000)
+     * );
+     * }</pre>
      */
     public And(final Condition... conditions) {
         super(Operator.AND, conditions);
     }
 
     /**
-     *
-     *
-     * @param conditions
+     * Creates a new AND condition with the specified collection of conditions.
+     * 
+     * @param conditions the collection of conditions to combine with AND logic
+     * @throws NullPointerException if conditions is null
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * List<Condition> conditions = Arrays.asList(
+     *     CF.eq("status", "active"),
+     *     CF.notNull("email")
+     * );
+     * And and = new And(conditions);
+     * }</pre>
      */
     public And(final Collection<? extends Condition> conditions) {
         super(Operator.AND, conditions);
     }
 
     /**
-     *
-     *
-     * @param condition
-     * @return
-     * @throws UnsupportedOperationException
+     * Creates a new AND condition by adding another condition to this AND.
+     * This method returns a new AND instance containing all existing conditions plus the new one.
+     * 
+     * @param condition the condition to add to this AND
+     * @return a new AND condition containing all conditions
+     * @throws UnsupportedOperationException if the operation is not supported
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * And and = new And(CF.eq("status", "active"));
+     * And extended = and.and(CF.gt("score", 80));
+     * // extended now contains both conditions
+     * }</pre>
      */
     @Override
     public And and(final Condition condition) throws UnsupportedOperationException {

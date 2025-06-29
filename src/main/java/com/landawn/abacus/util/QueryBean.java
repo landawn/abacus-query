@@ -36,14 +36,37 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-// TODO
 /**
- *
+ * A bean class that represents a structured query with support for converting to SQL-like conditions.
+ * This class provides a fluent API for building queries with select, from, where, having, order by clauses,
+ * and pagination support.
+ * 
+ * <p>The QueryBean is designed to work with bean-searcher pattern for dynamic query building.
+ * It supports complex filtering with AND/OR conditions and various operators.</p>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * QueryBean query = new QueryBean()
+ *     .select(Arrays.asList("id", "name", "email"))
+ *     .from("users")
+ *     .where(Arrays.asList(
+ *         new FilterBean()
+ *             .fieldName("status")
+ *             .operator(Operator.equals)
+ *             .parameter("active")
+ *     ))
+ *     .orderBy(Arrays.asList(
+ *         new OrderByBean()
+ *             .fieldName("created_date")
+ *             .sortDirection(SortDirection.DESC)
+ *     ))
+ *     .limit(10)
+ *     .offset(0);
+ * }</pre>
  *
  * @see <a href="https://github.com/troyzhxu/bean-searcher">bean-searcher in github</a>
  * @see <a href="https://gitee.com/troyzhxu/bean-searcher">bean-searcher in gitee</a>
  */
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -75,6 +98,31 @@ public class QueryBean {
     //        throw new UnsupportedOperationException();
     //    }
 
+    /**
+     * Represents a filter condition that can be applied in WHERE or HAVING clauses.
+     * Supports both simple field comparisons and complex nested AND/OR conditions.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // Simple filter
+     * FilterBean filter = new FilterBean()
+     *     .fieldName("age")
+     *     .operator(Operator.greater_than)
+     *     .parameter("18");
+     * 
+     * // Complex filter with AND conditions
+     * FilterBean complexFilter = new FilterBean()
+     *     .fieldName("status")
+     *     .operator(Operator.equals)
+     *     .parameter("active")
+     *     .and(Arrays.asList(
+     *         new FilterBean()
+     *             .fieldName("role")
+     *             .operator(Operator.in)
+     *             .parameter("[\"admin\", \"moderator\"]")
+     *     ));
+     * }</pre>
+     */
     @Accessors(fluent = true)
     @Data
     @NoArgsConstructor
@@ -89,29 +137,35 @@ public class QueryBean {
         private List<FilterBean> or;
 
         /**
+         * Converts this FilterBean to a Condition object without type information.
+         * Uses string type as default for all field values.
          *
-         *
-         * @return
+         * @return a Condition object representing this filter
+         * @throws IllegalArgumentException if both 'and' and 'or' lists contain values
          */
         public Condition toCondition() {
             return toCondition((BeanInfo) null);
         }
 
         /**
+         * Converts this FilterBean to a Condition object using the specified entity class for type information.
+         * The entity class is used to determine the correct data type for field values.
          *
-         *
-         * @param resultEntityClass
-         * @return
+         * @param resultEntityClass the entity class to extract field type information from
+         * @return a Condition object representing this filter with proper type conversion
+         * @throws IllegalArgumentException if both 'and' and 'or' lists contain values
          */
         public Condition toCondition(final Class<?> resultEntityClass) {
             return toCondition(ParserUtil.getBeanInfo(resultEntityClass));
         }
 
         /**
+         * Converts this FilterBean to a Condition object using the provided BeanInfo for type information.
+         * This method handles the conversion of string parameters to appropriate types based on field information.
          *
-         *
-         * @param beanInfo
-         * @return
+         * @param beanInfo bean metadata containing field type information, can be null
+         * @return a Condition object representing this filter with proper type conversion
+         * @throws IllegalArgumentException if both 'and' and 'or' lists contain values
          */
         public Condition toCondition(final BeanInfo beanInfo) {
             if (N.notEmpty(and) && N.notEmpty(or)) {
@@ -235,6 +289,22 @@ public class QueryBean {
         }
     }
 
+    /**
+     * Represents an ORDER BY clause component that can specify single or multiple fields with sort direction.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // Single field ordering
+     * OrderByBean orderBy = new OrderByBean()
+     *     .fieldName("created_date")
+     *     .sortDirection(SortDirection.DESC);
+     * 
+     * // Multiple fields ordering
+     * OrderByBean multiOrderBy = new OrderByBean()
+     *     .fieldNames(Arrays.asList("last_name", "first_name"))
+     *     .sortDirection(SortDirection.ASC);
+     * }</pre>
+     */
     @Accessors(fluent = true)
     @Data
     @NoArgsConstructor
@@ -245,9 +315,10 @@ public class QueryBean {
         private SortDirection sortDirection;
 
         /**
+         * Converts this OrderByBean to an OrderBy condition.
+         * If fieldNames is populated, it takes precedence over fieldName.
          *
-         *
-         * @return
+         * @return an OrderBy object representing this ordering specification
          */
         public OrderBy toOrderBy() {
             if (N.notEmpty(fieldNames)) {
@@ -434,6 +505,21 @@ public class QueryBean {
         return ret;
     };
 
+    /**
+     * Enumeration of supported SQL operators for query conditions.
+     * Each operator provides methods to generate both regular and parameterized SQL fragments.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // Generate SQL fragment
+     * String sql = Operator.equals.toSql("name", "John");
+     * // Result: "name = 'John'"
+     * 
+     * // Generate parameterized SQL
+     * String paramSql = Operator.in.toParameterizedSql("status", Arrays.asList("active", "pending"));
+     * // Result: "status IN (?, ?)"
+     * }</pre>
+     */
     public enum Operator {
         equals("=", generalSqlConverter, generalParameterizedSqlConverter), //
         not_equals("!=", generalSqlConverter, generalParameterizedSqlConverter),
@@ -470,93 +556,95 @@ public class QueryBean {
         }
 
         /**
+         * Returns the SQL operator string representation.
          *
-         *
-         * @return
+         * @return the SQL operator (e.g., "=", "!=", "LIKE", "IN")
          */
         public String sqlOperator() {
             return sqlOperator;
         }
 
         /**
+         * Generates a SQL fragment for this operator with the given parameter value.
+         * Numbers are not quoted, while other values are wrapped in single quotes.
          *
-         *
-         * @param parameter
-         * @return
+         * @param parameter the parameter value to include in the SQL
+         * @return a SQL fragment without column name (e.g., "= 'value'")
          */
         public String toSql(final Object parameter) {
             return sqlConverter.apply(null, null, this, parameter);
         }
 
         /**
+         * Generates a SQL fragment for this operator with column name and parameter value.
+         * Numbers are not quoted, while other values are wrapped in single quotes.
          *
-         *
-         * @param columnName
-         * @param parameter
-         * @return
+         * @param columnName the column name to use in the SQL
+         * @param parameter the parameter value to include in the SQL
+         * @return a complete SQL condition (e.g., "name = 'John'")
          */
         public String toSql(final String columnName, final Object parameter) {
             return sqlConverter.apply(null, columnName, this, parameter);
         }
 
         /**
+         * Appends a SQL fragment for this operator with the given parameter to the StringBuilder.
          *
-         *
-         * @param sqlBuilder
-         * @param parameter
+         * @param sqlBuilder the StringBuilder to append to
+         * @param parameter the parameter value to include in the SQL
          */
         public void appendSql(final StringBuilder sqlBuilder, final Object parameter) {
             sqlConverter.apply(sqlBuilder, null, this, parameter);
         }
 
         /**
+         * Appends a SQL fragment for this operator with column name and parameter to the StringBuilder.
          *
-         *
-         * @param sqlBuilder
-         * @param columnName
-         * @param parameter
+         * @param sqlBuilder the StringBuilder to append to
+         * @param columnName the column name to use in the SQL
+         * @param parameter the parameter value to include in the SQL
          */
         public void appendSql(final StringBuilder sqlBuilder, final String columnName, final Object parameter) {
             sqlConverter.apply(sqlBuilder, columnName, this, parameter);
         }
 
         /**
+         * Generates a parameterized SQL fragment for this operator using placeholders.
          *
-         *
-         * @param parameter
-         * @return
+         * @param parameter the parameter value (used to determine placeholder count for IN/BETWEEN operators)
+         * @return a parameterized SQL fragment without column name (e.g., "= ?")
          */
         public String toParameterizedSql(final Object parameter) {
             return parameterizedSqlConverter.apply(null, null, this, parameter);
         }
 
         /**
+         * Generates a parameterized SQL fragment for this operator with column name using placeholders.
          *
-         *
-         * @param columnName
-         * @param parameter
-         * @return
+         * @param columnName the column name to use in the SQL
+         * @param parameter the parameter value (used to determine placeholder count for IN/BETWEEN operators)
+         * @return a complete parameterized SQL condition (e.g., "name = ?")
          */
         public String toParameterizedSql(final String columnName, final Object parameter) {
             return parameterizedSqlConverter.apply(null, columnName, this, parameter);
         }
 
         /**
+         * Appends a parameterized SQL fragment for this operator to the StringBuilder.
          *
-         *
-         * @param sqlBuilder
-         * @param parameter
+         * @param sqlBuilder the StringBuilder to append to
+         * @param parameter the parameter value (used to determine placeholder count for IN/BETWEEN operators)
          */
         public void appendParameterizedSql(final StringBuilder sqlBuilder, final Object parameter) {
             parameterizedSqlConverter.apply(sqlBuilder, null, this, parameter);
         }
 
         /**
+         * Appends a parameterized SQL fragment for this operator with column name to the StringBuilder.
          *
-         *
-         * @param sqlBuilder
-         * @param columnName
-         * @param parameter
+         * @param sqlBuilder the StringBuilder to append to
+         * @param columnName the column name to use in the SQL
+         * @param parameter the parameter value (used to determine placeholder count for IN/BETWEEN operators)
          */
         public void appendParameterizedSql(final StringBuilder sqlBuilder, final String columnName, final Object parameter) {
             parameterizedSqlConverter.apply(sqlBuilder, columnName, this, parameter);

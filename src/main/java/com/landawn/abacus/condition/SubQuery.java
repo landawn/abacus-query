@@ -30,7 +30,34 @@ import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
- *
+ * Represents a subquery that can be used within SQL conditions.
+ * A subquery is a SELECT statement nested inside another SQL statement.
+ * 
+ * <p>This class supports two types of subqueries:</p>
+ * <ul>
+ *   <li>Raw SQL subqueries - directly specified SQL strings</li>
+ *   <li>Structured subqueries - built from entity names, property names, and conditions</li>
+ * </ul>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * // Raw SQL subquery
+ * SubQuery subQuery1 = new SubQuery("SELECT id FROM users WHERE status = 'active'");
+ * 
+ * // Structured subquery with entity name
+ * Condition activeCondition = new Equal("status", "active");
+ * SubQuery subQuery2 = new SubQuery("users", Arrays.asList("id"), activeCondition);
+ * // Generates: SELECT id FROM users WHERE status = 'active'
+ * 
+ * // Structured subquery with entity class
+ * SubQuery subQuery3 = new SubQuery(User.class, Arrays.asList("id", "name"), 
+ *                                   new GreaterThan("age", 18));
+ * // Generates: SELECT id, name FROM User WHERE age > 18
+ * 
+ * // Use in IN condition
+ * In inCondition = new In("userId", subQuery1);
+ * // Results in: userId IN (SELECT id FROM users WHERE status = 'active')
+ * }</pre>
  */
 public class SubQuery extends AbstractCondition {
 
@@ -58,19 +85,33 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
+     * Constructs a subquery with raw SQL.
      *
-     *
-     * @param sql
+     * @param sql the SQL SELECT statement
+     * @throws IllegalArgumentException if sql is null or empty
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT MAX(salary) FROM employees");
+     * }</pre>
      */
     public SubQuery(final String sql) {
         this(Strings.EMPTY, sql);
     }
 
     /**
+     * Constructs a subquery with an entity name and raw SQL.
+     * The entity name is for reference only when using raw SQL.
      *
-     *
-     * @param entityName
-     * @param sql
+     * @param entityName the entity/table name (can be empty)
+     * @param sql the SQL SELECT statement
+     * @throws IllegalArgumentException if sql is null or empty
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("orders", 
+     *     "SELECT order_id FROM orders WHERE total > 1000");
+     * }</pre>
      */
     public SubQuery(final String entityName, final String sql) {
         super(Operator.EMPTY);
@@ -87,11 +128,22 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
+     * Constructs a structured subquery with entity name, selected properties, and condition.
      *
-     *
-     * @param entityName
-     * @param propNames
-     * @param condition
+     * @param entityName the entity/table name
+     * @param propNames collection of property names to select
+     * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * List<String> props = Arrays.asList("id", "email");
+     * Condition condition = new And(
+     *     new Equal("active", true),
+     *     new GreaterThan("created", "2023-01-01")
+     * );
+     * SubQuery subQuery = new SubQuery("users", props, condition);
+     * // Generates: SELECT id, email FROM users WHERE active = true AND created > '2023-01-01'
+     * }</pre>
      */
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
@@ -108,11 +160,21 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
+     * Constructs a structured subquery with entity class, selected properties, and condition.
+     * The entity name is derived from the class's simple name.
      *
-     *
-     * @param entityClass
-     * @param propNames
-     * @param condition
+     * @param entityClass the entity class
+     * @param propNames collection of property names to select
+     * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery(Product.class, 
+     *     Arrays.asList("id", "categoryId"),
+     *     new Like("name", "%electronics%")
+     * );
+     * // Generates: SELECT id, categoryId FROM Product WHERE name LIKE '%electronics%'
+     * }</pre>
      */
     public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
@@ -129,54 +191,54 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Returns SQL script
+     * Returns the raw SQL script if this is a raw SQL subquery.
      *
-     * @return
+     * @return the SQL script, or null if this is a structured subquery
      */
     public String getSql() {
         return sql;
     }
 
     /**
+     * Gets the entity/table name for this subquery.
      *
-     *
-     * @return
+     * @return the entity name
      */
     public String getEntityName() {
         return entityName;
     }
 
     /**
+     * Gets the entity class if this subquery was created with a class.
      *
-     *
-     * @return
+     * @return the entity class, or null if created with entity name
      */
     public Class<?> getEntityClass() {
         return entityClass;
     }
 
     /**
-     * Gets the select prop names.
+     * Gets the collection of property names to select in this subquery.
      *
-     * @return
+     * @return collection of property names, or null for raw SQL subqueries
      */
     public Collection<String> getSelectPropNames() {
         return propNames;
     }
 
     /**
-     * Gets the condition.
+     * Gets the WHERE condition for this subquery.
      *
-     * @return
+     * @return the condition, or null if no condition or raw SQL subquery
      */
     public Condition getCondition() {
         return condition;
     }
 
     /**
-     * Gets the parameters.
+     * Gets the list of parameter values from the condition.
      *
-     * @return
+     * @return list of parameters, or empty list if no condition
      */
     @Override
     public List<Object> getParameters() {
@@ -184,7 +246,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Clear parameters.
+     * Clears all parameters from the condition.
      */
     @Override
     public void clearParameters() {
@@ -194,9 +256,10 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
+     * Creates a deep copy of this subquery.
      *
-     * @param <T>
-     * @return
+     * @param <T> the type of condition to return
+     * @return a new SubQuery instance with copied values
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -215,9 +278,13 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
+     * Converts this subquery to its string representation.
      *
-     * @param namingPolicy
-     * @return
+     * @param namingPolicy the naming policy to apply
+     * @return string representation of the subquery
+     * 
+     * <p>For raw SQL subqueries, returns the SQL as-is.
+     * For structured subqueries, generates the SELECT statement.</p>
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -261,9 +328,9 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
+     * Generates the hash code for this subquery.
      *
-     *
-     * @return
+     * @return hash code based on sql, entity name, properties, and condition
      */
     @Override
     public int hashCode() {
@@ -275,9 +342,10 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
+     * Checks if this subquery is equal to another object.
      *
-     * @param obj
-     * @return true, if successful
+     * @param obj the object to compare with
+     * @return true if the objects are equal, false otherwise
      */
     @Override
     public boolean equals(final Object obj) {

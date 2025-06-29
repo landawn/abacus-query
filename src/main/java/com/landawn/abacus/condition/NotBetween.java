@@ -23,7 +23,27 @@ import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
 /**
- *
+ * Represents a NOT BETWEEN condition in SQL queries.
+ * This condition checks if a value is NOT within a specified range (exclusive of the range).
+ * 
+ * <p>The NOT BETWEEN operator selects values outside a given range. The values can be
+ * numbers, text, dates, or even other conditions/expressions.</p>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * // Exclude ages between 18 and 65
+ * NotBetween condition1 = new NotBetween("age", 18, 65);
+ * // Results in: age NOT BETWEEN 18 AND 65
+ * 
+ * // Exclude dates in a range
+ * NotBetween condition2 = new NotBetween("orderDate", "2023-01-01", "2023-12-31");
+ * // Results in: orderDate NOT BETWEEN '2023-01-01' AND '2023-12-31'
+ * 
+ * // Using with subqueries or expressions as bounds
+ * Expression minExpr = new Expression("(SELECT MIN(salary) FROM employees)");
+ * Expression maxExpr = new Expression("(SELECT AVG(salary) FROM employees)");
+ * NotBetween condition3 = new NotBetween("salary", minExpr, maxExpr);
+ * }</pre>
  */
 public class NotBetween extends AbstractCondition {
     // For Kryo
@@ -39,11 +59,21 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
+     * Constructs a NOT BETWEEN condition for the specified property and range.
      *
-     *
-     * @param propName
-     * @param minValue
-     * @param maxValue
+     * @param propName the property name to check
+     * @param minValue the minimum value of the range (inclusive in BETWEEN, so excluded here)
+     * @param maxValue the maximum value of the range (inclusive in BETWEEN, so excluded here)
+     * @throws IllegalArgumentException if propName is null or empty
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * // Exclude normal working hours
+     * NotBetween notWorkHours = new NotBetween("hour", 9, 17);
+     * 
+     * // Exclude mid-range prices
+     * NotBetween extremePrices = new NotBetween("price", 100, 1000);
+     * }</pre>
      */
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {
         super(Operator.NOT_BETWEEN);
@@ -58,19 +88,19 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * Gets the prop name.
+     * Gets the property name for this NOT BETWEEN condition.
      *
-     * @return
+     * @return the property name
      */
     public String getPropName() {
         return propName;
     }
 
     /**
-     * Gets the min value.
+     * Gets the minimum value of the range to exclude.
      *
-     * @param <T>
-     * @return
+     * @param <T> the type of the minimum value
+     * @return the minimum value
      */
     @SuppressWarnings("unchecked")
     public <T> T getMinValue() {
@@ -78,9 +108,9 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * Sets the min value.
+     * Sets a new minimum value for the range.
      *
-     * @param minValue the new min value
+     * @param minValue the new minimum value
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
@@ -89,10 +119,10 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * Gets the max value.
+     * Gets the maximum value of the range to exclude.
      *
-     * @param <T>
-     * @return
+     * @param <T> the type of the maximum value
+     * @return the maximum value
      */
     @SuppressWarnings("unchecked")
     public <T> T getMaxValue() {
@@ -100,9 +130,9 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * Sets the max value.
+     * Sets a new maximum value for the range.
      *
-     * @param maxValue the new max value
+     * @param maxValue the new maximum value
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
@@ -111,9 +141,10 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * Gets the parameters.
+     * Gets the list of parameters for this condition.
+     * If min/max values are themselves conditions, their parameters are included.
      *
-     * @return
+     * @return list containing the min and max values or their parameters
      */
     @Override
     public List<Object> getParameters() {
@@ -135,7 +166,7 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * Clear parameters.
+     * Clears all parameters by setting values to null or clearing nested conditions.
      */
     @Override
     public void clearParameters() {
@@ -153,9 +184,11 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
+     * Creates a deep copy of this NOT BETWEEN condition.
+     * If min/max values are conditions themselves, they are also copied.
      *
-     * @param <T>
-     * @return
+     * @param <T> the type of condition to return
+     * @return a new instance with copied values
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -174,9 +207,16 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
+     * Converts this NOT BETWEEN condition to its string representation.
      *
-     * @param namingPolicy
-     * @return
+     * @param namingPolicy the naming policy to apply to the property name
+     * @return string representation of the NOT BETWEEN condition
+     * 
+     * <p>Example output:</p>
+     * <pre>{@code
+     * // "age NOT BETWEEN (18, 65)"
+     * // "price NOT BETWEEN (100.00, 1000.00)"
+     * }</pre>
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -185,9 +225,9 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
+     * Generates the hash code for this NOT BETWEEN condition.
      *
-     *
-     * @return
+     * @return hash code based on property name, operator, and range values
      */
     @Override
     public int hashCode() {
@@ -199,9 +239,10 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
+     * Checks if this NOT BETWEEN condition is equal to another object.
      *
-     * @param obj
-     * @return true, if successful
+     * @param obj the object to compare with
+     * @return true if the objects are equal, false otherwise
      */
     @Override
     public boolean equals(final Object obj) {

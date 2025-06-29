@@ -24,7 +24,24 @@ import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.WD;
 
 /**
- *
+ * Represents a NOT IN condition in SQL queries.
+ * This condition checks if a property value is NOT contained in a specified collection of values.
+ * 
+ * <p>The NOT IN operator is useful for excluding rows where the column value matches any value 
+ * in a given list. It's the opposite of the IN operator.</p>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * // Exclude specific statuses
+ * List<String> excludedStatuses = Arrays.asList("deleted", "archived", "inactive");
+ * NotIn condition = new NotIn("status", excludedStatuses);
+ * // Results in: status NOT IN ('deleted', 'archived', 'inactive')
+ * 
+ * // Exclude specific IDs
+ * Set<Integer> excludedIds = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
+ * NotIn condition2 = new NotIn("userId", excludedIds);
+ * // Results in: userId NOT IN (1, 2, 3, 4, 5)
+ * }</pre>
  */
 public class NotIn extends AbstractCondition {
 
@@ -39,10 +56,17 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
-     *
-     *
-     * @param propName
-     * @param values
+     * Constructs a NOT IN condition for the specified property and collection of values.
+     * 
+     * @param propName the property name to check
+     * @param values the collection of values that the property should NOT match
+     * @throws IllegalArgumentException if values is null or empty
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * List<String> excludedTypes = Arrays.asList("temp", "draft", "test");
+     * NotIn notIn = new NotIn("documentType", excludedTypes);
+     * }</pre>
      */
     public NotIn(final String propName, final Collection<?> values) {
         super(Operator.NOT_IN);
@@ -54,27 +78,27 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
-     * Gets the prop name.
+     * Gets the property name for this NOT IN condition.
      *
-     * @return
+     * @return the property name
      */
     public String getPropName() {
         return propName;
     }
 
     /**
-     * Gets the values.
+     * Gets the collection of values that the property should NOT match.
      *
-     * @return
+     * @return list of values to exclude
      */
     public List<?> getValues() { //NOSONAR
         return values;
     }
 
     /**
-     * Sets the values.
+     * Sets new values for this NOT IN condition.
      *
-     * @param values the new values
+     * @param values the new collection of values to exclude
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
      */
     @Deprecated
@@ -83,9 +107,10 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
-     * Gets the parameters.
+     * Gets the parameter values for this condition.
+     * Returns the values that should be excluded.
      *
-     * @return
+     * @return list of parameter values
      */
     @Override
     public List<Object> getParameters() {
@@ -93,7 +118,8 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
-     * Clear parameters.
+     * Clears all parameter values by setting them to null.
+     * This is useful for releasing resources while maintaining the condition structure.
      */
     @SuppressWarnings("rawtypes")
     @Override
@@ -104,9 +130,10 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
+     * Creates a deep copy of this NOT IN condition.
      *
-     * @param <T>
-     * @return
+     * @param <T> the type of condition to return
+     * @return a new instance with copied values
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -119,9 +146,16 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
+     * Converts this NOT IN condition to its string representation using the specified naming policy.
      *
-     * @param namingPolicy
-     * @return
+     * @param namingPolicy the naming policy to apply to the property name
+     * @return string representation of the NOT IN condition
+     * 
+     * <p>Example output:</p>
+     * <pre>{@code
+     * // With values ["A", "B", "C"] and snake_case naming:
+     * // "property_name NOT IN (A, B, C)"
+     * }</pre>
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -133,9 +167,9 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
+     * Generates the hash code for this NOT IN condition.
      *
-     *
-     * @return
+     * @return hash code based on property name, operator, and values
      */
     @Override
     public int hashCode() {
@@ -146,9 +180,10 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
+     * Checks if this NOT IN condition is equal to another object.
      *
-     * @param obj
-     * @return true, if successful
+     * @param obj the object to compare with
+     * @return true if the objects are equal, false otherwise
      */
     @Override
     public boolean equals(final Object obj) {

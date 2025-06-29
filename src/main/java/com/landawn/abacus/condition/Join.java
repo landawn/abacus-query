@@ -26,7 +26,47 @@ import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
 
 /**
- *
+ * Base class for SQL JOIN operations.
+ * This class provides the foundation for different types of joins (INNER, LEFT, RIGHT, FULL)
+ * and handles the common functionality of specifying join tables and conditions.
+ * 
+ * <p>A JOIN clause combines rows from two or more tables based on a related column between them.
+ * This class supports:
+ * <ul>
+ *   <li>Simple joins without conditions</li>
+ *   <li>Joins with ON conditions</li>
+ *   <li>Joins with multiple tables</li>
+ * </ul>
+ * 
+ * <p>This class is typically not used directly. Instead, use one of its subclasses:
+ * <ul>
+ *   <li>{@link InnerJoin} - Returns only matching rows from both tables</li>
+ *   <li>{@link LeftJoin} - Returns all rows from the left table and matching rows from the right</li>
+ *   <li>{@link RightJoin} - Returns all rows from the right table and matching rows from the left</li>
+ *   <li>{@link FullJoin} - Returns all rows from both tables</li>
+ * </ul>
+ * 
+ * <p>Example usage:
+ * <pre>{@code
+ * // Basic join (usually through subclasses)
+ * Join join = new Join("orders");
+ * // Generates: JOIN orders
+ * 
+ * // Join with condition
+ * Join joinWithCondition = new Join("orders o", 
+ *     new Equal("customers.id", "o.customer_id"));
+ * // Generates: JOIN orders o ON customers.id = o.customer_id
+ * 
+ * // Join multiple tables
+ * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
+ *     new Equal("o.id", "oi.order_id"));
+ * // Generates: JOIN orders o, order_items oi ON o.id = oi.order_id
+ * }</pre>
+ * 
+ * @see InnerJoin
+ * @see LeftJoin
+ * @see RightJoin
+ * @see FullJoin
  */
 public class Join extends AbstractCondition {
 
@@ -34,47 +74,95 @@ public class Join extends AbstractCondition {
 
     private Condition condition;
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor should not be used directly in application code.
+     */
     Join() {
     }
 
     /**
+     * Creates a simple JOIN clause for the specified table/entity.
+     * Uses the default JOIN operator without any ON condition.
      *
-     *
-     * @param joinEntity
+     * @param joinEntity the table or entity to join with. Can include alias.
+     * 
+     * <p>Example:
+     * <pre>{@code
+     * Join join = new Join("products");
+     * // Generates: JOIN products
+     * }</pre>
      */
     public Join(final String joinEntity) {
         this(Operator.JOIN, joinEntity);
     }
 
+    /**
+     * Creates a JOIN clause with the specified operator and table/entity.
+     * This protected constructor is used by subclasses to specify the join type.
+     *
+     * @param operator the join operator (INNER_JOIN, LEFT_JOIN, etc.)
+     * @param joinEntity the table or entity to join with
+     */
     protected Join(final Operator operator, final String joinEntity) {
         this(operator, joinEntity, null);
     }
 
     /**
+     * Creates a JOIN clause with a condition.
+     * Uses the default JOIN operator with an ON condition.
      *
-     *
-     * @param joinEntity
-     * @param condition
+     * @param joinEntity the table or entity to join with. Can include alias.
+     * @param condition the join condition, typically comparing columns from both tables.
+     * 
+     * <p>Example:
+     * <pre>{@code
+     * Join join = new Join("orders o",
+     *     new Equal("customers.id", "o.customer_id"));
+     * // Generates: JOIN orders o ON customers.id = o.customer_id
+     * }</pre>
      */
     public Join(final String joinEntity, final Condition condition) {
         this(Operator.JOIN, joinEntity, condition);
     }
 
+    /**
+     * Creates a JOIN clause with the specified operator, table/entity, and condition.
+     * This protected constructor is used by subclasses.
+     *
+     * @param operator the join operator
+     * @param joinEntity the table or entity to join with
+     * @param condition the join condition (can be null)
+     */
     protected Join(final Operator operator, final String joinEntity, final Condition condition) {
         this(operator, Array.asList(joinEntity), condition);
     }
 
     /**
+     * Creates a JOIN clause with multiple tables/entities and a condition.
+     * Uses the default JOIN operator.
      *
-     *
-     * @param joinEntities
-     * @param condition
+     * @param joinEntities the collection of tables or entities to join with
+     * @param condition the join condition
+     * 
+     * <p>Example:
+     * <pre>{@code
+     * Join join = new Join(Arrays.asList("orders o", "customers c"),
+     *     new Equal("o.customer_id", "c.id"));
+     * }</pre>
      */
     public Join(final Collection<String> joinEntities, final Condition condition) {
         this(Operator.JOIN, joinEntities, condition);
     }
 
+    /**
+     * Creates a JOIN clause with the specified operator, multiple tables/entities, and condition.
+     * This protected constructor is used by subclasses.
+     *
+     * @param operator the join operator
+     * @param joinEntities the collection of tables or entities to join with
+     * @param condition the join condition (can be null)
+     */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition condition) {
         super(operator);
         this.joinEntities = new ArrayList<>(joinEntities);
@@ -82,19 +170,19 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Gets the join entities.
+     * Gets the list of tables/entities involved in this join.
      *
-     * @return
+     * @return the list of join entities
      */
     public List<String> getJoinEntities() {
         return joinEntities;
     }
 
     /**
-     * Gets the condition.
+     * Gets the join condition.
      *
-     * @param <T>
-     * @return
+     * @param <T> the type of the condition
+     * @return the join condition, or null if no condition is specified
      */
     @SuppressWarnings("unchecked")
     public <T extends Condition> T getCondition() {
@@ -102,9 +190,9 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Gets the parameters.
+     * Gets all parameters from the join condition.
      *
-     * @return
+     * @return the list of parameters from the condition, or an empty list if no condition
      */
     @Override
     public List<Object> getParameters() {
@@ -112,7 +200,7 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Clear parameters.
+     * Clears all parameters from the join condition.
      */
     @Override
     public void clearParameters() {
@@ -122,9 +210,10 @@ public class Join extends AbstractCondition {
     }
 
     /**
+     * Creates a deep copy of this JOIN clause.
      *
-     * @param <T>
-     * @return
+     * @param <T> the type of the condition
+     * @return a new Join instance with copies of all entities and condition
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -143,9 +232,10 @@ public class Join extends AbstractCondition {
     }
 
     /**
+     * Converts this JOIN clause to its string representation according to the specified naming policy.
      *
-     * @param namingPolicy
-     * @return
+     * @param namingPolicy the naming policy to apply
+     * @return the string representation, e.g., "INNER JOIN orders o ON customers.id = o.customer_id"
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -154,9 +244,9 @@ public class Join extends AbstractCondition {
     }
 
     /**
+     * Computes the hash code for this JOIN clause.
      *
-     *
-     * @return
+     * @return the hash code based on operator, join entities, and condition
      */
     @Override
     public int hashCode() {
@@ -172,9 +262,10 @@ public class Join extends AbstractCondition {
     }
 
     /**
+     * Checks if this JOIN clause is equal to another object.
      *
-     * @param obj
-     * @return true, if successful
+     * @param obj the object to compare with
+     * @return true if the object is a Join with the same operator, entities, and condition
      */
     @Override
     public boolean equals(final Object obj) {

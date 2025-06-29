@@ -15,7 +15,20 @@
 package com.landawn.abacus.condition;
 
 /**
- *
+ * Represents a UNION clause in SQL queries.
+ * This class is used to combine the results of two or more SELECT statements,
+ * removing duplicate rows from the result set.
+ * 
+ * <p>The UNION operator selects only distinct values by default. To allow
+ * duplicate values, use {@link UnionAll} instead.</p>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * SubQuery query1 = new SubQuery("SELECT id, name FROM customers WHERE city='NY'");
+ * SubQuery query2 = new SubQuery("SELECT id, name FROM customers WHERE city='LA'");
+ * Union union = new Union(query2);
+ * // Results in: SELECT id, name FROM customers WHERE city='NY' UNION SELECT id, name FROM customers WHERE city='LA'
+ * }</pre>
  */
 public class Union extends Clause {
 
@@ -24,9 +37,15 @@ public class Union extends Clause {
     }
 
     /**
-     *
-     *
-     * @param condition
+     * Constructs a UNION clause with the specified subquery.
+     * 
+     * @param condition the subquery to be combined using UNION
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * SubQuery activeUsers = new SubQuery("SELECT user_id FROM active_users");
+     * Union union = new Union(activeUsers);
+     * }</pre>
      */
     public Union(final SubQuery condition) {
         super(Operator.UNION, condition);

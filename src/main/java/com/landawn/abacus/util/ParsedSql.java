@@ -24,8 +24,27 @@ import com.landawn.abacus.pool.PoolFactory;
 import com.landawn.abacus.pool.PoolableWrapper;
 
 /**
- *
- *
+ * Represents a parsed SQL statement with support for named parameters and parameterized queries.
+ * This class handles SQL parsing to extract named parameters (e.g., :userId, #{userId}) and converts
+ * them to standard JDBC parameter placeholders (?). It also supports Couchbase-style parameters.
+ * 
+ * <p>The class maintains an internal cache of parsed SQL statements for performance optimization.
+ * Supported parameter formats include:</p>
+ * <ul>
+ *   <li>Named parameters: :paramName</li>
+ *   <li>iBatis/MyBatis style: #{paramName}</li>
+ *   <li>Couchbase style: $1, $2, etc.</li>
+ * </ul>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
+ * String parameterized = parsed.getParameterizedSql(); // "SELECT * FROM users WHERE id = ? AND status = ?"
+ * List<String> params = parsed.getNamedParameters(); // ["userId", "status"]
+ * }</pre>
+ * 
+ * @see SQLParser
+ * @see SQLBuilder
  */
 public final class ParsedSql {
 
@@ -119,9 +138,25 @@ public final class ParsedSql {
     }
 
     /**
+     * Parses the given SQL string and returns a ParsedSql instance.
+     * This method uses an internal cache to avoid re-parsing the same SQL statements.
+     * The SQL is analyzed to extract named parameters and convert them to standard JDBC placeholders.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // Using named parameters
+     * ParsedSql ps1 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
+     * 
+     * // Using iBatis/MyBatis style
+     * ParsedSql ps2 = ParsedSql.parse("INSERT INTO users (name, email) VALUES (#{name}, #{email})");
+     * 
+     * // Using standard JDBC placeholders
+     * ParsedSql ps3 = ParsedSql.parse("UPDATE users SET status = ? WHERE id = ?");
+     * }</pre>
      *
-     * @param sql
-     * @return
+     * @param sql the SQL string to parse
+     * @return a ParsedSql instance containing the parsed information
+     * @throws IllegalArgumentException if sql is null or empty
      */
     public static ParsedSql parse(final String sql) {
         N.checkArgNotEmpty(sql, "sql");
@@ -142,28 +177,37 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the named SQL.
+     * Gets the original SQL string as provided to the parse method.
+     * This is the SQL before any parameter conversion or processing.
      *
-     * @return
+     * @return the original SQL string
      */
     public String sql() {
         return sql;
     }
 
     /**
-     * Gets the parameterized SQL.
+     * Gets the parameterized SQL with all named parameters replaced by JDBC placeholders (?).
+     * This SQL can be used directly with JDBC PreparedStatement.
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
+     * String sql = parsed.getParameterizedSql(); // Returns: "SELECT * FROM users WHERE id = ?"
+     * }</pre>
      *
-     * @return
+     * @return the parameterized SQL string with ? placeholders
      */
     public String getParameterizedSql() {
         return parameterizedSql;
     }
 
     /**
-     * Gets the parameterized SQL.
+     * Gets the parameterized SQL formatted for the specified database system.
+     * For Couchbase, parameters are converted to $1, $2, etc. format.
      *
-     * @param isForCouchbase
-     * @return
+     * @param isForCouchbase true to get Couchbase-formatted SQL, false for standard JDBC format
+     * @return the parameterized SQL string
      */
     public String getParameterizedSql(final boolean isForCouchbase) {
         if (isForCouchbase) {
@@ -178,19 +222,27 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the named parameters.
+     * Gets the list of named parameters extracted from the SQL in order of appearance.
+     * For SQL with no named parameters, returns an empty list.
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE age > :minAge AND age < :maxAge");
+     * List<String> params = parsed.getNamedParameters(); // Returns: ["minAge", "maxAge"]
+     * }</pre>
      *
-     * @return
+     * @return an immutable list of parameter names
      */
     public ImmutableList<String> getNamedParameters() {
         return namedParameters;
     }
 
     /**
-     * Gets the named parameters.
+     * Gets the list of named parameters formatted for the specified database system.
+     * For Couchbase, this may include positional parameter names if no named parameters exist.
      *
-     * @param isForCouchbase
-     * @return
+     * @param isForCouchbase true to get Couchbase-formatted parameters, false for standard format
+     * @return an immutable list of parameter names
      */
     public ImmutableList<String> getNamedParameters(final boolean isForCouchbase) {
         if (isForCouchbase) {
@@ -205,19 +257,26 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the parameter count.
+     * Gets the total number of parameters (named or positional) in the SQL.
+     * This count includes all occurrences of ?, :paramName, or #{paramName}.
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (?, ?, ?)");
+     * int count = parsed.getParameterCount(); // Returns: 3
+     * }</pre>
      *
-     * @return
+     * @return the number of parameters in the SQL
      */
     public int getParameterCount() {
         return parameterCount;
     }
 
     /**
-     * Gets the parameter count.
+     * Gets the parameter count formatted for the specified database system.
      *
-     * @param isForCouchbase
-     * @return
+     * @param isForCouchbase true to get Couchbase parameter count, false for standard count
+     * @return the number of parameters
      */
     public int getParameterCount(final boolean isForCouchbase) {
         if (isForCouchbase) {
@@ -309,9 +368,10 @@ public final class ParsedSql {
     }
 
     /**
+     * Returns the hash code value for this ParsedSql.
+     * The hash code is based on the original SQL string.
      *
-     *
-     * @return
+     * @return the hash code value
      */
     @Override
     public int hashCode() {
@@ -319,9 +379,11 @@ public final class ParsedSql {
     }
 
     /**
+     * Indicates whether some other object is "equal to" this one.
+     * Two ParsedSql objects are equal if they have the same original SQL string.
      *
-     * @param obj
-     * @return
+     * @param obj the reference object with which to compare
+     * @return true if this object equals the obj argument; false otherwise
      */
     @Override
     public boolean equals(final Object obj) {
@@ -337,9 +399,10 @@ public final class ParsedSql {
     }
 
     /**
+     * Returns a string representation of this ParsedSql.
+     * The string contains both the original SQL and the parameterized SQL.
      *
-     *
-     * @return
+     * @return a string representation of the object
      */
     @Override
     public String toString() {

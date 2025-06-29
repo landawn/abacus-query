@@ -15,17 +15,53 @@
 package com.landawn.abacus.util;
 
 /**
- * The Enum SortDirection.
- *
+ * Enumeration representing the sort direction for database queries and collections.
+ * Provides two possible sort orders: ascending (ASC) and descending (DESC).
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * SortDirection direction = SortDirection.ASC;
+ * if (direction.isAscending()) {
+ *     // Sort in ascending order
+ * }
+ * 
+ * // Use in SQL building
+ * String sql = "SELECT * FROM users ORDER BY name " + SortDirection.DESC;
+ * }</pre>
+ * 
+ * @see SQLBuilder
+ * @see QueryBean.OrderByBean
  */
 public enum SortDirection {
 
-    ASC, DESC;
+    /**
+     * Ascending sort order (A to Z, 0 to 9, oldest to newest).
+     */
+    ASC,
+
+    /**
+     * Descending sort order (Z to A, 9 to 0, newest to oldest).
+     */
+    DESC;
 
     // For Kryo
     SortDirection() {
     }
 
+    /**
+     * Checks if this sort direction is ascending.
+     * This is a convenience method equivalent to checking if the direction equals ASC.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * SortDirection dir = SortDirection.ASC;
+     * if (dir.isAscending()) {
+     *     System.out.println("Sorting in ascending order");
+     * }
+     * }</pre>
+     *
+     * @return true if this sort direction is ASC, false if it is DESC
+     */
     public boolean isAscending() {
         return this == SortDirection.ASC;
     }

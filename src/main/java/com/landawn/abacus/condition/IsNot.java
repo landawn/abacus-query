@@ -15,19 +15,42 @@
 package com.landawn.abacus.condition;
 
 /**
- *
+ * Represents an IS NOT condition in SQL-like queries.
+ * This class is used to create conditions that check if a property is not equal to a specific value,
+ * typically used for special SQL values like NULL, NaN, or INFINITE.
+ * 
+ * <p>Example usage:
+ * <pre>{@code
+ * // Check if a property is not null
+ * IsNot condition = new IsNot("age", null);
+ * // This would generate: age IS NOT NULL
+ * }</pre>
+ * 
+ * @see IsNotNull
+ * @see IsNotNaN
+ * @see IsNotInfinite
  */
 public class IsNot extends Binary {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor should not be used directly in application code.
+     */
     IsNot() {
     }
 
     /**
+     * Creates a new IS NOT condition with the specified property name and value.
+     * This condition checks if the property is not equal to the specified value using SQL IS NOT operator.
      *
-     *
-     * @param propName
-     * @param propValue
+     * @param propName the name of the property to check. Must not be null.
+     * @param propValue the value to compare against. Can be null or special Expression values.
+     * 
+     * <p>Example:
+     * <pre>{@code
+     * IsNot condition = new IsNot("status", someExpression);
+     * // Generates: status IS NOT someExpression
+     * }</pre>
      */
     public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);

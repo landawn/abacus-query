@@ -22,77 +22,117 @@ import java.util.Map;
 import com.landawn.abacus.annotation.Internal;
 
 /**
- * The Enum SQLOperation.
- *
+ * Enumeration representing SQL operation types.
+ * This enum provides a comprehensive list of SQL operations including DML, DDL, DCL, and TCL commands.
+ * It's primarily used internally for SQL parsing and operation identification.
+ * 
+ * <p>Supported operations include:</p>
+ * <ul>
+ *   <li>DML (Data Manipulation Language): SELECT, INSERT, UPDATE, DELETE, MERGE</li>
+ *   <li>DDL (Data Definition Language): CREATE, DROP, ALTER, RENAME</li>
+ *   <li>DCL (Data Control Language): USE</li>
+ *   <li>TCL (Transaction Control Language): BEGIN_TRANSACTION, COMMIT, ROLLBACK</li>
+ *   <li>Other: SHOW, DESCRIBE, CALL, UNKNOWN</li>
+ * </ul>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * // Get operation from SQL statement
+ * String sql = "SELECT * FROM users";
+ * String firstWord = sql.trim().split("\\s+")[0].toUpperCase();
+ * SQLOperation op = SQLOperation.getOperation(firstWord);
+ * 
+ * if (op == SQLOperation.SELECT) {
+ *     // Handle SELECT query
+ * }
+ * }</pre>
+ * 
+ * @see Internal
  */
 @Internal
 public enum SQLOperation {
     /**
-     * Field SELECT.
+     * SELECT operation for data retrieval.
      */
     SELECT(WD.SELECT),
+
     /**
-     * Field INSERT.
+     * INSERT operation for adding new records.
      */
     INSERT(WD.INSERT),
+
     /**
-     * Field UPDATE.
+     * UPDATE operation for modifying existing records.
      */
     UPDATE(WD.UPDATE),
+
     /**
-     * Field DELETE.
+     * DELETE operation for removing records.
      */
     DELETE(WD.DELETE),
+
     /**
-     * Field MERGE.
+     * MERGE operation for upsert functionality.
      */
     MERGE(WD.MERGE),
+
     /**
-     * Field CREATE.
+     * CREATE operation for creating database objects.
      */
     CREATE(WD.CREATE),
+
     /**
-     * Field DROP.
+     * DROP operation for removing database objects.
      */
     DROP(WD.DROP),
+
     /**
-     * Field ALTER.
+     * ALTER operation for modifying database object structure.
      */
     ALTER(WD.ALTER),
+
     /**
-     * Field SHOW.
+     * SHOW operation for displaying database information.
      */
     SHOW(WD.SHOW),
+
     /**
-     * Field DESCRIBE.
+     * DESCRIBE operation for showing table structure.
      */
     DESCRIBE(WD.DESCRIBE),
+
     /**
-     * Field USE.
+     * USE operation for selecting a database.
      */
     USE(WD.USE),
+
     /**
-     * Field RENAME.
+     * RENAME operation for renaming database objects.
      */
     RENAME(WD.RENAME),
+
     /**
-     * Field BEGIN_TRANSACTION.
+     * BEGIN_TRANSACTION operation for starting a transaction.
      */
     BEGIN_TRANSACTION(WD.BEGIN_TRANSACTION),
+
     /**
-     * Field COMMIT.
+     * COMMIT operation for committing a transaction.
      */
     COMMIT(WD.COMMIT),
+
     /**
-     * Field ROLLBACK.
+     * ROLLBACK operation for rolling back a transaction.
      */
     ROLLBACK(WD.ROLLBACK),
+
     /**
-     * Field CALL.
+     * CALL operation for executing stored procedures.
      */
     CALL("CALL"),
+
     /**
-     * Field UNKNOWN.
+     * UNKNOWN operation for unrecognized SQL commands.
      */
     UNKNOWN("UNKNOWN");
 
@@ -113,28 +153,37 @@ public enum SQLOperation {
     }
 
     /**
-     * Gets the operation.
+     * Retrieves the SQLOperation enum value corresponding to the given operation name.
+     * The lookup is case-sensitive and returns null if no matching operation is found.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * SQLOperation selectOp = SQLOperation.getOperation("SELECT"); // returns SELECT
+     * SQLOperation unknownOp = SQLOperation.getOperation("TRUNCATE"); // returns null
+     * }</pre>
      *
-     * @param name
-     * @return
+     * @param name the SQL operation name to look up
+     * @return the corresponding SQLOperation enum value, or null if not found
      */
     public static SQLOperation getOperation(final String name) {
         return operationMap.get(name);
     }
 
     /**
-     * Gets the name.
+     * Returns the string name of this SQL operation.
+     * This is the same value used in SQL statements (e.g., "SELECT", "INSERT").
      *
-     * @return
+     * @return the operation name as a string
      */
     public String getName() {
         return name;
     }
 
     /**
+     * Returns the string representation of this SQL operation.
+     * This method returns the same value as {@link #getName()}.
      *
-     *
-     * @return
+     * @return the operation name as a string
      */
     @Override
     public String toString() {

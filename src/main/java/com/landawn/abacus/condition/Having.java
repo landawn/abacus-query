@@ -15,7 +15,23 @@
 package com.landawn.abacus.condition;
 
 /**
- *
+ * Represents a HAVING clause in SQL queries.
+ * The HAVING clause is used to filter grouped results based on conditions applied to aggregated data.
+ * It is typically used with GROUP BY clauses to filter groups based on aggregate functions.
+ * 
+ * <p>Usage example:</p>
+ * <pre>{@code
+ * // Create a HAVING clause to filter groups where COUNT(*) > 5
+ * Having having = new Having(CF.gt("COUNT(*)", 5));
+ * 
+ * // Use in a query with GROUP BY
+ * query.groupBy("department")
+ *      .having(new Having(CF.gt("AVG(salary)", 50000)));
+ * }</pre>
+ * 
+ * @see Clause
+ * @see Condition
+ * @see GroupBy
  */
 public class Having extends Clause {
     // For Kryo
@@ -23,9 +39,16 @@ public class Having extends Clause {
     }
 
     /**
-     *
-     *
-     * @param condition
+     * Creates a new HAVING clause with the specified condition.
+     * 
+     * @param condition the condition to apply in the HAVING clause
+     * @throws NullPointerException if condition is null
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * // Filter groups where the sum of sales is greater than 10000
+     * Having having = new Having(CF.gt("SUM(sales)", 10000));
+     * }</pre>
      */
     public Having(final Condition condition) {
         super(Operator.HAVING, condition);

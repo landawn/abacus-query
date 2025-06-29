@@ -15,18 +15,54 @@
 package com.landawn.abacus.condition;
 
 /**
- *
+ * Represents a condition that checks if a numeric property value is NOT infinite.
+ * This class extends {@link IsNot} to provide a specialized condition for checking that
+ * floating-point values are finite (not positive or negative infinity).
+ * 
+ * <p>In floating-point arithmetic, infinity values can result from operations like
+ * division by zero (1.0/0.0 = Infinity) or overflow in calculations. This condition
+ * helps filter out such infinite values.
+ * 
+ * <p>Example usage:
+ * <pre>{@code
+ * // Check if a calculated ratio is finite
+ * IsNotInfinite condition = new IsNotInfinite("price_ratio");
+ * // This would generate: price_ratio IS NOT INFINITE
+ * 
+ * // Ensure measurement values are within finite range
+ * IsNotInfinite measurement = new IsNotInfinite("sensor_reading");
+ * // This would generate: sensor_reading IS NOT INFINITE
+ * }</pre>
+ * 
+ * @see IsInfinite
+ * @see IsNotNaN
  */
 public class IsNotInfinite extends IsNot {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor should not be used directly in application code.
+     */
     IsNotInfinite() {
     }
 
     /**
+     * Creates a new IsNotInfinite condition for the specified property.
+     * This condition checks if the property's numeric value is NOT infinite
+     * (neither positive nor negative infinity).
      *
-     *
-     * @param propName
+     * @param propName the name of the numeric property to check. Must not be null.
+     * 
+     * <p>Example:
+     * <pre>{@code
+     * // Ensure calculated values are finite
+     * IsNotInfinite calcCheck = new IsNotInfinite("calculation_result");
+     * // Generates: calculation_result IS NOT INFINITE
+     * 
+     * // Filter for records with finite growth rates
+     * IsNotInfinite growthCheck = new IsNotInfinite("growth_rate");
+     * // Generates: growth_rate IS NOT INFINITE
+     * }</pre>
      */
     public IsNotInfinite(final String propName) {
         super(propName, IsInfinite.INFINITE);

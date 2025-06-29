@@ -15,7 +15,26 @@
 package com.landawn.abacus.condition;
 
 /**
- *
+ * Represents an XOR (exclusive OR) condition in SQL queries.
+ * 
+ * <p>The XOR operator returns true when exactly one of the two operands is true,
+ * but not both. It's equivalent to (A AND NOT B) OR (NOT A AND B).</p>
+ * 
+ * <p>Note: XOR support varies by database. MySQL supports XOR natively, while
+ * other databases may require the condition to be rewritten using AND/OR/NOT.</p>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * // Check if either premium OR trial, but not both
+ * XOR xor1 = new XOR("isPremium", true);
+ * XOR xor2 = new XOR("isTrial", true);
+ * // In MySQL: isPremium XOR true (used with another condition)
+ * 
+ * // Practical example - exactly one discount type
+ * XOR studentDiscount = new XOR("hasStudentDiscount", true);
+ * XOR seniorDiscount = new XOR("hasSeniorDiscount", true);
+ * // Ensures customer has exactly one type of discount
+ * }</pre>
  */
 public class XOR extends Binary {
 
@@ -24,10 +43,21 @@ public class XOR extends Binary {
     }
 
     /**
+     * Constructs an XOR condition for the specified property and value.
+     * 
+     * <p>The XOR condition is true when the property value and the provided value
+     * differ in their boolean evaluation (one true, one false).</p>
      *
-     *
-     * @param propName
-     * @param propValue
+     * @param propName the property name
+     * @param propValue the value to XOR against
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * // Check if user has exactly one type of membership
+     * XOR condition = new XOR("hasGoldMembership", true);
+     * // Combined with another XOR for platinum membership
+     * // ensures user has gold XOR platinum, but not both or neither
+     * }</pre>
      */
     public XOR(final String propName, final Object propValue) {
         super(propName, Operator.XOR, propValue);
