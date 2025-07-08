@@ -198,7 +198,7 @@ public class Limit extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        if (Strings.isEmpty(expr)) {
+        if (Strings.isNotEmpty(expr)) {
             return expr;
         } else {
             return offset > 0 ? WD.LIMIT + _SPACE + count + _SPACE + WD.OFFSET + _SPACE + offset : WD.LIMIT + _SPACE + count;

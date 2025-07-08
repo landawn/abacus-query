@@ -83,6 +83,22 @@ public final class NamedProperty {
         return instancePool.computeIfAbsent(propName, NamedProperty::new);
     }
 
+
+    /**
+     * Returns the property name associated with this NamedProperty.
+     *
+     * @return the property name
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * NamedProperty age = NamedProperty.of("age");
+     * String name = age.propName(); // Returns "age"
+     * }</pre>
+     */
+    public String propName() {
+        return propName;
+    }
+
     /**
      * Creates an EQUAL condition for this property.
      *

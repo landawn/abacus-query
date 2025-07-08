@@ -604,6 +604,39 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
+     * Sets the GROUP BY clause with two properties and their sort directions.
+     * 
+     * @param propName the first property name to group by
+     * @param direction the sort direction for the first property
+     * @param propName2 the second property name to group by
+     * @param direction2 the sort direction for the second property
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+        groupBy(N.asLinkedHashMap(propName, direction, propName2, direction2));
+
+        return this;
+    }
+
+    /**
+     * Sets the GROUP BY clause with three properties and their sort directions.
+     * 
+     * @param propName the first property name to group by
+     * @param direction the sort direction for the first property
+     * @param propName2 the second property name to group by
+     * @param direction2 the sort direction for the second property
+     * @param propName3 the third property name to group by
+     * @param direction3 the sort direction for the third property
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
+            final String propName3, final SortDirection direction3) {
+        groupBy(N.asLinkedHashMap(propName, direction, propName2, direction2, propName3, direction3));
+
+        return this;
+    }
+
+    /**
      * Sets the GROUP BY clause with multiple properties.
      * 
      * @param propNames the collection of property names to group by
@@ -762,6 +795,39 @@ public class Criteria extends AbstractCondition {
      */
     public Criteria orderBy(final String propName, final SortDirection direction) {
         add(new OrderBy(propName, direction));
+
+        return this;
+    }
+
+    /**
+     * Sets the ORDER BY clause with two properties and their sort directions.
+     * 
+     * @param propName the first property name to order by
+     * @param direction the sort direction for the first property
+     * @param propName2 the second property name to order by
+     * @param direction2 the sort direction for the second property
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+        orderBy(N.asLinkedHashMap(propName, direction, propName2, direction2));
+
+        return this;
+    }
+
+    /**
+     * Sets the ORDER BY clause with three properties and their sort directions.
+     * 
+     * @param propName the first property name to order by
+     * @param direction the sort direction for the first property
+     * @param propName2 the second property name to order by
+     * @param direction2 the sort direction for the second property
+     * @param propName3 the third property name to order by
+     * @param direction3 the sort direction for the third property
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
+            final String propName3, final SortDirection direction3) {
+        orderBy(N.asLinkedHashMap(propName, direction, propName2, direction2, propName3, direction3));
 
         return this;
     }
