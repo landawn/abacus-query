@@ -288,10 +288,10 @@ public abstract class SQLBuilder { // NOSONAR
 
     static final String SPACE_AS_SPACE = WD.SPACE + WD.AS + WD.SPACE;
 
-    static final String SELECTION_PART_MSG = "select part";
-    static final String INSERTION_PART_MSG = "insert part";
-    static final String UPDATE_PART_MSG = "update part";
-    static final String DELETION_PART_MSG = "delete part";
+    static final String SELECTION_PART_MSG = "The specified parameter is not valid for selection part. It must not be null or empty";
+    static final String INSERTION_PART_MSG = "The specified parameter is not valid for insertion part. It must not be null or empty";
+    static final String UPDATE_PART_MSG = "The specified parameter is not valid for update part. It must not be null or empty";
+    static final String DELETION_PART_MSG = "The specified parameter is not valid for deletion part. It must not be null or empty";
 
     private static final Set<String> sqlKeyWords = N.newHashSet(1024);
 
@@ -4979,6 +4979,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -5790,6 +5792,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -5801,6 +5805,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance for COUNT operation
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -5819,6 +5825,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -5886,6 +5894,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance for INSERT operation
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -6491,6 +6501,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -6502,6 +6514,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -6512,6 +6526,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -6578,6 +6594,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @see #insert(String...)
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -7581,6 +7599,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for COUNT operation
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -7595,6 +7615,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for COUNT operation
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -7616,6 +7638,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for COUNT operation
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -7700,6 +7724,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -8742,6 +8768,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -8761,6 +8789,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -8780,6 +8810,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -8907,6 +8939,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -9854,6 +9888,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -9873,6 +9909,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -9893,6 +9931,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -9981,6 +10021,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -11076,6 +11118,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -11098,6 +11142,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -11119,6 +11165,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -11241,6 +11289,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -12126,6 +12176,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -12145,6 +12197,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -12165,6 +12219,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -12248,6 +12304,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -13348,6 +13406,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -13369,6 +13429,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -13389,6 +13451,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -13488,6 +13552,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation with named parameters
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -14472,6 +14538,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for COUNT operation
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -14491,6 +14559,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for COUNT operation
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -14512,6 +14582,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for COUNT operation
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -14606,6 +14678,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NAC.insert("FIRST_NAME").into("ACCOUNT")}
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -15336,6 +15410,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NAC.count("ACCOUNT").where(CF.eq("STATUS", "ACTIVE"))}
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -15349,6 +15425,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NAC.count("ACCOUNT", Account.class).where(CF.eq("status", "ACTIVE"))}
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -15361,6 +15439,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NAC.count(Account.class).where(CF.eq("status", "ACTIVE"))}
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -15448,6 +15528,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NLC.insert("firstName").into("account")}
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -16178,6 +16260,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NLC.count("account").where(CF.eq("status", "active"))}
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -16191,6 +16275,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NLC.count("account", Account.class).where(CF.eq("status", "active"))}
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -16203,6 +16289,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NLC.count(Account.class).where(CF.eq("status", "active"))}
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -16280,6 +16368,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -17254,6 +17344,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -17268,6 +17360,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return the SQLBuilder instance for method chaining
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -17288,6 +17382,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -17381,6 +17477,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -18333,6 +18431,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -18346,6 +18446,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return the SQLBuilder instance for method chaining
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -18366,6 +18468,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -18463,6 +18567,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -19454,6 +19560,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for COUNT operation
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -19473,6 +19581,10 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for COUNT operation
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -19495,6 +19607,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for COUNT operation
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 
@@ -19591,6 +19705,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
+
             return insert(N.asArray(expr));
         }
 
@@ -20652,6 +20768,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder count(final String tableName) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName);
         }
 
@@ -20673,6 +20791,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder count(final String tableName, final Class<?> entityClass) {
+            N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(tableName, entityClass);
         }
 
@@ -20693,6 +20813,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder count(final Class<?> entityClass) {
+            N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
+
             return select(COUNT_ALL_LIST).from(entityClass);
         }
 

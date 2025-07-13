@@ -50,6 +50,8 @@ public final class QueryUtil {
         // singleton
     }
 
+    private static final String ENTITY_CLASS = "entityClass";
+
     private static final Map<Class<?>, ImmutableMap<String, String>> column2PropNameNameMapPool = new ConcurrentHashMap<>();
 
     private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, String>>> entityTablePropColumnNameMap = new ObjectPool<>(N.POOL_SIZE);
@@ -70,6 +72,8 @@ public final class QueryUtil {
     @Deprecated
     @Beta
     public static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+
         Map<NamingPolicy, ImmutableMap<String, Tuple2<String, Boolean>>> namingPropColumnNameMap = entityTablePropColumnNameMap2.get(entityClass);
         ImmutableMap<String, Tuple2<String, Boolean>> result = null;
 
@@ -115,6 +119,8 @@ public final class QueryUtil {
      * @return an immutable map of column names (including case variations) to property names
      */
     public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
+        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+
         ImmutableMap<String, String> result = column2PropNameNameMapPool.get(entityClass);
 
         if (result == null) {
@@ -304,6 +310,8 @@ public final class QueryUtil {
      */
     @Internal
     public static Collection<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
+        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
         final Collection<String> propNames = val[2];
 
@@ -335,6 +343,8 @@ public final class QueryUtil {
     @Internal
     public static Collection<String> getSelectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
+        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
         final Collection<String> propNames = includeSubEntityProperties ? val[0] : val[1];
 
@@ -362,6 +372,8 @@ public final class QueryUtil {
      */
     @Internal
     public static Collection<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
+        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
         final Collection<String> propNames = val[4];
 
@@ -407,6 +419,8 @@ public final class QueryUtil {
     @Internal
     @Immutable
     public static List<String> getIdFieldNames(final Class<?> targetClass, final boolean fakeIdForEmpty) {
+        N.checkArgNotNull(targetClass, ENTITY_CLASS);
+
         final ImmutableList<String> idPropNames = ParserUtil.getBeanInfo(targetClass).idPropNameList;
 
         return N.isEmpty(idPropNames) && fakeIdForEmpty ? fakeIds : idPropNames;
@@ -506,6 +520,8 @@ public final class QueryUtil {
      * @return the table alias if defined in @Table annotation, null otherwise
      */
     public static String getTableAlias(final Class<?> entityClass) {
+        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+
         final Table anno = entityClass.getAnnotation(Table.class);
         return anno == null ? null : anno.alias();
     }
@@ -542,6 +558,8 @@ public final class QueryUtil {
      * @return the table name, optionally followed by space and alias
      */
     public static String getTableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+
         final Table anno = entityClass.getAnnotation(Table.class);
 
         if (anno == null) {
