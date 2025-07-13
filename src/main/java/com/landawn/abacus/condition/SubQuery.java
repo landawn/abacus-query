@@ -14,8 +14,8 @@
 
 package com.landawn.abacus.condition;
 
-import static com.landawn.abacus.util.WD.COMMA_SPACE;
-import static com.landawn.abacus.util.WD._SPACE;
+import static com.landawn.abacus.util.SK.COMMA_SPACE;
+import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,7 +27,7 @@ import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents a subquery that can be used within SQL conditions.
@@ -292,7 +292,7 @@ public class SubQuery extends AbstractCondition {
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
-                sb.append(WD.SELECT);
+                sb.append(SK.SELECT);
                 sb.append(_SPACE);
 
                 int i = 0;
@@ -306,7 +306,7 @@ public class SubQuery extends AbstractCondition {
                 }
 
                 sb.append(_SPACE);
-                sb.append(WD.FROM);
+                sb.append(SK.FROM);
 
                 sb.append(_SPACE);
                 sb.append(entityName);

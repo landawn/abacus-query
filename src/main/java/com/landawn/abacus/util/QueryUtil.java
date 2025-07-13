@@ -212,7 +212,7 @@ public final class QueryUtil {
                         final String subTableAliasOrName = SQLBuilder.getTableAliasOrName(propType.clazz(), namingPolicy);
 
                         for (final Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
-                            propColumnNameMap.put(propInfo.name + WD.PERIOD + entry.getKey(), subTableAliasOrName + WD.PERIOD + entry.getValue());
+                            propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(), subTableAliasOrName + SK.PERIOD + entry.getValue());
                         }
 
                         propColumnNameMap.remove(propInfo.name); // remove sub entity prop.
@@ -567,7 +567,7 @@ public final class QueryUtil {
         } else {
             final String tableName = anno.name();
             final String alias = anno.alias();
-            return Strings.isEmpty(alias) ? tableName : Strings.concat(tableName, WD.SPACE, alias);
+            return Strings.isEmpty(alias) ? tableName : Strings.concat(tableName, SK.SPACE, alias);
         }
     }
 }

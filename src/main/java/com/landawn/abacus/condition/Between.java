@@ -20,7 +20,7 @@ import java.util.List;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents a BETWEEN condition in SQL queries.
@@ -271,8 +271,8 @@ public class Between extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        return namingPolicy.convert(propName) + WD._SPACE + getOperator().toString() + WD.SPACE_PARENTHESES_L + parameter2String(minValue, namingPolicy)
-                + WD.COMMA_SPACE + parameter2String(maxValue, namingPolicy) + WD._PARENTHESES_R;
+        return namingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L + parameter2String(minValue, namingPolicy)
+                + SK.COMMA_SPACE + parameter2String(maxValue, namingPolicy) + SK._PARENTHESES_R;
     }
 
     /**

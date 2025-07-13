@@ -14,8 +14,8 @@
 
 package com.landawn.abacus.condition;
 
-import static com.landawn.abacus.util.WD.COMMA_SPACE;
-import static com.landawn.abacus.util.WD.SPACE;
+import static com.landawn.abacus.util.SK.COMMA_SPACE;
+import static com.landawn.abacus.util.SK.SPACE;
 
 import java.util.Collection;
 import java.util.Map;

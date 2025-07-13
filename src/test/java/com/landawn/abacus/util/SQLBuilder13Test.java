@@ -3192,7 +3192,7 @@ public class SQLBuilder13Test extends TestBase {
         public void testWindowFunctions() {
             String sql = NLC.select("name", "salary", "ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) as rank").from("employee").sql();
 
-            Assertions.assertTrue(sql.contains("OVER (partition BY department ORDER BY salary DESC) AS rank"));
+            Assertions.assertTrue(sql.contains("OVER (PARTITION BY department ORDER BY salary DESC) AS rank"));
         }
 
         @Test

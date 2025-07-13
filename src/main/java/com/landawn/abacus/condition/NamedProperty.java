@@ -83,7 +83,6 @@ public final class NamedProperty {
         return instancePool.computeIfAbsent(propName, NamedProperty::new);
     }
 
-
     /**
      * Returns the property name associated with this NamedProperty.
      *

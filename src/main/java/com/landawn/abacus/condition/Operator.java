@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Enumeration of SQL operators supported by the condition framework.
@@ -60,290 +60,290 @@ public enum Operator {
      * Equal operator (=).
      * Used for equality comparisons.
      */
-    EQUAL(WD.EQUAL),
+    EQUAL(SK.EQUAL),
 
     /**
      * Not equal operator (!=).
      * Used for inequality comparisons.
      */
-    NOT_EQUAL(WD.NOT_EQUAL),
+    NOT_EQUAL(SK.NOT_EQUAL),
 
     /**
      * Alternative not equal operator (<>).
      * Some databases prefer this syntax.
      */
-    NOT_EQUAL2(WD.NOT_EQUAL2),
+    NOT_EQUAL2(SK.NOT_EQUAL2),
 
     /**
      * NOT logical operator.
      * Used to negate conditions.
      */
-    NOT(WD.NOT),
+    NOT(SK.NOT),
 
     /**
      * NOT operator symbol (!).
      * Alternative representation of NOT.
      */
-    NOT_OP(WD.EXCLAMATION),
+    NOT_OP(SK.EXCLAMATION),
 
     /**
      * XOR (exclusive OR) operator.
      * True when exactly one condition is true.
      */
-    XOR(WD.XOR),
+    XOR(SK.XOR),
 
     /**
      * LIKE operator.
      * Used for pattern matching with wildcards.
      */
-    LIKE(WD.LIKE),
+    LIKE(SK.LIKE),
 
     /**
      * NOT LIKE operator.
      * Negation of LIKE for pattern exclusion.
      */
-    NOT_LIKE(NOT + " " + WD.LIKE),
+    NOT_LIKE(NOT + " " + SK.LIKE),
 
     /**
      * AND logical operator.
      * All conditions must be true.
      */
-    AND(WD.AND),
+    AND(SK.AND),
 
     /**
      * AND operator symbol (&&).
      * Alternative representation of AND.
      */
-    AND_OP(WD.AND_OP),
+    AND_OP(SK.AND_OP),
 
     /**
      * OR logical operator.
      * At least one condition must be true.
      */
-    OR(WD.OR),
+    OR(SK.OR),
 
     /**
      * OR operator symbol (||).
      * Alternative representation of OR.
      */
-    OR_OP(WD.OR_OP),
+    OR_OP(SK.OR_OP),
 
     /**
      * Greater than operator (>).
      * Used for "greater than" comparisons.
      */
-    GREATER_THAN(WD.GREATER_THAN),
+    GREATER_THAN(SK.GREATER_THAN),
 
     /**
      * Greater than or equal operator (>=).
      * Used for "greater than or equal" comparisons.
      */
-    GREATER_EQUAL(WD.GREATER_EQUAL),
+    GREATER_EQUAL(SK.GREATER_EQUAL),
 
     /**
      * Less than operator (<).
      * Used for "less than" comparisons.
      */
-    LESS_THAN(WD.LESS_THAN),
+    LESS_THAN(SK.LESS_THAN),
 
     /**
      * Less than or equal operator (<=).
      * Used for "less than or equal" comparisons.
      */
-    LESS_EQUAL(WD.LESS_EQUAL),
+    LESS_EQUAL(SK.LESS_EQUAL),
 
     /**
      * BETWEEN operator.
      * Checks if value is within a range (inclusive).
      */
-    BETWEEN(WD.BETWEEN),
+    BETWEEN(SK.BETWEEN),
 
     /**
      * NOT BETWEEN operator.
      * Checks if value is outside a range.
      */
-    NOT_BETWEEN(NOT + " " + WD.BETWEEN),
+    NOT_BETWEEN(NOT + " " + SK.BETWEEN),
 
     /**
      * IS operator.
      * Used for NULL comparisons (IS NULL).
      */
-    IS(WD.IS),
+    IS(SK.IS),
 
     /**
      * IS NOT operator.
      * Used for NOT NULL comparisons (IS NOT NULL).
      */
-    IS_NOT(WD.IS_NOT),
+    IS_NOT(SK.IS_NOT),
 
     /**
      * EXISTS operator.
      * Checks if subquery returns any rows.
      */
-    EXISTS(WD.EXISTS),
+    EXISTS(SK.EXISTS),
 
     /**
      * NOT EXISTS operator.
      * Checks if subquery not returns any rows.
      */
-    NOT_EXISTS(WD.NOT_EXISTS),
+    NOT_EXISTS(SK.NOT_EXISTS),
 
     /**
      * IN operator.
      * Checks if value is in a list or subquery result.
      */
-    IN(WD.IN),
+    IN(SK.IN),
 
     /**
      * NOT IN operator.
      * Checks if value is not in a list or subquery result.
      */
-    NOT_IN(WD.NOT_IN),
+    NOT_IN(SK.NOT_IN),
 
     /**
      * ANY operator.
      * Compares value with any value from subquery.
      */
-    ANY(WD.ANY),
+    ANY(SK.ANY),
 
     /**
      * SOME operator.
      * Synonym for ANY operator.
      */
-    SOME(WD.SOME),
+    SOME(SK.SOME),
 
     /**
      * ALL operator.
      * Compares value with all values from subquery.
      */
-    ALL(WD.ALL),
+    ALL(SK.ALL),
 
     /**
      * ON operator.
      * Specifies join condition.
      */
-    ON(WD.ON),
+    ON(SK.ON),
 
     /**
      * USING operator.
      * Specifies join columns with same names.
      */
-    USING(WD.USING),
+    USING(SK.USING),
 
     /**
      * Basic JOIN operator.
      * Performs inner join by default.
      */
-    JOIN(WD.JOIN),
+    JOIN(SK.JOIN),
 
     /**
      * LEFT JOIN operator.
      * Returns all rows from left table.
      */
-    LEFT_JOIN(WD.LEFT_JOIN),
+    LEFT_JOIN(SK.LEFT_JOIN),
 
     /**
      * RIGHT JOIN operator.
      * Returns all rows from right table.
      */
-    RIGHT_JOIN(WD.RIGHT_JOIN),
+    RIGHT_JOIN(SK.RIGHT_JOIN),
 
     /**
      * FULL JOIN operator.
      * Returns all rows from both tables.
      */
-    FULL_JOIN(WD.FULL_JOIN),
+    FULL_JOIN(SK.FULL_JOIN),
 
     /**
      * CROSS JOIN operator.
      * Cartesian product of two tables.
      */
-    CROSS_JOIN(WD.CROSS_JOIN),
+    CROSS_JOIN(SK.CROSS_JOIN),
 
     /**
      * INNER JOIN operator.
      * Returns only matching rows.
      */
-    INNER_JOIN(WD.INNER_JOIN),
+    INNER_JOIN(SK.INNER_JOIN),
 
     /**
      * NATURAL JOIN operator.
      * Joins on all columns with same names.
      */
-    NATURAL_JOIN(WD.NATURAL_JOIN),
+    NATURAL_JOIN(SK.NATURAL_JOIN),
 
     /**
      * WHERE clause operator.
      * Filters rows based on conditions.
      */
-    WHERE(WD.WHERE),
+    WHERE(SK.WHERE),
 
     /**
      * HAVING clause operator.
      * Filters groups after GROUP BY.
      */
-    HAVING(WD.HAVING),
+    HAVING(SK.HAVING),
 
     /**
      * GROUP BY clause operator.
      * Groups rows by specified columns.
      */
-    GROUP_BY(WD.GROUP_BY),
+    GROUP_BY(SK.GROUP_BY),
 
     /**
      * ORDER BY clause operator.
      * Sorts result set.
      */
-    ORDER_BY(WD.ORDER_BY),
+    ORDER_BY(SK.ORDER_BY),
 
     /**
      * LIMIT clause operator.
      * Limits number of returned rows.
      */
-    LIMIT(WD.LIMIT),
+    LIMIT(SK.LIMIT),
 
     /**
      * OFFSET clause operator.
      * Skips specified number of rows.
      */
-    OFFSET(WD.OFFSET),
+    OFFSET(SK.OFFSET),
 
     /**
      * FOR UPDATE clause operator.
      * Locks selected rows for update.
      * @deprecated
      */
-    FOR_UPDATE(WD.FOR_UPDATE),
+    FOR_UPDATE(SK.FOR_UPDATE),
 
     /**
      * UNION operator.
      * Combines results, removes duplicates.
      */
-    UNION(WD.UNION),
+    UNION(SK.UNION),
 
     /**
      * UNION ALL operator.
      * Combines results, keeps duplicates.
      */
-    UNION_ALL(WD.UNION_ALL),
+    UNION_ALL(SK.UNION_ALL),
 
     /**
      * INTERSECT operator.
      * Returns common rows from queries.
      */
-    INTERSECT(WD.INTERSECT),
+    INTERSECT(SK.INTERSECT),
 
     /**
      * EXCEPT operator.
      * Returns rows from first query not in second.
      */
-    EXCEPT(WD.EXCEPT),
+    EXCEPT(SK.EXCEPT),
 
     /**
      * MINUS operator.
      * Synonym for EXCEPT (Oracle syntax).
      */
-    MINUS(WD.EXCEPT2),
+    MINUS(SK.EXCEPT2),
 
     /**
      * Empty operator.

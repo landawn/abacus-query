@@ -21,7 +21,7 @@ import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Abstract base class for all condition implementations.
@@ -191,7 +191,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
         }
 
         if (parameter instanceof String) {
-            return WD._QUOTATION_S + parameter.toString() + WD._QUOTATION_S;
+            return SK._QUOTATION_S + parameter.toString() + SK._QUOTATION_S;
         }
 
         if (parameter instanceof Condition) {
@@ -227,26 +227,26 @@ public abstract class AbstractCondition implements Condition, Cloneable {
                 return propNames[0];
 
             case 2:
-                return WD.PARENTHESES_L + propNames[0] + WD.COMMA_SPACE + propNames[1] + WD.PARENTHESES_R;
+                return SK.PARENTHESES_L + propNames[0] + SK.COMMA_SPACE + propNames[1] + SK.PARENTHESES_R;
 
             case 3:
-                return WD.PARENTHESES_L + propNames[0] + WD.COMMA_SPACE + propNames[1] + WD.COMMA_SPACE + propNames[2] + WD.PARENTHESES_R;
+                return SK.PARENTHESES_L + propNames[0] + SK.COMMA_SPACE + propNames[1] + SK.COMMA_SPACE + propNames[2] + SK.PARENTHESES_R;
 
             default:
                 final StringBuilder sb = Objectory.createStringBuilder();
 
                 try {
-                    sb.append(WD._PARENTHESES_L);
+                    sb.append(SK._PARENTHESES_L);
 
                     for (int i = 0; i < size; i++) {
                         if (i > 0) {
-                            sb.append(WD.COMMA_SPACE);
+                            sb.append(SK.COMMA_SPACE);
                         }
 
                         sb.append(propNames[i]);
                     }
 
-                    sb.append(WD._PARENTHESES_R);
+                    sb.append(SK._PARENTHESES_R);
 
                     return sb.toString();
 
@@ -282,27 +282,27 @@ public abstract class AbstractCondition implements Condition, Cloneable {
                 return it.next();
 
             case 2:
-                return WD.PARENTHESES_L + it.next() + WD.COMMA_SPACE + it.next() + WD.PARENTHESES_R;
+                return SK.PARENTHESES_L + it.next() + SK.COMMA_SPACE + it.next() + SK.PARENTHESES_R;
 
             case 3:
-                return WD.PARENTHESES_L + it.next() + WD.COMMA_SPACE + it.next() + WD.COMMA_SPACE + it.next() + WD.PARENTHESES_R;
+                return SK.PARENTHESES_L + it.next() + SK.COMMA_SPACE + it.next() + SK.COMMA_SPACE + it.next() + SK.PARENTHESES_R;
 
             default:
 
                 final StringBuilder sb = Objectory.createStringBuilder();
 
                 try {
-                    sb.append(WD._PARENTHESES_L);
+                    sb.append(SK._PARENTHESES_L);
 
                     for (int i = 0; i < size; i++) {
                         if (i > 0) {
-                            sb.append(WD.COMMA_SPACE);
+                            sb.append(SK.COMMA_SPACE);
                         }
 
                         sb.append(it.next());
                     }
 
-                    sb.append(WD._PARENTHESES_R);
+                    sb.append(SK._PARENTHESES_R);
 
                     return sb.toString();
                 } finally {

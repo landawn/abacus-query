@@ -14,49 +14,49 @@
 
 package com.landawn.abacus.condition;
 
-import static com.landawn.abacus.util.WD.ABS;
-import static com.landawn.abacus.util.WD.ACOS;
-import static com.landawn.abacus.util.WD.AMPERSAND;
-import static com.landawn.abacus.util.WD.ASIN;
-import static com.landawn.abacus.util.WD.ASTERISK;
-import static com.landawn.abacus.util.WD.ATAN;
-import static com.landawn.abacus.util.WD.AVG;
-import static com.landawn.abacus.util.WD.CEIL;
-import static com.landawn.abacus.util.WD.CIRCUMFLEX;
-import static com.landawn.abacus.util.WD.COMMA_SPACE;
-import static com.landawn.abacus.util.WD.CONCAT;
-import static com.landawn.abacus.util.WD.COS;
-import static com.landawn.abacus.util.WD.COUNT;
-import static com.landawn.abacus.util.WD.EXP;
-import static com.landawn.abacus.util.WD.FLOOR;
-import static com.landawn.abacus.util.WD.LENGTH;
-import static com.landawn.abacus.util.WD.LN;
-import static com.landawn.abacus.util.WD.LOG;
-import static com.landawn.abacus.util.WD.LOWER;
-import static com.landawn.abacus.util.WD.LPAD;
-import static com.landawn.abacus.util.WD.LTRIM;
-import static com.landawn.abacus.util.WD.MAX;
-import static com.landawn.abacus.util.WD.MIN;
-import static com.landawn.abacus.util.WD.MINUS;
-import static com.landawn.abacus.util.WD.MOD;
-import static com.landawn.abacus.util.WD.PERCENT;
-import static com.landawn.abacus.util.WD.PLUS;
-import static com.landawn.abacus.util.WD.POWER;
-import static com.landawn.abacus.util.WD.REPLACE;
-import static com.landawn.abacus.util.WD.RPAD;
-import static com.landawn.abacus.util.WD.RTRIM;
-import static com.landawn.abacus.util.WD.SIGN;
-import static com.landawn.abacus.util.WD.SIN;
-import static com.landawn.abacus.util.WD.SLASH;
-import static com.landawn.abacus.util.WD.SPACE;
-import static com.landawn.abacus.util.WD.SQRT;
-import static com.landawn.abacus.util.WD.SUBSTR;
-import static com.landawn.abacus.util.WD.SUM;
-import static com.landawn.abacus.util.WD.TAN;
-import static com.landawn.abacus.util.WD.TRIM;
-import static com.landawn.abacus.util.WD.UPPER;
-import static com.landawn.abacus.util.WD.VERTICALBAR;
-import static com.landawn.abacus.util.WD._QUOTATION_S;
+import static com.landawn.abacus.util.SK.ABS;
+import static com.landawn.abacus.util.SK.ACOS;
+import static com.landawn.abacus.util.SK.AMPERSAND;
+import static com.landawn.abacus.util.SK.ASIN;
+import static com.landawn.abacus.util.SK.ASTERISK;
+import static com.landawn.abacus.util.SK.ATAN;
+import static com.landawn.abacus.util.SK.AVG;
+import static com.landawn.abacus.util.SK.CEIL;
+import static com.landawn.abacus.util.SK.CIRCUMFLEX;
+import static com.landawn.abacus.util.SK.COMMA_SPACE;
+import static com.landawn.abacus.util.SK.CONCAT;
+import static com.landawn.abacus.util.SK.COS;
+import static com.landawn.abacus.util.SK.COUNT;
+import static com.landawn.abacus.util.SK.EXP;
+import static com.landawn.abacus.util.SK.FLOOR;
+import static com.landawn.abacus.util.SK.LENGTH;
+import static com.landawn.abacus.util.SK.LN;
+import static com.landawn.abacus.util.SK.LOG;
+import static com.landawn.abacus.util.SK.LOWER;
+import static com.landawn.abacus.util.SK.LPAD;
+import static com.landawn.abacus.util.SK.LTRIM;
+import static com.landawn.abacus.util.SK.MAX;
+import static com.landawn.abacus.util.SK.MIN;
+import static com.landawn.abacus.util.SK.MINUS;
+import static com.landawn.abacus.util.SK.MOD;
+import static com.landawn.abacus.util.SK.PERCENT;
+import static com.landawn.abacus.util.SK.PLUS;
+import static com.landawn.abacus.util.SK.POWER;
+import static com.landawn.abacus.util.SK.REPLACE;
+import static com.landawn.abacus.util.SK.RPAD;
+import static com.landawn.abacus.util.SK.RTRIM;
+import static com.landawn.abacus.util.SK.SIGN;
+import static com.landawn.abacus.util.SK.SIN;
+import static com.landawn.abacus.util.SK.SLASH;
+import static com.landawn.abacus.util.SK.SPACE;
+import static com.landawn.abacus.util.SK.SQRT;
+import static com.landawn.abacus.util.SK.SUBSTR;
+import static com.landawn.abacus.util.SK.SUM;
+import static com.landawn.abacus.util.SK.TAN;
+import static com.landawn.abacus.util.SK.TRIM;
+import static com.landawn.abacus.util.SK.UPPER;
+import static com.landawn.abacus.util.SK.VERTICALBAR;
+import static com.landawn.abacus.util.SK._QUOTATION_S;
 
 import java.util.List;
 import java.util.Map;
@@ -68,7 +68,7 @@ import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.SQLParser;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents a raw SQL expression that can be used in queries.
@@ -579,9 +579,9 @@ public class Expression extends AbstractCondition {
 
         try {
             sb.append(literal);
-            sb.append(WD._SPACE);
+            sb.append(SK._SPACE);
             sb.append(operator.getName());
-            sb.append(WD._SPACE);
+            sb.append(SK._SPACE);
             sb.append(formalize(value));
 
             return sb.toString();
@@ -604,14 +604,14 @@ public class Expression extends AbstractCondition {
 
         try {
             sb.append(literal);
-            sb.append(WD._SPACE);
+            sb.append(SK._SPACE);
             sb.append(operator.getName());
-            sb.append(WD._SPACE);
-            sb.append(WD._PARENTHESES_L);
+            sb.append(SK._SPACE);
+            sb.append(SK._PARENTHESES_L);
             sb.append(formalize(min));
-            sb.append(WD.COMMA_SPACE);
+            sb.append(SK.COMMA_SPACE);
             sb.append(formalize(max));
-            sb.append(WD._PARENTHESES_R);
+            sb.append(SK._PARENTHESES_R);
 
             return sb.toString();
         } finally {
@@ -632,9 +632,9 @@ public class Expression extends AbstractCondition {
 
         try {
             sb.append(literal);
-            sb.append(WD._SPACE);
+            sb.append(SK._SPACE);
             sb.append(operator.getName());
-            sb.append(WD._SPACE);
+            sb.append(SK._SPACE);
             sb.append(operatorPostfix);
 
             return sb.toString();
@@ -656,9 +656,9 @@ public class Expression extends AbstractCondition {
         try {
             for (int i = 0; i < literals.length; i++) {
                 if (i > 0) {
-                    sb.append(WD._SPACE);
+                    sb.append(SK._SPACE);
                     sb.append(operator.getName());
-                    sb.append(WD._SPACE);
+                    sb.append(SK._SPACE);
                 }
 
                 sb.append(literals[i]);
@@ -679,7 +679,7 @@ public class Expression extends AbstractCondition {
      */
     static String link(String linkedSymbol, final Object... objects) {
         if (!(SPACE.equals(linkedSymbol) || COMMA_SPACE.equals(linkedSymbol))) {
-            linkedSymbol = WD._SPACE + linkedSymbol + WD._SPACE;
+            linkedSymbol = SK._SPACE + linkedSymbol + SK._SPACE;
         }
 
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -1117,7 +1117,7 @@ public class Expression extends AbstractCondition {
         try {
             sb.append(functionName);
 
-            sb.append(WD._PARENTHESES_L);
+            sb.append(SK._PARENTHESES_L);
 
             for (int i = 0; i < args.length; i++) {
                 if (i > 0) {
@@ -1127,7 +1127,7 @@ public class Expression extends AbstractCondition {
                 sb.append(N.stringOf(args[i]));
             }
 
-            sb.append(WD._PARENTHESES_R);
+            sb.append(SK._PARENTHESES_R);
 
             return sb.toString();
 

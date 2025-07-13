@@ -14,7 +14,6 @@
 
 package com.landawn.abacus.condition;
 
-
 /**
  * Represents the SQL NOT EXISTS operator for use with subqueries.
  * The NOT EXISTS operator returns true if the subquery returns no rows, false otherwise.
@@ -45,7 +44,6 @@ public class NotExists extends Cell {
     // For Kryo
     NotExists() {
     }
-
 
     /**
      * Creates a new NOT EXISTS condition with the specified subquery.

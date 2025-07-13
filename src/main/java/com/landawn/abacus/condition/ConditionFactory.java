@@ -30,7 +30,7 @@ import com.landawn.abacus.util.EntityId;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.QueryUtil;
 import com.landawn.abacus.util.SortDirection;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * A factory class for creating SQL-like condition objects used in database queries.
@@ -66,7 +66,7 @@ public class ConditionFactory {
      * Equal condition = ConditionFactory.eq("age"); // Uses QME internally
      * }</pre>
      */
-    public static final Expression QME = Expr.of(WD.QUESTION_MARK);
+    public static final Expression QME = Expr.of(SK.QUESTION_MARK);
 
     /**
      * Constant representing ascending sort direction.
@@ -1453,7 +1453,7 @@ public class ConditionFactory {
      * @return a Like condition
      */
     public static Like contains(final String propName, final Object propValue) {
-        return new Like(propName, WD._PERCENT + N.stringOf(propValue) + WD._PERCENT);
+        return new Like(propName, SK._PERCENT + N.stringOf(propValue) + SK._PERCENT);
     }
 
     /**
@@ -1471,7 +1471,7 @@ public class ConditionFactory {
      * @return a NotLike condition
      */
     public static NotLike notContains(final String propName, final Object propValue) {
-        return new NotLike(propName, WD._PERCENT + N.stringOf(propValue) + WD._PERCENT);
+        return new NotLike(propName, SK._PERCENT + N.stringOf(propValue) + SK._PERCENT);
     }
 
     /**
@@ -1489,7 +1489,7 @@ public class ConditionFactory {
      * @return a Like condition
      */
     public static Like startsWith(final String propName, final Object propValue) {
-        return new Like(propName, N.stringOf(propValue) + WD._PERCENT);
+        return new Like(propName, N.stringOf(propValue) + SK._PERCENT);
     }
 
     /**
@@ -1507,7 +1507,7 @@ public class ConditionFactory {
      * @return a NotLike condition
      */
     public static NotLike notStartsWith(final String propName, final Object propValue) {
-        return new NotLike(propName, N.stringOf(propValue) + WD._PERCENT);
+        return new NotLike(propName, N.stringOf(propValue) + SK._PERCENT);
     }
 
     /**
@@ -1525,7 +1525,7 @@ public class ConditionFactory {
      * @return a Like condition
      */
     public static Like endsWith(final String propName, final Object propValue) {
-        return new Like(propName, WD._PERCENT + N.stringOf(propValue));
+        return new Like(propName, SK._PERCENT + N.stringOf(propValue));
     }
 
     /**
@@ -1543,7 +1543,7 @@ public class ConditionFactory {
      * @return a NotLike condition
      */
     public static NotLike notEndsWith(final String propName, final Object propValue) {
-        return new NotLike(propName, WD._PERCENT + N.stringOf(propValue));
+        return new NotLike(propName, SK._PERCENT + N.stringOf(propValue));
     }
 
     /**

@@ -130,30 +130,30 @@ public final class SQLParser {
     private static final Map<String, String[]> compositeWords = new ObjectPool<>(64);
 
     static {
-        compositeWords.put(WD.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
-        compositeWords.put(WD.RIGHT_JOIN, new String[] { "RIGHT", "JOIN" });
-        compositeWords.put(WD.FULL_JOIN, new String[] { "FULL", "JOIN" });
-        compositeWords.put(WD.CROSS_JOIN, new String[] { "CROSS", "JOIN" });
-        compositeWords.put(WD.NATURAL_JOIN, new String[] { "NATURAL", "JOIN" });
-        compositeWords.put(WD.INNER_JOIN, new String[] { "INNER", "JOIN" });
-        compositeWords.put(WD.GROUP_BY, new String[] { "GROUP", "BY" });
-        compositeWords.put(WD.ORDER_BY, new String[] { "ORDER", "BY" });
-        compositeWords.put(WD.FOR_UPDATE, new String[] { "FOR", "UPDATE" });
-        compositeWords.put(WD.FETCH_FIRST, new String[] { "FETCH", "FIRST" });
-        compositeWords.put(WD.FETCH_NEXT, new String[] { "FETCH", "NEXT" });
-        compositeWords.put(WD.ROWS_ONLY, new String[] { "ROWS", "ONLY" });
-        compositeWords.put(WD.UNION_ALL, new String[] { "UNION", "ALL" });
-        compositeWords.put(WD.IS_NOT, new String[] { "IS", "NOT" });
-        compositeWords.put(WD.IS_NULL, new String[] { "IS", "NULL" });
-        compositeWords.put(WD.IS_NOT_NULL, new String[] { "IS", "NOT", "NULL" });
-        compositeWords.put(WD.IS_EMPTY, new String[] { "IS", "EMPTY" });
-        compositeWords.put(WD.IS_NOT_EMPTY, new String[] { "IS", "NOT", "EMPTY" });
-        compositeWords.put(WD.IS_BLANK, new String[] { "IS", "BLANK" });
-        compositeWords.put(WD.IS_NOT_BLANK, new String[] { "IS", "NOT", "BLANK" });
-        compositeWords.put(WD.NOT_IN, new String[] { "NOT", "IN" });
-        compositeWords.put(WD.NOT_EXISTS, new String[] { "NOT", "EXISTS" });
-        compositeWords.put("NOT LIKE", new String[] { "NOT", "LIKE" });
-        compositeWords.put("PARTITION BY", new String[] { "PARTITION", "BY" });
+        compositeWords.put(SK.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
+        compositeWords.put(SK.RIGHT_JOIN, new String[] { "RIGHT", "JOIN" });
+        compositeWords.put(SK.FULL_JOIN, new String[] { "FULL", "JOIN" });
+        compositeWords.put(SK.CROSS_JOIN, new String[] { "CROSS", "JOIN" });
+        compositeWords.put(SK.NATURAL_JOIN, new String[] { "NATURAL", "JOIN" });
+        compositeWords.put(SK.INNER_JOIN, new String[] { "INNER", "JOIN" });
+        compositeWords.put(SK.GROUP_BY, new String[] { "GROUP", "BY" });
+        compositeWords.put(SK.ORDER_BY, new String[] { "ORDER", "BY" });
+        compositeWords.put(SK.FOR_UPDATE, new String[] { "FOR", "UPDATE" });
+        compositeWords.put(SK.FETCH_FIRST, new String[] { "FETCH", "FIRST" });
+        compositeWords.put(SK.FETCH_NEXT, new String[] { "FETCH", "NEXT" });
+        compositeWords.put(SK.ROWS_ONLY, new String[] { "ROWS", "ONLY" });
+        compositeWords.put(SK.UNION_ALL, new String[] { "UNION", "ALL" });
+        compositeWords.put(SK.IS_NOT, new String[] { "IS", "NOT" });
+        compositeWords.put(SK.IS_NULL, new String[] { "IS", "NULL" });
+        compositeWords.put(SK.IS_NOT_NULL, new String[] { "IS", "NOT", "NULL" });
+        compositeWords.put(SK.IS_EMPTY, new String[] { "IS", "EMPTY" });
+        compositeWords.put(SK.IS_NOT_EMPTY, new String[] { "IS", "NOT", "EMPTY" });
+        compositeWords.put(SK.IS_BLANK, new String[] { "IS", "BLANK" });
+        compositeWords.put(SK.IS_NOT_BLANK, new String[] { "IS", "NOT", "BLANK" });
+        compositeWords.put(SK.NOT_IN, new String[] { "NOT", "IN" });
+        compositeWords.put(SK.NOT_EXISTS, new String[] { "NOT", "EXISTS" });
+        compositeWords.put(SK.NOT_LIKE, new String[] { "NOT", "LIKE" });
+        compositeWords.put(SK.PARTITION_BY, new String[] { "PARTITION", "BY" });
 
         final List<String> list = new ArrayList<>(compositeWords.keySet());
 
@@ -161,13 +161,13 @@ public final class SQLParser {
             e = e.toLowerCase();
 
             if (!compositeWords.containsKey(e)) {
-                compositeWords.put(e, Splitter.with(WD.SPACE).trimResults().splitToArray(e));
+                compositeWords.put(e, Splitter.with(SK.SPACE).trimResults().splitToArray(e));
             }
 
             e = e.toUpperCase();
 
             if (!compositeWords.containsKey(e)) {
-                compositeWords.put(e, Splitter.with(WD.SPACE).trimResults().splitToArray(e));
+                compositeWords.put(e, Splitter.with(SK.SPACE).trimResults().splitToArray(e));
             }
         }
     }
@@ -309,9 +309,9 @@ public final class SQLParser {
                 } else if ((index < (sqlLength - 1)) && separators.contains(temp = sql.substring(index, index + 2))) {
                     words.add(temp);
                     index += 1;
-                } else if (c == WD._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
-                    if ((words.size() > 0) && !words.get(words.size() - 1).equals(WD.SPACE)) {
-                        words.add(WD.SPACE);
+                } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
+                    if ((words.size() > 0) && !words.get(words.size() - 1).equals(SK.SPACE)) {
+                        words.add(SK.SPACE);
                     }
                 } else {
                     words.add(String.valueOf(c));
@@ -319,7 +319,7 @@ public final class SQLParser {
             } else {
                 sb.append(c);
 
-                if ((c == WD._QUOTATION_S) || (c == WD._QUOTATION_D)) {
+                if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
                     quoteChar = c;
                 }
             }
@@ -369,7 +369,7 @@ public final class SQLParser {
         String[] subWords = compositeWords.get(word);
 
         if (subWords == null) {
-            subWords = Splitter.with(WD.SPACE).trimResults().splitToArray(word);
+            subWords = Splitter.with(SK.SPACE).trimResults().splitToArray(word);
             compositeWords.put(word, subWords);
         }
 
@@ -413,7 +413,7 @@ public final class SQLParser {
                         }
 
                         sb.setLength(0);
-                    } else if (c == WD._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
+                    } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
                         // skip white char
                         continue;
                     }
@@ -442,7 +442,7 @@ public final class SQLParser {
                 } else {
                     sb.append(c);
 
-                    if ((c == WD._QUOTATION_S) || (c == WD._QUOTATION_D)) {
+                    if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
                         quoteChar = c;
                     }
                 }
@@ -529,7 +529,7 @@ public final class SQLParser {
             } else if (isSeparator(sql, sqlLength, index, c)) {
                 if (!sb.isEmpty()) {
                     break;
-                } else if (c == WD._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
+                } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
                     // skip white char
                     continue;
                 }
@@ -545,7 +545,7 @@ public final class SQLParser {
             } else {
                 sb.append(c);
 
-                if ((c == WD._QUOTATION_S) || (c == WD._QUOTATION_D)) {
+                if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
                     quoteChar = c;
                 }
             }
@@ -657,17 +657,17 @@ public final class SQLParser {
      * @return true if the word at the specified index is a function name, false otherwise
      */
     public static boolean isFunctionName(final List<String> words, final int len, final int index) {
-        //    return (i < len - 1 && words.get(i + 1).charAt(0) == WD._PARENTHESES_L)
-        //            || (i < len - 2 && WD.SPACE.equals(words.get(i + 1)) && words.get(i + 2).charAt(0) == WD._PARENTHESES_L);
+        //    return (i < len - 1 && words.get(i + 1).charAt(0) == SK._PARENTHESES_L)
+        //            || (i < len - 2 && SK.SPACE.equals(words.get(i + 1)) && words.get(i + 2).charAt(0) == SK._PARENTHESES_L);
 
-        if ((index < len - 1 && words.get(index + 1).charAt(0) == WD._PARENTHESES_L)) {
+        if ((index < len - 1 && words.get(index + 1).charAt(0) == SK._PARENTHESES_L)) {
             return true;
         }
 
         for (int i = index + 1; i < len; i++) {
-            if (words.get(i).charAt(0) == WD._PARENTHESES_L) {
+            if (words.get(i).charAt(0) == SK._PARENTHESES_L) {
                 return true;
-            } else if (!WD.SPACE.equals(words.get(i))) {
+            } else if (!SK.SPACE.equals(words.get(i))) {
                 return false;
             }
         }

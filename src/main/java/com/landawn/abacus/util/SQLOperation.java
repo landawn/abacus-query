@@ -54,77 +54,77 @@ public enum SQLOperation {
     /**
      * SELECT operation for data retrieval.
      */
-    SELECT(WD.SELECT),
+    SELECT(SK.SELECT),
 
     /**
      * INSERT operation for adding new records.
      */
-    INSERT(WD.INSERT),
+    INSERT(SK.INSERT),
 
     /**
      * UPDATE operation for modifying existing records.
      */
-    UPDATE(WD.UPDATE),
+    UPDATE(SK.UPDATE),
 
     /**
      * DELETE operation for removing records.
      */
-    DELETE(WD.DELETE),
+    DELETE(SK.DELETE),
 
     /**
      * MERGE operation for upsert functionality.
      */
-    MERGE(WD.MERGE),
+    MERGE(SK.MERGE),
 
     /**
      * CREATE operation for creating database objects.
      */
-    CREATE(WD.CREATE),
+    CREATE(SK.CREATE),
 
     /**
      * DROP operation for removing database objects.
      */
-    DROP(WD.DROP),
+    DROP(SK.DROP),
 
     /**
      * ALTER operation for modifying database object structure.
      */
-    ALTER(WD.ALTER),
+    ALTER(SK.ALTER),
 
     /**
      * SHOW operation for displaying database information.
      */
-    SHOW(WD.SHOW),
+    SHOW(SK.SHOW),
 
     /**
      * DESCRIBE operation for showing table structure.
      */
-    DESCRIBE(WD.DESCRIBE),
+    DESCRIBE(SK.DESCRIBE),
 
     /**
      * USE operation for selecting a database.
      */
-    USE(WD.USE),
+    USE(SK.USE),
 
     /**
      * RENAME operation for renaming database objects.
      */
-    RENAME(WD.RENAME),
+    RENAME(SK.RENAME),
 
     /**
      * BEGIN_TRANSACTION operation for starting a transaction.
      */
-    BEGIN_TRANSACTION(WD.BEGIN_TRANSACTION),
+    BEGIN_TRANSACTION(SK.BEGIN_TRANSACTION),
 
     /**
      * COMMIT operation for committing a transaction.
      */
-    COMMIT(WD.COMMIT),
+    COMMIT(SK.COMMIT),
 
     /**
      * ROLLBACK operation for rolling back a transaction.
      */
-    ROLLBACK(WD.ROLLBACK),
+    ROLLBACK(SK.ROLLBACK),
 
     /**
      * CALL operation for executing stored procedures.

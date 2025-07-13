@@ -21,7 +21,7 @@ import java.util.function.Function;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents a NOT IN subquery condition used in SQL WHERE clauses.
@@ -226,13 +226,13 @@ public class NotInSubQuery extends AbstractCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         if (Strings.isNotEmpty(propName)) {
-            return namingPolicy.convert(propName) + WD._SPACE + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
-                    + WD.PARENTHESES_R;
+            return namingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
+                    + SK.PARENTHESES_R;
         } else {
             final Function<String, String> func = namingPolicy::convert;
 
-            return "(" + Strings.join(N.map(propNames, func), ", ") + ") " + getOperator().toString() + WD.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
-                    + WD.PARENTHESES_R;
+            return "(" + Strings.join(N.map(propNames, func), ", ") + ") " + getOperator().toString() + SK.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
+                    + SK.PARENTHESES_R;
         }
     }
 

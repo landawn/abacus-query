@@ -160,10 +160,10 @@ public final class SQLMapper {
      * @throws RuntimeException if no 'sqlMapper' element is found in any file
      */
     public static SQLMapper fromFile(final String filePath) {
-        String[] filePaths = Splitter.with(WD.COMMA).trimResults().splitToArray(filePath);
+        String[] filePaths = Splitter.with(SK.COMMA).trimResults().splitToArray(filePath);
 
         if (filePaths.length == 1) {
-            filePaths = Splitter.with(WD.SEMICOLON).trimResults().splitToArray(filePath);
+            filePaths = Splitter.with(SK.SEMICOLON).trimResults().splitToArray(filePath);
         }
 
         final SQLMapper sqlMapper = new SQLMapper();

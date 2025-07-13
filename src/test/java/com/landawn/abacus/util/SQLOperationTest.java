@@ -60,7 +60,7 @@ public class SQLOperationTest extends TestBase {
         assertEquals("DESCRIBE", SQLOperation.DESCRIBE.sqlText());
         assertEquals("USE", SQLOperation.USE.sqlText());
         assertEquals("RENAME", SQLOperation.RENAME.sqlText());
-        assertEquals(WD.BEGIN_TRANSACTION, SQLOperation.BEGIN_TRANSACTION.sqlText());
+        assertEquals(SK.BEGIN_TRANSACTION, SQLOperation.BEGIN_TRANSACTION.sqlText());
         assertEquals("COMMIT", SQLOperation.COMMIT.sqlText());
         assertEquals("ROLLBACK", SQLOperation.ROLLBACK.sqlText());
         assertEquals("CALL", SQLOperation.CALL.sqlText());
@@ -271,7 +271,7 @@ public class SQLOperationTest extends TestBase {
         assertEquals("DESCRIBE", SQLOperation.DESCRIBE.sqlText());
         assertEquals("USE", SQLOperation.USE.sqlText());
         assertEquals("RENAME", SQLOperation.RENAME.sqlText());
-        assertEquals(WD.BEGIN_TRANSACTION, SQLOperation.BEGIN_TRANSACTION.sqlText());
+        assertEquals(SK.BEGIN_TRANSACTION, SQLOperation.BEGIN_TRANSACTION.sqlText());
         assertEquals("COMMIT", SQLOperation.COMMIT.sqlText());
         assertEquals("ROLLBACK", SQLOperation.ROLLBACK.sqlText());
         assertEquals("CALL", SQLOperation.CALL.sqlText());

@@ -25,7 +25,7 @@ import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.SortDirection;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents a complete query criteria that can contain multiple SQL clauses.
@@ -376,7 +376,7 @@ public class Criteria extends AbstractCondition {
      * }</pre>
      */
     public Criteria distinct() {
-        preselect = WD.DISTINCT;
+        preselect = SK.DISTINCT;
 
         return this;
     }
@@ -394,7 +394,7 @@ public class Criteria extends AbstractCondition {
      * }</pre>
      */
     public Criteria distinctBy(final String columnNames) {
-        preselect = Strings.isEmpty(columnNames) ? WD.DISTINCT : WD.DISTINCT + "(" + columnNames + ")";
+        preselect = Strings.isEmpty(columnNames) ? SK.DISTINCT : SK.DISTINCT + "(" + columnNames + ")";
 
         return this;
     }
@@ -405,7 +405,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria distinctRow() {
-        preselect = WD.DISTINCTROW;
+        preselect = SK.DISTINCTROW;
 
         return this;
     }
@@ -417,7 +417,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria distinctRowBy(final String columnNames) {
-        preselect = Strings.isEmpty(columnNames) ? WD.DISTINCTROW : WD.DISTINCTROW + "(" + columnNames + ")";
+        preselect = Strings.isEmpty(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
 
         return this;
     }
@@ -1042,7 +1042,7 @@ public class Criteria extends AbstractCondition {
     @SuppressWarnings("StringConcatenationInLoop")
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        final String preselect = Strings.isEmpty(this.preselect) ? Strings.EMPTY : WD.SPACE + this.preselect; //NOSONAR
+        final String preselect = Strings.isEmpty(this.preselect) ? Strings.EMPTY : SK.SPACE + this.preselect; //NOSONAR
         String join = Strings.EMPTY;
         String where = Strings.EMPTY;
         String groupBy = Strings.EMPTY;
@@ -1054,19 +1054,19 @@ public class Criteria extends AbstractCondition {
 
         for (final Condition cond : conditionList) {
             if (cond.getOperator() == Operator.WHERE) {
-                where += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
+                where += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.getOperator() == Operator.ORDER_BY) {
-                orderBy += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
+                orderBy += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.getOperator() == Operator.GROUP_BY) {
-                groupBy += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
+                groupBy += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.getOperator() == Operator.HAVING) {
-                having += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
+                having += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.getOperator() == Operator.LIMIT) {
-                limit += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
+                limit += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond instanceof Join) {
-                join += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
+                join += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else {
-                aggregate += (WD._SPACE + cond.toString(namingPolicy)); //NOSONAR
+                aggregate += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             }
         }
 

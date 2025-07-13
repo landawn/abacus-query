@@ -14,14 +14,14 @@
 
 package com.landawn.abacus.condition;
 
-import static com.landawn.abacus.util.WD._SPACE;
+import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.List;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents a LIMIT clause in SQL queries to restrict the number of rows returned.
@@ -201,7 +201,7 @@ public class Limit extends AbstractCondition {
         if (Strings.isNotEmpty(expr)) {
             return expr;
         } else {
-            return offset > 0 ? WD.LIMIT + _SPACE + count + _SPACE + WD.OFFSET + _SPACE + offset : WD.LIMIT + _SPACE + count;
+            return offset > 0 ? SK.LIMIT + _SPACE + count + _SPACE + SK.OFFSET + _SPACE + offset : SK.LIMIT + _SPACE + count;
         }
     }
 

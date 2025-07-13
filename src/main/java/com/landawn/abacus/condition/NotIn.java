@@ -21,7 +21,7 @@ import java.util.List;
 import com.landawn.abacus.util.Joiner;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents a NOT IN condition in SQL queries.
@@ -160,7 +160,7 @@ public class NotIn extends AbstractCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         //noinspection resource
-        return Joiner.with(WD.COMMA_SPACE, namingPolicy.convert(propName) + WD._SPACE + getOperator().toString() + WD.SPACE_PARENTHESES_L, WD.PARENTHESES_R)
+        return Joiner.with(SK.COMMA_SPACE, namingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L, SK.PARENTHESES_R)
                 .reuseCachedBuffer()
                 .appendAll(values)
                 .toString();

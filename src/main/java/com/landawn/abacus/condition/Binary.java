@@ -19,7 +19,7 @@ import java.util.List;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Abstract base class for binary conditions that compare a property with a value.
@@ -208,7 +208,7 @@ public class Binary extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        return namingPolicy.convert(propName) + WD._SPACE + getOperator().toString() + WD._SPACE + parameter2String(propValue, namingPolicy);
+        return namingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK._SPACE + parameter2String(propValue, namingPolicy);
     }
 
     /**

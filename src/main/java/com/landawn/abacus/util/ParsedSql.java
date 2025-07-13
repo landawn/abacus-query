@@ -54,7 +54,7 @@ public final class ParsedSql {
 
     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
 
-    private static final Set<String> opSqlPrefixSet = N.asSet(WD.SELECT, WD.INSERT, WD.UPDATE, WD.DELETE, WD.WITH, WD.MERGE);
+    private static final Set<String> opSqlPrefixSet = N.asSet(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE);
 
     private static final int factor = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
@@ -107,21 +107,21 @@ public final class ParsedSql {
             final StringBuilder sb = Objectory.createStringBuilder();
 
             for (String word : words) {
-                if (word.equals(WD.QUESTION_MARK)) {
+                if (word.equals(SK.QUESTION_MARK)) {
                     parameterCount++;
 
                     type ^= 1;
                 } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER)) {
                     namedParameterList.add(word.substring(2, word.length() - 1));
 
-                    word = WD.QUESTION_MARK;
+                    word = SK.QUESTION_MARK;
                     parameterCount++;
 
                     type ^= 4;
                 } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
                     namedParameterList.add(word.substring(1));
 
-                    word = WD.QUESTION_MARK;
+                    word = SK.QUESTION_MARK;
                     parameterCount++;
 
                     type ^= 2;
@@ -317,7 +317,7 @@ public final class ParsedSql {
             int countOfParameter = 0;
 
             for (String word : words) {
-                if (word.equals(WD.QUESTION_MARK)) {
+                if (word.equals(SK.QUESTION_MARK)) {
                     if (couchbaseNamedParameterList.size() > 0) {
                         throw new IllegalArgumentException("can't mix '?' with name parameter ':propName' or '#{propName}' in the same sql script");
                     }

@@ -19,7 +19,7 @@ import java.util.List;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.WD;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents a condition cell that wraps another condition with an operator.
@@ -159,7 +159,7 @@ public class Cell extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        return getOperator().toString() + ((condition == null) ? Strings.EMPTY : WD._SPACE + condition.toString(namingPolicy));
+        return getOperator().toString() + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(namingPolicy));
     }
 
     /**
