@@ -25,6 +25,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -244,7 +245,7 @@ public abstract class SQLBuilder { // NOSONAR
 
     static final char[] _SPACE_OFFSET_SPACE = (WD.SPACE + WD.OFFSET + WD.SPACE).toCharArray();
 
-    static final char[] _SPACE_ROWS_SPACE = (WD.SPACE + WD.ROWS + WD.SPACE).toCharArray();
+    static final char[] _SPACE_ROWS = (WD.SPACE + WD.ROWS).toCharArray();
 
     static final char[] _AND = WD.AND.toCharArray();
 
@@ -375,6 +376,8 @@ public abstract class SQLBuilder { // NOSONAR
     private boolean _isForConditionOnly = false; //NOSONAR
 
     private final BiConsumer<StringBuilder, String> _handlerForNamedParameter; //NOSONAR
+
+    private final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
 
     /**
      * Constructs a new SQLBuilder with the specified naming policy and SQL policy.
@@ -1241,7 +1244,7 @@ public abstract class SQLBuilder { // NOSONAR
                         _sb.append(_COMMA_SPACE);
                     }
 
-                    appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, columnName, null, false, null, isForSelect);
+                    appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, columnName, null, false, null, isForSelect, true);
                 }
             }
         } else if (N.notEmpty(_propOrColumnNameAliases)) {
@@ -1251,7 +1254,7 @@ public abstract class SQLBuilder { // NOSONAR
                     _sb.append(_COMMA_SPACE);
                 }
 
-                appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, entry.getKey(), entry.getValue(), false, null, isForSelect);
+                appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, entry.getKey(), entry.getValue(), false, null, isForSelect, true);
             }
         } else if (N.notEmpty(_multiSelects)) {
             _aliasPropColumnNameMap = N.newHashMap(_multiSelects.size());
@@ -1289,7 +1292,7 @@ public abstract class SQLBuilder { // NOSONAR
                     }
 
                     appendColumnName(selectionEntityClass, selectionBeanInfo, selectionPropColumnNameMap, selectionTableAlias, propName, null,
-                            selectionWithClassAlias, selectionClassAlias, isForSelect);
+                            selectionWithClassAlias, selectionClassAlias, isForSelect, true);
                 }
             }
         } else {
@@ -1883,6 +1886,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder where(final String expr) {
+        checkIfAlreadyCalled(WD.WHERE);
+
         init(true);
 
         _sb.append(_SPACE_WHERE_SPACE);
@@ -1909,6 +1914,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @see ConditionFactory.CF
      */
     public SQLBuilder where(final Condition cond) {
+        checkIfAlreadyCalled(WD.WHERE);
+
         init(true);
 
         _sb.append(_SPACE_WHERE_SPACE);
@@ -1933,6 +1940,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder groupBy(final String expr) {
+        checkIfAlreadyCalled(WD.GROUP_BY);
+
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         appendColumnName(expr);
@@ -1955,6 +1964,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder groupBy(final String... propOrColumnNames) {
+        checkIfAlreadyCalled(WD.GROUP_BY);
+
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         for (int i = 0, len = propOrColumnNames.length; i < len; i++) {
@@ -2007,6 +2018,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder groupBy(final Collection<String> propOrColumnNames) {
+        checkIfAlreadyCalled(WD.GROUP_BY);
+
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         int i = 0;
@@ -2055,6 +2068,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder groupBy(final Map<String, SortDirection> orders) {
+        checkIfAlreadyCalled(WD.GROUP_BY);
+
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         int i = 0;
@@ -2089,6 +2104,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder having(final String expr) {
+        checkIfAlreadyCalled(WD.HAVING);
+
         _sb.append(_SPACE_HAVING_SPACE);
 
         appendStringExpr(expr, false);
@@ -2114,6 +2131,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @see ConditionFactory.CF
      */
     public SQLBuilder having(final Condition cond) {
+        checkIfAlreadyCalled(WD.HAVING);
+
         _sb.append(_SPACE_HAVING_SPACE);
 
         appendCondition(cond);
@@ -2136,6 +2155,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder orderBy(final String expr) {
+        checkIfAlreadyCalled(WD.ORDER_BY);
+
         _sb.append(_SPACE_ORDER_BY_SPACE);
 
         appendColumnName(expr);
@@ -2158,6 +2179,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public final SQLBuilder orderBy(final String... propOrColumnNames) {
+        checkIfAlreadyCalled(WD.ORDER_BY);
+
         _sb.append(_SPACE_ORDER_BY_SPACE);
 
         for (int i = 0, len = propOrColumnNames.length; i < len; i++) {
@@ -2202,6 +2225,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder orderBy(final Collection<String> propOrColumnNames) {
+        checkIfAlreadyCalled(WD.ORDER_BY);
+
         _sb.append(_SPACE_ORDER_BY_SPACE);
 
         int i = 0;
@@ -2250,6 +2275,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder orderBy(final Map<String, SortDirection> orders) {
+        checkIfAlreadyCalled(WD.ORDER_BY);
+
         _sb.append(_SPACE_ORDER_BY_SPACE);
 
         int i = 0;
@@ -2367,6 +2394,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder limit(final int count) {
+        checkIfAlreadyCalled(WD.LIMIT);
+
         _sb.append(_SPACE_LIMIT_SPACE);
 
         _sb.append(count);
@@ -2390,6 +2419,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder limit(final int offset, final int count) {
+        checkIfAlreadyCalled(WD.LIMIT);
+
         _sb.append(_SPACE_LIMIT_SPACE);
 
         _sb.append(count);
@@ -2417,6 +2448,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder offset(final int offset) {
+        checkIfAlreadyCalled(WD.OFFSET);
+
         _sb.append(_SPACE_OFFSET_SPACE).append(offset);
 
         return this;
@@ -2439,7 +2472,9 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder offsetRows(final int offset) {
-        _sb.append(_SPACE_OFFSET_SPACE).append(offset).append(_SPACE_ROWS_SPACE);
+        checkIfAlreadyCalled(WD.OFFSET);
+
+        _sb.append(_SPACE_OFFSET_SPACE).append(offset).append(_SPACE_ROWS);
 
         return this;
     }
@@ -2461,6 +2496,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder fetchNextNRowsOnly(final int n) {
+        checkIfAlreadyCalled(WD.FETCH_NEXT);
+
         _sb.append(" FETCH NEXT ").append(n).append(" ROWS ONLY");
 
         return this;
@@ -2482,13 +2519,21 @@ public abstract class SQLBuilder { // NOSONAR
      * @return this SQLBuilder instance for method chaining
      */
     public SQLBuilder fetchFirstNRowsOnly(final int n) {
+        checkIfAlreadyCalled(WD.FETCH_FIRST);
+
         _sb.append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
 
         return this;
     }
 
+    private void checkIfAlreadyCalled(final String op) {
+        if (!calledOpSet.add(op)) {
+            throw new IllegalStateException("'" + op + "' has already been set. Can not set it again.");
+        }
+    }
+
     /**
-     * Appends a condition to the SQL statement.
+     * Appends a {@code Criteria} or {@code Where} condition to the SQL statement.
      * Automatically adds WHERE clause if not already present.
      * 
      * <pre>{@code
@@ -2504,7 +2549,8 @@ public abstract class SQLBuilder { // NOSONAR
      * @see ConditionFactory
      * @see ConditionFactory.CF
      */
-    public SQLBuilder append(final Condition cond) {
+    @Beta
+    SQLBuilder append(final Condition cond) {
         init(true);
 
         if (cond instanceof final Criteria criteria) {
@@ -2619,29 +2665,30 @@ public abstract class SQLBuilder { // NOSONAR
         return this;
     }
 
-    /**
-     * Conditionally appends a condition to the SQL statement.
-     * 
-     * <pre>{@code
-     * boolean includeAgeFilter = true;
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .appendIf(includeAgeFilter, CF.gt("age", 18))
-     *                 .sql();
-     * // Output: SELECT * FROM users WHERE age > ?
-     * }</pre>
-     * 
-     * @param b if true, the condition will be appended
-     * @param cond the condition to append
-     * @return this SQLBuilder instance for method chaining
-     */
-    public SQLBuilder appendIf(final boolean b, final Condition cond) {
-        if (b) {
-            append(cond);
-        }
-
-        return this;
-    }
+    //    /**
+    //     * Conditionally appends a condition to the SQL statement.
+    //     * 
+    //     * <pre>{@code
+    //     * boolean includeAgeFilter = true;
+    //     * String sql = PSC.select("*")
+    //     *                 .from("users")
+    //     *                 .appendIf(includeAgeFilter, CF.gt("age", 18))
+    //     *                 .sql();
+    //     * // Output: SELECT * FROM users WHERE age > ?
+    //     * }</pre>
+    //     * 
+    //     * @param b if true, the condition will be appended
+    //     * @param cond the condition to append
+    //     * @return this SQLBuilder instance for method chaining
+    //     */
+    //    @Beta
+    //    public SQLBuilder appendIf(final boolean b, final Condition cond) {
+    //        if (b) {
+    //            append(cond);
+    //        }
+    //
+    //        return this;
+    //    }
 
     /**
      * Conditionally appends a string expression to the SQL statement.
@@ -2684,35 +2731,35 @@ public abstract class SQLBuilder { // NOSONAR
         return this;
     }
 
-    /**
-     * Conditionally appends one of two conditions based on a boolean value.
-     * 
-     * <pre>{@code
-     * boolean isActive = true;
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .appendIfOrElse(isActive, 
-     *                     CF.eq("status", "active"),
-     *                     CF.eq("status", "inactive"))
-     *                 .sql();
-     * // Output: SELECT * FROM users WHERE status = ?
-     * }</pre>
-     * 
-     * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
-     * @param condToAppendForTrue the condition to append if b is true
-     * @param condToAppendForFalse the condition to append if b is false
-     * @return this SQLBuilder instance for method chaining
-     */
-    @Beta
-    public SQLBuilder appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
-        if (b) {
-            append(condToAppendForTrue);
-        } else {
-            append(condToAppendForFalse);
-        }
-
-        return this;
-    }
+    //    /**
+    //     * Conditionally appends one of two conditions based on a boolean value.
+    //     * 
+    //     * <pre>{@code
+    //     * boolean isActive = true;
+    //     * String sql = PSC.select("*")
+    //     *                 .from("users")
+    //     *                 .appendIfOrElse(isActive, 
+    //     *                     CF.eq("status", "active"),
+    //     *                     CF.eq("status", "inactive"))
+    //     *                 .sql();
+    //     * // Output: SELECT * FROM users WHERE status = ?
+    //     * }</pre>
+    //     * 
+    //     * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
+    //     * @param condToAppendForTrue the condition to append if b is true
+    //     * @param condToAppendForFalse the condition to append if b is false
+    //     * @return this SQLBuilder instance for method chaining
+    //     */
+    //    @Beta
+    //    public SQLBuilder appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
+    //        if (b) {
+    //            append(condToAppendForTrue);
+    //        } else {
+    //            append(condToAppendForFalse);
+    //        }
+    //
+    //        return this;
+    //    }
 
     /**
      * Conditionally appends one of two string expressions based on a boolean value.
@@ -3209,8 +3256,9 @@ public abstract class SQLBuilder { // NOSONAR
                     appendColumnName(columnName);
 
                     if (columnName.indexOf('=') < 0) {
-                        _sb.append(" = :");
-                        _sb.append(columnName);
+                        _sb.append(" = ");
+
+                        _handlerForNamedParameter.accept(_sb, columnName);
                     }
                 }
 
@@ -3526,10 +3574,31 @@ public abstract class SQLBuilder { // NOSONAR
      * // sqlPair.parameters contains: ["ACTIVE"]
      * }</pre>
      */
-    public SP pair() {
+    public SP build() {
         final String sql = sql();
 
         return new SP(sql, _parameters);
+    }
+
+    /**
+     * Generates both the SQL string and its parameters as a pair.
+     * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
+     *
+     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
+     * 
+     * <pre>{@code
+     * // Example usage:
+     * SP sqlPair = PSC.select("*")
+     *                 .from("account")
+     *                 .where(CF.eq("status", "ACTIVE"))
+     *                 .pair();
+     * // sqlPair.sql contains: "SELECT * FROM account WHERE status = ?"
+     * // sqlPair.parameters contains: ["ACTIVE"]
+     * }</pre>
+     * @deprecated Use {@link #build()} instead
+     */
+    public SP pair() {
+        return build();
     }
 
     /**
@@ -3552,7 +3621,7 @@ public abstract class SQLBuilder { // NOSONAR
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> func) throws E {
-        return func.apply(pair());
+        return func.apply(build());
     }
 
     /**
@@ -3575,7 +3644,7 @@ public abstract class SQLBuilder { // NOSONAR
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> func) throws E {
-        final SP sp = pair();
+        final SP sp = build();
 
         return func.apply(sp.sql, sp.parameters);
     }
@@ -3597,7 +3666,7 @@ public abstract class SQLBuilder { // NOSONAR
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E {
-        consumer.accept(pair());
+        consumer.accept(build());
     }
 
     /**
@@ -3621,7 +3690,7 @@ public abstract class SQLBuilder { // NOSONAR
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E {
-        final SP sp = pair();
+        final SP sp = build();
 
         consumer.accept(sp.sql, sp.parameters);
     }
@@ -4529,12 +4598,12 @@ public abstract class SQLBuilder { // NOSONAR
     }
 
     private void appendColumnName(final String propName) {
-        appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, propName, null, false, null, false);
+        appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, propName, null, false, null, false, true);
     }
 
     private void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo, final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap,
             final String tableAlias, final String propName, final String propAlias, final boolean withClassAlias, final String classAlias,
-            final boolean isForSelect) {
+            final boolean isForSelect, boolean quotePropAlias) {
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
@@ -4546,6 +4615,11 @@ public abstract class SQLBuilder { // NOSONAR
 
             if (isForSelect && _namingPolicy != NamingPolicy.NO_CHANGE) {
                 _sb.append(_SPACE_AS_SPACE);
+
+                if (quotePropAlias) {
+                    _sb.append(WD._QUOTATION_D);
+                }
+
                 _sb.append(WD._QUOTATION_D);
 
                 if (withClassAlias) {
@@ -4553,7 +4627,10 @@ public abstract class SQLBuilder { // NOSONAR
                 }
 
                 _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
-                _sb.append(WD._QUOTATION_D);
+
+                if (quotePropAlias) {
+                    _sb.append(WD._QUOTATION_D);
+                }
             }
 
             return;
@@ -4581,9 +4658,16 @@ public abstract class SQLBuilder { // NOSONAR
 
                     if (isForSelect) {
                         _sb.append(_SPACE_AS_SPACE);
-                        _sb.append(WD._QUOTATION_D);
+
+                        if (quotePropAlias) {
+                            _sb.append(WD._QUOTATION_D);
+                        }
+
                         _sb.append(propInfo.name).append(WD._PERIOD).append(subPropName);
-                        _sb.append(WD._QUOTATION_D);
+
+                        if (quotePropAlias) {
+                            _sb.append(WD._QUOTATION_D);
+                        }
                     }
                 }
 
@@ -4607,14 +4691,20 @@ public abstract class SQLBuilder { // NOSONAR
 
                         if (isForSelect && _namingPolicy != NamingPolicy.NO_CHANGE) {
                             _sb.append(_SPACE_AS_SPACE);
-                            _sb.append(WD._QUOTATION_D);
+
+                            if (quotePropAlias) {
+                                _sb.append(WD._QUOTATION_D);
+                            }
 
                             if (withClassAlias) {
                                 _sb.append(classAlias).append(WD._PERIOD);
                             }
 
                             _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
-                            _sb.append(WD._QUOTATION_D);
+
+                            if (quotePropAlias) {
+                                _sb.append(WD._QUOTATION_D);
+                            }
                         }
 
                         return;
@@ -4628,14 +4718,20 @@ public abstract class SQLBuilder { // NOSONAR
 
             if (isForSelect && _namingPolicy != NamingPolicy.NO_CHANGE) {
                 _sb.append(_SPACE_AS_SPACE);
-                _sb.append(WD._QUOTATION_D);
+
+                if (quotePropAlias) {
+                    _sb.append(WD._QUOTATION_D);
+                }
 
                 if (withClassAlias) {
                     _sb.append(classAlias).append(WD._PERIOD);
                 }
 
                 _sb.append(propAlias);
-                _sb.append(WD._QUOTATION_D);
+
+                if (quotePropAlias) {
+                    _sb.append(WD._QUOTATION_D);
+                }
             }
         } else if (isForSelect) {
             int index = propName.indexOf(" AS ");
@@ -4647,20 +4743,43 @@ public abstract class SQLBuilder { // NOSONAR
             if (index > 0) {
                 //noinspection ConstantValue
                 appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName.substring(0, index).trim(),
-                        propName.substring(index + 4).trim(), withClassAlias, classAlias, isForSelect);
+                        propName.substring(index + 4).trim(), withClassAlias, classAlias, isForSelect, false);
             } else {
                 appendStringExpr(propName, true);
 
-                if (_namingPolicy != NamingPolicy.NO_CHANGE && !(propName.charAt(propName.length() - 1) == '*' || propName.endsWith(")"))) {
+                //    char lastChar = propName.charAt(propName.length() - 1);
+                //
+                //    if (_namingPolicy != NamingPolicy.NO_CHANGE && !(lastChar == '*' || lastChar == ')')) {
+                //        _sb.append(_SPACE_AS_SPACE);
+                //        _sb.append(WD._QUOTATION_D);
+                //
+                //        if (withClassAlias) {
+                //            _sb.append(classAlias).append(WD._PERIOD);
+                //        }
+                //
+                //        _sb.append(propName);
+                //        _sb.append(WD._QUOTATION_D);
+                //    }
+
+                int idx = -1;
+                if (_sb.charAt(_sb.length() - propName.length() - 1) != _SPACE || _sb.indexOf(propName, _sb.length() - propName.length()) < 0
+                        || ((idx = propName.indexOf(WD._PERIOD)) > 0
+                                && (Strings.isEmpty(tableAlias) || tableAlias.length() != idx || !propName.startsWith(tableAlias)))) {
                     _sb.append(_SPACE_AS_SPACE);
-                    _sb.append(WD._QUOTATION_D);
+
+                    if (quotePropAlias) {
+                        _sb.append(WD._QUOTATION_D);
+                    }
 
                     if (withClassAlias) {
                         _sb.append(classAlias).append(WD._PERIOD);
                     }
 
                     _sb.append(propName);
-                    _sb.append(WD._QUOTATION_D);
+
+                    if (quotePropAlias) {
+                        _sb.append(WD._QUOTATION_D);
+                    }
                 }
             }
         } else {

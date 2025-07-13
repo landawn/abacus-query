@@ -729,7 +729,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.insert(props);
             assertNotNull(builder);
 
-            SP pair = builder.into("account").pair();
+            SP pair = builder.into("account").build();
             assertTrue(pair.sql.contains("first_name"));
             assertTrue(pair.sql.contains("last_name"));
             assertEquals(2, pair.parameters.size());
@@ -743,7 +743,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.insert(account);
             assertNotNull(builder);
 
-            SP pair = builder.into("account").pair();
+            SP pair = builder.into("account").build();
             assertTrue(pair.sql.contains("first_name"));
             assertTrue(pair.sql.contains("last_name"));
             assertTrue(pair.sql.contains("email"));
@@ -759,7 +759,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.insert(account, excludedProps);
             assertNotNull(builder);
 
-            SP pair = builder.into("account").pair();
+            SP pair = builder.into("account").build();
             assertTrue(pair.sql.contains("first_name"));
             assertTrue(pair.sql.contains("last_name"));
             assertFalse(pair.sql.contains("email"));
@@ -821,7 +821,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.batchInsert(accounts);
             assertNotNull(builder);
 
-            SP pair = builder.into("account").pair();
+            SP pair = builder.into("account").build();
             assertTrue(pair.sql.contains("VALUES"));
             assertTrue(pair.sql.contains("(?, ?)"));
             assertTrue(pair.sql.contains(", (?, ?)"));
@@ -1224,7 +1224,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.insert(props);
             assertNotNull(builder);
 
-            SP pair = builder.into("USER_ACCOUNT").pair();
+            SP pair = builder.into("USER_ACCOUNT").build();
             assertTrue(pair.sql.contains("FIRST_NAME"));
             assertTrue(pair.sql.contains("LAST_NAME"));
             assertEquals(2, pair.parameters.size());
@@ -1238,7 +1238,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.insert(account);
             assertNotNull(builder);
 
-            SP pair = builder.into("USER_ACCOUNT").pair();
+            SP pair = builder.into("USER_ACCOUNT").build();
             assertTrue(pair.sql.contains("FIRST_NAME"));
             assertTrue(pair.sql.contains("LAST_NAME"));
             assertTrue(pair.sql.contains("EMAIL_ADDRESS"));
@@ -1254,7 +1254,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.insert(account, excludedProps);
             assertNotNull(builder);
 
-            SP pair = builder.into("USER_ACCOUNT").pair();
+            SP pair = builder.into("USER_ACCOUNT").build();
             assertTrue(pair.sql.contains("FIRST_NAME"));
             assertTrue(pair.sql.contains("LAST_NAME"));
             assertFalse(pair.sql.contains("EMAIL_ADDRESS"));
@@ -1290,7 +1290,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.batchInsert(accounts);
             assertNotNull(builder);
 
-            SP pair = builder.into("USER_ACCOUNT").pair();
+            SP pair = builder.into("USER_ACCOUNT").build();
             assertTrue(pair.sql.contains("VALUES"));
             assertTrue(pair.sql.contains("(?, ?)"));
             assertTrue(pair.sql.contains(", (?, ?)"));
@@ -1647,7 +1647,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.insert(props);
             assertNotNull(builder);
 
-            SP pair = builder.into("userProfile").pair();
+            SP pair = builder.into("userProfile").build();
             assertTrue(pair.sql.contains("firstName"));
             assertTrue(pair.sql.contains("lastName"));
             assertTrue(pair.sql.contains("isActive"));
@@ -1663,7 +1663,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.insert(profile);
             assertNotNull(builder);
 
-            SP pair = builder.into("userProfile").pair();
+            SP pair = builder.into("userProfile").build();
             assertTrue(pair.sql.contains("firstName"));
             assertTrue(pair.sql.contains("lastName"));
             assertTrue(pair.sql.contains("emailAddress"));
@@ -1680,7 +1680,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.insert(profile, excludedProps);
             assertNotNull(builder);
 
-            SP pair = builder.into("userProfile").pair();
+            SP pair = builder.into("userProfile").build();
             assertTrue(pair.sql.contains("firstName"));
             assertTrue(pair.sql.contains("lastName"));
             assertFalse(pair.sql.contains("emailAddress"));
@@ -1717,7 +1717,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.batchInsert(profiles);
             assertNotNull(builder);
 
-            SP pair = builder.into("userProfile").pair();
+            SP pair = builder.into("userProfile").build();
             assertTrue(pair.sql.contains("VALUES"));
             assertTrue(pair.sql.contains("(?, ?)"));
             assertTrue(pair.sql.contains(", (?, ?)"));

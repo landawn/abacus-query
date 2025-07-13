@@ -74,6 +74,7 @@ public final class SQLParser {
         separators.add("&=");
         separators.add("|=");
         separators.add("!=");
+        separators.add("<>");
         separators.add("!<");
         separators.add("!>");
         separators.add('>');
@@ -151,6 +152,7 @@ public final class SQLParser {
         compositeWords.put(WD.IS_NOT_BLANK, new String[] { "IS", "NOT", "BLANK" });
         compositeWords.put(WD.NOT_IN, new String[] { "NOT", "IN" });
         compositeWords.put(WD.NOT_EXISTS, new String[] { "NOT", "EXISTS" });
+        compositeWords.put("NOT LIKE", new String[] { "NOT", "LIKE" });
 
         final List<String> list = new ArrayList<>(compositeWords.keySet());
 
@@ -566,12 +568,9 @@ public final class SQLParser {
      * // Result: ["SELECT", "$", "FROM", "$", "users"]
      * }</pre>
      * 
-     * @param separator the character to register as a separator
-     * @throws IllegalArgumentException if separator is not a positive char value
+     * @param separator the character to register as a separator 
      */
     public static void registerSeparator(final char separator) {
-        N.checkArgPositive(separator, "separator");
-
         separators.add(separator);
     }
 

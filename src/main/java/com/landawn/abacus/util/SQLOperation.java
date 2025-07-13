@@ -136,10 +136,10 @@ public enum SQLOperation {
      */
     UNKNOWN("UNKNOWN");
 
-    private final String name;
+    private final String sqlText;
 
     SQLOperation(final String name) {
-        this.name = name;
+        this.sqlText = name;
     }
 
     private static final Map<String, SQLOperation> operationMap = new HashMap<>();
@@ -148,7 +148,8 @@ public enum SQLOperation {
         final SQLOperation[] values = SQLOperation.values();
 
         for (final SQLOperation value : values) {
-            operationMap.put(value.name, value);
+            operationMap.put(value.sqlText, value);
+            operationMap.put(value.name(), value);
         }
     }
 
@@ -158,35 +159,44 @@ public enum SQLOperation {
      * 
      * <p>Example usage:</p>
      * <pre>{@code
-     * SQLOperation selectOp = SQLOperation.getOperation("SELECT"); // returns SELECT
-     * SQLOperation unknownOp = SQLOperation.getOperation("TRUNCATE"); // returns null
+     * SQLOperation selectOp = SQLOperation.of("SELECT"); // returns SELECT
+     * SQLOperation unknownOp = SQLOperation.of("TRUNCATE"); // returns null
      * }</pre>
      *
      * @param name the SQL operation name to look up
      * @return the corresponding SQLOperation enum value, or null if not found
      */
-    public static SQLOperation getOperation(final String name) {
+    public static SQLOperation of(final String name) {
         return operationMap.get(name);
     }
 
     /**
-     * Returns the string name of this SQL operation.
-     * This is the same value used in SQL statements (e.g., "SELECT", "INSERT").
+     * Returns the SQL text representation of this operation.
      *
-     * @return the operation name as a string
+     * <p>This method returns the canonical SQL keyword associated with this operation.
+     * For standard SQL operations, this will be the standard SQL keyword (e.g., "SELECT", "INSERT").
+     * For composite operations like BEGIN_TRANSACTION, it returns the appropriate command text.</p>
+     *
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * SQLOperation op = SQLOperation.SELECT;
+     * String sqlKeyword = op.sqlText(); // Returns "SELECT"
+     * }</pre>
+     *
+     * @return the SQL keyword string representation of this operation
      */
-    public String getName() {
-        return name;
+    public String sqlText() {
+        return sqlText;
     }
 
     /**
      * Returns the string representation of this SQL operation.
-     * This method returns the same value as {@link #getName()}.
+     * This method returns the same value as {@link #sqlText()}.
      *
      * @return the operation name as a string
      */
     @Override
     public String toString() {
-        return name;
+        return sqlText;
     }
 }
