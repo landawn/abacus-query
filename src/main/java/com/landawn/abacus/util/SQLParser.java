@@ -153,6 +153,7 @@ public final class SQLParser {
         compositeWords.put(WD.NOT_IN, new String[] { "NOT", "IN" });
         compositeWords.put(WD.NOT_EXISTS, new String[] { "NOT", "EXISTS" });
         compositeWords.put("NOT LIKE", new String[] { "NOT", "LIKE" });
+        compositeWords.put("PARTITION BY", new String[] { "PARTITION", "BY" });
 
         final List<String> list = new ArrayList<>(compositeWords.keySet());
 

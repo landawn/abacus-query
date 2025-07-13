@@ -4615,7 +4615,7 @@ public abstract class SQLBuilder { // NOSONAR
 
             _sb.append(tp._1);
 
-            if (isForSelect && _namingPolicy != NamingPolicy.NO_CHANGE) {
+            if (isForSelect && (withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
                 _sb.append(_SPACE_AS_SPACE);
 
                 if (quotePropAlias) {
@@ -4689,7 +4689,7 @@ public abstract class SQLBuilder { // NOSONAR
                     if (tp != null) {
                         _sb.append(propTableAlias).append('.').append(tp._1);
 
-                        if (isForSelect && _namingPolicy != NamingPolicy.NO_CHANGE) {
+                        if (isForSelect && (withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
                             _sb.append(_SPACE_AS_SPACE);
 
                             if (quotePropAlias) {
@@ -4716,7 +4716,10 @@ public abstract class SQLBuilder { // NOSONAR
         if (Strings.isNotEmpty(propAlias)) {
             appendStringExpr(propName, true);
 
-            if (isForSelect && _namingPolicy != NamingPolicy.NO_CHANGE) {
+            int idx = -1;
+            if (isForSelect && (withClassAlias || propAlias.length() >= _sb.length() || _sb.charAt(_sb.length() - propAlias.length() - 1) != _SPACE
+                    || _sb.indexOf(propAlias, _sb.length() - propAlias.length()) < 0 || ((idx = propAlias.indexOf(WD._PERIOD)) > 0
+                            && (Strings.isEmpty(tableAlias) || tableAlias.length() != idx || !propAlias.startsWith(tableAlias))))) {
                 _sb.append(_SPACE_AS_SPACE);
 
                 if (quotePropAlias) {
@@ -4762,8 +4765,8 @@ public abstract class SQLBuilder { // NOSONAR
                 //    }
 
                 int idx = -1;
-                if (_sb.charAt(_sb.length() - propName.length() - 1) != _SPACE || _sb.indexOf(propName, _sb.length() - propName.length()) < 0
-                        || ((idx = propName.indexOf(WD._PERIOD)) > 0
+                if (withClassAlias || propName.length() >= _sb.length() || _sb.charAt(_sb.length() - propName.length() - 1) != _SPACE
+                        || _sb.indexOf(propName, _sb.length() - propName.length()) < 0 || ((idx = propName.indexOf(WD._PERIOD)) > 0
                                 && (Strings.isEmpty(tableAlias) || tableAlias.length() != idx || !propName.startsWith(tableAlias)))) {
                     _sb.append(_SPACE_AS_SPACE);
 
@@ -4849,7 +4852,12 @@ public abstract class SQLBuilder { // NOSONAR
             }
         }
 
-        return formalizeColumnName(propName, _namingPolicy);
+        if (Strings.isNotEmpty(_tableAlias) && propName.length() > _tableAlias.length() + 1 && propName.charAt(_tableAlias.length()) == '.'
+                && propName.startsWith(_tableAlias)) {
+            return _tableAlias + "." + formalizeColumnName(propName.substring(_tableAlias.length() + 1), _namingPolicy);
+        } else {
+            return formalizeColumnName(propName, _namingPolicy);
+        }
     }
 
     private static void parseInsertEntity(final SQLBuilder instance, final Object entity, final Set<String> excludedPropNames) {
