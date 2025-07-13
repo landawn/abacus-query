@@ -62,9 +62,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.landawn.abacus.condition.ConditionFactory.CF;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.SQLParser;
 import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.WD;
 
@@ -1143,7 +1145,28 @@ public class Expression extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        return literal;
+        if (literal.length() < 16 && CF.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).find()) {
+            return namingPolicy.convert(literal);
+        }
+
+        final List<String> words = SQLParser.parse(literal);
+        final StringBuilder sb = Objectory.createStringBuilder();
+
+        try {
+            String word = null;
+            for (int i = 0, len = words.size(); i < len; i++) {
+                word = words.get(i);
+
+                if (!Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
+                    sb.append(word);
+                } else {
+                    sb.append(namingPolicy.convert(word));
+                }
+            }
+            return sb.toString();
+        } finally {
+            Objectory.recycle(sb);
+        }
     }
 
     /**

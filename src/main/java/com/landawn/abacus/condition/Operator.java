@@ -183,6 +183,12 @@ public enum Operator {
     EXISTS(WD.EXISTS),
 
     /**
+     * NOT EXISTS operator.
+     * Checks if subquery not returns any rows.
+     */
+    NOT_EXISTS(WD.NOT_EXISTS),
+
+    /**
      * IN operator.
      * Checks if value is in a list or subquery result.
      */

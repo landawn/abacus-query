@@ -52,7 +52,6 @@ package com.landawn.abacus.condition;
  * }</pre>
  * 
  * @see NotLike
- * @see ILike (case-insensitive LIKE in some databases)
  */
 public class Like extends Binary {
 

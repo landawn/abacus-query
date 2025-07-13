@@ -99,6 +99,8 @@ public final class ParsedSql {
             }
         }
 
+        int type = 0; // 0: no parameter, 1: named parameter, 2: iBatis/MyBatis style parameter 
+
         final List<String> namedParameterList = new ArrayList<>();
 
         if (isOpSqlPrefix) {
@@ -106,20 +108,27 @@ public final class ParsedSql {
 
             for (String word : words) {
                 if (word.equals(WD.QUESTION_MARK)) {
-                    if (namedParameterList.size() > 0) {
-                        throw new IllegalArgumentException("can't mix '?' with name parameter ':propName' or '#{propName}' in the same sql script");
-                    }
                     parameterCount++;
+
+                    type ^= 1;
                 } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER)) {
                     namedParameterList.add(word.substring(2, word.length() - 1));
 
                     word = WD.QUESTION_MARK;
                     parameterCount++;
+
+                    type ^= 4;
                 } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
                     namedParameterList.add(word.substring(1));
 
                     word = WD.QUESTION_MARK;
                     parameterCount++;
+
+                    type ^= 2;
+                }
+
+                if (Integer.bitCount(type) > 1) {
+                    throw new IllegalArgumentException("can't mix '?', ':propName' or '#{propName}' in the same sql script");
                 }
 
                 sb.append(word);

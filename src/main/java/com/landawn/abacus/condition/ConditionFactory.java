@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.condition.Expression.Expr;
@@ -79,7 +80,18 @@ public class ConditionFactory {
      */
     public static final SortDirection DESC = SortDirection.DESC;
 
-    private static final Expression ALWAYS_TRUE = Expression.of("1 < 2");
+    /**
+     * Regular expression pattern for validating alphanumeric column names.
+     * Column names must consist of letters, digits, underscores, or hyphens.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * boolean isValid = PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("column_name").matches();
+     * }</pre>
+     */
+    public static final Pattern PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME = Pattern.compile("^[a-zA-Z0-9_-]+$");
+
+    static final Expression ALWAYS_TRUE = Expression.of("1 < 2");
 
     private static final Expression ALWAYS_FALSE = Expression.of("1 > 2");
 
@@ -140,7 +152,6 @@ public class ConditionFactory {
      * ));
      * }</pre>
      * 
-     * @param <T> the type of the condition being negated
      * @param condition the condition to negate
      * @return a Not condition that wraps and negates the provided condition
      * @throws NullPointerException if the provided condition is null
@@ -3003,16 +3014,16 @@ public class ConditionFactory {
      * 
      * <p>Example usage:</p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM payments WHERE payments.order_id = orders.id");
-     * Not condition = ConditionFactory.notExists(subQuery);
-     * // Results in SQL like: WHERE NOT EXISTS (SELECT 1 FROM payments WHERE payments.order_id = orders.id)
+     * SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM archived_users WHERE archived_users.id = users.id");
+     * NotExists condition = ConditionFactory.notExists(subQuery);
+     * // Results in SQL like: WHERE NOT EXISTS (SELECT 1 FROM archived_users WHERE archived_users.id = users.id)
      * }</pre>
      *
      * @param condition the subquery to check
-     * @return a Not condition wrapping EXISTS
+     * @return a NotExists condition
      */
-    public static Not notExists(final SubQuery condition) {
-        return exists(condition).not();
+    public static NotExists notExists(final SubQuery condition) {
+        return new NotExists(condition);
     }
 
     /**

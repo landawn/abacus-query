@@ -4501,20 +4501,9 @@ public abstract class SQLBuilder { // NOSONAR
         // TODO performance improvement.
 
         if (expr.length() < 16) {
-            boolean allChars = true;
-            char ch = 0;
+            final boolean matched = CF.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(expr).find();
 
-            for (int i = 0, len = expr.length(); i < len; i++) {
-                ch = expr.charAt(i);
-
-                // https://www.sciencebuddies.org/science-fair-projects/references/ascii-table
-                if (ch < 'A' || (ch > 'Z' && ch < '_') || ch > 'z') {
-                    allChars = false;
-                    break;
-                }
-            }
-
-            if (allChars) {
+            if (matched) {
                 if (isFromAppendColumn) {
                     _sb.append(formalizeColumnName(expr, _namingPolicy));
                 } else {

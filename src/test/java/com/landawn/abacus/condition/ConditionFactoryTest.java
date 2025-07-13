@@ -986,7 +986,7 @@ public class ConditionFactoryTest extends TestBase {
     @Test
     public void testNotExists() {
         SubQuery subQuery = CF.subQuery("SELECT 1 FROM blacklist WHERE email = users.email");
-        Not notExists = CF.notExists(subQuery);
+        NotExists notExists = CF.notExists(subQuery);
         Assertions.assertNotNull(notExists);
     }
 
