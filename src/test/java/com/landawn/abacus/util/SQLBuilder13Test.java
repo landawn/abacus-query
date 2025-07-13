@@ -559,14 +559,6 @@ public class SQLBuilder13Test extends TestBase {
         }
 
         @Test
-        public void testCountWithEntityClass() {
-            String sql = NSB.count("user_accounts", User.class).where(CF.gt("lastLogin", new Date())).sql();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
-            Assertions.assertTrue(sql.contains("FROM user_accounts"));
-        }
-
-        @Test
         public void testCountEntityClass() {
             String sql = NSB.count(User.class).where(CF.eq("status", "active")).sql();
             Assertions.assertNotNull(sql);
@@ -1434,14 +1426,6 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains(":active"));
         }
 
-        @Test
-        public void testCountWithEntityClass() {
-            String sql = NSC.count("users", User.class).where(CF.eq("firstName", "John")).sql();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
-            Assertions.assertTrue(sql.contains("FROM users"));
-            Assertions.assertTrue(sql.contains("first_name = :firstName"));
-        }
 
         @Test
         public void testCountEntityClass() {
@@ -2139,15 +2123,6 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
             Assertions.assertTrue(sql.contains("FROM ACCOUNT"));
             Assertions.assertTrue(sql.contains("STATUS = :STATUS"));
-        }
-
-        @Test
-        public void testCountWithEntityClass() {
-            String sql = NAC.count("ACCOUNT", Account.class).where(CF.eq("status", "ACTIVE")).sql();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
-            Assertions.assertTrue(sql.contains("FROM ACCOUNT"));
-            Assertions.assertTrue(sql.contains("STATUS = :status"));
         }
 
         @Test
@@ -2918,14 +2893,6 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains("status = :status"));
         }
 
-        @Test
-        public void testCountWithEntityClass() {
-            String sql = NLC.count("account", Account.class).where(CF.eq("status", "active")).sql();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
-            Assertions.assertTrue(sql.contains("FROM account"));
-            Assertions.assertTrue(sql.contains("status = :status"));
-        }
 
         @Test
         public void testCountEntityClass() {
@@ -3830,15 +3797,6 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains("FROM users"));
             Assertions.assertTrue(sql.contains("WHERE"));
             Assertions.assertTrue(sql.contains("active = ?"));
-        }
-
-        @Test
-        public void testCountWithEntityClass() {
-            String sql = PSC.count("users", User.class).where(CF.gt("lastLogin", new Date())).sql();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
-            Assertions.assertTrue(sql.contains("FROM users"));
-            Assertions.assertTrue(sql.contains("last_login > ?"));
         }
 
         @Test

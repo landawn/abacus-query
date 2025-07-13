@@ -29,7 +29,6 @@ import com.landawn.abacus.util.SQLBuilder.MSC;
  */
 public class SQLBuilder14Test extends TestBase {
 
-
     @Nested
     public class MSBTest extends TestBase {
 
@@ -221,10 +220,7 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testUpdateTable() {
-            String sql = MSB.update("users")
-                    .set("status", "lastModified")
-                    .where(CF.eq("id", 123))
-                    .sql();
+            String sql = MSB.update("users").set("status", "lastModified").where(CF.eq("id", 123)).sql();
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
             Assertions.assertTrue(sql.contains("status = #{status}"));
@@ -235,19 +231,14 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testUpdateTableWithEntityClass() {
-            String sql = MSB.update("user_archive", Account.class)
-                    .set("firstName")
-                    .where(CF.eq("id", 123))
-                    .sql();
+            String sql = MSB.update("user_archive", Account.class).set("firstName").where(CF.eq("id", 123)).sql();
             Assertions.assertTrue(sql.contains("UPDATE user_archive"));
             Assertions.assertTrue(sql.contains("firstName = #{firstName}"));
         }
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = MSB.update(Account.class)
-                    .where(CF.eq("id", 123))
-                    .sql();
+            String sql = MSB.update(Account.class).where(CF.eq("id", 123)).sql();
             Assertions.assertTrue(sql.contains("UPDATE test_account"));
             Assertions.assertTrue(sql.contains("firstName = #{firstName}"));
             Assertions.assertTrue(sql.contains("lastName = #{lastName}"));
@@ -258,9 +249,7 @@ public class SQLBuilder14Test extends TestBase {
         @Test
         public void testUpdateEntityClassWithExclusions() {
             Set<String> excludes = new HashSet<>(Arrays.asList("createdDate"));
-            String sql = MSB.update(Account.class, excludes)
-                    .where(CF.eq("id", 123))
-                    .sql();
+            String sql = MSB.update(Account.class, excludes).where(CF.eq("id", 123)).sql();
             Assertions.assertTrue(sql.contains("UPDATE test_account"));
             Assertions.assertTrue(sql.contains("firstName = #{firstName}"));
             Assertions.assertFalse(sql.contains("createdDate"));
@@ -268,9 +257,7 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testDeleteFromTable() {
-            String sql = MSB.deleteFrom("users")
-                    .where(CF.eq("status", "INACTIVE"))
-                    .sql();
+            String sql = MSB.deleteFrom("users").where(CF.eq("status", "INACTIVE")).sql();
             Assertions.assertTrue(sql.contains("DELETE FROM users"));
             Assertions.assertTrue(sql.contains("WHERE"));
             Assertions.assertTrue(sql.contains("status = #{status}"));
@@ -349,9 +336,7 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testSelectFromEntityClass() {
-            String sql = MSB.selectFrom(Account.class)
-                    .where(CF.eq("active", true))
-                    .sql();
+            String sql = MSB.selectFrom(Account.class).where(CF.eq("active", true)).sql();
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM test_account"));
             Assertions.assertTrue(sql.contains("active = #{active}"));
@@ -359,27 +344,21 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testSelectFromEntityClassWithAlias() {
-            String sql = MSB.selectFrom(Account.class, "a")
-                    .where(CF.eq("a.active", true))
-                    .sql();
+            String sql = MSB.selectFrom(Account.class, "a").where(CF.eq("a.active", true)).sql();
             Assertions.assertTrue(sql.contains("FROM test_account a"));
         }
 
         @Test
         public void testSelectFromEntityClassWithExclusions() {
             Set<String> excludes = new HashSet<>(Arrays.asList("password"));
-            String sql = MSB.selectFrom(Account.class, excludes)
-                    .where(CF.eq("active", true))
-                    .sql();
+            String sql = MSB.selectFrom(Account.class, excludes).where(CF.eq("active", true)).sql();
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertFalse(sql.contains("password"));
         }
 
         @Test
         public void testSelectMultipleEntities() {
-            String sql = MSB.select(Account.class, "a", "account", Account.class, "b", "account2")
-                    .from("test_account a, test_account b")
-                    .sql();
+            String sql = MSB.select(Account.class, "a", "account", Account.class, "b", "account2").from("test_account a, test_account b").sql();
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("account."));
             Assertions.assertTrue(sql.contains("account2."));
@@ -387,19 +366,10 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testCountTable() {
-            String sql = MSB.count("users")
-                    .where(CF.eq("active", true))
-                    .sql();
+            String sql = MSB.count("users").where(CF.eq("active", true)).sql();
             Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
             Assertions.assertTrue(sql.contains("FROM users"));
             Assertions.assertTrue(sql.contains("active = #{active}"));
-        }
-
-        @Test
-        public void testCountTableWithEntityClass() {
-            String sql = MSB.count("users", Account.class).where(CF.eq("firstName", "John")).sql();
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
-            Assertions.assertTrue(sql.contains("FROM users"));
         }
 
         @Test
@@ -781,9 +751,7 @@ public class SQLBuilder14Test extends TestBase {
         public void testSelectMultipleEntitiesWithExclusions() {
             Set<String> exclude1 = new HashSet<>(Arrays.asList("password"));
             Set<String> exclude2 = new HashSet<>(Arrays.asList("emailAddress"));
-            String sql = MSC.select(User.class, "u", "user", exclude1, User.class, "u2", "user2", exclude2)
-                    .from("test_users u, test_users u2")
-                    .sql();
+            String sql = MSC.select(User.class, "u", "user", exclude1, User.class, "u2", "user2", exclude2).from("test_users u, test_users u2").sql();
             Assertions.assertTrue(sql.contains("user."));
             Assertions.assertTrue(sql.contains("user2."));
             Assertions.assertFalse(sql.contains("password"));
@@ -833,14 +801,6 @@ public class SQLBuilder14Test extends TestBase {
             String sql = MSC.count("users").sql();
             Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
             Assertions.assertTrue(sql.contains("FROM users"));
-        }
-
-        @Test
-        public void testCountTableWithEntityClass() {
-            String sql = MSC.count("users", User.class).where(CF.eq("firstName", "John")).sql();
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
-            Assertions.assertTrue(sql.contains("FROM users"));
-            Assertions.assertTrue(sql.contains("first_name = #{firstName}"));
         }
 
         @Test
@@ -1289,14 +1249,6 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("FROM ACCOUNT"));
             Assertions.assertTrue(sql.contains("WHERE"));
             Assertions.assertTrue(sql.contains("IS_ACTIVE = #{isActive}"));
-        }
-
-        @Test
-        public void testCountTableWithEntityClass() {
-            String sql = MAC.count("ACCOUNT", Account.class).where(CF.like("emailAddress", "%@example.com")).sql();
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
-            Assertions.assertTrue(sql.contains("FROM ACCOUNT"));
-            Assertions.assertTrue(sql.contains("EMAIL_ADDRESS LIKE #{emailAddress}"));
         }
 
         @Test
@@ -1836,14 +1788,6 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("FROM account"));
             Assertions.assertTrue(sql.contains("WHERE"));
             Assertions.assertTrue(sql.contains("isActive = #{isActive}"));
-        }
-
-        @Test
-        public void testCountTableWithEntityClass() {
-            String sql = MLC.count("account", Account.class).where(CF.like("emailAddress", "%@example.com")).sql();
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
-            Assertions.assertTrue(sql.contains("FROM account"));
-            Assertions.assertTrue(sql.contains("emailAddress LIKE #{emailAddress}"));
         }
 
         @Test

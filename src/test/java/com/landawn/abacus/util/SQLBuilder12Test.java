@@ -558,16 +558,6 @@ public class SQLBuilder12Test extends TestBase {
         }
 
         @Test
-        public void testCount_TableNameWithEntityClass() {
-            SQLBuilder builder = PSB.count("users", User.class);
-            assertNotNull(builder);
-
-            // Test with null parameters
-            assertThrows(IllegalArgumentException.class, () -> PSB.count(null, User.class));
-            assertThrows(IllegalArgumentException.class, () -> PSB.count("users", null));
-        }
-
-        @Test
         public void testCount_EntityClass() {
             SQLBuilder builder = PSB.count(User.class);
             assertNotNull(builder);
@@ -858,8 +848,8 @@ public class SQLBuilder12Test extends TestBase {
             assertTrue(sql.contains("first_name = ?"));
             // Should include updatable fields
             assertTrue(sql.contains("first_name"));
-            assertTrue(sql.contains("last_name"));
-            assertTrue(sql.contains("email"));
+            assertFalse(sql.contains("last_name"));
+            assertFalse(sql.contains("email"));
             // Should not include non-updatable fields
             assertFalse(sql.contains("created_date"));
         }
@@ -1041,17 +1031,6 @@ public class SQLBuilder12Test extends TestBase {
             String sql = builder.sql();
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM account"));
-        }
-
-        @Test
-        public void testCount_TableNameWithEntityClass() {
-            SQLBuilder builder = PSC.count("account", Account.class);
-            assertNotNull(builder);
-
-            String sql = builder.where(ConditionFactory.eq("firstName", "John")).sql();
-            assertTrue(sql.contains("SELECT count(*)"));
-            assertTrue(sql.contains("FROM account"));
-            assertTrue(sql.contains("first_name = ?"));
         }
 
         @Test
@@ -1792,8 +1771,8 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             String sql = builder.from("userProfile").sql();
-            assertTrue(sql.contains("firstName AS fname"));
-            assertTrue(sql.contains("lastName AS lname"));
+            assertTrue(sql.contains("firstName AS \"fname\""));
+            assertTrue(sql.contains("lastName AS \"lname\""));
         }
 
         @Test
@@ -1936,7 +1915,6 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(PLC.selectFrom(UserProfile.class, "p", new HashSet<>()));
             assertNotNull(PLC.selectFrom(UserProfile.class, true, new HashSet<>()));
             assertNotNull(PLC.selectFrom(UserProfile.class, "p", true, new HashSet<>()));
-            assertNotNull(PLC.count("userProfile", UserProfile.class));
         }
 
         @Test

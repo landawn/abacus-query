@@ -687,16 +687,6 @@ public class SQLBuilder11Test extends TestBase {
         }
 
         @Test
-        public void testCountTableNameWithEntityClass() {
-            SQLBuilder sb = SCSB.count("account", Account.class);
-            Assertions.assertNotNull(sb);
-
-            String sql = sb.sql();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("count(*)"));
-        }
-
-        @Test
         public void testCountEntityClass() {
             SQLBuilder sb = SCSB.count(Account.class);
             Assertions.assertNotNull(sb);
@@ -1254,16 +1244,6 @@ public class SQLBuilder11Test extends TestBase {
         }
 
         @Test
-        public void testCountTableNameWithEntityClass() {
-            SQLBuilder sb = ACSB.count("users", User.class);
-            Assertions.assertNotNull(sb);
-
-            String sql = sb.sql();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("count(*)"));
-        }
-
-        @Test
         public void testCountEntityClass() {
             SQLBuilder sb = ACSB.count(User.class);
             Assertions.assertNotNull(sb);
@@ -1301,7 +1281,6 @@ public class SQLBuilder11Test extends TestBase {
             // Test empty map
             Assertions.assertThrows(IllegalArgumentException.class, () -> ACSB.select(Collections.emptyMap()));
         }
-
 
         @Test
         public void testComplexQuery() {
@@ -1787,16 +1766,6 @@ public class SQLBuilder11Test extends TestBase {
         }
 
         @Test
-        public void testCountTableNameWithEntityClass() {
-            SQLBuilder sb = LCSB.count("customers", Customer.class);
-            Assertions.assertNotNull(sb);
-
-            String sql = sb.sql();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("count(*)"));
-        }
-
-        @Test
         public void testCountEntityClass() {
             SQLBuilder sb = LCSB.count(Customer.class);
             Assertions.assertNotNull(sb);
@@ -1911,7 +1880,6 @@ public class SQLBuilder11Test extends TestBase {
             Assertions.assertTrue(sql.contains("SET"));
         }
 
-
         @Test
         public void testSelectDistinct() {
             SQLBuilder sb = LCSB.select("DISTINCT status").from("customers").orderBy("status");
@@ -1955,7 +1923,6 @@ public class SQLBuilder11Test extends TestBase {
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UNION"));
         }
-
 
         @Test
         public void testCaseWhenExpression() {
