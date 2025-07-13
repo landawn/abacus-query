@@ -67,6 +67,7 @@ import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.util.Tuple.Tuple2;
 import com.landawn.abacus.util.u.Optional;
+import com.landawn.abacus.util.stream.Stream;
 
 /**
  * A fluent SQL builder for constructing SQL statements programmatically.
@@ -290,6 +291,8 @@ public abstract class SQLBuilder { // NOSONAR
     static final String SELECT_PART = "selectPart";
     static final String PROP_OR_COLUMN_NAMES = "propOrColumnNames";
     static final String PROP_OR_COLUMN_NAME_ALIASES = "propOrColumnNameAliases";
+
+    static final String INSERTION_PART = "insertion part";
 
     private static final Set<String> sqlKeyWords = N.newHashSet(1024);
 
@@ -4620,8 +4623,6 @@ public abstract class SQLBuilder { // NOSONAR
                     _sb.append(WD._QUOTATION_D);
                 }
 
-                _sb.append(WD._QUOTATION_D);
-
                 if (withClassAlias) {
                     _sb.append(classAlias).append(WD._PERIOD);
                 }
@@ -4865,10 +4866,19 @@ public abstract class SQLBuilder { // NOSONAR
         } else {
             final Collection<String> propNames = QueryUtil.getInsertPropNames(entity, excludedPropNames);
             final Map<String, Object> map = N.newHashMap(propNames.size());
-            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
+            final BeanInfo beanInfo = ParserUtil.getBeanInfo(entity.getClass());
+            final ImmutableList<String> idPropNameList = beanInfo.idPropNameList;
+            Object propValue;
 
             for (final String propName : propNames) {
-                map.put(propName, entityInfo.getPropValue(entity, propName));
+                propValue = beanInfo.getPropValue(entity, propName);
+
+                if (propValue == null || (!idPropNameList.isEmpty() && idPropNameList.contains(propName) && propValue instanceof Number
+                        && ((Number) propValue).longValue() == 0)) {
+                    continue; // skip null or zero id values
+                }
+
+                map.put(propName, beanInfo.getPropValue(entity, propName));
             }
 
             instance._props = map;
@@ -4895,6 +4905,22 @@ public abstract class SQLBuilder { // NOSONAR
             }
 
             newPropsList.add(props);
+        }
+
+        final BeanInfo beanInfo = ParserUtil.getBeanInfo(entityClass);
+        final ImmutableList<String> idPropNameList = beanInfo.idPropNameList;
+
+        final List<String> nullPropToRemove = Stream.of(propNames).filter(propName -> Stream.of(newPropsList).allMatch(map -> {
+            Object propValue = map.get(propName);
+
+            return propValue == null
+                    || (!idPropNameList.isEmpty() && idPropNameList.contains(propName) && propValue instanceof Number && ((Number) propValue).longValue() == 0);
+        })).toList();
+
+        if (N.notEmpty(nullPropToRemove)) {
+            for (final Map<String, Object> props : newPropsList) {
+                Maps.removeKeys(props, nullPropToRemove);
+            }
         }
 
         return newPropsList;
@@ -4954,6 +4980,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -4972,6 +5000,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -4994,6 +5024,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -5016,6 +5048,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -5039,6 +5073,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -5057,6 +5093,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -5831,6 +5869,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance for INSERT operation
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -5841,6 +5881,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance for INSERT operation
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -5856,6 +5898,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance for INSERT operation
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -5871,6 +5915,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance for INSERT operation
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -5886,6 +5932,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance for INSERT operation
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -5897,6 +5945,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance for INSERT operation
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -6493,6 +6543,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @see #insert(String...)
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -6515,6 +6567,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -6534,6 +6588,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -6564,6 +6620,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -6593,6 +6651,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @see #insert(Object, Set)
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -6618,6 +6678,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -7585,6 +7647,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -7605,6 +7669,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
@@ -7631,6 +7697,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             N.checkArgNotEmpty(propOrColumnNames, PROP_OR_COLUMN_NAMES);
 
             final SQLBuilder instance = createInstance();
@@ -7660,6 +7728,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -7685,6 +7755,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -7707,6 +7779,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -8766,6 +8840,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -8784,6 +8860,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -8806,6 +8884,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -8831,6 +8911,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -8861,6 +8943,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -8886,6 +8970,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -9810,6 +9896,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -9832,6 +9920,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -9858,6 +9948,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -9886,6 +9978,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -9913,6 +10007,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -9936,6 +10032,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -11040,6 +11138,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -11058,6 +11158,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -11080,6 +11182,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -11105,6 +11209,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -11136,6 +11242,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -11160,6 +11268,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return A new SQLBuilder instance for method chaining
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -12017,6 +12127,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -12038,6 +12150,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -12064,6 +12178,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -12091,6 +12207,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -12118,6 +12236,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -12143,6 +12263,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -13227,6 +13349,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation with named parameters
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -13247,6 +13371,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation with named parameters
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -13269,6 +13395,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation with named parameters
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -13295,6 +13423,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation with named parameters
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -13321,6 +13451,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation with named parameters
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -13344,6 +13476,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation with named parameters
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -14315,6 +14449,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NAC.insert("FIRST_NAME").into("ACCOUNT")}
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -14327,6 +14463,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NAC.insert("firstName", "lastName").into("ACCOUNT")}
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -14344,6 +14482,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NAC.insert(Arrays.asList("firstName", "lastName")).into("ACCOUNT")}
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -14361,6 +14501,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NAC.insert(Map.of("firstName", "John", "lastName", "Doe")).into("ACCOUNT")}
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -14383,6 +14525,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -14397,6 +14541,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NAC.insert(account, Set.of("createdTime")).into("ACCOUNT")}
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -15127,6 +15273,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NLC.insert("firstName").into("account")}
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -15139,6 +15287,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NLC.insert("firstName", "lastName").into("account")}
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -15156,6 +15306,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NLC.insert(Arrays.asList("firstName", "lastName")).into("account")}
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -15173,6 +15325,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NLC.insert(Map.of("firstName", "John", "lastName", "Doe")).into("account")}
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -15195,6 +15349,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -15209,6 +15365,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @example {@code NLC.insert(account, Set.of("createdTime")).into("account")}
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -15929,6 +16087,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -15951,6 +16111,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -15976,6 +16138,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -16003,6 +16167,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -16030,6 +16196,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -16051,6 +16219,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -17000,6 +17170,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -17022,6 +17194,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -17046,6 +17220,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -17073,6 +17249,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -17099,6 +17277,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -17121,6 +17301,8 @@ public abstract class SQLBuilder { // NOSONAR
          * }</pre>
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -18052,6 +18234,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -18070,6 +18254,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -18092,6 +18278,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -18116,6 +18304,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -18141,6 +18331,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -18163,6 +18355,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -19150,6 +19344,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @return a new SQLBuilder instance configured for INSERT operation
          */
         public static SQLBuilder insert(final String expr) {
+            N.checkArgNotEmpty(expr, INSERTION_PART);
+
             return insert(N.asArray(expr));
         }
 
@@ -19170,6 +19366,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -19194,6 +19392,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
+            N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -19221,6 +19421,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @throws IllegalArgumentException if props is null or empty
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
+            N.checkArgNotEmpty(props, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;
@@ -19249,6 +19451,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             return insert(entity, null);
         }
 
@@ -19273,6 +19477,8 @@ public abstract class SQLBuilder { // NOSONAR
          * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
+            N.checkArgNotNull(entity, INSERTION_PART);
+
             final SQLBuilder instance = createInstance();
 
             instance._op = OperationType.ADD;

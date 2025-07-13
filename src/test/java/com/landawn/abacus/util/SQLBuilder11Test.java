@@ -683,7 +683,7 @@ public class SQLBuilder11Test extends TestBase {
 
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("COUNT(*)"));
+            Assertions.assertTrue(sql.contains("count(*)"));
         }
 
         @Test
@@ -693,7 +693,7 @@ public class SQLBuilder11Test extends TestBase {
 
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("COUNT(*)"));
+            Assertions.assertTrue(sql.contains("count(*)"));
         }
 
         @Test
@@ -703,7 +703,7 @@ public class SQLBuilder11Test extends TestBase {
 
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("COUNT(*)"));
+            Assertions.assertTrue(sql.contains("count(*)"));
         }
 
         @Test
@@ -1250,7 +1250,7 @@ public class SQLBuilder11Test extends TestBase {
 
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("COUNT(*)"));
+            Assertions.assertTrue(sql.contains("count(*)"));
         }
 
         @Test
@@ -1260,7 +1260,7 @@ public class SQLBuilder11Test extends TestBase {
 
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("COUNT(*)"));
+            Assertions.assertTrue(sql.contains("count(*)"));
         }
 
         @Test
@@ -1270,7 +1270,7 @@ public class SQLBuilder11Test extends TestBase {
 
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("COUNT(*)"));
+            Assertions.assertTrue(sql.contains("count(*)"));
         }
 
         @Test
@@ -1783,7 +1783,7 @@ public class SQLBuilder11Test extends TestBase {
 
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("COUNT(*)"));
+            Assertions.assertTrue(sql.contains("count(*)"));
         }
 
         @Test
@@ -1793,7 +1793,7 @@ public class SQLBuilder11Test extends TestBase {
 
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("COUNT(*)"));
+            Assertions.assertTrue(sql.contains("count(*)"));
         }
 
         @Test
@@ -1803,7 +1803,7 @@ public class SQLBuilder11Test extends TestBase {
 
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("COUNT(*)"));
+            Assertions.assertTrue(sql.contains("count(*)"));
         }
 
         @Test
@@ -1966,7 +1966,7 @@ public class SQLBuilder11Test extends TestBase {
             Assertions.assertNotNull(sb);
             String sql = sb.sql();
             Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("CASE"));
+            Assertions.assertTrue(sql.contains("case when"));
         }
 
         @Test

@@ -2,7 +2,6 @@ package com.landawn.abacus.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,17 +32,17 @@ public class SQLOperationTest extends TestBase {
         assertEquals(SQLOperation.ROLLBACK, SQLOperation.valueOf("ROLLBACK"));
         assertEquals(SQLOperation.CALL, SQLOperation.valueOf("CALL"));
         assertEquals(SQLOperation.UNKNOWN, SQLOperation.valueOf("UNKNOWN"));
-        
+
         // Test case sensitivity (should be case-sensitive)
-        assertNull(SQLOperation.valueOf("select"));
-        assertNull(SQLOperation.valueOf("Select"));
-        assertNull(SQLOperation.valueOf("SELECT "));
-        
+        assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("select"));
+        assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("Select"));
+        assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("SELECT "));
+
         // Test non-existent operations
-        assertNull(SQLOperation.valueOf("TRUNCATE"));
-        assertNull(SQLOperation.valueOf("EXPLAIN"));
-        assertNull(SQLOperation.valueOf(""));
-        assertNull(SQLOperation.valueOf(null));
+        assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("TRUNCATE"));
+        assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("EXPLAIN"));
+        assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf(""));
+        assertThrows(NullPointerException.class, () -> SQLOperation.valueOf(null));
     }
 
     @Test
@@ -74,7 +73,7 @@ public class SQLOperationTest extends TestBase {
         for (SQLOperation op : SQLOperation.values()) {
             assertEquals(op.sqlText(), op.toString());
         }
-        
+
         // Test specific cases
         assertEquals("SELECT", SQLOperation.SELECT.toString());
         assertEquals("INSERT", SQLOperation.INSERT.toString());
@@ -87,36 +86,70 @@ public class SQLOperationTest extends TestBase {
         // Test that we have all expected values
         SQLOperation[] values = SQLOperation.values();
         assertEquals(17, values.length);
-        
+
         // Verify all operations are present
         boolean hasSelect = false, hasInsert = false, hasUpdate = false, hasDelete = false;
         boolean hasMerge = false, hasCreate = false, hasDrop = false, hasAlter = false;
         boolean hasShow = false, hasDescribe = false, hasUse = false, hasRename = false;
         boolean hasBeginTransaction = false, hasCommit = false, hasRollback = false;
         boolean hasCall = false, hasUnknown = false;
-        
+
         for (SQLOperation op : values) {
             switch (op) {
-                case SELECT: hasSelect = true; break;
-                case INSERT: hasInsert = true; break;
-                case UPDATE: hasUpdate = true; break;
-                case DELETE: hasDelete = true; break;
-                case MERGE: hasMerge = true; break;
-                case CREATE: hasCreate = true; break;
-                case DROP: hasDrop = true; break;
-                case ALTER: hasAlter = true; break;
-                case SHOW: hasShow = true; break;
-                case DESCRIBE: hasDescribe = true; break;
-                case USE: hasUse = true; break;
-                case RENAME: hasRename = true; break;
-                case BEGIN_TRANSACTION: hasBeginTransaction = true; break;
-                case COMMIT: hasCommit = true; break;
-                case ROLLBACK: hasRollback = true; break;
-                case CALL: hasCall = true; break;
-                case UNKNOWN: hasUnknown = true; break;
+                case SELECT:
+                    hasSelect = true;
+                    break;
+                case INSERT:
+                    hasInsert = true;
+                    break;
+                case UPDATE:
+                    hasUpdate = true;
+                    break;
+                case DELETE:
+                    hasDelete = true;
+                    break;
+                case MERGE:
+                    hasMerge = true;
+                    break;
+                case CREATE:
+                    hasCreate = true;
+                    break;
+                case DROP:
+                    hasDrop = true;
+                    break;
+                case ALTER:
+                    hasAlter = true;
+                    break;
+                case SHOW:
+                    hasShow = true;
+                    break;
+                case DESCRIBE:
+                    hasDescribe = true;
+                    break;
+                case USE:
+                    hasUse = true;
+                    break;
+                case RENAME:
+                    hasRename = true;
+                    break;
+                case BEGIN_TRANSACTION:
+                    hasBeginTransaction = true;
+                    break;
+                case COMMIT:
+                    hasCommit = true;
+                    break;
+                case ROLLBACK:
+                    hasRollback = true;
+                    break;
+                case CALL:
+                    hasCall = true;
+                    break;
+                case UNKNOWN:
+                    hasUnknown = true;
+                    break;
             }
         }
-        
+
         assertTrue(hasSelect);
         assertTrue(hasInsert);
         assertTrue(hasUpdate);
@@ -156,7 +189,7 @@ public class SQLOperationTest extends TestBase {
         assertEquals(SQLOperation.ROLLBACK, SQLOperation.valueOf("ROLLBACK"));
         assertEquals(SQLOperation.CALL, SQLOperation.valueOf("CALL"));
         assertEquals(SQLOperation.UNKNOWN, SQLOperation.valueOf("UNKNOWN"));
-        
+
         // Test invalid enum name
         assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("INVALID"));
         assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("select")); // Case sensitive
@@ -190,7 +223,7 @@ public class SQLOperationTest extends TestBase {
         SQLOperation select1 = SQLOperation.SELECT;
         SQLOperation select2 = SQLOperation.SELECT;
         assertSame(select1, select2);
-        
+
         // Test different operations are not the same
         assertNotSame(SQLOperation.SELECT, SQLOperation.INSERT);
         assertNotSame(SQLOperation.UPDATE, SQLOperation.DELETE);
@@ -222,9 +255,9 @@ public class SQLOperationTest extends TestBase {
     public void testOperationMapConsistency() {
         // Test that all enum values can be retrieved by their name through getOperation
         for (SQLOperation op : SQLOperation.values()) {
-            assertEquals(op, SQLOperation.valueOf(op.sqlText()));
+            assertEquals(op, SQLOperation.of(op.sqlText()));
         }
-        
+
         // Test that getName() returns the expected value used in getOperation()
         assertEquals("SELECT", SQLOperation.SELECT.sqlText());
         assertEquals("INSERT", SQLOperation.INSERT.sqlText());
