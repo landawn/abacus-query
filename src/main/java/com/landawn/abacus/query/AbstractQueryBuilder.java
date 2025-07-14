@@ -2558,7 +2558,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @see ConditionFactory.CF
      */
     @Beta
-    protected This append(final Condition cond) {
+    public This append(final Condition cond) {
         init(true);
 
         if (cond instanceof final Criteria criteria) {
@@ -2673,30 +2673,30 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return (This) this;
     }
 
-    //    /**
-    //     * Conditionally appends a condition to the SQL statement.
-    //     * 
-    //     * <pre>{@code
-    //     * boolean includeAgeFilter = true;
-    //     * String sql = PSC.select("*")
-    //     *                 .from("users")
-    //     *                 .appendIf(includeAgeFilter, CF.gt("age", 18))
-    //     *                 .sql();
-    //     * // Output: SELECT * FROM users WHERE age > ?
-    //     * }</pre>
-    //     * 
-    //     * @param b if true, the condition will be appended
-    //     * @param cond the condition to append
-    //     * @return this SQLBuilder instance for method chaining
-    //     */
-    //    @Beta
-    //    public SQLBuilder appendIf(final boolean b, final Condition cond) {
-    //        if (b) {
-    //            append(cond);
-    //        }
-    //
-    //        return (This) this;
-    //    }
+    /**
+     * Conditionally appends a condition to the SQL statement.
+     * 
+     * <pre>{@code
+     * boolean includeAgeFilter = true;
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .appendIf(includeAgeFilter, CF.gt("age", 18))
+     *                 .sql();
+     * // Output: SELECT * FROM users WHERE age > ?
+     * }</pre>
+     * 
+     * @param b if true, the condition will be appended
+     * @param cond the condition to append
+     * @return this SQLBuilder instance for method chaining
+     */
+    @Beta
+    public This appendIf(final boolean b, final Condition cond) {
+        if (b) {
+            append(cond);
+        }
+
+        return (This) this;
+    }
 
     /**
      * Conditionally appends a string expression to the SQL statement.
@@ -2739,35 +2739,35 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return (This) this;
     }
 
-    //    /**
-    //     * Conditionally appends one of two conditions based on a boolean value.
-    //     * 
-    //     * <pre>{@code
-    //     * boolean isActive = true;
-    //     * String sql = PSC.select("*")
-    //     *                 .from("users")
-    //     *                 .appendIfOrElse(isActive, 
-    //     *                     CF.eq("status", "active"),
-    //     *                     CF.eq("status", "inactive"))
-    //     *                 .sql();
-    //     * // Output: SELECT * FROM users WHERE status = ?
-    //     * }</pre>
-    //     * 
-    //     * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
-    //     * @param condToAppendForTrue the condition to append if b is true
-    //     * @param condToAppendForFalse the condition to append if b is false
-    //     * @return this SQLBuilder instance for method chaining
-    //     */
-    //    @Beta
-    //    public SQLBuilder appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
-    //        if (b) {
-    //            append(condToAppendForTrue);
-    //        } else {
-    //            append(condToAppendForFalse);
-    //        }
-    //
-    //        return (This) this;
-    //    }
+    /**
+     * Conditionally appends one of two conditions based on a boolean value.
+     * 
+     * <pre>{@code
+     * boolean isActive = true;
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .appendIfOrElse(isActive, 
+     *                     CF.eq("status", "active"),
+     *                     CF.eq("status", "inactive"))
+     *                 .sql();
+     * // Output: SELECT * FROM users WHERE status = ?
+     * }</pre>
+     * 
+     * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
+     * @param condToAppendForTrue the condition to append if b is true
+     * @param condToAppendForFalse the condition to append if b is false
+     * @return this SQLBuilder instance for method chaining
+     */
+    @Beta
+    public This appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
+        if (b) {
+            append(condToAppendForTrue);
+        } else {
+            append(condToAppendForFalse);
+        }
+
+        return (This) this;
+    }
 
     /**
      * Conditionally appends one of two string expressions based on a boolean value.
@@ -3576,8 +3576,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * SP sqlPair = PSC.select("*")
      *                 .from("account")
      *                 .where(CF.eq("status", "ACTIVE"))
-     *                 .pair();
-     * // sqlPair.sql contains: "SELECT * FROM account WHERE status = ?"
+     *                 .build();
+     * // sqlPair.query contains: "SELECT * FROM account WHERE status = ?"
      * // sqlPair.parameters contains: ["ACTIVE"]
      * }</pre>
      */
@@ -3587,26 +3587,26 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return new SP(sql, _parameters);
     }
 
-    /**
-     * Generates both the SQL string and its parameters as a pair.
-     * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
-     *
-     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
-     * 
-     * <pre>{@code
-     * // Example usage:
-     * SP sqlPair = PSC.select("*")
-     *                 .from("account")
-     *                 .where(CF.eq("status", "ACTIVE"))
-     *                 .pair();
-     * // sqlPair.sql contains: "SELECT * FROM account WHERE status = ?"
-     * // sqlPair.parameters contains: ["ACTIVE"]
-     * }</pre>
-     * @deprecated Use {@link #build()} instead
-     */
-    public SP pair() {
-        return build();
-    }
+    //    /**
+    //     * Generates both the SQL string and its parameters as a pair.
+    //     * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
+    //     *
+    //     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
+    //     * 
+    //     * <pre>{@code
+    //     * // Example usage:
+    //     * SP sqlPair = PSC.select("*")
+    //     *                 .from("account")
+    //     *                 .where(CF.eq("status", "ACTIVE"))
+    //     *                 .build();
+    //     * // sqlPair.query contains: "SELECT * FROM account WHERE status = ?"
+    //     * // sqlPair.parameters contains: ["ACTIVE"]
+    //     * }</pre>
+    //     * @deprecated Use {@link #build()} instead
+    //     */
+    //    public SP pair() {
+    //        return build();
+    //    }
 
     /**
      * Applies a function to the SQL-Parameters pair and returns the result.
@@ -3623,7 +3623,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * List<Account> accounts = PSC.select("*")
      *     .from("account")
      *     .where(CF.eq("status", "ACTIVE"))
-     *     .apply(sp -> jdbcTemplate.query(sp.sql, sp.parameters, accountRowMapper));
+     *     .apply(sp -> jdbcTemplate.query(sp.query, sp.parameters, accountRowMapper));
      * }</pre>
      */
     @Beta
@@ -3668,7 +3668,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Example usage:
      * PSC.insert("account")
      *    .values("name", "email", "status")
-     *    .accept(sp -> jdbcTemplate.update(sp.sql, sp.parameters.toArray()));
+     *    .accept(sp -> jdbcTemplate.update(sp.query, sp.parameters.toArray()));
      * }</pre>
      */
     @Beta
@@ -3767,10 +3767,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    @Beta
     //    public <Q extends com.landawn.abacus.jdbc.AbstractQuery> Q toPreparedQuery(final javax.sql.DataSource dataSource,
     //            final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter) throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
-    //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
-    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQuery(dataSource, sp.sql);
+    //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQuery(dataSource, sp.query)
+    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQuery(dataSource, sp.query);
     //
     //        boolean noException = false;
     //
@@ -3805,10 +3805,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    @Beta
     //    public <Q extends com.landawn.abacus.jdbc.AbstractQuery> Q toPreparedQuery(final java.sql.Connection conn,
     //            final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter) throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
-    //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQuery(conn, sp.sql)
-    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQuery(conn, sp.sql);
+    //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQuery(conn, sp.query)
+    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQuery(conn, sp.query);
     //
     //        boolean noException = false;
     //
@@ -3841,11 +3841,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    @SuppressWarnings("rawtypes")
     //    @Beta
     //    public <Q extends com.landawn.abacus.jdbc.AbstractQuery> Q toPreparedQueryForBigResult(final javax.sql.DataSource dataSource) throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
     //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql()
-    //                ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.sql)
-    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForBigResult(dataSource, sp.sql);
+    //                ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.query)
+    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForBigResult(dataSource, sp.query);
     //
     //        boolean noException = false;
     //
@@ -3874,10 +3874,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    @SuppressWarnings("rawtypes")
     //    @Beta
     //    public <Q extends com.landawn.abacus.jdbc.AbstractQuery> Q toPreparedQueryForBigResult(final java.sql.Connection conn) throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
-    //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForBigResult(conn, sp.sql)
-    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForBigResult(conn, sp.sql);
+    //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForBigResult(conn, sp.query)
+    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForBigResult(conn, sp.query);
     //
     //        boolean noException = false;
     //
@@ -3908,10 +3908,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    @Beta
     //    public <R> R execute(final javax.sql.DataSource dataSource, final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryOrUpdateCall)
     //            throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
-    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
-    //                : JdbcUtil.prepareQuery(dataSource, sp.sql)) {
+    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.query)
+    //                : JdbcUtil.prepareQuery(dataSource, sp.query)) {
     //
     //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
@@ -3933,9 +3933,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    @Beta
     //    public <R> R execute(final java.sql.Connection conn, final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryOrUpdateCall)
     //            throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
-    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.sql) : JdbcUtil.prepareQuery(conn, sp.sql)) {
+    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.query) : JdbcUtil.prepareQuery(conn, sp.query)) {
     //
     //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
@@ -3959,10 +3959,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    public <R> R execute(final javax.sql.DataSource dataSource,
     //            final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter,
     //            final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryOrUpdateCall) throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
-    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.sql)
-    //                : JdbcUtil.prepareQuery(dataSource, sp.sql)) {
+    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.query)
+    //                : JdbcUtil.prepareQuery(dataSource, sp.query)) {
     //
     //            preparedQuery.configStmt(stmtSetter);
     //
@@ -3987,9 +3987,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    @Beta
     //    public <R> R execute(final java.sql.Connection conn, final Throwables.Consumer<? super java.sql.PreparedStatement, ? extends SQLException> stmtSetter,
     //            final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryCall) throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
-    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.sql) : JdbcUtil.prepareQuery(conn, sp.sql)) {
+    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.query) : JdbcUtil.prepareQuery(conn, sp.query)) {
     //
     //            preparedQuery.configStmt(stmtSetter);
     //
@@ -4013,10 +4013,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    @Beta
     //    public <R> R executeQueryForBigResult(final javax.sql.DataSource dataSource, final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryCall)
     //            throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
-    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.sql)
-    //                : JdbcUtil.prepareQueryForBigResult(dataSource, sp.sql)) {
+    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.query)
+    //                : JdbcUtil.prepareQueryForBigResult(dataSource, sp.query)) {
     //
     //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
@@ -4038,10 +4038,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    @Beta
     //    public <R> R executeQueryForBigResult(final java.sql.Connection conn, final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryOrUpdateCall)
     //            throws SQLException {
-    //        final SP sp = this.pair();
+    //        final SP sp = this.build();
     //
-    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(conn, sp.sql)
-    //                : JdbcUtil.prepareQueryForBigResult(conn, sp.sql)) {
+    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(conn, sp.query)
+    //                : JdbcUtil.prepareQueryForBigResult(conn, sp.query)) {
     //
     //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);

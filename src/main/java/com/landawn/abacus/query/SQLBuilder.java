@@ -5521,7 +5521,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * 
      * // Batch INSERT
      * List<Account> accounts = Arrays.asList(account1, account2, account3);
-     * SP sqlPair = PSC.batchInsert(accounts).into("account").pair();
+     * SP sqlPair = PSC.batchInsert(accounts).into("account").build();
      * // sqlPair.sql: INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?), (?, ?)
      * // sqlPair.parameters: ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
      * 
@@ -5639,7 +5639,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Map<String, Object> props = new HashMap<>();
          * props.put("firstName", "John");
          * props.put("lastName", "Doe");
-         * SP sqlPair = PSC.insert(props).into("account").pair();
+         * SP sqlPair = PSC.insert(props).into("account").build();
          * // sqlPair.sql: INSERT INTO account (first_name, last_name) VALUES (?, ?)
          * // sqlPair.parameters: ["John", "Doe"]
          * }</pre>
@@ -5673,7 +5673,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * account.setLastName("Doe");
          * account.setEmail("john.doe@example.com");
          * 
-         * SP sqlPair = PSC.insert(account).into("account").pair();
+         * SP sqlPair = PSC.insert(account).into("account").build();
          * // sqlPair.sql: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com"]
          * }</pre>
@@ -5702,7 +5702,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * account.setCreatedDate(new Date());
          * 
          * Set<String> excluded = N.asSet("createdDate");
-         * SP sqlPair = PSC.insert(account, excluded).into("account").pair();
+         * SP sqlPair = PSC.insert(account, excluded).into("account").build();
          * // sqlPair.sql: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com"]
          * }</pre>
@@ -5835,7 +5835,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Account("Bob", "Johnson")
          * );
          * 
-         * SP sqlPair = PSC.batchInsert(accounts).into("account").pair();
+         * SP sqlPair = PSC.batchInsert(accounts).into("account").build();
          * // sqlPair.sql: INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?), (?, ?)
          * // sqlPair.parameters: ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
          * }</pre>
@@ -8099,7 +8099,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * SP sqlPair = PLC.insert("firstName", "lastName", "email")
          *                 .into("account")
          *                 .values("John", "Doe", "john@example.com")
-         *                 .pair();
+         *                 .build();
          * // sqlPair.sql: INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
          * // sqlPair.parameters: ["John", "Doe", "john@example.com"]
          * }</pre>
@@ -8165,13 +8165,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * props.put("emailAddress", "john.doe@example.com");
          * props.put("isActive", true);
          * 
-         * SP sqlPair = PLC.insert(props).into("account").pair();
+         * SP sqlPair = PLC.insert(props).into("account").build();
          * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress, isActive) VALUES (?, ?, ?, ?)
          * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com", true]
          * 
          * // With null values (will be included)
          * props.put("middleName", null);
-         * SP sqlPair2 = PLC.insert(props).into("account").pair();
+         * SP sqlPair2 = PLC.insert(props).into("account").build();
          * // Includes middleName with NULL value
          * }</pre>
          * 
@@ -8206,7 +8206,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * account.setEmailAddress("john.doe@example.com");
          * account.setCreatedDate(new Date());
          * 
-         * SP sqlPair = PLC.insert(account).into("account").pair();
+         * SP sqlPair = PLC.insert(account).into("account").build();
          * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress, createdDate) VALUES (?, ?, ?, ?)
          * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com", Date object]
          * 
@@ -8245,13 +8245,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * account.setInternalNotes("VIP customer");
          * 
          * Set<String> excluded = N.asSet("createdDate", "internalNotes");
-         * SP sqlPair = PLC.insert(account, excluded).into("account").pair();
+         * SP sqlPair = PLC.insert(account, excluded).into("account").build();
          * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress) VALUES (?, ?, ?)
          * // sqlPair.parameters: ["John", "Doe", "john@example.com"]
          * 
          * // Exclude all audit fields
          * Set<String> auditFields = N.asSet("createdBy", "createdDate", "modifiedBy", "modifiedDate");
-         * SP sqlPair2 = PLC.insert(account, auditFields).into("account").pair();
+         * SP sqlPair2 = PLC.insert(account, auditFields).into("account").build();
          * }</pre>
          * 
          * @param entity The entity object to insert
@@ -8403,7 +8403,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Account("Bob", "Johnson", "bob@example.com")
          * );
          * 
-         * SP sqlPair = PLC.batchInsert(accounts).into("account").pair();
+         * SP sqlPair = PLC.batchInsert(accounts).into("account").build();
          * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?)
          * // sqlPair.parameters: ["John", "Doe", "john@example.com", "Jane", "Smith", "jane@example.com", "Bob", "Johnson", "bob@example.com"]
          * 
@@ -8412,7 +8412,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     N.asMap("firstName", "John", "lastName", "Doe"),
          *     N.asMap("firstName", "Jane", "lastName", "Smith")
          * );
-         * SP sqlPair2 = PLC.batchInsert(data).into("account").pair();
+         * SP sqlPair2 = PLC.batchInsert(data).into("account").build();
          * }</pre>
          * 
          * @param propsList List of entities or property maps to insert
@@ -8492,7 +8492,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * SP sqlPair = PLC.update("account", Account.class)
          *                 .set(account)
          *                 .where(CF.eq("id", account.getId()))
-         *                 .pair();
+         *                 .build();
          * // sqlPair.sql: UPDATE account SET firstName = ?, lastName = ?, modifiedDate = ? WHERE id = ?
          * }</pre>
          * 
@@ -8536,7 +8536,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * SP sqlPair = PLC.update(Account.class)
          *                 .set(account)
          *                 .where(CF.eq("id", account.getId()))
-         *                 .pair();
+         *                 .build();
          * }</pre>
          * 
          * @param entityClass The entity class to update
@@ -8566,7 +8566,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * SP sqlPair = PLC.update(Account.class, excluded)
          *                 .set(account)
          *                 .where(CF.eq("id", account.getId()))
-         *                 .pair();
+         *                 .build();
          * // createdDate excluded even though set in entity
          * 
          * // Exclude version control fields
