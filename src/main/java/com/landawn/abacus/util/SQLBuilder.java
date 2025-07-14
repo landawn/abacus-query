@@ -125,7 +125,7 @@ public abstract class SQLBuilder { // NOSONAR
 
     // TODO performance goal: 80% cases (or maybe SQL.length < 1024?) can be composed in 0.1 millisecond. 0.01 millisecond will be fantastic if possible.
 
-    private static final Logger logger = LoggerFactory.getLogger(SQLBuilder.class);
+    protected static final Logger logger = LoggerFactory.getLogger(SQLBuilder.class);
 
     /** Constant for selecting all columns in SQL queries. */
     public static final String ALL = SK.ALL;
@@ -148,152 +148,152 @@ public abstract class SQLBuilder { // NOSONAR
     /** Constant for COUNT(*) aggregate function. */
     public static final String COUNT_ALL = "count(*)";
 
-    static final List<String> COUNT_ALL_LIST = ImmutableList.of(COUNT_ALL);
+    protected static final List<String> COUNT_ALL_LIST = ImmutableList.of(COUNT_ALL);
 
     //    public static final String _1 = "1";
     //
     //    public static final List<String> _1_list = ImmutableList.of(_1);
 
-    static final char[] _INSERT = SK.INSERT.toCharArray();
+    protected static final char[] _INSERT = SK.INSERT.toCharArray();
 
-    static final char[] _SPACE_INSERT_SPACE = (SK.SPACE + SK.INSERT + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_INSERT_SPACE = (SK.SPACE + SK.INSERT + SK.SPACE).toCharArray();
 
-    static final char[] _INTO = SK.INTO.toCharArray();
+    protected static final char[] _INTO = SK.INTO.toCharArray();
 
-    static final char[] _SPACE_INTO_SPACE = (SK.SPACE + SK.INTO + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_INTO_SPACE = (SK.SPACE + SK.INTO + SK.SPACE).toCharArray();
 
-    static final char[] _VALUES = SK.VALUES.toCharArray();
+    protected static final char[] _VALUES = SK.VALUES.toCharArray();
 
-    static final char[] _SPACE_VALUES_SPACE = (SK.SPACE + SK.VALUES + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_VALUES_SPACE = (SK.SPACE + SK.VALUES + SK.SPACE).toCharArray();
 
-    static final char[] _SELECT = SK.SELECT.toCharArray();
+    protected static final char[] _SELECT = SK.SELECT.toCharArray();
 
-    static final char[] _SPACE_SELECT_SPACE = (SK.SPACE + SK.SELECT + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_SELECT_SPACE = (SK.SPACE + SK.SELECT + SK.SPACE).toCharArray();
 
-    static final char[] _FROM = SK.FROM.toCharArray();
+    protected static final char[] _FROM = SK.FROM.toCharArray();
 
-    static final char[] _SPACE_FROM_SPACE = (SK.SPACE + SK.FROM + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_FROM_SPACE = (SK.SPACE + SK.FROM + SK.SPACE).toCharArray();
 
-    static final char[] _UPDATE = SK.UPDATE.toCharArray();
+    protected static final char[] _UPDATE = SK.UPDATE.toCharArray();
 
-    static final char[] _SPACE_UPDATE_SPACE = (SK.SPACE + SK.UPDATE + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_UPDATE_SPACE = (SK.SPACE + SK.UPDATE + SK.SPACE).toCharArray();
 
-    static final char[] _SET = SK.SET.toCharArray();
+    protected static final char[] _SET = SK.SET.toCharArray();
 
-    static final char[] _SPACE_SET_SPACE = (SK.SPACE + SK.SET + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_SET_SPACE = (SK.SPACE + SK.SET + SK.SPACE).toCharArray();
 
-    static final char[] _DELETE = SK.DELETE.toCharArray();
+    protected static final char[] _DELETE = SK.DELETE.toCharArray();
 
-    static final char[] _SPACE_DELETE_SPACE = (SK.SPACE + SK.DELETE + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_DELETE_SPACE = (SK.SPACE + SK.DELETE + SK.SPACE).toCharArray();
 
-    static final char[] _JOIN = SK.JOIN.toCharArray();
+    protected static final char[] _JOIN = SK.JOIN.toCharArray();
 
-    static final char[] _SPACE_JOIN_SPACE = (SK.SPACE + SK.JOIN + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_JOIN_SPACE = (SK.SPACE + SK.JOIN + SK.SPACE).toCharArray();
 
-    static final char[] _LEFT_JOIN = SK.LEFT_JOIN.toCharArray();
+    protected static final char[] _LEFT_JOIN = SK.LEFT_JOIN.toCharArray();
 
-    static final char[] _SPACE_LEFT_JOIN_SPACE = (SK.SPACE + SK.LEFT_JOIN + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_LEFT_JOIN_SPACE = (SK.SPACE + SK.LEFT_JOIN + SK.SPACE).toCharArray();
 
-    static final char[] _RIGHT_JOIN = SK.RIGHT_JOIN.toCharArray();
+    protected static final char[] _RIGHT_JOIN = SK.RIGHT_JOIN.toCharArray();
 
-    static final char[] _SPACE_RIGHT_JOIN_SPACE = (SK.SPACE + SK.RIGHT_JOIN + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_RIGHT_JOIN_SPACE = (SK.SPACE + SK.RIGHT_JOIN + SK.SPACE).toCharArray();
 
-    static final char[] _FULL_JOIN = SK.FULL_JOIN.toCharArray();
+    protected static final char[] _FULL_JOIN = SK.FULL_JOIN.toCharArray();
 
-    static final char[] _SPACE_FULL_JOIN_SPACE = (SK.SPACE + SK.FULL_JOIN + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_FULL_JOIN_SPACE = (SK.SPACE + SK.FULL_JOIN + SK.SPACE).toCharArray();
 
-    static final char[] _CROSS_JOIN = SK.CROSS_JOIN.toCharArray();
+    protected static final char[] _CROSS_JOIN = SK.CROSS_JOIN.toCharArray();
 
-    static final char[] _SPACE_CROSS_JOIN_SPACE = (SK.SPACE + SK.CROSS_JOIN + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_CROSS_JOIN_SPACE = (SK.SPACE + SK.CROSS_JOIN + SK.SPACE).toCharArray();
 
-    static final char[] _INNER_JOIN = SK.INNER_JOIN.toCharArray();
+    protected static final char[] _INNER_JOIN = SK.INNER_JOIN.toCharArray();
 
-    static final char[] _SPACE_INNER_JOIN_SPACE = (SK.SPACE + SK.INNER_JOIN + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_INNER_JOIN_SPACE = (SK.SPACE + SK.INNER_JOIN + SK.SPACE).toCharArray();
 
-    static final char[] _NATURAL_JOIN = SK.NATURAL_JOIN.toCharArray();
+    protected static final char[] _NATURAL_JOIN = SK.NATURAL_JOIN.toCharArray();
 
-    static final char[] _SPACE_NATURAL_JOIN_SPACE = (SK.SPACE + SK.NATURAL_JOIN + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_NATURAL_JOIN_SPACE = (SK.SPACE + SK.NATURAL_JOIN + SK.SPACE).toCharArray();
 
-    static final char[] _ON = SK.ON.toCharArray();
+    protected static final char[] _ON = SK.ON.toCharArray();
 
-    static final char[] _SPACE_ON_SPACE = (SK.SPACE + SK.ON + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_ON_SPACE = (SK.SPACE + SK.ON + SK.SPACE).toCharArray();
 
-    static final char[] _USING = SK.USING.toCharArray();
+    protected static final char[] _USING = SK.USING.toCharArray();
 
-    static final char[] _SPACE_USING_SPACE = (SK.SPACE + SK.USING + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_USING_SPACE = (SK.SPACE + SK.USING + SK.SPACE).toCharArray();
 
-    static final char[] _WHERE = SK.WHERE.toCharArray();
+    protected static final char[] _WHERE = SK.WHERE.toCharArray();
 
-    static final char[] _SPACE_WHERE_SPACE = (SK.SPACE + SK.WHERE + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_WHERE_SPACE = (SK.SPACE + SK.WHERE + SK.SPACE).toCharArray();
 
-    static final char[] _GROUP_BY = SK.GROUP_BY.toCharArray();
+    protected static final char[] _GROUP_BY = SK.GROUP_BY.toCharArray();
 
-    static final char[] _SPACE_GROUP_BY_SPACE = (SK.SPACE + SK.GROUP_BY + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_GROUP_BY_SPACE = (SK.SPACE + SK.GROUP_BY + SK.SPACE).toCharArray();
 
-    static final char[] _HAVING = SK.HAVING.toCharArray();
+    protected static final char[] _HAVING = SK.HAVING.toCharArray();
 
-    static final char[] _SPACE_HAVING_SPACE = (SK.SPACE + SK.HAVING + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_HAVING_SPACE = (SK.SPACE + SK.HAVING + SK.SPACE).toCharArray();
 
-    static final char[] _ORDER_BY = SK.ORDER_BY.toCharArray();
+    protected static final char[] _ORDER_BY = SK.ORDER_BY.toCharArray();
 
-    static final char[] _SPACE_ORDER_BY_SPACE = (SK.SPACE + SK.ORDER_BY + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_ORDER_BY_SPACE = (SK.SPACE + SK.ORDER_BY + SK.SPACE).toCharArray();
 
-    static final char[] _LIMIT = (SK.SPACE + SK.LIMIT + SK.SPACE).toCharArray();
+    protected static final char[] _LIMIT = (SK.SPACE + SK.LIMIT + SK.SPACE).toCharArray();
 
-    static final char[] _SPACE_LIMIT_SPACE = (SK.SPACE + SK.LIMIT + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_LIMIT_SPACE = (SK.SPACE + SK.LIMIT + SK.SPACE).toCharArray();
 
-    static final char[] _OFFSET = SK.OFFSET.toCharArray();
+    protected static final char[] _OFFSET = SK.OFFSET.toCharArray();
 
-    static final char[] _SPACE_OFFSET_SPACE = (SK.SPACE + SK.OFFSET + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_OFFSET_SPACE = (SK.SPACE + SK.OFFSET + SK.SPACE).toCharArray();
 
-    static final char[] _SPACE_ROWS = (SK.SPACE + SK.ROWS).toCharArray();
+    protected static final char[] _SPACE_ROWS = (SK.SPACE + SK.ROWS).toCharArray();
 
-    static final char[] _AND = SK.AND.toCharArray();
+    protected static final char[] _AND = SK.AND.toCharArray();
 
-    static final char[] _SPACE_AND_SPACE = (SK.SPACE + SK.AND + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_AND_SPACE = (SK.SPACE + SK.AND + SK.SPACE).toCharArray();
 
-    static final char[] _OR = SK.OR.toCharArray();
+    protected static final char[] _OR = SK.OR.toCharArray();
 
-    static final char[] _SPACE_OR_SPACE = (SK.SPACE + SK.OR + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_OR_SPACE = (SK.SPACE + SK.OR + SK.SPACE).toCharArray();
 
-    static final char[] _UNION = SK.UNION.toCharArray();
+    protected static final char[] _UNION = SK.UNION.toCharArray();
 
-    static final char[] _SPACE_UNION_SPACE = (SK.SPACE + SK.UNION + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_UNION_SPACE = (SK.SPACE + SK.UNION + SK.SPACE).toCharArray();
 
-    static final char[] _UNION_ALL = SK.UNION_ALL.toCharArray();
+    protected static final char[] _UNION_ALL = SK.UNION_ALL.toCharArray();
 
-    static final char[] _SPACE_UNION_ALL_SPACE = (SK.SPACE + SK.UNION_ALL + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_UNION_ALL_SPACE = (SK.SPACE + SK.UNION_ALL + SK.SPACE).toCharArray();
 
-    static final char[] _INTERSECT = SK.INTERSECT.toCharArray();
+    protected static final char[] _INTERSECT = SK.INTERSECT.toCharArray();
 
-    static final char[] _SPACE_INTERSECT_SPACE = (SK.SPACE + SK.INTERSECT + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_INTERSECT_SPACE = (SK.SPACE + SK.INTERSECT + SK.SPACE).toCharArray();
 
-    static final char[] _EXCEPT = SK.EXCEPT.toCharArray();
+    protected static final char[] _EXCEPT = SK.EXCEPT.toCharArray();
 
-    static final char[] _SPACE_EXCEPT_SPACE = (SK.SPACE + SK.EXCEPT + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_EXCEPT_SPACE = (SK.SPACE + SK.EXCEPT + SK.SPACE).toCharArray();
 
-    static final char[] _EXCEPT2 = SK.EXCEPT2.toCharArray();
+    protected static final char[] _EXCEPT2 = SK.EXCEPT2.toCharArray();
 
-    static final char[] _SPACE_EXCEPT2_SPACE = (SK.SPACE + SK.EXCEPT2 + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_EXCEPT2_SPACE = (SK.SPACE + SK.EXCEPT2 + SK.SPACE).toCharArray();
 
-    static final char[] _AS = SK.AS.toCharArray();
+    protected static final char[] _AS = SK.AS.toCharArray();
 
-    static final char[] _SPACE_AS_SPACE = (SK.SPACE + SK.AS + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_AS_SPACE = (SK.SPACE + SK.AS + SK.SPACE).toCharArray();
 
-    static final char[] _SPACE_EQUAL_SPACE = (SK.SPACE + SK.EQUAL + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_EQUAL_SPACE = (SK.SPACE + SK.EQUAL + SK.SPACE).toCharArray();
 
-    static final char[] _SPACE_FOR_UPDATE = (SK.SPACE + SK.FOR_UPDATE).toCharArray();
+    protected static final char[] _SPACE_FOR_UPDATE = (SK.SPACE + SK.FOR_UPDATE).toCharArray();
 
-    static final char[] _COMMA_SPACE = SK.COMMA_SPACE.toCharArray();
+    protected static final char[] _COMMA_SPACE = SK.COMMA_SPACE.toCharArray();
 
-    static final String SPACE_AS_SPACE = SK.SPACE + SK.AS + SK.SPACE;
+    protected static final String SPACE_AS_SPACE = SK.SPACE + SK.AS + SK.SPACE;
 
-    static final String SELECTION_PART_MSG = "The specified parameter is not valid for selection part. It must not be null or empty";
-    static final String INSERTION_PART_MSG = "The specified parameter is not valid for insertion part. It must not be null or empty";
-    static final String UPDATE_PART_MSG = "The specified parameter is not valid for update part. It must not be null or empty";
-    static final String DELETION_PART_MSG = "The specified parameter is not valid for deletion part. It must not be null or empty";
+    protected static final String SELECTION_PART_MSG = "The specified parameter is not valid for selection part. It must not be null or empty";
+    protected static final String INSERTION_PART_MSG = "The specified parameter is not valid for insertion part. It must not be null or empty";
+    protected static final String UPDATE_PART_MSG = "The specified parameter is not valid for update part. It must not be null or empty";
+    protected static final String DELETION_PART_MSG = "The specified parameter is not valid for deletion part. It must not be null or empty";
 
-    private static final Set<String> sqlKeyWords = N.newHashSet(1024);
+    protected static final Set<String> sqlKeyWords = N.newHashSet(1024);
 
     static {
         final Field[] fields = SK.class.getDeclaredFields();
@@ -318,13 +318,13 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private static final Map<Class<?>, ImmutableSet<String>> subEntityPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
+    protected static final Map<Class<?>, ImmutableSet<String>> subEntityPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
 
     // private static final Map<Class<?>, ImmutableSet<String>> nonSubEntityPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
 
-    private static final Map<Class<?>, Set<String>[]> defaultPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
+    protected static final Map<Class<?>, Set<String>[]> defaultPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
 
-    private static final Map<NamingPolicy, Map<Class<?>, String>> fullSelectPartsPool = N.newHashMap(NamingPolicy.values().length);
+    protected static final Map<NamingPolicy, Map<Class<?>, String>> fullSelectPartsPool = N.newHashMap(NamingPolicy.values().length);
 
     static {
         for (final NamingPolicy np : NamingPolicy.values()) {
@@ -332,54 +332,54 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private static final Map<String, char[]> tableDeleteFrom = new ConcurrentHashMap<>();
+    protected static final Map<String, char[]> tableDeleteFrom = new ConcurrentHashMap<>();
 
-    private static final Map<Class<?>, String[]> classTableNameMap = new ConcurrentHashMap<>();
+    protected static final Map<Class<?>, String[]> classTableNameMap = new ConcurrentHashMap<>();
 
-    private static final Map<Class<?>, String> classTableAliasMap = new ConcurrentHashMap<>();
+    protected static final Map<Class<?>, String> classTableAliasMap = new ConcurrentHashMap<>();
 
-    private static final AtomicInteger activeStringBuilderCounter = new AtomicInteger();
+    protected static final AtomicInteger activeStringBuilderCounter = new AtomicInteger();
 
-    private final NamingPolicy _namingPolicy; //NOSONAR
+    protected final NamingPolicy _namingPolicy; //NOSONAR
 
-    private final SQLPolicy _sqlPolicy; //NOSONAR
+    protected final SQLPolicy _sqlPolicy; //NOSONAR
 
-    private final List<Object> _parameters = new ArrayList<>(); //NOSONAR
+    protected final List<Object> _parameters = new ArrayList<>(); //NOSONAR
 
-    private StringBuilder _sb; //NOSONAR
+    protected StringBuilder _sb; //NOSONAR
 
-    private Class<?> _entityClass; //NOSONAR
+    protected Class<?> _entityClass; //NOSONAR
 
-    private BeanInfo _entityInfo; //NOSONAR
+    protected BeanInfo _entityInfo; //NOSONAR
 
-    private ImmutableMap<String, Tuple2<String, Boolean>> _propColumnNameMap; //NOSONAR
+    protected ImmutableMap<String, Tuple2<String, Boolean>> _propColumnNameMap; //NOSONAR
 
-    private OperationType _op; //NOSONAR
+    protected OperationType _op; //NOSONAR
 
-    private String _tableName; //NOSONAR
+    protected String _tableName; //NOSONAR
 
-    private String _tableAlias; //NOSONAR
+    protected String _tableAlias; //NOSONAR
 
-    private String _preselect; //NOSONAR
+    protected String _preselect; //NOSONAR
 
-    private Collection<String> _propOrColumnNames; //NOSONAR
+    protected Collection<String> _propOrColumnNames; //NOSONAR
 
-    private Map<String, String> _propOrColumnNameAliases; //NOSONAR
+    protected Map<String, String> _propOrColumnNameAliases; //NOSONAR
 
-    private List<Selection> _multiSelects; //NOSONAR
+    protected List<Selection> _multiSelects; //NOSONAR
 
-    private Map<String, Map<String, Tuple2<String, Boolean>>> _aliasPropColumnNameMap; //NOSONAR
+    protected Map<String, Map<String, Tuple2<String, Boolean>>> _aliasPropColumnNameMap; //NOSONAR
 
-    private Map<String, Object> _props; //NOSONAR
+    protected Map<String, Object> _props; //NOSONAR
 
-    private Collection<Map<String, Object>> _propsList; //NOSONAR
+    protected Collection<Map<String, Object>> _propsList; //NOSONAR
 
-    private boolean _hasFromBeenSet = false; //NOSONAR
-    private boolean _isForConditionOnly = false; //NOSONAR
+    protected boolean _hasFromBeenSet = false; //NOSONAR
+    protected boolean _isForConditionOnly = false; //NOSONAR
 
-    private final BiConsumer<StringBuilder, String> _handlerForNamedParameter; //NOSONAR
+    protected final BiConsumer<StringBuilder, String> _handlerForNamedParameter; //NOSONAR
 
-    private final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
+    protected final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
 
     /**
      * Constructs a new SQLBuilder with the specified naming policy and SQL policy.
@@ -387,7 +387,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param namingPolicy the naming policy for column names, defaults to LOWER_CASE_WITH_UNDERSCORE if null
      * @param sqlPolicy the SQL generation policy, defaults to SQL if null
      */
-    SQLBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
+    protected SQLBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
             logger.error("Too many(" + activeStringBuilderCounter.get()
                     + ") StringBuilder instances are created in SQLBuilder. The method sql()/pair() must be called to release resources and close SQLBuilder");
@@ -419,7 +419,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param namingPolicy the naming policy to apply
      * @return the table name
      */
-    static String getTableName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+    protected static String getTableName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         String[] entityTableNames = classTableNameMap.get(entityClass);
 
         if (entityTableNames == null) {
@@ -458,7 +458,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param entityClass the entity class
      * @return the table alias, or empty string if not defined
      */
-    static String getTableAlias(final Class<?> entityClass) {
+    protected static String getTableAlias(final Class<?> entityClass) {
         String alis = classTableAliasMap.get(entityClass);
 
         if (alis == null) {
@@ -483,7 +483,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param entityClass the entity class
      * @return the table alias
      */
-    static String getTableAlias(final String alias, final Class<?> entityClass) {
+    protected static String getTableAlias(final String alias, final Class<?> entityClass) {
         if (Strings.isNotEmpty(alias)) {
             return alias;
         }
@@ -498,7 +498,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param namingPolicy the naming policy to apply
      * @return the table alias if defined, otherwise the table name
      */
-    static String getTableAliasOrName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+    protected static String getTableAliasOrName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         return getTableAliasOrName(null, entityClass, namingPolicy);
     }
 
@@ -511,7 +511,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param namingPolicy the naming policy to apply
      * @return the table alias if specified or defined, otherwise the table name
      */
-    static String getTableAliasOrName(final String alias, final Class<?> entityClass, final NamingPolicy namingPolicy) {
+    protected static String getTableAliasOrName(final String alias, final Class<?> entityClass, final NamingPolicy namingPolicy) {
         String tableAliasOrName = alias;
 
         if (Strings.isEmpty(tableAliasOrName)) {
@@ -533,7 +533,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return true if the value is null or a number equal to 0, false otherwise
      */
     @Internal
-    static boolean isDefaultIdPropValue(final Object propValue) {
+    protected static boolean isDefaultIdPropValue(final Object propValue) {
         return (propValue == null) || (propValue instanceof Number && (((Number) propValue).longValue() == 0));
     }
 
@@ -551,7 +551,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param entityClass the entity class to analyze
      * @return an array of property name sets categorized by usage
      */
-    static Set<String>[] loadPropNamesByClass(final Class<?> entityClass) {
+    protected static Set<String>[] loadPropNamesByClass(final Class<?> entityClass) {
         Set<String>[] val = defaultPropNamesPool.get(entityClass);
 
         if (val == null) {
@@ -641,7 +641,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param entityClass the entity class
      * @return an immutable set of sub-entity property names
      */
-    static ImmutableSet<String> getSubEntityPropNames(final Class<?> entityClass) {
+    protected static ImmutableSet<String> getSubEntityPropNames(final Class<?> entityClass) {
         ImmutableSet<String> subEntityPropNames = subEntityPropNamesPool.get(entityClass);
         if (subEntityPropNames == null) {
             synchronized (subEntityPropNamesPool) {
@@ -656,7 +656,7 @@ public abstract class SQLBuilder { // NOSONAR
         return subEntityPropNames;
     }
 
-    private static List<String> getSelectTableNames(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames,
+    protected static List<String> getSelectTableNames(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames,
             final NamingPolicy namingPolicy) {
         final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
@@ -781,7 +781,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return a map with property names mapped to question mark expressions
      */
     @Beta
-    static Map<String, Expression> named(final String... propNames) {
+    protected static Map<String, Expression> named(final String... propNames) {
         final Map<String, Expression> m = N.newLinkedHashMap(propNames.length);
 
         for (final String propName : propNames) {
@@ -804,7 +804,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @return a map with property names mapped to question mark expressions
      */
     @Beta
-    static Map<String, Expression> named(final Collection<String> propNames) {
+    protected static Map<String, Expression> named(final Collection<String> propNames) {
         final Map<String, Expression> m = N.newLinkedHashMap(propNames.size());
 
         for (final String propName : propNames) {
@@ -1163,7 +1163,7 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private SQLBuilder from(final Class<?> entityClass, final Collection<String> tableNames) {
+    protected SQLBuilder from(final Class<?> entityClass, final Collection<String> tableNames) {
         if (_entityClass == null) {
             setEntityClass(entityClass);
         }
@@ -1177,7 +1177,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param fromCause
      * @return
      */
-    private SQLBuilder from(final String tableName, final String fromCause) {
+    protected SQLBuilder from(final String tableName, final String fromCause) {
         if (_op != OperationType.QUERY) {
             throw new RuntimeException("Invalid operation: " + _op);
         }
@@ -1308,7 +1308,7 @@ public abstract class SQLBuilder { // NOSONAR
         return this;
     }
 
-    private void addPropColumnMapForAlias(final Class<?> entityClass, final String alias) {
+    protected void addPropColumnMapForAlias(final Class<?> entityClass, final String alias) {
         if (_aliasPropColumnNameMap == null) {
             _aliasPropColumnNameMap = new HashMap<>();
         }
@@ -2528,7 +2528,7 @@ public abstract class SQLBuilder { // NOSONAR
         return this;
     }
 
-    private void checkIfAlreadyCalled(final String op) {
+    protected void checkIfAlreadyCalled(final String op) {
         if (!calledOpSet.add(op)) {
             throw new IllegalStateException("'" + op + "' has already been set. Can not set it again.");
         }
@@ -4050,7 +4050,7 @@ public abstract class SQLBuilder { // NOSONAR
      *
      * @param setForUpdate
      */
-    void init(final boolean setForUpdate) {
+    protected void init(final boolean setForUpdate) {
         // Note: any change, please take a look at: parse(final Class<?> entityClass, final Condition cond) first.
 
         if (!_sb.isEmpty()) {
@@ -4080,7 +4080,7 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private void setEntityClass(final Class<?> entityClass) {
+    protected void setEntityClass(final Class<?> entityClass) {
         _entityClass = entityClass;
 
         if (ClassUtil.isBeanClass(entityClass)) {
@@ -4097,7 +4097,7 @@ public abstract class SQLBuilder { // NOSONAR
      *
      * @param propValue the new parameter for SQL
      */
-    private void setParameterForSQL(final Object propValue) {
+    protected void setParameterForSQL(final Object propValue) {
         if (CF.QME.equals(propValue)) {
             _sb.append(SK._QUESTION_MARK);
         } else if (propValue instanceof Condition) {
@@ -4112,7 +4112,7 @@ public abstract class SQLBuilder { // NOSONAR
      *
      * @param propValue the new parameter for raw SQL
      */
-    private void setParameterForRawSQL(final Object propValue) {
+    protected void setParameterForRawSQL(final Object propValue) {
         if (CF.QME.equals(propValue)) {
             _sb.append(SK._QUESTION_MARK);
         } else if (propValue instanceof Condition) {
@@ -4130,7 +4130,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propName
      * @param propValue
      */
-    private void setParameterForNamedSQL(final String propName, final Object propValue) {
+    protected void setParameterForNamedSQL(final String propName, final Object propValue) {
         if (CF.QME.equals(propValue)) {
             _handlerForNamedParameter.accept(_sb, propName);
         } else if (propValue instanceof Condition) {
@@ -4148,7 +4148,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propName
      * @param propValue
      */
-    private void setParameterForIbatisNamedSQL(final String propName, final Object propValue) {
+    protected void setParameterForIbatisNamedSQL(final String propName, final Object propValue) {
         if (CF.QME.equals(propValue)) {
             _sb.append("#{");
             _sb.append(propName);
@@ -4170,7 +4170,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propName
      * @param propValue
      */
-    private void setParameter(final String propName, final Object propValue) {
+    protected void setParameter(final String propName, final Object propValue) {
         switch (_sqlPolicy) {
             case SQL: {
                 setParameterForSQL(propValue);
@@ -4206,7 +4206,7 @@ public abstract class SQLBuilder { // NOSONAR
      *
      * @param props
      */
-    private void appendInsertProps(final Map<String, Object> props) {
+    protected void appendInsertProps(final Map<String, Object> props) {
         switch (_sqlPolicy) {
             case SQL: {
                 int i = 0;
@@ -4269,7 +4269,7 @@ public abstract class SQLBuilder { // NOSONAR
      *
      * @param cond
      */
-    private void appendCondition(final Condition cond) {
+    protected void appendCondition(final Condition cond) {
         //    if (sb.charAt(sb.length() - 1) != _SPACE) {
         //        sb.append(_SPACE);
         //    }
@@ -4568,7 +4568,7 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private void appendStringExpr(final String expr, final boolean isFromAppendColumn) {
+    protected void appendStringExpr(final String expr, final boolean isFromAppendColumn) {
         // TODO performance improvement.
 
         if (expr.length() < 16) {
@@ -4599,13 +4599,13 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private void appendColumnName(final String propName) {
+    protected void appendColumnName(final String propName) {
         appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, propName, null, false, null, false, true);
     }
 
-    private void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo, final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap,
-            final String tableAlias, final String propName, final String propAlias, final boolean withClassAlias, final String classAlias,
-            final boolean isForSelect, boolean quotePropAlias) {
+    protected void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo,
+            final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String tableAlias, final String propName, final String propAlias,
+            final boolean withClassAlias, final String classAlias, final boolean isForSelect, boolean quotePropAlias) {
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
@@ -4790,7 +4790,7 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private static boolean hasSubEntityToInclude(final Class<?> entityClass, final boolean includeSubEntityProperties) {
+    protected static boolean hasSubEntityToInclude(final Class<?> entityClass, final boolean includeSubEntityProperties) {
         return includeSubEntityProperties && N.notEmpty(getSubEntityPropNames(entityClass));
     }
 
@@ -4800,7 +4800,7 @@ public abstract class SQLBuilder { // NOSONAR
      * @param propOrColumnNames
      * @return true, if is subquery
      */
-    private static boolean isSubQuery(final String... propOrColumnNames) {
+    protected static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
             int index = SQLParser.indexWord(propOrColumnNames[0], SK.SELECT, 0, false);
 
@@ -4814,7 +4814,7 @@ public abstract class SQLBuilder { // NOSONAR
         return false;
     }
 
-    static String formalizeColumnName(final String word, final NamingPolicy namingPolicy) {
+    protected static String formalizeColumnName(final String word, final NamingPolicy namingPolicy) {
         if (sqlKeyWords.contains(word) || namingPolicy == NamingPolicy.NO_CHANGE) {
             return word;
         }
@@ -4824,7 +4824,7 @@ public abstract class SQLBuilder { // NOSONAR
         return namingPolicy.convert(word);
     }
 
-    private String formalizeColumnName(final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String propName) {
+    protected String formalizeColumnName(final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String propName) {
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
@@ -4860,7 +4860,7 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private static void parseInsertEntity(final SQLBuilder instance, final Object entity, final Set<String> excludedPropNames) {
+    protected static void parseInsertEntity(final SQLBuilder instance, final Object entity, final Set<String> excludedPropNames) {
         if (entity instanceof String) {
             instance._propOrColumnNames = Array.asList((String) entity);
         } else if (entity instanceof Map) {
@@ -4892,7 +4892,7 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private static List<Map<String, Object>> toInsertPropsList(final Collection<?> propsList) {
+    protected static List<Map<String, Object>> toInsertPropsList(final Collection<?> propsList) {
         final Optional<?> first = N.firstNonNull(propsList);
 
         if (first.isPresent() && first.get() instanceof Map) {
@@ -4933,7 +4933,7 @@ public abstract class SQLBuilder { // NOSONAR
         return newPropsList;
     }
 
-    static void checkMultiSelects(final List<Selection> multiSelects) {
+    protected static void checkMultiSelects(final List<Selection> multiSelects) {
         N.checkArgNotEmpty(multiSelects, "multiSelects");
 
         for (final Selection selection : multiSelects) {
@@ -4941,11 +4941,11 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+    protected static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         return QueryUtil.prop2ColumnNameMap(entityClass, namingPolicy);
     }
 
-    enum SQLPolicy {
+    protected enum SQLPolicy {
         SQL, PARAMETERIZED_SQL, NAMED_SQL, IBATIS_SQL
     }
 
@@ -4970,7 +4970,7 @@ public abstract class SQLBuilder { // NOSONAR
             super(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, SQLPolicy.SQL);
         }
 
-        static SCSB createInstance() {
+        protected static SCSB createInstance() {
             return new SCSB();
         }
 
@@ -5891,7 +5891,7 @@ public abstract class SQLBuilder { // NOSONAR
          * 
          * @return a new ACSB instance
          */
-        static ACSB createInstance() {
+        protected static ACSB createInstance() {
             return new ACSB();
         }
 
@@ -7056,7 +7056,7 @@ public abstract class SQLBuilder { // NOSONAR
             super(NamingPolicy.LOWER_CAMEL_CASE, SQLPolicy.SQL);
         }
 
-        static LCSB createInstance() {
+        protected static LCSB createInstance() {
             return new LCSB();
         }
 
@@ -8169,7 +8169,7 @@ public abstract class SQLBuilder { // NOSONAR
             super(NamingPolicy.NO_CHANGE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
-        static PSB createInstance() {
+        protected static PSB createInstance() {
             return new PSB();
         }
 
@@ -9367,7 +9367,7 @@ public abstract class SQLBuilder { // NOSONAR
             super(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
-        static PSC createInstance() {
+        protected static PSC createInstance() {
             return new PSC();
         }
 
@@ -10427,7 +10427,7 @@ public abstract class SQLBuilder { // NOSONAR
             super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
-        static PAC createInstance() {
+        protected static PAC createInstance() {
             return new PAC();
         }
 
@@ -11676,7 +11676,7 @@ public abstract class SQLBuilder { // NOSONAR
             super(NamingPolicy.LOWER_CAMEL_CASE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
-        static PLC createInstance() {
+        protected static PLC createInstance() {
             return new PLC();
         }
 
@@ -12669,7 +12669,7 @@ public abstract class SQLBuilder { // NOSONAR
             return true;
         }
 
-        static NSB createInstance() {
+        protected static NSB createInstance() {
             return new NSB();
         }
 
@@ -13899,7 +13899,7 @@ public abstract class SQLBuilder { // NOSONAR
             return true;
         }
 
-        static NSC createInstance() {
+        protected static NSC createInstance() {
             return new NSC();
         }
 
@@ -15011,7 +15011,7 @@ public abstract class SQLBuilder { // NOSONAR
          * 
          * @return a new NAC instance
          */
-        static NAC createInstance() {
+        protected static NAC createInstance() {
             return new NAC();
         }
 
@@ -15848,7 +15848,7 @@ public abstract class SQLBuilder { // NOSONAR
          * 
          * @return a new NLC instance
          */
-        static NLC createInstance() {
+        protected static NLC createInstance() {
             return new NLC();
         }
 
@@ -16668,7 +16668,7 @@ public abstract class SQLBuilder { // NOSONAR
             super(NamingPolicy.NO_CHANGE, SQLPolicy.IBATIS_SQL);
         }
 
-        static MSB createInstance() {
+        protected static MSB createInstance() {
             return new MSB();
         }
 
@@ -17763,7 +17763,7 @@ public abstract class SQLBuilder { // NOSONAR
          * 
          * @return a new MSC SQLBuilder instance
          */
-        static MSC createInstance() {
+        protected static MSC createInstance() {
             return new MSC();
         }
 
@@ -18842,7 +18842,7 @@ public abstract class SQLBuilder { // NOSONAR
          * 
          * @return a new MAC SQL builder instance
          */
-        static MAC createInstance() {
+        protected static MAC createInstance() {
             return new MAC();
         }
 
@@ -19958,7 +19958,7 @@ public abstract class SQLBuilder { // NOSONAR
          * 
          * @return a new MLC SQL builder instance
          */
-        static MLC createInstance() {
+        protected static MLC createInstance() {
             return new MLC();
         }
 
@@ -21175,10 +21175,10 @@ public abstract class SQLBuilder { // NOSONAR
         }
     }
 
-    private static final BiConsumer<StringBuilder, String> defaultHandlerForNamedParameter = (sb, propName) -> sb.append(":").append(propName);
+    protected static final BiConsumer<StringBuilder, String> defaultHandlerForNamedParameter = (sb, propName) -> sb.append(":").append(propName);
     // private static final BiConsumer<StringBuilder, String> mybatisHandlerForNamedParameter = (sb, propName) -> sb.append("#{").append(propName).append("}");
 
-    private static final ThreadLocal<BiConsumer<StringBuilder, String>> handlerForNamedParameter_TL = ThreadLocal //NOSONAR
+    protected static final ThreadLocal<BiConsumer<StringBuilder, String>> handlerForNamedParameter_TL = ThreadLocal //NOSONAR
             .withInitial(() -> defaultHandlerForNamedParameter);
 
     /**
@@ -21222,7 +21222,7 @@ public abstract class SQLBuilder { // NOSONAR
         handlerForNamedParameter_TL.set(defaultHandlerForNamedParameter);
     }
 
-    private static String getFromClause(final List<Selection> multiSelects, final NamingPolicy namingPolicy) {
+    protected static String getFromClause(final List<Selection> multiSelects, final NamingPolicy namingPolicy) {
         final StringBuilder sb = Objectory.createStringBuilder();
         int idx = 0;
 
