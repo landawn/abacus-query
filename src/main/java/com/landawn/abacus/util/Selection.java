@@ -199,7 +199,7 @@ public final class Selection {
         }
 
         /**
-         * Applies the built selections to a SQLBuilder function and returns the resulting SQLBuilder.
+         * Applies the built selections to the SQLBuilder function and returns the resulting SQLBuilder.
          * This method provides a convenient way to integrate the selections with SQLBuilder methods.
          * 
          * <p>Example usage:</p>

@@ -22,7 +22,7 @@ import com.landawn.abacus.util.N;
 /**
  * Represents a USING clause in SQL JOIN operations.
  * 
- * <p>The USING clause is a shorthand for joining tables when the join column names 
+ * <p>The USING clause is shorthand for joining tables when the join column names
  * are identical in both tables. It automatically performs an equi-join on the specified 
  * columns and eliminates duplicate columns in the result set.</p>
  * 

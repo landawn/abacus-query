@@ -362,7 +362,7 @@ public final class QueryUtil {
      * <p>Example usage:</p>
      * <pre>{@code
      * Collection<String> props = QueryUtil.getUpdatePropNames(User.class, Set.of("createdTime"));
-     * // Returns updateable properties like ["name", "email", "lastModified"] excluding ID and createdTime
+     * // Returns updatable properties like ["name", "email", "lastModified"] excluding ID and createdTime
      * }</pre>
      *
      * @param entityClass the entity class to analyze

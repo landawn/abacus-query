@@ -30,7 +30,6 @@ package com.landawn.abacus.util;
  * }</pre>
  * 
  * @see SQLBuilder
- * @see QueryBean.OrderByBean
  */
 public enum SortDirection {
 
