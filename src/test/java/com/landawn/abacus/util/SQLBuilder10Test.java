@@ -33,13 +33,13 @@ import com.landawn.abacus.condition.Criteria;
 import com.landawn.abacus.condition.Expression;
 import com.landawn.abacus.condition.Having;
 import com.landawn.abacus.condition.Where;
+import com.landawn.abacus.util.AbstractQueryBuilder.SP;
 import com.landawn.abacus.util.SQLBuilder.NAC;
 import com.landawn.abacus.util.SQLBuilder.NLC;
 import com.landawn.abacus.util.SQLBuilder.NSC;
 import com.landawn.abacus.util.SQLBuilder.PAC;
 import com.landawn.abacus.util.SQLBuilder.PLC;
 import com.landawn.abacus.util.SQLBuilder.PSC;
-import com.landawn.abacus.util.SQLBuilder.SP;
 import com.landawn.abacus.util.Tuple.Tuple2;
 
 public class SQLBuilder10Test extends TestBase {
@@ -376,7 +376,7 @@ public class SQLBuilder10Test extends TestBase {
         assertEquals("SELECT * FROM users", sql);
 
         // Multiple tables
-        sql = PSC.select("*").from("users", "orders").sql();
+        sql = PSC.select("*").from(Array.of("users", "orders")).sql();
         assertEquals("SELECT * FROM users, orders", sql);
 
         // Collection of tables
@@ -845,14 +845,14 @@ public class SQLBuilder10Test extends TestBase {
     public void testPair() {
         SQLBuilder.SP sp = PSC.select("*").from("account").where(CF.eq("status", "ACTIVE")).build();
 
-        assertEquals("SELECT * FROM account WHERE status = ?", sp.sql);
+        assertEquals("SELECT * FROM account WHERE status = ?", sp.query);
         assertEquals(1, sp.parameters.size());
         assertEquals("ACTIVE", sp.parameters.get(0));
     }
 
     @Test
     public void testApplyFunction() throws Exception {
-        List<String> result = PSC.select("*").from("account").where(CF.eq("status", "ACTIVE")).apply(sp -> Arrays.asList(sp.sql, sp.parameters.toString()));
+        List<String> result = PSC.select("*").from("account").where(CF.eq("status", "ACTIVE")).apply(sp -> Arrays.asList(sp.query, sp.parameters.toString()));
 
         assertEquals(2, result.size());
         assertEquals("SELECT * FROM account WHERE status = ?", result.get(0));

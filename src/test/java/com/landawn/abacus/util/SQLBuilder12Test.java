@@ -29,11 +29,11 @@ import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.annotation.Transient;
 import com.landawn.abacus.condition.Condition;
 import com.landawn.abacus.condition.ConditionFactory;
+import com.landawn.abacus.util.AbstractQueryBuilder.SP;
 import com.landawn.abacus.util.SQLBuilder.PAC;
 import com.landawn.abacus.util.SQLBuilder.PLC;
 import com.landawn.abacus.util.SQLBuilder.PSB;
 import com.landawn.abacus.util.SQLBuilder.PSC;
-import com.landawn.abacus.util.SQLBuilder.SP;
 
 /**
  * Unit tests for SQLBuilder class
@@ -720,8 +720,8 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("account").build();
-            assertTrue(pair.sql.contains("first_name"));
-            assertTrue(pair.sql.contains("last_name"));
+            assertTrue(pair.query.contains("first_name"));
+            assertTrue(pair.query.contains("last_name"));
             assertEquals(2, pair.parameters.size());
         }
 
@@ -734,10 +734,10 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("account").build();
-            assertTrue(pair.sql.contains("first_name"));
-            assertTrue(pair.sql.contains("last_name"));
-            assertTrue(pair.sql.contains("email"));
-            assertFalse(pair.sql.contains("created_date")); // ReadOnly field should be excluded
+            assertTrue(pair.query.contains("first_name"));
+            assertTrue(pair.query.contains("last_name"));
+            assertTrue(pair.query.contains("email"));
+            assertFalse(pair.query.contains("created_date")); // ReadOnly field should be excluded
         }
 
         @Test
@@ -750,9 +750,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("account").build();
-            assertTrue(pair.sql.contains("first_name"));
-            assertTrue(pair.sql.contains("last_name"));
-            assertFalse(pair.sql.contains("email"));
+            assertTrue(pair.query.contains("first_name"));
+            assertTrue(pair.query.contains("last_name"));
+            assertFalse(pair.query.contains("email"));
         }
 
         @Test
@@ -812,9 +812,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("account").build();
-            assertTrue(pair.sql.contains("VALUES"));
-            assertTrue(pair.sql.contains("(?, ?)"));
-            assertTrue(pair.sql.contains(", (?, ?)"));
+            assertTrue(pair.query.contains("VALUES"));
+            assertTrue(pair.query.contains("(?, ?)"));
+            assertTrue(pair.query.contains(", (?, ?)"));
             assertEquals(4, pair.parameters.size()); // 2 accounts * 2 fields each
         }
 
@@ -1204,8 +1204,8 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("USER_ACCOUNT").build();
-            assertTrue(pair.sql.contains("FIRST_NAME"));
-            assertTrue(pair.sql.contains("LAST_NAME"));
+            assertTrue(pair.query.contains("FIRST_NAME"));
+            assertTrue(pair.query.contains("LAST_NAME"));
             assertEquals(2, pair.parameters.size());
         }
 
@@ -1218,10 +1218,10 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("USER_ACCOUNT").build();
-            assertTrue(pair.sql.contains("FIRST_NAME"));
-            assertTrue(pair.sql.contains("LAST_NAME"));
-            assertTrue(pair.sql.contains("EMAIL_ADDRESS"));
-            assertFalse(pair.sql.contains("CREATED_DATE")); // ReadOnly
+            assertTrue(pair.query.contains("FIRST_NAME"));
+            assertTrue(pair.query.contains("LAST_NAME"));
+            assertTrue(pair.query.contains("EMAIL_ADDRESS"));
+            assertFalse(pair.query.contains("CREATED_DATE")); // ReadOnly
         }
 
         @Test
@@ -1234,9 +1234,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("USER_ACCOUNT").build();
-            assertTrue(pair.sql.contains("FIRST_NAME"));
-            assertTrue(pair.sql.contains("LAST_NAME"));
-            assertFalse(pair.sql.contains("EMAIL_ADDRESS"));
+            assertTrue(pair.query.contains("FIRST_NAME"));
+            assertTrue(pair.query.contains("LAST_NAME"));
+            assertFalse(pair.query.contains("EMAIL_ADDRESS"));
         }
 
         @Test
@@ -1270,9 +1270,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("USER_ACCOUNT").build();
-            assertTrue(pair.sql.contains("VALUES"));
-            assertTrue(pair.sql.contains("(?, ?)"));
-            assertTrue(pair.sql.contains(", (?, ?)"));
+            assertTrue(pair.query.contains("VALUES"));
+            assertTrue(pair.query.contains("(?, ?)"));
+            assertTrue(pair.query.contains(", (?, ?)"));
         }
 
         @Test
@@ -1627,9 +1627,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("userProfile").build();
-            assertTrue(pair.sql.contains("firstName"));
-            assertTrue(pair.sql.contains("lastName"));
-            assertTrue(pair.sql.contains("isActive"));
+            assertTrue(pair.query.contains("firstName"));
+            assertTrue(pair.query.contains("lastName"));
+            assertTrue(pair.query.contains("isActive"));
             assertEquals(3, pair.parameters.size());
         }
 
@@ -1643,11 +1643,11 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("userProfile").build();
-            assertTrue(pair.sql.contains("firstName"));
-            assertTrue(pair.sql.contains("lastName"));
-            assertTrue(pair.sql.contains("emailAddress"));
-            assertTrue(pair.sql.contains("isActive"));
-            assertFalse(pair.sql.contains("lastLoginDate")); // ReadOnly
+            assertTrue(pair.query.contains("firstName"));
+            assertTrue(pair.query.contains("lastName"));
+            assertTrue(pair.query.contains("emailAddress"));
+            assertTrue(pair.query.contains("isActive"));
+            assertFalse(pair.query.contains("lastLoginDate")); // ReadOnly
         }
 
         @Test
@@ -1660,9 +1660,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("userProfile").build();
-            assertTrue(pair.sql.contains("firstName"));
-            assertTrue(pair.sql.contains("lastName"));
-            assertFalse(pair.sql.contains("emailAddress"));
+            assertTrue(pair.query.contains("firstName"));
+            assertTrue(pair.query.contains("lastName"));
+            assertFalse(pair.query.contains("emailAddress"));
         }
 
         @Test
@@ -1697,9 +1697,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("userProfile").build();
-            assertTrue(pair.sql.contains("VALUES"));
-            assertTrue(pair.sql.contains("(?, ?)"));
-            assertTrue(pair.sql.contains(", (?, ?)"));
+            assertTrue(pair.query.contains("VALUES"));
+            assertTrue(pair.query.contains("(?, ?)"));
+            assertTrue(pair.query.contains(", (?, ?)"));
         }
 
         @Test
