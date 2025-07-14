@@ -3494,8 +3494,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Generates the final SQL query string and releases resources.
      * This method should be called only once. After calling this method, the SQLBuilder instance cannot be used again.
-     *
-     * @return the generated SQL query string
      * 
      * <pre>{@code
      * // Example usage:
@@ -3505,6 +3503,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .query();
      * // sql contains: "SELECT * FROM users WHERE status = ?"
      * }</pre>
+     *
+     * @return the generated SQL query string
      */
     public String query() {
         if (_sb == null) {

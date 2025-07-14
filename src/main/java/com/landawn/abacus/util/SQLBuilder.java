@@ -125,9 +125,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     /**
      * Generates the final SQL string from this builder.
      * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
-     *
-     * @return the generated SQL string
-     * @throws RuntimeException if the builder has already been closed
+     * 
+     * <br />
+     * This method is same as {@link #query()}.
      * 
      * <pre>{@code
      * // Example usage:
@@ -136,7 +136,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      *                 .where(CF.gt("age", 18))
      *                 .sql();
      * // Result: SELECT id, name FROM account WHERE age > ?
-     * }</pre>
+     * }</pre> 
+     *
+     * @return the generated SQL string
+     * @throws RuntimeException if the builder has already been closed
+     * @see #query()
      */
     public String sql() {
         return query();
@@ -444,40 +448,69 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
     /**
      * Un-parameterized SQL builder with snake case (lower case with underscore) field/column naming strategy.
-     * This builder generates SQL with actual values embedded directly in the SQL string (not recommended for production use).
-     *
-     * For example:
-     * <pre>
-     * <code>
+     * 
+     * <p>This builder generates SQL with actual values embedded directly in the SQL string. Property names
+     * are automatically converted from camelCase to snake_case for database column names.</p>
+     * 
+     * <p>Features:</p>
+     * <ul>
+     *   <li>Converts "firstName" to "first_name"</li>
+     *   <li>Generates non-parameterized SQL (values embedded directly)</li>
+     *   <li>Suitable for debugging or read-only queries</li>
+     * </ul>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
      * SCSB.select("firstName", "lastName").from("account").where(CF.eq("id", 1)).sql();
      * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = 1
-     * </code>
-     * </pre>
+     * }</pre>
      *
-     * @deprecated {@code PSC or NSC} is preferred for better security and performance
+     * @deprecated {@code PSC or NSC} is preferred for better security and performance. 
+     *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
     public static class SCSB extends SQLBuilder {
 
+        /**
+         * Constructs a new SCSB instance with snake_case naming policy and non-parameterized SQL policy.
+         * 
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
+         */
         SCSB() {
             super(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, SQLPolicy.SQL);
         }
 
+        /**
+         * Creates a new instance of SCSB.
+         * 
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * 
+         * @return a new SCSB instance
+         */
         protected static SCSB createInstance() {
             return new SCSB();
         }
 
         /**
          * Creates an INSERT SQL builder for a single column.
+         * 
+         * <p>This method initializes an INSERT statement for one column. The column name will be
+         * converted according to the snake_case naming policy.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.insert("firstName")
+         *                  .into("account")
+         *                  .values("John")
+         *                  .sql();
+         * // Output: INSERT INTO account (first_name) VALUES ('John')
+         * }</pre>
          *
          * @param expr the column name or expression
          * @return a new SQLBuilder instance for INSERT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * String sql = SCSB.insert("name").into("account").sql();
-         * // Output: INSERT INTO account (name)
-         * }</pre>
+         * @throws IllegalArgumentException if expr is null or empty
          */
         public static SQLBuilder insert(final String expr) {
             N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
@@ -487,17 +520,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for multiple columns.
+         * 
+         * <p>This method initializes an INSERT statement for multiple columns. All column names
+         * will be converted according to the snake_case naming policy.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.insert("firstName", "lastName", "email")
+         *                  .into("account")
+         *                  .values("John", "Doe", "john@example.com")
+         *                  .sql();
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@example.com')
+         * }</pre>
          *
          * @param propOrColumnNames the column names to insert
          * @return a new SQLBuilder instance for INSERT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * String sql = SCSB.insert("name", "email", "status")
-         *                  .into("account")
-         *                  .sql();
-         * // Output: INSERT INTO account (name, email, status)
-         * }</pre>
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -512,16 +550,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for a collection of columns.
+         * 
+         * <p>This method is useful when column names are determined dynamically. The collection
+         * can contain property names that will be converted to column names.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * List<String> columns = Arrays.asList("firstName", "lastName", "email");
+         * String sql = SCSB.insert(columns)
+         *                  .into("account")
+         *                  .values("John", "Doe", "john@example.com")
+         *                  .sql();
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@example.com')
+         * }</pre>
          *
          * @param propOrColumnNames the collection of column names to insert
          * @return a new SQLBuilder instance for INSERT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * List<String> columns = Arrays.asList("name", "email", "status");
-         * String sql = SCSB.insert(columns).into("account").sql();
-         * // Output: INSERT INTO account (name, email, status)
-         * }</pre>
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -536,16 +581,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder with column-value mappings.
+         * 
+         * <p>This method allows specifying both column names and their values together. The map keys
+         * represent column names (which will be converted to snake_case) and values are the data
+         * to insert.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Map<String, Object> props = N.asMap("firstName", "John", "age", 25);
+         * String sql = SCSB.insert(props).into("account").sql();
+         * // Output: INSERT INTO account (first_name, age) VALUES ('John', 25)
+         * }</pre>
          *
          * @param props map of column names to values
          * @return a new SQLBuilder instance for INSERT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * Map<String, Object> props = N.asMap("name", "John", "age", 25);
-         * String sql = SCSB.insert(props).into("account").sql();
-         * // Output: INSERT INTO account (name, age) VALUES ('John', 25)
-         * }</pre>
+         * @throws IllegalArgumentException if props is null or empty
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
             N.checkArgNotEmpty(props, INSERTION_PART_MSG);
@@ -560,17 +610,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder from an entity object.
-         * Properties marked with @Transient, @ReadOnly, or similar annotations are excluded.
+         * 
+         * <p>This method extracts values from the entity's properties and creates an INSERT statement.
+         * Properties marked with @Transient, @ReadOnly, or similar annotations are automatically excluded.
+         * Property names are converted to snake_case column names.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Account account = new Account("John", "john@email.com");
+         * String sql = SCSB.insert(account).into("account").sql();
+         * // Output: INSERT INTO account (first_name, email) VALUES ('John', 'john@email.com')
+         * }</pre>
          *
          * @param entity the entity object to insert
          * @return a new SQLBuilder instance for INSERT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * Account account = new Account("John", "john@email.com");
-         * String sql = SCSB.insert(account).into("account").sql();
-         * // Output: INSERT INTO account (name, email) VALUES ('John', 'john@email.com')
-         * }</pre>
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity) {
             return insert(entity, null);
@@ -578,17 +632,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder from an entity object, excluding specified properties.
+         * 
+         * <p>This method allows selective insertion of entity properties. In addition to properties
+         * automatically excluded by annotations, you can specify additional properties to exclude.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Account account = new Account("John", "john@email.com");
+         * Set<String> excluded = N.asSet("createdDate");
+         * String sql = SCSB.insert(account, excluded).into("account").sql();
+         * // Output: INSERT INTO account (first_name, email) VALUES ('John', 'john@email.com')
+         * }</pre>
          *
          * @param entity the entity object to insert
          * @param excludedPropNames properties to exclude from the insert
          * @return a new SQLBuilder instance for INSERT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * Account account = new Account("John", "john@email.com");
-         * Set<String> excluded = N.asSet("createdDate");
-         * String sql = SCSB.insert(account, excluded).into("account").sql();
-         * }</pre>
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entity, INSERTION_PART_MSG);
@@ -605,16 +664,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder from an entity class.
-         * Generates INSERT statement for all insertable properties of the class.
+         * 
+         * <p>This method generates an INSERT template for all insertable properties of the class.
+         * Properties marked with @ReadOnly, @ReadOnlyId, or @Transient are automatically excluded.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.insert(Account.class).into("account").sql();
+         * // Output: INSERT INTO account (first_name, last_name, email, status)
+         * }</pre>
          *
          * @param entityClass the entity class
          * @return a new SQLBuilder instance for INSERT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * String sql = SCSB.insert(Account.class).into("account").sql();
-         * // Output: INSERT INTO account (name, email, status, created_date)
-         * }</pre>
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass) {
             return insert(entityClass, null);
@@ -622,10 +684,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder from an entity class, excluding specified properties.
+         * 
+         * <p>This method generates an INSERT template excluding both annotation-based exclusions
+         * and the specified properties. Useful for creating templates where certain fields
+         * are populated by database defaults or triggers.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("id", "createdDate");
+         * String sql = SCSB.insert(Account.class, excluded).into("account").sql();
+         * // Output: INSERT INTO account (first_name, last_name, email)
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param excludedPropNames properties to exclude from the insert
          * @return a new SQLBuilder instance for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, INSERTION_PART_MSG);
@@ -641,15 +715,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT INTO SQL builder for an entity class.
-         * Convenience method that combines insert() and into() operations.
+         * 
+         * <p>This convenience method combines insert() and into() operations. The table name
+         * is derived from the entity class using the naming policy.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.insertInto(Account.class)
+         *                  .values("John", "Doe", "john@example.com")
+         *                  .sql();
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@example.com')
+         * }</pre>
          *
          * @param entityClass the entity class
          * @return a new SQLBuilder instance for INSERT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * String sql = SCSB.insertInto(Account.class).values(...).sql();
-         * }</pre>
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass) {
             return insertInto(entityClass, null);
@@ -657,10 +737,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT INTO SQL builder for an entity class, excluding specified properties.
+         * 
+         * <p>This convenience method combines insert() and into() operations with property exclusion.
+         * The table name is derived from the entity class.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("id");
+         * String sql = SCSB.insertInto(Account.class, excluded)
+         *                  .values("John", "Doe", "john@example.com")
+         *                  .sql();
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@example.com')
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param excludedPropNames properties to exclude from the insert
          * @return a new SQLBuilder instance for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return insert(entityClass, excludedPropNames).into(entityClass);
@@ -668,20 +761,25 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a batch INSERT SQL builder for multiple entities or property maps.
-         * Generates MySQL-style batch insert SQL.
-         *
-         * @param propsList list of entities or property maps to insert
-         * @return a new SQLBuilder instance for batch INSERT operation
          * 
+         * <p>This method generates MySQL-style batch insert SQL for efficient bulk inserts.
+         * All entities or maps in the collection must have the same structure (same properties).</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * List<Account> accounts = Arrays.asList(
          *     new Account("John", "john@email.com"),
          *     new Account("Jane", "jane@email.com")
          * );
          * String sql = SCSB.batchInsert(accounts).into("account").sql();
-         * // Output: INSERT INTO account (name, email) VALUES ('John', 'john@email.com'), ('Jane', 'jane@email.com')
+         * // Output: INSERT INTO account (first_name, email) VALUES ('John', 'john@email.com'), ('Jane', 'jane@email.com')
          * }</pre>
+         *
+         * @param propsList list of entities or property maps to insert
+         * @return a new SQLBuilder instance for batch INSERT operation
+         * @throws IllegalArgumentException if propsList is null or empty
+         * 
+         * @apiNote This is a beta feature and may be subject to change
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -703,18 +801,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for a table.
-         *
-         * @param tableName the table name to update
-         * @return a new SQLBuilder instance for UPDATE operation
          * 
+         * <p>This method starts building an UPDATE statement for the specified table.
+         * The SET clause should be added using the set() method.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.update("account")
          *                  .set("status", "'ACTIVE'")
          *                  .where(CF.eq("id", 1))
          *                  .sql();
          * // Output: UPDATE account SET status = 'ACTIVE' WHERE id = 1
          * }</pre>
+         *
+         * @param tableName the table name to update
+         * @return a new SQLBuilder instance for UPDATE operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder update(final String tableName) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -729,11 +831,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for a table with entity class context.
-         * The entity class provides property-to-column name mapping.
+         * 
+         * <p>This method provides entity class information for property-to-column name mapping
+         * when building the UPDATE statement.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.update("account", Account.class)
+         *                  .set("firstName", "'Jane'")
+         *                  .where(CF.eq("id", 1))
+         *                  .sql();
+         * // Output: UPDATE account SET first_name = 'Jane' WHERE id = 1
+         * }</pre>
          *
          * @param tableName the table name to update
          * @param entityClass the entity class for property mapping
          * @return a new SQLBuilder instance for UPDATE operation
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -750,18 +864,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class.
-         * The table name is derived from the entity class.
-         *
-         * @param entityClass the entity class
-         * @return a new SQLBuilder instance for UPDATE operation
          * 
+         * <p>This method derives the table name from the entity class and includes all
+         * updatable properties. Properties marked with @NonUpdatable or @ReadOnly are excluded.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.update(Account.class)
          *                  .set("status", "'INACTIVE'")
          *                  .where(CF.lt("lastLogin", "2023-01-01"))
          *                  .sql();
+         * // Output: UPDATE account SET status = 'INACTIVE' WHERE last_login < '2023-01-01'
          * }</pre>
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for UPDATE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass) {
             return update(entityClass, null);
@@ -769,11 +887,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class, excluding specified properties.
-         * Properties marked with @NonUpdatable, @ReadOnly, etc. are automatically excluded.
+         * 
+         * <p>This method allows additional property exclusions beyond those marked with
+         * annotations. Useful for partial updates or when certain fields should not be modified.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("email", "createdDate");
+         * String sql = SCSB.update(Account.class, excluded)
+         *                  .set("status", "'ACTIVE'")
+         *                  .where(CF.eq("id", 1))
+         *                  .sql();
+         * // Output: UPDATE account SET status = 'ACTIVE' WHERE id = 1
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param excludedPropNames additional properties to exclude from updates
          * @return a new SQLBuilder instance for UPDATE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, UPDATE_PART_MSG);
@@ -790,17 +921,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a DELETE FROM SQL builder for a table.
-         *
-         * @param tableName the table name to delete from
-         * @return a new SQLBuilder instance for DELETE operation
          * 
+         * <p>This method starts building a DELETE statement for the specified table.
+         * A WHERE clause should typically be added to avoid deleting all rows.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.deleteFrom("account")
          *                  .where(CF.eq("status", "'DELETED'"))
          *                  .sql();
          * // Output: DELETE FROM account WHERE status = 'DELETED'
          * }</pre>
+         *
+         * @param tableName the table name to delete from
+         * @return a new SQLBuilder instance for DELETE operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder deleteFrom(final String tableName) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -815,10 +950,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a DELETE FROM SQL builder for a table with entity class context.
+         * 
+         * <p>This method provides entity class information for property-to-column name mapping
+         * in the WHERE clause of the DELETE statement.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.deleteFrom("account", Account.class)
+         *                  .where(CF.eq("status", "'INACTIVE'"))
+         *                  .sql();
+         * // Output: DELETE FROM account WHERE status = 'INACTIVE'
+         * }</pre>
          *
          * @param tableName the table name to delete from
          * @param entityClass the entity class for property mapping
          * @return a new SQLBuilder instance for DELETE operation
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -835,20 +982,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a DELETE FROM SQL builder for an entity class.
-         * The table name is derived from the entity class.
-         *
-         * @param entityClass the entity class
-         * @return a new SQLBuilder instance for DELETE operation
          * 
+         * <p>This method derives the table name from the entity class using the naming policy.
+         * Always add a WHERE clause to avoid accidentally deleting all rows.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.deleteFrom(Account.class)
          *                  .where(CF.and(
          *                      CF.eq("status", "'INACTIVE'"),
          *                      CF.lt("lastLogin", "2022-01-01")
          *                  ))
          *                  .sql();
+         * // Output: DELETE FROM account WHERE status = 'INACTIVE' AND last_login < '2022-01-01'
          * }</pre>
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for DELETE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder deleteFrom(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, DELETION_PART_MSG);
@@ -864,17 +1015,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder with a custom select expression.
-         *
-         * @param selectPart the select expression (e.g., "COUNT(*)", "DISTINCT name")
-         * @return a new SQLBuilder instance for SELECT operation
          * 
+         * <p>This method allows complex SELECT expressions including aggregate functions,
+         * calculated columns, or any valid SQL select expression.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.select("COUNT(DISTINCT customer_id)")
          *                  .from("orders")
          *                  .where(CF.between("order_date", "2023-01-01", "2023-12-31"))
          *                  .sql();
+         * // Output: SELECT COUNT(DISTINCT customer_id) FROM orders WHERE order_date BETWEEN '2023-01-01' AND '2023-12-31'
          * }</pre>
+         *
+         * @param selectPart the select expression (e.g., "COUNT(*)", "DISTINCT name")
+         * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if selectPart is null or empty
          */
         public static SQLBuilder select(final String selectPart) {
             N.checkArgNotEmpty(selectPart, SELECTION_PART_MSG);
@@ -888,18 +1044,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for multiple columns.
-         *
-         * @param propOrColumnNames the column names to select
-         * @return a new SQLBuilder instance for SELECT operation
          * 
+         * <p>This method builds a SELECT statement with the specified columns. Property names
+         * are converted to column names using the snake_case naming policy.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.select("firstName", "lastName", "email")
          *                  .from("account")
          *                  .where(CF.eq("status", "'ACTIVE'"))
          *                  .sql();
          * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
          * }</pre>
+         *
+         * @param propOrColumnNames the column names to select
+         * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, SELECTION_PART_MSG);
@@ -914,9 +1074,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for a collection of columns.
+         * 
+         * <p>This method is useful when column names are determined dynamically at runtime.
+         * The collection can contain property names that will be converted to column names.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * List<String> columns = Arrays.asList("firstName", "lastName", "email");
+         * String sql = SCSB.select(columns)
+         *                  .from("account")
+         *                  .where(CF.eq("status", "'ACTIVE'"))
+         *                  .sql();
+         * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
+         * }</pre>
          *
          * @param propOrColumnNames the collection of column names to select
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, SELECTION_PART_MSG);
@@ -931,12 +1105,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder with column aliases.
-         *
-         * @param propOrColumnNameAliases map of column names to their aliases
-         * @return a new SQLBuilder instance for SELECT operation
          * 
+         * <p>This method allows specifying custom aliases for each selected column. The map keys
+         * are column names (converted to snake_case) and values are the aliases to use.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * Map<String, String> aliases = N.asMap(
          *     "firstName", "fname",
          *     "lastName", "lname"
@@ -944,6 +1118,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = SCSB.select(aliases).from("account").sql();
          * // Output: SELECT first_name AS fname, last_name AS lname FROM account
          * }</pre>
+         *
+         * @param propOrColumnNameAliases map of column names to their aliases
+         * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if propOrColumnNameAliases is null or empty
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
             N.checkArgNotEmpty(propOrColumnNameAliases, SELECTION_PART_MSG);
@@ -958,17 +1136,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for all properties of an entity class.
-         *
-         * @param entityClass the entity class
-         * @return a new SQLBuilder instance for SELECT operation
          * 
+         * <p>This method generates a SELECT statement including all properties of the entity class,
+         * excluding those marked with @Transient annotation.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.select(Account.class)
          *                  .from("account")
          *                  .sql();
-         * // Selects all columns mapped to Account properties
+         * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account
          * }</pre>
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass) {
             return select(entityClass, false);
@@ -976,10 +1158,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for an entity class with optional sub-entity properties.
+         * 
+         * <p>When includeSubEntityProperties is true, properties from related entities (marked with
+         * appropriate annotations) will also be included in the SELECT statement.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.select(Order.class, true)
+         *                  .from("orders")
+         *                  .sql();
+         * // Output includes both Order properties and related Customer properties
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param includeSubEntityProperties whether to include properties from related entities
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return select(entityClass, includeSubEntityProperties, null);
@@ -987,18 +1181,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for an entity class, excluding specified properties.
-         *
-         * @param entityClass the entity class
-         * @param excludedPropNames properties to exclude from selection
-         * @return a new SQLBuilder instance for SELECT operation
          * 
+         * <p>This method allows selective property selection by excluding certain properties
+         * from the SELECT statement.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * Set<String> excluded = N.asSet("password", "salt");
          * String sql = SCSB.select(Account.class, excluded)
          *                  .from("account")
          *                  .sql();
+         * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account
          * }</pre>
+         *
+         * @param entityClass the entity class
+         * @param excludedPropNames properties to exclude from selection
+         * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return select(entityClass, false, excludedPropNames);
@@ -1006,11 +1205,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for an entity class with full control over property inclusion.
+         * 
+         * <p>This method provides complete control over which properties to include in the SELECT
+         * statement, with options for sub-entity properties and property exclusion.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("internalData");
+         * String sql = SCSB.select(Order.class, true, excluded)
+         *                  .from("orders")
+         *                  .sql();
+         * // Output includes Order and sub-entity properties, excluding internalData
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param includeSubEntityProperties whether to include properties from related entities
          * @param excludedPropNames properties to exclude from selection
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -1026,18 +1238,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder for an entity class.
-         * Convenience method that combines select() and from() operations.
-         *
-         * @param entityClass the entity class
-         * @return a new SQLBuilder instance for SELECT operation
          * 
+         * <p>This convenience method combines select() and from() operations. The table name
+         * is automatically derived from the entity class.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.selectFrom(Account.class)
          *                  .where(CF.eq("status", "'ACTIVE'"))
          *                  .sql();
-         * // Automatically determines table name from entity class
+         * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
          * }</pre>
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass) {
             return selectFrom(entityClass, false);
@@ -1045,17 +1260,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder for an entity class with table alias.
+         * 
+         * <p>This method allows specifying a table alias for use in complex queries with joins
+         * or subqueries.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.selectFrom(Account.class, "a")
+         *                  .innerJoin("orders", "o").on("a.id = o.account_id")
+         *                  .sql();
+         * // Output: SELECT a.id, a.first_name AS "firstName" ... FROM account a INNER JOIN orders o ON a.id = o.account_id
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param alias the table alias
          * @return a new SQLBuilder instance for SELECT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * String sql = SCSB.selectFrom(Account.class, "a")
-         *                  .innerJoin("orders", "o").on("a.id = o.account_id")
-         *                  .sql();
-         * }</pre>
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
             return selectFrom(entityClass, alias, false);
@@ -1063,10 +1283,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with sub-entity inclusion option.
+         * 
+         * <p>This convenience method combines select() and from() operations with the option
+         * to include properties from related entities.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.selectFrom(Order.class, true)
+         *                  .where(CF.gt("totalAmount", 100))
+         *                  .sql();
+         * // Output includes automatic joins for sub-entities
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param includeSubEntityProperties whether to include properties from related entities
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, includeSubEntityProperties, null);
@@ -1074,11 +1306,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with alias and sub-entity inclusion option.
+         * 
+         * <p>This method combines table aliasing with sub-entity property inclusion for
+         * complex query construction.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.selectFrom(Order.class, "o", true)
+         *                  .where(CF.eq("o.status", "'COMPLETED'"))
+         *                  .sql();
+         * // Output includes aliased columns and joins for sub-entities
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param alias the table alias
          * @param includeSubEntityProperties whether to include properties from related entities
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, alias, includeSubEntityProperties, null);
@@ -1086,10 +1330,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder excluding specified properties.
+         * 
+         * <p>This convenience method combines select() and from() operations while excluding
+         * certain properties from the selection.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("largeBlob", "metadata");
+         * String sql = SCSB.selectFrom(Account.class, excluded)
+         *                  .where(CF.eq("active", true))
+         *                  .sql();
+         * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE active = true
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param excludedPropNames properties to exclude from selection
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, false, excludedPropNames);
@@ -1097,11 +1354,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with alias, excluding specified properties.
+         * 
+         * <p>This method provides aliasing capability while excluding specified properties
+         * from the SELECT statement.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("internalCode");
+         * String sql = SCSB.selectFrom(Account.class, "a", excluded)
+         *                  .innerJoin("orders", "o").on("a.id = o.account_id")
+         *                  .sql();
+         * // Output uses alias "a" and excludes internalCode property
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param alias the table alias
          * @param excludedPropNames properties to exclude from selection
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, alias, false, excludedPropNames);
@@ -1109,11 +1379,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with sub-entity inclusion and property exclusion.
+         * 
+         * <p>This method provides a convenient way to create a complete SELECT FROM statement
+         * with control over sub-entities and property exclusion.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("deletedFlag");
+         * String sql = SCSB.selectFrom(Order.class, true, excluded)
+         *                  .where(CF.gt("createdDate", "2023-01-01"))
+         *                  .sql();
+         * // Output includes Order with Customer sub-entity, excluding deletedFlag
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param includeSubEntityProperties whether to include properties from related entities
          * @param excludedPropNames properties to exclude from selection
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
@@ -1121,12 +1404,26 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with full control over all options.
+         * 
+         * <p>This method provides complete control over the SELECT FROM statement generation,
+         * including table alias, sub-entity properties, and property exclusion. When sub-entities
+         * are included, appropriate joins will be generated automatically.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("debugInfo");
+         * String sql = SCSB.selectFrom(Order.class, "ord", true, excluded)
+         *                  .where(CF.gt("ord.totalAmount", 1000))
+         *                  .sql();
+         * // Output: Complex SELECT with alias, sub-entities, and exclusions
+         * }</pre>
          *
          * @param entityClass the entity class
          * @param alias the table alias
          * @param includeSubEntityProperties whether to include properties from related entities
          * @param excludedPropNames properties to exclude from selection
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
@@ -1143,6 +1440,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for joining two entity classes.
+         * 
+         * <p>This method sets up a query to select from two tables with proper aliasing and
+         * property prefixing. Each entity's properties will be prefixed with their class alias
+         * in the result set.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.select(Account.class, "a", "account",
+         *                         Order.class, "o", "order")
+         *                  .from("account a")
+         *                  .innerJoin("orders o").on("a.id = o.account_id")
+         *                  .sql();
+         * // Output: SELECT a.first_name AS "account.firstName", o.total AS "order.total" ...
+         * }</pre>
          *
          * @param entityClassA the first entity class
          * @param tableAliasA table alias for the first entity
@@ -1151,16 +1462,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB table alias for the second entity
          * @param classAliasB property prefix for the second entity in results
          * @return a new SQLBuilder instance for SELECT operation
-         * 
-         * <pre>{@code
-         * // Example:
-         * String sql = SCSB.select(Account.class, "a", "account",
-         *                         Order.class, "o", "order")
-         *                  .from("account a")
-         *                  .innerJoin("orders o").on("a.id = o.account_id")
-         *                  .sql();
-         * // Selects columns like: a.name AS "account.name", o.total AS "order.total"
-         * }</pre>
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -1169,6 +1471,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for joining two entity classes with property exclusions.
+         * 
+         * <p>This method extends the two-entity join capability by allowing exclusion of specific
+         * properties from each entity. Useful for avoiding large fields or sensitive data in joins.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> accountExcluded = N.asSet("password");
+         * Set<String> orderExcluded = N.asSet("internalNotes");
+         * String sql = SCSB.select(Account.class, "a", "account", accountExcluded,
+         *                         Order.class, "o", "order", orderExcluded)
+         *                  .from("account a")
+         *                  .innerJoin("orders o").on("a.id = o.account_id")
+         *                  .sql();
+         * }</pre>
          *
          * @param entityClassA the first entity class
          * @param tableAliasA table alias for the first entity
@@ -1179,6 +1495,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param classAliasB property prefix for the second entity in results
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -1192,17 +1509,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for multiple entity selections.
-         * Used for complex joins involving multiple tables.
-         *
-         * @param multiSelects list of Selection objects defining what to select from each entity
-         * @return a new SQLBuilder instance for SELECT operation
          * 
+         * <p>This is the most flexible method for complex multi-table queries. Each Selection
+         * object encapsulates the configuration for one entity including alias, property prefix,
+         * and exclusions.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * List<Selection> selections = Arrays.asList(
-         *     new Selection(Account.class, "a", "account"),
-         *     new Selection(Order.class, "o", "order"),
-         *     new Selection(Product.class, "p", "product")
+         *     new Selection(Account.class, "a", "account", null, false, null),
+         *     new Selection(Order.class, "o", "order", null, false, null),
+         *     new Selection(Product.class, "p", "product", null, false, null)
          * );
          * String sql = SCSB.select(selections)
          *                  .from("account a")
@@ -1210,6 +1527,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .innerJoin("products p").on("o.product_id = p.id")
          *                  .sql();
          * }</pre>
+         *
+         * @param multiSelects list of Selection objects defining what to select from each entity
+         * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -1225,7 +1546,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder for joining two entity classes.
-         * Convenience method that combines select() and from() for joins.
+         * 
+         * <p>This convenience method combines select() and from() operations for two-entity joins.
+         * The FROM clause is automatically generated based on the entity classes.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = SCSB.selectFrom(Account.class, "a", "account",
+         *                             Order.class, "o", "order")
+         *                  .where(CF.eq("a.status", "'ACTIVE'"))
+         *                  .sql();
+         * // Output: SELECT ... FROM account a, orders o WHERE a.status = 'ACTIVE'
+         * }</pre>
          *
          * @param entityClassA the first entity class
          * @param tableAliasA table alias for the first entity
@@ -1234,6 +1566,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB table alias for the second entity
          * @param classAliasB property prefix for the second entity in results
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -1242,6 +1575,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder for joining two entity classes with property exclusions.
+         * 
+         * <p>This method combines multi-entity selection with automatic FROM clause generation
+         * and property filtering capabilities.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> accountExcluded = N.asSet("passwordHash");
+         * Set<String> orderExcluded = N.asSet("debugData");
+         * String sql = SCSB.selectFrom(Account.class, "a", "account", accountExcluded,
+         *                             Order.class, "o", "order", orderExcluded)
+         *                  .where(CF.eq("o.status", "'COMPLETED'"))
+         *                  .sql();
+         * }</pre>
          *
          * @param entityClassA the first entity class
          * @param tableAliasA table alias for the first entity
@@ -1252,6 +1598,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param classAliasB property prefix for the second entity in results
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -1266,10 +1613,26 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder for multiple entity selections.
-         * Automatically generates the FROM clause based on the entity classes.
+         * 
+         * <p>This method automatically generates the appropriate FROM clause based on the
+         * provided Selection configurations. It's the most convenient way to build complex
+         * multi-table queries with automatic FROM clause generation.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * List<Selection> selections = Arrays.asList(
+         *     new Selection(Account.class, "a", "account", null, false, null),
+         *     new Selection(Order.class, "o", "order", null, true, null)
+         * );
+         * String sql = SCSB.selectFrom(selections)
+         *                  .where(CF.eq("a.verified", true))
+         *                  .sql();
+         * // Output: SELECT ... FROM account a, orders o WHERE a.verified = true
+         * }</pre>
          *
          * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SQLBuilder instance for SELECT operation
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -1282,17 +1645,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a COUNT(*) SQL builder for a table.
-         *
-         * @param tableName the table name to count rows from
-         * @return a new SQLBuilder instance for COUNT operation
          * 
+         * <p>This is a convenience method for creating COUNT queries to get the total number
+         * of rows in a table.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.count("account")
          *                  .where(CF.eq("status", "'ACTIVE'"))
          *                  .sql();
          * // Output: SELECT COUNT(*) FROM account WHERE status = 'ACTIVE'
          * }</pre>
+         *
+         * @param tableName the table name to count rows from
+         * @return a new SQLBuilder instance for COUNT operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder count(final String tableName) {
             N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
@@ -1302,17 +1669,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a COUNT(*) SQL builder for an entity class.
-         * The table name is derived from the entity class.
-         *
-         * @param entityClass the entity class
-         * @return a new SQLBuilder instance for COUNT operation
          * 
+         * <p>This method derives the table name from the entity class and creates a COUNT query.
+         * Useful for getting row counts with type-safe table name resolution.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * String sql = SCSB.count(Account.class)
          *                  .where(CF.between("createdDate", "2023-01-01", "2023-12-31"))
          *                  .sql();
+         * // Output: SELECT COUNT(*) FROM account WHERE created_date BETWEEN '2023-01-01' AND '2023-12-31'
          * }</pre>
+         *
+         * @param entityClass the entity class
+         * @return a new SQLBuilder instance for COUNT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -1322,14 +1693,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Parses a condition into SQL with entity class context.
-         * Used to generate SQL fragments for conditions only.
-         *
-         * @param cond the condition to parse
-         * @param entityClass the entity class for property mapping
-         * @return a new SQLBuilder instance containing the condition SQL
          * 
+         * <p>This method is used to generate SQL fragments for conditions only, without
+         * building a complete SQL statement. It's useful for debugging conditions or
+         * building dynamic query parts that will be combined later.</p>
+         * 
+         * <p>Example usage:</p>
          * <pre>{@code
-         * // Example:
          * Condition cond = CF.and(
          *     CF.eq("status", "'ACTIVE'"),
          *     CF.gt("balance", 1000)
@@ -1337,6 +1707,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = SCSB.parse(cond, Account.class).sql();
          * // Output: status = 'ACTIVE' AND balance > 1000
          * }</pre>
+         *
+         * @param cond the condition to parse
+         * @param entityClass the entity class for property mapping (can be null)
+         * @return a new SQLBuilder instance containing the condition SQL
+         * @throws IllegalArgumentException if cond is null
          */
         public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
@@ -1354,16 +1729,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
     /**
      * Un-parameterized SQL builder with all capital case (upper case with underscore) field/column naming strategy.
-     * This builder generates SQL with actual values embedded directly in the SQL string (not recommended for production use).
      * 
-     * <p>ACSB stands for "All Capital SQL Builder" and uses UPPER_CASE_WITH_UNDERSCORE naming policy for database columns.
-     * It converts camelCase property names to UPPER_CASE_WITH_UNDERSCORE column names automatically.</p>
-     *
-     * <pre>
-     * // Example: property "firstName" becomes column "FIRST_NAME"
+     * <p>This builder generates SQL with actual values embedded directly in the SQL string. Property names
+     * are automatically converted from camelCase to UPPER_CASE_WITH_UNDERSCORE for database column names.</p>
+     * 
+     * <p>Features:</p>
+     * <ul>
+     *   <li>Converts "firstName" to "FIRST_NAME"</li>
+     *   <li>Generates non-parameterized SQL (values embedded directly)</li>
+     *   <li>Suitable for databases that use uppercase column names</li>
+     * </ul>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
      * ACSB.select("firstName", "lastName").from("account").where(CF.eq("id", 1)).sql();
      * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = 1
-     * </pre>
+     * }</pre>
      *
      * @deprecated {@code PAC or NAC} is preferred for better security and performance. 
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
@@ -1372,15 +1753,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class ACSB extends SQLBuilder {
 
         /**
-         * Creates a new instance of ACSB with UPPER_CASE_WITH_UNDERSCORE naming policy
-         * and SQL (non-parameterized) SQL policy.
+         * Constructs a new ACSB instance with UPPER_CASE_WITH_UNDERSCORE naming policy and non-parameterized SQL policy.
+         * 
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         ACSB() {
             super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.SQL);
         }
 
         /**
-         * Factory method to create a new ACSB instance.
+         * Creates a new instance of ACSB.
+         * 
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
          * 
          * @return a new ACSB instance
          */
@@ -1390,13 +1776,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for a single column.
-         * This method starts building an INSERT statement with one column.
          * 
-         * <pre>
-         * // Example:
-         * String sql = ACSB.insert("name").into("users").values("John").sql();
-         * // Output: INSERT INTO USERS (NAME) VALUES ('John')
-         * </pre>
+         * <p>This method initializes an INSERT statement for one column. The column name will be
+         * converted to UPPER_CASE_WITH_UNDERSCORE according to the naming policy.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = ACSB.insert("firstName")
+         *                  .into("users")
+         *                  .values("John")
+         *                  .sql();
+         * // Output: INSERT INTO USERS (FIRST_NAME) VALUES ('John')
+         * }</pre>
          *
          * @param expr the column name or expression to insert
          * @return a new SQLBuilder instance configured for INSERT operation
@@ -1410,18 +1801,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for multiple columns.
-         * This method starts building an INSERT statement with multiple columns.
          * 
-         * <pre>
-         * // Example:
-         * String sql = ACSB.insert("name", "age", "email")
+         * <p>This method initializes an INSERT statement for multiple columns. All column names
+         * will be converted to UPPER_CASE_WITH_UNDERSCORE according to the naming policy.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = ACSB.insert("firstName", "lastName", "email")
          *                  .into("users")
-         *                  .values("John", 30, "john@example.com")
+         *                  .values("John", "Doe", "john@example.com")
          *                  .sql();
-         * // Output: INSERT INTO USERS (NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
-         * </pre>
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES ('John', 'Doe', 'john@example.com')
+         * }</pre>
          *
-         * @param propOrColumnNames the column names to insert, in order
+         * @param propOrColumnNames the property or column names to insert, in order
          * @return a new SQLBuilder instance configured for INSERT operation
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
@@ -1438,17 +1831,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for a collection of columns.
-         * This method is useful when column names are dynamically determined.
          * 
-         * <pre>
-         * // Example:
-         * List<String> columns = Arrays.asList("name", "age", "email");
+         * <p>This method is useful when column names are dynamically determined. The collection
+         * can contain property names that will be converted to uppercase column names.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = ACSB.insert(columns)
          *                  .into("users")
-         *                  .values("John", 30, "john@example.com")
+         *                  .values("John", "Doe", "john@example.com")
          *                  .sql();
-         * // Output: INSERT INTO USERS (NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
-         * </pre>
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES ('John', 'Doe', 'john@example.com')
+         * }</pre>
          *
          * @param propOrColumnNames the collection of column names to insert
          * @return a new SQLBuilder instance configured for INSERT operation
@@ -1467,16 +1862,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder with column-value mappings.
-         * This method allows specifying both column names and their values together.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method allows direct specification of column names and their corresponding
+         * values as a Map. Column names will be converted to uppercase.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Map<String, Object> data = new HashMap<>();
-         * data.put("name", "John");
+         * data.put("firstName", "John");
          * data.put("age", 30);
          * String sql = ACSB.insert(data).into("users").sql();
-         * // Output: INSERT INTO USERS (NAME, AGE) VALUES ('John', 30)
-         * </pre>
+         * // Output: INSERT INTO USERS (FIRST_NAME, AGE) VALUES ('John', 30)
+         * }</pre>
          *
          * @param props map of column names to their corresponding values
          * @return a new SQLBuilder instance configured for INSERT operation
@@ -1495,15 +1892,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder from an entity object.
-         * The entity's properties are mapped to column names using the naming policy.
-         * All properties with non-null values will be included in the INSERT statement.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method extracts property values from the given entity object and creates
+         * an INSERT statement. Properties marked with @Transient, @ReadOnly, or similar 
+         * annotations are automatically excluded. Property names are converted to uppercase.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * User user = new User("John", 30, "john@example.com");
          * String sql = ACSB.insert(user).into("users").sql();
-         * // Output: INSERT INTO USERS (NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
-         * </pre>
+         * // Output: INSERT INTO USERS (FIRST_NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
+         * }</pre>
          *
          * @param entity the entity object containing data to insert
          * @return a new SQLBuilder instance configured for INSERT operation
@@ -1515,15 +1914,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder from an entity object, excluding specified properties.
-         * This method allows selective insertion of entity properties.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method allows selective insertion of entity properties. In addition to properties
+         * automatically excluded by annotations, you can specify additional properties to exclude.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * User user = new User("John", 30, "john@example.com");
          * Set<String> excluded = new HashSet<>(Arrays.asList("createdDate", "modifiedDate"));
          * String sql = ACSB.insert(user, excluded).into("users").sql();
-         * // Output: INSERT INTO USERS (NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
-         * </pre>
+         * // Output: INSERT INTO USERS (FIRST_NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
+         * }</pre>
          *
          * @param entity the entity object containing data to insert
          * @param excludedPropNames set of property names to exclude from the insert
@@ -1545,13 +1946,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder from an entity class.
-         * This generates an INSERT template for all insertable properties of the class.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method generates an INSERT template for the specified entity class,
+         * including all insertable properties. Properties marked with @ReadOnly, @ReadOnlyId,
+         * or @Transient are automatically excluded.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.insert(User.class).into("users").sql();
-         * // Output: INSERT INTO USERS (NAME, AGE, EMAIL) VALUES (?, ?, ?)
-         * </pre>
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, AGE, EMAIL)
+         * }</pre>
          *
          * @param entityClass the entity class to use as template
          * @return a new SQLBuilder instance configured for INSERT operation
@@ -1563,14 +1967,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder from an entity class, excluding specified properties.
-         * This generates an INSERT template excluding certain properties.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method generates an INSERT template excluding both annotation-based exclusions
+         * and the specified properties. Useful for creating templates where certain fields
+         * are populated by database defaults or triggers.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
          * String sql = ACSB.insert(User.class, excluded).into("users").sql();
-         * // Output: INSERT INTO USERS (NAME, AGE, EMAIL) VALUES (?, ?, ?)
-         * </pre>
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, AGE, EMAIL)
+         * }</pre>
          *
          * @param entityClass the entity class to use as template
          * @param excludedPropNames properties to exclude from the insert template
@@ -1591,17 +1998,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT INTO SQL builder for an entity class.
-         * This is a convenience method that combines insert() and into() operations.
-         * The table name is derived from the entity class name.
          * 
-         * <pre>
-         * // Example:
-         * String sql = ACSB.insertInto(User.class).values("John", 30, "john@example.com").sql();
-         * // Output: INSERT INTO USER (NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
-         * </pre>
+         * <p>This is a convenience method that combines insert() and into() operations.
+         * The table name is derived from the entity class name and converted to uppercase.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = ACSB.insertInto(User.class)
+         *                  .values("John", "Doe", 30, "john@example.com")
+         *                  .sql();
+         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES ('John', 'Doe', 30, 'john@example.com')
+         * }</pre>
          *
          * @param entityClass the entity class to insert into
-         * @return a new SQLBuilder instance configured for INSERT operation
+         * @return a new SQLBuilder instance configured for INSERT INTO operation
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass) {
@@ -1610,20 +2020,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT INTO SQL builder for an entity class, excluding specified properties.
-         * Combines insert() and into() operations with property exclusion.
          * 
-         * <pre>
-         * // Example:
+         * <p>This convenience method combines insert() and into() operations with property exclusion.
+         * The table name is derived from the entity class and converted to uppercase.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("id"));
          * String sql = ACSB.insertInto(User.class, excluded)
-         *                  .values("John", 30, "john@example.com")
+         *                  .values("John", "Doe", 30, "john@example.com")
          *                  .sql();
-         * // Output: INSERT INTO USER (NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
-         * </pre>
+         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES ('John', 'Doe', 30, 'john@example.com')
+         * }</pre>
          *
          * @param entityClass the entity class to insert into
          * @param excludedPropNames properties to exclude from the insert
-         * @return a new SQLBuilder instance configured for INSERT operation
+         * @return a new SQLBuilder instance configured for INSERT INTO operation
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -1632,23 +2044,27 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a batch INSERT SQL builder for multiple entities or property maps.
-         * This generates MySQL-style batch insert SQL for efficient bulk inserts.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method generates MySQL-style batch insert SQL for efficient bulk inserts.
+         * All entities or maps in the collection must have the same structure (same properties).</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * List<User> users = Arrays.asList(
          *     new User("John", 30, "john@example.com"),
          *     new User("Jane", 25, "jane@example.com")
          * );
          * String sql = ACSB.batchInsert(users).into("users").sql();
-         * // Output: INSERT INTO USERS (NAME, AGE, EMAIL) VALUES 
+         * // Output: INSERT INTO USERS (FIRST_NAME, AGE, EMAIL) VALUES 
          * //         ('John', 30, 'john@example.com'), 
          * //         ('Jane', 25, 'jane@example.com')
-         * </pre>
+         * }</pre>
          *
          * @param propsList list of entities or property maps to insert
          * @return a new SQLBuilder instance configured for batch INSERT operation
          * @throws IllegalArgumentException if propsList is null or empty
+         * 
+         * @apiNote This is a beta feature and may be subject to change
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -1669,17 +2085,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         }
 
         /**
-         * Creates an UPDATE SQL builder for a table.
-         * This starts building an UPDATE statement for the specified table.
+         * Creates an UPDATE SQL builder for the specified table.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method initializes a new SQLBuilder for UPDATE operations on the
+         * specified table. The columns to update should be specified using the
+         * set() method.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.update("users")
-         *                  .set("age", 31)
-         *                  .where("name = 'John'")
+         *                  .set("LAST_NAME", "'Smith'")
+         *                  .where(CF.eq("ID", 123))
          *                  .sql();
-         * // Output: UPDATE USERS SET AGE = 31 WHERE NAME = 'John'
-         * </pre>
+         * // Output: UPDATE USERS SET LAST_NAME = 'Smith' WHERE ID = 123
+         * }</pre>
          *
          * @param tableName the name of the table to update
          * @return a new SQLBuilder instance configured for UPDATE operation
@@ -1698,21 +2117,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for a table with entity class context.
-         * This allows property name mapping when building the UPDATE statement.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method provides entity class information for property-to-column name mapping
+         * when building the UPDATE statement. Property names will be converted to uppercase.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.update("users", User.class)
          *                  .set("age", 31)  // "age" is mapped to "AGE" column
-         *                  .where("name = 'John'")
+         *                  .where(CF.eq("firstName", "'John'"))
          *                  .sql();
-         * // Output: UPDATE USERS SET AGE = 31 WHERE NAME = 'John'
-         * </pre>
+         * // Output: UPDATE USERS SET AGE = 31 WHERE FIRST_NAME = 'John'
+         * }</pre>
          *
          * @param tableName the name of the table to update
          * @param entityClass the entity class for property mapping
          * @return a new SQLBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName is null or empty
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -1729,16 +2150,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class.
-         * The table name is derived from the entity class name.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method derives the table name from the entity class and includes all
+         * updatable properties. Properties marked with @NonUpdatable or @ReadOnly are excluded.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.update(User.class)
          *                  .set("age", 31)
-         *                  .where("name = 'John'")
+         *                  .where(CF.eq("firstName", "'John'"))
          *                  .sql();
-         * // Output: UPDATE USER SET AGE = 31 WHERE NAME = 'John'
-         * </pre>
+         * // Output: UPDATE USER SET AGE = 31 WHERE FIRST_NAME = 'John'
+         * }</pre>
          *
          * @param entityClass the entity class to update
          * @return a new SQLBuilder instance configured for UPDATE operation
@@ -1750,17 +2173,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class, excluding specified properties.
-         * This prepares an UPDATE template excluding certain properties (like id, version fields).
          * 
-         * <pre>
-         * // Example:
+         * <p>This method allows additional property exclusions beyond those marked with
+         * annotations. Useful for partial updates or when certain fields should not be modified.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
          * String sql = ACSB.update(User.class, excluded)
          *                  .set("age", 31)
-         *                  .where("id = 1")
+         *                  .where(CF.eq("id", 1))
          *                  .sql();
          * // Output: UPDATE USER SET AGE = 31 WHERE ID = 1
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to update
          * @param excludedPropNames additional properties to exclude from updates
@@ -1781,16 +2206,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         }
 
         /**
-         * Creates a DELETE FROM SQL builder for a table.
-         * This starts building a DELETE statement for the specified table.
+         * Creates a DELETE FROM SQL builder for the specified table.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method initializes a new SQLBuilder for DELETE operations on the
+         * specified table. A WHERE clause should typically be added to avoid deleting all rows.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.deleteFrom("users")
-         *                  .where("age < 18")
+         *                  .where(CF.lt("AGE", 18))
          *                  .sql();
          * // Output: DELETE FROM USERS WHERE AGE < 18
-         * </pre>
+         * }</pre>
          *
          * @param tableName the table name to delete from
          * @return a new SQLBuilder instance configured for DELETE operation
@@ -1809,20 +2236,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a DELETE FROM SQL builder for a table with entity class context.
-         * This allows property name mapping in WHERE conditions.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method provides entity class information for property-to-column name mapping
+         * in the WHERE clause of the DELETE statement.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.deleteFrom("users", User.class)
          *                  .where(CF.eq("age", 18))  // "age" is mapped to "AGE" column
          *                  .sql();
          * // Output: DELETE FROM USERS WHERE AGE = 18
-         * </pre>
+         * }</pre>
          *
          * @param tableName the table name to delete from
          * @param entityClass the entity class for property mapping
          * @return a new SQLBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName is null or empty
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -1839,15 +2268,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a DELETE FROM SQL builder for an entity class.
-         * The table name is derived from the entity class name.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method derives the table name from the entity class name and converts it
+         * to uppercase according to the naming policy.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.deleteFrom(User.class)
-         *                  .where("id = 1")
+         *                  .where(CF.eq("ID", 1))
          *                  .sql();
          * // Output: DELETE FROM USER WHERE ID = 1
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to delete from
          * @return a new SQLBuilder instance configured for DELETE operation
@@ -1867,17 +2298,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder with a custom select expression.
-         * This allows complex SELECT expressions including functions and aliases.
          * 
-         * <pre>
-         * // Example:
-         * String sql = ACSB.select("COUNT(*) AS total")
-         *                  .from("users")
+         * <p>This method allows complex SELECT expressions including aggregate functions,
+         * calculated columns, or any valid SQL select expression.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = ACSB.select("COUNT(*) as total, AVG(SALARY) as avgSalary")
+         *                  .from("EMPLOYEES")
          *                  .sql();
-         * // Output: SELECT COUNT(*) AS total FROM USERS
-         * </pre>
+         * // Output: SELECT COUNT(*) as total, AVG(SALARY) as avgSalary FROM EMPLOYEES
+         * }</pre>
          *
-         * @param selectPart the select expression (can include functions, aliases, etc.)
+         * @param selectPart the SELECT expression or clause
          * @return a new SQLBuilder instance configured for SELECT operation
          * @throws IllegalArgumentException if selectPart is null or empty
          */
@@ -1892,20 +2325,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         }
 
         /**
-         * Creates a SELECT SQL builder for multiple columns.
-         * Column names are automatically mapped using the naming policy.
+         * Creates a SELECT SQL builder for the specified columns.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method builds a SELECT statement with the specified columns. Property names
+         * are converted to uppercase column names using the UPPER_CASE_WITH_UNDERSCORE naming policy.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.select("firstName", "lastName", "age")
          *                  .from("users")
-         *                  .where("age >= 18")
+         *                  .where(CF.gte("age", 18))
          *                  .sql();
          * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age" 
          * //         FROM USERS WHERE AGE >= 18
-         * </pre>
+         * }</pre>
          *
-         * @param propOrColumnNames the column names to select
+         * @param propOrColumnNames the property or column names to select
          * @return a new SQLBuilder instance configured for SELECT operation
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
@@ -1922,18 +2357,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for a collection of columns.
-         * Useful when column names are determined dynamically.
          * 
-         * <pre>
-         * // Example:
-         * List<String> columns = getRequiredColumns(); // returns ["name", "email"]
+         * <p>This method is useful when column names are determined dynamically at runtime.
+         * The collection can contain property names that will be converted to uppercase column names.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * List<String> columns = getRequiredColumns(); // returns ["firstName", "email"]
          * String sql = ACSB.select(columns)
          *                  .from("users")
          *                  .sql();
-         * // Output: SELECT NAME AS "name", EMAIL AS "email" FROM USERS
-         * </pre>
+         * // Output: SELECT FIRST_NAME AS "firstName", EMAIL AS "email" FROM USERS
+         * }</pre>
          *
-         * @param propOrColumnNames collection of column names to select
+         * @param propOrColumnNames collection of property or column names to select
          * @return a new SQLBuilder instance configured for SELECT operation
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
@@ -1950,16 +2387,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder with column aliases.
-         * This allows renaming columns in the result set.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method allows specifying custom aliases for each selected column. The map keys
+         * are column names (converted to uppercase) and values are the aliases to use.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Map<String, String> aliases = new HashMap<>();
          * aliases.put("firstName", "fname");
          * aliases.put("lastName", "lname");
          * String sql = ACSB.select(aliases).from("users").sql();
          * // Output: SELECT FIRST_NAME AS "fname", LAST_NAME AS "lname" FROM USERS
-         * </pre>
+         * }</pre>
          *
          * @param propOrColumnNameAliases map of column names to their aliases
          * @return a new SQLBuilder instance configured for SELECT operation
@@ -1978,15 +2417,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for all properties of an entity class.
-         * This selects all mapped properties of the entity.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method generates a SELECT statement including all properties of the entity class,
+         * excluding those marked with @Transient annotation. Column names are converted to uppercase.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.select(User.class)
          *                  .from("users")
          *                  .sql();
-         * // Output: SELECT ID AS "id", NAME AS "name", AGE AS "age", EMAIL AS "email" FROM USERS
-         * </pre>
+         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" FROM USERS
+         * }</pre>
          *
          * @param entityClass the entity class whose properties to select
          * @return a new SQLBuilder instance configured for SELECT operation
@@ -1998,15 +2439,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for an entity class with sub-entity option.
-         * When includeSubEntityProperties is true, properties of nested entities are included.
          * 
-         * <pre>
-         * // Example with sub-entities:
+         * <p>When includeSubEntityProperties is true, properties of nested entities are included.
+         * This is useful for fetching related data in a single query.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.select(Order.class, true)  // includes Customer sub-entity
          *                  .from("orders")
          *                  .sql();
-         * // Output includes both Order and nested Customer properties
-         * </pre>
+         * // Output includes both Order and nested Customer properties with uppercase column names
+         * }</pre>
          *
          * @param entityClass the entity class whose properties to select
          * @param includeSubEntityProperties whether to include properties of sub-entities
@@ -2019,16 +2462,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for an entity class, excluding specified properties.
-         * This allows selective property selection.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method allows selective property selection by excluding certain properties
+         * from the SELECT statement.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("password", "secretKey"));
          * String sql = ACSB.select(User.class, excluded)
          *                  .from("users")
          *                  .sql();
-         * // Output: SELECT ID AS "id", NAME AS "name", AGE AS "age", EMAIL AS "email" FROM USERS
-         * </pre>
+         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" FROM USERS
+         * }</pre>
          *
          * @param entityClass the entity class whose properties to select
          * @param excludedPropNames properties to exclude from selection
@@ -2041,16 +2486,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for an entity class with full control over property selection.
-         * Combines sub-entity inclusion and property exclusion options.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method combines sub-entity inclusion and property exclusion options, providing
+         * complete control over which properties appear in the SELECT statement.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("internalNotes"));
          * String sql = ACSB.select(Order.class, true, excluded)
          *                  .from("orders")
          *                  .sql();
          * // Output includes Order and Customer properties, excluding internalNotes
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class whose properties to select
          * @param includeSubEntityProperties whether to include properties of sub-entities
@@ -2072,16 +2519,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder for an entity class.
-         * This is a convenience method that combines select() and from() operations.
          * 
-         * <pre>
-         * // Example:
+         * <p>This is a convenience method that combines select() and from() operations.
+         * The table name is derived from the entity class and converted to uppercase.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.selectFrom(User.class)
-         *                  .where("age >= 18")
+         *                  .where(CF.gte("age", 18))
          *                  .sql();
-         * // Output: SELECT ID AS "id", NAME AS "name", AGE AS "age", EMAIL AS "email" 
+         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" 
          * //         FROM USER WHERE AGE >= 18
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @return a new SQLBuilder instance configured for SELECT operation
@@ -2093,16 +2542,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with table alias for an entity class.
-         * The alias is used to qualify column names in complex queries.
          * 
-         * <pre>
-         * // Example:
+         * <p>The alias is used to qualify column names in complex queries with joins or subqueries.
+         * The table name is derived from the entity class and converted to uppercase.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.selectFrom(User.class, "u")
-         *                  .where("u.age >= 18")
+         *                  .where(CF.gte("u.AGE", 18))
          *                  .sql();
-         * // Output: SELECT u.ID AS "id", u.NAME AS "name", u.AGE AS "age", u.EMAIL AS "email" 
+         * // Output: SELECT u.ID AS "id", u.FIRST_NAME AS "firstName", u.LAST_NAME AS "lastName", u.AGE AS "age", u.EMAIL AS "email" 
          * //         FROM USER u WHERE u.AGE >= 18
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param alias the table alias
@@ -2115,15 +2566,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with sub-entity inclusion option.
-         * When includeSubEntityProperties is true, joins are added for sub-entities.
          * 
-         * <pre>
-         * // Example:
+         * <p>When includeSubEntityProperties is true, joins are added for sub-entities.
+         * This provides a convenient way to fetch related data in a single query.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.selectFrom(Order.class, true)
-         *                  .where("status = 'ACTIVE'")
+         *                  .where(CF.eq("STATUS", "'ACTIVE'"))
          *                  .sql();
          * // Output includes JOINs for sub-entities like Customer
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include and join sub-entities
@@ -2136,15 +2589,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with alias and sub-entity options.
-         * Combines table aliasing with sub-entity inclusion.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method combines table aliasing with sub-entity inclusion for building
+         * complex queries with related data.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.selectFrom(Order.class, "o", true)
-         *                  .where("o.status = 'ACTIVE'")
+         *                  .where(CF.eq("o.STATUS", "'ACTIVE'"))
          *                  .sql();
          * // Output includes aliased columns and JOINs for sub-entities
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param alias the table alias
@@ -2158,17 +2613,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with property exclusion.
-         * Allows selective property selection with automatic FROM clause.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method allows selective property selection with automatic FROM clause generation.
+         * Properties in the excluded set will not appear in the SELECT statement.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("largeBlob", "metadata"));
          * String sql = ACSB.selectFrom(User.class, excluded)
-         *                  .where("active = true")
+         *                  .where(CF.eq("ACTIVE", true))
          *                  .sql();
-         * // Output: SELECT ID AS "id", NAME AS "name", AGE AS "age", EMAIL AS "email" 
+         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" 
          * //         FROM USER WHERE ACTIVE = true
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param excludedPropNames properties to exclude from selection
@@ -2181,16 +2638,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with alias and property exclusion.
-         * Combines aliasing with selective property selection.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method combines aliasing with selective property selection for flexible
+         * query construction.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("internalCode"));
          * String sql = ACSB.selectFrom(User.class, "u", excluded)
-         *                  .innerJoin("orders", "o").on("u.id = o.user_id")
+         *                  .innerJoin("ORDERS", "o").on("u.ID = o.USER_ID")
          *                  .sql();
          * // Output uses alias "u" and excludes internalCode property
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param alias the table alias
@@ -2204,16 +2663,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with sub-entity and exclusion options.
-         * Provides full control over entity selection including sub-entities.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method provides full control over entity selection including sub-entities
+         * while allowing certain properties to be excluded.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("deletedFlag"));
          * String sql = ACSB.selectFrom(Order.class, true, excluded)
-         *                  .where("createdDate > '2023-01-01'")
+         *                  .where(CF.gt("CREATED_DATE", "'2023-01-01'"))
          *                  .sql();
          * // Output includes Order with Customer sub-entity, excluding deletedFlag
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include and join sub-entities
@@ -2227,16 +2688,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder with full control over all options.
-         * This is the most comprehensive selectFrom method with all configuration options.
          * 
-         * <pre>
-         * // Example:
+         * <p>This is the most comprehensive selectFrom method providing complete control over
+         * aliasing, sub-entity inclusion, and property exclusion. When sub-entities are included,
+         * appropriate joins are generated automatically.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("debugInfo"));
          * String sql = ACSB.selectFrom(Order.class, "ord", true, excluded)
-         *                  .where("ord.totalAmount > 1000")
+         *                  .where(CF.gt("ord.TOTAL_AMOUNT", 1000))
          *                  .sql();
          * // Output: Complex SELECT with alias, sub-entities, and exclusions
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param alias the table alias
@@ -2250,7 +2714,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -2260,16 +2724,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for joining two entity classes.
-         * This method sets up a query to select from two tables with aliasing.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method sets up a query to select from two tables with aliasing.
+         * Each entity's properties will be prefixed with their class alias in the result set.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.select(User.class, "u", "user", Order.class, "o", "order")
-         *                  .from("users", "u")
-         *                  .innerJoin("orders", "o").on("u.id = o.user_id")
+         *                  .from("USERS", "u")
+         *                  .innerJoin("ORDERS", "o").on("u.ID = o.USER_ID")
          *                  .sql();
          * // Output: SELECT with columns from both entities properly aliased
-         * </pre>
+         * }</pre>
          *
          * @param entityClassA first entity class
          * @param tableAliasA table alias for first entity
@@ -2287,19 +2753,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for joining two entity classes with exclusions.
-         * Allows excluding specific properties from each entity in the join.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method allows excluding specific properties from each entity in the join.
+         * Useful for optimizing queries by excluding unnecessary or large fields.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> userExclusions = new HashSet<>(Arrays.asList("password"));
          * Set<String> orderExclusions = new HashSet<>(Arrays.asList("internalNotes"));
          * String sql = ACSB.select(User.class, "u", "user", userExclusions,
          *                         Order.class, "o", "order", orderExclusions)
-         *                  .from("users", "u")
-         *                  .innerJoin("orders", "o").on("u.id = o.user_id")
+         *                  .from("USERS", "u")
+         *                  .innerJoin("ORDERS", "o").on("u.ID = o.USER_ID")
          *                  .sql();
          * // Output: SELECT with filtered columns from both entities
-         * </pre>
+         * }</pre>
          *
          * @param entityClassA first entity class
          * @param tableAliasA table alias for first entity
@@ -2324,22 +2792,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for multiple entity selections.
-         * This is the most flexible method for complex multi-table queries.
          * 
-         * <pre>
-         * // Example:
+         * <p>This is the most flexible method for complex multi-table queries.
+         * Each Selection object encapsulates the configuration for one entity.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * List<Selection> selections = Arrays.asList(
          *     new Selection(User.class, "u", "user", null, false, null),
          *     new Selection(Order.class, "o", "order", null, false, null),
          *     new Selection(Product.class, "p", "product", null, false, null)
          * );
          * String sql = ACSB.select(selections)
-         *                  .from("users", "u")
-         *                  .innerJoin("orders", "o").on("u.id = o.user_id")
-         *                  .innerJoin("products", "p").on("o.product_id = p.id")
+         *                  .from("USERS", "u")
+         *                  .innerJoin("ORDERS", "o").on("u.ID = o.USER_ID")
+         *                  .innerJoin("PRODUCTS", "p").on("o.PRODUCT_ID = p.ID")
          *                  .sql();
          * // Output: Complex SELECT with columns from all three entities
-         * </pre>
+         * }</pre>
          *
          * @param multiSelects list of Selection objects defining what to select
          * @return a new SQLBuilder instance configured for SELECT operation
@@ -2359,15 +2829,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder for joining two entities.
-         * Convenience method that includes both SELECT and FROM clauses.
          * 
-         * <pre>
-         * // Example:
+         * <p>This convenience method includes both SELECT and FROM clauses.
+         * The FROM clause is automatically generated based on the entity classes.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.selectFrom(User.class, "u", "user", Order.class, "o", "order")
-         *                  .where("u.active = true")
+         *                  .where(CF.eq("u.ACTIVE", true))
          *                  .sql();
          * // Output: SELECT ... FROM USER u, ORDER o WHERE u.ACTIVE = true
-         * </pre>
+         * }</pre>
          *
          * @param entityClassA first entity class
          * @param tableAliasA table alias for first entity
@@ -2385,18 +2857,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder for joining two entities with exclusions.
-         * Combines multi-entity selection with property filtering.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method combines multi-entity selection with property filtering and
+         * automatic FROM clause generation.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * Set<String> userExcl = new HashSet<>(Arrays.asList("passwordHash"));
          * Set<String> orderExcl = new HashSet<>(Arrays.asList("debugData"));
          * String sql = ACSB.selectFrom(User.class, "u", "user", userExcl,
          *                             Order.class, "o", "order", orderExcl)
-         *                  .where("o.status = 'COMPLETED'")
+         *                  .where(CF.eq("o.STATUS", "'COMPLETED'"))
          *                  .sql();
          * // Output: SELECT ... FROM USER u, ORDER o WHERE o.STATUS = 'COMPLETED'
-         * </pre>
+         * }</pre>
          *
          * @param entityClassA first entity class
          * @param tableAliasA table alias for first entity
@@ -2422,19 +2896,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM SQL builder for multiple entity selections.
-         * Automatically generates the FROM clause based on the selections.
          * 
-         * <pre>
-         * // Example:
+         * <p>This method automatically generates the FROM clause based on the selections.
+         * It's the most convenient way to build complex multi-table queries.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * List<Selection> selections = Arrays.asList(
          *     new Selection(User.class, "u", "user", null, false, null),
          *     new Selection(Order.class, "o", "order", null, true, null)
          * );
          * String sql = ACSB.selectFrom(selections)
-         *                  .where("u.verified = true")
+         *                  .where(CF.eq("u.VERIFIED", true))
          *                  .sql();
          * // Output: SELECT ... FROM USER u, ORDER o WHERE u.VERIFIED = true
-         * </pre>
+         * }</pre>
          *
          * @param multiSelects list of Selection objects defining what to select
          * @return a new SQLBuilder instance configured for SELECT operation
@@ -2443,7 +2919,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -2451,15 +2927,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a COUNT(*) SQL builder for a table.
-         * This is a convenience method for counting rows.
          * 
-         * <pre>
-         * // Example:
+         * <p>This is a convenience method for counting rows. The table name is
+         * automatically converted to uppercase.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.count("users")
-         *                  .where("active = true")
+         *                  .where(CF.eq("ACTIVE", true))
          *                  .sql();
          * // Output: SELECT COUNT(*) FROM USERS WHERE ACTIVE = true
-         * </pre>
+         * }</pre>
          *
          * @param tableName the table to count rows from
          * @return a new SQLBuilder instance configured for COUNT operation
@@ -2473,15 +2951,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a COUNT(*) SQL builder for an entity class.
-         * The table name is derived from the entity class.
          * 
-         * <pre>
-         * // Example:
+         * <p>The table name is derived from the entity class and converted to uppercase.
+         * This provides type-safe row counting.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
          * String sql = ACSB.count(User.class)
-         *                  .where("age >= 18")
+         *                  .where(CF.gte("AGE", 18))
          *                  .sql();
          * // Output: SELECT COUNT(*) FROM USER WHERE AGE >= 18
-         * </pre>
+         * }</pre>
          *
          * @param entityClass the entity class to count
          * @return a new SQLBuilder instance configured for COUNT operation
@@ -2495,14 +2975,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Parses a Condition object into SQL with entity class mapping.
-         * This method is used to generate SQL fragments from Condition objects.
          * 
-         * <pre>
-         * // Example:
-         * Condition cond = CF.and(CF.eq("name", "John"), CF.gt("age", 18));
+         * <p>This method is used to generate SQL fragments from Condition objects.
+         * Property names in the condition are converted to uppercase column names.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Condition cond = CF.and(CF.eq("firstName", "'John'"), CF.gt("age", 18));
          * String sql = ACSB.parse(cond, User.class).sql();
-         * // Output: NAME = 'John' AND AGE > 18
-         * </pre>
+         * // Output: FIRST_NAME = 'John' AND AGE > 18
+         * }</pre>
          *
          * @param cond the condition to parse into SQL
          * @param entityClass the entity class for property name mapping (can be null)
@@ -2526,29 +3008,47 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     /**
      * SQL builder implementation with lower camel case naming policy.
      * 
-     * <p>This class generates SQL with column names in lowerCamelCase format. It is marked as deprecated
-     * and users should consider using one of the other naming policy implementations like {@link PSC}, 
-     * {@link PAC}, {@link NSC}, etc.</p>
+     * <p>This builder generates SQL with actual values embedded directly in the SQL string.
+     * Property names are preserved in lowerCamelCase format without conversion. This is useful
+     * for databases that use camelCase column naming conventions.</p>
+     * 
+     * <p>Features:</p>
+     * <ul>
+     *   <li>Preserves "firstName" as "firstName" (no conversion)</li>
+     *   <li>Generates non-parameterized SQL (values embedded directly)</li>
+     *   <li>Suitable for databases with camelCase column names</li>
+     * </ul>
      * 
      * <p>Example usage:</p>
      * <pre>{@code
-     * // Column names will be in lowerCamelCase
-     * String sql = LCSB.select("firstName", "lastName")
-     *                  .from("userAccount")
-     *                  .where(CF.eq("userId", 1))
-     *                  .sql();
-     * // Output: SELECT firstName, lastName FROM userAccount WHERE userId = ?
+     * LCSB.select("firstName", "lastName").from("userAccount").where(CF.eq("userId", 1)).sql();
+     * // Output: SELECT firstName, lastName FROM userAccount WHERE userId = 1
      * }</pre>
      * 
-     * @deprecated Use other naming policy implementations instead
+     * @deprecated Use other naming policy implementations like {@link PSC}, {@link PAC}, {@link NSC} instead.
+     *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
     public static class LCSB extends SQLBuilder {
 
+        /**
+         * Constructs a new LCSB instance with LOWER_CAMEL_CASE naming policy and non-parameterized SQL policy.
+         * 
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
+         */
         LCSB() {
             super(NamingPolicy.LOWER_CAMEL_CASE, SQLPolicy.SQL);
         }
 
+        /**
+         * Creates a new instance of LCSB.
+         * 
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * 
+         * @return a new LCSB instance
+         */
         protected static LCSB createInstance() {
             return new LCSB();
         }
@@ -2557,10 +3057,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder for a single column expression.
          * 
          * <p>This method is a convenience wrapper that delegates to {@link #insert(String...)} 
-         * with a single element array.</p>
+         * with a single element array. Column names remain in camelCase format.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.insert("userName")
+         *                  .into("users")
+         *                  .values("John")
+         *                  .sql();
+         * // Output: INSERT INTO users (userName) VALUES ('John')
+         * }</pre>
          * 
          * @param expr the column name or expression to insert
          * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if expr is null or empty
          * 
          * @see #insert(String...)
          */
@@ -2574,19 +3084,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder for the specified columns.
          * 
          * <p>This method initializes a new SQLBuilder for INSERT operations with the specified
-         * column names. The actual values should be provided later using the VALUES clause.</p>
+         * column names. The actual values should be provided later using the VALUES clause.
+         * Column names remain in camelCase format without conversion.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.insert("firstName", "lastName", "email")
          *                  .into("users")
          *                  .values("John", "Doe", "john@example.com")
          *                  .sql();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@example.com')
          * }</pre>
          * 
          * @param propOrColumnNames the property or column names to insert
          * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -2603,7 +3115,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder for the specified columns collection.
          * 
          * <p>This method is similar to {@link #insert(String...)} but accepts a Collection
-         * of column names instead of varargs.</p>
+         * of column names instead of varargs. Useful when column names are dynamically determined.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * List<String> columns = Arrays.asList("firstName", "lastName", "email");
+         * String sql = LCSB.insert(columns)
+         *                  .into("users")
+         *                  .values("John", "Doe", "john@example.com")
+         *                  .sql();
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@example.com')
+         * }</pre>
          * 
          * @param propOrColumnNames collection of property or column names to insert
          * @return a new SQLBuilder instance configured for INSERT operation
@@ -2624,22 +3146,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder with property name-value pairs.
          * 
          * <p>This method allows direct specification of column names and their corresponding
-         * values as a Map.</p>
+         * values as a Map. Column names remain in camelCase format.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * Map<String, Object> props = new HashMap<>();
          * props.put("firstName", "John");
-         * props.put("lastName", "Doe");
-         * 
-         * String sql = LCSB.insert(props)
-         *                  .into("users")
-         *                  .sql();
-         * // Output: INSERT INTO users (firstName, lastName) VALUES (?, ?)
+         * props.put("age", 30);
+         * String sql = LCSB.insert(props).into("users").sql();
+         * // Output: INSERT INTO users (firstName, age) VALUES ('John', 30)
          * }</pre>
          * 
          * @param props map of property names to their values
          * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if props is null or empty
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
             N.checkArgNotEmpty(props, INSERTION_PART_MSG);
@@ -2656,19 +3176,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder from an entity object.
          * 
          * <p>This method extracts property values from the given entity object and creates
-         * an INSERT statement. All non-transient properties of the entity will be included.</p>
+         * an INSERT statement. Properties marked with @Transient, @ReadOnly, or similar 
+         * annotations are automatically excluded. Property names remain in camelCase.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * User user = new User("John", "Doe", "john@example.com");
-         * String sql = LCSB.insert(user)
-         *                  .into("users")
-         *                  .sql();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
+         * String sql = LCSB.insert(user).into("users").sql();
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@example.com')
          * }</pre>
          * 
          * @param entity the entity object to insert
          * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entity is null
          * 
          * @see #insert(Object, Set)
          */
@@ -2680,22 +3200,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder from an entity object with excluded properties.
          * 
          * <p>This method is similar to {@link #insert(Object)} but allows exclusion of
-         * specific properties from the INSERT statement.</p>
+         * specific properties from the INSERT statement beyond those excluded by annotations.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * User user = new User("John", "Doe", "john@example.com");
          * Set<String> excluded = new HashSet<>(Arrays.asList("createdDate", "modifiedDate"));
-         * 
-         * String sql = LCSB.insert(user, excluded)
-         *                  .into("users")
-         *                  .sql();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
+         * String sql = LCSB.insert(user, excluded).into("users").sql();
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@example.com')
          * }</pre>
          * 
          * @param entity the entity object to insert
          * @param excludedPropNames set of property names to exclude from the insert
          * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entity, INSERTION_PART_MSG);
@@ -2714,10 +3232,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder for an entity class.
          * 
          * <p>This method generates an INSERT template for the specified entity class,
-         * including all insertable properties of the class.</p>
+         * including all insertable properties. Properties marked with @ReadOnly, @ReadOnlyId,
+         * or @Transient are automatically excluded.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.insert(User.class).into("users").sql();
+         * // Output: INSERT INTO users (firstName, lastName, email)
+         * }</pre>
          * 
          * @param entityClass the entity class to create INSERT for
          * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          * 
          * @see #insert(Class, Set)
          */
@@ -2730,20 +3256,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>This method generates an INSERT template for the specified entity class,
          * excluding the specified properties. Properties marked with {@link ReadOnly},
-         * {@link ReadOnlyId}, or {@link Transient} annotations are automatically excluded.</p>
+         * {@link ReadOnlyId}, or {@link com.landawn.abacus.annotation.Transient} annotations 
+         * are automatically excluded.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
-         * String sql = LCSB.insert(User.class, excluded)
-         *                  .into("users")
-         *                  .sql();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
+         * String sql = LCSB.insert(User.class, excluded).into("users").sql();
+         * // Output: INSERT INTO users (firstName, lastName, email)
          * }</pre>
          * 
          * @param entityClass the entity class to create INSERT for
          * @param excludedPropNames set of property names to exclude from the insert
          * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, INSERTION_PART_MSG);
@@ -2761,10 +3287,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT INTO SQL builder for an entity class.
          * 
          * <p>This is a convenience method that combines {@link #insert(Class)} and
-         * {@link #into(Class)} operations.</p>
+         * {@link #into(Class)} operations. The table name is derived from the entity class.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.insertInto(User.class)
+         *                  .values("John", "Doe", "john@example.com")
+         *                  .sql();
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@example.com')
+         * }</pre>
          * 
          * @param entityClass the entity class to insert into
          * @return a new SQLBuilder instance configured for INSERT INTO operation
+         * @throws IllegalArgumentException if entityClass is null
          * 
          * @see #insertInto(Class, Set)
          */
@@ -2778,18 +3313,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This is a convenience method that combines {@link #insert(Class, Set)} and
          * {@link #into(Class)} operations. The table name is derived from the entity class.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("id"));
          * String sql = LCSB.insertInto(User.class, excluded)
          *                  .values("John", "Doe", "john@example.com")
          *                  .sql();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@example.com')
          * }</pre>
          * 
          * @param entityClass the entity class to insert into
          * @param excludedPropNames set of property names to exclude from the insert
          * @return a new SQLBuilder instance configured for INSERT INTO operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return insert(entityClass, excludedPropNames).into(entityClass);
@@ -2800,23 +3336,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>This method generates MySQL-style batch insert SQL for inserting multiple
          * rows in a single statement. The input collection can contain either entity
-         * objects or Map instances.</p>
+         * objects or Map instances. All items must have the same structure.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * List<User> users = Arrays.asList(
          *     new User("John", "Doe"),
          *     new User("Jane", "Smith")
          * );
-         * 
-         * String sql = LCSB.batchInsert(users)
-         *                  .into("users")
-         *                  .sql();
-         * // Output: INSERT INTO users (firstName, lastName) VALUES (?, ?), (?, ?)
+         * String sql = LCSB.batchInsert(users).into("users").sql();
+         * // Output: INSERT INTO users (firstName, lastName) VALUES ('John', 'Doe'), ('Jane', 'Smith')
          * }</pre>
          * 
          * @param propsList collection of entities or property maps to batch insert
          * @return a new SQLBuilder instance configured for batch INSERT operation
+         * @throws IllegalArgumentException if propsList is null or empty
          * 
          * @apiNote This is a beta feature and may be subject to change
          */
@@ -2845,17 +3379,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * specified table. The columns to update should be specified using the
          * {@code set()} method.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.update("users")
-         *                  .set("lastName", "Smith")
+         *                  .set("lastName", "'Smith'")
          *                  .where(CF.eq("id", 123))
          *                  .sql();
-         * // Output: UPDATE users SET lastName = ? WHERE id = ?
+         * // Output: UPDATE users SET lastName = 'Smith' WHERE id = 123
          * }</pre>
          * 
          * @param tableName the name of the table to update
          * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder update(final String tableName) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -2874,9 +3409,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method is similar to {@link #update(String)} but also provides entity
          * class information for better type safety and property name mapping.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.update("users", User.class)
+         *                  .set("age", 31)
+         *                  .where(CF.eq("firstName", "'John'"))
+         *                  .sql();
+         * // Output: UPDATE users SET age = 31 WHERE firstName = 'John'
+         * }</pre>
+         * 
          * @param tableName the name of the table to update
          * @param entityClass the entity class corresponding to the table
          * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -2895,10 +3440,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an UPDATE SQL builder for an entity class.
          * 
          * <p>This method derives the table name from the entity class and includes
-         * all updatable properties in the UPDATE statement.</p>
+         * all updatable properties. Properties marked with {@link NonUpdatable} or
+         * {@link ReadOnly} are automatically excluded.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.update(User.class)
+         *                  .set("age", 31)
+         *                  .where(CF.eq("firstName", "'John'"))
+         *                  .sql();
+         * // Output: UPDATE users SET age = 31 WHERE firstName = 'John'
+         * }</pre>
          * 
          * @param entityClass the entity class to update
          * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if entityClass is null
          * 
          * @see #update(Class, Set)
          */
@@ -2907,25 +3463,27 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         }
 
         /**
-         * Creates an UPDATE SQL builder for an entity class with excluded properties.
+         * Creates an UPDATE SQL builder for an entity class, excluding specified properties.
          * 
          * <p>This method generates an UPDATE template for the specified entity class,
          * excluding the specified properties. Properties marked with {@link ReadOnly},
-         * {@link NonUpdatable}, or {@link Transient} annotations are automatically excluded.</p>
+         * {@link NonUpdatable}, or {@link com.landawn.abacus.annotation.Transient} 
+         * annotations are automatically excluded.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
          * String sql = LCSB.update(User.class, excluded)
-         *                  .set("firstName", "John")
+         *                  .set("firstName", "'John'")
          *                  .where(CF.eq("id", 123))
          *                  .sql();
-         * // Output: UPDATE users SET firstName = ? WHERE id = ?
+         * // Output: UPDATE users SET firstName = 'John' WHERE id = 123
          * }</pre>
          * 
          * @param entityClass the entity class to update
          * @param excludedPropNames set of property names to exclude from the update
          * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, UPDATE_PART_MSG);
@@ -2944,18 +3502,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates a DELETE FROM SQL builder for the specified table.
          * 
          * <p>This method initializes a new SQLBuilder for DELETE operations on the
-         * specified table.</p>
+         * specified table. A WHERE clause should typically be added to avoid deleting all rows.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.deleteFrom("users")
-         *                  .where(CF.eq("status", "inactive"))
+         *                  .where(CF.eq("status", "'inactive'"))
          *                  .sql();
-         * // Output: DELETE FROM users WHERE status = ?
+         * // Output: DELETE FROM users WHERE status = 'inactive'
          * }</pre>
          * 
          * @param tableName the name of the table to delete from
          * @return a new SQLBuilder instance configured for DELETE operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder deleteFrom(final String tableName) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -2974,9 +3533,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method is similar to {@link #deleteFrom(String)} but also provides entity
          * class information for better type safety in WHERE conditions.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.deleteFrom("users", User.class)
+         *                  .where(CF.eq("age", 18))
+         *                  .sql();
+         * // Output: DELETE FROM users WHERE age = 18
+         * }</pre>
+         * 
          * @param tableName the name of the table to delete from
          * @param entityClass the entity class corresponding to the table
          * @return a new SQLBuilder instance configured for DELETE operation
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -2997,16 +3565,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method derives the table name from the entity class using the
          * configured naming policy.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.deleteFrom(User.class)
-         *                  .where(CF.lt("lastLoginDate", oneYearAgo))
+         *                  .where(CF.eq("id", 1))
          *                  .sql();
-         * // Output: DELETE FROM users WHERE lastLoginDate < ?
+         * // Output: DELETE FROM users WHERE id = 1
          * }</pre>
          * 
          * @param entityClass the entity class to delete from
          * @return a new SQLBuilder instance configured for DELETE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder deleteFrom(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, DELETION_PART_MSG);
@@ -3026,7 +3595,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method allows specification of complex SELECT expressions including
          * aggregate functions, calculated fields, etc.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.select("COUNT(*) as total, AVG(salary) as avgSalary")
          *                  .from("employees")
@@ -3051,15 +3620,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT SQL builder for the specified columns.
          * 
-         * <p>This method initializes a SELECT query with the specified column names.</p>
+         * <p>This method initializes a SELECT query with the specified column names.
+         * Column names remain in camelCase format without conversion.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.select("firstName", "lastName", "email")
          *                  .from("users")
          *                  .where(CF.eq("active", true))
          *                  .sql();
-         * // Output: SELECT firstName, lastName, email FROM users WHERE active = ?
+         * // Output: SELECT firstName, lastName, email FROM users WHERE active = true
          * }</pre>
          * 
          * @param propOrColumnNames the property or column names to select
@@ -3083,6 +3653,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method is similar to {@link #select(String...)} but accepts a Collection
          * of column names instead of varargs.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * List<String> columns = getRequiredColumns();
+         * String sql = LCSB.select(columns)
+         *                  .from("users")
+         *                  .sql();
+         * // Output: SELECT firstName, lastName, email FROM users
+         * }</pre>
+         * 
          * @param propOrColumnNames collection of property or column names to select
          * @return a new SQLBuilder instance configured for SELECT operation
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
@@ -3104,15 +3683,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method allows specification of column names with their aliases for
          * the SELECT statement.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * Map<String, String> aliases = new HashMap<>();
          * aliases.put("firstName", "fname");
          * aliases.put("lastName", "lname");
-         * 
-         * String sql = LCSB.select(aliases)
-         *                  .from("users")
-         *                  .sql();
+         * String sql = LCSB.select(aliases).from("users").sql();
          * // Output: SELECT firstName AS fname, lastName AS lname FROM users
          * }</pre>
          * 
@@ -3137,8 +3713,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method generates a SELECT statement including all properties of the
          * specified entity class, excluding any transient fields.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.select(User.class)
+         *                  .from("users")
+         *                  .sql();
+         * // Output: SELECT id, firstName, lastName, email FROM users
+         * }</pre>
+         * 
          * @param entityClass the entity class to select from
          * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          * 
          * @see #select(Class, boolean)
          */
@@ -3152,7 +3737,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>When includeSubEntityProperties is true, properties of sub-entities
          * (nested objects) will also be included in the SELECT statement.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * // If User has an Address sub-entity
          * String sql = LCSB.select(User.class, true)
@@ -3164,20 +3749,31 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return select(entityClass, includeSubEntityProperties, null);
         }
 
         /**
-         * Creates a SELECT SQL builder for an entity class with excluded properties.
+         * Creates a SELECT SQL builder for an entity class, excluding specified properties.
          * 
          * <p>This method generates a SELECT statement for the entity class, excluding
          * the specified properties.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = new HashSet<>(Arrays.asList("password", "secretKey"));
+         * String sql = LCSB.select(User.class, excluded)
+         *                  .from("users")
+         *                  .sql();
+         * // Output: SELECT id, firstName, lastName, email FROM users
+         * }</pre>
+         * 
          * @param entityClass the entity class to select from
          * @param excludedPropNames set of property names to exclude from the select
          * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return select(entityClass, false, excludedPropNames);
@@ -3189,19 +3785,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method provides full control over which properties to include in the
          * SELECT statement, with options for sub-entities and property exclusion.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
-         * Set<String> excluded = new HashSet<>(Arrays.asList("password", "secretKey"));
-         * String sql = LCSB.select(User.class, true, excluded)
-         *                  .from("users")
+         * Set<String> excluded = new HashSet<>(Arrays.asList("internalNotes"));
+         * String sql = LCSB.select(Order.class, true, excluded)
+         *                  .from("orders")
          *                  .sql();
-         * // Output: SELECT firstName, lastName, email, address.street, address.city FROM users
+         * // Output includes Order and Customer properties, excluding internalNotes
          * }</pre>
          * 
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @param excludedPropNames set of property names to exclude from the select
          * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -3221,8 +3818,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This is a convenience method that combines SELECT and FROM operations.
          * The table name is derived from the entity class.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.selectFrom(User.class)
+         *                  .where(CF.eq("active", true))
+         *                  .sql();
+         * // Output: SELECT id, firstName, lastName, email FROM users WHERE active = true
+         * }</pre>
+         * 
          * @param entityClass the entity class to select from
          * @return a new SQLBuilder instance configured for SELECT FROM operation
+         * @throws IllegalArgumentException if entityClass is null
          * 
          * @see #selectFrom(Class, boolean)
          */
@@ -3236,17 +3842,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method allows specification of a table alias for use in complex queries
          * with joins or subqueries.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.selectFrom(User.class, "u")
          *                  .where(CF.eq("u.active", true))
          *                  .sql();
-         * // Output: SELECT u.firstName, u.lastName FROM users u WHERE u.active = ?
+         * // Output: SELECT u.id, u.firstName, u.lastName FROM users u WHERE u.active = true
          * }</pre>
          * 
          * @param entityClass the entity class to select from
          * @param alias the table alias to use
          * @return a new SQLBuilder instance configured for SELECT FROM operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
             return selectFrom(entityClass, alias, false);
@@ -3258,9 +3865,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This is a convenience method that combines SELECT and FROM operations
          * with the option to include sub-entity properties.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.selectFrom(Order.class, true)
+         *                  .where(CF.gt("totalAmount", 100))
+         *                  .sql();
+         * // Output includes JOINs for sub-entities
+         * }</pre>
+         * 
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @return a new SQLBuilder instance configured for SELECT FROM operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, includeSubEntityProperties, null);
@@ -3272,76 +3888,111 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method combines table aliasing with sub-entity property inclusion
          * for complex query construction.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.selectFrom(Order.class, "o", true)
+         *                  .where(CF.eq("o.status", "'ACTIVE'"))
+         *                  .sql();
+         * // Output includes aliased columns and JOINs for sub-entities
+         * }</pre>
+         * 
          * @param entityClass the entity class to select from
          * @param alias the table alias to use
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @return a new SQLBuilder instance configured for SELECT FROM operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, alias, includeSubEntityProperties, null);
         }
 
         /**
-         * Creates a SELECT FROM SQL builder with excluded properties.
+         * Creates a SELECT FROM SQL builder with property exclusion.
          * 
-         * <p>This is a convenience method that combines SELECT and FROM operations
-         * while excluding specified properties.</p>
+         * <p>This method allows selective property selection with automatic FROM clause.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = new HashSet<>(Arrays.asList("largeBlob", "metadata"));
+         * String sql = LCSB.selectFrom(User.class, excluded)
+         *                  .where(CF.eq("active", true))
+         *                  .sql();
+         * // Output: SELECT id, firstName, lastName, email FROM users WHERE active = true
+         * }</pre>
          * 
          * @param entityClass the entity class to select from
          * @param excludedPropNames set of property names to exclude from the select
          * @return a new SQLBuilder instance configured for SELECT FROM operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, false, excludedPropNames);
         }
 
         /**
-         * Creates a SELECT FROM SQL builder with table alias and excluded properties.
+         * Creates a SELECT FROM SQL builder with table alias and property exclusion.
          * 
          * <p>This method provides aliasing capability while excluding specified properties
          * from the SELECT statement.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = new HashSet<>(Arrays.asList("internalCode"));
+         * String sql = LCSB.selectFrom(User.class, "u", excluded)
+         *                  .innerJoin("orders", "o").on("u.id = o.userId")
+         *                  .sql();
+         * // Output uses alias "u" and excludes internalCode property
+         * }</pre>
          * 
          * @param entityClass the entity class to select from
          * @param alias the table alias to use
          * @param excludedPropNames set of property names to exclude from the select
          * @return a new SQLBuilder instance configured for SELECT FROM operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, alias, false, excludedPropNames);
         }
 
         /**
-         * Creates a SELECT FROM SQL builder with sub-entity option and excluded properties.
+         * Creates a SELECT FROM SQL builder with sub-entity option and property exclusion.
          * 
          * <p>This method provides a convenient way to create a complete SELECT FROM
          * statement with control over sub-entities and property exclusion.</p>
+         * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> excluded = new HashSet<>(Arrays.asList("deletedFlag"));
+         * String sql = LCSB.selectFrom(Order.class, true, excluded)
+         *                  .where(CF.gt("createdDate", "'2023-01-01'"))
+         *                  .sql();
+         * // Output includes Order with Customer sub-entity, excluding deletedFlag
+         * }</pre>
          * 
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @param excludedPropNames set of property names to exclude from the select
          * @return a new SQLBuilder instance configured for SELECT FROM operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
         }
 
         /**
-         * Creates a SELECT FROM SQL builder with full configuration options.
+         * Creates a SELECT FROM SQL builder with full control over all options.
          * 
          * <p>This method provides complete control over the SELECT FROM statement generation,
          * including table alias, sub-entity properties, and property exclusion. When
          * sub-entities are included, appropriate joins will be generated.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
-         * Set<String> excluded = new HashSet<>(Arrays.asList("password"));
-         * String sql = LCSB.selectFrom(User.class, "u", true, excluded)
-         *                  .where(CF.eq("u.active", true))
+         * Set<String> excluded = new HashSet<>(Arrays.asList("debugInfo"));
+         * String sql = LCSB.selectFrom(Order.class, "ord", true, excluded)
+         *                  .where(CF.gt("ord.totalAmount", 1000))
          *                  .sql();
-         * // Output: SELECT u.firstName, u.lastName, a.street, a.city 
-         * //         FROM users u 
-         * //         LEFT JOIN addresses a ON u.addressId = a.id 
-         * //         WHERE u.active = ?
+         * // Output: Complex SELECT with alias, sub-entities, and exclusions
          * }</pre>
          * 
          * @param entityClass the entity class to select from
@@ -3349,6 +4000,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @param excludedPropNames set of property names to exclude from the select
          * @return a new SQLBuilder instance configured for SELECT FROM operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
@@ -3366,11 +4018,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT SQL builder for two entity classes with aliases.
          * 
-         * <p>This method is designed for queries that need to select from multiple tables,
-         * typically used in JOIN operations. Each entity class can have both a table alias
-         * and a class alias for property disambiguation.</p>
+         * <p>This method sets up a query to select from two tables with aliasing.
+         * Each entity's properties will be prefixed with their class alias
+         * in the result set.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.select(User.class, "u", "user", 
          *                         Order.class, "o", "order")
@@ -3390,6 +4042,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias for the second entity (used in result mapping)
          * @return a new SQLBuilder instance configured for multi-table SELECT operation
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -3402,7 +4055,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method extends {@link #select(Class, String, String, Class, String, String)}
          * by allowing exclusion of specific properties from each entity class.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * Set<String> userExclusions = new HashSet<>(Arrays.asList("password"));
          * Set<String> orderExclusions = new HashSet<>(Arrays.asList("internalNotes"));
@@ -3423,6 +4076,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param classAliasB the class alias for the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SQLBuilder instance configured for multi-table SELECT operation
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -3441,7 +4095,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * statements involving multiple entities with different configurations. Each
          * Selection object encapsulates the configuration for one entity.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * List<Selection> selections = Arrays.asList(
          *     new Selection(User.class, "u", "user", null, false, null),
@@ -3478,6 +4132,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This is a convenience method that combines the multi-entity SELECT with
          * automatic FROM clause generation.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * String sql = LCSB.selectFrom(User.class, "u", "user", Order.class, "o", "order")
+         *                  .where(CF.eq("u.active", true))
+         *                  .sql();
+         * // Output: SELECT ... FROM users u, orders o WHERE u.active = true
+         * }</pre>
+         * 
          * @param entityClassA the first entity class
          * @param tableAliasA the table alias for the first entity
          * @param classAliasA the class alias for the first entity
@@ -3485,6 +4147,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias for the second entity
          * @return a new SQLBuilder instance configured for multi-table SELECT FROM operation
+         * @throws IllegalArgumentException if entityClassA is null
          * 
          * @see #select(Class, String, String, Class, String, String)
          */
@@ -3499,6 +4162,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This is a convenience method that combines the multi-entity SELECT with
          * automatic FROM clause generation, while allowing property exclusions.</p>
          * 
+         * <p>Example usage:</p>
+         * <pre>{@code
+         * Set<String> userExcl = new HashSet<>(Arrays.asList("passwordHash"));
+         * Set<String> orderExcl = new HashSet<>(Arrays.asList("debugData"));
+         * 
+         * String sql = LCSB.selectFrom(User.class, "u", "user", userExcl,
+         *                             Order.class, "o", "order", orderExcl)
+         *                  .where(CF.eq("o.status", "'COMPLETED'"))
+         *                  .sql();
+         * }</pre>
+         * 
          * @param entityClassA the first entity class
          * @param tableAliasA the table alias for the first entity
          * @param classAliasA the class alias for the first entity
@@ -3508,6 +4182,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param classAliasB the class alias for the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SQLBuilder instance configured for multi-table SELECT FROM operation
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -3527,7 +4202,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * the provided Selection configurations. It's the most convenient way to build
          * complex multi-table queries.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * List<Selection> selections = Arrays.asList(
          *     new Selection(User.class, "u", "user", null, false, null),
@@ -3535,11 +4210,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * 
          * String sql = LCSB.selectFrom(selections)
-         *                  .where(CF.eq("u.active", true))
+         *                  .where(CF.eq("u.verified", true))
          *                  .sql();
          * // Output: SELECT u.firstName AS "user.firstName", ... 
          * //         FROM users u, orders o 
-         * //         WHERE u.active = ?
+         * //         WHERE u.verified = true
          * }</pre>
          * 
          * @param multiSelects list of Selection objects defining the entities to select
@@ -3560,16 +4235,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>This is a convenience method for creating COUNT queries.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.count("users")
          *                  .where(CF.eq("active", true))
          *                  .sql();
-         * // Output: SELECT COUNT(*) FROM users WHERE active = ?
+         * // Output: SELECT COUNT(*) FROM users WHERE active = true
          * }</pre>
          * 
          * @param tableName the table to count rows from
          * @return a new SQLBuilder instance configured for COUNT operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder count(final String tableName) {
             N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
@@ -3583,16 +4259,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method derives the table name from the entity class and creates
          * a COUNT query.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * String sql = LCSB.count(User.class)
          *                  .where(CF.between("age", 18, 65))
          *                  .sql();
-         * // Output: SELECT COUNT(*) FROM users WHERE age BETWEEN ? AND ?
+         * // Output: SELECT COUNT(*) FROM users WHERE age BETWEEN 18 AND 65
          * }</pre>
          * 
          * @param entityClass the entity class to count
          * @return a new SQLBuilder instance configured for COUNT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -3607,7 +4284,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * condition without building a complete statement. It's typically used for
          * debugging or building dynamic query parts.</p>
          * 
-         * <p>Example:</p>
+         * <p>Example usage:</p>
          * <pre>{@code
          * Condition cond = CF.and(
          *     CF.eq("active", true),
@@ -3615,7 +4292,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * 
          * String sql = LCSB.parse(cond, User.class).sql();
-         * // Output: active = ? AND age > ?
+         * // Output: active = true AND age > 18
          * }</pre>
          * 
          * @param cond the condition to parse into SQL
@@ -3672,13 +4349,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method is a convenience wrapper that internally calls {@link #insert(String...)}
          * with a single-element array.</p>
          *
-         * @param expr the column name or expression to insert
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if expr is null or empty
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.insert("user_name").into("users");
          * }</pre>
+         * 
+         * @param expr the column name or expression to insert
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if expr is null or empty
          */
         public static SQLBuilder insert(final String expr) {
             N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
@@ -3692,15 +4369,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The column names are used as-is without any naming transformation.
          * The actual values must be provided later using the {@code values()} method.</p>
          *
-         * @param propOrColumnNames the property or column names to include in the INSERT statement
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if propOrColumnNames is null or empty
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.insert("name", "email", "age")
          *                         .into("users")
          *                         .values("John", "john@example.com", 25);
          * }</pre>
+         * 
+         * @param propOrColumnNames the property or column names to include in the INSERT statement
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -3719,14 +4396,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method allows using any Collection implementation (List, Set, etc.) to specify
          * the columns for insertion.</p>
          *
-         * @param propOrColumnNames collection of property or column names to include in the INSERT
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if propOrColumnNames is null or empty
-         * 
          * <pre>{@code
          * List<String> columns = Arrays.asList("name", "email", "age");
          * SQLBuilder builder = PSB.insert(columns).into("users");
          * }</pre>
+         * 
+         * @param propOrColumnNames collection of property or column names to include in the INSERT
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -3746,16 +4423,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * to be inserted. This provides a convenient way to specify both columns and values
          * in a single call.</p>
          *
-         * @param props map where keys are column names and values are the values to insert
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if props is null or empty
-         * 
          * <pre>{@code
          * Map<String, Object> data = new HashMap<>();
          * data.put("name", "John");
          * data.put("age", 25);
          * SQLBuilder builder = PSB.insert(data).into("users");
          * }</pre>
+         * 
+         * @param props map where keys are column names and values are the values to insert
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if props is null or empty
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
             N.checkArgNotEmpty(props, INSERTION_PART_MSG);
@@ -3775,14 +4452,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * except those marked with {@code @Transient}, {@code @ReadOnly}, or {@code @ReadOnlyId}
          * annotations.</p>
          *
-         * @param entity the entity object whose properties will be inserted
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entity is null
-         * 
          * <pre>{@code
          * User user = new User("John", "john@example.com", 25);
          * SQLBuilder builder = PSB.insert(user).into("users");
          * }</pre>
+         * 
+         * @param entity the entity object whose properties will be inserted
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity) {
             return insert(entity, null);
@@ -3795,16 +4472,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * in the excludedPropNames set. This is useful when certain properties should not
          * be inserted even if they have values.</p>
          *
-         * @param entity the entity object whose properties will be inserted
-         * @param excludedPropNames set of property names to exclude from the INSERT
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entity is null
-         * 
          * <pre>{@code
          * User user = new User();
          * Set<String> excluded = N.asSet("createdTime", "updatedTime");
          * SQLBuilder builder = PSB.insert(user, excluded).into("users");
          * }</pre>
+         * 
+         * @param entity the entity object whose properties will be inserted
+         * @param excludedPropNames set of property names to exclude from the INSERT
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entity, INSERTION_PART_MSG);
@@ -3826,15 +4503,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * specified entity class. Properties marked with {@code @Transient}, {@code @ReadOnly},
          * or {@code @ReadOnlyId} annotations are automatically excluded.</p>
          *
-         * @param entityClass the entity class to generate INSERT statement for
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.insert(User.class)
          *                         .into("users")
          *                         .values("John", "john@example.com", 25);
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate INSERT statement for
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass) {
             return insert(entityClass, null);
@@ -3846,15 +4523,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Generates an INSERT template excluding the specified properties in addition to
          * those automatically excluded by annotations.</p>
          *
-         * @param entityClass the entity class to generate INSERT statement for
-         * @param excludedPropNames set of property names to exclude from the INSERT
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * Set<String> excluded = N.asSet("version", "lastModified");
          * SQLBuilder builder = PSB.insert(User.class, excluded).into("users");
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate INSERT statement for
+         * @param excludedPropNames set of property names to exclude from the INSERT
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, INSERTION_PART_MSG);
@@ -3875,14 +4552,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * in a single call. The table name is derived from the entity class name or its {@code @Table}
          * annotation.</p>
          *
-         * @param entityClass the entity class to generate INSERT INTO statement for
-         * @return a new SQLBuilder instance configured for INSERT operation with table name set
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.insertInto(User.class)
          *                         .values("John", "john@example.com", 25);
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate INSERT INTO statement for
+         * @return a new SQLBuilder instance configured for INSERT operation with table name set
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass) {
             return insertInto(entityClass, null);
@@ -3894,16 +4571,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Combines INSERT and INTO operations while excluding specified properties from
          * the generated statement.</p>
          *
-         * @param entityClass the entity class to generate INSERT INTO statement for
-         * @param excludedPropNames set of property names to exclude from the INSERT
-         * @return a new SQLBuilder instance configured for INSERT operation with table name set
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * Set<String> excluded = N.asSet("id", "version");
          * SQLBuilder builder = PSB.insertInto(User.class, excluded)
          *                         .values("John", "john@example.com");
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate INSERT INTO statement for
+         * @param excludedPropNames set of property names to exclude from the INSERT
+         * @return a new SQLBuilder instance configured for INSERT operation with table name set
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return insert(entityClass, excludedPropNames).into(entityClass);
@@ -3916,10 +4593,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * statement. The input collection can contain either entity objects or Map instances
          * representing the data to insert.</p>
          *
-         * @param propsList collection of entities or property maps to insert
-         * @return a new SQLBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
-         * 
          * <pre>{@code
          * List<User> users = Arrays.asList(
          *     new User("John", "john@example.com"),
@@ -3928,6 +4601,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * SQLBuilder builder = PSB.batchInsert(users).into("users");
          * // Generates: INSERT INTO users (name, email) VALUES (?, ?), (?, ?)
          * }</pre>
+         * 
+         * @param propsList collection of entities or property maps to insert
+         * @return a new SQLBuilder instance configured for batch INSERT operation
+         * @throws IllegalArgumentException if propsList is null or empty
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -3953,15 +4630,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The table name is used as-is without any transformation. Columns to update
          * must be specified using the {@code set()} method.</p>
          *
-         * @param tableName the name of the table to update
-         * @return a new SQLBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName is null or empty
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.update("users")
          *                         .set("name", "email")
          *                         .where(CF.eq("id", 1));
          * }</pre>
+         * 
+         * @param tableName the name of the table to update
+         * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder update(final String tableName) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -3980,16 +4657,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Specifying the entity class enables property name transformation and validation
          * based on the entity's field definitions.</p>
          *
-         * @param tableName the name of the table to update
-         * @param entityClass the entity class for property mapping
-         * @return a new SQLBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName or entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.update("users", User.class)
          *                         .set("name", "email")
          *                         .where(CF.eq("id", 1));
          * }</pre>
+         * 
+         * @param tableName the name of the table to update
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if tableName or entityClass is null
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -4011,14 +4688,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * All updatable properties (excluding those marked with {@code @NonUpdatable}, {@code @ReadOnly},
          * or {@code @Transient}) are included in the SET clause.</p>
          *
-         * @param entityClass the entity class to generate UPDATE statement for
-         * @return a new SQLBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.update(User.class)
          *                         .where(CF.eq("id", 1));
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate UPDATE statement for
+         * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass) {
             return update(entityClass, null);
@@ -4030,16 +4707,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Generates an UPDATE statement excluding the specified properties in addition to
          * those automatically excluded by annotations.</p>
          *
-         * @param entityClass the entity class to generate UPDATE statement for
-         * @param excludedPropNames set of property names to exclude from the UPDATE
-         * @return a new SQLBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * Set<String> excluded = N.asSet("createdTime", "createdBy");
          * SQLBuilder builder = PSB.update(User.class, excluded)
          *                         .where(CF.eq("id", 1));
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate UPDATE statement for
+         * @param excludedPropNames set of property names to exclude from the UPDATE
+         * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, UPDATE_PART_MSG);
@@ -4060,14 +4737,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The table name is used as-is without any transformation. WHERE conditions
          * should be added to avoid deleting all records.</p>
          *
-         * @param tableName the name of the table to delete from
-         * @return a new SQLBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName is null or empty
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.deleteFrom("users")
          *                         .where(CF.eq("status", "inactive"));
          * }</pre>
+         * 
+         * @param tableName the name of the table to delete from
+         * @return a new SQLBuilder instance configured for DELETE operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder deleteFrom(final String tableName) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -4086,15 +4763,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Specifying the entity class enables property name validation in WHERE conditions
          * based on the entity's field definitions.</p>
          *
-         * @param tableName the name of the table to delete from
-         * @param entityClass the entity class for property mapping
-         * @return a new SQLBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName or entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.deleteFrom("users", User.class)
          *                         .where(CF.eq("lastLogin", null));
          * }</pre>
+         * 
+         * @param tableName the name of the table to delete from
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance configured for DELETE operation
+         * @throws IllegalArgumentException if tableName or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -4114,14 +4791,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>The table name is derived from the entity class name or its {@code @Table} annotation.</p>
          *
-         * @param entityClass the entity class to generate DELETE FROM statement for
-         * @return a new SQLBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.deleteFrom(User.class)
          *                         .where(CF.eq("id", 1));
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate DELETE FROM statement for
+         * @return a new SQLBuilder instance configured for DELETE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder deleteFrom(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, DELETION_PART_MSG);
@@ -4141,14 +4818,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The selectPart can be a simple column name or a complex expression including
          * functions, aliases, etc.</p>
          *
-         * @param selectPart the column name or expression to select
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if selectPart is null or empty
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.select("COUNT(*)").from("users");
          * SQLBuilder builder2 = PSB.select("name AS userName").from("users");
          * }</pre>
+         * 
+         * @param selectPart the column name or expression to select
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if selectPart is null or empty
          */
         public static SQLBuilder select(final String selectPart) {
             N.checkArgNotEmpty(selectPart, SELECTION_PART_MSG);
@@ -4166,15 +4843,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Column names are used as-is without any transformation. Each column can be
          * a simple name or include expressions and aliases.</p>
          *
-         * @param propOrColumnNames the property or column names to select
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if propOrColumnNames is null or empty
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.select("id", "name", "email")
          *                         .from("users")
          *                         .where(CF.gt("age", 18));
          * }</pre>
+         * 
+         * @param propOrColumnNames the property or column names to select
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, SELECTION_PART_MSG);
@@ -4193,14 +4870,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method allows using any Collection implementation (List, Set, etc.) to specify
          * the columns to select.</p>
          *
-         * @param propOrColumnNames collection of property or column names to select
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if propOrColumnNames is null or empty
-         * 
          * <pre>{@code
          * List<String> columns = Arrays.asList("id", "name", "email");
          * SQLBuilder builder = PSB.select(columns).from("users");
          * }</pre>
+         * 
+         * @param propOrColumnNames collection of property or column names to select
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, SELECTION_PART_MSG);
@@ -4219,10 +4896,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The map keys represent the column names or expressions to select, and the values
          * are their corresponding aliases in the result set.</p>
          *
-         * @param propOrColumnNameAliases map where keys are column names and values are aliases
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if propOrColumnNameAliases is null or empty
-         * 
          * <pre>{@code
          * Map<String, String> aliases = new LinkedHashMap<>();
          * aliases.put("u.name", "userName");
@@ -4230,6 +4903,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * SQLBuilder builder = PSB.select(aliases).from("users u");
          * // Generates: SELECT u.name AS userName, u.email AS userEmail FROM users u
          * }</pre>
+         * 
+         * @param propOrColumnNameAliases map where keys are column names and values are aliases
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if propOrColumnNameAliases is null or empty
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
             N.checkArgNotEmpty(propOrColumnNameAliases, SELECTION_PART_MSG);
@@ -4248,15 +4925,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Selects all properties of the entity class except those marked with
          * {@code @Transient} annotation. Sub-entity properties are not included by default.</p>
          *
-         * @param entityClass the entity class whose properties to select
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.select(User.class)
          *                         .from("users")
          *                         .where(CF.eq("active", true));
          * }</pre>
+         * 
+         * @param entityClass the entity class whose properties to select
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass) {
             return select(entityClass, false);
@@ -4268,17 +4945,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>When includeSubEntityProperties is true, properties of sub-entities (nested objects)
          * are also included in the selection with appropriate aliasing.</p>
          *
-         * @param entityClass the entity class whose properties to select
-         * @param includeSubEntityProperties whether to include properties of sub-entities
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * // If User has an Address sub-entity
          * SQLBuilder builder = PSB.select(User.class, true)
          *                         .from("users u")
          *                         .join("addresses a").on("u.address_id = a.id");
          * }</pre>
+         * 
+         * @param entityClass the entity class whose properties to select
+         * @param includeSubEntityProperties whether to include properties of sub-entities
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return select(entityClass, includeSubEntityProperties, null);
@@ -4290,16 +4967,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Generates a SELECT statement excluding the specified properties in addition to
          * those automatically excluded by {@code @Transient} annotation.</p>
          *
-         * @param entityClass the entity class whose properties to select
-         * @param excludedPropNames set of property names to exclude from the SELECT
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * Set<String> excluded = N.asSet("password", "secretKey");
          * SQLBuilder builder = PSB.select(User.class, excluded)
          *                         .from("users");
          * }</pre>
+         * 
+         * @param entityClass the entity class whose properties to select
+         * @param excludedPropNames set of property names to exclude from the SELECT
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return select(entityClass, false, excludedPropNames);
@@ -4311,18 +4988,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Provides complete control over which properties to include or exclude, including
          * sub-entity properties.</p>
          *
-         * @param entityClass the entity class whose properties to select
-         * @param includeSubEntityProperties whether to include properties of sub-entities
-         * @param excludedPropNames set of property names to exclude from the SELECT
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * Set<String> excluded = N.asSet("internalNotes");
          * SQLBuilder builder = PSB.select(User.class, true, excluded)
          *                         .from("users u")
          *                         .join("addresses a").on("u.address_id = a.id");
          * }</pre>
+         * 
+         * @param entityClass the entity class whose properties to select
+         * @param includeSubEntityProperties whether to include properties of sub-entities
+         * @param excludedPropNames set of property names to exclude from the SELECT
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -4342,15 +5019,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This is a convenience method that combines SELECT and FROM operations.
          * The table name is derived from the entity class name or its {@code @Table} annotation.</p>
          *
-         * @param entityClass the entity class to generate SELECT FROM statement for
-         * @return a new SQLBuilder instance with both SELECT and FROM clauses set
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.selectFrom(User.class)
          *                         .where(CF.eq("status", "active"));
          * // Equivalent to: PSB.select(User.class).from(User.class)
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate SELECT FROM statement for
+         * @return a new SQLBuilder instance with both SELECT and FROM clauses set
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass) {
             return selectFrom(entityClass, false);
@@ -4362,16 +5039,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The alias is used to qualify column names in the generated SQL, which is useful
          * for joins and subqueries.</p>
          *
-         * @param entityClass the entity class to generate SELECT FROM statement for
-         * @param alias the table alias to use in the FROM clause
-         * @return a new SQLBuilder instance with SELECT and FROM clauses set
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.selectFrom(User.class, "u")
          *                         .join("orders o").on("u.id = o.user_id");
          * // Generates: SELECT u.id, u.name, ... FROM users u JOIN orders o ON u.id = o.user_id
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate SELECT FROM statement for
+         * @param alias the table alias to use in the FROM clause
+         * @return a new SQLBuilder instance with SELECT and FROM clauses set
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
             return selectFrom(entityClass, alias, false);
@@ -4383,15 +5060,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>When includeSubEntityProperties is true, appropriate joins are automatically
          * generated for sub-entities.</p>
          *
-         * @param entityClass the entity class to generate SELECT FROM statement for
-         * @param includeSubEntityProperties whether to include properties of sub-entities
-         * @return a new SQLBuilder instance with SELECT and FROM clauses set
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.selectFrom(User.class, true)
          *                         .where(CF.isNotNull("address.city"));
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate SELECT FROM statement for
+         * @param includeSubEntityProperties whether to include properties of sub-entities
+         * @return a new SQLBuilder instance with SELECT and FROM clauses set
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, includeSubEntityProperties, null);
@@ -4402,16 +5079,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Combines table aliasing with sub-entity property inclusion for complex queries.</p>
          *
+         * <pre>{@code
+         * SQLBuilder builder = PSB.selectFrom(User.class, "u", true)
+         *                         .where(CF.like("u.name", "John%"));
+         * }</pre>
+         * 
          * @param entityClass the entity class to generate SELECT FROM statement for
          * @param alias the table alias to use in the FROM clause
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @return a new SQLBuilder instance with SELECT and FROM clauses set
          * @throws IllegalArgumentException if entityClass is null
-         * 
-         * <pre>{@code
-         * SQLBuilder builder = PSB.selectFrom(User.class, "u", true)
-         *                         .where(CF.like("u.name", "John%"));
-         * }</pre>
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, alias, includeSubEntityProperties, null);
@@ -4423,16 +5100,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Convenience method for creating a complete SELECT FROM statement while excluding
          * specific properties.</p>
          *
-         * @param entityClass the entity class to generate SELECT FROM statement for
-         * @param excludedPropNames set of property names to exclude from the SELECT
-         * @return a new SQLBuilder instance with SELECT and FROM clauses set
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * Set<String> excluded = N.asSet("largeBlob", "internalData");
          * SQLBuilder builder = PSB.selectFrom(User.class, excluded)
          *                         .limit(10);
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate SELECT FROM statement for
+         * @param excludedPropNames set of property names to exclude from the SELECT
+         * @return a new SQLBuilder instance with SELECT and FROM clauses set
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, false, excludedPropNames);
@@ -4443,17 +5120,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Provides aliasing capability while excluding specific properties from selection.</p>
          *
-         * @param entityClass the entity class to generate SELECT FROM statement for
-         * @param alias the table alias to use in the FROM clause
-         * @param excludedPropNames set of property names to exclude from the SELECT
-         * @return a new SQLBuilder instance with SELECT and FROM clauses set
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * Set<String> excluded = N.asSet("password");
          * SQLBuilder builder = PSB.selectFrom(User.class, "u", excluded)
          *                         .join("roles r").on("u.role_id = r.id");
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate SELECT FROM statement for
+         * @param alias the table alias to use in the FROM clause
+         * @param excludedPropNames set of property names to exclude from the SELECT
+         * @return a new SQLBuilder instance with SELECT and FROM clauses set
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, alias, false, excludedPropNames);
@@ -4465,16 +5142,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Allows including sub-entity properties while excluding specific properties
          * from the selection.</p>
          *
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("user.password", "user.salt");
+         * SQLBuilder builder = PSB.selectFrom(Order.class, true, excluded);
+         * }</pre>
+         * 
          * @param entityClass the entity class to generate SELECT FROM statement for
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @param excludedPropNames set of property names to exclude from the SELECT
          * @return a new SQLBuilder instance with SELECT and FROM clauses set
          * @throws IllegalArgumentException if entityClass is null
-         * 
-         * <pre>{@code
-         * Set<String> excluded = N.asSet("user.password", "user.salt");
-         * SQLBuilder builder = PSB.selectFrom(Order.class, true, excluded);
-         * }</pre>
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
@@ -4487,19 +5164,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * aliasing, sub-entity properties, and property exclusion. When sub-entities are included,
          * appropriate JOIN clauses may be automatically generated.</p>
          *
-         * @param entityClass the entity class to generate SELECT FROM statement for
-         * @param alias the table alias to use in the FROM clause
-         * @param includeSubEntityProperties whether to include properties of sub-entities
-         * @param excludedPropNames set of property names to exclude from the SELECT
-         * @return a new SQLBuilder instance with SELECT and FROM clauses set
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * Set<String> excluded = N.asSet("audit.createdBy", "audit.modifiedBy");
          * SQLBuilder builder = PSB.selectFrom(Product.class, "p", true, excluded)
          *                         .where(CF.gt("p.price", 100))
          *                         .orderBy("p.name");
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate SELECT FROM statement for
+         * @param alias the table alias to use in the FROM clause
+         * @param includeSubEntityProperties whether to include properties of sub-entities
+         * @param excludedPropNames set of property names to exclude from the SELECT
+         * @return a new SQLBuilder instance with SELECT and FROM clauses set
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
@@ -4520,6 +5197,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * related tables. Each entity class can have its own table alias and class alias
          * for property prefixing in the result set.</p>
          *
+         * <pre>{@code
+         * SQLBuilder builder = PSB.select(User.class, "u", "user", 
+         *                                Order.class, "o", "order")
+         *                         .from("users u")
+         *                         .join("orders o").on("u.id = o.user_id");
+         * // Properties will be prefixed: user.name, user.email, order.id, order.total
+         * }</pre>
+         * 
          * @param entityClassA the first entity class to select from
          * @param tableAliasA the table alias for the first entity
          * @param classAliasA the prefix for properties of the first entity in results
@@ -4528,14 +5213,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param classAliasB the prefix for properties of the second entity in results
          * @return a new SQLBuilder instance configured for multi-table SELECT
          * @throws IllegalArgumentException if any required parameter is null
-         * 
-         * <pre>{@code
-         * SQLBuilder builder = PSB.select(User.class, "u", "user", 
-         *                                Order.class, "o", "order")
-         *                         .from("users u")
-         *                         .join("orders o").on("u.id = o.user_id");
-         * // Properties will be prefixed: user.name, user.email, order.id, order.total
-         * }</pre>
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -4548,6 +5225,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Provides fine-grained control over which properties to include from each entity
          * when performing joins.</p>
          *
+         * <pre>{@code
+         * Set<String> userExclude = N.asSet("password", "salt");
+         * Set<String> orderExclude = N.asSet("internalNotes");
+         * 
+         * SQLBuilder builder = PSB.select(User.class, "u", "user", userExclude,
+         *                                Order.class, "o", "order", orderExclude)
+         *                         .from("users u")
+         *                         .join("orders o").on("u.id = o.user_id");
+         * }</pre>
+         * 
          * @param entityClassA the first entity class to select from
          * @param tableAliasA the table alias for the first entity
          * @param classAliasA the prefix for properties of the first entity in results
@@ -4558,16 +5245,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SQLBuilder instance configured for multi-table SELECT
          * @throws IllegalArgumentException if entity classes are null
-         * 
-         * <pre>{@code
-         * Set<String> userExclude = N.asSet("password", "salt");
-         * Set<String> orderExclude = N.asSet("internalNotes");
-         * 
-         * SQLBuilder builder = PSB.select(User.class, "u", "user", userExclude,
-         *                                Order.class, "o", "order", orderExclude)
-         *                         .from("users u")
-         *                         .join("orders o").on("u.id = o.user_id");
-         * }</pre>
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -4586,10 +5263,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * allowing each table to have its own configuration including aliases, column
          * selections, and sub-entity handling.</p>
          *
-         * @param multiSelects list of Selection configurations for each table
-         * @return a new SQLBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid selections
-         * 
          * <pre>{@code
          * List<Selection> selections = Arrays.asList(
          *     new Selection(User.class, "u", "user", Arrays.asList("id", "name"), false, null),
@@ -4600,6 +5273,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                         .from("users u")
          *                         .join("orders o").on("u.id = o.user_id");
          * }</pre>
+         * 
+         * @param multiSelects list of Selection configurations for each table
+         * @return a new SQLBuilder instance configured for multi-table SELECT
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid selections
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -4619,6 +5296,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This convenience method combines SELECT and FROM operations for two-table joins.
          * The FROM clause is automatically generated based on the entity configurations.</p>
          *
+         * <pre>{@code
+         * SQLBuilder builder = PSB.selectFrom(User.class, "u", "user",
+         *                                    Order.class, "o", "order")
+         *                         .where(CF.eq("u.status", "active"));
+         * }</pre>
+         * 
          * @param entityClassA the first entity class to select from
          * @param tableAliasA the table alias for the first entity
          * @param classAliasA the prefix for properties of the first entity in results
@@ -4627,12 +5310,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param classAliasB the prefix for properties of the second entity in results
          * @return a new SQLBuilder instance with SELECT and FROM clauses configured
          * @throws IllegalArgumentException if any required parameter is null
-         * 
-         * <pre>{@code
-         * SQLBuilder builder = PSB.selectFrom(User.class, "u", "user",
-         *                                    Order.class, "o", "order")
-         *                         .where(CF.eq("u.status", "active"));
-         * }</pre>
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -4645,6 +5322,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Generates a complete SELECT FROM statement for joining two tables while
          * excluding specified properties from each entity.</p>
          *
+         * <pre>{@code
+         * Set<String> excludeUser = N.asSet("passwordHash");
+         * Set<String> excludeOrder = N.asSet("internalId");
+         * 
+         * SQLBuilder builder = PSB.selectFrom(User.class, "u", "user", excludeUser,
+         *                                    Order.class, "o", "order", excludeOrder)
+         *                         .where(CF.between("o.created", startDate, endDate));
+         * }</pre>
+         * 
          * @param entityClassA the first entity class to select from
          * @param tableAliasA the table alias for the first entity
          * @param classAliasA the prefix for properties of the first entity in results
@@ -4655,15 +5341,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SQLBuilder instance with SELECT and FROM clauses configured
          * @throws IllegalArgumentException if entity classes are null
-         * 
-         * <pre>{@code
-         * Set<String> excludeUser = N.asSet("passwordHash");
-         * Set<String> excludeOrder = N.asSet("internalId");
-         * 
-         * SQLBuilder builder = PSB.selectFrom(User.class, "u", "user", excludeUser,
-         *                                    Order.class, "o", "order", excludeOrder)
-         *                         .where(CF.between("o.created", startDate, endDate));
-         * }</pre>
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -4683,10 +5360,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * the provided Selection configurations, including proper table aliasing and joins
          * for sub-entities when specified.</p>
          *
-         * @param multiSelects list of Selection configurations for each table
-         * @return a new SQLBuilder instance with SELECT and FROM clauses configured
-         * @throws IllegalArgumentException if multiSelects is null, empty, or invalid
-         * 
          * <pre>{@code
          * List<Selection> selections = Arrays.asList(
          *     new Selection(Customer.class, "c", "customer", null, true, null),
@@ -4700,6 +5373,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                             CF.gt("o.total", 1000)
          *                         ));
          * }</pre>
+         * 
+         * @param multiSelects list of Selection configurations for each table
+         * @return a new SQLBuilder instance with SELECT and FROM clauses configured
+         * @throws IllegalArgumentException if multiSelects is null, empty, or invalid
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -4716,15 +5393,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This is a convenience method for creating count queries without specifying
          * the COUNT(*) expression explicitly.</p>
          *
-         * @param tableName the name of the table to count rows from
-         * @return a new SQLBuilder instance configured for COUNT query
-         * @throws IllegalArgumentException if tableName is null or empty
-         * 
          * <pre>{@code
          * SQLBuilder builder = PSB.count("users")
          *                         .where(CF.eq("status", "active"));
          * // Generates: SELECT COUNT(*) FROM users WHERE status = ?
          * }</pre>
+         * 
+         * @param tableName the name of the table to count rows from
+         * @return a new SQLBuilder instance configured for COUNT query
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder count(final String tableName) {
             N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
@@ -4737,15 +5414,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>The table name is derived from the entity class name or its {@code @Table} annotation.</p>
          *
-         * @param entityClass the entity class to count rows for
-         * @return a new SQLBuilder instance configured for COUNT query
-         * @throws IllegalArgumentException if entityClass is null
-         * 
          * <pre>{@code
          * long count = PSB.count(User.class)
          *                 .where(CF.like("email", "%@example.com"))
          *                 .queryForSingleResult(Long.class);
          * }</pre>
+         * 
+         * @param entityClass the entity class to count rows for
+         * @return a new SQLBuilder instance configured for COUNT query
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -4760,11 +5437,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * particularly for debugging or when building complex dynamic queries. The entity
          * class provides context for property name resolution.</p>
          *
-         * @param cond the condition to parse into SQL
-         * @param entityClass the entity class for property name context
-         * @return a new SQLBuilder instance containing the parsed condition
-         * @throws IllegalArgumentException if cond is null
-         * 
          * <pre>{@code
          * Condition cond = CF.and(
          *     CF.eq("status", "active"),
@@ -4773,6 +5445,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PSB.parse(cond, User.class).sql();
          * // Result: "status = ? AND age > ?"
          * }</pre>
+         * 
+         * @param cond the condition to parse into SQL
+         * @param entityClass the entity class for property name context
+         * @return a new SQLBuilder instance containing the parsed condition
+         * @throws IllegalArgumentException if cond is null
          */
         public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
@@ -4867,6 +5544,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement for a single column expression.
          * 
+         * <p>This method creates an INSERT statement template with a single column. The actual value
+         * will be provided as a parameter when executing the query.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PSC.insert("firstName").into("account").sql();
@@ -4875,6 +5555,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param expr The column name or expression to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if expr is null or empty
          */
         public static SQLBuilder insert(final String expr) {
             N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
@@ -4884,6 +5565,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT statement for multiple columns.
+         * 
+         * <p>This method creates an INSERT statement template with multiple columns. Property names
+         * are automatically converted to snake_case format. Values will be provided as parameters
+         * when executing the query.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -4895,6 +5580,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param propOrColumnNames The property or column names to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -4910,6 +5596,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement for a collection of columns.
          * 
+         * <p>This method provides flexibility when column names are dynamically generated or come from
+         * a collection. Property names are automatically converted to snake_case format.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
@@ -4919,6 +5608,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param propOrColumnNames Collection of property or column names to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -4934,6 +5624,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement from a map of property names and values.
          * 
+         * <p>This method generates an INSERT statement where map keys represent property names
+         * (converted to snake_case) and values are used to generate parameter placeholders.
+         * The actual values can be retrieved using the {@code pair()} method.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * Map<String, Object> props = new HashMap<>();
@@ -4946,6 +5640,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param props Map of property names to their values
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if props is null or empty
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
             N.checkArgNotEmpty(props, INSERTION_PART_MSG);
@@ -4961,8 +5656,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement from an entity object.
          * 
-         * <p>This method extracts all non-null properties from the entity object,
-         * excluding those marked with @Transient, @ReadOnly, or @ReadOnlyId annotations.</p>
+         * <p>This method inspects the entity object and extracts all non-null properties that are
+         * suitable for insertion. Properties marked with @Transient, @ReadOnly, or @ReadOnlyId
+         * annotations are automatically excluded. Property names are converted to snake_case format.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -4978,6 +5674,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param entity The entity object to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity) {
             return insert(entity, null);
@@ -4985,6 +5682,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT statement from an entity object with excluded properties.
+         * 
+         * <p>This method allows fine-grained control over which properties to include in the INSERT
+         * statement. Properties in the exclusion set will not be included even if they have values
+         * and are normally insertable.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5003,6 +5704,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entity The entity object to insert
          * @param excludedPropNames Set of property names to exclude from the insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entity, INSERTION_PART_MSG);
@@ -5020,8 +5722,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement for an entity class.
          * 
-         * <p>This method includes all properties of the entity class that are suitable for insertion,
-         * excluding those marked with @Transient, @ReadOnly, or @ReadOnlyId annotations.</p>
+         * <p>This method generates an INSERT statement template based on the entity class structure.
+         * All properties suitable for insertion (excluding those marked with @Transient, @ReadOnly,
+         * or @ReadOnlyId) are included. Property names are converted to snake_case format.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5031,6 +5734,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param entityClass The entity class to generate INSERT for
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass) {
             return insert(entityClass, null);
@@ -5038,6 +5742,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT statement for an entity class with excluded properties.
+         * 
+         * <p>This method generates an INSERT statement template based on the entity class structure,
+         * excluding specified properties. This is useful for creating reusable INSERT templates
+         * that exclude certain fields like auto-generated IDs or timestamps.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5049,6 +5757,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entityClass The entity class to generate INSERT for
          * @param excludedPropNames Set of property names to exclude from the insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, INSERTION_PART_MSG);
@@ -5066,7 +5775,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT INTO statement for an entity class.
          * 
          * <p>This is a convenience method that combines insert() and into() operations.
-         * The table name is derived from the entity class name or @Table annotation.</p>
+         * The table name is automatically derived from the entity class name or @Table annotation.
+         * Property names are converted to snake_case format.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5076,6 +5786,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param entityClass The entity class to generate INSERT INTO for
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass) {
             return insertInto(entityClass, null);
@@ -5083,6 +5794,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT INTO statement for an entity class with excluded properties.
+         * 
+         * <p>This convenience method combines insert() and into() operations while allowing
+         * property exclusion. The table name is derived from the entity class.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5094,6 +5808,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entityClass The entity class to generate INSERT INTO for
          * @param excludedPropNames Set of property names to exclude from the insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return insert(entityClass, excludedPropNames).into(entityClass);
@@ -5103,7 +5818,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Generates a MySQL-style batch INSERT statement.
          * 
          * <p>This method creates an efficient batch insert statement with multiple value sets
-         * in a single INSERT statement, which is particularly useful for MySQL databases.</p>
+         * in a single INSERT statement, which is particularly useful for MySQL databases and
+         * provides better performance than multiple individual INSERT statements.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5120,6 +5836,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param propsList List of entities or property maps to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if propsList is null or empty
          * @deprecated This feature is in beta and may change in future versions
          */
         @Beta
@@ -5143,6 +5860,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an UPDATE statement for a table.
          * 
+         * <p>This method starts building an UPDATE statement. Use the {@code set()} method to specify
+         * which columns to update and their values. Property names in subsequent operations will be
+         * converted to snake_case format.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PSC.update("account")
@@ -5155,6 +5876,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param tableName The name of the table to update
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder update(final String tableName) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -5170,7 +5892,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an UPDATE statement for a table with entity class mapping.
          * 
-         * <p>The entity class provides property-to-column name mapping information.</p>
+         * <p>This method creates an UPDATE statement where the entity class provides property-to-column
+         * name mapping information. This ensures proper snake_case conversion for all property names
+         * used in the update operation.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5185,6 +5909,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableName The name of the table to update
          * @param entityClass The entity class for property mapping
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -5202,8 +5927,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an UPDATE statement for an entity class.
          * 
-         * <p>The table name is derived from the entity class name or @Table annotation.
-         * All updatable properties are included by default.</p>
+         * <p>This method creates an UPDATE statement where the table name is derived from the entity
+         * class name or @Table annotation. All updatable properties (excluding those marked with
+         * @ReadOnly or @NonUpdatable) are included by default.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5216,6 +5942,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param entityClass The entity class to update
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass) {
             return update(entityClass, null);
@@ -5224,7 +5951,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an UPDATE statement for an entity class with excluded properties.
          * 
-         * <p>Properties marked with @NonUpdatable or @ReadOnly are automatically excluded.</p>
+         * <p>This method creates an UPDATE statement excluding specified properties in addition to
+         * those automatically excluded by annotations (@ReadOnly, @NonUpdatable). This is useful
+         * for partial updates or when certain fields should never be updated.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5238,6 +5967,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entityClass The entity class to update
          * @param excludedPropNames Set of property names to exclude from the update
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, UPDATE_PART_MSG);
@@ -5255,6 +5985,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a DELETE FROM statement for a table.
          * 
+         * <p>This method starts building a DELETE statement. Typically followed by WHERE conditions
+         * to specify which rows to delete. Property names in WHERE conditions will be converted
+         * to snake_case format if an entity class is associated.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PSC.deleteFrom("account")
@@ -5265,6 +5999,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param tableName The name of the table to delete from
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder deleteFrom(final String tableName) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -5280,6 +6015,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a DELETE FROM statement for a table with entity class mapping.
          * 
+         * <p>This method creates a DELETE statement where the entity class provides property-to-column
+         * name mapping for WHERE conditions. This ensures proper snake_case conversion for property
+         * names used in conditions.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PSC.deleteFrom("account", Account.class)
@@ -5291,6 +6030,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableName The name of the table to delete from
          * @param entityClass The entity class for property mapping
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -5308,7 +6048,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a DELETE FROM statement for an entity class.
          * 
-         * <p>The table name is derived from the entity class name or @Table annotation.</p>
+         * <p>This method creates a DELETE statement where the table name is derived from the entity
+         * class name or @Table annotation. Property names in WHERE conditions will be automatically
+         * converted to snake_case format.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5320,6 +6062,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param entityClass The entity class to delete from
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder deleteFrom(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, DELETION_PART_MSG);
@@ -5336,7 +6079,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement with a single expression.
          * 
-         * <p>This method is useful for complex select expressions or aggregate functions.</p>
+         * <p>This method is useful for complex select expressions, aggregate functions, or when
+         * selecting computed values. The expression is used as-is without property name conversion.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5369,6 +6113,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement with multiple columns.
          * 
+         * <p>This method creates a SELECT statement for multiple columns. Property names are
+         * converted to snake_case format and aliased back to their original camelCase names
+         * to maintain proper object mapping.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PSC.select("id", "firstName", "lastName", "email")
@@ -5396,6 +6144,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement with a collection of columns.
          * 
+         * <p>This method provides flexibility when column names are dynamically generated. Property
+         * names are converted to snake_case format with appropriate aliases.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * List<String> columns = Arrays.asList("id", "firstName", "lastName");
@@ -5422,6 +6173,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT statement with column aliases.
+         * 
+         * <p>This method allows specifying custom aliases for selected columns. The map keys are
+         * property names (converted to snake_case) and values are their desired aliases in the
+         * result set.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5454,6 +6209,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement for all properties of an entity class.
          * 
+         * <p>This method generates a SELECT statement including all properties from the entity class
+         * that are not marked with @Transient. Property names are converted to snake_case with
+         * appropriate aliases.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PSC.select(Account.class)
@@ -5464,6 +6223,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param entityClass The entity class to select properties from
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass) {
             return select(entityClass, false);
@@ -5471,6 +6231,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT statement for an entity class with optional sub-entity properties.
+         * 
+         * <p>When includeSubEntityProperties is true, properties of nested entity objects are also
+         * included in the selection with appropriate prefixes. This is useful for fetching related
+         * entities in a single query.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5488,6 +6252,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entityClass The entity class to select properties from
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return select(entityClass, includeSubEntityProperties, null);
@@ -5495,6 +6260,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT statement for an entity class with excluded properties.
+         * 
+         * <p>This method selects all properties from the entity class except those specified in
+         * the exclusion set. This is useful for queries that need most but not all properties.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5508,6 +6276,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entityClass The entity class to select properties from
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return select(entityClass, false, excludedPropNames);
@@ -5515,6 +6284,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT statement for an entity class with sub-entities and exclusions.
+         * 
+         * <p>This method provides full control over entity property selection, allowing both
+         * inclusion of sub-entity properties and exclusion of specific properties.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5529,6 +6301,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -5546,7 +6319,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates a complete SELECT FROM statement for an entity class.
          * 
          * <p>This is a convenience method that combines select() and from() operations.
-         * The table name is derived from the entity class name or @Table annotation.</p>
+         * The table name is automatically derived from the entity class name or @Table annotation.
+         * All property names are converted to snake_case with appropriate aliases.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5558,6 +6332,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param entityClass The entity class to select from
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass) {
             return selectFrom(entityClass, false);
@@ -5565,6 +6340,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement for an entity class with table alias.
+         * 
+         * <p>This method creates a SELECT FROM statement where columns are prefixed with the table
+         * alias. This is useful for joins and disambiguating column names in complex queries.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5577,6 +6355,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entityClass The entity class to select from
          * @param alias The table alias to use
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
             return selectFrom(entityClass, alias, false);
@@ -5585,9 +6364,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with optional sub-entity properties.
          * 
+         * <p>This convenience method combines SELECT and FROM operations with control over
+         * sub-entity inclusion. When sub-entities are included, appropriate joins may be
+         * generated automatically.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * String sql = PSC.selectFrom(Order.class, true)
+         *                 .where(CF.gt("total", 100))
+         *                 .sql();
+         * // Includes properties from nested entities like customer, items, etc.
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, includeSubEntityProperties, null);
@@ -5596,10 +6388,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with alias and sub-entity option.
          * 
+         * <p>This method combines table aliasing with sub-entity property inclusion for
+         * complex queries involving related entities.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * String sql = PSC.selectFrom(Order.class, "o", true)
+         *                 .where(CF.eq("o.status", "pending"))
+         *                 .sql();
+         * // Selects from orders with alias 'o' including sub-entity properties
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param alias The table alias to use
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, alias, includeSubEntityProperties, null);
@@ -5608,9 +6412,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with excluded properties.
          * 
+         * <p>This convenience method creates a complete SELECT FROM statement while excluding
+         * specific properties from the selection.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("password", "secretKey");
+         * String sql = PSC.selectFrom(Account.class, excluded)
+         *                 .where(CF.eq("active", true))
+         *                 .sql();
+         * // Selects all properties except password and secretKey
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, false, excludedPropNames);
@@ -5619,10 +6436,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with alias and excluded properties.
          * 
+         * <p>This method combines table aliasing with property exclusion for precise control
+         * over the generated SELECT statement.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("password");
+         * String sql = PSC.selectFrom(Account.class, "a", excluded)
+         *                 .innerJoin("orders o").on("a.id = o.account_id")
+         *                 .sql();
+         * // Selects from account with alias 'a', excluding password
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param alias The table alias to use
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, alias, false, excludedPropNames);
@@ -5631,10 +6461,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with sub-entities and exclusions.
          * 
+         * <p>This method provides control over both sub-entity inclusion and property exclusion
+         * while automatically determining the appropriate table alias.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("internalData");
+         * String sql = PSC.selectFrom(Order.class, true, excluded)
+         *                 .where(CF.between("orderDate", startDate, endDate))
+         *                 .sql();
+         * // Includes sub-entities but excludes internalData
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
@@ -5643,6 +6486,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a complete SELECT FROM statement with all options.
          * 
+         * <p>This method provides maximum flexibility by allowing control over table alias,
+         * sub-entity inclusion, and property exclusion. It handles complex scenarios including
+         * automatic join generation for sub-entities.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * Set<String> excluded = N.asSet("password", "internalNotes");
@@ -5650,6 +6497,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .innerJoin("orders o").on("a.id = o.account_id")
          *                 .where(CF.gt("o.total", 1000))
          *                 .sql();
+         * // Complex query with full control over selection
          * }</pre>
          * 
          * @param entityClass The entity class to select from
@@ -5657,6 +6505,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
@@ -5673,6 +6522,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement for multiple entity classes (for joins).
          * 
+         * <p>This method is designed for queries that need to select from multiple tables,
+         * typically used with joins. Each entity gets both a table alias and a class alias
+         * for proper result mapping. Property names are converted to snake_case.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PSC.select(Account.class, "a", "account",
@@ -5680,16 +6533,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .from("account a")
          *                 .innerJoin("orders o").on("a.id = o.account_id")
          *                 .sql();
-         * // Selects columns from both Account and Order with prefixes
+         * // Output: SELECT a.id AS "account.id", a.first_name AS "account.firstName", ..., 
+         * //                o.id AS "order.id", o.order_date AS "order.orderDate", ...
          * }</pre>
          * 
          * @param entityClassA First entity class
          * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity
+         * @param classAliasA Property prefix for first entity results
          * @param entityClassB Second entity class
          * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity
+         * @param classAliasB Property prefix for second entity results
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -5699,15 +6554,32 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement for multiple entity classes with exclusions.
          * 
+         * <p>Extended version that allows excluding specific properties from each entity
+         * in the multi-table select. This is useful for joins where you don't need all
+         * properties from each table.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * Set<String> userExclude = N.asSet("password", "salt");
+         * Set<String> orderExclude = N.asSet("internalNotes");
+         * 
+         * String sql = PSC.select(Account.class, "a", "account", userExclude,
+         *                        Order.class, "o", "order", orderExclude)
+         *                 .from("account a")
+         *                 .innerJoin("orders o").on("a.id = o.account_id")
+         *                 .sql();
+         * }</pre>
+         * 
          * @param entityClassA First entity class
          * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity
+         * @param classAliasA Property prefix for first entity results
          * @param excludedPropNamesA Excluded properties for first entity
          * @param entityClassB Second entity class
          * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity
+         * @param classAliasB Property prefix for second entity results
          * @param excludedPropNamesB Excluded properties for second entity
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -5720,10 +6592,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         }
 
         /**
-         * Creates a SELECT statement for multiple entity selections.
+         * Creates a SELECT statement for multiple entities using Selection descriptors.
          * 
-         * <p>This method supports complex queries involving multiple entities with different
-         * selection criteria for each entity.</p>
+         * <p>This is the most flexible method for multi-entity queries, allowing any number
+         * of entities with full control over aliases, sub-entities, and exclusions. Each
+         * Selection object defines how to select from one entity.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5743,6 +6616,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param multiSelects List of Selection objects defining what to select from each entity
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if multiSelects is null or empty
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -5759,7 +6633,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement for multiple entity classes.
          * 
-         * <p>This convenience method combines select() and from() for multi-table queries.</p>
+         * <p>This convenience method combines select() and from() for multi-table queries.
+         * The FROM clause is automatically generated based on the entity classes and their
+         * aliases.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * String sql = PSC.selectFrom(Account.class, "a", "account",
+         *                            Order.class, "o", "order")
+         *                 .innerJoin("o").on("a.id = o.account_id")
+         *                 .sql();
+         * // Automatically generates appropriate FROM clause
+         * }</pre>
          * 
          * @param entityClassA First entity class
          * @param tableAliasA Table alias for first entity
@@ -5767,7 +6652,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entityClassB Second entity class
          * @param tableAliasB Table alias for second entity
          * @param classAliasB Property prefix for second entity
-         * @return A new SQLBuilder instance for method chaining
+         * @return A new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -5777,6 +6663,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement for multiple entity classes with exclusions.
          * 
+         * <p>Extended version allowing property exclusions for each entity in the query.
+         * The FROM clause is automatically generated.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * Set<String> userExclude = N.asSet("password");
+         * String sql = PSC.selectFrom(Account.class, "a", "account", userExclude,
+         *                            Order.class, "o", "order", null)
+         *                 .innerJoin("o").on("a.id = o.account_id")
+         *                 .sql();
+         * }</pre>
+         * 
          * @param entityClassA First entity class
          * @param tableAliasA Table alias for first entity
          * @param classAliasA Property prefix for first entity
@@ -5785,7 +6683,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB Table alias for second entity
          * @param classAliasB Property prefix for second entity
          * @param excludedPropNamesB Excluded properties for second entity
-         * @return A new SQLBuilder instance for method chaining
+         * @return A new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -5801,8 +6700,25 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement for multiple entity selections.
          * 
+         * <p>Most flexible method for multi-entity queries with automatic FROM clause generation.
+         * Each Selection object can have different configurations for its entity.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = Arrays.asList(
+         *     new Selection(Account.class, "a", "account", null, false, null),
+         *     new Selection(Order.class, "o", "order", null, true, null),  // include sub-entities
+         *     new Selection(Product.class, "p", "product", null, false, N.asSet("details"))
+         * );
+         * 
+         * String sql = PSC.selectFrom(selections)
+         *                 .where(CF.eq("a.status", "active"))
+         *                 .sql();
+         * }</pre>
+         * 
          * @param multiSelects List of Selection objects defining what to select from each entity
-         * @return A new SQLBuilder instance for method chaining
+         * @return A new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if multiSelects is null or empty
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -5816,6 +6732,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a COUNT(*) query for a table.
          * 
+         * <p>Convenience method for generating count queries. This is equivalent to
+         * {@code select("COUNT(*)").from(tableName)} but more expressive.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PSC.count("account")
@@ -5826,6 +6745,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param tableName The table to count rows from
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder count(final String tableName) {
             N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
@@ -5836,7 +6756,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a COUNT(*) query for an entity class.
          * 
-         * <p>The table name is derived from the entity class name or @Table annotation.</p>
+         * <p>The table name is derived from the entity class name or @Table annotation.
+         * This is a convenient way to count rows with entity class mapping for proper
+         * property name conversion in WHERE conditions.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -5848,6 +6770,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param entityClass The entity class to count
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -5930,14 +6853,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method is a convenience wrapper that delegates to {@link #insert(String...)} 
          * with a single element array.</p>
          * 
-         * @param expr the expression or column name to insert
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.insert("name").into("users").sql();
          * // Output: INSERT INTO USERS (NAME) VALUES (?)
          * }</pre>
+         * 
+         * @param expr the expression or column name to insert
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if expr is null or empty
          */
         public static SQLBuilder insert(final String expr) {
             N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
@@ -5951,17 +6874,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The column names will be converted according to the UPPER_CASE_WITH_UNDERSCORE naming policy.
          * Use {@link #into(String)} to specify the target table.</p>
          * 
-         * @param propOrColumnNames the property or column names to include in the INSERT
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if propOrColumnNames is null or empty
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.insert("firstName", "lastName", "email")
          *                 .into("users")
          *                 .sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
+         * 
+         * @param propOrColumnNames the property or column names to include in the INSERT
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -5980,16 +6902,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method accepts a collection of column names, providing flexibility when 
          * the column list is dynamically generated.</p>
          * 
-         * @param propOrColumnNames collection of property or column names to include
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if propOrColumnNames is null or empty
-         * 
-         * @example
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = PAC.insert(columns).into("users").sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
+         * 
+         * @param propOrColumnNames collection of property or column names to include
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -6008,11 +6929,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The map keys represent column names and will be converted according to the naming policy.
          * The values are used to determine the number of parameter placeholders needed.</p>
          * 
-         * @param props map of property names to their values
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if props is null or empty
-         * 
-         * @example
          * <pre>{@code
          * Map<String, Object> data = new HashMap<>();
          * data.put("firstName", "John");
@@ -6020,6 +6936,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PAC.insert(data).into("users").sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME) VALUES (?, ?)
          * }</pre>
+         * 
+         * @param props map of property names to their values
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if props is null or empty
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
             N.checkArgNotEmpty(props, INSERTION_PART_MSG);
@@ -6039,16 +6959,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * with exclusion annotations (@Transient, @ReadOnly, etc.). The table name is inferred 
          * from the entity class or @Table annotation.</p>
          * 
-         * @param entity the entity object to insert
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entity is null
-         * 
-         * @example
          * <pre>{@code
          * User user = new User("John", "Doe", "john@example.com");
          * String sql = PAC.insert(user).into("users").sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
+         * 
+         * @param entity the entity object to insert
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity) {
             return insert(entity, null);
@@ -6060,18 +6979,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method allows fine-grained control over which properties to include in the INSERT.
          * Properties in the exclusion set will not be included even if they are normally insertable.</p>
          * 
-         * @param entity the entity object to insert
-         * @param excludedPropNames set of property names to exclude from the INSERT
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entity is null
-         * 
-         * @example
          * <pre>{@code
          * User user = new User("John", "Doe", "john@example.com");
          * Set<String> exclude = new HashSet<>(Arrays.asList("createdDate", "modifiedDate"));
          * String sql = PAC.insert(user, exclude).into("users").sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
+         * 
+         * @param entity the entity object to insert
+         * @param excludedPropNames set of property names to exclude from the INSERT
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entity, INSERTION_PART_MSG);
@@ -6092,15 +7010,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method generates an INSERT statement based on the class structure without 
          * requiring an actual entity instance. All insertable properties are included.</p>
          * 
-         * @param entityClass the entity class to generate INSERT for
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.insert(User.class).into("users").sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate INSERT for
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass) {
             return insert(entityClass, null);
@@ -6112,17 +7029,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method generates an INSERT statement based on the class structure, excluding 
          * specified properties. Useful for creating reusable INSERT templates.</p>
          * 
-         * @param entityClass the entity class to generate INSERT for
-         * @param excludedPropNames set of property names to exclude
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("id", "version"));
          * String sql = PAC.insert(User.class, exclude).into("users").sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
+         * 
+         * @param entityClass the entity class to generate INSERT for
+         * @param excludedPropNames set of property names to exclude
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, INSERTION_PART_MSG);
@@ -6142,15 +7058,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This is a convenience method that combines {@link #insert(Class)} with {@link #into(Class)}.
          * The table name is determined from the @Table annotation or class name.</p>
          * 
-         * @param entityClass the entity class to insert into
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.insertInto(User.class).sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
+         * 
+         * @param entityClass the entity class to insert into
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass) {
             return insertInto(entityClass, null);
@@ -6161,17 +7076,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Combines the functionality of specifying excluded properties with automatic table name resolution.</p>
          * 
-         * @param entityClass the entity class to insert into
-         * @param excludedPropNames set of property names to exclude
-         * @return a new SQLBuilder instance configured for INSERT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("id"));
          * String sql = PAC.insertInto(User.class, exclude).sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
+         * 
+         * @param entityClass the entity class to insert into
+         * @param excludedPropNames set of property names to exclude
+         * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return insert(entityClass, excludedPropNames).into(entityClass);
@@ -6186,11 +7100,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Note: This is a beta feature and may change in future versions.</p>
          * 
-         * @param propsList collection of entities or property maps to batch insert
-         * @return a new SQLBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
-         * 
-         * @example
          * <pre>{@code
          * List<User> users = Arrays.asList(
          *     new User("John", "Doe"),
@@ -6199,6 +7108,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PAC.batchInsert(users).into("users").sql();
          * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME) VALUES (?, ?), (?, ?)
          * }</pre>
+         * 
+         * @param propsList collection of entities or property maps to batch insert
+         * @return a new SQLBuilder instance configured for batch INSERT operation
+         * @throws IllegalArgumentException if propsList is null or empty
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -6224,11 +7137,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method starts building an UPDATE statement. Use {@link #set(String...)} 
          * to specify which columns to update.</p>
          * 
-         * @param tableName the name of the table to update
-         * @return a new SQLBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName is null or empty
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.update("users")
          *                 .set("firstName", "lastName")
@@ -6236,6 +7144,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
+         * 
+         * @param tableName the name of the table to update
+         * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder update(final String tableName) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -6254,12 +7166,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method allows specifying both the table name and entity class, 
          * which enables proper property-to-column name mapping.</p>
          * 
-         * @param tableName the name of the table to update
-         * @param entityClass the entity class for property mapping
-         * @return a new SQLBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName or entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.update("users", User.class)
          *                 .set("firstName", "lastName")
@@ -6267,6 +7173,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
+         * 
+         * @param tableName the name of the table to update
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if tableName or entityClass is null
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -6287,11 +7198,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The table name is determined from the @Table annotation or class name. 
          * All updatable properties (excluding @ReadOnly, @NonUpdatable) are included.</p>
          * 
-         * @param entityClass the entity class to update
-         * @return a new SQLBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.update(User.class)
          *                 .set("firstName", "lastName")
@@ -6299,6 +7205,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
+         * 
+         * @param entityClass the entity class to update
+         * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass) {
             return update(entityClass, null);
@@ -6310,12 +7220,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method generates an UPDATE statement excluding specified properties 
          * in addition to those marked with @ReadOnly or @NonUpdatable annotations.</p>
          * 
-         * @param entityClass the entity class to update
-         * @param excludedPropNames set of property names to exclude from updates
-         * @return a new SQLBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("version", "modifiedDate"));
          * String sql = PAC.update(User.class, exclude)
@@ -6324,6 +7228,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
+         * 
+         * @param entityClass the entity class to update
+         * @param excludedPropNames set of property names to exclude from updates
+         * @return a new SQLBuilder instance configured for UPDATE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, UPDATE_PART_MSG);
@@ -6344,17 +7253,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method starts building a DELETE FROM statement. Typically followed 
          * by WHERE conditions to specify which rows to delete.</p>
          * 
-         * @param tableName the name of the table to delete from
-         * @return a new SQLBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName is null or empty
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.deleteFrom("users")
          *                 .where(CF.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM USERS WHERE ID = ?
          * }</pre>
+         * 
+         * @param tableName the name of the table to delete from
+         * @return a new SQLBuilder instance configured for DELETE operation
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder deleteFrom(final String tableName) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -6373,18 +7281,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method allows specifying both the table name and entity class 
          * for proper property-to-column name mapping in WHERE conditions.</p>
          * 
-         * @param tableName the name of the table to delete from
-         * @param entityClass the entity class for property mapping
-         * @return a new SQLBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName or entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.deleteFrom("users", User.class)
          *                 .where(CF.eq("email", "john@example.com"))
          *                 .sql();
          * // Output: DELETE FROM USERS WHERE EMAIL = ?
          * }</pre>
+         * 
+         * @param tableName the name of the table to delete from
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance configured for DELETE operation
+         * @throws IllegalArgumentException if tableName or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -6404,17 +7311,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>The table name is determined from the @Table annotation or class name.</p>
          * 
-         * @param entityClass the entity class to delete from
-         * @return a new SQLBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.deleteFrom(User.class)
          *                 .where(CF.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM USERS WHERE ID = ?
          * }</pre>
+         * 
+         * @param entityClass the entity class to delete from
+         * @return a new SQLBuilder instance configured for DELETE operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder deleteFrom(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, DELETION_PART_MSG);
@@ -6434,11 +7340,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method can accept complex expressions like aggregate functions, 
          * calculations, or simple column names.</p>
          * 
-         * @param selectPart the SELECT expression (e.g., "COUNT(*)", "MAX(age)", "firstName")
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if selectPart is null or empty
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.select("COUNT(*)").from("users").sql();
          * // Output: SELECT COUNT(*) FROM USERS
@@ -6446,6 +7347,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql2 = PAC.select("MAX(age)").from("users").sql();
          * // Output: SELECT MAX(AGE) FROM USERS
          * }</pre>
+         * 
+         * @param selectPart the SELECT expression (e.g., "COUNT(*)", "MAX(age)", "firstName")
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if selectPart is null or empty
          */
         public static SQLBuilder select(final String selectPart) {
             N.checkArgNotEmpty(selectPart, SELECTION_PART_MSG);
@@ -6463,17 +7368,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Column names will be converted according to the UPPER_CASE_WITH_UNDERSCORE 
          * naming policy and aliased back to their original property names.</p>
          * 
-         * @param propOrColumnNames the property or column names to select
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if propOrColumnNames is null or empty
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.select("firstName", "lastName", "email")
          *                 .from("users")
          *                 .sql();
          * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" FROM USERS
          * }</pre>
+         * 
+         * @param propOrColumnNames the property or column names to select
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, SELECTION_PART_MSG);
@@ -6492,16 +7396,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method accepts a collection of column names, useful when the column 
          * list is dynamically generated.</p>
          * 
-         * @param propOrColumnNames collection of property or column names to select
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if propOrColumnNames is null or empty
-         * 
-         * @example
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = PAC.select(columns).from("users").sql();
          * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" FROM USERS
          * }</pre>
+         * 
+         * @param propOrColumnNames collection of property or column names to select
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, SELECTION_PART_MSG);
@@ -6520,11 +7423,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method allows specifying custom aliases for selected columns. 
          * The map keys are column names and values are their aliases.</p>
          * 
-         * @param propOrColumnNameAliases map of column names to their aliases
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if propOrColumnNameAliases is null or empty
-         * 
-         * @example
          * <pre>{@code
          * Map<String, String> aliases = new LinkedHashMap<>();
          * aliases.put("firstName", "fname");
@@ -6532,6 +7430,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PAC.select(aliases).from("users").sql();
          * // Output: SELECT FIRST_NAME AS "fname", LAST_NAME AS "lname" FROM USERS
          * }</pre>
+         * 
+         * @param propOrColumnNameAliases map of column names to their aliases
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if propOrColumnNameAliases is null or empty
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
             N.checkArgNotEmpty(propOrColumnNameAliases, SELECTION_PART_MSG);
@@ -6550,15 +7452,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method selects all properties from the entity class that are not 
          * marked with @Transient. Sub-entity properties are not included by default.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.select(User.class).from("users").sql();
          * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" FROM USERS
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass) {
             return select(entityClass, false);
@@ -6570,17 +7471,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>When includeSubEntityProperties is true, properties of nested entity types 
          * are also included in the selection with appropriate prefixes.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param includeSubEntityProperties whether to include properties from sub-entities
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * // If User has an Address sub-entity
          * String sql = PAC.select(User.class, true).from("users").sql();
          * // Output includes address properties: ADDRESS_STREET AS "address.street", etc.
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param includeSubEntityProperties whether to include properties from sub-entities
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return select(entityClass, includeSubEntityProperties, null);
@@ -6591,17 +7491,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>This method selects all properties except those specified in the exclusion set.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param excludedPropNames set of property names to exclude from selection
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("password", "salt"));
          * String sql = PAC.select(User.class, exclude).from("users").sql();
          * // Output excludes password and salt columns
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return select(entityClass, false, excludedPropNames);
@@ -6613,13 +7512,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method combines sub-entity inclusion control with property exclusion, 
          * providing maximum flexibility in column selection.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param includeSubEntityProperties whether to include properties from sub-entities
-         * @param excludedPropNames set of property names to exclude
-         * @return a new SQLBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("password"));
          * String sql = PAC.select(User.class, true, exclude)
@@ -6627,6 +7519,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * // Output includes sub-entity properties but excludes password
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param includeSubEntityProperties whether to include properties from sub-entities
+         * @param excludedPropNames set of property names to exclude
+         * @return a new SQLBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -6646,15 +7544,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This convenience method combines SELECT and FROM operations. The table name 
          * is derived from the @Table annotation or entity class name.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @return a new SQLBuilder instance with both SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.selectFrom(User.class).where(CF.eq("active", true)).sql();
          * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", ... FROM USERS WHERE ACTIVE = ?
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @return a new SQLBuilder instance with both SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass) {
             return selectFrom(entityClass, false);
@@ -6666,18 +7563,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>The alias is used to qualify column names in the generated SQL, useful 
          * for self-joins or disambiguating columns in complex queries.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param alias the table alias to use
-         * @return a new SQLBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.selectFrom(User.class, "u")
          *                 .where(CF.eq("u.active", true))
          *                 .sql();
          * // Output: SELECT u.ID AS "id", u.FIRST_NAME AS "firstName", ... FROM USERS u WHERE u.ACTIVE = ?
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param alias the table alias to use
+         * @return a new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
             return selectFrom(entityClass, alias, false);
@@ -6689,18 +7585,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>When includeSubEntityProperties is true and the entity has sub-entities, 
          * appropriate joins may be generated automatically.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param includeSubEntityProperties whether to include sub-entity properties
-         * @return a new SQLBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.selectFrom(User.class, true)
          *                 .where(CF.eq("active", true))
          *                 .sql();
          * // Output includes joins for sub-entities if present
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param includeSubEntityProperties whether to include sub-entity properties
+         * @return a new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, includeSubEntityProperties, null);
@@ -6711,19 +7606,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Combines table aliasing with sub-entity property inclusion for complex queries.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param alias the table alias
-         * @param includeSubEntityProperties whether to include sub-entity properties
-         * @return a new SQLBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.selectFrom(User.class, "u", true)
          *                 .where(CF.eq("u.active", true))
          *                 .sql();
          * // Output: SELECT u.ID AS "id", ... FROM USERS u WHERE u.ACTIVE = ?
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param alias the table alias
+         * @param includeSubEntityProperties whether to include sub-entity properties
+         * @return a new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, alias, includeSubEntityProperties, null);
@@ -6735,17 +7629,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method provides a convenient way to select from an entity while 
          * excluding specific properties.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param excludedPropNames properties to exclude from selection
-         * @return a new SQLBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("password"));
          * String sql = PAC.selectFrom(User.class, exclude).sql();
          * // Output excludes the password column
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param excludedPropNames properties to exclude from selection
+         * @return a new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, false, excludedPropNames);
@@ -6756,18 +7649,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Combines table aliasing with property exclusion for precise query control.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param alias the table alias
-         * @param excludedPropNames properties to exclude
-         * @return a new SQLBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("password"));
          * String sql = PAC.selectFrom(User.class, "u", exclude).sql();
          * // Output: SELECT u.ID AS "id", ... FROM USERS u (excluding password)
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param alias the table alias
+         * @param excludedPropNames properties to exclude
+         * @return a new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, alias, false, excludedPropNames);
@@ -6778,18 +7670,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Provides control over both sub-entity inclusion and property exclusion.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param includeSubEntityProperties whether to include sub-entity properties
-         * @param excludedPropNames properties to exclude
-         * @return a new SQLBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("password"));
          * String sql = PAC.selectFrom(User.class, true, exclude).sql();
          * // Output includes sub-entities but excludes password
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param includeSubEntityProperties whether to include sub-entity properties
+         * @param excludedPropNames properties to exclude
+         * @return a new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
@@ -6801,14 +7692,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method provides maximum flexibility by allowing control over table alias, 
          * sub-entity inclusion, and property exclusion.</p>
          * 
-         * @param entityClass the entity class to select from
-         * @param alias the table alias
-         * @param includeSubEntityProperties whether to include sub-entity properties
-         * @param excludedPropNames properties to exclude
-         * @return a new SQLBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("password"));
          * String sql = PAC.selectFrom(User.class, "u", true, exclude)
@@ -6816,6 +7699,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * // Complex query with full control
          * }</pre>
+         * 
+         * @param entityClass the entity class to select from
+         * @param alias the table alias
+         * @param includeSubEntityProperties whether to include sub-entity properties
+         * @param excludedPropNames properties to exclude
+         * @return a new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
@@ -6837,15 +7727,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * typically used with joins. Each entity gets both a table alias and a class alias 
          * for result mapping.</p>
          * 
-         * @param entityClassA first entity class
-         * @param tableAliasA table alias for first entity
-         * @param classAliasA property prefix for first entity results
-         * @param entityClassB second entity class
-         * @param tableAliasB table alias for second entity
-         * @param classAliasB property prefix for second entity results
-         * @return a new SQLBuilder instance configured for multi-table SELECT
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.select(User.class, "u", "user", Order.class, "o", "order")
          *                 .from("users", "u")
@@ -6853,6 +7734,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * // Output: SELECT u.ID AS "user.id", ..., o.ID AS "order.id", ... 
          * }</pre>
+         * 
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity results
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity results
+         * @return a new SQLBuilder instance configured for multi-table SELECT
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -6865,17 +7754,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Extended version that allows excluding specific properties from each entity 
          * in the multi-table select.</p>
          * 
-         * @param entityClassA first entity class
-         * @param tableAliasA table alias for first entity
-         * @param classAliasA property prefix for first entity
-         * @param excludedPropNamesA properties to exclude from first entity
-         * @param entityClassB second entity class
-         * @param tableAliasB table alias for second entity
-         * @param classAliasB property prefix for second entity
-         * @param excludedPropNamesB properties to exclude from second entity
-         * @return a new SQLBuilder instance configured for multi-table SELECT
-         * 
-         * @example
          * <pre>{@code
          * Set<String> userExclude = new HashSet<>(Arrays.asList("password"));
          * Set<String> orderExclude = new HashSet<>(Arrays.asList("internalNotes"));
@@ -6885,6 +7763,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .innerJoin("orders", "o").on("u.id = o.user_id")
          *                 .sql();
          * }</pre>
+         * 
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity
+         * @param excludedPropNamesA properties to exclude from first entity
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity
+         * @param excludedPropNamesB properties to exclude from second entity
+         * @return a new SQLBuilder instance configured for multi-table SELECT
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -6902,11 +7790,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This is the most flexible method for multi-entity queries, allowing any number 
          * of entities with full control over aliases, sub-entities, and exclusions.</p>
          * 
-         * @param multiSelects list of Selection descriptors for each entity
-         * @return a new SQLBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if multiSelects is null or empty
-         * 
-         * @example
          * <pre>{@code
          * List<Selection> selections = Arrays.asList(
          *     new Selection(User.class, "u", "user", null, false, null),
@@ -6919,6 +7802,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .innerJoin("products", "p").on("o.product_id = p.id")
          *                 .sql();
          * }</pre>
+         * 
+         * @param multiSelects list of Selection descriptors for each entity
+         * @return a new SQLBuilder instance configured for multi-table SELECT
+         * @throws IllegalArgumentException if multiSelects is null or empty
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -6938,6 +7825,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>Convenience method that combines SELECT and FROM for two-table queries. 
          * The FROM clause is automatically generated based on the entity classes.</p>
          * 
+         * <pre>{@code
+         * String sql = PAC.selectFrom(User.class, "u", "user", 
+         *                            Order.class, "o", "order")
+         *                 .innerJoin("o").on("u.id = o.user_id")
+         *                 .sql();
+         * }</pre>
+         * 
          * @param entityClassA first entity class
          * @param tableAliasA table alias for first entity
          * @param classAliasA property prefix for first entity
@@ -6945,14 +7839,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity
          * @return a new SQLBuilder instance with SELECT and FROM configured
-         * 
-         * @example
-         * <pre>{@code
-         * String sql = PAC.selectFrom(User.class, "u", "user", 
-         *                            Order.class, "o", "order")
-         *                 .innerJoin("o").on("u.id = o.user_id")
-         *                 .sql();
-         * }</pre>
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -6964,6 +7850,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Extended version allowing property exclusions for each entity in the query.</p>
          * 
+         * <pre>{@code
+         * Set<String> userExclude = new HashSet<>(Arrays.asList("password"));
+         * String sql = PAC.selectFrom(User.class, "u", "user", userExclude,
+         *                            Order.class, "o", "order", null)
+         *                 .innerJoin("o").on("u.id = o.user_id")
+         *                 .sql();
+         * }</pre>
+         * 
          * @param entityClassA first entity class
          * @param tableAliasA table alias for first entity
          * @param classAliasA property prefix for first entity
@@ -6973,15 +7867,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param classAliasB property prefix for second entity
          * @param excludedPropNamesB properties to exclude from second entity
          * @return a new SQLBuilder instance with SELECT and FROM configured
-         * 
-         * @example
-         * <pre>{@code
-         * Set<String> userExclude = new HashSet<>(Arrays.asList("password"));
-         * String sql = PAC.selectFrom(User.class, "u", "user", userExclude,
-         *                            Order.class, "o", "order", null)
-         *                 .innerJoin("o").on("u.id = o.user_id")
-         *                 .sql();
-         * }</pre>
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -6999,11 +7884,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Most flexible method for multi-entity queries with automatic FROM clause generation.</p>
          * 
-         * @param multiSelects list of Selection descriptors
-         * @return a new SQLBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if multiSelects is null or empty
-         * 
-         * @example
          * <pre>{@code
          * List<Selection> selections = Arrays.asList(
          *     new Selection(User.class, "u", "user", null, false, null),
@@ -7013,6 +7893,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .innerJoin("o").on("u.id = o.user_id")
          *                 .sql();
          * }</pre>
+         * 
+         * @param multiSelects list of Selection descriptors
+         * @return a new SQLBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if multiSelects is null or empty
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -7028,15 +7912,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Convenience method for generating count queries.</p>
          * 
-         * @param tableName the table to count rows from
-         * @return a new SQLBuilder instance configured for COUNT query
-         * @throws IllegalArgumentException if tableName is null or empty
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.count("users").where(CF.eq("active", true)).sql();
          * // Output: SELECT COUNT(*) FROM USERS WHERE ACTIVE = ?
          * }</pre>
+         * 
+         * @param tableName the table to count rows from
+         * @return a new SQLBuilder instance configured for COUNT query
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder count(final String tableName) {
             N.checkArgNotEmpty(tableName, SELECTION_PART_MSG);
@@ -7049,17 +7932,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>Table name is derived from the entity class.</p>
          * 
-         * @param entityClass the entity class to count
-         * @return a new SQLBuilder instance configured for COUNT query
-         * @throws IllegalArgumentException if entityClass is null
-         * 
-         * @example
          * <pre>{@code
          * String sql = PAC.count(User.class)
          *                 .where(CF.gt("age", 18))
          *                 .sql();
          * // Output: SELECT COUNT(*) FROM USERS WHERE AGE > ?
          * }</pre>
+         * 
+         * @param entityClass the entity class to count
+         * @return a new SQLBuilder instance configured for COUNT query
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder count(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -7073,17 +7955,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p>This method is useful for generating just the SQL representation of a condition, 
          * typically for use in complex queries or debugging.</p>
          * 
-         * @param cond the condition to parse
-         * @param entityClass entity class for property name mapping
-         * @return a new SQLBuilder instance containing the parsed condition
-         * @throws IllegalArgumentException if cond is null
-         * 
-         * @example
          * <pre>{@code
          * Condition cond = CF.and(CF.eq("firstName", "John"), CF.gt("age", 21));
          * String sql = PAC.parse(cond, User.class).sql();
          * // Output: FIRST_NAME = ? AND AGE > ?
          * }</pre>
+         * 
+         * @param cond the condition to parse
+         * @param entityClass entity class for property name mapping
+         * @return a new SQLBuilder instance containing the parsed condition
+         * @throws IllegalArgumentException if cond is null
          */
         public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
@@ -7176,6 +8057,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement for a single column expression.
          * 
+         * <p>This method generates an INSERT statement with a single column using camelCase naming.
+         * The generated SQL will use placeholder parameters (?) for the values.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PLC.insert("firstName").into("account").sql();
@@ -7184,6 +8068,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * @param expr The column name or expression to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if expr is null or empty
          */
         public static SQLBuilder insert(final String expr) {
             N.checkArgNotEmpty(expr, INSERTION_PART_MSG);
@@ -7194,16 +8079,28 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement for multiple columns.
          * 
+         * <p>This method generates an INSERT statement with multiple columns using camelCase naming.
+         * The order of columns in the INSERT statement matches the order provided in the parameters.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PLC.insert("firstName", "lastName", "email")
          *                 .into("account")
          *                 .sql();
          * // Output: INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
+         * 
+         * // With actual values using pair()
+         * SP sqlPair = PLC.insert("firstName", "lastName", "email")
+         *                 .into("account")
+         *                 .values("John", "Doe", "john@example.com")
+         *                 .pair();
+         * // sqlPair.sql: INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
+         * // sqlPair.parameters: ["John", "Doe", "john@example.com"]
          * }</pre>
          * 
          * @param propOrColumnNames The property or column names to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -7219,15 +8116,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement for a collection of columns.
          * 
+         * <p>This method is useful when the column list is dynamically generated or comes from
+         * another source. The columns maintain their camelCase naming.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = PLC.insert(columns).into("account").sql();
          * // Output: INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
+         * 
+         * // Dynamic column selection
+         * List<String> requiredFields = getRequiredFields();
+         * String sql = PLC.insert(requiredFields).into("userProfile").sql();
          * }</pre>
          * 
          * @param propOrColumnNames Collection of property or column names to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
             N.checkArgNotEmpty(propOrColumnNames, INSERTION_PART_MSG);
@@ -7243,18 +8148,30 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement from a map of property names and values.
          * 
+         * <p>This method is particularly useful when you have a dynamic set of fields to insert.
+         * The map keys represent column names and values represent the data to insert.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * Map<String, Object> props = new HashMap<>();
          * props.put("firstName", "John");
          * props.put("lastName", "Doe");
+         * props.put("emailAddress", "john.doe@example.com");
+         * props.put("isActive", true);
+         * 
          * SP sqlPair = PLC.insert(props).into("account").pair();
-         * // sqlPair.sql: INSERT INTO account (firstName, lastName) VALUES (?, ?)
-         * // sqlPair.parameters: ["John", "Doe"]
+         * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress, isActive) VALUES (?, ?, ?, ?)
+         * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com", true]
+         * 
+         * // With null values (will be included)
+         * props.put("middleName", null);
+         * SP sqlPair2 = PLC.insert(props).into("account").pair();
+         * // Includes middleName with NULL value
          * }</pre>
          * 
          * @param props Map of property names to their values
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if props is null or empty
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
             N.checkArgNotEmpty(props, INSERTION_PART_MSG);
@@ -7272,7 +8189,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>This method extracts all non-null properties from the entity object,
          * excluding those marked with @Transient, @ReadOnly, or @ReadOnlyId annotations.
-         * Property names maintain their camelCase format.</p>
+         * Property names maintain their camelCase format. This is the most convenient way
+         * to insert data when working with entity objects.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -7280,14 +8198,26 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * account.setFirstName("John");
          * account.setLastName("Doe");
          * account.setEmailAddress("john.doe@example.com");
+         * account.setCreatedDate(new Date());
          * 
          * SP sqlPair = PLC.insert(account).into("account").pair();
-         * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress) VALUES (?, ?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com"]
+         * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress, createdDate) VALUES (?, ?, ?, ?)
+         * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com", Date object]
+         * 
+         * // Entity with @ReadOnly fields (will be excluded)
+         * @Table("userProfile")
+         * public class UserProfile {
+         *     @ReadOnlyId
+         *     private Long id;  // Excluded from INSERT
+         *     private String userName;
+         *     @ReadOnly
+         *     private Date lastModified;  // Excluded from INSERT
+         * }
          * }</pre>
          * 
          * @param entity The entity object to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity) {
             return insert(entity, null);
@@ -7296,22 +8226,32 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement from an entity object with excluded properties.
          * 
+         * <p>This method allows fine-grained control over which properties to include in the INSERT.
+         * Properties can be excluded explicitly in addition to those marked with annotations.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * Account account = new Account();
          * account.setFirstName("John");
          * account.setLastName("Doe");
+         * account.setEmailAddress("john@example.com");
          * account.setCreatedDate(new Date());
+         * account.setInternalNotes("VIP customer");
          * 
-         * Set<String> excluded = N.asSet("createdDate");
+         * Set<String> excluded = N.asSet("createdDate", "internalNotes");
          * SP sqlPair = PLC.insert(account, excluded).into("account").pair();
-         * // sqlPair.sql: INSERT INTO account (firstName, lastName) VALUES (?, ?)
-         * // sqlPair.parameters: ["John", "Doe"]
+         * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress) VALUES (?, ?, ?)
+         * // sqlPair.parameters: ["John", "Doe", "john@example.com"]
+         * 
+         * // Exclude all audit fields
+         * Set<String> auditFields = N.asSet("createdBy", "createdDate", "modifiedBy", "modifiedDate");
+         * SP sqlPair2 = PLC.insert(account, auditFields).into("account").pair();
          * }</pre>
          * 
          * @param entity The entity object to insert
          * @param excludedPropNames Set of property names to exclude from the insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entity, INSERTION_PART_MSG);
@@ -7330,16 +8270,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT statement for an entity class.
          * 
          * <p>This method includes all properties of the entity class that are suitable for insertion,
-         * excluding those marked with @Transient, @ReadOnly, or @ReadOnlyId annotations.</p>
+         * excluding those marked with @Transient, @ReadOnly, or @ReadOnlyId annotations. This is useful
+         * when you want to generate the INSERT structure without having an actual entity instance.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PLC.insert(Account.class).into("account").sql();
          * // Output: INSERT INTO account (firstName, lastName, email, createdDate) VALUES (?, ?, ?, ?)
+         * 
+         * // Can be used to prepare statements
+         * String template = PLC.insert(UserProfile.class).into("userProfile").sql();
+         * PreparedStatement ps = connection.prepareStatement(template);
+         * // Then set values: ps.setString(1, "John"); etc.
          * }</pre>
          * 
          * @param entityClass The entity class to generate INSERT for
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass) {
             return insert(entityClass, null);
@@ -7348,16 +8295,25 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement for an entity class with excluded properties.
          * 
+         * <p>This method provides control over which properties to include when generating
+         * the INSERT statement from a class definition.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
-         * Set<String> excluded = N.asSet("createdDate", "modifiedDate");
+         * // Exclude auto-generated fields
+         * Set<String> excluded = N.asSet("id", "createdDate", "modifiedDate");
          * String sql = PLC.insert(Account.class, excluded).into("account").sql();
          * // Output: INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
+         * 
+         * // Exclude computed fields
+         * Set<String> computed = N.asSet("fullName", "age", "accountBalance");
+         * String sql2 = PLC.insert(Customer.class, computed).into("customer").sql();
          * }</pre>
          * 
          * @param entityClass The entity class to generate INSERT for
          * @param excludedPropNames Set of property names to exclude from the insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, INSERTION_PART_MSG);
@@ -7375,16 +8331,26 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT INTO statement for an entity class.
          * 
          * <p>This is a convenience method that combines insert() and into() operations.
-         * The table name is derived from the entity class name or @Table annotation.</p>
+         * The table name is derived from the entity class name or @Table annotation.
+         * This provides the most concise way to generate INSERT statements for entities.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Using class name as table name
          * String sql = PLC.insertInto(Account.class).sql();
          * // Output: INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
+         * 
+         * // Using @Table annotation
+         * @Table("user_accounts")
+         * public class Account { ... }
+         * 
+         * String sql2 = PLC.insertInto(Account.class).sql();
+         * // Output: INSERT INTO user_accounts (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param entityClass The entity class to generate INSERT INTO for
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass) {
             return insertInto(entityClass, null);
@@ -7393,16 +8359,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT INTO statement for an entity class with excluded properties.
          * 
+         * <p>This convenience method combines insert() and into() operations while allowing
+         * property exclusions. The table name is automatically determined from the entity class.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
-         * Set<String> excluded = N.asSet("id", "createdDate");
+         * Set<String> excluded = N.asSet("id", "createdDate", "version");
          * String sql = PLC.insertInto(Account.class, excluded).sql();
          * // Output: INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
+         * 
+         * // For batch operations
+         * String template = PLC.insertInto(Order.class, N.asSet("id", "orderNumber")).sql();
+         * // Use template for bulk inserts
          * }</pre>
          * 
          * @param entityClass The entity class to generate INSERT INTO for
          * @param excludedPropNames Set of property names to exclude from the insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return insert(entityClass, excludedPropNames).into(entityClass);
@@ -7412,23 +8386,32 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Generates a MySQL-style batch INSERT statement.
          * 
          * <p>This method creates an efficient batch insert statement with multiple value sets
-         * in a single INSERT statement. Property names maintain their camelCase format.</p>
+         * in a single INSERT statement. This is significantly more efficient than executing
+         * multiple individual INSERT statements. Property names maintain their camelCase format.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * List<Account> accounts = Arrays.asList(
-         *     new Account("John", "Doe"),
-         *     new Account("Jane", "Smith"),
-         *     new Account("Bob", "Johnson")
+         *     new Account("John", "Doe", "john@example.com"),
+         *     new Account("Jane", "Smith", "jane@example.com"),
+         *     new Account("Bob", "Johnson", "bob@example.com")
          * );
          * 
          * SP sqlPair = PLC.batchInsert(accounts).into("account").pair();
-         * // sqlPair.sql: INSERT INTO account (firstName, lastName) VALUES (?, ?), (?, ?), (?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
+         * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?)
+         * // sqlPair.parameters: ["John", "Doe", "john@example.com", "Jane", "Smith", "jane@example.com", "Bob", "Johnson", "bob@example.com"]
+         * 
+         * // With maps
+         * List<Map<String, Object>> data = Arrays.asList(
+         *     N.asMap("firstName", "John", "lastName", "Doe"),
+         *     N.asMap("firstName", "Jane", "lastName", "Smith")
+         * );
+         * SP sqlPair2 = PLC.batchInsert(data).into("account").pair();
          * }</pre>
          * 
          * @param propsList List of entities or property maps to insert
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if propsList is null or empty
          * @deprecated This feature is in beta and may change in future versions
          */
         @Beta
@@ -7452,6 +8435,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an UPDATE statement for a table.
          * 
+         * <p>This method starts building an UPDATE statement. Column names maintain camelCase format.
+         * The actual columns to update are specified using the set() method.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * String sql = PLC.update("account")
@@ -7460,10 +8446,18 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .where(CF.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET firstName = ?, lastName = ? WHERE id = ?
+         * 
+         * // Update with expression
+         * String sql2 = PLC.update("account")
+         *                  .set("loginCount", "loginCount + 1")
+         *                  .set("lastLoginDate", new Date())
+         *                  .where(CF.eq("id", 1))
+         *                  .sql();
          * }</pre>
          * 
          * @param tableName The name of the table to update
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder update(final String tableName) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -7479,21 +8473,27 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an UPDATE statement for a table with entity class mapping.
          * 
-         * <p>The entity class provides property-to-column name mapping information.</p>
+         * <p>The entity class provides property-to-column name mapping information,
+         * which is useful when using the set() method with entity objects.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
-         * String sql = PLC.update("account", Account.class)
-         *                 .set("firstName", "John")
-         *                 .set("lastModified", new Date())
-         *                 .where(CF.eq("id", 1))
-         *                 .sql();
-         * // Output: UPDATE account SET firstName = ?, lastModified = ? WHERE id = ?
+         * Account account = new Account();
+         * account.setFirstName("John");
+         * account.setLastName("Smith");
+         * account.setModifiedDate(new Date());
+         * 
+         * SP sqlPair = PLC.update("account", Account.class)
+         *                 .set(account)
+         *                 .where(CF.eq("id", account.getId()))
+         *                 .pair();
+         * // sqlPair.sql: UPDATE account SET firstName = ?, lastName = ?, modifiedDate = ? WHERE id = ?
          * }</pre>
          * 
          * @param tableName The name of the table to update
          * @param entityClass The entity class for property mapping
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -7512,19 +8512,30 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an UPDATE statement for an entity class.
          * 
          * <p>The table name is derived from the entity class name or @Table annotation.
-         * All updatable properties are included by default.</p>
+         * All updatable properties are included by default when using set() with an entity object.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Simple update
          * String sql = PLC.update(Account.class)
          *                 .set("status", "active")
+         *                 .set("activatedDate", new Date())
          *                 .where(CF.eq("id", 1))
          *                 .sql();
-         * // Output: UPDATE account SET status = ? WHERE id = ?
+         * // Output: UPDATE account SET status = ?, activatedDate = ? WHERE id = ?
+         * 
+         * // Update with entity
+         * Account account = getAccount();
+         * account.setStatus("inactive");
+         * SP sqlPair = PLC.update(Account.class)
+         *                 .set(account)
+         *                 .where(CF.eq("id", account.getId()))
+         *                 .pair();
          * }</pre>
          * 
          * @param entityClass The entity class to update
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass) {
             return update(entityClass, null);
@@ -7533,20 +8544,37 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an UPDATE statement for an entity class with excluded properties.
          * 
-         * <p>Properties marked with @NonUpdatable or @ReadOnly are automatically excluded.</p>
+         * <p>Properties marked with @NonUpdatable or @ReadOnly are automatically excluded.
+         * Additional properties can be excluded through the excludedPropNames parameter.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Exclude audit fields from update
          * Set<String> excluded = N.asSet("createdDate", "createdBy");
-         * String sql = PLC.update(Account.class, excluded)
+         * 
+         * Account account = getAccount();
+         * account.setFirstName("John");
+         * account.setLastName("Doe");
+         * account.setCreatedDate(new Date()); // This will be ignored
+         * 
+         * SP sqlPair = PLC.update(Account.class, excluded)
          *                 .set(account)
          *                 .where(CF.eq("id", account.getId()))
+         *                 .pair();
+         * // createdDate excluded even though set in entity
+         * 
+         * // Exclude version control fields
+         * Set<String> versionExcluded = N.asSet("version", "previousVersion");
+         * String sql = PLC.update(Document.class, versionExcluded)
+         *                 .set("content", newContent)
+         *                 .where(CF.eq("id", docId))
          *                 .sql();
          * }</pre>
          * 
          * @param entityClass The entity class to update
          * @param excludedPropNames Set of property names to exclude from the update
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, UPDATE_PART_MSG);
@@ -7564,16 +8592,35 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a DELETE FROM statement for a table.
          * 
+         * <p>This method creates a DELETE statement. Always use with a WHERE clause
+         * to avoid deleting all rows in the table.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Delete specific records
          * String sql = PLC.deleteFrom("account")
          *                 .where(CF.eq("status", "inactive"))
          *                 .sql();
          * // Output: DELETE FROM account WHERE status = ?
+         * 
+         * // Delete with multiple conditions
+         * String sql2 = PLC.deleteFrom("account")
+         *                  .where(CF.and(
+         *                      CF.eq("status", "inactive"),
+         *                      CF.lt("lastLoginDate", thirtyDaysAgo)
+         *                  ))
+         *                  .sql();
+         * 
+         * // Delete with limit (database-specific)
+         * String sql3 = PLC.deleteFrom("logs")
+         *                  .where(CF.lt("createdDate", oneYearAgo))
+         *                  .limit(1000)
+         *                  .sql();
          * }</pre>
          * 
          * @param tableName The name of the table to delete from
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder deleteFrom(final String tableName) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -7589,17 +8636,30 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a DELETE FROM statement for a table with entity class mapping.
          * 
+         * <p>The entity class provides property-to-column name mapping for use in WHERE conditions.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Delete with entity property names
          * String sql = PLC.deleteFrom("account", Account.class)
-         *                 .where(CF.lt("lastLoginDate", thirtyDaysAgo))
+         *                 .where(CF.and(
+         *                     CF.eq("accountType", "trial"),
+         *                     CF.lt("createdDate", expirationDate)
+         *                 ))
          *                 .sql();
-         * // Output: DELETE FROM account WHERE lastLoginDate < ?
+         * // Property names are used even though table name is specified
+         * 
+         * // Using with entity instance
+         * Account account = getAccount();
+         * String sql2 = PLC.deleteFrom("account", Account.class)
+         *                  .where(CF.eq("id", account.getId()))
+         *                  .sql();
          * }</pre>
          * 
          * @param tableName The name of the table to delete from
          * @param entityClass The entity class for property mapping
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -7617,18 +8677,38 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a DELETE FROM statement for an entity class.
          * 
-         * <p>The table name is derived from the entity class name or @Table annotation.</p>
+         * <p>The table name is derived from the entity class name or @Table annotation.
+         * This provides a type-safe way to generate DELETE statements.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Delete by ID
          * String sql = PLC.deleteFrom(Account.class)
          *                 .where(CF.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM account WHERE id = ?
+         * 
+         * // Bulk delete with conditions
+         * String sql2 = PLC.deleteFrom(Order.class)
+         *                  .where(CF.and(
+         *                      CF.eq("status", "cancelled"),
+         *                      CF.lt("orderDate", oneYearAgo)
+         *                  ))
+         *                  .sql();
+         * 
+         * // With @Table annotation
+         * @Table("user_sessions")
+         * public class Session { ... }
+         * 
+         * String sql3 = PLC.deleteFrom(Session.class)
+         *                  .where(CF.lt("expiryTime", now))
+         *                  .sql();
+         * // Output: DELETE FROM user_sessions WHERE expiryTime < ?
          * }</pre>
          * 
          * @param entityClass The entity class to delete from
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder deleteFrom(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, DELETION_PART_MSG);
@@ -7645,20 +8725,30 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement with a single expression.
          * 
-         * <p>This method is useful for complex select expressions or aggregate functions.</p>
+         * <p>This method is useful for complex select expressions, aggregate functions,
+         * or when selecting computed values.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Count query
          * String sql = PLC.select("COUNT(*)")
          *                 .from("account")
          *                 .where(CF.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT COUNT(*) FROM account WHERE status = ?
          * 
+         * // Complex expression
          * String sql2 = PLC.select("firstName || ' ' || lastName AS fullName")
          *                  .from("account")
          *                  .sql();
          * // Output: SELECT firstName || ' ' || lastName AS fullName FROM account
+         * 
+         * // Aggregate with grouping
+         * String sql3 = PLC.select("departmentId, COUNT(*) AS employeeCount")
+         *                  .from("employee")
+         *                  .groupBy("departmentId")
+         *                  .having(CF.gt("COUNT(*)", 10))
+         *                  .sql();
          * }</pre>
          * 
          * @param selectPart The select expression
@@ -7678,13 +8768,29 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement with multiple columns.
          * 
+         * <p>Column names maintain camelCase format. This is the most common way to
+         * create SELECT statements when you know the specific columns needed.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Simple select
          * String sql = PLC.select("id", "firstName", "lastName", "email")
          *                 .from("account")
          *                 .where(CF.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, email FROM account WHERE status = ?
+         * 
+         * // With table aliases
+         * String sql2 = PLC.select("a.id", "a.firstName", "o.orderId", "o.totalAmount")
+         *                  .from("account a")
+         *                  .innerJoin("orders o").on("a.id = o.accountId")
+         *                  .sql();
+         * 
+         * // Mixed columns and expressions
+         * String sql3 = PLC.select("id", "firstName", "lastName", 
+         *                          "YEAR(CURRENT_DATE) - YEAR(birthDate) AS age")
+         *                  .from("account")
+         *                  .sql();
          * }</pre>
          * 
          * @param propOrColumnNames The property or column names to select
@@ -7705,13 +8811,29 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement with a collection of columns.
          * 
+         * <p>This method is useful when the column list is dynamically generated or
+         * comes from another source.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
-         * List<String> columns = Arrays.asList("id", "firstName", "lastName");
+         * // Dynamic column selection
+         * List<String> columns = getUserSelectedColumns();
          * String sql = PLC.select(columns)
          *                 .from("account")
          *                 .sql();
-         * // Output: SELECT id, firstName, lastName FROM account
+         * 
+         * // Programmatically built column list
+         * List<String> cols = new ArrayList<>();
+         * cols.add("id");
+         * cols.add("firstName");
+         * if (includeEmail) {
+         *     cols.add("emailAddress");
+         * }
+         * String sql2 = PLC.select(cols).from("account").sql();
+         * 
+         * // From entity metadata
+         * List<String> entityColumns = getEntityColumns(Account.class);
+         * String sql3 = PLC.select(entityColumns).from("account").sql();
          * }</pre>
          * 
          * @param propOrColumnNames Collection of property or column names to select
@@ -7732,6 +8854,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement with column aliases.
          * 
+         * <p>This method allows you to specify custom aliases for each selected column,
+         * which is useful for renaming columns in the result set.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
          * Map<String, String> columnAliases = new HashMap<>();
@@ -7743,6 +8868,19 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .from("account")
          *                 .sql();
          * // Output: SELECT firstName AS fname, lastName AS lname, emailAddress AS email FROM account
+         * 
+         * // For JSON output formatting
+         * Map<String, String> jsonAliases = new HashMap<>();
+         * jsonAliases.put("id", "user_id");
+         * jsonAliases.put("firstName", "first_name");
+         * jsonAliases.put("lastName", "last_name");
+         * String sql2 = PLC.select(jsonAliases).from("account").sql();
+         * 
+         * // Complex aliases with expressions
+         * Map<String, String> aliases = new HashMap<>();
+         * aliases.put("firstName || ' ' || lastName", "full_name");
+         * aliases.put("YEAR(CURRENT_DATE) - YEAR(birthDate)", "age");
+         * String sql3 = PLC.select(aliases).from("account").sql();
          * }</pre>
          * 
          * @param propOrColumnNameAliases Map of property/column names to their aliases
@@ -7763,16 +8901,35 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement for all properties of an entity class.
          * 
+         * <p>This method selects all properties from an entity class, excluding those
+         * marked with @Transient annotation. Properties maintain their camelCase naming.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Select all fields from Account entity
          * String sql = PLC.select(Account.class)
          *                 .from("account")
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, email, createdDate FROM account
+         * 
+         * // With WHERE clause
+         * String sql2 = PLC.select(Account.class)
+         *                  .from("account")
+         *                  .where(CF.eq("status", "active"))
+         *                  .sql();
+         * 
+         * // Entity with @Transient fields
+         * public class User {
+         *     private Long id;
+         *     private String userName;
+         *     @Transient
+         *     private String tempPassword;  // Excluded from SELECT
+         * }
          * }</pre>
          * 
          * @param entityClass The entity class to select properties from
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass) {
             return select(entityClass, false);
@@ -7781,9 +8938,36 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement for an entity class with optional sub-entity properties.
          * 
+         * <p>When includeSubEntityProperties is true, properties of nested entity objects
+         * are also included in the selection, which is useful for fetching related data.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * // Entity with nested object
+         * public class Order {
+         *     private Long id;
+         *     private String orderNumber;
+         *     private Customer customer;  // Nested entity
+         * }
+         * 
+         * // Without sub-entities
+         * String sql = PLC.select(Order.class, false)
+         *                 .from("orders")
+         *                 .sql();
+         * // Output: SELECT id, orderNumber FROM orders
+         * 
+         * // With sub-entities
+         * String sql2 = PLC.select(Order.class, true)
+         *                  .from("orders o")
+         *                  .innerJoin("customers c").on("o.customerId = c.id")
+         *                  .sql();
+         * // Includes customer properties as well
+         * }</pre>
+         * 
          * @param entityClass The entity class to select properties from
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return select(entityClass, includeSubEntityProperties, null);
@@ -7792,9 +8976,29 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement for an entity class with excluded properties.
          * 
+         * <p>This method allows you to select most properties of an entity while
+         * explicitly excluding certain ones.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * // Exclude sensitive fields
+         * Set<String> excluded = N.asSet("password", "securityAnswer", "ssn");
+         * String sql = PLC.select(Account.class, excluded)
+         *                 .from("account")
+         *                 .sql();
+         * // All fields except password, securityAnswer, and ssn
+         * 
+         * // Exclude large fields for list views
+         * Set<String> listExcluded = N.asSet("biography", "profileImage", "attachments");
+         * String sql2 = PLC.select(Author.class, listExcluded)
+         *                  .from("authors")
+         *                  .sql();
+         * }</pre>
+         * 
          * @param entityClass The entity class to select properties from
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return select(entityClass, false, excludedPropNames);
@@ -7803,10 +9007,34 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement for an entity class with all options.
          * 
+         * <p>This method provides full control over property selection, including
+         * sub-entity properties and exclusions.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * // Complex entity with relationships
+         * public class Invoice {
+         *     private Long id;
+         *     private String invoiceNumber;
+         *     private Customer customer;
+         *     private List<InvoiceItem> items;
+         *     private byte[] pdfData;  // Large field
+         * }
+         * 
+         * // Select with sub-entities but exclude large fields
+         * Set<String> excluded = N.asSet("pdfData", "items");
+         * String sql = PLC.select(Invoice.class, true, excluded)
+         *                 .from("invoices i")
+         *                 .innerJoin("customers c").on("i.customerId = c.id")
+         *                 .sql();
+         * // Includes invoice and customer fields, but not pdfData or items
+         * }</pre>
+         * 
          * @param entityClass The entity class to select properties from
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -7824,18 +9052,31 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates a complete SELECT FROM statement for an entity class.
          * 
          * <p>This is a convenience method that combines select() and from() operations.
-         * The table name is derived from the entity class name or @Table annotation.</p>
+         * The table name is derived from the entity class name or @Table annotation.
+         * This is the most concise way to create entity-based queries.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Simple entity query
          * String sql = PLC.selectFrom(Account.class)
          *                 .where(CF.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, email FROM account WHERE status = ?
+         * 
+         * // With @Table annotation
+         * @Table("user_accounts")
+         * public class Account { ... }
+         * 
+         * String sql2 = PLC.selectFrom(Account.class)
+         *                  .orderBy("createdDate DESC")
+         *                  .limit(10)
+         *                  .sql();
+         * // Output: SELECT ... FROM user_accounts ORDER BY createdDate DESC LIMIT 10
          * }</pre>
          * 
          * @param entityClass The entity class to select from
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass) {
             return selectFrom(entityClass, false);
@@ -7844,17 +9085,33 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement for an entity class with table alias.
          * 
+         * <p>Table aliases are essential for joins and disambiguating column names
+         * when multiple tables are involved in the query.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
+         * // Simple alias usage
          * String sql = PLC.selectFrom(Account.class, "a")
          *                 .where(CF.eq("a.status", "active"))
          *                 .sql();
          * // Output: SELECT a.id, a.firstName, a.lastName, a.email FROM account a WHERE a.status = ?
+         * 
+         * // With joins
+         * String sql2 = PLC.selectFrom(Order.class, "o")
+         *                  .innerJoin("customers c").on("o.customerId = c.id")
+         *                  .where(CF.eq("c.country", "USA"))
+         *                  .sql();
+         * 
+         * // Self-join
+         * String sql3 = PLC.selectFrom(Employee.class, "e1")
+         *                  .leftJoin("employee e2").on("e1.managerId = e2.id")
+         *                  .sql();
          * }</pre>
          * 
          * @param entityClass The entity class to select from
          * @param alias The table alias to use
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
             return selectFrom(entityClass, alias, false);
@@ -7863,9 +9120,34 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with optional sub-entity properties.
          * 
+         * <p>This method combines entity selection with the option to include
+         * properties from related entities.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * // Entity with relationships
+         * public class BlogPost {
+         *     private Long id;
+         *     private String title;
+         *     private Author author;
+         *     private List<Comment> comments;
+         * }
+         * 
+         * // Without sub-entities (flat selection)
+         * String sql = PLC.selectFrom(BlogPost.class, false)
+         *                 .sql();
+         * // Output: SELECT id, title FROM blog_post
+         * 
+         * // With sub-entities (includes author fields)
+         * String sql2 = PLC.selectFrom(BlogPost.class, true)
+         *                  .sql();
+         * // Includes author properties in selection
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, includeSubEntityProperties, null);
@@ -7874,10 +9156,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with alias and sub-entity option.
          * 
+         * <p>This method provides alias support along with sub-entity property inclusion.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * // Query with related entities
+         * String sql = PLC.selectFrom(Order.class, "o", true)
+         *                 .innerJoin("customers c").on("o.customerId = c.id")
+         *                 .innerJoin("addresses a").on("c.addressId = a.id")
+         *                 .where(CF.eq("a.country", "USA"))
+         *                 .sql();
+         * // Includes order and related entity properties with proper aliases
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param alias The table alias to use
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
             return selectFrom(entityClass, alias, includeSubEntityProperties, null);
@@ -7886,9 +9182,27 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with excluded properties.
          * 
+         * <p>This method creates a complete query while excluding specific properties
+         * from the selection.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * // Exclude large or sensitive fields
+         * Set<String> excluded = N.asSet("password", "biography", "photo");
+         * String sql = PLC.selectFrom(UserProfile.class, excluded)
+         *                 .where(CF.eq("active", true))
+         *                 .sql();
+         * 
+         * // Exclude computed fields
+         * Set<String> computed = N.asSet("age", "fullName", "totalSpent");
+         * String sql2 = PLC.selectFrom(Customer.class, computed)
+         *                  .sql();
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, false, excludedPropNames);
@@ -7897,10 +9211,31 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with alias and excluded properties.
          * 
+         * <p>This method combines alias support with property exclusion for
+         * precise control over the generated query.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * // Complex query with exclusions
+         * Set<String> excluded = N.asSet("internalNotes", "debugInfo");
+         * String sql = PLC.selectFrom(Order.class, "o", excluded)
+         *                 .innerJoin("customers c").on("o.customerId = c.id")
+         *                 .where(CF.between("o.orderDate", startDate, endDate))
+         *                 .sql();
+         * 
+         * // Multiple table query
+         * Set<String> sensitiveFields = N.asSet("ssn", "creditCard");
+         * String sql2 = PLC.selectFrom(Customer.class, "c", sensitiveFields)
+         *                  .leftJoin("orders o").on("c.id = o.customerId")
+         *                  .groupBy("c.id")
+         *                  .sql();
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param alias The table alias to use
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, alias, false, excludedPropNames);
@@ -7909,10 +9244,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT FROM statement with sub-entities and exclusions.
          * 
+         * <p>This method allows including sub-entity properties while excluding
+         * specific properties from the main or sub-entities.</p>
+         * 
+         * <p><b>Example:</b></p>
+         * <pre>{@code
+         * // Include related entities but exclude sensitive fields
+         * Set<String> excluded = N.asSet("password", "customer.creditCard");
+         * String sql = PLC.selectFrom(Order.class, true, excluded)
+         *                 .sql();
+         * // Includes order and customer fields except the excluded ones
+         * }</pre>
+         * 
          * @param entityClass The entity class to select from
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
             return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
@@ -7921,13 +9269,29 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a complete SELECT FROM statement with all options.
          * 
+         * <p>This method provides maximum flexibility for creating SELECT statements
+         * with entity mapping, allowing control over aliases, sub-entity inclusion,
+         * and property exclusions.</p>
+         * 
          * <p><b>Example:</b></p>
          * <pre>{@code
-         * Set<String> excluded = N.asSet("password", "internalNotes");
-         * String sql = PLC.selectFrom(Account.class, "a", true, excluded)
-         *                 .innerJoin("orders o").on("a.id = o.accountId")
-         *                 .where(CF.gt("o.total", 1000))
+         * // Comprehensive query example
+         * Set<String> excluded = N.asSet("password", "internalNotes", "customer.creditScore");
+         * String sql = PLC.selectFrom(Order.class, "o", true, excluded)
+         *                 .innerJoin("customers c").on("o.customerId = c.id")
+         *                 .leftJoin("shipping_addresses sa").on("o.shippingAddressId = sa.id")
+         *                 .where(CF.and(
+         *                     CF.eq("o.status", "pending"),
+         *                     CF.gt("o.totalAmount", 100)
+         *                 ))
+         *                 .orderBy("o.createdDate DESC")
          *                 .sql();
+         * 
+         * // Report query with specific field selection
+         * Set<String> reportExcluded = N.asSet("id", "createdBy", "modifiedBy", "version");
+         * String sql2 = PLC.selectFrom(SalesReport.class, "sr", false, reportExcluded)
+         *                  .where(CF.between("sr.reportDate", startDate, endDate))
+         *                  .sql();
          * }</pre>
          * 
          * @param entityClass The entity class to select from
@@ -7935,6 +9299,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param includeSubEntityProperties Whether to include properties of nested entity objects
          * @param excludedPropNames Set of property names to exclude from selection
          * @return A new SQLBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
