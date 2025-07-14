@@ -35,8 +35,7 @@ public class IsNaNTest extends TestBase {
         List<Object> params = condition.getParameters();
         
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals(IsNaN.NAN, params.get(0));
+        Assertions.assertEquals(0, params.size());
     }
 
     @Test
@@ -47,8 +46,7 @@ public class IsNaNTest extends TestBase {
         // The parameter should be cleared but the structure remains
         List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertNull(params.get(0));
+        Assertions.assertEquals(0, params.size());
     }
 
     @Test

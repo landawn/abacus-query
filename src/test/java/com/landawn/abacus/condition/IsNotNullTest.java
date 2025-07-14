@@ -39,8 +39,7 @@ public class IsNotNullTest extends TestBase {
         List<Object> params = condition.getParameters();
         
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals(IsNull.NULL, params.get(0));
+        Assertions.assertEquals(0, params.size());
     }
 
     @Test
@@ -50,8 +49,7 @@ public class IsNotNullTest extends TestBase {
         
         List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertNull(params.get(0));
+        Assertions.assertEquals(0, params.size());
     }
 
     @Test

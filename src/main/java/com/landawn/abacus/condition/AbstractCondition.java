@@ -20,8 +20,8 @@ import java.util.Iterator;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
-import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.SK;
+import com.landawn.abacus.util.Strings;
 
 /**
  * Abstract base class for all condition implementations.
@@ -71,7 +71,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * @param operator the operator for this condition
      */
     protected AbstractCondition(final Operator operator) {
-        this.operator = operator;
+        this.operator = N.requireNonNull(operator, "operator");
     }
 
     /**
@@ -195,7 +195,11 @@ public abstract class AbstractCondition implements Condition, Cloneable {
         }
 
         if (parameter instanceof Condition) {
-            return ((Condition) parameter).toString(namingPolicy);
+            if (parameter.equals(IsNull.NULL)) {
+                return parameter.toString();
+            } else {
+                return ((Condition) parameter).toString(namingPolicy);
+            }
         }
 
         return parameter.toString();

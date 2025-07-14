@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.landawn.abacus.util.N;
+
 /**
  * Represents an OR logical operator that combines multiple conditions.
  * The OR condition evaluates to true if at least one of its child conditions evaluates to true.
@@ -88,7 +90,6 @@ public class Or extends Junction {
      * 
      * @param condition the condition to add with OR
      * @return a new OR instance with the additional condition
-     * @throws UnsupportedOperationException if the operation is not supported
      * 
      * <p>Example:</p>
      * <pre>{@code
@@ -99,7 +100,9 @@ public class Or extends Junction {
      * }</pre>
      */
     @Override
-    public Or or(final Condition condition) throws UnsupportedOperationException {
+    public Or or(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
+
         final List<Condition> condList = new ArrayList<>(conditionList.size() + 1);
 
         condList.addAll(conditionList);

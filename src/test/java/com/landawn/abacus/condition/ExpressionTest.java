@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.condition.ConditionFactory.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class ExpressionTest extends TestBase {
@@ -22,7 +23,7 @@ public class ExpressionTest extends TestBase {
     public void testOf() {
         Expression expr1 = Expression.of("CURRENT_TIMESTAMP");
         Expression expr2 = Expression.of("CURRENT_TIMESTAMP");
-        
+
         Assertions.assertSame(expr1, expr2); // Should be cached
         Assertions.assertEquals("CURRENT_TIMESTAMP", expr1.getLiteral());
     }
@@ -155,61 +156,61 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testPlus() {
-        String result = Expression.plus("price", "tax", "shipping");
+        String result = Expression.plus(CF.expr("price"), CF.expr("tax"), CF.expr("shipping"));
         Assertions.assertEquals("price + tax + shipping", result);
     }
 
     @Test
     public void testMinus() {
-        String result = Expression.minus("total", "discount");
+        String result = Expression.minus(CF.expr("total"), CF.expr("discount"));
         Assertions.assertEquals("total - discount", result);
     }
 
     @Test
     public void testMulti() {
-        String result = Expression.multi("quantity", "price");
+        String result = Expression.multi(CF.expr("quantity"), CF.expr("price"));
         Assertions.assertEquals("quantity * price", result);
     }
 
     @Test
     public void testDivision() {
-        String result = Expression.division("total", "count");
+        String result = Expression.division(CF.expr("total"), CF.expr("count"));
         Assertions.assertEquals("total / count", result);
     }
 
     @Test
     public void testModulus() {
-        String result = Expression.modulus("value", 10);
+        String result = Expression.modulus(CF.expr("value"), 10);
         Assertions.assertEquals("value % 10", result);
     }
 
     @Test
     public void testLShift() {
-        String result = Expression.lShift("value", 2);
+        String result = Expression.lShift(CF.expr("value"), 2);
         Assertions.assertEquals("value << 2", result);
     }
 
     @Test
     public void testRShift() {
-        String result = Expression.rShift("value", 2);
+        String result = Expression.rShift(CF.expr("value"), 2);
         Assertions.assertEquals("value >> 2", result);
     }
 
     @Test
     public void testBitwiseAnd() {
-        String result = Expression.bitwiseAnd("flags", 0xFF);
+        String result = Expression.bitwiseAnd(CF.expr("flags"), 0xFF);
         Assertions.assertEquals("flags & 255", result);
     }
 
     @Test
     public void testBitwiseOr() {
-        String result = Expression.bitwiseOr("flags", 0x01);
+        String result = Expression.bitwiseOr(CF.expr("flags"), 0x01);
         Assertions.assertEquals("flags | 1", result);
     }
 
     @Test
     public void testBitwiseXOr() {
-        String result = Expression.bitwiseXOr("value", "mask");
+        String result = Expression.bitwiseXOr(CF.expr("value"), CF.expr("mask"));
         Assertions.assertEquals("value ^ mask", result);
     }
 
@@ -425,7 +426,7 @@ public class ExpressionTest extends TestBase {
     public void testGetParameters() {
         Expression expr = Expression.of("price * quantity");
         List<Object> params = expr.getParameters();
-        
+
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
     }
@@ -434,7 +435,7 @@ public class ExpressionTest extends TestBase {
     public void testClearParameters() {
         Expression expr = Expression.of("CURRENT_DATE");
         expr.clearParameters(); // Should do nothing
-        
+
         Assertions.assertEquals("CURRENT_DATE", expr.getLiteral());
     }
 
@@ -448,7 +449,7 @@ public class ExpressionTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Expression expr = Expression.of("firstName = 'John'");
         // Naming policy is ignored for expressions
-        Assertions.assertEquals("firstName = 'John'", expr.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
+        Assertions.assertEquals("first_name = 'John'", expr.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
     }
 
     @Test
@@ -456,7 +457,7 @@ public class ExpressionTest extends TestBase {
         Expression expr1 = new Expression("price > 100");
         Expression expr2 = new Expression("price > 100");
         Expression expr3 = new Expression("price < 100");
-        
+
         Assertions.assertEquals(expr1, expr1);
         Assertions.assertEquals(expr1, expr2);
         Assertions.assertNotEquals(expr1, expr3);
@@ -468,7 +469,7 @@ public class ExpressionTest extends TestBase {
     public void testHashCode() {
         Expression expr1 = new Expression("count > 0");
         Expression expr2 = new Expression("count > 0");
-        
+
         Assertions.assertEquals(expr1.hashCode(), expr2.hashCode());
     }
 
@@ -476,7 +477,7 @@ public class ExpressionTest extends TestBase {
     public void testCopy() {
         Expression original = Expression.of("status = 'active'");
         Expression copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getLiteral(), copy.getLiteral());
     }

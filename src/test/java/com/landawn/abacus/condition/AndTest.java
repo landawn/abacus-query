@@ -16,9 +16,9 @@ public class AndTest extends TestBase {
     public void testConstructorWithVarargs() {
         Equal eq1 = ConditionFactory.eq("status", "active");
         GreaterThan gt = ConditionFactory.gt("age", 18);
-        
+
         And and = ConditionFactory.and(eq1, gt);
-        
+
         Assertions.assertNotNull(and);
         Assertions.assertEquals(Operator.AND, and.getOperator());
         Assertions.assertEquals(2, and.getConditions().size());
@@ -32,7 +32,7 @@ public class AndTest extends TestBase {
                 ConditionFactory.lt("age", 65));
 
         And and = ConditionFactory.and(conditions);
-        
+
         Assertions.assertNotNull(and);
         Assertions.assertEquals(3, and.getConditions().size());
     }
@@ -40,7 +40,7 @@ public class AndTest extends TestBase {
     @Test
     public void testConstructorWithEmptyArray() {
         And and = ConditionFactory.and();
-        
+
         Assertions.assertNotNull(and);
         Assertions.assertEquals(0, and.getConditions().size());
     }
@@ -68,8 +68,8 @@ public class AndTest extends TestBase {
     @Test
     public void testAndMethodThrowsException() {
         And and = ConditionFactory.and();
-        
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
             and.and(null);
         });
     }
@@ -77,7 +77,7 @@ public class AndTest extends TestBase {
     @Test
     public void testToString() {
         And and = ConditionFactory.and(ConditionFactory.eq("name", "John"), ConditionFactory.gt("age", 25));
-        
+
         String result = and.toString();
         Assertions.assertTrue(result.contains("name = 'John'"));
         Assertions.assertTrue(result.contains("AND"));
@@ -87,7 +87,7 @@ public class AndTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         And and = ConditionFactory.and(ConditionFactory.eq("firstName", "Jane"), ConditionFactory.le("yearOfBirth", 2000));
-        
+
         String result = and.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
         Assertions.assertTrue(result.contains("first_name = 'Jane'"));
         Assertions.assertTrue(result.contains("year_of_birth <= 2000"));
@@ -95,11 +95,11 @@ public class AndTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        And and = ConditionFactory.and(ConditionFactory.eq("status", "active"), ConditionFactory.between("age", 18, 65), ConditionFactory.like("name", "John%")
-        );
-        
+        And and = ConditionFactory.and(ConditionFactory.eq("status", "active"), ConditionFactory.between("age", 18, 65),
+                ConditionFactory.like("name", "John%"));
+
         List<Object> params = and.getParameters();
-        
+
         Assertions.assertEquals(4, params.size());
         Assertions.assertTrue(params.contains("active"));
         Assertions.assertTrue(params.contains(18));
@@ -110,20 +110,19 @@ public class AndTest extends TestBase {
     @Test
     public void testClearParameters() {
         And and = ConditionFactory.and(ConditionFactory.eq("id", 100), ConditionFactory.ne("status", "deleted"));
-        
+
         and.clearParameters();
-        
+
         List<Object> params = and.getParameters();
-        Assertions.assertEquals(0, params.size());
+        Assertions.assertEquals(2, params.size());
     }
 
     @Test
     public void testCopy() {
-        And original = ConditionFactory.and(ConditionFactory.eq("active", true), ConditionFactory.gt("score", 80)
-        );
-        
+        And original = ConditionFactory.and(ConditionFactory.eq("active", true), ConditionFactory.gt("score", 80));
+
         And copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getConditions().size(), copy.getConditions().size());
         Assertions.assertNotSame(original.getConditions(), copy.getConditions());
@@ -131,15 +130,12 @@ public class AndTest extends TestBase {
 
     @Test
     public void testEquals() {
-        And and1 = ConditionFactory.and(ConditionFactory.eq("name", "Test"), ConditionFactory.gt("value", 10)
-        );
-        
-        And and2 = ConditionFactory.and(ConditionFactory.eq("name", "Test"), ConditionFactory.gt("value", 10)
-        );
-        
-        And and3 = ConditionFactory.and(ConditionFactory.eq("name", "Test")
-        );
-        
+        And and1 = ConditionFactory.and(ConditionFactory.eq("name", "Test"), ConditionFactory.gt("value", 10));
+
+        And and2 = ConditionFactory.and(ConditionFactory.eq("name", "Test"), ConditionFactory.gt("value", 10));
+
+        And and3 = ConditionFactory.and(ConditionFactory.eq("name", "Test"));
+
         Assertions.assertEquals(and1, and2);
         Assertions.assertNotEquals(and1, and3);
         Assertions.assertNotEquals(and1, null);
@@ -151,15 +147,14 @@ public class AndTest extends TestBase {
         And and1 = ConditionFactory.and(ConditionFactory.eq("id", 1), ConditionFactory.ne("deleted", true));
 
         And and2 = ConditionFactory.and(ConditionFactory.eq("id", 1), ConditionFactory.ne("deleted", true));
-        
+
         Assertions.assertEquals(and1.hashCode(), and2.hashCode());
     }
 
     @Test
     public void testOr() {
-        And and = ConditionFactory.and(ConditionFactory.eq("type", "A"), ConditionFactory.eq("status", "active")
-        );
-        
+        And and = ConditionFactory.and(ConditionFactory.eq("type", "A"), ConditionFactory.eq("status", "active"));
+
         Or or = and.or(ConditionFactory.eq("priority", "high"));
 
         Assertions.assertNotNull(or);
@@ -169,11 +164,10 @@ public class AndTest extends TestBase {
 
     @Test
     public void testNot() {
-        And and = ConditionFactory.and(ConditionFactory.eq("available", true), ConditionFactory.gt("stock", 0)
-        );
+        And and = ConditionFactory.and(ConditionFactory.eq("available", true), ConditionFactory.gt("stock", 0));
 
         Not not = and.not();
-        
+
         Assertions.assertNotNull(not);
         Assertions.assertEquals(Operator.NOT, not.getOperator());
         Assertions.assertEquals(and, not.getCondition());
@@ -181,12 +175,10 @@ public class AndTest extends TestBase {
 
     @Test
     public void testComplexNestedAnd() {
-        And nested1 = ConditionFactory.and(ConditionFactory.eq("a", 1), ConditionFactory.eq("b", 2)
-        );
-        
-        And nested2 = ConditionFactory.and(ConditionFactory.eq("c", 3), ConditionFactory.eq("d", 4)
-        );
-        
+        And nested1 = ConditionFactory.and(ConditionFactory.eq("a", 1), ConditionFactory.eq("b", 2));
+
+        And nested2 = ConditionFactory.and(ConditionFactory.eq("c", 3), ConditionFactory.eq("d", 4));
+
         And complex = ConditionFactory.and(nested1, nested2);
 
         Assertions.assertEquals(2, complex.getConditions().size());

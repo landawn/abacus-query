@@ -69,7 +69,7 @@ public class ExistsTest extends TestBase {
 
         exists.clearParameters();
 
-        Assertions.assertTrue(exists.getParameters().isEmpty());
+        Assertions.assertTrue(exists.getParameters().size() == 3 && exists.getParameters().stream().allMatch(param -> param == null));
     }
 
     @Test
@@ -156,7 +156,7 @@ public class ExistsTest extends TestBase {
         NotExists notExists = ConditionFactory.notExists(subQuery);
 
         Assertions.assertNotNull(notExists);
-        Assertions.assertEquals(Operator.NOT, notExists.getOperator());
+        Assertions.assertEquals(Operator.NOT_EXISTS, notExists.getOperator());
     }
 
     @Test

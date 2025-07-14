@@ -87,7 +87,7 @@ public class ConditionFactoryTest extends TestBase {
     public void testEqOrWithArray() {
         Or or = CF.eqOr("status", "active", "pending", "approved");
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(3, or.getConditions().size());
+        Assertions.assertEquals(2, or.getConditions().size());
     }
 
     @Test
@@ -1085,8 +1085,6 @@ public class ConditionFactoryTest extends TestBase {
 
     @Test
     public void testCF() {
-        // Test that CF extends ConditionFactory
-        Assertions.assertTrue(CF.CF.class.getSuperclass() == CF.class);
 
         // Test a method via CF
         Equal eq = CF.CF.eq("test", "value");

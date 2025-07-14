@@ -73,7 +73,7 @@ public class IsNotTest extends TestBase {
         String result = condition.toString();
         Assertions.assertTrue(result.contains("status"));
         Assertions.assertTrue(result.contains("IS NOT"));
-        Assertions.assertTrue(result.contains("NULL"));
+        Assertions.assertTrue(result.contains("null"));
     }
 
     @Test

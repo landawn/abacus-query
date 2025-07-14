@@ -16,7 +16,7 @@ public class JoinTest extends TestBase {
     @Test
     public void testConstructorWithJoinEntity() {
         Join join = new Join("products");
-        
+
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.JOIN, join.getOperator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
@@ -28,7 +28,7 @@ public class JoinTest extends TestBase {
     public void testConstructorWithJoinEntityAndCondition() {
         Condition condition = CF.eq("customers.id", "orders.customer_id");
         Join join = new Join("orders o", condition);
-        
+
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.JOIN, join.getOperator());
         Assertions.assertEquals("orders o", join.getJoinEntities().get(0));
@@ -40,7 +40,7 @@ public class JoinTest extends TestBase {
         List<String> entities = Arrays.asList("orders o", "customers c");
         Condition condition = CF.eq("o.customer_id", "c.id");
         Join join = new Join(entities, condition);
-        
+
         Assertions.assertNotNull(join);
         Assertions.assertEquals(2, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().containsAll(entities));
@@ -53,13 +53,13 @@ public class JoinTest extends TestBase {
         TestJoin join1 = new TestJoin(Operator.LEFT_JOIN, "table1");
         Assertions.assertEquals(Operator.LEFT_JOIN, join1.getOperator());
         Assertions.assertEquals("table1", join1.getJoinEntities().get(0));
-        
+
         Condition condition = CF.eq("a", "b");
         TestJoin join2 = new TestJoin(Operator.RIGHT_JOIN, "table2", condition);
         Assertions.assertEquals(Operator.RIGHT_JOIN, join2.getOperator());
         Assertions.assertEquals("table2", join2.getJoinEntities().get(0));
         Assertions.assertEquals(condition, join2.getCondition());
-        
+
         List<String> entities = Arrays.asList("t1", "t2");
         TestJoin join3 = new TestJoin(Operator.FULL_JOIN, entities, condition);
         Assertions.assertEquals(Operator.FULL_JOIN, join3.getOperator());
@@ -71,7 +71,7 @@ public class JoinTest extends TestBase {
     public void testGetJoinEntities() {
         Join join = new Join("customers c");
         List<String> entities = join.getJoinEntities();
-        
+
         Assertions.assertNotNull(entities);
         Assertions.assertEquals(1, entities.size());
         Assertions.assertEquals("customers c", entities.get(0));
@@ -81,21 +81,18 @@ public class JoinTest extends TestBase {
     public void testGetCondition() {
         Condition condition = CF.eq("a.id", "b.a_id");
         Join join = new Join("table_b b", condition);
-        
+
         Condition retrieved = join.getCondition();
         Assertions.assertEquals(condition, retrieved);
     }
 
     @Test
     public void testGetParameters() {
-        Condition condition = CF.and(
-            CF.eq("status", "active"),
-            CF.gt("amount", 100)
-        );
+        Condition condition = CF.and(CF.eq("status", "active"), CF.gt("amount", 100));
         Join join = new Join("orders", condition);
-        
+
         List<Object> params = join.getParameters();
-        
+
         Assertions.assertNotNull(params);
         Assertions.assertEquals(2, params.size());
         Assertions.assertTrue(params.contains("active"));
@@ -106,7 +103,7 @@ public class JoinTest extends TestBase {
     public void testGetParametersNoCondition() {
         Join join = new Join("products");
         List<Object> params = join.getParameters();
-        
+
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
     }
@@ -115,9 +112,9 @@ public class JoinTest extends TestBase {
     public void testClearParameters() {
         Condition condition = CF.eq("status", "active");
         Join join = new Join("orders", condition);
-        
+
         join.clearParameters();
-        
+
         List<Object> params = join.getParameters();
         Assertions.assertTrue(params.isEmpty() || params.stream().allMatch(p -> p == null));
     }
@@ -125,10 +122,10 @@ public class JoinTest extends TestBase {
     @Test
     public void testClearParametersNoCondition() {
         Join join = new Join("products");
-        
+
         // Should not throw exception
         join.clearParameters();
-        
+
         List<Object> params = join.getParameters();
         Assertions.assertTrue(params.isEmpty());
     }
@@ -138,7 +135,7 @@ public class JoinTest extends TestBase {
         Condition condition = CF.eq("a.id", "b.a_id");
         Join original = new Join("table_b b", condition);
         Join copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getOperator(), copy.getOperator());
         Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
@@ -151,7 +148,7 @@ public class JoinTest extends TestBase {
     public void testCopyWithoutCondition() {
         Join original = new Join("products");
         Join copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertNull(copy.getCondition());
@@ -161,7 +158,7 @@ public class JoinTest extends TestBase {
     public void testToString() {
         Join join = new Join("orders");
         String result = join.toString();
-        
+
         Assertions.assertTrue(result.contains("JOIN"));
         Assertions.assertTrue(result.contains("orders"));
         Assertions.assertFalse(result.contains("INNER"));
@@ -173,7 +170,7 @@ public class JoinTest extends TestBase {
         Condition condition = CF.eq("customers.id", "orders.customer_id");
         Join join = new Join("orders o", condition);
         String result = join.toString();
-        
+
         Assertions.assertTrue(result.contains("JOIN"));
         Assertions.assertTrue(result.contains("orders o"));
         Assertions.assertTrue(result.contains("customers.id"));
@@ -182,10 +179,10 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Condition condition = CF.eq("customerId", "orderId");
+        Condition condition = CF.eq("customerId", CF.expr("orderId"));
         Join join = new Join("orderTable", condition);
         String result = join.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-        
+
         Assertions.assertTrue(result.contains("JOIN"));
         Assertions.assertTrue(result.contains("orderTable"));
         Assertions.assertTrue(result.contains("CUSTOMER_ID"));
@@ -197,7 +194,7 @@ public class JoinTest extends TestBase {
         List<String> entities = Arrays.asList("t1", "t2", "t3");
         Condition condition = CF.eq("t1.id", "t2.t1_id");
         Join join = new Join(entities, condition);
-        
+
         String result = join.toString();
         Assertions.assertTrue(result.contains("t1, t2, t3"));
     }
@@ -209,7 +206,7 @@ public class JoinTest extends TestBase {
         Join join2 = new Join("table", condition);
         Join join3 = new Join("other", condition);
         Join join4 = new Join("table");
-        
+
         Assertions.assertEquals(join1.hashCode(), join2.hashCode());
         Assertions.assertNotEquals(join1.hashCode(), join3.hashCode());
         Assertions.assertNotEquals(join1.hashCode(), join4.hashCode());
@@ -222,7 +219,7 @@ public class JoinTest extends TestBase {
         Join join2 = new Join("table", condition);
         Join join3 = new Join("other", condition);
         Join join4 = new Join("table");
-        
+
         Assertions.assertEquals(join1, join1);
         Assertions.assertEquals(join1, join2);
         Assertions.assertNotEquals(join1, join3);
@@ -235,7 +232,7 @@ public class JoinTest extends TestBase {
     public void testEqualsWithDifferentOperators() {
         TestJoin join1 = new TestJoin(Operator.JOIN, "table");
         TestJoin join2 = new TestJoin(Operator.LEFT_JOIN, "table");
-        
+
         Assertions.assertNotEquals(join1, join2);
     }
 
@@ -244,11 +241,11 @@ public class JoinTest extends TestBase {
         public TestJoin(Operator operator, String joinEntity) {
             super(operator, joinEntity);
         }
-        
+
         public TestJoin(Operator operator, String joinEntity, Condition condition) {
             super(operator, joinEntity, condition);
         }
-        
+
         public TestJoin(Operator operator, Collection<String> joinEntities, Condition condition) {
             super(operator, joinEntities, condition);
         }

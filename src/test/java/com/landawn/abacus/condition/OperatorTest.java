@@ -146,7 +146,7 @@ public class OperatorTest extends TestBase {
         Assertions.assertEquals("UNION ALL", Operator.UNION_ALL.getName());
         Assertions.assertEquals("INTERSECT", Operator.INTERSECT.getName());
         Assertions.assertEquals("EXCEPT", Operator.EXCEPT.getName());
-        Assertions.assertEquals("EXCEPT", Operator.MINUS.getName());
+        Assertions.assertEquals("MINUS", Operator.MINUS.getName());
 
         // Special operators
         Assertions.assertEquals("", Operator.EMPTY.getName());

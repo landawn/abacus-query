@@ -66,9 +66,9 @@ import com.landawn.abacus.condition.ConditionFactory.CF;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.SQLParser;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.SK;
 
 /**
  * Represents a raw SQL expression that can be used in queries.
@@ -722,7 +722,7 @@ public class Expression extends AbstractCondition {
 
         if (value instanceof String) {
             return (_QUOTATION_S + Strings.quoteEscaped((String) value) + _QUOTATION_S);
-        } else if (value instanceof Number) {
+        } else if (value instanceof Number || value instanceof Boolean) {
             return value.toString();
         } else if (value instanceof Expression) {
             return ((Expression) value).getLiteral();

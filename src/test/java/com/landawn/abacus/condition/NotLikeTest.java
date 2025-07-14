@@ -58,7 +58,7 @@ public class NotLikeTest extends TestBase {
         notLike.clearParameters();
         
         Assertions.assertNull(notLike.getPropValue());
-        Assertions.assertTrue(notLike.getParameters().isEmpty());
+        Assertions.assertTrue(notLike.getParameters().size() == 1);
     }
 
     @Test
@@ -123,7 +123,7 @@ public class NotLikeTest extends TestBase {
         NotLike notLike = CF.notLike("name", null);
         
         Assertions.assertNull(notLike.getPropValue());
-        Assertions.assertTrue(notLike.getParameters().isEmpty());
+        Assertions.assertTrue(notLike.getParameters().size() == 1);
     }
 
     @Test

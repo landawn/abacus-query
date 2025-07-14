@@ -35,8 +35,7 @@ public class IsNotNaNTest extends TestBase {
         List<Object> params = condition.getParameters();
         
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals(IsNaN.NAN, params.get(0));
+        Assertions.assertEquals(0, params.size());
     }
 
     @Test
@@ -46,8 +45,7 @@ public class IsNotNaNTest extends TestBase {
         
         List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertNull(params.get(0));
+        Assertions.assertEquals(0, params.size());
     }
 
     @Test

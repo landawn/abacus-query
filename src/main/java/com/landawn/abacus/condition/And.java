@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.landawn.abacus.util.N;
+
 /**
  * Represents a logical AND condition that combines multiple conditions.
  * All conditions within an AND must evaluate to true for the AND condition to be true.
@@ -65,8 +67,7 @@ public class And extends Junction {
     /**
      * Creates a new AND condition with the specified collection of conditions.
      * 
-     * @param conditions the collection of conditions to combine with AND logic
-     * @throws NullPointerException if conditions is null
+     * @param conditions the collection of conditions to combine with AND logic 
      * 
      * <p>Example:</p>
      * <pre>{@code
@@ -86,8 +87,7 @@ public class And extends Junction {
      * This method returns a new AND instance containing all existing conditions plus the new one.
      * 
      * @param condition the condition to add to this AND
-     * @return a new AND condition containing all conditions
-     * @throws UnsupportedOperationException if the operation is not supported
+     * @return a new AND condition containing all conditions 
      * 
      * <p>Example:</p>
      * <pre>{@code
@@ -97,7 +97,9 @@ public class And extends Junction {
      * }</pre>
      */
     @Override
-    public And and(final Condition condition) throws UnsupportedOperationException {
+    public And and(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
+
         final List<Condition> condList = new ArrayList<>(conditionList.size() + 1);
 
         condList.addAll(conditionList);

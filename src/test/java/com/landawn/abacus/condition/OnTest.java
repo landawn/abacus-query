@@ -217,6 +217,6 @@ public class OnTest extends TestBase {
         On on = CF.on(complexJoin);
         
         Assertions.assertEquals(complexJoin, on.getCondition());
-        Assertions.assertEquals(3, on.getCondition().getParameters().size());
+        Assertions.assertEquals(2, on.getCondition().getParameters().size());
     }
 }

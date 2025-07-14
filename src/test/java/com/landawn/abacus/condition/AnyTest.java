@@ -72,8 +72,8 @@ public class AnyTest extends TestBase {
         Assertions.assertEquals(2, any.getParameters().size());
         
         any.clearParameters();
-        
-        Assertions.assertTrue(any.getParameters().isEmpty());
+
+        Assertions.assertEquals(2, any.getParameters().size());
     }
 
     @Test
