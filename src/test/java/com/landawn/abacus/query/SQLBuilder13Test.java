@@ -20,12 +20,12 @@ import com.landawn.abacus.annotation.NonUpdatable;
 import com.landawn.abacus.annotation.ReadOnly;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.annotation.Transient;
-import com.landawn.abacus.query.Selection;
 import com.landawn.abacus.query.SQLBuilder.NAC;
 import com.landawn.abacus.query.SQLBuilder.NLC;
 import com.landawn.abacus.query.SQLBuilder.NSB;
 import com.landawn.abacus.query.SQLBuilder.NSC;
 import com.landawn.abacus.query.SQLBuilder.PSC;
+import com.landawn.abacus.query.SQLBuilder10Test.Order;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.ConditionFactory.CF;
 import com.landawn.abacus.util.N;
@@ -3284,6 +3284,17 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains(":firstName"));
             Assertions.assertTrue(sql.contains(":lastName"));
             Assertions.assertTrue(sql.contains(":email"));
+
+            Date startDate = new Date();
+            Date endDate = new Date(startDate.getTime() + 86400000); // 1 day later
+
+            sql = NLC.selectFrom(Order.class, "ord", true).where(CF.between("ord.orderDate", startDate, endDate)).sql();
+            // Output: SELECT ord.id, ord.orderNumber, ord.amount, ord.status,
+            //                acc.id AS "account.id", acc.firstName AS "account.firstName"
+            //         FROM orders ord
+            //         LEFT JOIN account acc ON ord.accountId = acc.id
+            //         WHERE ord.orderDate BETWEEN :startDate AND :endDate
+            N.println(sql);
         }
     }
 

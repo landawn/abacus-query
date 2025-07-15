@@ -18,12 +18,12 @@ import com.landawn.abacus.annotation.NonUpdatable;
 import com.landawn.abacus.annotation.ReadOnly;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.annotation.Transient;
-import com.landawn.abacus.query.Selection;
 import com.landawn.abacus.query.SQLBuilder.MAC;
 import com.landawn.abacus.query.SQLBuilder.MLC;
 import com.landawn.abacus.query.SQLBuilder.MSB;
 import com.landawn.abacus.query.SQLBuilder.MSC;
 import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.util.N;
 
 /**
  * Unit tests for SQLBuilder class
@@ -376,6 +376,7 @@ public class SQLBuilder14Test extends TestBase {
         @Test
         public void testCountEntityClass() {
             String sql = MSB.count(Account.class).where(CF.between("createdDate", new Date(), new Date())).sql();
+            N.println(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM test_account"));
         }

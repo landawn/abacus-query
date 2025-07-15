@@ -1184,37 +1184,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return
      */
     protected This from(final String tableName, final String fromCause) {
-        if (_op != OperationType.QUERY) {
-            throw new RuntimeException("Invalid operation: " + _op);
-        }
-
-        _hasFromBeenSet = true;
-
-        if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
-            throw new RuntimeException("Column names or props must be set first by select");
-        }
-
-        final int idx = tableName.indexOf(' ');
-
-        if (idx > 0) {
-            _tableName = tableName.substring(0, idx).trim();
-            _tableAlias = tableName.substring(idx + 1).trim();
-        } else {
-            _tableName = tableName.trim();
-        }
-
-        if (_entityClass != null && Strings.isNotEmpty(_tableAlias)) {
-            addPropColumnMapForAlias(_entityClass, _tableAlias);
-        }
-
-        _sb.append(_SELECT);
-        _sb.append(_SPACE);
-
-        if (Strings.isNotEmpty(_preselect)) {
-            appendStringExpr(_preselect, false);
-
-            _sb.append(_SPACE);
-        }
+        appendOperationBeforeFrom(tableName);
 
         final boolean withAlias = Strings.isNotEmpty(_tableAlias);
         final boolean isForSelect = _op == OperationType.QUERY;
@@ -1303,15 +1273,47 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                             selectionWithClassAlias, selectionClassAlias, isForSelect, true);
                 }
             }
-        } else {
-            throw new UnsupportedOperationException("No select part specified");
         }
 
         _sb.append(_SPACE_FROM_SPACE);
 
         _sb.append(fromCause);
 
+        _hasFromBeenSet = true;
+
         return (This) this;
+    }
+
+    protected void appendOperationBeforeFrom(final String tableName) {
+        if (_op != OperationType.QUERY) {
+            throw new RuntimeException("Invalid operation: " + _op);
+        }
+
+        if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
+            throw new RuntimeException("Column names or props must be set first by select");
+        }
+
+        final int idx = tableName.indexOf(' ');
+
+        if (idx > 0) {
+            _tableName = tableName.substring(0, idx).trim();
+            _tableAlias = tableName.substring(idx + 1).trim();
+        } else {
+            _tableName = tableName.trim();
+        }
+
+        if (_entityClass != null && Strings.isNotEmpty(_tableAlias)) {
+            addPropColumnMapForAlias(_entityClass, _tableAlias);
+        }
+
+        _sb.append(_SELECT);
+        _sb.append(_SPACE);
+
+        if (Strings.isNotEmpty(_preselect)) {
+            appendStringExpr(_preselect, false);
+
+            _sb.append(_SPACE);
+        }
     }
 
     protected void addPropColumnMapForAlias(final Class<?> entityClass, final String alias) {
@@ -3403,9 +3405,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Sets properties to update from an entity object.
      * Only the dirty properties will be set into the result SQL if the specified entity is a dirty marker entity.
      * 
-     * @param entity the entity object containing properties to set
-     * @return this SQLBuilder instance for method chaining
-     * 
      * <pre>{@code
      * // Example usage:
      * String sql = PSC.update("account")
@@ -3413,6 +3412,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .where(CF.eq("id", 1))
      *                 .sql();
      * }</pre>
+     * 
+     * @param entity the entity object containing properties to set
+     * @return this SQLBuilder instance for method chaining
      */
     public This set(final Object entity) {
         return set(entity, null);
@@ -3422,10 +3424,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Sets properties to update from an entity object, excluding specified properties.
      * Only the dirty properties will be set into the result SQL if the specified entity is a dirty marker entity.
      * 
-     * @param entity the entity object containing properties to set
-     * @param excludedPropNames properties to exclude from the update
-     * @return this SQLBuilder instance for method chaining
-     * 
      * <pre>{@code
      * // Example usage:
      * Set<String> excluded = N.asSet("createdDate", "version");
@@ -3434,6 +3432,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .where(CF.eq("id", 1))
      *                 .sql();
      * }</pre>
+     * 
+     * @param entity the entity object containing properties to set
+     * @param excludedPropNames properties to exclude from the update
+     * @return this SQLBuilder instance for method chaining
      */
     public This set(final Object entity, final Set<String> excludedPropNames) {
         if (entity instanceof String) {
@@ -3463,9 +3465,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets all updatable properties from an entity class for UPDATE operation.
      * Properties marked with @NonUpdatable, @ReadOnly, @ReadOnlyId, or @Transient annotations are excluded.
-     *
-     * @param entityClass the entity class to get properties from
-     * @return this SQLBuilder instance for method chaining
      * 
      * <pre>{@code
      * // Example usage:
@@ -3474,6 +3473,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .where(CF.eq("id", 1))
      *                 .sql();
      * }</pre>
+     *
+     * @param entityClass the entity class to get properties from
+     * @return this SQLBuilder instance for method chaining
      */
     public This set(final Class<?> entityClass) {
         setEntityClass(entityClass);
@@ -3484,10 +3486,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
      * Properties marked with @NonUpdatable, @ReadOnly, @ReadOnlyId, or @Transient annotations are automatically excluded.
-     *
-     * @param entityClass the entity class to get properties from
-     * @param excludedPropNames additional properties to exclude from the update
-     * @return this SQLBuilder instance for method chaining
      * 
      * <pre>{@code
      * // Example usage:
@@ -3497,6 +3495,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .where(CF.eq("id", 1))
      *                 .sql();
      * }</pre>
+     *
+     * @param entityClass the entity class to get properties from
+     * @param excludedPropNames additional properties to exclude from the update
+     * @return this SQLBuilder instance for method chaining
      */
     public This set(final Class<?> entityClass, final Set<String> excludedPropNames) {
         setEntityClass(entityClass);
@@ -3547,9 +3549,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Returns the list of parameter values for the generated SQL.
      * For parameterized SQL (using ?), this list contains the actual values in order.
-     * For named SQL, this list contains the values corresponding to named parameters.
-     *
-     * @return an immutable list of parameter values
+     * For named SQL, this list contains the values corresponding to named parameters
      * 
      * <pre>{@code
      * // Example usage:
@@ -3560,6 +3560,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * List<Object> params = builder.parameters();
      * // params contains: ["John", 25]
      * }</pre>
+     *
+     * @return an immutable list of parameter values
      */
     public List<Object> parameters() {
         return _parameters;
@@ -3568,8 +3570,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Generates both the SQL string and its parameters as a pair.
      * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
-     *
-     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
      * 
      * <pre>{@code
      * // Example usage:
@@ -3580,6 +3580,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // sqlPair.query contains: "SELECT * FROM account WHERE status = ?"
      * // sqlPair.parameters contains: ["ACTIVE"]
      * }</pre>
+     *
+     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
      */
     public SP build() {
         final String sql = query();
@@ -3590,8 +3592,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    /**
     //     * Generates both the SQL string and its parameters as a pair.
     //     * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
-    //     *
-    //     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
     //     * 
     //     * <pre>{@code
     //     * // Example usage:
@@ -3603,6 +3603,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //     * // sqlPair.parameters contains: ["ACTIVE"]
     //     * }</pre>
     //     * @deprecated Use {@link #build()} instead
+    //     *
+    //     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
     //     */
     //    public SP pair() {
     //        return build();
@@ -3610,13 +3612,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Applies a function to the SQL-Parameters pair and returns the result.
-     * This is useful for executing the SQL directly with a data access framework.
-     *
-     * @param <T> the return type of the function
-     * @param <E> the exception type that may be thrown
-     * @param func the function to apply to the SP pair
-     * @return the result of applying the function
-     * @throws E if the function throws an exception
+     * This is useful for executing the SQL directly with a data access framework
      * 
      * <pre>{@code
      * // Example usage:
@@ -3625,6 +3621,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *     .where(CF.eq("status", "ACTIVE"))
      *     .apply(sp -> jdbcTemplate.query(sp.query, sp.parameters, accountRowMapper));
      * }</pre>
+     *
+     * @param <T> the return type of the function
+     * @param <E> the exception type that may be thrown
+     * @param func the function to apply to the SP pair
+     * @return the result of applying the function
+     * @throws E if the function throws an exception
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> func) throws E {
@@ -3634,12 +3636,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Applies a bi-function to the SQL string and parameters separately and returns the result.
      * This is useful for executing the SQL directly with a data access framework that takes SQL and parameters separately.
-     *
-     * @param <T> the return type of the function
-     * @param <E> the exception type that may be thrown
-     * @param func the bi-function to apply to the SQL and parameters
-     * @return the result of applying the function
-     * @throws E if the function throws an exception
      * 
      * <pre>{@code
      * // Example usage:
@@ -3648,6 +3644,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *     .where(CF.lt("lastLogin", oneYearAgo))
      *     .apply((sql, params) -> jdbcTemplate.update(sql, params.toArray()));
      * }</pre>
+     *
+     * @param <T> the return type of the function
+     * @param <E> the exception type that may be thrown
+     * @param func the bi-function to apply to the SQL and parameters
+     * @return the result of applying the function
+     * @throws E if the function throws an exception
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> func) throws E {
@@ -3659,10 +3661,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Accepts a consumer for the SQL-Parameters pair.
      * This is useful for executing the SQL with a data access framework when no return value is needed.
-     *
-     * @param <E> the exception type that may be thrown
-     * @param consumer the consumer to accept the SP pair
-     * @throws E if the consumer throws an exception
      * 
      * <pre>{@code
      * // Example usage:
@@ -3670,6 +3668,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *    .values("name", "email", "status")
      *    .accept(sp -> jdbcTemplate.update(sp.query, sp.parameters.toArray()));
      * }</pre>
+     *
+     * @param <E> the exception type that may be thrown
+     * @param consumer the consumer to accept the SP pair
+     * @throws E if the consumer throws an exception
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E {
@@ -3679,10 +3681,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Accepts a bi-consumer for the SQL string and parameters separately.
      * This is useful for executing the SQL with a data access framework when no return value is needed.
-     *
-     * @param <E> the exception type that may be thrown
-     * @param consumer the bi-consumer to accept the SQL and parameters
-     * @throws E if the consumer throws an exception
      * 
      * <pre>{@code
      * // Example usage:
@@ -3694,6 +3692,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *        jdbcTemplate.update(sql, params.toArray());
      *    });
      * }</pre>
+     *
+     * @param <E> the exception type that may be thrown
+     * @param consumer the bi-consumer to accept the SQL and parameters
+     * @throws E if the consumer throws an exception
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E {
@@ -3729,6 +3731,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public String toString() {
         return query();
     }
+
     //    /**
     //     *
     //     * @param <Q>
@@ -4650,84 +4653,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return QueryUtil.prop2ColumnNameMap(entityClass, namingPolicy);
     }
 
-    protected enum SQLPolicy {
-        SQL, PARAMETERIZED_SQL, NAMED_SQL, IBATIS_SQL
-    }
-
-    /**
-     * Represents a SQL string and its associated parameters.
-     * This class is used to encapsulate the generated SQL and the parameters required for execution.
-     * It is immutable, meaning once created, the SQL and parameters cannot be changed.
-     */
-    public static final class SP {
-        /**
-         * The generated SQL string with parameter placeholders.
-         * For parameterized SQL, placeholders are '?'.
-         * For named SQL, placeholders are ':paramName' or '#{paramName}'.
-         */
-        public final String query;
-
-        /**
-         * The list of parameter values in the order they appear in the SQL.
-         * This list is immutable and cannot be modified after creation.
-         */
-        public final List<Object> parameters;
-
-        /**
-         * Creates a new SQL-Parameters pair.
-         * Internal constructor - instances are created by SQLBuilder.
-         * 
-         * @param sql the SQL string
-         * @param parameters the parameter values
-         */
-        SP(final String sql, final List<Object> parameters) {
-            this.query = sql;
-            this.parameters = ImmutableList.wrap(parameters);
-        }
-
-        /**
-         * Returns a hash code value for this SP object.
-         * The hash code is computed based on both the SQL string and parameters.
-         *
-         * @return a hash code value for this object
-         */
-        @Override
-        public int hashCode() {
-            return N.hashCode(query) * 31 + N.hashCode(parameters);
-        }
-
-        /**
-         * Indicates whether some other object is "equal to" this one.
-         * Two SP objects are equal if they have the same SQL string and parameters.
-         *
-         * @param obj the reference object with which to compare
-         * @return true if this object is the same as the obj argument; false otherwise
-         */
-        @Override
-        public boolean equals(final Object obj) {
-            if (this == obj) {
-                return true;
-            }
-
-            if (obj instanceof final SP other) {
-                return N.equals(other.query, query) && N.equals(other.parameters, parameters);
-            }
-
-            return false;
-        }
-
-        /**
-         * Returns a string representation of this SP object.
-         * The string contains both the SQL and parameters for debugging purposes.
-         *
-         * @return a string representation of the object
-         */
-        @Override
-        public String toString() {
-            return "{sql=" + query + ", parameters=" + N.toString(parameters) + "}";
-        }
-    }
-
     protected static final BiConsumer<StringBuilder, String> defaultHandlerForNamedParameter = (sb, propName) -> sb.append(":").append(propName);
     // private static final BiConsumer<StringBuilder, String> mybatisHandlerForNamedParameter = (sb, propName) -> sb.append("#{").append(propName).append("}");
 
@@ -4825,5 +4750,83 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         Objectory.recycle(sb);
         return fromClause;
+    }
+
+    protected enum SQLPolicy {
+        SQL, PARAMETERIZED_SQL, NAMED_SQL, IBATIS_SQL
+    }
+
+    /**
+     * Represents a SQL string and its associated parameters.
+     * This class is used to encapsulate the generated SQL and the parameters required for execution.
+     * It is immutable, meaning once created, the SQL and parameters cannot be changed.
+     */
+    public static final class SP {
+        /**
+         * The generated SQL string with parameter placeholders.
+         * For parameterized SQL, placeholders are '?'.
+         * For named SQL, placeholders are ':paramName' or '#{paramName}'.
+         */
+        public final String query;
+
+        /**
+         * The list of parameter values in the order they appear in the SQL.
+         * This list is immutable and cannot be modified after creation.
+         */
+        public final List<Object> parameters;
+
+        /**
+         * Creates a new SQL-Parameters pair.
+         * Internal constructor - instances are created by SQLBuilder.
+         * 
+         * @param sql the SQL string
+         * @param parameters the parameter values
+         */
+        SP(final String sql, final List<Object> parameters) {
+            this.query = sql;
+            this.parameters = ImmutableList.wrap(parameters);
+        }
+
+        /**
+         * Returns a hash code value for this SP object.
+         * The hash code is computed based on both the SQL string and parameters.
+         *
+         * @return a hash code value for this object
+         */
+        @Override
+        public int hashCode() {
+            return N.hashCode(query) * 31 + N.hashCode(parameters);
+        }
+
+        /**
+         * Indicates whether some other object is "equal to" this one.
+         * Two SP objects are equal if they have the same SQL string and parameters.
+         *
+         * @param obj the reference object with which to compare
+         * @return true if this object is the same as the obj argument; false otherwise
+         */
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj) {
+                return true;
+            }
+
+            if (obj instanceof final SP other) {
+                return N.equals(other.query, query) && N.equals(other.parameters, parameters);
+            }
+
+            return false;
+        }
+
+        /**
+         * Returns a string representation of this SP object.
+         * The string contains both the SQL and parameters for debugging purposes.
+         *
+         * @return a string representation of the object
+         */
+        @Override
+        public String toString() {
+            return "{sql=" + query + ", parameters=" + N.toString(parameters) + "}";
+        }
     }
 }

@@ -105,9 +105,8 @@ public final class ParsedSql {
             }
         }
 
-        int type = 0; // 0: no parameter, 1: named parameter, 2: iBatis/MyBatis style parameter 
-
         final List<String> namedParameterList = new ArrayList<>();
+        int type = 0; // 0: no parameter, 1: named parameter, 2: iBatis/MyBatis style parameter 
 
         if (isOpSqlPrefix) {
             final StringBuilder sb = Objectory.createStringBuilder();
