@@ -19,7 +19,15 @@ package com.landawn.abacus.query.condition;
  * This condition checks if a property value is not equal to a specified value.
  * 
  * <p>The NOT EQUAL operator can be represented as != or <> in SQL, depending on the database.
- * This implementation uses the standard != operator.</p>
+ * This implementation uses the standard != operator. The condition evaluates to true when
+ * the property value differs from the specified value.</p>
+ * 
+ * <p>Important considerations:</p>
+ * <ul>
+ *   <li>NULL comparisons: In SQL, NULL != value returns NULL, not true. Use {@link IsNotNull} for null checks</li>
+ *   <li>Type compatibility: Ensure the property and value types are compatible for comparison</li>
+ *   <li>Case sensitivity: String comparisons may be case-sensitive depending on the database</li>
+ * </ul>
  * 
  * <p>Example usage:</p>
  * <pre>{@code
@@ -39,6 +47,10 @@ package com.landawn.abacus.query.condition;
  * NotEqual condition4 = new NotEqual("created", "2024-01-01");
  * // Results in: created != '2024-01-01'
  * }</pre>
+ * 
+ * @see Equal
+ * @see IsNull
+ * @see IsNotNull
  */
 public class NotEqual extends Binary {
 
@@ -48,14 +60,13 @@ public class NotEqual extends Binary {
 
     /**
      * Constructs a NOT EQUAL condition for the specified property and value.
+     * This condition will evaluate to true when the property value is not equal to the specified value.
      * 
-     * <p>Note: For null comparisons, consider using {@link IsNull} or {@link IsNotNull}
-     * as SQL NULL comparisons behave differently (NULL != value returns NULL, not true).</p>
-     *
-     * @param propName the property name to compare
-     * @param propValue the value that the property should not equal
+     * <p>The NOT EQUAL operator is commonly used to exclude specific values from query results.
+     * It's particularly useful for filtering out deleted records, excluding default values,
+     * or finding records that don't match a specific criteria.</p>
      * 
-     * <p>Example:</p>
+     * <p>Example usage:</p>
      * <pre>{@code
      * // Exclude specific user
      * NotEqual notAdmin = new NotEqual("username", "admin");
@@ -66,6 +77,13 @@ public class NotEqual extends Binary {
      * // Filter out zero values
      * NotEqual notZero = new NotEqual("balance", 0);
      * }</pre>
+     * 
+     * <p>Note: For null comparisons, consider using {@link IsNull} or {@link IsNotNull}
+     * as SQL NULL comparisons behave differently (NULL != value returns NULL, not true).</p>
+     *
+     * @param propName the property name to compare
+     * @param propValue the value that the property should not equal
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public NotEqual(final String propName, final Object propValue) {
         super(propName, Operator.NOT_EQUAL, propValue);

@@ -26,7 +26,16 @@ import com.landawn.abacus.util.Strings;
 /**
  * Represents an IN condition with a subquery in SQL-like queries.
  * This class is used to check if a property value (or multiple property values) exists 
- * in the result set of a subquery.
+ * in the result set of a subquery. It's commonly used for filtering records based on
+ * values from another table or complex query result.
+ * 
+ * <p>The IN subquery condition is particularly useful when:
+ * <ul>
+ *   <li>Filtering based on dynamic result sets from other tables</li>
+ *   <li>Avoiding joins when only checking existence</li>
+ *   <li>Working with correlated or uncorrelated subqueries</li>
+ *   <li>Checking multiple column combinations against subquery results</li>
+ * </ul>
  * 
  * <p>This condition supports two forms:
  * <ul>
@@ -36,15 +45,19 @@ import com.landawn.abacus.util.Strings;
  * 
  * <p>Example usage:
  * <pre>{@code
- * // Single column IN subquery
- * SubQuery activeUsers = new SubQuery("SELECT user_id FROM users WHERE status = 'active'");
- * InSubQuery condition = new InSubQuery("user_id", activeUsers);
- * // Generates: user_id IN (SELECT user_id FROM users WHERE status = 'active')
+ * // Single column IN subquery - find orders from premium customers
+ * SubQuery premiumCustomers = new SubQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
+ * InSubQuery condition = new InSubQuery("customer_id", premiumCustomers);
+ * // Generates: customer_id IN (SELECT customer_id FROM customers WHERE status = 'premium')
  * 
- * // Multiple columns IN subquery
- * SubQuery locations = new SubQuery("SELECT city, state FROM allowed_locations");
- * InSubQuery multiColumn = new InSubQuery(Arrays.asList("city", "state"), locations);
- * // Generates: (city, state) IN (SELECT city, state FROM allowed_locations)
+ * // Multiple columns IN subquery - find employees in specific department/location combinations
+ * SubQuery validAssignments = new SubQuery("SELECT dept_id, location_id FROM allowed_assignments");
+ * InSubQuery multiColumn = new InSubQuery(Arrays.asList("department_id", "location_id"), validAssignments);
+ * // Generates: (department_id, location_id) IN (SELECT dept_id, location_id FROM allowed_assignments)
+ * 
+ * // With parameterized subquery
+ * SubQuery recentOrders = new SubQuery("SELECT order_id FROM orders WHERE order_date > ?", "2024-01-01");
+ * InSubQuery recentCondition = new InSubQuery("order_id", recentOrders);
  * }</pre>
  * 
  * @see NotInSubQuery
@@ -77,17 +90,20 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Creates an IN subquery condition for a single property.
-     * Checks if the property value exists in the result set of the subquery.
+     * Use this constructor when checking if a single column value exists in the subquery result.
+     * The subquery should return a single column of compatible type.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * // Find all products in active categories
+     * SubQuery activeCategories = new SubQuery("SELECT category_id FROM categories WHERE active = true");
+     * InSubQuery condition = new InSubQuery("category_id", activeCategories);
+     * // Can be used in: SELECT * FROM products WHERE category_id IN (SELECT category_id FROM categories WHERE active = true)
+     * }</pre>
      *
      * @param propName the name of the property to check. Must not be null.
      * @param subQuery the subquery that returns the values to check against. Must not be null.
-     * 
-     * <p>Example:
-     * <pre>{@code
-     * SubQuery managerIds = new SubQuery("SELECT id FROM employees WHERE role = 'manager'");
-     * InSubQuery condition = new InSubQuery("manager_id", managerIds);
-     * // Generates: manager_id IN (SELECT id FROM employees WHERE role = 'manager')
-     * }</pre>
+     * @throws IllegalArgumentException if subQuery is null
      */
     public InSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.IN);
@@ -101,18 +117,25 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Creates an IN subquery condition for multiple properties.
-     * Checks if the combination of property values exists in the result set of the subquery.
+     * Use this constructor for composite key checks or when multiple columns need to match
+     * the subquery results. The subquery must return the same number of columns in the same order.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * // Find employees assigned to valid department/location combinations
+     * List<String> columns = Arrays.asList("dept_id", "loc_id");
+     * SubQuery validCombinations = new SubQuery(
+     *     "SELECT department_id, location_id FROM dept_locations WHERE active = 'Y'"
+     * );
+     * InSubQuery condition = new InSubQuery(columns, validCombinations);
+     * // Generates: (dept_id, loc_id) IN (SELECT department_id, location_id FROM dept_locations WHERE active = 'Y')
+     * }</pre>
      *
      * @param propNames the names of the properties to check. Must not be null or empty.
+     *                  The order must match the column order in the subquery.
      * @param subQuery the subquery that returns the value combinations to check against. Must not be null.
-     * 
-     * <p>Example:
-     * <pre>{@code
-     * List<String> columns = Arrays.asList("department_id", "location_id");
-     * SubQuery validCombos = new SubQuery("SELECT dept_id, loc_id FROM valid_assignments");
-     * InSubQuery condition = new InSubQuery(columns, validCombos);
-     * // Generates: (department_id, location_id) IN (SELECT dept_id, loc_id FROM valid_assignments)
-     * }</pre>
+     *                 Must return the same number of columns as propNames.size().
+     * @throws IllegalArgumentException if propNames is null/empty or subQuery is null
      */
     public InSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.IN);
@@ -154,6 +177,7 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Sets a new subquery for this IN condition.
+     * Note: Modifying conditions after creation is not recommended as they should be immutable.
      *
      * @param subQuery the new subquery to set. Must not be null.
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
@@ -165,6 +189,7 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Gets all parameters from the subquery.
+     * These are the parameter values that will be bound to the prepared statement placeholders.
      *
      * @return the list of parameters from the subquery
      */
@@ -175,6 +200,7 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Clears all parameters from the subquery.
+     * This is useful for releasing resources while keeping the condition structure intact.
      */
     @Override
     public void clearParameters() {
@@ -183,6 +209,8 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Creates a deep copy of this InSubQuery condition.
+     * The copy includes a deep copy of the subquery, ensuring complete independence
+     * from the original condition.
      *
      * @param <T> the type of the condition
      * @return a new InSubQuery instance with a copy of the subquery
@@ -199,8 +227,9 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Computes the hash code for this InSubQuery condition.
+     * The hash code is based on the property name(s), operator, and subquery.
      *
-     * @return the hash code based on the property name(s), operator, and subquery
+     * @return the hash code
      */
     @Override
     public int hashCode() {
@@ -212,9 +241,11 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Checks if this InSubQuery condition is equal to another object.
+     * Two InSubQuery conditions are equal if they have the same property name(s),
+     * operator, and subquery.
      *
      * @param obj the object to compare with
-     * @return true if the object is an InSubQuery with the same property name(s), operator, and subquery
+     * @return true if the objects are equal, false otherwise
      */
     @Override
     public boolean equals(final Object obj) {
@@ -232,9 +263,17 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Converts this InSubQuery condition to its string representation according to the specified naming policy.
+     * The naming policy is applied to the property names to handle different naming conventions
+     * (e.g., camelCase to snake_case).
+     * 
+     * <p>Example output:
+     * <pre>{@code
+     * // Single column: "user_id IN (SELECT id FROM users WHERE active = true)"
+     * // Multiple columns: "(dept_id, location_id) IN (SELECT d_id, l_id FROM assignments)"
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names
-     * @return the string representation, e.g., "user_id IN (SELECT ...)" or "(city, state) IN (SELECT ...)"
+     * @return the string representation of the IN subquery condition
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {

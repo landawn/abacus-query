@@ -16,41 +16,76 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents an IS condition in SQL-like queries.
- * This class is used to create conditions that check if a property is equal to a specific value,
- * typically used for special SQL values like NULL, NaN, or INFINITE.
+ * This class is used to create conditions that check if a property is equal to a specific value
+ * using the SQL IS operator, which is primarily used for special SQL values like NULL, NaN, or INFINITE.
+ * 
+ * <p>The IS operator differs from the equals (=) operator in that it can properly compare
+ * special SQL values that have no direct equality semantics. The most common use case is
+ * checking for NULL values, though it also applies to floating-point special values in
+ * databases that support them.
+ * 
+ * <p>Common use cases:
+ * <ul>
+ *   <li>Checking if a value is NULL (though IsNull class is preferred)</li>
+ *   <li>Checking if a numeric value is NaN (though IsNaN class is preferred)</li>
+ *   <li>Checking if a numeric value is INFINITE (though IsInfinite class is preferred)</li>
+ *   <li>Custom IS expressions for database-specific values</li>
+ * </ul>
  * 
  * <p>Example usage:
  * <pre>{@code
- * // Check if a property is null
- * Is condition = new Is("age", null);
- * // This would generate: age IS NULL
+ * // Check if a property is null (prefer IsNull class)
+ * Is nullCheck = new Is("email", null);
+ * // Generates: email IS NULL
+ * 
+ * // Check against a custom expression
+ * Expression customExpr = CF.expr("UNKNOWN");
+ * Is unknownCheck = new Is("status", customExpr);
+ * // Generates: status IS UNKNOWN
  * }</pre>
  * 
  * @see IsNull
  * @see IsNaN
  * @see IsInfinite
+ * @see Binary
  */
 public class Is extends Binary {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor should not be used directly in application code.
+     * This constructor creates an uninitialized Is instance and should not be used 
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Is() {
     }
 
     /**
      * Creates a new IS condition with the specified property name and value.
-     * This condition checks if the property is equal to the specified value using SQL IS operator.
+     * This condition checks if the property is equal to the specified value using the SQL IS operator.
+     * The IS operator is essential for comparing special SQL values that cannot be compared
+     * using the standard equals operator.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * // Check for NULL (though IsNull is preferred)
+     * Is nullCheck = new Is("phone_number", null);
+     * // Generates: phone_number IS NULL
+     * 
+     * // Check against a special expression
+     * Expression nanExpr = CF.expr("NAN");
+     * Is nanCheck = new Is("temperature", nanExpr);
+     * // Generates: temperature IS NAN
+     * 
+     * // Custom database-specific value
+     * Expression unknownExpr = CF.expr("UNKNOWN");
+     * Is triStateCheck = new Is("verification_status", unknownExpr);
+     * // Generates: verification_status IS UNKNOWN
+     * }</pre>
      *
      * @param propName the name of the property to check. Must not be null.
      * @param propValue the value to compare against. Can be null or special Expression values.
-     * 
-     * <p>Example:
-     * <pre>{@code
-     * Is condition = new Is("status", someExpression);
-     * // Generates: status IS someExpression
-     * }</pre>
+     *                  Common values include null, NaN, INFINITE, or custom database-specific values.
+     * @throws IllegalArgumentException if propName is null
      */
     public Is(final String propName, final Object propValue) {
         super(propName, Operator.IS, propValue);

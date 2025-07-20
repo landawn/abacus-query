@@ -20,13 +20,25 @@ import java.util.Collection;
  * Represents an INNER JOIN clause in SQL queries.
  * An INNER JOIN returns only the rows that have matching values in both tables.
  * Rows from either table that don't have a match in the other table are excluded
- * from the result set.
+ * from the result set. This is the most restrictive type of join and ensures that
+ * all returned rows have complete data from both tables.
  * 
  * <p>INNER JOIN is the most common type of join and is used when you want to:
  * <ul>
  *   <li>Combine related data from multiple tables</li>
  *   <li>Return only records that have corresponding data in both tables</li>
  *   <li>Ensure referential integrity in query results</li>
+ *   <li>Eliminate orphaned records from results</li>
+ *   <li>Perform equi-joins based on matching key values</li>
+ * </ul>
+ * 
+ * <p>Key characteristics:
+ * <ul>
+ *   <li>Returns only matching rows from both tables</li>
+ *   <li>Non-matching rows are completely excluded</li>
+ *   <li>Result set size is at most the size of the smaller table</li>
+ *   <li>Order of tables doesn't affect the result (commutative)</li>
+ *   <li>Can be chained for multi-table joins</li>
  * </ul>
  * 
  * <p>Example usage:
@@ -47,6 +59,14 @@ import java.util.Collection;
  *         new Equal("o.status", "completed")
  *     ));
  * // Generates: INNER JOIN orders o ON c.customer_id = o.customer_id AND o.status = 'completed'
+ * 
+ * // Complex multi-condition join
+ * InnerJoin complexJoin = new InnerJoin("inventory i",
+ *     new And(
+ *         new Equal("p.product_id", "i.product_id"),
+ *         new Equal("p.warehouse_id", "i.warehouse_id"),
+ *         new GreaterThan("i.quantity", 0)
+ *     ));
  * }</pre>
  * 
  * @see LeftJoin
@@ -58,7 +78,8 @@ public class InnerJoin extends Join {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor should not be used directly in application code.
+     * This constructor creates an uninitialized InnerJoin instance and should not be used 
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     InnerJoin() {
     }
@@ -66,15 +87,22 @@ public class InnerJoin extends Join {
     /**
      * Creates an INNER JOIN clause for the specified table/entity.
      * This creates a join without an ON condition, which may need to be
-     * specified separately or will use implicit join conditions.
-     *
-     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
+     * specified separately or will use implicit join conditions based on
+     * foreign key relationships (if supported by the database).
      * 
-     * <p>Example:
+     * <p>Example usage:
      * <pre>{@code
+     * // Simple join without explicit condition
      * InnerJoin join = new InnerJoin("products");
      * // Generates: INNER JOIN products
+     * 
+     * // Join with table alias
+     * InnerJoin aliasJoin = new InnerJoin("order_details od");
+     * // Generates: INNER JOIN order_details od
      * }</pre>
+     *
+     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public InnerJoin(final String joinEntity) {
         super(Operator.INNER_JOIN, joinEntity);
@@ -83,28 +111,38 @@ public class InnerJoin extends Join {
     /**
      * Creates an INNER JOIN clause with a join condition.
      * This is the most common form of INNER JOIN, specifying both the table to join
-     * and the condition for matching rows.
-     *
-     * @param joinEntity the table or entity to join with. Can include alias.
-     * @param condition the join condition (typically an equality condition between columns).
+     * and the condition for matching rows. The condition typically compares key columns
+     * between the tables.
      * 
-     * <p>Example:
+     * <p>Example usage:
      * <pre>{@code
      * // Join orders with customers
-     * InnerJoin join = new InnerJoin("customers c",
+     * InnerJoin customerOrders = new InnerJoin("customers c",
      *     new Equal("orders.customer_id", "c.id"));
      * // Generates: INNER JOIN customers c ON orders.customer_id = c.id
      * 
-     * // Complex join with multiple conditions
-     * InnerJoin complexJoin = new InnerJoin("order_items oi",
+     * // Join with composite key
+     * InnerJoin compositeJoin = new InnerJoin("order_items oi",
      *     new And(
      *         new Equal("orders.id", "oi.order_id"),
-     *         new GreaterThan("oi.quantity", 0),
-     *         new Equal("oi.status", "active")
+     *         new Equal("orders.version", "oi.order_version")
      *     ));
-     * // Generates: INNER JOIN order_items oi ON orders.id = oi.order_id 
-     * //            AND oi.quantity > 0 AND oi.status = 'active'
+     * // Generates: INNER JOIN order_items oi ON orders.id = oi.order_id AND orders.version = oi.order_version
+     * 
+     * // Join with additional filter conditions
+     * InnerJoin filteredJoin = new InnerJoin("products p",
+     *     new And(
+     *         new Equal("order_items.product_id", "p.id"),
+     *         new Equal("p.active", true),
+     *         new GreaterThan("p.stock", 0)
+     *     ));
+     * // Generates: INNER JOIN products p ON order_items.product_id = p.id AND p.active = true AND p.stock > 0
      * }</pre>
+     *
+     * @param joinEntity the table or entity to join with. Can include alias.
+     * @param condition the join condition (typically an equality condition between columns).
+     *                  Can be a complex condition using And/Or for multiple criteria.
+     * @throws IllegalArgumentException if joinEntity is null/empty or condition is null
      */
     public InnerJoin(final String joinEntity, final Condition condition) {
         super(Operator.INNER_JOIN, joinEntity, condition);
@@ -112,18 +150,29 @@ public class InnerJoin extends Join {
 
     /**
      * Creates an INNER JOIN clause with multiple tables/entities and a join condition.
-     * This allows joining multiple tables in a single INNER JOIN operation.
-     *
-     * @param joinEntities the collection of tables or entities to join with.
-     * @param condition the join condition to apply.
+     * This allows joining multiple tables in a single INNER JOIN operation, though
+     * this syntax is less common than chaining individual joins.
      * 
-     * <p>Example:
+     * <p>Example usage:
      * <pre>{@code
      * // Join multiple related tables
      * List<String> tables = Arrays.asList("orders o", "customers c");
-     * InnerJoin join = new InnerJoin(tables,
+     * InnerJoin multiJoin = new InnerJoin(tables,
      *     new Equal("o.customer_id", "c.id"));
+     * // Generates: INNER JOIN orders o, customers c ON o.customer_id = c.id
+     * 
+     * // Complex multi-table join
+     * List<String> entities = Arrays.asList("products p", "categories cat", "suppliers s");
+     * InnerJoin complexMulti = new InnerJoin(entities,
+     *     new And(
+     *         new Equal("p.category_id", "cat.id"),
+     *         new Equal("p.supplier_id", "s.id")
+     *     ));
      * }</pre>
+     *
+     * @param joinEntities the collection of tables or entities to join with.
+     * @param condition the join condition to apply across all tables.
+     * @throws IllegalArgumentException if joinEntities is null/empty or condition is null
      */
     public InnerJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.INNER_JOIN, joinEntities, condition);

@@ -21,11 +21,21 @@ package com.landawn.abacus.query.condition;
  * Unlike UNION, UNION ALL includes all rows from all queries, including duplicates.
  * This makes UNION ALL faster than UNION as it doesn't need to remove duplicates.</p>
  * 
- * <p>Key differences from UNION:</p>
+ * <p>Key characteristics:</p>
  * <ul>
- *   <li>UNION removes duplicate rows, UNION ALL keeps all rows</li>
- *   <li>UNION ALL is generally faster as it doesn't perform duplicate elimination</li>
+ *   <li>Preserves all rows from all queries, including duplicates</li>
+ *   <li>Faster performance than UNION (no duplicate elimination)</li>
+ *   <li>Maintains the order of rows from each query</li>
+ *   <li>Requires same number of columns with compatible types</li>
+ *   <li>Column names from the first query are used in the result</li>
+ * </ul>
+ * 
+ * <p>When to use UNION ALL vs UNION:</p>
+ * <ul>
  *   <li>Use UNION ALL when you want all results or know there are no duplicates</li>
+ *   <li>Use UNION ALL for better performance when duplicates don't matter</li>
+ *   <li>Use UNION ALL when combining data from different sources that won't overlap</li>
+ *   <li>Use UNION when you need distinct results</li>
  * </ul>
  * 
  * <p>Example usage:</p>
@@ -43,6 +53,9 @@ package com.landawn.abacus.query.condition;
  * SubQuery inactiveUsers = new SubQuery("SELECT id, name, 'inactive' as status FROM inactive_users");
  * UnionAll allUsers = new UnionAll(inactiveUsers);
  * }</pre>
+ * 
+ * @see Union
+ * @see SubQuery
  */
 public class UnionAll extends Clause {
 
@@ -52,13 +65,13 @@ public class UnionAll extends Clause {
 
     /**
      * Constructs a UNION ALL clause with the specified subquery.
+     * The subquery will be combined with the main query, keeping all rows including duplicates.
      * 
-     * <p>The subquery should return the same number and compatible types of columns
-     * as the main query to ensure valid SQL.</p>
-     *
-     * @param condition the subquery to combine with UNION ALL
+     * <p>The subquery must return the same number of columns as the main query,
+     * and the data types must be compatible. The column names from the first query
+     * in the UNION ALL operation will be used for the final result set.</p>
      * 
-     * <p>Example:</p>
+     * <p>Example usage:</p>
      * <pre>{@code
      * // Combine orders from multiple regions
      * SubQuery eastRegion = new SubQuery("SELECT * FROM orders WHERE region = 'EAST'");
@@ -66,6 +79,9 @@ public class UnionAll extends Clause {
      * UnionAll allOrders = new UnionAll(westRegion);
      * // Keeps all orders, even if some might appear in both regions
      * }</pre>
+     *
+     * @param condition the subquery to combine with UNION ALL
+     * @throws IllegalArgumentException if condition is null
      */
     public UnionAll(final SubQuery condition) {
         super(Operator.UNION_ALL, condition);

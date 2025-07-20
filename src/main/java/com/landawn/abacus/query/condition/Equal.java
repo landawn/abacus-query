@@ -18,28 +18,42 @@ package com.landawn.abacus.query.condition;
  * Represents an equality (=) condition in a query.
  * This condition checks if a property value equals a specified value.
  * 
- * <p>This is one of the most commonly used conditions in queries.
- * It supports comparison with literal values, null values, and subqueries.</p>
+ * <p>The Equal condition is one of the most fundamental and commonly used conditions
+ * in database queries. It performs exact matching between a column value and a
+ * specified value, supporting various data types including strings, numbers, dates,
+ * booleans, and even subqueries.</p>
+ * 
+ * <p>Key features:</p>
+ * <ul>
+ *   <li>Exact value matching</li>
+ *   <li>Null-safe comparison when comparing with null</li>
+ *   <li>Support for subquery comparisons</li>
+ *   <li>Case-sensitive for string comparisons (database-dependent)</li>
+ * </ul>
  * 
  * <p>Usage example:</p>
  * <pre>{@code
  * // Simple equality check
- * Equal condition = new Equal("status", "active");
+ * Equal statusCheck = new Equal("status", "active");
  * 
- * // Use in a query
- * query.where(new Equal("userId", 12345));
+ * // Numeric comparison
+ * Equal idCheck = new Equal("userId", 12345);
  * 
- * // Compare with null (though IsNull is preferred)
+ * // Date comparison
+ * Equal dateCheck = new Equal("createdDate", LocalDate.of(2024, 1, 1));
+ * 
+ * // Null check (though IsNull is preferred for clarity)
  * Equal nullCheck = new Equal("deletedDate", null);
  * 
- * // Compare with subquery result
- * SubQuery maxSalary = new SubQuery("SELECT MAX(salary) FROM employees");
+ * // Subquery comparison
+ * SubQuery maxSalary = CF.subQuery("SELECT MAX(salary) FROM employees");
  * Equal maxSalaryCheck = new Equal("salary", maxSalary);
  * }</pre>
  * 
  * @see Binary
  * @see NotEqual
  * @see IsNull
+ * @see In
  * @see Condition
  */
 public class Equal extends Binary {
@@ -50,22 +64,30 @@ public class Equal extends Binary {
 
     /**
      * Creates a new Equal condition.
-     * 
-     * @param propName the name of the property to compare
-     * @param propValue the value to compare against (can be null, literal value, or subquery)
-     * @throws IllegalArgumentException if propName is null or empty
+     * The condition evaluates to true when the property value exactly matches the specified value.
      * 
      * <p>Example:</p>
      * <pre>{@code
-     * // Check if name equals "John"
+     * // String equality
      * Equal nameCheck = new Equal("name", "John");
      * 
-     * // Check if count equals 0
+     * // Numeric equality
      * Equal countCheck = new Equal("count", 0);
      * 
-     * // Check if date equals specific date
-     * Equal dateCheck = new Equal("createdDate", someDate);
+     * // Boolean equality
+     * Equal activeCheck = new Equal("isActive", true);
+     * 
+     * // Date equality
+     * Equal dateCheck = new Equal("birthDate", LocalDate.of(1990, 1, 1));
+     * 
+     * // Subquery equality - find employees with average salary
+     * SubQuery avgSalary = CF.subQuery("SELECT AVG(salary) FROM employees");
+     * Equal avgCheck = new Equal("salary", avgSalary);
      * }</pre>
+     * 
+     * @param propName the name of the property to compare (must not be null or empty)
+     * @param propValue the value to compare against (can be null, literal value, or subquery)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public Equal(final String propName, final Object propValue) {
         super(propName, Operator.EQUAL, propValue);

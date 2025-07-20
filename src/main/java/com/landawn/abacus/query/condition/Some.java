@@ -19,13 +19,22 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>The SOME operator returns true if the comparison is true for at least one
  * value returned by the subquery. It's functionally equivalent to the ANY operator
- * in SQL.</p>
+ * in SQL. The operator is used with a comparison operator (=, !=, >, <, >=, <=)
+ * to compare a value against a set of values from a subquery.</p>
  * 
- * <p>Common usage patterns:</p>
+ * <p>Comparison behavior:</p>
  * <ul>
  *   <li>column = SOME (subquery) - true if column equals any value from subquery</li>
  *   <li>column > SOME (subquery) - true if column is greater than at least one value</li>
  *   <li>column < SOME (subquery) - true if column is less than at least one value</li>
+ *   <li>column != SOME (subquery) - true if column differs from at least one value</li>
+ * </ul>
+ * 
+ * <p>SOME vs ALL vs ANY:</p>
+ * <ul>
+ *   <li>SOME and ANY are equivalent - both return true if condition matches any value</li>
+ *   <li>ALL returns true only if condition matches all values</li>
+ *   <li>SOME/ANY are more permissive than ALL</li>
  * </ul>
  * 
  * <p>Example usage:</p>
@@ -40,6 +49,10 @@ package com.landawn.abacus.query.condition;
  * Some somePrice = new Some(competitorPrices);
  * // Used with: price < SOME (SELECT price FROM competitor_products)
  * }</pre>
+ * 
+ * @see Any
+ * @see All
+ * @see SubQuery
  */
 public class Some extends Cell {
 
@@ -49,13 +62,14 @@ public class Some extends Cell {
 
     /**
      * Constructs a SOME condition with the specified subquery.
+     * The SOME operator must be used with a comparison operator in the containing condition.
      * 
-     * <p>The SOME operator is typically used in combination with comparison operators
-     * (=, !=, >, <, >=, <=) to compare a value against the result set of a subquery.</p>
-     *
-     * @param condition the subquery that returns values to compare against
+     * <p>The SOME operator is typically used in scenarios where you want to find records
+     * that meet a criteria compared to at least one value from another dataset. It's
+     * particularly useful for finding records that exceed minimum thresholds or fall
+     * below maximum limits from a dynamic set of values.</p>
      * 
-     * <p>Example:</p>
+     * <p>Example usage:</p>
      * <pre>{@code
      * // Subquery to get department budgets
      * SubQuery deptBudgets = new SubQuery("SELECT budget FROM departments");
@@ -65,6 +79,9 @@ public class Some extends Cell {
      * // project_cost < SOME (SELECT budget FROM departments)
      * // This returns projects that cost less than at least one department's budget
      * }</pre>
+     *
+     * @param condition the subquery that returns values to compare against
+     * @throws IllegalArgumentException if condition is null
      */
     public Some(final SubQuery condition) {
         super(Operator.SOME, condition);

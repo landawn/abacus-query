@@ -18,17 +18,23 @@ package com.landawn.abacus.query.condition;
  * Represents a greater than (>) condition in a query.
  * This condition checks if a property value is strictly greater than a specified value.
  * 
+ * <p>The GreaterThan condition is used for range queries where you need to find records
+ * with values exceeding a threshold. It supports various data types including numbers,
+ * dates, strings (lexicographical comparison), and can also work with subqueries.</p>
+ * 
  * <p>Usage example:</p>
  * <pre>{@code
  * // Create a condition where age > 18
- * GreaterThan condition = new GreaterThan("age", 18);
+ * GreaterThan ageCondition = new GreaterThan("age", 18);
  * 
- * // Use in a query
- * query.where(new GreaterThan("price", 100.0));
+ * // Use in a query for high-value orders
+ * query.where(new GreaterThan("orderTotal", 1000.0));
  * 
- * // Can be used with various data types
- * GreaterThan dateCondition = new GreaterThan("createdDate", someDate);
- * GreaterThan stringCondition = new GreaterThan("name", "M"); // Alphabetical comparison
+ * // Date comparison - find future events
+ * GreaterThan futureEvents = new GreaterThan("eventDate", LocalDate.now());
+ * 
+ * // String comparison (alphabetical)
+ * GreaterThan afterM = new GreaterThan("lastName", "M");
  * }</pre>
  * 
  * @see Binary
@@ -44,19 +50,27 @@ public class GreaterThan extends Binary {
 
     /**
      * Creates a new GreaterThan condition.
+     * The condition evaluates to true when the property value is strictly greater than the specified value.
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * // Check if salary is above 50000
+     * GreaterThan salaryCondition = new GreaterThan("salary", 50000);
+     * 
+     * // Check if temperature exceeds threshold
+     * GreaterThan tempCondition = new GreaterThan("temperature", 100);
+     * 
+     * // Check if date is after a specific date
+     * GreaterThan dateCondition = new GreaterThan("expiryDate", LocalDate.of(2024, 12, 31));
+     * 
+     * // Use with subquery - find products priced above average
+     * SubQuery avgPrice = CF.subQuery("SELECT AVG(price) FROM products");
+     * GreaterThan aboveAverage = new GreaterThan("price", avgPrice);
+     * }</pre>
      * 
      * @param propName the name of the property to compare
      * @param propValue the value to compare against
      * @throws IllegalArgumentException if propName is null or empty
-     * 
-     * <p>Example:</p>
-     * <pre>{@code
-     * // Check if salary is greater than 50000
-     * GreaterThan condition = new GreaterThan("salary", 50000);
-     * 
-     * // Check if date is after a specific date
-     * GreaterThan dateCondition = new GreaterThan("expiryDate", new Date());
-     * }</pre>
      */
     public GreaterThan(final String propName, final Object propValue) {
         super(propName, Operator.GREATER_THAN, propValue);

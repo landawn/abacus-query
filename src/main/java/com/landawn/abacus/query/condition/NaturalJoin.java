@@ -21,13 +21,25 @@ import java.util.Collection;
  * 
  * <p>A NATURAL JOIN automatically joins tables based on all columns with the same names 
  * in both tables. It's a special type of equi-join where the join predicate arises 
- * implicitly by comparing all columns in both tables that have the same column names.</p>
+ * implicitly by comparing all columns in both tables that have the same column names.
+ * The result set contains only one column for each pair of equally named columns.</p>
+ * 
+ * <p>Key characteristics:</p>
+ * <ul>
+ *   <li>Automatically identifies common column names</li>
+ *   <li>Performs equality comparison on all matching columns</li>
+ *   <li>Eliminates duplicate columns in the result</li>
+ *   <li>No explicit join condition needed for matching columns</li>
+ *   <li>Additional conditions act as filters after the natural join</li>
+ * </ul>
  * 
  * <p>Important considerations:</p>
  * <ul>
- *   <li>No explicit join condition is needed when columns have matching names</li>
- *   <li>If an explicit condition is provided, it acts as an additional filter</li>
- *   <li>Be cautious as table schema changes can affect natural join behavior</li>
+ *   <li>Schema changes can silently affect query behavior</li>
+ *   <li>Adding columns with common names changes join semantics</li>
+ *   <li>Less explicit than other join types</li>
+ *   <li>May join on unintended columns if naming conventions overlap</li>
+ *   <li>Best used when table relationships are well-defined and stable</li>
  * </ul>
  * 
  * <p>Example usage:</p>
@@ -45,6 +57,10 @@ import java.util.Collection;
  * List<String> tables = Arrays.asList("employees", "departments");
  * NaturalJoin join3 = new NaturalJoin(tables, condition);
  * }</pre>
+ * 
+ * @see Join
+ * @see InnerJoin
+ * @see LeftJoin
  */
 public class NaturalJoin extends Join {
 
@@ -54,15 +70,21 @@ public class NaturalJoin extends Join {
 
     /**
      * Constructs a NATURAL JOIN with the specified entity/table.
-     * The join will automatically use all columns with matching names.
+     * The join will automatically use all columns with matching names between the tables.
+     * 
+     * <p>This constructor creates a pure natural join without additional conditions.
+     * The database engine will identify all columns with identical names in both tables
+     * and create an implicit equality condition for each pair.</p>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // If 'orders' and 'customers' both have 'customer_id' column
+     * NaturalJoin join = new NaturalJoin("customers");
+     * // Automatically joins on orders.customer_id = customers.customer_id
+     * }</pre>
      *
      * @param joinEntity the name of the entity/table to join
-     * 
-     * <p>Example:</p>
-     * <pre>{@code
-     * NaturalJoin join = new NaturalJoin("orders");
-     * // Joins on all columns with same names in both tables
-     * }</pre>
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public NaturalJoin(final String joinEntity) {
         super(Operator.NATURAL_JOIN, joinEntity);
@@ -71,16 +93,22 @@ public class NaturalJoin extends Join {
     /**
      * Constructs a NATURAL JOIN with the specified entity/table and an additional condition.
      * The natural join occurs on matching column names, with the condition as an extra filter.
+     * 
+     * <p>The condition parameter acts as an additional filter after the natural join
+     * is performed. This is useful when you want to combine the automatic column matching
+     * of natural join with specific filtering criteria.</p>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // Natural join filtered by date
+     * Condition recentOnly = new GreaterThan("orderDate", "2024-01-01");
+     * NaturalJoin join = new NaturalJoin("orders", recentOnly);
+     * // Natural join on matching columns, then filter by order date
+     * }</pre>
      *
      * @param joinEntity the name of the entity/table to join
      * @param condition additional condition to apply after the natural join
-     * 
-     * <p>Example:</p>
-     * <pre>{@code
-     * Condition recentOnly = new GreaterThan("orderDate", "2023-01-01");
-     * NaturalJoin join = new NaturalJoin("orders", recentOnly);
-     * // Natural join on matching columns, filtered by order date
-     * }</pre>
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public NaturalJoin(final String joinEntity, final Condition condition) {
         super(Operator.NATURAL_JOIN, joinEntity, condition);
@@ -89,17 +117,23 @@ public class NaturalJoin extends Join {
     /**
      * Constructs a NATURAL JOIN with multiple entities/tables and a condition.
      * Useful for joining multiple tables in a single natural join operation.
-     *
-     * @param joinEntities collection of entity/table names to join
-     * @param condition additional condition to apply after the natural join
      * 
-     * <p>Example:</p>
+     * <p>When joining multiple tables, the natural join is performed sequentially.
+     * Each table is joined based on columns with matching names. Care must be taken
+     * to ensure the intended columns are matched, especially with multiple tables.</p>
+     * 
+     * <p>Example usage:</p>
      * <pre>{@code
+     * // Join customers, orders, and products naturally
      * List<String> tables = Arrays.asList("customers", "orders", "products");
      * Condition highValue = new GreaterThan("totalAmount", 1000);
      * NaturalJoin join = new NaturalJoin(tables, highValue);
-     * // Natural join across all tables on matching columns
+     * // Natural join across all tables on matching columns, filtered by amount
      * }</pre>
+     *
+     * @param joinEntities collection of entity/table names to join
+     * @param condition additional condition to apply after the natural join
+     * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.NATURAL_JOIN, joinEntities, condition);

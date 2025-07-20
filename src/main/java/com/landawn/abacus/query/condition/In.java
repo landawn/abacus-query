@@ -27,33 +27,50 @@ import com.landawn.abacus.util.NamingPolicy;
  * Represents an IN condition in SQL-like queries.
  * This class is used to check if a property value matches any value in a specified collection.
  * It's equivalent to multiple OR conditions but more concise and often more efficient.
+ * The IN operator is one of the most commonly used SQL operators for filtering data.
  * 
- * <p>The IN condition is commonly used for:
+ * <p>The IN condition is particularly useful for:
  * <ul>
  *   <li>Checking membership in a list of values</li>
- *   <li>Filtering by multiple possible values</li>
- *   <li>Replacing multiple OR conditions</li>
+ *   <li>Filtering by multiple possible values efficiently</li>
+ *   <li>Replacing multiple OR conditions with cleaner syntax</li>
+ *   <li>Working with results from subqueries (see {@link InSubQuery})</li>
+ *   <li>Implementing dynamic filters based on user selections</li>
+ * </ul>
+ * 
+ * <p>Performance considerations:
+ * <ul>
+ *   <li>Most databases optimize IN conditions well for small to medium lists</li>
+ *   <li>For very large lists, consider using a temporary table and JOIN</li>
+ *   <li>Some databases have limits on the number of values in an IN clause</li>
  * </ul>
  * 
  * <p>Example usage:
  * <pre>{@code
  * // Check if status is one of several values
- * In condition = new In("status", Arrays.asList("active", "pending", "approved"));
- * // This would generate: status IN ('active', 'pending', 'approved')
+ * In statusCheck = new In("status", Arrays.asList("active", "pending", "approved"));
+ * // Generates: status IN ('active', 'pending', 'approved')
  * 
  * // Check if user_id is in a list
- * In userCondition = new In("user_id", Arrays.asList(1, 2, 3, 5, 8));
- * // This would generate: user_id IN (1, 2, 3, 5, 8)
+ * In userFilter = new In("user_id", Arrays.asList(1, 2, 3, 5, 8));
+ * // Generates: user_id IN (1, 2, 3, 5, 8)
+ * 
+ * // Filter by categories
+ * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers"));
+ * In categoryFilter = new In("category", categories);
+ * // Generates: category IN ('electronics', 'computers')
  * }</pre>
  * 
  * @see NotIn
  * @see InSubQuery
+ * @see AbstractCondition
  */
 public class In extends AbstractCondition {
 
     /**
      * The property name to check.
-     * This field is used for serialization frameworks like Kryo.
+     * This field stores the name of the column or property that will be compared
+     * against the list of values. It's package-private for serialization frameworks.
      */
     final String propName;
 
@@ -61,7 +78,8 @@ public class In extends AbstractCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor should not be used directly in application code.
+     * This constructor creates an uninitialized In instance and should not be used 
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     In() {
         propName = null;
@@ -70,11 +88,9 @@ public class In extends AbstractCondition {
     /**
      * Creates a new IN condition with the specified property name and collection of values.
      * The condition checks if the property value matches any value in the collection.
-     *
-     * @param propName the name of the property to check. Must not be null.
-     * @param values the collection of values to check against. Must not be null or empty.
+     * This is the primary constructor for creating IN conditions.
      * 
-     * <p>Example:
+     * <p>Example usage:
      * <pre>{@code
      * // Filter by multiple categories
      * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers", "phones"));
@@ -85,7 +101,17 @@ public class In extends AbstractCondition {
      * List<Long> ids = Arrays.asList(101L, 102L, 103L);
      * In idFilter = new In("product_id", ids);
      * // Generates: product_id IN (101, 102, 103)
+     * 
+     * // Filter by enum values
+     * List<String> priorities = Arrays.asList("HIGH", "CRITICAL");
+     * In priorityFilter = new In("priority", priorities);
+     * // Generates: priority IN ('HIGH', 'CRITICAL')
      * }</pre>
+     *
+     * @param propName the name of the property to check. Must not be null.
+     * @param values the collection of values to check against. Must not be null or empty.
+     *               The collection is copied to prevent external modifications.
+     * @throws IllegalArgumentException if propName is null or values is null/empty
      */
     public In(final String propName, final Collection<?> values) {
         super(Operator.IN);

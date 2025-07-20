@@ -21,14 +21,23 @@ import java.util.Collection;
  * 
  * <p>A RIGHT JOIN (or RIGHT OUTER JOIN) returns all records from the right table (table2),
  * and the matched records from the left table (table1). If there is no match, NULL values
- * are returned for columns from the left table.</p>
+ * are returned for columns from the left table. This is essentially the opposite of a LEFT JOIN.</p>
  * 
  * <p>RIGHT JOIN behavior:</p>
  * <ul>
- *   <li>All rows from the right table are included</li>
- *   <li>Matching rows from the left table are included</li>
+ *   <li>All rows from the right table are included in the result</li>
+ *   <li>Matching rows from the left table are included with their values</li>
  *   <li>Non-matching rows from right table have NULL for left table columns</li>
- *   <li>Rows from left table without matches are excluded</li>
+ *   <li>Rows from left table without matches in right table are excluded</li>
+ *   <li>The join condition determines which rows match between tables</li>
+ * </ul>
+ * 
+ * <p>Common use cases:</p>
+ * <ul>
+ *   <li>Finding all records in a reference table, with optional related data</li>
+ *   <li>Listing all products even if they have no orders</li>
+ *   <li>Showing all departments including those without employees</li>
+ *   <li>Identifying missing relationships from the right table perspective</li>
  * </ul>
  * 
  * <p>Example usage:</p>
@@ -48,6 +57,10 @@ import java.util.Collection;
  * Condition condition = new Equal("orders.id", new Expression("order_items.order_id"));
  * RightJoin join3 = new RightJoin(tables, condition);
  * }</pre>
+ * 
+ * @see LeftJoin
+ * @see InnerJoin
+ * @see FullJoin
  */
 public class RightJoin extends Join {
 
@@ -59,16 +72,20 @@ public class RightJoin extends Join {
      * Constructs a RIGHT JOIN with the specified entity/table.
      * 
      * <p>Creates a basic right join without an explicit ON condition.
-     * The join condition should be specified separately or will use natural join behavior.</p>
-     *
-     * @param joinEntity the name of the entity/table to right join
+     * The join condition should be specified separately or will use natural join behavior.
+     * This constructor is useful when the join condition will be added later or when
+     * using natural join semantics.</p>
      * 
-     * <p>Example:</p>
+     * <p>Example usage:</p>
      * <pre>{@code
+     * // Join to show all customers, even those without orders
      * RightJoin join = new RightJoin("customers");
      * // Use when you want all customers, even those without orders
      * // SELECT * FROM orders RIGHT JOIN customers
      * }</pre>
+     *
+     * @param joinEntity the name of the entity/table to right join
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public RightJoin(final String joinEntity) {
         super(Operator.RIGHT_JOIN, joinEntity);
@@ -77,12 +94,11 @@ public class RightJoin extends Join {
     /**
      * Constructs a RIGHT JOIN with the specified entity/table and join condition.
      * 
-     * <p>This is the most common form, specifying both the table to join and how to join it.</p>
-     *
-     * @param joinEntity the name of the entity/table to right join
-     * @param condition the join condition (typically an ON or USING clause)
+     * <p>This is the most common form, specifying both the table to join and how to join it.
+     * The condition typically uses ON or USING clauses to define the relationship between tables.
+     * All rows from the right table (joinEntity) will be included in the result.</p>
      * 
-     * <p>Example:</p>
+     * <p>Example usage:</p>
      * <pre>{@code
      * // Get all products, even those never ordered
      * On onClause = new On("order_items.product_id", "products.id");
@@ -96,6 +112,10 @@ public class RightJoin extends Join {
      * );
      * RightJoin activeProducts = new RightJoin("products", complexCondition);
      * }</pre>
+     *
+     * @param joinEntity the name of the entity/table to right join
+     * @param condition the join condition (typically an ON or USING clause)
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public RightJoin(final String joinEntity, final Condition condition) {
         super(Operator.RIGHT_JOIN, joinEntity, condition);
@@ -104,12 +124,11 @@ public class RightJoin extends Join {
     /**
      * Constructs a RIGHT JOIN with multiple entities/tables and a condition.
      * 
-     * <p>Useful for joining multiple tables in a single right join operation.</p>
-     *
-     * @param joinEntities collection of entity/table names to right join
-     * @param condition the join condition
+     * <p>Useful for joining multiple tables in a single right join operation.
+     * When multiple tables are specified, they are typically joined sequentially.
+     * The condition should account for the relationships between all tables.</p>
      * 
-     * <p>Example:</p>
+     * <p>Example usage:</p>
      * <pre>{@code
      * // Right join multiple related tables
      * List<String> tables = Arrays.asList("categories", "subcategories");
@@ -120,6 +139,10 @@ public class RightJoin extends Join {
      * RightJoin join = new RightJoin(tables, joinCondition);
      * // Gets all categories and subcategories, even those with no products
      * }</pre>
+     *
+     * @param joinEntities collection of entity/table names to right join
+     * @param condition the join condition
+     * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public RightJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.RIGHT_JOIN, joinEntities, condition);

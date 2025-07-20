@@ -41,14 +41,13 @@ public class Having extends Clause {
     /**
      * Creates a new HAVING clause with the specified condition.
      * 
-     * @param condition the condition to apply in the HAVING clause
-     * @throws NullPointerException if condition is null
-     * 
      * <p>Example:</p>
      * <pre>{@code
      * // Filter groups where the sum of sales is greater than 10000
      * Having having = new Having(CF.gt("SUM(sales)", 10000));
      * }</pre>
+     * 
+     * @param condition the condition to apply in the HAVING clause
      */
     public Having(final Condition condition) {
         super(Operator.HAVING, condition);

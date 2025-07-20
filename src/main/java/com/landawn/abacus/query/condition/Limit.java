@@ -25,18 +25,33 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * Represents a LIMIT clause in SQL queries to restrict the number of rows returned.
- * This class supports both simple LIMIT (count only) and LIMIT with OFFSET.
+ * This class supports both simple LIMIT (count only) and LIMIT with OFFSET for pagination.
+ * The LIMIT clause is essential for controlling result set size and implementing efficient
+ * data retrieval strategies, especially for large datasets.
  * 
- * <p>Example usage:
+ * <p>This class provides three ways to create LIMIT clauses:
+ * <ul>
+ *   <li>Simple limit with count only</li>
+ *   <li>Limit with offset for pagination</li>
+ *   <li>Custom expression for database-specific syntax</li>
+ * </ul>
+ * 
+ * <p>Usage examples:
  * <pre>{@code
- * // Limit to 10 rows
+ * // Limit to first 10 rows
  * Limit limit1 = new Limit(10);
  * // Generates: LIMIT 10
  * 
- * // Limit to 20 rows, starting from row 50
+ * // Pagination: Get 20 rows starting from row 50
  * Limit limit2 = new Limit(50, 20);
  * // Generates: LIMIT 20 OFFSET 50
+ * 
+ * // Custom expression for specific databases
+ * Limit limit3 = new Limit("10 OFFSET 20");
  * }</pre>
+ * 
+ * @see Operator#LIMIT
+ * @see AbstractCondition
  */
 public class Limit extends AbstractCondition {
 
@@ -48,22 +63,30 @@ public class Limit extends AbstractCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor should not be used directly in application code.
+     * This constructor creates an uninitialized Limit instance and should not be used 
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Limit() {
     }
 
     /**
      * Creates a LIMIT clause with the specified row count.
-     * This constructor creates a simple LIMIT without OFFSET.
+     * This constructor creates a simple LIMIT without OFFSET, returning rows from the beginning
+     * of the result set up to the specified count.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * // Get top 5 customers
+     * Limit topFive = new Limit(5);
+     * // SQL: SELECT * FROM customers LIMIT 5
+     * 
+     * // Limit search results to 100
+     * Limit searchLimit = new Limit(100);
+     * // SQL: SELECT * FROM products WHERE name LIKE '%phone%' LIMIT 100
+     * }</pre>
      *
      * @param count the maximum number of rows to return. Must be non-negative.
-     * 
-     * <p>Example:
-     * <pre>{@code
-     * Limit limit = new Limit(5);
-     * // Generates: LIMIT 5
-     * }</pre>
+     * @throws IllegalArgumentException if count is negative
      */
     public Limit(final int count) {
         this(0, count);
@@ -71,16 +94,28 @@ public class Limit extends AbstractCondition {
 
     /**
      * Creates a LIMIT clause with both count and offset.
-     * This allows pagination by specifying how many rows to skip and how many to return.
+     * This constructor enables pagination by specifying how many rows to skip (offset)
+     * and how many rows to return (count). This is the standard way to implement
+     * result pagination in SQL queries.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * // Page 1: First 10 results (offset 0)
+     * Limit page1 = new Limit(0, 10);
+     * // SQL: SELECT * FROM orders LIMIT 10 OFFSET 0
+     * 
+     * // Page 3: Results 21-30 (offset 20, count 10)
+     * Limit page3 = new Limit(20, 10);
+     * // SQL: SELECT * FROM orders LIMIT 10 OFFSET 20
+     * 
+     * // Get 50 products starting from the 101st
+     * Limit products = new Limit(100, 50);
+     * // SQL: SELECT * FROM products LIMIT 50 OFFSET 100
+     * }</pre>
      *
      * @param offset the number of rows to skip before returning results. Must be non-negative.
      * @param count the maximum number of rows to return after the offset. Must be non-negative.
-     * 
-     * <p>Example:
-     * <pre>{@code
-     * Limit limit = new Limit(100, 20);
-     * // Generates: LIMIT 20 OFFSET 100
-     * }</pre>
+     * @throws IllegalArgumentException if offset or count is negative
      */
     public Limit(final int offset, final int count) {
         super(Operator.LIMIT);
@@ -90,14 +125,23 @@ public class Limit extends AbstractCondition {
 
     /**
      * Creates a LIMIT clause from a string expression.
-     * This constructor allows for custom LIMIT expressions.
-     *
-     * @param expr the custom LIMIT expression as a string
+     * This constructor allows for custom LIMIT expressions to accommodate database-specific
+     * syntax or complex limit scenarios that can't be expressed with simple count/offset.
      * 
-     * <p>Example:
+     * <p>Example usage:
      * <pre>{@code
-     * Limit limit = new Limit("10 OFFSET 20");
+     * // Standard LIMIT with OFFSET
+     * Limit standard = new Limit("10 OFFSET 20");
+     * 
+     * // MySQL-style limit
+     * Limit mysql = new Limit("20, 10");
+     * 
+     * // Database-specific syntax
+     * Limit custom = new Limit("FIRST 10 SKIP 20");
      * }</pre>
+     *
+     * @param expr the custom LIMIT expression as a string. Must not be null.
+     * @throws IllegalArgumentException if expr is null
      */
     public Limit(final String expr) {
         this(0, Integer.MAX_VALUE);
@@ -107,6 +151,8 @@ public class Limit extends AbstractCondition {
 
     /**
      * Returns the custom expression string if one was provided.
+     * This method returns the raw expression string passed to the constructor,
+     * or null if the Limit was created with count/offset parameters.
      *
      * @return the custom expression string, or null if constructed with count/offset
      */
@@ -116,6 +162,13 @@ public class Limit extends AbstractCondition {
 
     /**
      * Gets the maximum number of rows to return.
+     * For Limit instances created with a custom expression, this returns Integer.MAX_VALUE.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Limit limit = new Limit(50, 20);
+     * int maxRows = limit.getCount(); // Returns 20
+     * }</pre>
      *
      * @return the row count limit
      */
@@ -125,6 +178,14 @@ public class Limit extends AbstractCondition {
 
     /**
      * Gets the number of rows to skip before returning results.
+     * For Limit instances created with only a count or with a custom expression,
+     * this returns 0.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Limit limit = new Limit(50, 20);
+     * int skip = limit.getOffset(); // Returns 50
+     * }</pre>
      *
      * @return the offset value
      */
@@ -134,9 +195,17 @@ public class Limit extends AbstractCondition {
 
     /**
      * Gets the parameters for this LIMIT clause.
-     * LIMIT clauses do not have parameters, so this always returns an empty list.
+     * LIMIT clauses do not have bindable parameters as the count and offset
+     * are typically part of the SQL structure itself, not parameterized values.
+     * This method always returns an empty list.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Limit limit = new Limit(10);
+     * List<Object> params = limit.getParameters(); // Returns empty list
+     * }</pre>
      *
-     * @return an empty list
+     * @return an empty list as LIMIT has no parameters
      */
     @Override
     public List<Object> getParameters() {
@@ -145,7 +214,14 @@ public class Limit extends AbstractCondition {
 
     /**
      * Clears any parameters associated with this condition.
-     * Since LIMIT has no parameters, this method does nothing.
+     * Since LIMIT has no bindable parameters, this method performs no operation.
+     * It exists to maintain consistency with the Condition interface.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Limit limit = new Limit(10);
+     * limit.clearParameters(); // No effect
+     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -154,9 +230,20 @@ public class Limit extends AbstractCondition {
 
     /**
      * Attempts to combine this LIMIT with another condition using AND.
-     * This operation is not supported for LIMIT clauses.
+     * This operation is not supported for LIMIT clauses as they are not logical
+     * conditions that can be combined with AND/OR operators.
+     * 
+     * <p>Example that throws exception:
+     * <pre>{@code
+     * Limit limit = new Limit(10);
+     * try {
+     *     limit.and(someCondition); // Throws UnsupportedOperationException
+     * } catch (UnsupportedOperationException e) {
+     *     // Expected behavior
+     * }
+     * }</pre>
      *
-     * @param condition the condition to combine with
+     * @param condition the condition to combine with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown as LIMIT cannot be combined with AND
      */
@@ -167,9 +254,20 @@ public class Limit extends AbstractCondition {
 
     /**
      * Attempts to combine this LIMIT with another condition using OR.
-     * This operation is not supported for LIMIT clauses.
+     * This operation is not supported for LIMIT clauses as they are not logical
+     * conditions that can be combined with AND/OR operators.
+     * 
+     * <p>Example that throws exception:
+     * <pre>{@code
+     * Limit limit = new Limit(10);
+     * try {
+     *     limit.or(someCondition); // Throws UnsupportedOperationException
+     * } catch (UnsupportedOperationException e) {
+     *     // Expected behavior
+     * }
+     * }</pre>
      *
-     * @param condition the condition to combine with
+     * @param condition the condition to combine with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown as LIMIT cannot be combined with OR
      */
@@ -180,7 +278,18 @@ public class Limit extends AbstractCondition {
 
     /**
      * Attempts to negate this LIMIT clause.
-     * This operation is not supported for LIMIT clauses.
+     * This operation is not supported for LIMIT clauses as they represent
+     * a result set constraint, not a logical condition that can be negated.
+     * 
+     * <p>Example that throws exception:
+     * <pre>{@code
+     * Limit limit = new Limit(10);
+     * try {
+     *     limit.not(); // Throws UnsupportedOperationException
+     * } catch (UnsupportedOperationException e) {
+     *     // Expected behavior
+     * }
+     * }</pre>
      *
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown as LIMIT cannot be negated
@@ -192,9 +301,25 @@ public class Limit extends AbstractCondition {
 
     /**
      * Converts this LIMIT clause to its string representation according to the specified naming policy.
+     * The output format depends on how the Limit was constructed:
+     * - Custom expression: returns the expression as-is
+     * - Count only: returns "LIMIT count"
+     * - Count with offset: returns "LIMIT count OFFSET offset"
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Limit limit1 = new Limit(10);
+     * String sql1 = limit1.toString(NamingPolicy.LOWER_CASE); // "LIMIT 10"
+     * 
+     * Limit limit2 = new Limit(20, 10);
+     * String sql2 = limit2.toString(NamingPolicy.LOWER_CASE); // "LIMIT 10 OFFSET 20"
+     * 
+     * Limit limit3 = new Limit("FIRST 5 ROWS");
+     * String sql3 = limit3.toString(NamingPolicy.LOWER_CASE); // "FIRST 5 ROWS"
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply (though LIMIT typically doesn't need name conversion)
-     * @return the string representation of this LIMIT clause, e.g., "LIMIT 10" or "LIMIT 10 OFFSET 20"
+     * @return the string representation of this LIMIT clause
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -207,6 +332,20 @@ public class Limit extends AbstractCondition {
 
     /**
      * Computes the hash code for this LIMIT clause.
+     * The hash code is calculated based on either the custom expression (if present)
+     * or the combination of count and offset values. This ensures that Limit instances
+     * with the same logical content have the same hash code.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Limit limit1 = new Limit(10);
+     * Limit limit2 = new Limit(10);
+     * assert limit1.hashCode() == limit2.hashCode();
+     * 
+     * Limit limit3 = new Limit("LIMIT 10");
+     * Limit limit4 = new Limit("LIMIT 10");
+     * assert limit3.hashCode() == limit4.hashCode();
+     * }</pre>
      *
      * @return the hash code based on expr if present, otherwise based on count and offset
      */
@@ -223,6 +362,20 @@ public class Limit extends AbstractCondition {
 
     /**
      * Checks if this LIMIT clause is equal to another object.
+     * Two Limit instances are considered equal if:
+     * - Both have the same custom expression, or
+     * - Both have the same count and offset values
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Limit limit1 = new Limit(50, 20);
+     * Limit limit2 = new Limit(50, 20);
+     * assert limit1.equals(limit2); // true
+     * 
+     * Limit limit3 = new Limit("LIMIT 20 OFFSET 50");
+     * Limit limit4 = new Limit("LIMIT 20 OFFSET 50");
+     * assert limit3.equals(limit4); // true
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return true if the object is a Limit with the same expr or count/offset values

@@ -25,25 +25,45 @@ import com.landawn.abacus.util.Strings;
 /**
  * Represents a NOT BETWEEN condition in SQL queries.
  * This condition checks if a value is NOT within a specified range (exclusive of the range).
+ * It's the logical opposite of the BETWEEN operator and is useful for excluding ranges of values.
  * 
- * <p>The NOT BETWEEN operator selects values outside a given range. The values can be
- * numbers, text, dates, or even other conditions/expressions.</p>
+ * <p>The NOT BETWEEN operator is particularly useful for:
+ * <ul>
+ *   <li>Excluding values within a specific range</li>
+ *   <li>Finding outliers or extreme values</li>
+ *   <li>Filtering out normal operating ranges to find anomalies</li>
+ *   <li>Implementing "outside business hours" logic</li>
+ * </ul>
  * 
- * <p>Example usage:</p>
+ * <p>Important notes:
+ * <ul>
+ *   <li>The range is inclusive in BETWEEN, so NOT BETWEEN excludes both boundaries</li>
+ *   <li>Works with numbers, strings, dates, and other comparable types</li>
+ *   <li>Can use expressions or subqueries as range boundaries</li>
+ *   <li>NULL values: if the column value or either boundary is NULL, the result is NULL (not true)</li>
+ * </ul>
+ * 
+ * <p>Example usage:
  * <pre>{@code
- * // Exclude ages between 18 and 65
- * NotBetween condition1 = new NotBetween("age", 18, 65);
- * // Results in: age NOT BETWEEN 18 AND 65
+ * // Exclude normal temperature range
+ * NotBetween abnormalTemp = new NotBetween("temperature", 36.0, 37.5);
+ * // Results in: temperature NOT BETWEEN 36.0 AND 37.5
  * 
- * // Exclude dates in a range
- * NotBetween condition2 = new NotBetween("orderDate", "2023-01-01", "2023-12-31");
- * // Results in: orderDate NOT BETWEEN '2023-01-01' AND '2023-12-31'
+ * // Find orders outside business hours (before 9 AM or after 5 PM)
+ * NotBetween outsideHours = new NotBetween("order_hour", 9, 17);
+ * // Results in: order_hour NOT BETWEEN 9 AND 17
  * 
- * // Using with subqueries or expressions as bounds
- * Expression minExpr = new Expression("(SELECT MIN(salary) FROM employees)");
- * Expression maxExpr = new Expression("(SELECT AVG(salary) FROM employees)");
- * NotBetween condition3 = new NotBetween("salary", minExpr, maxExpr);
+ * // Exclude mid-range salaries
+ * NotBetween salaryRange = new NotBetween("salary", 50000, 100000);
+ * // Results in: salary NOT BETWEEN 50000 AND 100000
+ * 
+ * // Using with date strings
+ * NotBetween dateRange = new NotBetween("order_date", "2024-01-01", "2024-12-31");
+ * // Results in: order_date NOT BETWEEN '2024-01-01' AND '2024-12-31'
  * }</pre>
+ * 
+ * @see Between
+ * @see NotIn
  */
 public class NotBetween extends AbstractCondition {
     // For Kryo
@@ -60,20 +80,24 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Constructs a NOT BETWEEN condition for the specified property and range.
+     * The condition will match values that are less than minValue OR greater than maxValue.
+     * Both boundaries are excluded from the match (opposite of BETWEEN's inclusive behavior).
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * // Find products with extreme prices (very cheap or very expensive)
+     * NotBetween priceRange = new NotBetween("price", 10.0, 1000.0);
+     * // Matches: price < 10.0 OR price > 1000.0
+     * 
+     * // Find events outside regular working days
+     * NotBetween workdays = new NotBetween("day_of_week", 2, 6);  // Monday = 2, Friday = 6
+     * // Matches: Sunday (1) and Saturday (7)
+     * }</pre>
      *
      * @param propName the property name to check
-     * @param minValue the minimum value of the range (inclusive in BETWEEN, so excluded here)
-     * @param maxValue the maximum value of the range (inclusive in BETWEEN, so excluded here)
+     * @param minValue the minimum value of the range to exclude
+     * @param maxValue the maximum value of the range to exclude
      * @throws IllegalArgumentException if propName is null or empty
-     * 
-     * <p>Example:</p>
-     * <pre>{@code
-     * // Exclude normal working hours
-     * NotBetween notWorkHours = new NotBetween("hour", 9, 17);
-     * 
-     * // Exclude mid-range prices
-     * NotBetween extremePrices = new NotBetween("price", 100, 1000);
-     * }</pre>
      */
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {
         super(Operator.NOT_BETWEEN);
@@ -98,6 +122,7 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Gets the minimum value of the range to exclude.
+     * Values less than this will match the condition.
      *
      * @param <T> the type of the minimum value
      * @return the minimum value
@@ -109,6 +134,7 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Sets a new minimum value for the range.
+     * Note: Modifying conditions after creation is not recommended as they should be immutable.
      *
      * @param minValue the new minimum value
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
@@ -120,6 +146,7 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Gets the maximum value of the range to exclude.
+     * Values greater than this will match the condition.
      *
      * @param <T> the type of the maximum value
      * @return the maximum value
@@ -131,6 +158,7 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Sets a new maximum value for the range.
+     * Note: Modifying conditions after creation is not recommended as they should be immutable.
      *
      * @param maxValue the new maximum value
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
@@ -142,7 +170,14 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Gets the list of parameters for this condition.
-     * If min/max values are themselves conditions, their parameters are included.
+     * If min/max values are themselves conditions (like subqueries), their parameters are included.
+     * Otherwise, the values themselves are returned as parameters.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * NotBetween condition = new NotBetween("age", 18, 65);
+     * List<Object> params = condition.getParameters(); // Returns [18, 65]
+     * }</pre>
      *
      * @return list containing the min and max values or their parameters
      */
@@ -167,6 +202,7 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Clears all parameters by setting values to null or clearing nested conditions.
+     * This is useful for releasing resources while maintaining the condition structure.
      */
     @Override
     public void clearParameters() {
@@ -185,7 +221,15 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Creates a deep copy of this NOT BETWEEN condition.
-     * If min/max values are conditions themselves, they are also copied.
+     * If min/max values are conditions themselves (like expressions or subqueries),
+     * they are also copied to ensure complete independence.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * NotBetween original = new NotBetween("score", 60, 80);
+     * NotBetween copy = original.copy();
+     * // copy is independent of original
+     * }</pre>
      *
      * @param <T> the type of condition to return
      * @return a new instance with copied values
@@ -208,15 +252,17 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Converts this NOT BETWEEN condition to its string representation.
+     * The naming policy is applied to the property name to handle different naming conventions.
+     * 
+     * <p>Example output:
+     * <pre>{@code
+     * // With numeric values: "age NOT BETWEEN (18, 65)"
+     * // With string values: "grade NOT BETWEEN ('A', 'C')"
+     * // With date values: "order_date NOT BETWEEN ('2024-01-01', '2024-12-31')"
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to the property name
      * @return string representation of the NOT BETWEEN condition
-     * 
-     * <p>Example output:</p>
-     * <pre>{@code
-     * // "age NOT BETWEEN (18, 65)"
-     * // "price NOT BETWEEN (100.00, 1000.00)"
-     * }</pre>
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -226,6 +272,7 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Generates the hash code for this NOT BETWEEN condition.
+     * The hash code is computed based on the property name, operator, and both range values.
      *
      * @return hash code based on property name, operator, and range values
      */
@@ -240,6 +287,8 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Checks if this NOT BETWEEN condition is equal to another object.
+     * Two NOT BETWEEN conditions are equal if they have the same property name,
+     * operator, and range boundaries.
      *
      * @param obj the object to compare with
      * @return true if the objects are equal, false otherwise

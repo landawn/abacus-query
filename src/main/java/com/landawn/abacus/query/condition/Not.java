@@ -16,23 +16,55 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents a NOT logical operator in SQL conditions.
- * This class negates the result of a given condition.
+ * This class negates the result of any given condition, reversing its boolean logic.
+ * It's a fundamental logical operator used to invert query conditions.
  * 
- * <p>The NOT operator reverses the logical state of its operand. If a condition is TRUE,
- * then NOT condition will be FALSE, and vice versa.</p>
+ * <p>The NOT operator is particularly useful for:
+ * <ul>
+ *   <li>Negating complex conditions without rewriting them</li>
+ *   <li>Creating more readable queries by expressing what you don't want</li>
+ *   <li>Inverting existing conditions dynamically</li>
+ *   <li>Building flexible query builders that can toggle conditions</li>
+ * </ul>
  * 
- * <p>Example usage:</p>
+ * <p>Truth table:
+ * <ul>
+ *   <li>NOT TRUE = FALSE</li>
+ *   <li>NOT FALSE = TRUE</li>
+ *   <li>NOT NULL = NULL (in SQL three-valued logic)</li>
+ * </ul>
+ * 
+ * <p>Example usage:
  * <pre>{@code
- * // NOT with LIKE condition
+ * // NOT with LIKE - find names that don't contain "test"
  * Like likeCondition = new Like("name", "%test%");
- * Not notCondition = new Not(likeCondition);
+ * Not notLike = new Not(likeCondition);
  * // Results in: NOT (name LIKE '%test%')
  * 
- * // NOT with IN condition
- * In inCondition = new In("status", Arrays.asList("active", "pending"));
- * Not notIn = new Not(inCondition);
- * // Results in: NOT (status IN ('active', 'pending'))
+ * // NOT with IN - exclude specific departments
+ * In deptCondition = new In("department_id", Arrays.asList(10, 20, 30));
+ * Not notInDepts = new Not(deptCondition);
+ * // Results in: NOT (department_id IN (10, 20, 30))
+ * 
+ * // NOT with complex condition - find orders that are NOT (high priority AND urgent)
+ * And complexCondition = new And(
+ *     new Equal("priority", "HIGH"),
+ *     new Equal("status", "URGENT")
+ * );
+ * Not notUrgentHigh = new Not(complexCondition);
+ * // Results in: NOT (priority = 'HIGH' AND status = 'URGENT')
+ * 
+ * // NOT with EXISTS subquery
+ * SubQuery hasOrders = new SubQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+ * Exists existsCondition = new Exists(hasOrders);
+ * Not noOrders = new Not(existsCondition);
+ * // Results in: NOT EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id)
  * }</pre>
+ * 
+ * @see And
+ * @see Or
+ * @see NotIn
+ * @see NotBetween
  */
 public class Not extends Cell {
     // For Kryo
@@ -41,15 +73,33 @@ public class Not extends Cell {
 
     /**
      * Constructs a NOT condition that negates the specified condition.
-     *
-     * @param condition the condition to be negated
+     * The resulting condition will be true when the input condition is false,
+     * and false when the input condition is true.
      * 
-     * <p>Example:</p>
+     * <p>Example usage:
      * <pre>{@code
-     * Between between = new Between("age", 18, 65);
-     * Not notBetween = new Not(between);
+     * // Simple negation
+     * Equal isActive = new Equal("active", true);
+     * Not isInactive = new Not(isActive);
+     * // Results in: NOT (active = true)
+     * 
+     * // Negating BETWEEN
+     * Between ageRange = new Between("age", 18, 65);
+     * Not outsideRange = new Not(ageRange);
      * // Results in: NOT (age BETWEEN 18 AND 65)
+     * 
+     * // Negating OR condition
+     * Or multiStatus = new Or(
+     *     new Equal("status", "PENDING"),
+     *     new Equal("status", "PROCESSING")
+     * );
+     * Not notPendingOrProcessing = new Not(multiStatus);
+     * // Results in: NOT (status = 'PENDING' OR status = 'PROCESSING')
      * }</pre>
+     *
+     * @param condition the condition to be negated. Can be any type of condition
+     *                  including simple comparisons, complex logical conditions,
+     *                  or subquery conditions.
      */
     public Not(final Condition condition) {
         super(Operator.NOT, condition);

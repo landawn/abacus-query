@@ -77,20 +77,28 @@ import com.landawn.abacus.util.Strings;
  * and mathematical/string functions.
  *
  * <p>Expressions are cached for performance optimization. The same expression literal
- * will return the same Expression instance when created through {@link #of(String)}.</p>
+ * will return the same Expression instance when created through {@link #of(String)}.
+ * This helps reduce memory usage and improves performance for frequently used expressions.</p>
  *
- * <p>Example usage:</p>
- * <pre>
+ * <p>The class provides numerous static helper methods for creating common SQL expressions
+ * and functions, including arithmetic operations, string functions, mathematical functions,
+ * and comparison operations. These methods help build type-safe SQL expressions.</p>
+ *
+ * <p>Usage example:</p>
+ * <pre>{@code
  * // Simple expression
  * Expression expr = Expression.of("price * 0.9");
- *
+ * 
  * // Using in a condition
  * Condition discountPrice = CF.lt(expr, 100);
- *
+ * 
  * // SQL functions
  * String upperName = Expression.upper("name");
  * String avgPrice = Expression.average("price");
- * </pre>
+ * 
+ * // Complex expressions
+ * String complex = Expression.plus("base_price", "tax", "shipping");
+ * }</pre>
  *
  * @see AbstractCondition
  * @see ConditionFactory#expr(String)
@@ -129,15 +137,18 @@ public class Expression extends AbstractCondition {
 
     /**
      * Constructs a new Expression with the specified SQL literal.
-     *
-     * @param literal the SQL expression as a string. Can contain any valid SQL.
+     * The literal can contain any valid SQL expression, including functions, operators,
+     * column references, and complex expressions.
      *
      * <p>Example:</p>
-     * <pre>
+     * <pre>{@code
      * Expression expr1 = new Expression("CURRENT_TIMESTAMP");
      * Expression expr2 = new Expression("price * quantity");
      * Expression expr3 = new Expression("CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END");
-     * </pre>
+     * Expression expr4 = new Expression("COALESCE(middle_name, '')");
+     * }</pre>
+     *
+     * @param literal the SQL expression as a string. Can contain any valid SQL.
      */
     public Expression(final String literal) {
         super(Operator.EMPTY);
@@ -148,6 +159,12 @@ public class Expression extends AbstractCondition {
     /**
      * Gets the SQL literal string of this expression.
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * Expression expr = new Expression("UPPER(name)");
+     * String sql = expr.getLiteral(); // Returns "UPPER(name)"
+     * }</pre>
+     *
      * @return the SQL expression string
      */
     public String getLiteral() {
@@ -157,17 +174,20 @@ public class Expression extends AbstractCondition {
     /**
      * Creates or retrieves a cached Expression instance for the given literal.
      * This method uses caching to ensure that expressions with the same literal
-     * share the same instance, improving memory efficiency.
-     *
-     * @param literal the SQL expression string
-     * @return a cached or new Expression instance
+     * share the same instance, improving memory efficiency and performance.
      *
      * <p>Example:</p>
-     * <pre>
+     * <pre>{@code
      * Expression expr1 = Expression.of("CURRENT_DATE");
      * Expression expr2 = Expression.of("CURRENT_DATE");
      * // expr1 == expr2 (same instance due to caching)
-     * </pre>
+     * 
+     * Expression calc = Expression.of("price * 1.1");
+     * // Reuse the same expression in multiple places
+     * }</pre>
+     *
+     * @param literal the SQL expression string
+     * @return a cached or new Expression instance
      */
     public static Expression of(final String literal) {
         Expression expr = cachedExpression.get(literal);
@@ -183,16 +203,20 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an equality expression between a literal and a value.
+     * This is useful for building dynamic SQL conditions programmatically.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.equal("age", 25);
+     * // Returns: "age = 25"
+     * 
+     * String expr2 = Expression.equal("status", "active");
+     * // Returns: "status = 'active'"
+     * }</pre>
      *
      * @param literal the left-hand side of the equality
      * @param value the right-hand side value
      * @return a string representation of the equality expression
-     *
-     * <p>Example:</p>
-     * <pre>
-     * String expr = Expression.equal("age", 25);
-     * // Returns: "age = 25"
-     * </pre>
      */
     public static String equal(final String literal, final Object value) { //NOSONAR
         return link(Operator.EQUAL, literal, value);
@@ -201,6 +225,12 @@ public class Expression extends AbstractCondition {
     /**
      * Creates an equality expression between a literal and a value.
      * Alias for {@link #equal(String, Object)}.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.eq("user_id", 123);
+     * // Returns: "user_id = 123"
+     * }</pre>
      *
      * @param literal the left-hand side of the equality
      * @param value the right-hand side value
@@ -213,15 +243,18 @@ public class Expression extends AbstractCondition {
     /**
      * Creates a not-equal expression between a literal and a value.
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.notEqual("status", "INACTIVE");
+     * // Returns: "status != 'INACTIVE'"
+     * 
+     * String expr2 = Expression.notEqual("count", 0);
+     * // Returns: "count != 0"
+     * }</pre>
+     *
      * @param literal the left-hand side of the inequality
      * @param value the right-hand side value
      * @return a string representation of the not-equal expression
-     *
-     * <p>Example:</p>
-     * <pre>
-     * String expr = Expression.notEqual("status", "INACTIVE");
-     * // Returns: "status != 'INACTIVE'"
-     * </pre>
      */
     public static String notEqual(final String literal, final Object value) {
         return link(Operator.NOT_EQUAL, literal, value);
@@ -230,6 +263,12 @@ public class Expression extends AbstractCondition {
     /**
      * Creates a not-equal expression between a literal and a value.
      * Alias for {@link #notEqual(String, Object)}.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.ne("type", "guest");
+     * // Returns: "type != 'guest'"
+     * }</pre>
      *
      * @param literal the left-hand side of the inequality
      * @param value the right-hand side value
@@ -242,15 +281,18 @@ public class Expression extends AbstractCondition {
     /**
      * Creates a greater-than expression between a literal and a value.
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.greaterThan("salary", 50000);
+     * // Returns: "salary > 50000"
+     * 
+     * String expr2 = Expression.greaterThan("created_date", "2024-01-01");
+     * // Returns: "created_date > '2024-01-01'"
+     * }</pre>
+     *
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the greater-than expression
-     *
-     * <p>Example:</p>
-     * <pre>
-     * String expr = Expression.greaterThan("salary", 50000);
-     * // Returns: "salary > 50000"
-     * </pre>
      */
     public static String greaterThan(final String literal, final Object value) {
         return link(Operator.GREATER_THAN, literal, value);
@@ -259,6 +301,12 @@ public class Expression extends AbstractCondition {
     /**
      * Creates a greater-than expression between a literal and a value.
      * Alias for {@link #greaterThan(String, Object)}.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.gt("age", 18);
+     * // Returns: "age > 18"
+     * }</pre>
      *
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
@@ -270,6 +318,12 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a greater-than-or-equal expression between a literal and a value.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.greaterEqual("score", 60);
+     * // Returns: "score >= 60"
+     * }</pre>
      *
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
@@ -283,6 +337,12 @@ public class Expression extends AbstractCondition {
      * Creates a greater-than-or-equal expression between a literal and a value.
      * Alias for {@link #greaterEqual(String, Object)}.
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.ge("quantity", 1);
+     * // Returns: "quantity >= 1"
+     * }</pre>
+     *
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the greater-than-or-equal expression
@@ -293,6 +353,12 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a less-than expression between a literal and a value.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.lessThan("price", 100);
+     * // Returns: "price < 100"
+     * }</pre>
      *
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
@@ -306,6 +372,12 @@ public class Expression extends AbstractCondition {
      * Creates a less-than expression between a literal and a value.
      * Alias for {@link #lessThan(String, Object)}.
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.lt("stock", 10);
+     * // Returns: "stock < 10"
+     * }</pre>
+     *
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the less-than expression
@@ -316,6 +388,12 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a less-than-or-equal expression between a literal and a value.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.lessEqual("discount", 50);
+     * // Returns: "discount <= 50"
+     * }</pre>
      *
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
@@ -329,6 +407,12 @@ public class Expression extends AbstractCondition {
      * Creates a less-than-or-equal expression between a literal and a value.
      * Alias for {@link #lessEqual(String, Object)}.
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.le("temperature", 32);
+     * // Returns: "temperature <= 32"
+     * }</pre>
+     *
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the less-than-or-equal expression
@@ -339,17 +423,21 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a BETWEEN expression for a literal with min and max values.
+     * The BETWEEN operator is inclusive on both ends.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.between("age", 18, 65);
+     * // Returns: "age BETWEEN (18, 65)"
+     * 
+     * String expr2 = Expression.between("price", 10.0, 50.0);
+     * // Returns: "price BETWEEN (10.0, 50.0)"
+     * }</pre>
      *
      * @param literal the literal to test
      * @param min the minimum value (inclusive)
      * @param max the maximum value (inclusive)
      * @return a string representation of the BETWEEN expression
-     *
-     * <p>Example:</p>
-     * <pre>
-     * String expr = Expression.between("age", 18, 65);
-     * // Returns: "age BETWEEN (18, 65)"
-     * </pre>
      */
     public static String between(final String literal, final Object min, final Object max) {
         return link(Operator.BETWEEN, literal, min, max);
@@ -357,6 +445,12 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a BETWEEN expression for a literal with min and max values.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.bt("score", 60, 100);
+     * // Returns: "score BETWEEN (60, 100)"
+     * }</pre>
      *
      * @param literal the literal to test
      * @param min the minimum value (inclusive)
@@ -371,16 +465,23 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a LIKE expression for pattern matching.
+     * Use SQL wildcards: % for any sequence of characters, _ for any single character.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.like("name", "John%");
+     * // Returns: "name LIKE 'John%'"
+     * 
+     * String expr2 = Expression.like("email", "%@gmail.com");
+     * // Returns: "email LIKE '%@gmail.com'"
+     * 
+     * String expr3 = Expression.like("code", "A__");
+     * // Returns: "code LIKE 'A__'" (matches 'A' followed by exactly 2 characters)
+     * }</pre>
      *
      * @param literal the literal to match
      * @param value the pattern to match against (can include % and _ wildcards)
      * @return a string representation of the LIKE expression
-     *
-     * <p>Example:</p>
-     * <pre>
-     * String expr = Expression.like("name", "John%");
-     * // Returns: "name LIKE 'John%'"
-     * </pre>
      */
     public static String like(final String literal, final String value) {
         return link(Operator.LIKE, literal, value);
@@ -389,14 +490,17 @@ public class Expression extends AbstractCondition {
     /**
      * Creates an IS NULL expression for the specified literal.
      *
-     * @param literal the literal to check for null
-     * @return a string representation of the IS NULL expression
-     *
      * <p>Example:</p>
-     * <pre>
+     * <pre>{@code
      * String expr = Expression.isNull("middleName");
      * // Returns: "middleName IS NULL"
-     * </pre>
+     * 
+     * String expr2 = Expression.isNull("deleted_date");
+     * // Returns: "deleted_date IS NULL"
+     * }</pre>
+     *
+     * @param literal the literal to check for null
+     * @return a string representation of the IS NULL expression
      */
     public static String isNull(final String literal) {
         return link2(Operator.IS, literal, NULL);
@@ -404,6 +508,12 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an IS NOT NULL expression for the specified literal.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.isNotNull("email");
+     * // Returns: "email IS NOT NULL"
+     * }</pre>
      *
      * @param literal the literal to check for not null
      * @return a string representation of the IS NOT NULL expression
@@ -416,6 +526,12 @@ public class Expression extends AbstractCondition {
      * Creates an IS EMPTY expression for the specified literal.
      * This checks if a value is empty (blank).
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.isEmpty("description");
+     * // Returns: "description IS BLANK"
+     * }</pre>
+     *
      * @param literal the literal to check for emptiness
      * @return a string representation of the IS EMPTY expression
      */
@@ -427,6 +543,12 @@ public class Expression extends AbstractCondition {
      * Creates an IS NOT EMPTY expression for the specified literal.
      * This checks if a value is not empty (not blank).
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.isNotEmpty("name");
+     * // Returns: "name IS NOT BLANK"
+     * }</pre>
+     *
      * @param literal the literal to check for non-emptiness
      * @return a string representation of the IS NOT EMPTY expression
      */
@@ -436,15 +558,19 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an AND expression combining multiple literals.
+     * All conditions must be true for the AND expression to be true.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.and("active = true", "age > 18", "status = 'APPROVED'");
+     * // Returns: "active = true AND age > 18 AND status = 'APPROVED'"
+     * 
+     * String expr2 = Expression.and("verified = 1", "email IS NOT NULL");
+     * // Returns: "verified = 1 AND email IS NOT NULL"
+     * }</pre>
      *
      * @param literals the literals to combine with AND
      * @return a string representation of the AND expression
-     *
-     * <p>Example:</p>
-     * <pre>
-     * String expr = Expression.and("active = true", "age > 18", "status = 'APPROVED'");
-     * // Returns: "active = true AND age > 18 AND status = 'APPROVED'"
-     * </pre>
      */
     public static String and(final String... literals) {
         return link2(Operator.AND, literals);
@@ -452,6 +578,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an OR expression combining multiple literals.
+     * At least one condition must be true for the OR expression to be true.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.or("status = 'active'", "status = 'pending'", "priority = 1");
+     * // Returns: "status = 'active' OR status = 'pending' OR priority = 1"
+     * }</pre>
      *
      * @param literals the literals to combine with OR
      * @return a string representation of the OR expression
@@ -462,15 +595,19 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an addition expression for the given objects.
+     * Concatenates all values with the + operator.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.plus("price", "tax", "shipping");
+     * // Returns: "price + tax + shipping"
+     * 
+     * String expr2 = Expression.plus("base_salary", 5000, "bonus");
+     * // Returns: "base_salary + 5000 + bonus"
+     * }</pre>
      *
      * @param objects the values to add
      * @return a string representation of the addition expression
-     *
-     * <p>Example:</p>
-     * <pre>
-     * String expr = Expression.plus("price", "tax", "shipping");
-     * // Returns: "price + tax + shipping"
-     * </pre>
      */
     public static String plus(final Object... objects) {
         return link(PLUS, objects);
@@ -478,6 +615,16 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a subtraction expression for the given objects.
+     * Subtracts each subsequent value from the first.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.minus("total", "discount", "tax_credit");
+     * // Returns: "total - discount - tax_credit"
+     * 
+     * String expr2 = Expression.minus("price", 10);
+     * // Returns: "price - 10"
+     * }</pre>
      *
      * @param objects the values to subtract
      * @return a string representation of the subtraction expression
@@ -488,6 +635,16 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a multiplication expression for the given objects.
+     * Multiplies all values together.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.multi("price", "quantity", "tax_rate");
+     * // Returns: "price * quantity * tax_rate"
+     * 
+     * String expr2 = Expression.multi("hours", 60);
+     * // Returns: "hours * 60"
+     * }</pre>
      *
      * @param objects the values to multiply
      * @return a string representation of the multiplication expression
@@ -498,6 +655,16 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a division expression for the given objects.
+     * Divides the first value by each subsequent value.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.division("total", "count");
+     * // Returns: "total / count"
+     * 
+     * String expr2 = Expression.division("distance", "time", 60);
+     * // Returns: "distance / time / 60"
+     * }</pre>
      *
      * @param objects the values to divide
      * @return a string representation of the division expression
@@ -508,6 +675,16 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a modulus expression for the given objects.
+     * Returns the remainder of division operations.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.modulus("value", 10);
+     * // Returns: "value % 10"
+     * 
+     * String expr2 = Expression.modulus("id", "batch_size");
+     * // Returns: "id % batch_size"
+     * }</pre>
      *
      * @param objects the values for modulus operation
      * @return a string representation of the modulus expression
@@ -518,6 +695,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a left shift expression for the given objects.
+     * Shifts bits to the left.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.lShift("flags", 2);
+     * // Returns: "flags << 2"
+     * }</pre>
      *
      * @param objects the values for left shift operation
      * @return a string representation of the left shift expression
@@ -528,6 +712,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a right shift expression for the given objects.
+     * Shifts bits to the right.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.rShift("value", 4);
+     * // Returns: "value >> 4"
+     * }</pre>
      *
      * @param objects the values for right shift operation
      * @return a string representation of the right shift expression
@@ -539,6 +730,15 @@ public class Expression extends AbstractCondition {
     /**
      * Creates a bitwise AND expression for the given objects.
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.bitwiseAnd("permissions", "mask");
+     * // Returns: "permissions & mask"
+     * 
+     * String expr2 = Expression.bitwiseAnd("flags", 0xFF);
+     * // Returns: "flags & 255"
+     * }</pre>
+     *
      * @param objects the values for bitwise AND operation
      * @return a string representation of the bitwise AND expression
      */
@@ -549,6 +749,12 @@ public class Expression extends AbstractCondition {
     /**
      * Creates a bitwise OR expression for the given objects.
      *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.bitwiseOr("flags1", "flags2");
+     * // Returns: "flags1 | flags2"
+     * }</pre>
+     *
      * @param objects the values for bitwise OR operation
      * @return a string representation of the bitwise OR expression
      */
@@ -558,6 +764,12 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a bitwise XOR expression for the given objects.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.bitwiseXOr("value1", "value2");
+     * // Returns: "value1 ^ value2"
+     * }</pre>
      *
      * @param objects the values for bitwise XOR operation
      * @return a string representation of the bitwise XOR expression
@@ -704,16 +916,17 @@ public class Expression extends AbstractCondition {
      * Strings are quoted, nulls become "null", numbers are converted to strings,
      * and expressions keep their literal form.
      *
-     * @param value the value to formalize
-     * @return the SQL representation of the value
-     *
      * <p>Example:</p>
-     * <pre>
+     * <pre>{@code
      * Expression.formalize("text");     // Returns: "'text'"
      * Expression.formalize(123);        // Returns: "123"
      * Expression.formalize(null);       // Returns: "null"
+     * Expression.formalize(true);       // Returns: "true"
      * Expression.formalize(expr);       // Returns: the expression's literal
-     * </pre>
+     * }</pre>
+     *
+     * @param value the value to formalize
+     * @return the SQL representation of the value
      */
     public static String formalize(final Object value) {
         if (value == null) {
@@ -733,15 +946,17 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a COUNT function expression.
+     * COUNT returns the number of rows that match the criteria.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.count("*");           // Returns: "COUNT(*)"
+     * String expr2 = Expression.count("id");         // Returns: "COUNT(id)"
+     * String expr3 = Expression.count("DISTINCT department"); // Returns: "COUNT(DISTINCT department)"
+     * }</pre>
      *
      * @param expression the expression to count
      * @return a COUNT function string
-     *
-     * <p>Example:</p>
-     * <pre>
-     * String expr = Expression.count("*");           // Returns: "COUNT(*)"
-     * String expr2 = Expression.count("DISTINCT id"); // Returns: "COUNT(DISTINCT id)"
-     * </pre>
      */
     public static String count(final String expression) {
         return function(COUNT, expression);
@@ -749,6 +964,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an AVERAGE function expression.
+     * AVG returns the average value of a numeric column.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.average("salary");    // Returns: "AVG(salary)"
+     * String expr2 = Expression.average("age");      // Returns: "AVG(age)"
+     * }</pre>
      *
      * @param expression the expression to average
      * @return an AVG function string
@@ -759,6 +981,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a SUM function expression.
+     * SUM returns the total sum of a numeric column.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.sum("amount");        // Returns: "SUM(amount)"
+     * String expr2 = Expression.sum("quantity * price"); // Returns: "SUM(quantity * price)"
+     * }</pre>
      *
      * @param expression the expression to sum
      * @return a SUM function string
@@ -769,6 +998,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a MIN function expression.
+     * MIN returns the smallest value in a set.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.min("price");         // Returns: "MIN(price)"
+     * String expr2 = Expression.min("created_date"); // Returns: "MIN(created_date)"
+     * }</pre>
      *
      * @param expression the expression to find minimum
      * @return a MIN function string
@@ -779,6 +1015,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a MAX function expression.
+     * MAX returns the largest value in a set.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.max("score");         // Returns: "MAX(score)"
+     * String expr2 = Expression.max("last_login");   // Returns: "MAX(last_login)"
+     * }</pre>
      *
      * @param expression the expression to find maximum
      * @return a MAX function string
@@ -789,6 +1032,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an ABS (absolute value) function expression.
+     * ABS returns the absolute (positive) value of a number.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.abs("balance");       // Returns: "ABS(balance)"
+     * String expr2 = Expression.abs("temperature");  // Returns: "ABS(temperature)"
+     * }</pre>
      *
      * @param expression the expression to get absolute value of
      * @return an ABS function string
@@ -799,6 +1049,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an ACOS (arc cosine) function expression.
+     * ACOS returns the arc cosine of a number in radians.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.acos("0.5");          // Returns: "ACOS(0.5)"
+     * String expr2 = Expression.acos("cosine_value"); // Returns: "ACOS(cosine_value)"
+     * }</pre>
      *
      * @param expression the expression to calculate arc cosine of
      * @return an ACOS function string
@@ -809,6 +1066,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an ASIN (arc sine) function expression.
+     * ASIN returns the arc sine of a number in radians.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.asin("0.5");          // Returns: "ASIN(0.5)"
+     * String expr2 = Expression.asin("sine_value");  // Returns: "ASIN(sine_value)"
+     * }</pre>
      *
      * @param expression the expression to calculate arc sine of
      * @return an ASIN function string
@@ -819,6 +1083,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an ATAN (arc tangent) function expression.
+     * ATAN returns the arc tangent of a number in radians.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.atan("1");            // Returns: "ATAN(1)"
+     * String expr2 = Expression.atan("tangent_value"); // Returns: "ATAN(tangent_value)"
+     * }</pre>
      *
      * @param expression the expression to calculate arc tangent of
      * @return an ATAN function string
@@ -829,6 +1100,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a CEIL (ceiling) function expression.
+     * CEIL returns the smallest integer greater than or equal to a number.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.ceil("4.2");          // Returns: "CEIL(4.2)"
+     * String expr2 = Expression.ceil("price");       // Returns: "CEIL(price)"
+     * }</pre>
      *
      * @param expression the expression to round up
      * @return a CEIL function string
@@ -839,6 +1117,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a COS (cosine) function expression.
+     * COS returns the cosine of an angle in radians.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.cos("3.14159");       // Returns: "COS(3.14159)"
+     * String expr2 = Expression.cos("angle");        // Returns: "COS(angle)"
+     * }</pre>
      *
      * @param expression the expression to calculate cosine of
      * @return a COS function string
@@ -849,6 +1134,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an EXP (exponential) function expression.
+     * EXP returns e raised to the power of the given number.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.exp("2");             // Returns: "EXP(2)"
+     * String expr2 = Expression.exp("growth_rate");  // Returns: "EXP(growth_rate)"
+     * }</pre>
      *
      * @param expression the expression to calculate exponential of
      * @return an EXP function string
@@ -859,6 +1151,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a FLOOR function expression.
+     * FLOOR returns the largest integer less than or equal to a number.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.floor("4.8");         // Returns: "FLOOR(4.8)"
+     * String expr2 = Expression.floor("average");    // Returns: "FLOOR(average)"
+     * }</pre>
      *
      * @param expression the expression to round down
      * @return a FLOOR function string
@@ -869,6 +1168,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a LOG function expression with specified base.
+     * LOG returns the logarithm of a number to the specified base.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.log("10", "100");     // Returns: "LOG(10, 100)"
+     * String expr2 = Expression.log("2", "value");   // Returns: "LOG(2, value)"
+     * }</pre>
      *
      * @param b the logarithm base
      * @param x the value to calculate logarithm of
@@ -880,6 +1186,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an LN (natural logarithm) function expression.
+     * LN returns the natural logarithm (base e) of a number.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.ln("10");             // Returns: "LN(10)"
+     * String expr2 = Expression.ln("value");         // Returns: "LN(value)"
+     * }</pre>
      *
      * @param expression the expression to calculate natural logarithm of
      * @return an LN function string
@@ -890,6 +1203,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a MOD (modulo) function expression.
+     * MOD returns the remainder of division.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.mod("10", "3");       // Returns: "MOD(10, 3)"
+     * String expr2 = Expression.mod("id", "batch_size"); // Returns: "MOD(id, batch_size)"
+     * }</pre>
      *
      * @param n1 the dividend
      * @param n2 the divisor
@@ -901,6 +1221,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a POWER function expression.
+     * POWER returns a number raised to the power of another number.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.power("2", "10");     // Returns: "POWER(2, 10)"
+     * String expr2 = Expression.power("base", "exponent"); // Returns: "POWER(base, exponent)"
+     * }</pre>
      *
      * @param n1 the base
      * @param n2 the exponent
@@ -912,6 +1239,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a SIGN function expression.
+     * SIGN returns -1, 0, or 1 depending on the sign of the number.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.sign("-5");           // Returns: "SIGN(-5)"
+     * String expr2 = Expression.sign("balance");     // Returns: "SIGN(balance)"
+     * }</pre>
      *
      * @param expression the expression to get sign of
      * @return a SIGN function string
@@ -922,6 +1256,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a SIN (sine) function expression.
+     * SIN returns the sine of an angle in radians.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.sin("1.5708");        // Returns: "SIN(1.5708)"
+     * String expr2 = Expression.sin("angle");        // Returns: "SIN(angle)"
+     * }</pre>
      *
      * @param expression the expression to calculate sine of
      * @return a SIN function string
@@ -932,6 +1273,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a SQRT (square root) function expression.
+     * SQRT returns the square root of a number.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.sqrt("16");           // Returns: "SQRT(16)"
+     * String expr2 = Expression.sqrt("area");        // Returns: "SQRT(area)"
+     * }</pre>
      *
      * @param expression the expression to calculate square root of
      * @return a SQRT function string
@@ -942,6 +1290,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a TAN (tangent) function expression.
+     * TAN returns the tangent of an angle in radians.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.tan("0.7854");        // Returns: "TAN(0.7854)"
+     * String expr2 = Expression.tan("angle");        // Returns: "TAN(angle)"
+     * }</pre>
      *
      * @param expression the expression to calculate tangent of
      * @return a TAN function string
@@ -952,16 +1307,20 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a CONCAT function expression to concatenate two strings.
+     * CONCAT joins two or more strings into one.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.concat("firstName", "' '");
+     * // Returns: "CONCAT(firstName, ' ')"
+     * 
+     * String expr2 = Expression.concat("city", "', '");
+     * // Returns: "CONCAT(city, ', ')"
+     * }</pre>
      *
      * @param st1 the first string
      * @param st2 the second string
      * @return a CONCAT function string
-     *
-     * <p>Example:</p>
-     * <pre>
-     * String expr = Expression.concat("firstName", "' '", "lastName");
-     * // Returns: "CONCAT(firstName, ' ', lastName)"
-     * </pre>
      */
     public static String concat(final String st1, final String st2) {
         return function(CONCAT, st1, st2);
@@ -969,6 +1328,16 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a REPLACE function expression.
+     * REPLACE substitutes occurrences of a substring within a string.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.replace("email", "'@'", "'_at_'");
+     * // Returns: "REPLACE(email, '@', '_at_')"
+     * 
+     * String expr2 = Expression.replace("phone", "'-'", "''");
+     * // Returns: "REPLACE(phone, '-', '')"
+     * }</pre>
      *
      * @param st the string to search in
      * @param oldString the string to search for
@@ -981,6 +1350,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a LENGTH function expression.
+     * LENGTH returns the number of characters in a string.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.stringLength("name");     // Returns: "LENGTH(name)"
+     * String expr2 = Expression.stringLength("description"); // Returns: "LENGTH(description)"
+     * }</pre>
      *
      * @param st the string to get length of
      * @return a LENGTH function string
@@ -991,6 +1367,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a SUBSTR function expression starting from a position.
+     * SUBSTR extracts a substring starting at the specified position.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.subString("phone", 1);    // Returns: "SUBSTR(phone, 1)"
+     * String expr2 = Expression.subString("code", 3);    // Returns: "SUBSTR(code, 3)"
+     * }</pre>
      *
      * @param st the string to extract from
      * @param fromIndex the starting position (1-based)
@@ -1002,6 +1385,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a SUBSTR function expression with start position and length.
+     * SUBSTR extracts a substring of specified length starting at the given position.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.subString("phone", 1, 3);  // Returns: "SUBSTR(phone, 1, 3)"
+     * String expr2 = Expression.subString("zip", 1, 5);   // Returns: "SUBSTR(zip, 1, 5)"
+     * }</pre>
      *
      * @param st the string to extract from
      * @param fromIndex the starting position (1-based)
@@ -1014,6 +1404,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a TRIM function expression.
+     * TRIM removes leading and trailing spaces from a string.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.trim("input");         // Returns: "TRIM(input)"
+     * String expr2 = Expression.trim("user_name");    // Returns: "TRIM(user_name)"
+     * }</pre>
      *
      * @param st the string to trim
      * @return a TRIM function string
@@ -1024,6 +1421,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an LTRIM (left trim) function expression.
+     * LTRIM removes leading spaces from a string.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.lTrim("comment");      // Returns: "LTRIM(comment)"
+     * String expr2 = Expression.lTrim("address");     // Returns: "LTRIM(address)"
+     * }</pre>
      *
      * @param st the string to left trim
      * @return an LTRIM function string
@@ -1034,6 +1438,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an RTRIM (right trim) function expression.
+     * RTRIM removes trailing spaces from a string.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.rTrim("code");         // Returns: "RTRIM(code)"
+     * String expr2 = Expression.rTrim("description"); // Returns: "RTRIM(description)"
+     * }</pre>
      *
      * @param st the string to right trim
      * @return an RTRIM function string
@@ -1044,6 +1455,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an LPAD (left pad) function expression.
+     * LPAD pads a string on the left to a specified length with a given string.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.lPad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
+     * String expr2 = Expression.lPad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
+     * }</pre>
      *
      * @param st the string to pad
      * @param length the total length after padding
@@ -1056,6 +1474,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an RPAD (right pad) function expression.
+     * RPAD pads a string on the right to a specified length with a given string.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.rPad("name", 20, "' '");   // Returns: "RPAD(name, 20, ' ')"
+     * String expr2 = Expression.rPad("code", 10, "'X'");  // Returns: "RPAD(code, 10, 'X')"
+     * }</pre>
      *
      * @param st the string to pad
      * @param length the total length after padding
@@ -1068,6 +1493,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates a LOWER function expression.
+     * LOWER converts all characters in a string to lowercase.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.lower("email");        // Returns: "LOWER(email)"
+     * String expr2 = Expression.lower("COUNTRY");     // Returns: "LOWER(COUNTRY)"
+     * }</pre>
      *
      * @param st the string to convert to lowercase
      * @return a LOWER function string
@@ -1078,6 +1510,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an UPPER function expression.
+     * UPPER converts all characters in a string to uppercase.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * String expr = Expression.upper("name");         // Returns: "UPPER(name)"
+     * String expr2 = Expression.upper("country_code"); // Returns: "UPPER(country_code)"
+     * }</pre>
      *
      * @param st the string to convert to uppercase
      * @return an UPPER function string
@@ -1088,6 +1527,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Returns an empty list as expressions have no parameters.
+     * Expressions are literal SQL strings and don't have bindable parameters.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * Expression expr = Expression.of("price * 1.1");
+     * List<Object> params = expr.getParameters(); // Always returns empty list
+     * }</pre>
      *
      * @return an empty list
      */
@@ -1098,6 +1544,13 @@ public class Expression extends AbstractCondition {
 
     /**
      * Does nothing as expressions have no parameters to clear.
+     * This method is provided for consistency with the Condition interface.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * Expression expr = Expression.of("CURRENT_TIMESTAMP");
+     * expr.clearParameters(); // No effect
+     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -1138,10 +1591,22 @@ public class Expression extends AbstractCondition {
 
     /**
      * Returns the literal string of this expression.
-     * The naming policy is ignored for expressions.
+     * The naming policy may be applied to property names within the expression
+     * if they can be identified as simple column names.
      *
-     * @param namingPolicy ignored for expressions
-     * @return the literal string
+     * <p>Example:</p>
+     * <pre>{@code
+     * Expression expr = Expression.of("userName = 'John'");
+     * String sql = expr.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+     * // Returns: "user_name = 'John'"
+     * 
+     * Expression complex = Expression.of("UPPER(firstName) || ' ' || UPPER(lastName)");
+     * String sql2 = complex.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+     * // Returns: "UPPER(first_name) || ' ' || UPPER(last_name)"
+     * }</pre>
+     *
+     * @param namingPolicy the naming policy to apply
+     * @return the literal string of this expression with applied naming policy
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {

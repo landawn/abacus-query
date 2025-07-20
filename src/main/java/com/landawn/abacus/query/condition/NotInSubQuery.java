@@ -28,6 +28,17 @@ import com.landawn.abacus.util.Strings;
  * This condition checks if a property value (or multiple property values) is NOT contained 
  * in the result set of a subquery.
  * 
+ * <p>The NOT IN subquery is particularly useful for excluding records based on
+ * dynamic criteria from another query. It supports both single-column and multi-column
+ * comparisons, making it suitable for simple exclusions as well as composite key checks.</p>
+ * 
+ * <p>Important considerations:</p>
+ * <ul>
+ *   <li>NULL handling: If the subquery returns any NULL values, NOT IN may produce unexpected results</li>
+ *   <li>Performance: For large result sets, consider using NOT EXISTS instead</li>
+ *   <li>Empty subquery results: If subquery returns no rows, all values pass the NOT IN check</li>
+ * </ul>
+ * 
  * <p>Example usage:</p>
  * <pre>{@code
  * // Single property NOT IN subquery
@@ -41,6 +52,10 @@ import com.landawn.abacus.util.Strings;
  * NotInSubQuery condition2 = new NotInSubQuery(props, subQuery2);
  * // Generates: (firstName, lastName) NOT IN (SELECT fname, lname FROM blacklist)
  * }</pre>
+ * 
+ * @see NotIn
+ * @see NotExists
+ * @see SubQuery
  */
 public class NotInSubQuery extends AbstractCondition {
 
@@ -60,16 +75,26 @@ public class NotInSubQuery extends AbstractCondition {
 
     /**
      * Constructs a NOT IN subquery condition for a single property.
+     * This checks if the property value is not present in the subquery results.
+     * 
+     * <p>Use this constructor when comparing a single column against a subquery
+     * that returns a single column of values. This is the most common use case
+     * for NOT IN subqueries.</p>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // Exclude deleted items
+     * SubQuery deletedItems = new SubQuery("SELECT id FROM deleted_items");
+     * NotInSubQuery condition = new NotInSubQuery("itemId", deletedItems);
+     * 
+     * // Exclude users from specific departments
+     * SubQuery deptQuery = new SubQuery("SELECT user_id FROM dept_users WHERE dept = 'HR'");
+     * NotInSubQuery notHR = new NotInSubQuery("id", deptQuery);
+     * }</pre>
      * 
      * @param propName the property name to check against the subquery results
      * @param subQuery the subquery that returns the values to check against
-     * @throws IllegalArgumentException if subQuery is null
-     * 
-     * <p>Example:</p>
-     * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM deleted_items");
-     * NotInSubQuery condition = new NotInSubQuery("itemId", subQuery);
-     * }</pre>
+     * @throws IllegalArgumentException if propName is null/empty or subQuery is null
      */
     public NotInSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.NOT_IN);
@@ -86,16 +111,26 @@ public class NotInSubQuery extends AbstractCondition {
      * Used for composite key comparisons where multiple columns need to be
      * checked against a subquery returning multiple columns.
      * 
+     * <p>This constructor is useful for excluding records based on composite keys
+     * or multiple related fields. The number and order of properties must match
+     * the columns returned by the subquery.</p>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // Exclude based on composite key
+     * List<String> props = Arrays.asList("country", "city");
+     * SubQuery restricted = new SubQuery("SELECT country, city FROM restricted_locations");
+     * NotInSubQuery condition = new NotInSubQuery(props, restricted);
+     * 
+     * // Exclude duplicate entries
+     * List<String> uniqueProps = Arrays.asList("firstName", "lastName", "email");
+     * SubQuery existing = new SubQuery("SELECT fname, lname, email FROM existing_users");
+     * NotInSubQuery noDupes = new NotInSubQuery(uniqueProps, existing);
+     * }</pre>
+     * 
      * @param propNames collection of property names to check against the subquery results
      * @param subQuery the subquery that returns the values to check against
      * @throws IllegalArgumentException if propNames is empty or subQuery is null
-     * 
-     * <p>Example:</p>
-     * <pre>{@code
-     * List<String> props = Arrays.asList("country", "city");
-     * SubQuery subQuery = new SubQuery("SELECT country, city FROM restricted_locations");
-     * NotInSubQuery condition = new NotInSubQuery(props, subQuery);
-     * }</pre>
      */
     public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.NOT_IN);
@@ -137,8 +172,18 @@ public class NotInSubQuery extends AbstractCondition {
 
     /**
      * Sets a new subquery for this NOT IN condition.
+     * This method allows updating the subquery after construction.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * NotInSubQuery condition = new NotInSubQuery("userId", oldSubQuery);
+     * // Update with new criteria
+     * SubQuery newSubQuery = new SubQuery("SELECT id FROM users WHERE active = false");
+     * condition.setSubQuery(newSubQuery);
+     * }</pre>
      * 
      * @param subQuery the new subquery to set
+     * @throws IllegalArgumentException if subQuery is null
      */
     public void setSubQuery(final SubQuery subQuery) {
         this.subQuery = subQuery;
@@ -146,6 +191,7 @@ public class NotInSubQuery extends AbstractCondition {
 
     /**
      * Gets the list of parameters from the subquery.
+     * These are the parameter values that will be bound when executing the query.
      * 
      * @return list of parameter values from the subquery
      */
@@ -156,6 +202,7 @@ public class NotInSubQuery extends AbstractCondition {
 
     /**
      * Clears all parameters from the subquery.
+     * This is useful for reusing the condition structure with different parameter values.
      */
     @Override
     public void clearParameters() {
@@ -164,6 +211,7 @@ public class NotInSubQuery extends AbstractCondition {
 
     /**
      * Creates a deep copy of this NOT IN subquery condition.
+     * The copy includes a deep copy of the subquery to ensure complete independence.
      * 
      * @param <T> the type of condition to return
      * @return a new instance with copied values
@@ -193,6 +241,8 @@ public class NotInSubQuery extends AbstractCondition {
 
     /**
      * Checks if this NOT IN subquery condition is equal to another object.
+     * Two NotInSubQuery conditions are equal if they have the same property name(s),
+     * operator, and subquery.
      * 
      * @param obj the object to compare with
      * @return true if the objects are equal, false otherwise
@@ -213,15 +263,16 @@ public class NotInSubQuery extends AbstractCondition {
 
     /**
      * Converts this NOT IN subquery condition to its string representation using the specified naming policy.
-     * 
-     * @param namingPolicy the naming policy to apply to property names
-     * @return string representation of the NOT IN subquery condition
+     * The output format depends on whether this is a single or multi-property condition.
      * 
      * <p>Example output:</p>
      * <pre>{@code
      * // Single property: "user_id NOT IN (SELECT id FROM inactive_users)"
      * // Multiple properties: "(first_name, last_name) NOT IN (SELECT fname, lname FROM blacklist)"
      * }</pre>
+     * 
+     * @param namingPolicy the naming policy to apply to property names
+     * @return string representation of the NOT IN subquery condition
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {

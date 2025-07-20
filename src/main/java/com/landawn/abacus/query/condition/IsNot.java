@@ -16,41 +16,74 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents an IS NOT condition in SQL-like queries.
- * This class is used to create conditions that check if a property is not equal to a specific value,
- * typically used for special SQL values like NULL, NaN, or INFINITE.
+ * This class is used to create conditions that check if a property is not equal to a specific value
+ * using the SQL IS NOT operator, which is primarily used for special SQL values like NULL, NaN, or INFINITE.
+ * 
+ * <p>The IS NOT operator is the negation of the IS operator and is essential for:
+ * <ul>
+ *   <li>Checking if a value is not NULL (most common use case)</li>
+ *   <li>Checking if a numeric value is not NaN</li>
+ *   <li>Checking if a numeric value is not INFINITE</li>
+ *   <li>Comparing against other special SQL values</li>
+ * </ul>
+ * 
+ * <p>This class serves as the base for more specific IS NOT conditions like IsNotNull,
+ * IsNotNaN, and IsNotInfinite, but can also be used directly for custom IS NOT expressions.
  * 
  * <p>Example usage:
  * <pre>{@code
- * // Check if a property is not null
- * IsNot condition = new IsNot("age", null);
- * // This would generate: age IS NOT NULL
+ * // Check if a property is not null (prefer IsNotNull class)
+ * IsNot notNull = new IsNot("email", null);
+ * // Generates: email IS NOT NULL
+ * 
+ * // Check if not a specific expression value
+ * Expression unknownExpr = CF.expr("UNKNOWN");
+ * IsNot notUnknown = new IsNot("status", unknownExpr);
+ * // Generates: status IS NOT UNKNOWN
  * }</pre>
  * 
  * @see IsNotNull
  * @see IsNotNaN
  * @see IsNotInfinite
+ * @see Binary
  */
 public class IsNot extends Binary {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor should not be used directly in application code.
+     * This constructor creates an uninitialized IsNot instance and should not be used 
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     IsNot() {
     }
 
     /**
      * Creates a new IS NOT condition with the specified property name and value.
-     * This condition checks if the property is not equal to the specified value using SQL IS NOT operator.
+     * This condition checks if the property is not equal to the specified value using 
+     * the SQL IS NOT operator. This operator is essential for negating comparisons
+     * with special SQL values that have no direct inequality semantics.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * // Check for NOT NULL (though IsNotNull is preferred)
+     * IsNot notNull = new IsNot("phone_number", null);
+     * // Generates: phone_number IS NOT NULL
+     * 
+     * // Check if not NaN
+     * Expression nanExpr = CF.expr("NAN");
+     * IsNot notNaN = new IsNot("temperature", nanExpr);
+     * // Generates: temperature IS NOT NAN
+     * 
+     * // Check if not a custom value
+     * Expression pendingExpr = CF.expr("PENDING");
+     * IsNot notPending = new IsNot("order_status", pendingExpr);
+     * // Generates: order_status IS NOT PENDING
+     * }</pre>
      *
      * @param propName the name of the property to check. Must not be null.
      * @param propValue the value to compare against. Can be null or special Expression values.
-     * 
-     * <p>Example:
-     * <pre>{@code
-     * IsNot condition = new IsNot("status", someExpression);
-     * // Generates: status IS NOT someExpression
-     * }</pre>
+     *                  Common values include null, NaN, INFINITE, or custom database-specific values.
+     * @throws IllegalArgumentException if propName is null
      */
     public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);

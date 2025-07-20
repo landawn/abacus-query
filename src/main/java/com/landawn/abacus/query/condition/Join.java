@@ -28,14 +28,17 @@ import com.landawn.abacus.util.Strings;
 /**
  * Base class for SQL JOIN operations.
  * This class provides the foundation for different types of joins (INNER, LEFT, RIGHT, FULL)
- * and handles the common functionality of specifying join tables and conditions.
+ * and handles the common functionality of specifying join tables and conditions. JOIN operations
+ * are fundamental to relational databases, allowing you to combine rows from multiple tables
+ * based on related columns.
  * 
  * <p>A JOIN clause combines rows from two or more tables based on a related column between them.
  * This class supports:
  * <ul>
- *   <li>Simple joins without conditions</li>
- *   <li>Joins with ON conditions</li>
- *   <li>Joins with multiple tables</li>
+ *   <li>Simple joins without conditions (natural joins or cross joins)</li>
+ *   <li>Joins with ON conditions specifying how tables relate</li>
+ *   <li>Joins with multiple tables in a single operation</li>
+ *   <li>Complex join conditions using AND/OR logic</li>
  * </ul>
  * 
  * <p>This class is typically not used directly. Instead, use one of its subclasses:
@@ -44,6 +47,14 @@ import com.landawn.abacus.util.Strings;
  *   <li>{@link LeftJoin} - Returns all rows from the left table and matching rows from the right</li>
  *   <li>{@link RightJoin} - Returns all rows from the right table and matching rows from the left</li>
  *   <li>{@link FullJoin} - Returns all rows from both tables</li>
+ * </ul>
+ * 
+ * <p>Join performance considerations:
+ * <ul>
+ *   <li>Ensure join columns are indexed for better performance</li>
+ *   <li>Join order can affect query performance</li>
+ *   <li>Use appropriate join types to avoid unnecessary data retrieval</li>
+ *   <li>Consider denormalization for frequently joined tables</li>
  * </ul>
  * 
  * <p>Example usage:
@@ -67,6 +78,7 @@ import com.landawn.abacus.util.Strings;
  * @see LeftJoin
  * @see RightJoin
  * @see FullJoin
+ * @see AbstractCondition
  */
 public class Join extends AbstractCondition {
 
@@ -76,22 +88,30 @@ public class Join extends AbstractCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor should not be used directly in application code.
+     * This constructor creates an uninitialized Join instance and should not be used 
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Join() {
     }
 
     /**
      * Creates a simple JOIN clause for the specified table/entity.
-     * Uses the default JOIN operator without any ON condition.
-     *
-     * @param joinEntity the table or entity to join with. Can include alias.
+     * Uses the default JOIN operator without any ON condition. This form is rarely used
+     * in practice as it relies on implicit join conditions or results in a cross join.
      * 
-     * <p>Example:
+     * <p>Example usage:
      * <pre>{@code
+     * // Simple join (rarely used directly)
      * Join join = new Join("products");
      * // Generates: JOIN products
+     * 
+     * // With alias
+     * Join aliasJoin = new Join("product_categories pc");
+     * // Generates: JOIN product_categories pc
      * }</pre>
+     *
+     * @param joinEntity the table or entity to join with. Can include alias.
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public Join(final String joinEntity) {
         this(Operator.JOIN, joinEntity);
@@ -99,7 +119,16 @@ public class Join extends AbstractCondition {
 
     /**
      * Creates a JOIN clause with the specified operator and table/entity.
-     * This protected constructor is used by subclasses to specify the join type.
+     * This protected constructor is used by subclasses to specify the join type
+     * (INNER, LEFT, RIGHT, FULL) while reusing the common join logic.
+     * 
+     * <p>Example usage in subclasses:
+     * <pre>{@code
+     * // Used internally by InnerJoin
+     * protected InnerJoin(String joinEntity) {
+     *     super(Operator.INNER_JOIN, joinEntity);
+     * }
+     * }</pre>
      *
      * @param operator the join operator (INNER_JOIN, LEFT_JOIN, etc.)
      * @param joinEntity the table or entity to join with
@@ -110,17 +139,28 @@ public class Join extends AbstractCondition {
 
     /**
      * Creates a JOIN clause with a condition.
-     * Uses the default JOIN operator with an ON condition.
+     * Uses the default JOIN operator with an ON condition. This specifies how
+     * the tables are related and which rows should be combined.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * // Join with simple condition
+     * Join orderJoin = new Join("orders o",
+     *     new Equal("customers.id", "o.customer_id"));
+     * // Generates: JOIN orders o ON customers.id = o.customer_id
+     * 
+     * // Join with complex condition
+     * Join complexJoin = new Join("products p",
+     *     new And(
+     *         new Equal("categories.id", "p.category_id"),
+     *         new Equal("p.active", true)
+     *     ));
+     * // Generates: JOIN products p ON categories.id = p.category_id AND p.active = true
+     * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param condition the join condition, typically comparing columns from both tables.
-     * 
-     * <p>Example:
-     * <pre>{@code
-     * Join join = new Join("orders o",
-     *     new Equal("customers.id", "o.customer_id"));
-     * // Generates: JOIN orders o ON customers.id = o.customer_id
-     * }</pre>
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public Join(final String joinEntity, final Condition condition) {
         this(Operator.JOIN, joinEntity, condition);
@@ -128,7 +168,16 @@ public class Join extends AbstractCondition {
 
     /**
      * Creates a JOIN clause with the specified operator, table/entity, and condition.
-     * This protected constructor is used by subclasses.
+     * This protected constructor is used by subclasses to create specific join types
+     * with conditions.
+     * 
+     * <p>Example usage in subclasses:
+     * <pre>{@code
+     * // Used internally by LeftJoin
+     * protected LeftJoin(String joinEntity, Condition condition) {
+     *     super(Operator.LEFT_JOIN, joinEntity, condition);
+     * }
+     * }</pre>
      *
      * @param operator the join operator
      * @param joinEntity the table or entity to join with
@@ -140,16 +189,25 @@ public class Join extends AbstractCondition {
 
     /**
      * Creates a JOIN clause with multiple tables/entities and a condition.
-     * Uses the default JOIN operator.
+     * Uses the default JOIN operator. This form allows joining multiple tables
+     * in a single join clause, though chaining individual joins is often clearer.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * // Join multiple tables
+     * List<String> tables = Arrays.asList("orders o", "customers c", "addresses a");
+     * Join multiJoin = new Join(tables,
+     *     new And(
+     *         new Equal("o.customer_id", "c.id"),
+     *         new Equal("c.address_id", "a.id")
+     *     ));
+     * // Generates: JOIN orders o, customers c, addresses a 
+     * //            ON o.customer_id = c.id AND c.address_id = a.id
+     * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with
      * @param condition the join condition
-     * 
-     * <p>Example:
-     * <pre>{@code
-     * Join join = new Join(Arrays.asList("orders o", "customers c"),
-     *     new Equal("o.customer_id", "c.id"));
-     * }</pre>
+     * @throws IllegalArgumentException if joinEntities is null/empty
      */
     public Join(final Collection<String> joinEntities, final Condition condition) {
         this(Operator.JOIN, joinEntities, condition);
@@ -157,7 +215,16 @@ public class Join extends AbstractCondition {
 
     /**
      * Creates a JOIN clause with the specified operator, multiple tables/entities, and condition.
-     * This protected constructor is used by subclasses.
+     * This protected constructor provides the base implementation for all join operations,
+     * allowing subclasses to specify their join type while reusing the common logic.
+     * 
+     * <p>Example usage in subclasses:
+     * <pre>{@code
+     * // Used internally by subclasses
+     * protected RightJoin(Collection<String> joinEntities, Condition condition) {
+     *     super(Operator.RIGHT_JOIN, joinEntities, condition);
+     * }
+     * }</pre>
      *
      * @param operator the join operator
      * @param joinEntities the collection of tables or entities to join with
@@ -171,6 +238,13 @@ public class Join extends AbstractCondition {
 
     /**
      * Gets the list of tables/entities involved in this join.
+     * Returns the tables that are being joined, including any aliases.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Join join = new Join(Arrays.asList("orders o", "customers c"), condition);
+     * List<String> entities = join.getJoinEntities(); // Returns ["orders o", "customers c"]
+     * }</pre>
      *
      * @return the list of join entities
      */
@@ -180,6 +254,15 @@ public class Join extends AbstractCondition {
 
     /**
      * Gets the join condition.
+     * Returns the condition that specifies how the tables are related.
+     * May return null if no condition was specified (natural join or cross join).
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Equal condition = new Equal("a.id", "b.a_id");
+     * Join join = new Join("table_b b", condition);
+     * Condition retrieved = join.getCondition(); // Returns the Equal condition
+     * }</pre>
      *
      * @param <T> the type of the condition
      * @return the join condition, or null if no condition is specified
@@ -191,6 +274,18 @@ public class Join extends AbstractCondition {
 
     /**
      * Gets all parameters from the join condition.
+     * Returns any bound parameters used in the join condition. Returns an empty
+     * list if there's no condition or the condition has no parameters.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Join join = new Join("orders o", 
+     *     new And(
+     *         new Equal("o.customer_id", "c.id"),
+     *         new GreaterThan("o.amount", 1000)
+     *     ));
+     * List<Object> params = join.getParameters(); // Returns [1000]
+     * }</pre>
      *
      * @return the list of parameters from the condition, or an empty list if no condition
      */
@@ -201,6 +296,14 @@ public class Join extends AbstractCondition {
 
     /**
      * Clears all parameters from the join condition.
+     * This releases any resources held by parameter values in the condition.
+     * Does nothing if there's no condition.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Join join = new Join("orders o", someConditionWithParams);
+     * join.clearParameters(); // Clears parameters in the condition
+     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -211,6 +314,15 @@ public class Join extends AbstractCondition {
 
     /**
      * Creates a deep copy of this JOIN clause.
+     * The copy includes copies of all join entities and the condition,
+     * ensuring that modifications to the copy don't affect the original.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Join original = new Join("orders o", new Equal("o.customer_id", "c.id"));
+     * Join copy = original.copy();
+     * // copy is independent of original
+     * }</pre>
      *
      * @param <T> the type of the condition
      * @return a new Join instance with copies of all entities and condition
@@ -233,6 +345,22 @@ public class Join extends AbstractCondition {
 
     /**
      * Converts this JOIN clause to its string representation according to the specified naming policy.
+     * The output format includes the join operator, tables, and optional ON condition.
+     * 
+     * <p>Example outputs:
+     * <pre>{@code
+     * // Simple join
+     * Join j1 = new Join("orders");
+     * j1.toString(policy); // "JOIN orders"
+     * 
+     * // Join with condition
+     * Join j2 = new Join("orders o", new Equal("c.id", "o.customer_id"));
+     * j2.toString(policy); // "JOIN orders o ON c.id = o.customer_id"
+     * 
+     * // Multiple tables
+     * Join j3 = new Join(Arrays.asList("t1", "t2"), condition);
+     * j3.toString(policy); // "JOIN t1, t2 ON ..."
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply
      * @return the string representation, e.g., "INNER JOIN orders o ON customers.id = o.customer_id"
@@ -245,6 +373,15 @@ public class Join extends AbstractCondition {
 
     /**
      * Computes the hash code for this JOIN clause.
+     * The hash code is based on the operator, join entities, and condition,
+     * ensuring consistent hashing for equivalent joins.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Join j1 = new Join("orders o", new Equal("c.id", "o.customer_id"));
+     * Join j2 = new Join("orders o", new Equal("c.id", "o.customer_id"));
+     * assert j1.hashCode() == j2.hashCode();
+     * }</pre>
      *
      * @return the hash code based on operator, join entities, and condition
      */
@@ -263,6 +400,18 @@ public class Join extends AbstractCondition {
 
     /**
      * Checks if this JOIN clause is equal to another object.
+     * Two Join instances are equal if they have the same operator, join entities,
+     * and condition.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Join j1 = new Join("orders o", new Equal("c.id", "o.customer_id"));
+     * Join j2 = new Join("orders o", new Equal("c.id", "o.customer_id"));
+     * assert j1.equals(j2); // true
+     * 
+     * Join j3 = new Join("products p", new Equal("c.id", "p.category_id"));
+     * assert !j1.equals(j3); // false
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return true if the object is a Join with the same operator, entities, and condition

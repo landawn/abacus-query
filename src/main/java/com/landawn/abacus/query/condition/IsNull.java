@@ -21,57 +21,79 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
 /**
  * Represents a condition that checks if a property value is NULL.
  * This class extends {@link Is} to provide a specialized condition for NULL checks,
- * which is one of the most fundamental conditions in SQL queries.
+ * which is one of the most fundamental conditions in SQL queries. NULL checking
+ * is essential for proper data handling as NULL represents the absence of a value,
+ * distinct from empty string, zero, or false.
  * 
  * <p>NULL represents the absence of a value and is different from empty string or zero.
- * This condition is essential for:
+ * In SQL, NULL has special properties:
+ * <ul>
+ *   <li>NULL is not equal to anything, including itself (NULL = NULL is unknown)</li>
+ *   <li>Any arithmetic operation with NULL results in NULL</li>
+ *   <li>NULL values are excluded from aggregate functions (except COUNT(*))</li>
+ *   <li>NULL values require special IS NULL/IS NOT NULL operators for comparison</li>
+ * </ul>
+ * 
+ * <p>This condition is essential for:
  * <ul>
  *   <li>Finding missing or unset data</li>
- *   <li>Data quality checks</li>
- *   <li>Handling optional fields</li>
- *   <li>Outer join result filtering</li>
+ *   <li>Data quality checks and validation</li>
+ *   <li>Handling optional fields in queries</li>
+ *   <li>Filtering results from outer joins</li>
+ *   <li>Implementing business logic for incomplete data</li>
  * </ul>
  * 
  * <p>Example usage:
  * <pre>{@code
  * // Check if email is null
- * IsNull condition = new IsNull("email");
- * // This would generate: email IS NULL
+ * IsNull emailCheck = new IsNull("email");
+ * // Generates: email IS NULL
  * 
  * // Find customers without phone numbers
  * IsNull phoneCheck = new IsNull("phone_number");
- * // This would generate: phone_number IS NULL
+ * // Generates: phone_number IS NULL
  * 
  * // Find unassigned tasks
  * IsNull assigneeCheck = new IsNull("assigned_to");
- * // This would generate: assigned_to IS NULL
+ * // Generates: assigned_to IS NULL
+ * 
+ * // Combine with other conditions
+ * And incompleteProfile = new And(
+ *     new IsNull("profile_picture"),
+ *     new IsNull("bio"),
+ *     new IsNotNull("user_id")
+ * );
  * }</pre>
  * 
  * @see IsNotNull
  * @see Null (alias)
+ * @see Is
  */
 public class IsNull extends Is {
 
     /**
      * Shared Expression instance representing NULL.
      * This constant is used internally to represent the NULL value in SQL.
+     * It's shared across all instances to reduce memory overhead and ensure
+     * consistency in SQL generation.
      */
     static final Expression NULL = CF.expr("NULL");
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor should not be used directly in application code.
+     * This constructor creates an uninitialized IsNull instance and should not be used 
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     IsNull() {
     }
 
     /**
      * Creates a new IsNull condition for the specified property.
-     * This condition checks if the property value is NULL.
-     *
-     * @param propName the name of the property to check. Must not be null.
+     * This condition checks if the property value is NULL, which indicates
+     * the absence of a value in the database. This is different from empty
+     * string or zero values.
      * 
-     * <p>Example:
+     * <p>Example usage:
      * <pre>{@code
      * // Find records with missing data
      * IsNull birthdateCheck = new IsNull("birth_date");
@@ -84,7 +106,19 @@ public class IsNull extends Is {
      * // Find products without descriptions
      * IsNull descCheck = new IsNull("description");
      * // Generates: description IS NULL
+     * 
+     * // Find employees without managers (top-level)
+     * IsNull managerCheck = new IsNull("manager_id");
+     * // Generates: manager_id IS NULL
+     * 
+     * // Check for missing optional fields
+     * IsNull middleNameCheck = new IsNull("middle_name");
+     * // Generates: middle_name IS NULL
      * }</pre>
+     *
+     * @param propName the name of the property to check. Must not be null.
+     *                 This should be the column name or field name in your query.
+     * @throws IllegalArgumentException if propName is null
      */
     public IsNull(final String propName) {
         super(propName, NULL);

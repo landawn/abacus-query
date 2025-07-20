@@ -70,7 +70,7 @@ public enum Operator {
 
     /**
      * Alternative not equal operator (<>).
-     * Some databases prefer this syntax.
+     * Some databases prefer this syntax over !=.
      */
     NOT_EQUAL2(SK.NOT_EQUAL2),
 
@@ -94,7 +94,7 @@ public enum Operator {
 
     /**
      * LIKE operator.
-     * Used for pattern matching with wildcards.
+     * Used for pattern matching with wildcards (% and _).
      */
     LIKE(SK.LIKE),
 
@@ -184,7 +184,7 @@ public enum Operator {
 
     /**
      * NOT EXISTS operator.
-     * Checks if subquery not returns any rows.
+     * Checks if subquery returns no rows.
      */
     NOT_EXISTS(SK.NOT_EXISTS),
 

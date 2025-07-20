@@ -154,7 +154,6 @@ public class ConditionFactory {
      * 
      * @param condition the condition to negate
      * @return a Not condition that wraps and negates the provided condition
-     * @throws NullPointerException if the provided condition is null
      * @see Not
      * @see Condition
      * @see ConditionFactory

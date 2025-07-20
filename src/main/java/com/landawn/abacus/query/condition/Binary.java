@@ -25,6 +25,10 @@ import com.landawn.abacus.util.Strings;
  * Abstract base class for binary conditions that compare a property with a value.
  * Binary conditions represent operations with two operands: a property name and a value.
  * 
+ * <p>This class serves as the foundation for all comparison operations in queries,
+ * providing common functionality for storing the property name, operator, and value.
+ * The value can be a literal (String, Number, Date, etc.) or another Condition (for subqueries).</p>
+ * 
  * <p>Common subclasses include:</p>
  * <ul>
  *   <li>{@link Equal} - property = value</li>
@@ -34,9 +38,8 @@ import com.landawn.abacus.util.Strings;
  *   <li>{@link LessThan} - property < value</li>
  *   <li>{@link LessEqual} - property <= value</li>
  *   <li>{@link Like} - property LIKE value</li>
+ *   <li>{@link In} - property IN (values)</li>
  * </ul>
- * 
- * <p>The value can be a literal value or another Condition (for subqueries).</p>
  * 
  * <p>Usage example:</p>
  * <pre>{@code
@@ -45,7 +48,8 @@ import com.landawn.abacus.util.Strings;
  * Binary gt = new GreaterThan("age", 18);
  * 
  * // Binary condition with subquery
- * Binary in = new In("department_id", subQuery);
+ * SubQuery avgSalary = CF.subQuery("SELECT AVG(salary) FROM employees");
+ * Binary aboveAvg = new GreaterThan("salary", avgSalary);
  * }</pre>
  * 
  * @see AbstractCondition
@@ -65,16 +69,22 @@ public class Binary extends AbstractCondition {
 
     /**
      * Creates a new Binary condition.
-     * 
-     * @param propName the property name to compare
-     * @param operator the comparison operator
-     * @param propValue the value to compare against (can be a literal or Condition)
-     * @throws IllegalArgumentException if propName is null or empty
+     * This constructor initializes a binary condition with a property name, operator, and value.
      * 
      * <p>Example:</p>
      * <pre>{@code
+     * // Create a custom binary condition
      * Binary condition = new Binary("price", Operator.GREATER_THAN, 100.0);
+     * 
+     * // With a subquery as value
+     * SubQuery subQuery = CF.subQuery("SELECT MIN(price) FROM products");
+     * Binary minPrice = new Binary("price", Operator.GREATER_EQUAL, subQuery);
      * }</pre>
+     * 
+     * @param propName the property name to compare (must not be null or empty)
+     * @param operator the comparison operator
+     * @param propValue the value to compare against (can be a literal or Condition)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {
         super(operator);
@@ -89,14 +99,18 @@ public class Binary extends AbstractCondition {
 
     /**
      * Gets the property name being compared.
-     * 
-     * @return the property name
+     * This is the left-hand side of the binary operation.
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Binary condition = new Equal("userName", "John");
      * String prop = condition.getPropName(); // Returns "userName"
+     * 
+     * Binary ageCheck = new GreaterThan("age", 18);
+     * String ageProp = ageCheck.getPropName(); // Returns "age"
      * }</pre>
+     * 
+     * @return the property name
      */
     public String getPropName() {
         return propName;
@@ -105,15 +119,23 @@ public class Binary extends AbstractCondition {
     /**
      * Gets the value being compared against.
      * The value can be a literal value or a Condition (for subqueries).
-     * 
-     * @param <T> the expected type of the value
-     * @return the property value, cast to the requested type
+     * The returned value can be safely cast to its expected type.
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Binary condition = new Equal("age", 25);
      * Integer age = condition.getPropValue(); // Returns 25
+     * 
+     * Binary strCondition = new Like("name", "%John%");
+     * String pattern = strCondition.getPropValue(); // Returns "%John%"
+     * 
+     * // For subquery conditions
+     * Binary subCondition = new In("id", subQuery);
+     * SubQuery sq = subCondition.getPropValue(); // Returns the SubQuery
      * }</pre>
+     * 
+     * @param <T> the expected type of the value
+     * @return the property value, cast to the requested type
      */
     @SuppressWarnings("unchecked")
     public <T> T getPropValue() {
@@ -122,6 +144,13 @@ public class Binary extends AbstractCondition {
 
     /**
      * Sets the value being compared against.
+     * This method should generally not be used as conditions should be immutable.
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * Binary condition = new Equal("status", "active");
+     * // Not recommended: condition.setPropValue("inactive");
+     * }</pre>
      * 
      * @param propValue the new property value
      * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
@@ -136,13 +165,20 @@ public class Binary extends AbstractCondition {
      * If the value is a Condition (subquery), returns its parameters.
      * Otherwise, returns a list containing the single value.
      * 
-     * @return a list of parameter values
-     * 
      * <p>Example:</p>
      * <pre>{@code
      * Binary condition = new Equal("status", "active");
      * List<Object> params = condition.getParameters(); // Returns ["active"]
+     * 
+     * Binary between = new Between("age", 18, 65);
+     * List<Object> rangeParams = between.getParameters(); // Returns [18, 65]
+     * 
+     * // For subquery conditions
+     * Binary inSubquery = new InSubQuery("id", subQuery);
+     * List<Object> subParams = inSubquery.getParameters(); // Returns subquery's parameters
      * }</pre>
+     * 
+     * @return a list of parameter values
      */
     @Override
     public List<Object> getParameters() {
@@ -156,7 +192,14 @@ public class Binary extends AbstractCondition {
     /**
      * Clears the parameters of this condition.
      * If the value is a Condition, clears its parameters.
-     * Otherwise, sets the value to null.
+     * Otherwise, sets the value to null to release resources.
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * Binary condition = new In("id", largeIdList);
+     * // Use the condition in queries...
+     * condition.clearParameters(); // Releases the large list
+     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -169,17 +212,22 @@ public class Binary extends AbstractCondition {
 
     /**
      * Creates a deep copy of this Binary condition.
-     * If the value is a Condition, it is also copied.
-     * 
-     * @param <T> the type of condition to return
-     * @return a new Binary instance with copied values
+     * If the value is a Condition, it is also copied to ensure complete independence.
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Binary original = new Equal("name", "John");
      * Binary copy = original.copy();
      * // copy is a new instance with the same values
+     * 
+     * // For conditions with subqueries
+     * Binary originalSub = new InSubQuery("id", subQuery);
+     * Binary copySub = originalSub.copy();
+     * // The subquery is also deep copied
      * }</pre>
+     * 
+     * @param <T> the type of condition to return
+     * @return a new Binary instance with copied values
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -195,16 +243,24 @@ public class Binary extends AbstractCondition {
 
     /**
      * Returns a string representation of this Binary condition using the specified naming policy.
-     * 
-     * @param namingPolicy the naming policy to apply to the property name
-     * @return a string representation of this condition
+     * The format is: propertyName OPERATOR value
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Binary condition = new Equal("userName", "John");
-     * String str = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+     * String str1 = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
      * // Returns: "user_name = 'John'"
+     * 
+     * String str2 = condition.toString(NamingPolicy.LOWER_CAMEL_CASE);
+     * // Returns: "userName = 'John'"
+     * 
+     * Binary numCondition = new GreaterThan("age", 18);
+     * String str3 = numCondition.toString(NamingPolicy.NO_CHANGE);
+     * // Returns: "age > 18"
      * }</pre>
+     * 
+     * @param namingPolicy the naming policy to apply to the property name
+     * @return a string representation of this condition
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -214,6 +270,13 @@ public class Binary extends AbstractCondition {
     /**
      * Returns the hash code of this Binary condition.
      * The hash code is computed based on the property name, operator, and value.
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * Binary c1 = new Equal("name", "John");
+     * Binary c2 = new Equal("name", "John");
+     * boolean sameHash = c1.hashCode() == c2.hashCode(); // true
+     * }</pre>
      * 
      * @return the hash code value
      */
@@ -229,15 +292,21 @@ public class Binary extends AbstractCondition {
      * Checks if this Binary condition is equal to another object.
      * Two Binary conditions are equal if they have the same property name, operator, and value.
      * 
-     * @param obj the object to compare with
-     * @return true if the objects are equal, false otherwise
-     * 
      * <p>Example:</p>
      * <pre>{@code
      * Binary c1 = new Equal("name", "John");
      * Binary c2 = new Equal("name", "John");
      * boolean isEqual = c1.equals(c2); // Returns true
+     * 
+     * Binary c3 = new Equal("name", "Jane");
+     * boolean isDifferent = c1.equals(c3); // Returns false
+     * 
+     * Binary c4 = new GreaterThan("name", "John");
+     * boolean diffOperator = c1.equals(c4); // Returns false
      * }</pre>
+     * 
+     * @param obj the object to compare with
+     * @return true if the objects are equal, false otherwise
      */
     @Override
     public boolean equals(final Object obj) {

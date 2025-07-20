@@ -23,14 +23,26 @@ import com.landawn.abacus.util.NamingPolicy;
  * Conditions are immutable objects that represent various types of query criteria,
  * such as equality checks, comparisons, logical operations, and SQL clauses.
  * 
- * <p>Conditions should be immutable except when using {@code clearParameter()} to release resources.</p>
+ * <p>This interface defines the contract that all conditions must follow, providing
+ * methods for logical operations (AND, OR, NOT), parameter management, and string
+ * representation. Conditions are designed to be composable, allowing complex queries
+ * to be built from simple building blocks.</p>
+ * 
+ * <p>Conditions should be immutable except when using {@code clearParameter()} to release resources.
+ * This design ensures thread-safety and prevents unexpected side effects when conditions
+ * are reused or shared.</p>
  * 
  * <p>Common implementations include:</p>
  * <ul>
- *   <li>Binary conditions: {@code Equal}, {@code GreaterThan}, {@code LessThan}, etc.</li>
- *   <li>Logical operations: {@code And}, {@code Or}, {@code Not}</li>
- *   <li>SQL clauses: {@code Where}, {@code Having}, {@code GroupBy}, {@code OrderBy}</li>
- *   <li>Special conditions: {@code In}, {@code Between}, {@code Like}, {@code IsNull}</li>
+ *   <li><b>Comparison conditions:</b> {@code Equal}, {@code NotEqual}, {@code GreaterThan}, 
+ *       {@code LessThan}, {@code GreaterEqual}, {@code LessEqual}</li>
+ *   <li><b>Range conditions:</b> {@code Between}, {@code NotBetween}</li>
+ *   <li><b>Pattern matching:</b> {@code Like}, {@code NotLike}</li>
+ *   <li><b>Null checks:</b> {@code IsNull}, {@code IsNotNull}</li>
+ *   <li><b>Collection operations:</b> {@code In}, {@code NotIn}</li>
+ *   <li><b>Logical operations:</b> {@code And}, {@code Or}, {@code Not}</li>
+ *   <li><b>SQL clauses:</b> {@code Where}, {@code Having}, {@code GroupBy}, {@code OrderBy}, {@code Join}</li>
+ *   <li><b>Subquery operations:</b> {@code Exists}, {@code NotExists}, {@code All}, {@code Any}</li>
  * </ul>
  * 
  * <p>Usage example:</p>
@@ -39,28 +51,45 @@ import com.landawn.abacus.util.NamingPolicy;
  * Condition ageCondition = CF.gt("age", 18);
  * Condition statusCondition = CF.eq("status", "active");
  * 
- * // Combine conditions
+ * // Combine conditions using logical operations
  * Condition combined = ageCondition.and(statusCondition);
+ * 
+ * // Negate a condition
+ * Condition notActive = statusCondition.not();
  * 
  * // Use in queries
  * query.where(combined);
+ * 
+ * // Get parameters for prepared statements
+ * List<Object> params = combined.getParameters(); // [18, "active"]
  * }</pre>
  * 
  * @see ConditionFactory
  * @see ConditionFactory.CF
+ * @see AbstractCondition
  */
 public interface Condition {
     /**
      * Gets the operator associated with this condition.
      * The operator determines the type of comparison or operation performed.
      * 
-     * @return the operator for this condition
+     * <p>Each condition has exactly one operator that defines its behavior.
+     * For example, an Equal condition has the EQUAL operator, while an
+     * And condition has the AND operator.</p>
      * 
      * <p>Example:</p>
      * <pre>{@code
-     * Condition condition = CF.eq("name", "John");
-     * Operator op = condition.getOperator(); // Returns Operator.EQUAL
+     * Condition eq = CF.eq("name", "John");
+     * Operator op1 = eq.getOperator(); // Returns Operator.EQUAL
+     * 
+     * Condition gt = CF.gt("age", 18);
+     * Operator op2 = gt.getOperator(); // Returns Operator.GREATER_THAN
+     * 
+     * Condition and = eq.and(gt);
+     * Operator op3 = and.getOperator(); // Returns Operator.AND
      * }</pre>
+     * 
+     * @return the operator for this condition
      */
     Operator getOperator();
 
@@ -68,16 +97,29 @@ public interface Condition {
      * Creates a new AND condition combining this condition with another.
      * Both conditions must be true for the result to be true.
      * 
-     * @param condition the condition to AND with this condition
-     * @return a new And condition containing both conditions
+     * <p>The AND operation follows standard logical conjunction rules:
+     * <ul>
+     *   <li>true AND true = true</li>
+     *   <li>true AND false = false</li>
+     *   <li>false AND true = false</li>
+     *   <li>false AND false = false</li>
+     * </ul></p>
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Condition age = CF.gt("age", 18);
      * Condition status = CF.eq("status", "active");
-     * Condition combined = age.and(status);
+     * And combined = age.and(status);
      * // Equivalent to: age > 18 AND status = 'active'
+     * 
+     * // Can be chained
+     * Condition verified = CF.eq("verified", true);
+     * And all = age.and(status).and(verified);
+     * // Equivalent to: age > 18 AND status = 'active' AND verified = true
      * }</pre>
+     * 
+     * @param condition the condition to AND with this condition
+     * @return a new And condition containing both conditions
      */
     And and(Condition condition);
 
@@ -85,16 +127,29 @@ public interface Condition {
      * Creates a new OR condition combining this condition with another.
      * Either condition can be true for the result to be true.
      * 
-     * @param condition the condition to OR with this condition
-     * @return a new Or condition containing both conditions
+     * <p>The OR operation follows standard logical disjunction rules:
+     * <ul>
+     *   <li>true OR true = true</li>
+     *   <li>true OR false = true</li>
+     *   <li>false OR true = true</li>
+     *   <li>false OR false = false</li>
+     * </ul></p>
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Condition premium = CF.eq("memberType", "premium");
      * Condition vip = CF.eq("memberType", "vip");
-     * Condition combined = premium.or(vip);
+     * Or combined = premium.or(vip);
      * // Equivalent to: memberType = 'premium' OR memberType = 'vip'
+     * 
+     * // Can be chained
+     * Condition gold = CF.eq("memberType", "gold");
+     * Or any = premium.or(vip).or(gold);
+     * // Equivalent to: memberType = 'premium' OR memberType = 'vip' OR memberType = 'gold'
      * }</pre>
+     * 
+     * @param condition the condition to OR with this condition
+     * @return a new Or condition containing both conditions
      */
     Or or(Condition condition);
 
@@ -102,14 +157,28 @@ public interface Condition {
      * Creates a new NOT condition that negates this condition.
      * The result is true when this condition is false, and vice versa.
      * 
-     * @return a new Not condition wrapping this condition
+     * <p>The NOT operation follows standard logical negation rules:
+     * <ul>
+     *   <li>NOT true = false</li>
+     *   <li>NOT false = true</li>
+     * </ul></p>
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Condition isNull = CF.isNull("email");
-     * Condition isNotNull = isNull.not();
+     * Not isNotNull = isNull.not();
      * // Equivalent to: NOT (email IS NULL)
+     * 
+     * // Complex negation
+     * Condition complex = CF.and(
+     *     CF.eq("status", "active"),
+     *     CF.gt("age", 18)
+     * );
+     * Not negated = complex.not();
+     * // Equivalent to: NOT (status = 'active' AND age > 18)
      * }</pre>
+     * 
+     * @return a new Not condition wrapping this condition
      */
     Not not();
 
@@ -117,15 +186,15 @@ public interface Condition {
      * Creates a deep copy of this condition.
      * The copy is independent of the original and can be modified without affecting it.
      * 
-     * @param <T> the type of condition to return
-     * @return a deep copy of this condition
-     * 
      * <p>Example:</p>
      * <pre>{@code
      * Condition original = CF.eq("status", "active");
      * Condition copy = original.copy();
      * // copy is a new instance with the same values
      * }</pre>
+     * 
+     * @param <T> the type of condition to return
+     * @return a deep copy of this condition
      */
     <T extends Condition> T copy();
 
@@ -133,14 +202,14 @@ public interface Condition {
      * Gets the list of parameter values associated with this condition.
      * Parameters are the actual values used in comparisons (e.g., the "John" in name = "John").
      * 
-     * @return a list of parameter values, never null
-     * 
      * <p>Example:</p>
      * <pre>{@code
      * Condition condition = CF.between("age", 18, 65);
      * List<Object> params = condition.getParameters();
      * // Returns [18, 65]
      * }</pre>
+     * 
+     * @return a list of parameter values, never null
      */
     List<Object> getParameters();
 
@@ -162,15 +231,15 @@ public interface Condition {
      * Returns a string representation of this condition using the specified naming policy.
      * The naming policy determines how property names are formatted in the output.
      * 
-     * @param namingPolicy the policy for formatting property names
-     * @return a string representation of this condition
-     * 
      * <p>Example:</p>
      * <pre>{@code
      * Condition condition = CF.eq("firstName", "John");
      * String sql = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
      * // Returns: "first_name = 'John'"
      * }</pre>
+     * 
+     * @param namingPolicy the policy for formatting property names
+     * @return a string representation of this condition
      */
     String toString(NamingPolicy namingPolicy);
 }

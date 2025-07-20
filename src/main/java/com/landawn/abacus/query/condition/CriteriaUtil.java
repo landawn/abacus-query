@@ -26,6 +26,10 @@ import com.landawn.abacus.util.N;
  * This class provides helper methods to identify and manipulate SQL clause operators
  * and conditions within the criteria framework.
  * 
+ * <p>CriteriaUtil maintains the proper SQL clause ordering and provides methods to
+ * check if operators or conditions are clauses. It also provides protected access
+ * to Criteria's add and remove methods for framework use.</p>
+ * 
  * <p>The class maintains a set of valid clause operators in their proper SQL order:</p>
  * <ol>
  *   <li>JOIN operations (JOIN, LEFT_JOIN, RIGHT_JOIN, FULL_JOIN, CROSS_JOIN, INNER_JOIN, NATURAL_JOIN)</li>
@@ -36,6 +40,16 @@ import com.landawn.abacus.util.N;
  *   <li>LIMIT</li>
  *   <li>Set operations (UNION_ALL, UNION, INTERSECT, EXCEPT, MINUS)</li>
  * </ol>
+ * 
+ * <p>Usage example:</p>
+ * <pre>{@code
+ * // Check if an operator is a clause operator
+ * boolean isClause = CriteriaUtil.isClause(Operator.WHERE); // true
+ * boolean notClause = CriteriaUtil.isClause(Operator.EQUAL); // false
+ * 
+ * // Get all clause operators
+ * Set<Operator> clauses = CriteriaUtil.getClauseOperators();
+ * }</pre>
  * 
  * @see Criteria
  * @see Operator
@@ -79,15 +93,18 @@ public final class CriteriaUtil {
 
     /**
      * Gets the set of all valid clause operators.
-     * The set maintains the proper SQL clause ordering.
-     * 
-     * @return an immutable set of clause operators
+     * The set maintains the proper SQL clause ordering and is immutable.
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Set<Operator> clauses = CriteriaUtil.getClauseOperators();
-     * // Contains: JOIN, LEFT_JOIN, WHERE, GROUP_BY, HAVING, etc.
+     * // Contains: JOIN, LEFT_JOIN, WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.
+     * 
+     * // Check if a specific operator is a clause
+     * boolean hasWhere = clauses.contains(Operator.WHERE); // true
      * }</pre>
+     * 
+     * @return an immutable set of clause operators in proper SQL order
      */
     public static Set<Operator> getClauseOperators() {
         return clauseOperators;
@@ -95,15 +112,18 @@ public final class CriteriaUtil {
 
     /**
      * Checks if the given operator is a valid clause operator.
-     * 
-     * @param operator the operator to check
-     * @return true if the operator is a clause operator, false otherwise
+     * Clause operators represent major SQL query components like WHERE, JOIN, GROUP BY, etc.
      * 
      * <p>Example:</p>
      * <pre>{@code
-     * boolean isClause = CriteriaUtil.isClause(Operator.WHERE); // Returns true
-     * boolean isClause = CriteriaUtil.isClause(Operator.EQUAL); // Returns false
+     * boolean isClause = CriteriaUtil.isClause(Operator.WHERE); // true
+     * boolean isClause2 = CriteriaUtil.isClause(Operator.GROUP_BY); // true
+     * boolean notClause = CriteriaUtil.isClause(Operator.EQUAL); // false
+     * boolean notClause2 = CriteriaUtil.isClause(Operator.GREATER_THAN); // false
      * }</pre>
+     * 
+     * @param operator the operator to check
+     * @return true if the operator is a clause operator, false otherwise
      */
     public static boolean isClause(final Operator operator) {
         return operator != null && clauseOperators.contains(operator);
@@ -111,15 +131,18 @@ public final class CriteriaUtil {
 
     /**
      * Checks if the given operator string represents a valid clause operator.
-     * 
-     * @param operator the operator string to check
-     * @return true if the operator string represents a clause operator, false otherwise
+     * This method converts the string to an Operator and checks if it's a clause.
      * 
      * <p>Example:</p>
      * <pre>{@code
-     * boolean isClause = CriteriaUtil.isClause("WHERE"); // Returns true
-     * boolean isClause = CriteriaUtil.isClause("="); // Returns false
+     * boolean isClause = CriteriaUtil.isClause("WHERE"); // true
+     * boolean isClause2 = CriteriaUtil.isClause("LEFT JOIN"); // true
+     * boolean notClause = CriteriaUtil.isClause("="); // false
+     * boolean notClause2 = CriteriaUtil.isClause("LIKE"); // false
      * }</pre>
+     * 
+     * @param operator the operator string to check
+     * @return true if the operator string represents a clause operator, false otherwise
      */
     public static boolean isClause(final String operator) {
         return isClause(Operator.getOperator(operator));
@@ -127,18 +150,22 @@ public final class CriteriaUtil {
 
     /**
      * Checks if the given condition is a clause condition.
-     * 
-     * @param condition the condition to check
-     * @return true if the condition has a clause operator, false otherwise
+     * A condition is a clause if its operator is a clause operator.
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Condition where = new Where(CF.eq("status", "active"));
-     * boolean isClause = CriteriaUtil.isClause(where); // Returns true
+     * boolean isClause = CriteriaUtil.isClause(where); // true
+     * 
+     * Condition orderBy = new OrderBy("name", SortDirection.ASC);
+     * boolean isClause2 = CriteriaUtil.isClause(orderBy); // true
      * 
      * Condition eq = CF.eq("status", "active");
-     * boolean isClause = CriteriaUtil.isClause(eq); // Returns false
+     * boolean notClause = CriteriaUtil.isClause(eq); // false
      * }</pre>
+     * 
+     * @param condition the condition to check
+     * @return true if the condition has a clause operator, false if null or not a clause
      */
     public static boolean isClause(final Condition condition) {
         //        if (condition == null) {
@@ -164,16 +191,19 @@ public final class CriteriaUtil {
 
     /**
      * Adds conditions to the specified criteria.
-     * This method provides access to the protected add method of Criteria.
-     * 
-     * @param criteria the criteria to add conditions to
-     * @param conditions the conditions to add
+     * This method provides access to the protected add method of Criteria for framework use.
      * 
      * <p>Example:</p>
      * <pre>{@code
      * Criteria criteria = new Criteria();
-     * CriteriaUtil.add(criteria, new Where(CF.eq("status", "active")));
+     * CriteriaUtil.add(criteria, 
+     *     new Where(CF.eq("status", "active")),
+     *     new OrderBy("name", SortDirection.ASC)
+     * );
      * }</pre>
+     * 
+     * @param criteria the criteria to add conditions to
+     * @param conditions the conditions to add
      */
     public static void add(final Criteria criteria, final Condition... conditions) {
         criteria.add(conditions);
@@ -181,7 +211,17 @@ public final class CriteriaUtil {
 
     /**
      * Adds a collection of conditions to the specified criteria.
-     * This method provides access to the protected add method of Criteria.
+     * This method provides access to the protected add method of Criteria for framework use.
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria();
+     * List<Condition> conditions = Arrays.asList(
+     *     new Where(CF.eq("active", true)),
+     *     new Limit(10)
+     * );
+     * CriteriaUtil.add(criteria, conditions);
+     * }</pre>
      * 
      * @param criteria the criteria to add conditions to
      * @param conditions the collection of conditions to add
@@ -192,16 +232,20 @@ public final class CriteriaUtil {
 
     /**
      * Removes all conditions with the specified operator from the criteria.
-     * This method provides access to the protected remove method of Criteria.
-     * 
-     * @param criteria the criteria to remove conditions from
-     * @param operator the operator of conditions to remove
+     * This method provides access to the protected remove method of Criteria for framework use.
      * 
      * <p>Example:</p>
      * <pre>{@code
+     * Criteria criteria = // ... existing criteria with WHERE and ORDER BY
      * CriteriaUtil.remove(criteria, Operator.WHERE);
-     * // Removes the WHERE clause
+     * // Removes the WHERE clause from the criteria
+     * 
+     * CriteriaUtil.remove(criteria, Operator.ORDER_BY);
+     * // Removes all ORDER BY clauses
      * }</pre>
+     * 
+     * @param criteria the criteria to remove conditions from
+     * @param operator the operator of conditions to remove
      */
     public static void remove(final Criteria criteria, final Operator operator) {
         criteria.remove(operator);
@@ -209,7 +253,17 @@ public final class CriteriaUtil {
 
     /**
      * Removes specific conditions from the criteria.
-     * This method provides access to the protected remove method of Criteria.
+     * This method provides access to the protected remove method of Criteria for framework use.
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * Where whereClause = new Where(CF.eq("status", "active"));
+     * OrderBy orderByClause = new OrderBy("name");
+     * Criteria criteria = // ... contains these conditions
+     * 
+     * CriteriaUtil.remove(criteria, whereClause, orderByClause);
+     * // Removes both specific conditions
+     * }</pre>
      * 
      * @param criteria the criteria to remove conditions from
      * @param conditions the conditions to remove

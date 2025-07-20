@@ -20,35 +20,61 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
 
 /**
  * Represents an ON clause used in SQL JOIN operations.
+ * The ON clause specifies the join condition between tables, providing maximum flexibility
+ * for defining how tables should be related in a join operation.
  * 
- * <p>The ON clause specifies the join condition between tables. Unlike USING,
- * ON allows for more complex join conditions including different column names,
- * multiple conditions, and expressions.</p>
- * 
- * <p>Common usage patterns:</p>
+ * <p>Key features of ON clause:
  * <ul>
- *   <li>Simple column equality: table1.id = table2.foreign_id</li>
- *   <li>Multiple conditions: combining with AND/OR</li>
- *   <li>Complex expressions: joins with calculations or functions</li>
+ *   <li>Supports joins on columns with different names</li>
+ *   <li>Allows complex join conditions with AND/OR logic</li>
+ *   <li>Can include additional filtering conditions beyond equality</li>
+ *   <li>Supports expressions and functions in join conditions</li>
+ *   <li>More flexible than USING clause but more verbose</li>
  * </ul>
  * 
- * <p>Example usage:</p>
- * <pre>{@code
- * // Simple ON condition with custom condition
- * Condition joinCondition = new Equal("t1.id", new Expression("t2.user_id"));
- * On on1 = new On(joinCondition);
+ * <p>Common usage patterns:
+ * <ul>
+ *   <li>Simple foreign key joins: {@code t1.id = t2.foreign_id}</li>
+ *   <li>Composite key joins: multiple equality conditions with AND</li>
+ *   <li>Range joins: using BETWEEN or inequality operators</li>
+ *   <li>Conditional joins: including business logic in the join</li>
+ * </ul>
  * 
- * // Convenient method for column equality
- * On on2 = new On("employees.department_id", "departments.id");
- * // Results in: ON employees.department_id = departments.id
+ * <p>Example usage:
+ * <pre>{@code
+ * // Simple column equality join
+ * On on1 = new On("orders.customer_id", "customers.id");
+ * // Results in: ON orders.customer_id = customers.id
+ * 
+ * // Complex condition with custom logic
+ * And complexJoin = new And(
+ *     new Equal("o.customer_id", new Expression("c.id")),
+ *     new GreaterThan("o.order_date", new Expression("c.registration_date"))
+ * );
+ * On on2 = new On(complexJoin);
+ * // Results in: ON o.customer_id = c.id AND o.order_date > c.registration_date
  * 
  * // Multiple join conditions using Map
  * Map<String, String> joinMap = new LinkedHashMap<>();
- * joinMap.put("orders.customer_id", "customers.id");
- * joinMap.put("orders.region", "customers.region");
+ * joinMap.put("emp.department_id", "dept.id");
+ * joinMap.put("emp.location_id", "dept.location_id");
  * On on3 = new On(joinMap);
- * // Results in: ON orders.customer_id = customers.id AND orders.region = customers.region
+ * // Results in: ON emp.department_id = dept.id AND emp.location_id = dept.location_id
+ * 
+ * // Join with additional filter
+ * And filteredJoin = new And(
+ *     new Equal("products.category_id", new Expression("categories.id")),
+ *     new Equal("categories.active", true)
+ * );
+ * On on4 = new On(filteredJoin);
+ * // Results in: ON products.category_id = categories.id AND categories.active = true
  * }</pre>
+ * 
+ * @see Using
+ * @see Join
+ * @see LeftJoin
+ * @see RightJoin
+ * @see InnerJoin
  */
 public class On extends Cell {
 
@@ -58,21 +84,33 @@ public class On extends Cell {
 
     /**
      * Constructs an ON clause with a custom condition.
+     * This is the most flexible constructor, accepting any type of condition
+     * for maximum control over the join logic.
      * 
-     * <p>This is the most flexible constructor, allowing any type of condition
-     * including complex expressions, AND/OR combinations, etc.</p>
-     *
-     * @param condition the join condition
-     * 
-     * <p>Example:</p>
+     * <p>Example usage:
      * <pre>{@code
-     * // Complex join condition
+     * // Simple equality condition
+     * Equal simpleJoin = new Equal("a.id", new Expression("b.a_id"));
+     * On on1 = new On(simpleJoin);
+     * 
+     * // Complex multi-condition join
      * And complexCondition = new And(
-     *     new Equal("a.id", new Expression("b.a_id")),
-     *     new GreaterThan("b.created", "2024-01-01")
+     *     new Equal("orders.customer_id", new Expression("customers.id")),
+     *     new Between("orders.order_date", "2024-01-01", "2024-12-31"),
+     *     new NotEqual("customers.status", "DELETED")
      * );
-     * On on = new On(complexCondition);
+     * On on2 = new On(complexCondition);
+     * 
+     * // Range join
+     * And rangeJoin = new And(
+     *     new GreaterEqual("emp.salary", new Expression("salary_grades.min_salary")),
+     *     new LessEqual("emp.salary", new Expression("salary_grades.max_salary"))
+     * );
+     * On on3 = new On(rangeJoin);
      * }</pre>
+     *
+     * @param condition the join condition, can be any type of condition including
+     *                  Equal, And, Or, or more complex expressions
      */
     public On(final Condition condition) {
         super(Operator.ON, condition);
@@ -80,22 +118,26 @@ public class On extends Cell {
 
     /**
      * Constructs an ON clause for simple column equality between tables.
+     * This is a convenience constructor for the most common join scenario
+     * where you're joining on equal values between two columns.
      * 
-     * <p>This is a convenience constructor for the common case of joining
-     * on equal column values from different tables.</p>
-     *
-     * @param propName the column name from the first table
-     * @param anoPropName the column name from the second table
-     * 
-     * <p>Example:</p>
+     * <p>Example usage:
      * <pre>{@code
-     * On on = new On("users.id", "posts.user_id");
-     * // Results in: ON users.id = posts.user_id
+     * // Basic foreign key join
+     * On on1 = new On("orders.customer_id", "customers.id");
+     * // Results in: ON orders.customer_id = customers.id
      * 
-     * // Can include table aliases
-     * On on2 = new On("u.department_id", "d.id");
-     * // Results in: ON u.department_id = d.id
+     * // Join with table aliases
+     * On on2 = new On("o.product_id", "p.id");
+     * // Results in: ON o.product_id = p.id
+     * 
+     * // Self-join scenario
+     * On on3 = new On("emp1.manager_id", "emp2.employee_id");
+     * // Results in: ON emp1.manager_id = emp2.employee_id
      * }</pre>
+     *
+     * @param propName the column name from the first table (can include table name/alias)
+     * @param anoPropName the column name from the second table (can include table name/alias)
      */
     public On(final String propName, final String anoPropName) {
         this(createOnCondition(propName, anoPropName));
@@ -103,22 +145,30 @@ public class On extends Cell {
 
     /**
      * Constructs an ON clause with multiple column equality conditions.
+     * All conditions in the map are combined with AND. This is useful for
+     * composite key joins or when multiple columns must match between tables.
      * 
-     * <p>All conditions in the map are combined with AND. This is useful
-     * for composite key joins or multiple join criteria.</p>
+     * <p>Example usage:
+     * <pre>{@code
+     * // Composite primary key join
+     * Map<String, String> compositeKey = new LinkedHashMap<>();
+     * compositeKey.put("order_items.order_id", "orders.id");
+     * compositeKey.put("order_items.customer_id", "orders.customer_id");
+     * On on1 = new On(compositeKey);
+     * // Results in: ON order_items.order_id = orders.id 
+     * //             AND order_items.customer_id = orders.customer_id
+     * 
+     * // Multi-column natural key join
+     * Map<String, String> naturalKey = new LinkedHashMap<>();
+     * naturalKey.put("addresses.country_code", "countries.code");
+     * naturalKey.put("addresses.region_code", "countries.region_code");
+     * naturalKey.put("addresses.postal_code", "postal_codes.code");
+     * On on2 = new On(naturalKey);
+     * // Results in complex multi-column join condition
+     * }</pre>
      *
      * @param propNamePair map of column pairs where key is from first table,
-     *                     value is from second table
-     * 
-     * <p>Example:</p>
-     * <pre>{@code
-     * Map<String, String> joinConditions = new LinkedHashMap<>();
-     * joinConditions.put("orders.customer_id", "customers.id");
-     * joinConditions.put("orders.store_id", "customers.preferred_store_id");
-     * On on = new On(joinConditions);
-     * // Results in: ON orders.customer_id = customers.id 
-     * //            AND orders.store_id = customers.preferred_store_id
-     * }</pre>
+     *                     value is from second table. Order is preserved if LinkedHashMap is used.
      */
     public On(final Map<String, String> propNamePair) {
         this(createOnCondition(propNamePair));
@@ -126,6 +176,14 @@ public class On extends Cell {
 
     /**
      * Creates an ON condition for simple column equality.
+     * This static factory method is used internally to create Equal conditions
+     * for the convenience constructors.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Condition joinCondition = On.createOnCondition("users.id", "posts.user_id");
+     * // Creates: Equal("users.id", Expression("posts.user_id"))
+     * }</pre>
      *
      * @param propName the first column name
      * @param anoPropName the second column name
@@ -137,6 +195,18 @@ public class On extends Cell {
 
     /**
      * Creates an ON condition from multiple column pairs.
+     * If only one pair is provided, returns a simple Equal condition.
+     * If multiple pairs are provided, combines them with AND.
+     * 
+     * <p>Example usage:
+     * <pre>{@code
+     * Map<String, String> joinColumns = new LinkedHashMap<>();
+     * joinColumns.put("t1.col1", "t2.col1");
+     * joinColumns.put("t1.col2", "t2.col2");
+     * Condition condition = On.createOnCondition(joinColumns);
+     * // Creates: And(Equal("t1.col1", Expression("t2.col1")), 
+     * //              Equal("t1.col2", Expression("t2.col2")))
+     * }</pre>
      *
      * @param propNamePair map of column name pairs
      * @return a single Equal condition or an And condition combining multiple equalities

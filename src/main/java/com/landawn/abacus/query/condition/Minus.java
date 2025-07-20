@@ -16,37 +16,60 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents a MINUS clause in SQL queries (also known as EXCEPT in some databases).
- * This class is used to create conditions that return rows from the first query
+ * This class implements the set difference operation, returning rows from the first query
  * that are not present in the second query (subquery).
  * 
- * <p>The MINUS operator removes duplicate rows and returns only distinct rows
- * that appear in the first query but not in the second. Both queries must have
- * the same number of columns with compatible data types.
- * 
- * <p>Note: Different databases use different keywords:
+ * <p>Key characteristics of MINUS/EXCEPT:
  * <ul>
- *   <li>Oracle, DB2: MINUS</li>
- *   <li>PostgreSQL, SQL Server: EXCEPT</li>
+ *   <li>Removes duplicate rows automatically (returns DISTINCT results)</li>
+ *   <li>Both queries must have the same number of columns</li>
+ *   <li>Corresponding columns must have compatible data types</li>
+ *   <li>Column names don't need to match, but order matters</li>
+ *   <li>NULL values are considered equal when comparing rows</li>
+ * </ul>
+ * 
+ * <p>Database support:
+ * <ul>
+ *   <li>Oracle, DB2: Use MINUS keyword</li>
+ *   <li>PostgreSQL, SQL Server, SQLite: Use EXCEPT keyword</li>
+ *   <li>MySQL: Does not support MINUS/EXCEPT directly (use NOT IN or LEFT JOIN)</li>
+ * </ul>
+ * 
+ * <p>Common use cases:
+ * <ul>
+ *   <li>Finding records that exist in one table but not another</li>
+ *   <li>Identifying missing data or gaps</li>
+ *   <li>Data validation and comparison between datasets</li>
+ *   <li>Finding customers without orders, products never sold, etc.</li>
  * </ul>
  * 
  * <p>Example usage:
  * <pre>{@code
- * // Create a subquery for all customers
- * SubQuery allCustomers = new SubQuery("SELECT customer_id FROM customers");
- * 
- * // Create a subquery for customers with orders
- * SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
- * 
  * // Find customers who have never placed an order
- * Minus minus = new Minus(customersWithOrders);
- * // When combined with the first query, generates:
+ * SubQuery allCustomers = new SubQuery("SELECT customer_id FROM customers");
+ * SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+ * Minus customersWithoutOrders = new Minus(customersWithOrders);
+ * // When used with main query:
  * // SELECT customer_id FROM customers
  * // MINUS
  * // SELECT DISTINCT customer_id FROM orders
+ * 
+ * // Find products not sold in the last month
+ * SubQuery allProducts = new SubQuery("SELECT product_id FROM products WHERE active = 'Y'");
+ * SubQuery soldProducts = new SubQuery(
+ *     "SELECT DISTINCT product_id FROM order_items WHERE order_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)"
+ * );
+ * Minus unsoldProducts = new Minus(soldProducts);
+ * 
+ * // Find employees not assigned to any project
+ * SubQuery allEmployees = new SubQuery("SELECT employee_id FROM employees WHERE status = 'ACTIVE'");
+ * SubQuery assignedEmployees = new SubQuery("SELECT DISTINCT employee_id FROM project_assignments");
+ * Minus unassignedEmployees = new Minus(assignedEmployees);
  * }</pre>
  * 
  * @see Except
  * @see Union
+ * @see UnionAll
  * @see Intersect
  */
 public class Minus extends Clause {
@@ -62,8 +85,6 @@ public class Minus extends Clause {
      * Creates a new MINUS clause with the specified subquery.
      * The MINUS operation will return rows from the main query that are not
      * present in this subquery.
-     *
-     * @param condition the subquery whose results will be subtracted from the main query. Must not be null.
      * 
      * <p>Example:
      * <pre>{@code
@@ -75,6 +96,8 @@ public class Minus extends Clause {
      * // MINUS
      * // SELECT product_id FROM sales
      * }</pre>
+     *
+     * @param condition the subquery whose results will be subtracted from the main query. Must not be null.
      */
     public Minus(final SubQuery condition) {
         super(Operator.MINUS, condition);

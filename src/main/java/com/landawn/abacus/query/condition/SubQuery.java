@@ -35,8 +35,17 @@ import com.landawn.abacus.util.Strings;
  * 
  * <p>This class supports two types of subqueries:</p>
  * <ul>
- *   <li>Raw SQL subqueries - directly specified SQL strings</li>
- *   <li>Structured subqueries - built from entity names, property names, and conditions</li>
+ *   <li><b>Raw SQL subqueries</b> - directly specified SQL strings for maximum flexibility</li>
+ *   <li><b>Structured subqueries</b> - built from entity names, property names, and conditions for type safety</li>
+ * </ul>
+ * 
+ * <p>Subqueries can be used in various contexts:</p>
+ * <ul>
+ *   <li>IN/NOT IN conditions for set membership tests</li>
+ *   <li>EXISTS/NOT EXISTS for existence checks</li>
+ *   <li>Scalar subqueries in comparisons (=, >, <, etc.)</li>
+ *   <li>ANY/ALL/SOME for multi-row comparisons</li>
+ *   <li>FROM clause for derived tables</li>
  * </ul>
  * 
  * <p>Example usage:</p>
@@ -58,6 +67,11 @@ import com.landawn.abacus.util.Strings;
  * In inCondition = new In("userId", subQuery1);
  * // Results in: userId IN (SELECT id FROM users WHERE status = 'active')
  * }</pre>
+ * 
+ * @see In
+ * @see NotIn
+ * @see Exists
+ * @see NotExists
  */
 public class SubQuery extends AbstractCondition {
 
@@ -86,14 +100,32 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Constructs a subquery with raw SQL.
+     * This provides maximum flexibility for complex subqueries that cannot be easily
+     * expressed using the structured approach.
+     * 
+     * <p>Use this constructor when:</p>
+     * <ul>
+     *   <li>The subquery uses database-specific features</li>
+     *   <li>Complex joins or aggregations are needed</li>
+     *   <li>Performance-tuned SQL is required</li>
+     * </ul>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // Simple subquery
+     * SubQuery subQuery = new SubQuery("SELECT MAX(salary) FROM employees");
+     * 
+     * // Complex subquery with joins
+     * SubQuery complexQuery = new SubQuery(
+     *     "SELECT u.id FROM users u " +
+     *     "INNER JOIN orders o ON u.id = o.user_id " +
+     *     "WHERE o.total > 1000 " +
+     *     "GROUP BY u.id HAVING COUNT(o.id) > 5"
+     * );
+     * }</pre>
      *
      * @param sql the SQL SELECT statement
      * @throws IllegalArgumentException if sql is null or empty
-     * 
-     * <p>Example:</p>
-     * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT MAX(salary) FROM employees");
-     * }</pre>
      */
     public SubQuery(final String sql) {
         this(Strings.EMPTY, sql);
@@ -101,17 +133,20 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Constructs a subquery with an entity name and raw SQL.
-     * The entity name is for reference only when using raw SQL.
-     *
-     * @param entityName the entity/table name (can be empty)
-     * @param sql the SQL SELECT statement
-     * @throws IllegalArgumentException if sql is null or empty
+     * The entity name is for reference only when using raw SQL and doesn't affect the query.
      * 
-     * <p>Example:</p>
+     * <p>This constructor allows associating a logical entity name with a raw SQL subquery,
+     * which can be useful for documentation or framework integration purposes.</p>
+     * 
+     * <p>Example usage:</p>
      * <pre>{@code
      * SubQuery subQuery = new SubQuery("orders", 
      *     "SELECT order_id FROM orders WHERE total > 1000");
      * }</pre>
+     *
+     * @param entityName the entity/table name (can be empty)
+     * @param sql the SQL SELECT statement
+     * @throws IllegalArgumentException if sql is null or empty
      */
     public SubQuery(final String entityName, final String sql) {
         super(Operator.EMPTY);
@@ -129,21 +164,27 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Constructs a structured subquery with entity name, selected properties, and condition.
+     * This approach provides type safety and automatic SQL generation.
+     * 
+     * <p>The generated SQL follows the pattern: SELECT [properties] FROM [entity] WHERE [condition].
+     * If the condition is not already a clause (like WHERE), it will be automatically wrapped in a WHERE clause.</p>
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * // Select specific columns with conditions
+     * List<String> props = Arrays.asList("id", "email");
+     * Condition condition = new And(
+     *     new Equal("active", true),
+     *     new GreaterThan("created", "2024-01-01")
+     * );
+     * SubQuery subQuery = new SubQuery("users", props, condition);
+     * // Generates: SELECT id, email FROM users WHERE active = true AND created > '2024-01-01'
+     * }</pre>
      *
      * @param entityName the entity/table name
      * @param propNames collection of property names to select
      * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
-     * 
-     * <p>Example:</p>
-     * <pre>{@code
-     * List<String> props = Arrays.asList("id", "email");
-     * Condition condition = new And(
-     *     new Equal("active", true),
-     *     new GreaterThan("created", "2023-01-01")
-     * );
-     * SubQuery subQuery = new SubQuery("users", props, condition);
-     * // Generates: SELECT id, email FROM users WHERE active = true AND created > '2023-01-01'
-     * }</pre>
+     * @throws IllegalArgumentException if entityName is null/empty or propNames is null
      */
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
@@ -162,19 +203,33 @@ public class SubQuery extends AbstractCondition {
     /**
      * Constructs a structured subquery with entity class, selected properties, and condition.
      * The entity name is derived from the class's simple name.
-     *
-     * @param entityClass the entity class
-     * @param propNames collection of property names to select
-     * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
      * 
-     * <p>Example:</p>
+     * <p>This constructor provides the strongest type safety by using the entity class.
+     * It's particularly useful in JPA-style applications where entity classes represent tables.</p>
+     * 
+     * <p>Example usage:</p>
      * <pre>{@code
+     * // Type-safe subquery construction
      * SubQuery subQuery = new SubQuery(Product.class, 
      *     Arrays.asList("id", "categoryId"),
      *     new Like("name", "%electronics%")
      * );
      * // Generates: SELECT id, categoryId FROM Product WHERE name LIKE '%electronics%'
+     * 
+     * // With complex conditions
+     * SubQuery activeProducts = new SubQuery(Product.class,
+     *     Arrays.asList("id", "name", "price"),
+     *     new And(
+     *         new Equal("active", true),
+     *         new Between("price", 10, 100)
+     *     )
+     * );
      * }</pre>
+     *
+     * @param entityClass the entity class
+     * @param propNames collection of property names to select
+     * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
+     * @throws IllegalArgumentException if entityClass is null or propNames is null
      */
     public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
@@ -237,6 +292,7 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Gets the list of parameter values from the condition.
+     * These parameters will be bound to the prepared statement when executing the query.
      *
      * @return list of parameters, or empty list if no condition
      */
@@ -247,6 +303,7 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Clears all parameters from the condition.
+     * This is useful for reusing the subquery structure with different parameter values.
      */
     @Override
     public void clearParameters() {
@@ -257,6 +314,14 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Creates a deep copy of this subquery.
+     * The copy includes deep copies of property names and conditions to ensure complete independence.
+     * 
+     * <p>Example usage:</p>
+     * <pre>{@code
+     * SubQuery original = new SubQuery("users", Arrays.asList("id"), new Equal("active", true));
+     * SubQuery copy = original.copy();
+     * // Modifying copy doesn't affect original
+     * }</pre>
      *
      * @param <T> the type of condition to return
      * @return a new SubQuery instance with copied values
@@ -279,12 +344,18 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Converts this subquery to its string representation.
+     * 
+     * <p>For raw SQL subqueries, returns the SQL as-is.
+     * For structured subqueries, generates the SELECT statement with proper formatting.</p>
+     * 
+     * <p>Example output:</p>
+     * <pre>{@code
+     * // Raw SQL: returns the SQL string directly
+     * // Structured: "SELECT id, name FROM users WHERE status = 'active'"
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply
      * @return string representation of the subquery
-     * 
-     * <p>For raw SQL subqueries, returns the SQL as-is.
-     * For structured subqueries, generates the SELECT statement.</p>
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -329,6 +400,8 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Generates the hash code for this subquery.
+     * The hash code is based on the SQL string (for raw queries) or the combination
+     * of entity name, properties, and condition (for structured queries).
      *
      * @return hash code based on sql, entity name, properties, and condition
      */
@@ -343,6 +416,8 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Checks if this subquery is equal to another object.
+     * Two subqueries are equal if they have the same SQL (for raw queries) or the same
+     * entity name, properties, and condition (for structured queries).
      *
      * @param obj the object to compare with
      * @return true if the objects are equal, false otherwise
