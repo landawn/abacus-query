@@ -1,3 +1,7 @@
+## 3.2.1
+
+* Improvements
+
 ## 3.2.0
 
 * Improvements
