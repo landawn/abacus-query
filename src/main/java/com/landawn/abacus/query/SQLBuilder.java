@@ -66,7 +66,7 @@ import com.landawn.abacus.util.u.Optional;
  *   <li>Complex joins, subqueries, and conditions</li>
  * </ul>
  * 
- * <p>The builder must be finalized by calling {@code sql()} or {@code pair()} to generate 
+ * <p>The builder must be finalized by calling {@code sql()} or {@code build()} to generate 
  * the SQL string and release resources.</p>
  * 
  * <p>Example usage:</p>
@@ -5632,7 +5632,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p>This method generates an INSERT statement where map keys represent property names
          * (converted to snake_case) and values are used to generate parameter placeholders.
-         * The actual values can be retrieved using the {@code pair()} method.</p>
+         * The actual values can be retrieved using the {@code build()} method.</p>
          * 
          * <p><b>Example:</b></p>
          * <pre>{@code
@@ -8095,7 +8095,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * // Output: INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
          * 
-         * // With actual values using pair()
+         * // With actual values using build()
          * SP sqlPair = PLC.insert("firstName", "lastName", "email")
          *                 .into("account")
          *                 .values("John", "Doe", "john@example.com")

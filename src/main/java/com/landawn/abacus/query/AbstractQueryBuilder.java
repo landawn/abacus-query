@@ -87,7 +87,7 @@ import com.landawn.abacus.util.stream.Stream;
  *   <li>Complex joins, subqueries, and conditions</li>
  * </ul>
  * 
- * <p>The builder must be finalized by calling {@code sql()} or {@code pair()} to generate 
+ * <p>The builder must be finalized by calling {@code sql()} or {@code build()} to generate 
  * the SQL string and release resources.</p>
  * 
  * <p>Example usage:</p>
@@ -396,7 +396,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
             logger.error("Too many(" + activeStringBuilderCounter.get()
-                    + ") StringBuilder instances are created in SQLBuilder. The method sql()/pair() must be called to release resources and close SQLBuilder");
+                    + ") StringBuilder instances are created in SQLBuilder. The method sql()/build() must be called to release resources and close SQLBuilder");
         }
 
         _sb = Objectory.createStringBuilder();
@@ -3598,7 +3598,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //     * SP sqlPair = PSC.select("*")
     //     *                 .from("account")
     //     *                 .where(CF.eq("status", "ACTIVE"))
-    //     *                 .build();
+    //     *                 .pair();
     //     * // sqlPair.query contains: "SELECT * FROM account WHERE status = ?"
     //     * // sqlPair.parameters contains: ["ACTIVE"]
     //     * }</pre>
