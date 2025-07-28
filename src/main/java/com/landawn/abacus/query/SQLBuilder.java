@@ -47,7 +47,7 @@ import com.landawn.abacus.query.condition.NotInSubQuery;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.util.Array;
-import com.landawn.abacus.util.ClassUtil;
+import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.OperationType;
@@ -798,7 +798,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -2083,7 +2083,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -3371,7 +3371,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -4623,7 +4623,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -5856,7 +5856,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -7130,7 +7130,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -8431,7 +8431,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -9850,7 +9850,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -11108,7 +11108,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -12250,7 +12250,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -13455,7 +13455,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -14739,7 +14739,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -15880,7 +15880,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -17064,7 +17064,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 
@@ -18202,7 +18202,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             instance._op = OperationType.ADD;
             final Optional<?> first = N.firstNonNull(propsList);
 
-            if (first.isPresent() && ClassUtil.isBeanClass(first.get().getClass())) {
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
                 instance.setEntityClass(first.get().getClass());
             }
 

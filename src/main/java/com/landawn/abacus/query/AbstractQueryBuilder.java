@@ -59,6 +59,7 @@ import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.util.Array;
+import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
@@ -435,8 +436,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 entityTableNames = Array.repeat(entityInfo.tableName.get(), 4);
             } else {
                 final String simpleClassName = ClassUtil.getSimpleClassName(entityClass);
-                entityTableNames = new String[] { ClassUtil.toLowerCaseWithUnderscore(simpleClassName), ClassUtil.toUpperCaseWithUnderscore(simpleClassName),
-                        ClassUtil.toCamelCase(simpleClassName), simpleClassName };
+                entityTableNames = new String[] { Beans.toLowerCaseWithUnderscore(simpleClassName), Beans.toUpperCaseWithUnderscore(simpleClassName),
+                        Beans.toCamelCase(simpleClassName), simpleClassName };
             }
 
             classTableNameMap.put(entityClass, entityTableNames);
@@ -562,7 +563,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         if (val == null) {
             synchronized (defaultPropNamesPool) {
-                final Set<String> entityPropNames = N.newLinkedHashSet(ClassUtil.getPropNameList(entityClass));
+                final Set<String> entityPropNames = N.newLinkedHashSet(Beans.getPropNameList(entityClass));
                 final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
                 if (N.notEmpty(subEntityPropNames)) {
@@ -587,7 +588,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     final PropInfo propInfo = entityInfo.getPropInfo(subEntityPropName);
                     subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
 
-                    subEntityPropNameList = N.newLinkedHashSet(ClassUtil.getPropNameList(subEntityClass));
+                    subEntityPropNameList = N.newLinkedHashSet(Beans.getPropNameList(subEntityClass));
                     subEntityPropNameList.removeAll(getSubEntityPropNames(subEntityClass));
 
                     for (final String pn : subEntityPropNameList) {
@@ -624,7 +625,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 for (final String idPropName : QueryUtil.getIdFieldNames(entityClass)) {
                     val[3].remove(idPropName);
-                    val[3].remove(ClassUtil.getPropNameByMethod(ClassUtil.getPropGetMethod(entityClass, idPropName)));
+                    val[3].remove(Beans.getPropNameByMethod(Beans.getPropGetMethod(entityClass, idPropName)));
                 }
 
                 val[0] = ImmutableSet.wrap(val[0]); // for select, including sub entity properties.
@@ -1254,8 +1255,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             for (final Selection selection : _multiSelects) {
                 selectionEntityClass = selection.entityClass();
-                selectionBeanInfo = ClassUtil.isBeanClass(selectionEntityClass) ? ParserUtil.getBeanInfo(selectionEntityClass) : null;
-                selectionPropColumnNameMap = ClassUtil.isBeanClass(selectionEntityClass) ? prop2ColumnNameMap(selectionEntityClass, _namingPolicy) : null;
+                selectionBeanInfo = Beans.isBeanClass(selectionEntityClass) ? ParserUtil.getBeanInfo(selectionEntityClass) : null;
+                selectionPropColumnNameMap = Beans.isBeanClass(selectionEntityClass) ? prop2ColumnNameMap(selectionEntityClass, _namingPolicy) : null;
                 selectionTableAlias = selection.tableAlias();
 
                 selectionClassAlias = selection.classAlias();
@@ -1321,7 +1322,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             _aliasPropColumnNameMap = new HashMap<>();
         }
 
-        if (N.isEmpty(_propColumnNameMap) && ClassUtil.isBeanClass(entityClass)) {
+        if (N.isEmpty(_propColumnNameMap) && Beans.isBeanClass(entityClass)) {
             _propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
         }
 
@@ -4091,7 +4092,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected void setEntityClass(final Class<?> entityClass) {
         _entityClass = entityClass;
 
-        if (ClassUtil.isBeanClass(entityClass)) {
+        if (Beans.isBeanClass(entityClass)) {
             _entityInfo = ParserUtil.getBeanInfo(entityClass);
             _propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
         } else {
@@ -4526,7 +4527,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return word;
         }
         if (namingPolicy == NamingPolicy.LOWER_CAMEL_CASE) {
-            return ClassUtil.formalizePropName(word);
+            return Beans.formalizePropName(word);
         }
         return namingPolicy.convert(word);
     }
