@@ -5,7 +5,7 @@
 
 	<groupId>com.landawn</groupId>
 	<artifactId>abacus-query</artifactId>
-	<version>3.2.3</version>
+	<version>3.2.5</version>
 	<packaging>jar</packaging>
 	<name>abacus-query</name>
 	<description>Abacus Data Access and Analysis</description>
@@ -40,6 +40,7 @@
 		<junit.platform.version>1.10.1</junit.platform.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<lombok.version>1.18.38</lombok.version>
 	</properties>
 
 	<dependencies>
@@ -53,7 +54,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.36</version>
+			<version>${lombok.version}</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -112,7 +113,7 @@
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
-				</configuration>
+				</configuration> 
 			</plugin>
 
 			<plugin>

@@ -1510,7 +1510,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -1614,7 +1614,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -2793,7 +2793,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -2897,7 +2897,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -4091,7 +4091,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -4198,7 +4198,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -5259,7 +5259,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -5356,7 +5356,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -6594,7 +6594,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -6700,7 +6700,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -7801,7 +7801,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -7896,7 +7896,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -9383,7 +9383,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -9441,7 +9441,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -10589,7 +10589,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -10691,7 +10691,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -11762,7 +11762,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -11861,7 +11861,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -12944,7 +12944,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -13043,7 +13043,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -14197,7 +14197,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -14312,7 +14312,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -15401,7 +15401,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -15481,7 +15481,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -16582,7 +16582,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -16682,7 +16682,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -17719,7 +17719,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -17813,7 +17813,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
@@ -18901,7 +18901,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return select(multiSelects);
         }
@@ -18999,7 +18999,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClassA, SELECTION_PART_MSG);
 
             final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                    new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+                    new Selection(entityClassB, tableAliasB, classAliasB, (Collection<String>) null, false, excludedPropNamesB));
 
             return selectFrom(multiSelects);
         }
