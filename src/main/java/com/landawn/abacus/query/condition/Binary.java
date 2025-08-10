@@ -17,6 +17,7 @@ package com.landawn.abacus.query.condition;
 import java.util.List;
 
 import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
@@ -185,7 +186,7 @@ public class Binary extends AbstractCondition {
         if (propValue instanceof Condition) {
             return ((Condition) propValue).getParameters();
         } else {
-            return N.asList(propValue);
+            return ImmutableList.of(propValue);
         }
     }
 

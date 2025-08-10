@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.Joiner;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -161,7 +162,7 @@ public class In extends AbstractCondition {
      */
     @Override
     public List<Object> getParameters() {
-        return values == null ? N.emptyList() : (List<Object>) values;
+        return values == null ? N.emptyList() : ImmutableList.wrap((List<Object>) values);
     }
 
     /**

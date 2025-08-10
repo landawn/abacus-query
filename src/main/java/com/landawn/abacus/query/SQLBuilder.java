@@ -6847,10 +6847,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      */
     public static class PAC extends SQLBuilder {
 
+        /**
+         * Constructs a new PAC instance with UPPER_CASE_WITH_UNDERSCORE naming policy and parameterized SQL policy.
+         * 
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
+         */
         PAC() {
             super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
+        /**
+         * Creates a new instance of PAC.
+         * 
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * 
+         * @return a new PAC instance
+         */
         protected static PAC createInstance() {
             return new PAC();
         }
@@ -8054,10 +8068,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      */
     public static class PLC extends SQLBuilder {
 
+        /**
+         * Constructs a new PLC instance with lowerCamelCase naming policy and parameterized SQL policy.
+         * 
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
+         */
         PLC() {
             super(NamingPolicy.LOWER_CAMEL_CASE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
+        /**
+         * Creates a new instance of PLC.
+         * 
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * 
+         * @return a new PLC instance
+         */
         protected static PLC createInstance() {
             return new PLC();
         }
@@ -10813,7 +10841,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class NSC extends SQLBuilder {
 
         /**
-         * Creates a new instance of NSC builder with snake_case naming policy and named SQL generation.
+         * Constructs a new NSC instance with snake_case naming policy and named SQL policy.
+         * 
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         NSC() {
             super(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, SQLPolicy.NAMED_SQL);
@@ -10830,9 +10861,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         }
 
         /**
-         * Creates a new instance of NSC builder.
+         * Creates a new instance of NSC.
          * 
-         * @return a new NSC builder instance
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * 
+         * @return a new NSC instance
          */
         protected static NSC createInstance() {
             return new NSC();
@@ -11960,8 +11994,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class NAC extends SQLBuilder {
 
         /**
-         * Constructs a new NAC instance with UPPER_CASE_WITH_UNDERSCORE naming policy
-         * and named SQL parameter style.
+         * Constructs a new NAC instance with UPPER_CASE_WITH_UNDERSCORE naming policy and named SQL policy.
+         * 
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         NAC() {
             super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.NAMED_SQL);
@@ -11978,7 +12014,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         }
 
         /**
-         * Creates a new instance of NAC builder.
+         * Creates a new instance of NAC.
+         * 
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
          * 
          * @return a new NAC instance
          */

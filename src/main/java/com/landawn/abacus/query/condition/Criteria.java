@@ -23,6 +23,7 @@ import java.util.Set;
 import com.landawn.abacus.query.SK;
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
@@ -442,7 +443,7 @@ public class Criteria extends AbstractCondition {
              *
              * if (limit != null) { parameters.addAll(limit.getParameters()); }
              */
-            return parameters;
+            return ImmutableList.wrap(parameters);
         } else {
             return N.emptyList();
         }

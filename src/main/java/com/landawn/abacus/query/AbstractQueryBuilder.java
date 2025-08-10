@@ -126,6 +126,8 @@ import com.landawn.abacus.util.stream.Stream;
  * @see {@link com.landawn.abacus.annotation.Transient}
  * @see {@link com.landawn.abacus.annotation.Table}
  * @see {@link com.landawn.abacus.annotation.Column}
+ * 
+ * @param <This> the concrete implementation type that extends this builder for method chaining
  */
 @SuppressWarnings("deprecation")
 public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<This>> { // NOSONAR
@@ -1179,10 +1181,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Sets the FROM clause with a custom table expression or clause.
+     * 
+     * <p>This method allows specifying additional FROM clause expressions beyond just a table name.</p>
      *
-     * @param tableName
-     * @param fromCause
-     * @return
+     * @param tableName the name of the table to select from
+     * @param fromCause additional FROM clause expression or conditions
+     * @return this builder instance for method chaining
      */
     protected This from(final String tableName, final String fromCause) {
         appendOperationBeforeFrom(tableName);
@@ -4056,8 +4061,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    }
 
     /**
+     * Initializes the query builder with the appropriate SQL operation type and parameters.
+     * 
+     * <p>This method sets up the builder's internal state based on the operation type and whether
+     * this is an update operation that affects row data.</p>
      *
-     * @param setForUpdate
+     * @param setForUpdate whether this operation will update data (affects entity field filtering)
      */
     protected void init(final boolean setForUpdate) {
         // Note: any change, please take a look at: parse(final Class<?> entityClass, final Condition cond) first.
@@ -4136,8 +4145,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets the parameter for named SQL.
      *
-     * @param propName
-     * @param propValue
+     * @param propName the property or parameter name for the named SQL placeholder
+     * @param propValue the value to bind to the named parameter
      */
     protected void setParameterForNamedSQL(final String propName, final Object propValue) {
         if (CF.QME.equals(propValue)) {
@@ -4154,8 +4163,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets the parameter for ibatis named SQL.
      *
-     * @param propName
-     * @param propValue
+     * @param propName the property or parameter name for the ibatis named SQL placeholder
+     * @param propValue the value to bind to the ibatis named parameter
      */
     protected void setParameterForIbatisNamedSQL(final String propName, final Object propValue) {
         if (CF.QME.equals(propValue)) {
@@ -4174,10 +4183,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets the parameter.
+     * Sets the parameter based on the current SQL policy.
      *
-     * @param propName
-     * @param propValue
+     * @param propName the property or parameter name 
+     * @param propValue the value to bind to the parameter
      */
     protected void setParameter(final String propName, final Object propValue) {
         switch (_sqlPolicy) {
@@ -4211,9 +4220,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Append insert props.
+     * Appends the column names and values for an INSERT operation.
      *
-     * @param props
+     * @param props a map of property names to values to be inserted
      */
     protected void appendInsertProps(final Map<String, Object> props) {
         switch (_sqlPolicy) {
@@ -4503,10 +4512,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Checks if is subquery.
+     * Checks if the provided property or column names represent a subquery.
      *
-     * @param propOrColumnNames
-     * @return true, if is subquery
+     * @param propOrColumnNames array of property or column names to check
+     * @return true if any of the names represents a subquery, false otherwise
      */
     protected static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {

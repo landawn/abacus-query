@@ -136,6 +136,8 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      */
     @Override
     public And and(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
+
         return new And(this, condition);
     }
 
@@ -161,6 +163,8 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      */
     @Override
     public Or or(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
+
         return new Or(this, condition);
     }
 

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
@@ -241,7 +242,7 @@ public class Between extends AbstractCondition {
             parameters.add(maxValue);
         }
 
-        return parameters;
+        return ImmutableList.wrap(parameters);
     }
 
     /**
@@ -259,13 +260,13 @@ public class Between extends AbstractCondition {
     @Override
     public void clearParameters() {
         if (minValue instanceof Condition) {
-            ((Condition) minValue).getParameters().clear();
+            ((Condition) minValue).clearParameters();
         } else {
             minValue = null;
         }
 
         if (maxValue instanceof Condition) {
-            ((Condition) maxValue).getParameters().clear();
+            ((Condition) maxValue).clearParameters();
         } else {
             maxValue = null;
         }

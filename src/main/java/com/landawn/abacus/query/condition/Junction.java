@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
@@ -354,7 +355,7 @@ public class Junction extends AbstractCondition {
             parameters.addAll(condition.getParameters());
         }
 
-        return parameters;
+        return ImmutableList.wrap(parameters);
     }
 
     /**
