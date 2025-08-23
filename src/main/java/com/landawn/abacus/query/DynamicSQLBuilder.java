@@ -481,6 +481,7 @@ public class DynamicSQLBuilder {
         if (moreParts != null) {
             select.sb.append(moreParts);
             Objectory.recycle(moreParts);
+            moreParts = null;
         }
 
         final String sql = select.sb.toString();

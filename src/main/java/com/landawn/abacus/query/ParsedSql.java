@@ -106,7 +106,10 @@ public final class ParsedSql {
         }
 
         final List<String> namedParameterList = new ArrayList<>();
-        int type = 0; // 0: no parameter, 1: named parameter, 2: iBatis/MyBatis style parameter 
+        int type = 0; // Use bit flags: 1=question mark, 2=named parameter, 4=iBatis parameter
+        final int QUESTION_MARK_TYPE = 1;
+        final int NAMED_PARAMETER_TYPE = 2;
+        final int IBATIS_PARAMETER_TYPE = 4;
 
         if (isOpSqlPrefix) {
             final StringBuilder sb = Objectory.createStringBuilder();
@@ -114,22 +117,19 @@ public final class ParsedSql {
             for (String word : words) {
                 if (word.equals(SK.QUESTION_MARK)) {
                     parameterCount++;
-
-                    type ^= 1;
-                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER)) {
+                    type |= QUESTION_MARK_TYPE;
+                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() >= 3) {
                     namedParameterList.add(word.substring(2, word.length() - 1));
 
                     word = SK.QUESTION_MARK;
                     parameterCount++;
-
-                    type ^= 4;
+                    type |= IBATIS_PARAMETER_TYPE;
                 } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
                     namedParameterList.add(word.substring(1));
 
                     word = SK.QUESTION_MARK;
                     parameterCount++;
-
-                    type ^= 2;
+                    type |= NAMED_PARAMETER_TYPE;
                 }
 
                 if (Integer.bitCount(type) > 1) {
@@ -176,12 +176,17 @@ public final class ParsedSql {
         N.checkArgNotEmpty(sql, "sql");
 
         ParsedSql result = null;
-        final PoolableWrapper<ParsedSql> w = pool.get(sql);
+        PoolableWrapper<ParsedSql> w = pool.get(sql);
 
         if ((w == null) || (w.value() == null)) {
             synchronized (pool) {
-                result = new ParsedSql(sql);
-                pool.put(sql, PoolableWrapper.of(result, LIVE_TIME, MAX_IDLE_TIME));
+                w = pool.get(sql);
+                if ((w == null) || (w.value() == null)) {
+                    result = new ParsedSql(sql);
+                    pool.put(sql, PoolableWrapper.of(result, LIVE_TIME, MAX_IDLE_TIME));
+                } else {
+                    result = w.value();
+                }
             }
         } else {
             result = w.value();
@@ -329,7 +334,7 @@ public final class ParsedSql {
 
                     countOfParameter++;
                     word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
-                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER)) {
+                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() >= 3) {
                     couchbaseNamedParameterList.add(word.substring(2, word.length() - 1));
 
                     countOfParameter++;
