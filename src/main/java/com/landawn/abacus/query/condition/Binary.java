@@ -284,8 +284,8 @@ public class Binary extends AbstractCondition {
     @Override
     public int hashCode() {
         int h = 17;
-        h = (h * 31) + propName.hashCode();
-        h = (h * 31) + operator.hashCode();
+        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         return (h * 31) + ((propValue == null) ? 0 : propValue.hashCode());
     }
 
