@@ -414,7 +414,7 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return true if the object is a Join with the same operator, entities, and condition
+     * @return {@code true} if the object is a Join with the same operator, entities, and condition
      */
     @Override
     public boolean equals(final Object obj) {

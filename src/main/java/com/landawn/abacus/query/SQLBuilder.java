@@ -9565,7 +9565,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Indicates whether this builder generates named SQL parameters.
          * 
-         * <p>This implementation always returns true as NSB generates SQL with named parameters
+         * <p>This implementation always returns {@code true} as NSB generates SQL with named parameters
          * (e.g., :paramName) instead of positional parameters (?).</p>
          * 
          * @return true, indicating this builder uses named SQL parameters
@@ -10853,7 +10853,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Checks if this builder generates named SQL (with :paramName syntax).
          * 
-         * @return always returns true for NSC builder
+         * @return always returns {@code true} for NSC builder
          */
         @Override
         protected boolean isNamedSql() {

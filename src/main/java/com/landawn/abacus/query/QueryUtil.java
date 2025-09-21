@@ -452,7 +452,7 @@ public final class QueryUtil {
      * @param columnFields set of field names explicitly included as columns (from @Table annotation)
      * @param nonColumnFields set of field names explicitly excluded as columns (from @Table annotation)
      * @param propInfo the property information to check
-     * @return true if the property should not be mapped to a database column
+     * @return {@code true} if the property should not be mapped to a database column
      */
     public static boolean isNotColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
         return propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
@@ -466,7 +466,7 @@ public final class QueryUtil {
      * Fake IDs are used internally when entities have no defined ID fields.
      *
      * @param idPropNames the list of ID property names to check
-     * @return true if this is a fake ID
+     * @return {@code true} if this is a fake ID
      * @deprecated for internal only.
      */
     @Deprecated

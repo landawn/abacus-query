@@ -17,7 +17,7 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents an XOR (exclusive OR) condition in SQL queries.
  * 
- * <p>The XOR operator returns true when exactly one of the two operands is true,
+ * <p>The XOR operator returns {@code true} when exactly one of the two operands is true,
  * but not both. It's equivalent to (A AND NOT B) OR (NOT A AND B).</p>
  * 
  * <p>Note: XOR support varies by database. MySQL supports XOR natively, while

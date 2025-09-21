@@ -383,7 +383,7 @@ public final class SQLMapper {
     /**
      * Checks if this mapper contains no SQL definitions.
      *
-     * @return true if the mapper contains no SQL definitions, false otherwise
+     * @return {@code true} if the mapper contains no SQL definitions, {@code false} otherwise
      */
     public boolean isEmpty() {
         return sqlMap.isEmpty();
@@ -405,7 +405,7 @@ public final class SQLMapper {
      * Two SQLMappers are considered equal if they contain the same SQL definitions.
      *
      * @param obj the object to compare with
-     * @return true if the objects are equal, false otherwise
+     * @return {@code true} if the objects are equal, {@code false} otherwise
      */
     @Override
     public boolean equals(final Object obj) {

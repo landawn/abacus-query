@@ -59,7 +59,7 @@ public enum SortDirection {
      * }
      * }</pre>
      *
-     * @return true if this sort direction is ASC, false if it is DESC
+     * @return {@code true} if this sort direction is ASC, {@code false} if it is DESC
      */
     public boolean isAscending() {
         return this == SortDirection.ASC;

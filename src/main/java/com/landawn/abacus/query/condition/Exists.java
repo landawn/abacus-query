@@ -16,7 +16,7 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents the SQL EXISTS operator for use with subqueries.
- * The EXISTS operator returns true if the subquery returns at least one row, false otherwise.
+ * The EXISTS operator returns {@code true} if the subquery returns at least one row, {@code false} otherwise.
  * 
  * <p>EXISTS is particularly useful for checking the existence of related records without
  * actually retrieving them. It's often more efficient than using IN with large result sets
@@ -24,7 +24,7 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>Key characteristics:</p>
  * <ul>
- *   <li>Returns true if subquery returns any rows, false if no rows</li>
+ *   <li>Returns true if subquery returns any rows, {@code false} if no rows</li>
  *   <li>More efficient than IN for large datasets - stops at first match</li>
  *   <li>The SELECT clause in the subquery doesn't matter (SELECT 1, SELECT *, etc.)</li>
  *   <li>Commonly used with correlated subqueries</li>

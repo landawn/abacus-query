@@ -245,7 +245,7 @@ public class NotInSubQuery extends AbstractCondition {
      * operator, and subquery.
      * 
      * @param obj the object to compare with
-     * @return true if the objects are equal, false otherwise
+     * @return {@code true} if the objects are equal, {@code false} otherwise
      */
     @Override
     public boolean equals(final Object obj) {

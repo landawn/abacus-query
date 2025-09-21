@@ -16,7 +16,7 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents the SQL NOT EXISTS operator for use with subqueries.
- * The NOT EXISTS operator returns true if the subquery returns no rows, false otherwise.
+ * The NOT EXISTS operator returns {@code true} if the subquery returns no rows, {@code false} otherwise.
  *
  * <p>NOT EXISTS is particularly useful for checking the absence of related records without
  * retrieving them. It can be more efficient than using NOT IN with large result sets

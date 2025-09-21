@@ -16,7 +16,7 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents the SQL ALL operator for use with subqueries.
- * The ALL operator returns true if the comparison is true for ALL values returned by the subquery.
+ * The ALL operator returns {@code true} if the comparison is true for ALL values returned by the subquery.
  * 
  * <p>ALL is used with comparison operators (=, !=, >, <, >=, <=) and a subquery.
  * The condition is satisfied only if the comparison is true for every value from the subquery.

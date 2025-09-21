@@ -413,7 +413,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Checks if this SQL builder generates named SQL (with named parameters).
      * 
-     * @return true if this builder generates named SQL, false otherwise
+     * @return {@code true} if this builder generates named SQL, {@code false} otherwise
      */
     protected boolean isNamedSql() {
         return false;
@@ -539,7 +539,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * A value is considered default if it's null or a number equal to 0.
      *
      * @param propValue the property value to check
-     * @return true if the value is null or a number equal to 0, false otherwise
+     * @return {@code true} if the value is null or a number equal to 0, {@code false} otherwise
      */
     @Internal
     protected static boolean isDefaultIdPropValue(final Object propValue) {
@@ -4515,7 +4515,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Checks if the provided property or column names represent a subquery.
      *
      * @param propOrColumnNames array of property or column names to check
-     * @return true if any of the names represents a subquery, false otherwise
+     * @return {@code true} if any of the names represents a subquery, {@code false} otherwise
      */
     protected static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
@@ -4813,7 +4813,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
          * Two SP objects are equal if they have the same SQL string and parameters.
          *
          * @param obj the reference object with which to compare
-         * @return true if this object is the same as the obj argument; false otherwise
+         * @return {@code true} if this object is the same as the obj argument; false otherwise
          */
         @Override
         public boolean equals(final Object obj) {

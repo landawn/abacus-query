@@ -17,7 +17,7 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents a SOME comparison operator used with subqueries in SQL.
  * 
- * <p>The SOME operator returns true if the comparison is true for at least one
+ * <p>The SOME operator returns {@code true} if the comparison is true for at least one
  * value returned by the subquery. It's functionally equivalent to the ANY operator
  * in SQL. The operator is used with a comparison operator (=, !=, >, <, >=, <=)
  * to compare a value against a set of values from a subquery.</p>
@@ -33,7 +33,7 @@ package com.landawn.abacus.query.condition;
  * <p>SOME vs ALL vs ANY:</p>
  * <ul>
  *   <li>SOME and ANY are equivalent - both return true if condition matches any value</li>
- *   <li>ALL returns true only if condition matches all values</li>
+ *   <li>ALL returns {@code true} only if condition matches all values</li>
  *   <li>SOME/ANY are more permissive than ALL</li>
  * </ul>
  * 

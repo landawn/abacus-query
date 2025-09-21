@@ -123,7 +123,7 @@ public final class CriteriaUtil {
      * }</pre>
      * 
      * @param operator the operator to check
-     * @return true if the operator is a clause operator, false otherwise
+     * @return {@code true} if the operator is a clause operator, {@code false} otherwise
      */
     public static boolean isClause(final Operator operator) {
         return operator != null && clauseOperators.contains(operator);
@@ -142,7 +142,7 @@ public final class CriteriaUtil {
      * }</pre>
      * 
      * @param operator the operator string to check
-     * @return true if the operator string represents a clause operator, false otherwise
+     * @return {@code true} if the operator string represents a clause operator, {@code false} otherwise
      */
     public static boolean isClause(final String operator) {
         return isClause(Operator.getOperator(operator));
@@ -165,7 +165,7 @@ public final class CriteriaUtil {
      * }</pre>
      * 
      * @param condition the condition to check
-     * @return true if the condition has a clause operator, false if null or not a clause
+     * @return {@code true} if the condition has a clause operator, {@code false} if null or not a clause
      */
     public static boolean isClause(final Condition condition) {
         //        if (condition == null) {

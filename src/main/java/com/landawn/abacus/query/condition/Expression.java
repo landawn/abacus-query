@@ -1655,7 +1655,7 @@ public class Expression extends AbstractCondition {
      * Two expressions are equal if they have the same literal string.
      *
      * @param obj the object to compare with
-     * @return true if the objects are equal
+     * @return {@code true} if the objects are equal
      */
     @Override
     public boolean equals(final Object obj) {

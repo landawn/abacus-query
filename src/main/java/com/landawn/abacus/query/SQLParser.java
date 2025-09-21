@@ -630,7 +630,7 @@ public final class SQLParser {
      * @param len the length of the SQL string
      * @param index the current position in the string
      * @param ch the character to check
-     * @return true if the character is a separator in this context, false otherwise
+     * @return {@code true} if the character is a separator in this context, {@code false} otherwise
      */
     public static boolean isSeparator(final String str, final int len, final int index, final char ch) {
         // for Ibatis/Mybatis
@@ -660,7 +660,7 @@ public final class SQLParser {
      * @param words the list of parsed SQL words/tokens
      * @param len the total length of the words list
      * @param index the index of the word to check
-     * @return true if the word at the specified index is a function name, false otherwise
+     * @return {@code true} if the word at the specified index is a function name, {@code false} otherwise
      */
     public static boolean isFunctionName(final List<String> words, final int len, final int index) {
         //    return (i < len - 1 && words.get(i + 1).charAt(0) == SK._PARENTHESES_L)

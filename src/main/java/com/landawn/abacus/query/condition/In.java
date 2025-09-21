@@ -226,7 +226,7 @@ public class In extends AbstractCondition {
      * Checks if this IN condition is equal to another object.
      *
      * @param obj the object to compare with
-     * @return true if the object is an IN condition with the same property name, operator, and values
+     * @return {@code true} if the object is an IN condition with the same property name, operator, and values
      */
     @Override
     public boolean equals(final Object obj) {

@@ -18,7 +18,7 @@ package com.landawn.abacus.query.condition;
  * Represents a NOT LIKE condition in SQL queries.
  * This condition is used to search for values that do NOT match a specified pattern.
  * 
- * <p>The NOT LIKE operator is the opposite of the LIKE operator. It returns true when
+ * <p>The NOT LIKE operator is the opposite of the LIKE operator. It returns {@code true} when
  * the value does not match the specified pattern. This is particularly useful for
  * excluding records based on pattern matching.</p>
  * 

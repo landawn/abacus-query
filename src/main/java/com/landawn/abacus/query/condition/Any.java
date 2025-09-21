@@ -16,7 +16,7 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents the SQL ANY operator for use with subqueries.
- * The ANY operator returns true if the comparison is true for ANY of the values returned by the subquery.
+ * The ANY operator returns {@code true} if the comparison is true for ANY of the values returned by the subquery.
  * 
  * <p>ANY is typically used with comparison operators (=, !=, >, <, >=, <=) and a subquery.
  * The condition is satisfied if the comparison is true for at least one value from the subquery.

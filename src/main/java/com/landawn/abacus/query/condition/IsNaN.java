@@ -36,7 +36,7 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * <p>Important properties of NaN:
  * <ul>
  *   <li>NaN is not equal to anything, including itself (NaN == NaN is false)</li>
- *   <li>Any comparison with NaN returns false (except != which returns true)</li>
+ *   <li>Any comparison with NaN returns {@code false} (except != which returns true)</li>
  *   <li>NaN propagates through calculations (any operation with NaN returns NaN)</li>
  *   <li>Must use IS NAN or IS NOT NAN to check for NaN values</li>
  * </ul>

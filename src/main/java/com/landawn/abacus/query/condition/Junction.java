@@ -506,7 +506,7 @@ public class Junction extends AbstractCondition {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return true if the object is a Junction with the same operator and conditions
+     * @return {@code true} if the object is a Junction with the same operator and conditions
      */
     @Override
     public boolean equals(final Object obj) {

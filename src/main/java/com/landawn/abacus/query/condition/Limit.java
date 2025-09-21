@@ -378,7 +378,7 @@ public class Limit extends AbstractCondition {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return true if the object is a Limit with the same expr or count/offset values
+     * @return {@code true} if the object is a Limit with the same expr or count/offset values
      */
     @Override
     public boolean equals(final Object obj) {
