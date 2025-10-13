@@ -388,6 +388,10 @@ public enum Operator {
      * @return the corresponding Operator enum value, or null if not found
      */
     public static synchronized Operator getOperator(final String name) {
+        if (name == null) {
+            return null;
+        }
+
         if (operatorMap.isEmpty()) {
             final Operator[] values = Operator.values();
 

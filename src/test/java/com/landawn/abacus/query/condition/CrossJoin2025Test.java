@@ -97,7 +97,8 @@ public class CrossJoin2025Test extends TestBase {
         CrossJoin join = new CrossJoin("products", new Equal("status", "available"));
         assertFalse(join.getParameters().isEmpty());
         join.clearParameters();
-        assertTrue(join.getParameters().isEmpty());
+        List<Object> params = join.getParameters();
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test

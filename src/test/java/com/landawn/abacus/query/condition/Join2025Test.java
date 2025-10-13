@@ -92,7 +92,8 @@ public class Join2025Test extends TestBase {
     public void testClearParameters() {
         Join join = new Join("orders o", new Equal("status", "pending"));
         join.clearParameters();
-        assertTrue(join.getParameters().isEmpty());
+        List<Object> params = join.getParameters();
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test

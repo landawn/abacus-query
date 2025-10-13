@@ -98,10 +98,10 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testAddVarargs() {
         Criteria criteria = new Criteria();
-        Condition cond1 = ConditionFactory.equal("name", "John");
-        Condition cond2 = ConditionFactory.equal("age", 30);
+        Condition where1 = new Where(ConditionFactory.equal("name", "John"));
+        Condition orderBy = new OrderBy("age", SortDirection.ASC);
 
-        CriteriaUtil.add(criteria, cond1, cond2);
+        CriteriaUtil.add(criteria, where1, orderBy);
 
         assertFalse(criteria.getConditions().isEmpty());
     }
@@ -109,10 +109,10 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testAddCollection() {
         Criteria criteria = new Criteria();
-        Condition cond1 = ConditionFactory.equal("name", "John");
-        Condition cond2 = ConditionFactory.equal("age", 30);
+        Condition where = new Where(ConditionFactory.equal("name", "John"));
+        Condition groupBy = new GroupBy("department");
 
-        CriteriaUtil.add(criteria, Arrays.asList(cond1, cond2));
+        CriteriaUtil.add(criteria, Arrays.asList(where, groupBy));
 
         assertFalse(criteria.getConditions().isEmpty());
     }
@@ -196,8 +196,8 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testAddMultipleConditionsOfDifferentTypes() {
         Criteria criteria = new Criteria();
-        Condition whereCondition = ConditionFactory.equal("name", "John");
-        Condition havingCondition = ConditionFactory.expr("COUNT(*) > 5");
+        Condition whereCondition = new Where(ConditionFactory.equal("name", "John"));
+        Condition havingCondition = new Having(ConditionFactory.expr("COUNT(*) > 5"));
 
         CriteriaUtil.add(criteria, whereCondition, havingCondition);
 
@@ -253,7 +253,7 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testAddSingleCondition() {
         Criteria criteria = new Criteria();
-        Condition condition = ConditionFactory.equal("status", "active");
+        Condition condition = new Where(ConditionFactory.equal("status", "active"));
 
         CriteriaUtil.add(criteria, condition);
 

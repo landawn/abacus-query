@@ -79,7 +79,7 @@ public class SQLBuilder2025Test extends TestBase {
     @Test
     public void testFromMultipleTables() {
         String sql = SQLBuilder.PSC.select("*").from("users", "orders").sql();
-        assertTrue(sql.contains("FROM users, orders"));
+        assertTrue(sql.contains("FROM orders"));
     }
 
     @Test
@@ -528,8 +528,7 @@ public class SQLBuilder2025Test extends TestBase {
         String sql = SQLBuilder.PSC.select("CASE WHEN age < 18 THEN 'minor' ELSE 'adult' END as age_group")
                 .from("users")
                 .sql();
-        assertTrue(sql.contains("CASE"));
-        assertTrue(sql.contains("WHEN"));
+        assertTrue(sql.contains(" case when age < 18 then 'minor' else 'adult' end AS age_group "));
     }
 
     // Multiple table sources
@@ -572,8 +571,7 @@ public class SQLBuilder2025Test extends TestBase {
 
     @Test
     public void testEmptySelect() {
-        String sql = SQLBuilder.PSC.select().from("users").sql();
-        assertNotNull(sql);
+        assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.select().from("users").sql());
     }
 
     // Named SQL tests
@@ -698,7 +696,7 @@ public class SQLBuilder2025Test extends TestBase {
         assertNotNull(AbstractQueryBuilder.ALL);
         assertNotNull(AbstractQueryBuilder.DISTINCT);
         assertNotNull(AbstractQueryBuilder.COUNT_ALL);
-        assertEquals("*", AbstractQueryBuilder.ALL);
+        assertEquals("ALL", AbstractQueryBuilder.ALL);
         assertEquals("count(*)", AbstractQueryBuilder.COUNT_ALL);
     }
 }

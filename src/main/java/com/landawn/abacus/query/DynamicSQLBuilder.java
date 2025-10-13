@@ -617,7 +617,7 @@ public class DynamicSQLBuilder {
                 sb.append("SELECT ");
             }
 
-            sb.append(Strings.joinEntries(columnsAndAliasMap, " AS ", ", "));
+            sb.append(Strings.joinEntries(columnsAndAliasMap, ", ", " AS "));
 
             return this;
         }

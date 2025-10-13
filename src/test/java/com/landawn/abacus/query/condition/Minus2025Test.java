@@ -48,7 +48,7 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = new SubQuery("SELECT product_id FROM sales WHERE region = ?", "WEST");
+        SubQuery subQuery = new SubQuery("sales", List.of("product_id"), new Equal("region", "WEST"));
         Minus minus = new Minus(subQuery);
         List<Object> params = minus.getParameters();
         assertEquals(1, (int)params.size());
@@ -57,11 +57,12 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = new SubQuery("SELECT employee_id FROM project_assignments WHERE active = ?", "true");
+        SubQuery subQuery = new SubQuery("project_assignments", List.of("employee_id"), new Equal("active", "true"));
         Minus minus = new Minus(subQuery);
         assertFalse(minus.getParameters().isEmpty());
         minus.clearParameters();
-        assertTrue(minus.getParameters().isEmpty());
+        List<Object> params = minus.getParameters();
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test
@@ -139,7 +140,7 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testFindUnassignedEmployees() {
-        SubQuery assignedEmployees = new SubQuery("SELECT DISTINCT employee_id FROM project_assignments WHERE status = ?", "ACTIVE");
+        SubQuery assignedEmployees = new SubQuery("project_assignments", List.of("employee_id"), new Equal("status", "ACTIVE"));
         Minus minus = new Minus(assignedEmployees);
         assertEquals(1, (int)minus.getParameters().size());
     }

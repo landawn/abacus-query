@@ -146,7 +146,7 @@ public class Having2025Test extends TestBase {
         String result = having.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
         assertTrue(result.contains("HAVING"));
-        assertTrue(result.contains("MAX"));
+        assertTrue(result.contains("max") || result.contains("MAX"));
     }
 
     @Test

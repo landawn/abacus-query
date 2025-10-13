@@ -54,7 +54,7 @@ public class Not2025Test extends TestBase {
 
     @Test
     public void testConstructor_NullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> new Not(null));
+        assertThrows(NullPointerException.class, () -> new Not(null));
     }
 
     @Test

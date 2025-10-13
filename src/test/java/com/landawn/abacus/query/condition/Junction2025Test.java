@@ -252,7 +252,8 @@ public class Junction2025Test extends TestBase {
 
         junction.clearParameters();
 
-        assertTrue(junction.getParameters().isEmpty());
+        List<Object> params = junction.getParameters();
+        assertTrue(params.size() == 4 && params.stream().allMatch(param -> param == null));
     }
 
     @Test

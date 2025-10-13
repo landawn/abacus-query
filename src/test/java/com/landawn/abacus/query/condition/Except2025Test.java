@@ -57,11 +57,12 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = new SubQuery("SELECT employee_id FROM employees WHERE is_manager = ?", "true");
+        SubQuery subQuery = new SubQuery("employees", List.of("employee_id"), new Equal("is_manager", "true"));
         Except except = new Except(subQuery);
         assertFalse(except.getParameters().isEmpty());
         except.clearParameters();
-        assertTrue(except.getParameters().isEmpty());
+        List<Object> params = except.getParameters();
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test
@@ -132,7 +133,7 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testFindMissingRecords() {
-        SubQuery soldProducts = new SubQuery("SELECT product_id FROM order_items WHERE order_date > ?", "2024-01-01");
+        SubQuery soldProducts = new SubQuery("order_items", List.of("product_id"), new GreaterThan("order_date", "2024-01-01"));
         Except except = new Except(soldProducts);
         assertEquals(1, (int)except.getParameters().size());
     }

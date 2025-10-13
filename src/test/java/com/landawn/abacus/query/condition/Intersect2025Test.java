@@ -57,11 +57,12 @@ public class Intersect2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = new SubQuery("SELECT user_id FROM activity WHERE last_login > ?", "2024-01-01");
+        SubQuery subQuery = new SubQuery("activity", List.of("user_id"), new GreaterThan("last_login", "2024-01-01"));
         Intersect intersect = new Intersect(subQuery);
         assertFalse(intersect.getParameters().isEmpty());
         intersect.clearParameters();
-        assertTrue(intersect.getParameters().isEmpty());
+        List<Object> params = intersect.getParameters();
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test

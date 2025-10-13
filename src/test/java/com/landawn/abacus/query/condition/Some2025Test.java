@@ -94,7 +94,7 @@ public class Some2025Test extends TestBase {
 
         condition.clearParameters();
         List<Object> params = condition.getParameters();
-        assertTrue(params.isEmpty());
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test
@@ -298,6 +298,7 @@ public class Some2025Test extends TestBase {
 
         copy.clearParameters();
         assertEquals(1, (int)original.getParameters().size());
-        assertTrue(copy.getParameters().isEmpty());
+        List<Object> copyParams = copy.getParameters();
+        assertTrue(copyParams.size() == 1 && copyParams.stream().allMatch(param -> param == null));
     }
 }

@@ -94,7 +94,7 @@ public class All2025Test extends TestBase {
 
         condition.clearParameters();
         List<Object> params = condition.getParameters();
-        assertTrue(params.isEmpty());
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test

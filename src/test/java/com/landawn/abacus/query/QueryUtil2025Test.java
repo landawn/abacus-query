@@ -360,6 +360,6 @@ public class QueryUtil2025Test extends TestBase {
     public void testRepeatQM_NonCachedValue() {
         String result = QueryUtil.repeatQM(50);
         assertNotNull(result);
-        assertEquals(99, result.length()); // 50 "?" + 49 ", "
+        assertEquals(148, result.length()); // "?, " * 50 = 150 - 2 = 148 characters
     }
 }

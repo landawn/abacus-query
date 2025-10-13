@@ -97,7 +97,8 @@ public class NaturalJoin2025Test extends TestBase {
         NaturalJoin join = new NaturalJoin("orders", new GreaterThan("orderDate", "2024-01-01"));
         assertFalse(join.getParameters().isEmpty());
         join.clearParameters();
-        assertTrue(join.getParameters().isEmpty());
+        List<Object> params = join.getParameters();
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test

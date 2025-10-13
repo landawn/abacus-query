@@ -121,7 +121,8 @@ public class Cell2025Test extends TestBase {
 
         cell.clearParameters();
 
-        assertTrue(cell.getParameters().isEmpty());
+        List<Object> params = cell.getParameters();
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test

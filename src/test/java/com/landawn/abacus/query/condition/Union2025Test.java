@@ -52,7 +52,7 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = new SubQuery("SELECT * FROM customers WHERE status = ?", "active");
+        SubQuery subQuery = new SubQuery("customers", List.of("*"), new Equal("status", "active"));
         Union union = new Union(subQuery);
         List<Object> params = union.getParameters();
         assertEquals(1, (int)params.size());

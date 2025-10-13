@@ -214,7 +214,8 @@ public class SubQuery2025Test extends TestBase {
 
         subQuery.clearParameters();
 
-        assertTrue(subQuery.getParameters().isEmpty());
+        List<Object> params = subQuery.getParameters();
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
     }
 
     @Test

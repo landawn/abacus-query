@@ -80,8 +80,9 @@ public class On2025Test extends TestBase {
         );
         On on = new On(complexCondition);
         List<Object> params = on.getParameters();
-        assertEquals(1, (int)params.size());
-        assertEquals("active", params.get(0));
+        assertEquals(2, (int)params.size());
+        assertEquals("customers.id", params.get(0));
+        assertEquals("active", params.get(1));
     }
 
     @Test
@@ -93,7 +94,8 @@ public class On2025Test extends TestBase {
         On on = new On(condition);
         assertFalse(on.getParameters().isEmpty());
         on.clearParameters();
-        assertTrue(on.getParameters().isEmpty());
+        List<Object> params = on.getParameters();
+        assertTrue(params.size() == 2 && params.stream().allMatch(param -> param == null));
     }
 
     @Test
@@ -196,6 +198,6 @@ public class On2025Test extends TestBase {
             new Equal("categories.active", true)
         );
         On on = new On(filteredJoin);
-        assertEquals(1, (int)on.getParameters().size());
+        assertEquals(2, (int)on.getParameters().size());
     }
 }

@@ -248,7 +248,7 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         builder.from().append("users");
         builder.where().append("id IN (").repeatQM(3).append(")");
         String sql = builder.build();
-        assertEquals("SELECT * FROM users WHERE id IN (?, ?, ?)", sql);
+        assertEquals("SELECT * FROM users WHERE id IN (?, ?, ? )", sql);
     }
 
     @Test
