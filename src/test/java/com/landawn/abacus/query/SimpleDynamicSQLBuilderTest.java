@@ -17,7 +17,7 @@ public class SimpleDynamicSQLBuilderTest extends TestBase {
     void testCreate() {
         DynamicSQLBuilder builder1 = DynamicSQLBuilder.create();
         DynamicSQLBuilder builder2 = DynamicSQLBuilder.create();
-        
+
         assertNotNull(builder1);
         assertNotNull(builder2);
         assertNotSame(builder1, builder2); // Should return different instances
@@ -26,7 +26,7 @@ public class SimpleDynamicSQLBuilderTest extends TestBase {
     @Test
     void testClauseBuilders() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        
+
         assertNotNull(builder.select());
         assertNotNull(builder.from());
         assertNotNull(builder.where());
@@ -38,7 +38,7 @@ public class SimpleDynamicSQLBuilderTest extends TestBase {
     @Test
     void testBasicBuilding() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        
+
         // Test basic build - should not throw exception
         String sql = builder.build();
         assertNotNull(sql);

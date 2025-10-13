@@ -11,14 +11,14 @@ import com.landawn.abacus.TestBase;
 /**
  * Unit tests for the SK (String and Keywords) constants class.
  * Tests all public constants for correct values and types.
- * 
+ *
  * This class validates that all SQL keywords, operators, and character constants
  * in the SK class have the expected values and are properly initialized.
  */
 public class SKTest extends TestBase {
 
     // Tests for Character Constants
-    
+
     @Test
     void testSpecialCharacters() {
         assertEquals((char) 0, SK.CHAR_ZERO);
@@ -78,7 +78,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Basic String Constants
-    
+
     @Test
     void testSingleCharacterStrings() {
         assertEquals(" ", SK.SPACE);
@@ -128,7 +128,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Operator Constants
-    
+
     @Test
     void testComparisonOperators() {
         assertEquals("!=", SK.NOT_EQUAL);
@@ -145,7 +145,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for SQL DDL/DML Keywords
-    
+
     @Test
     void testCoreSQLCommands() {
         assertEquals("WITH", SK.WITH);
@@ -174,7 +174,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for SQL JOIN Operations
-    
+
     @Test
     void testJoinTypes() {
         assertEquals("JOIN", SK.JOIN);
@@ -204,7 +204,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for SQL Query Clauses
-    
+
     @Test
     void testCoreQueryKeywords() {
         assertEquals("AS", SK.AS);
@@ -232,7 +232,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for SQL Logical Operations
-    
+
     @Test
     void testLogicalKeywords() {
         assertEquals("AND", SK.AND);
@@ -279,7 +279,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for SQL Set Operations
-    
+
     @Test
     void testSetOperationKeywords() {
         assertEquals("VALUES", SK.VALUES);
@@ -295,7 +295,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for SQL Aggregate Functions
-    
+
     @Test
     void testAggregateFunctions() {
         assertEquals("AVG", SK.AVG);
@@ -306,7 +306,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Mathematical Functions
-    
+
     @Test
     void testMathematicalFunctions() {
         assertEquals("ABS", SK.ABS);
@@ -329,7 +329,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for String Functions
-    
+
     @Test
     void testStringFunctions() {
         assertEquals("LENGTH", SK.LENGTH);
@@ -346,7 +346,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Date/Time and Conversion Functions
-    
+
     @Test
     void testDateTimeAndConversionFunctions() {
         assertEquals("CAST", SK.CAST);
@@ -356,19 +356,19 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Non-null Validation
-    
+
     @Test
     void testAllConstantsAreNotNull() {
         // Test all character constants are not null
         assertNotNull(SK._SPACE);
         assertNotNull(SK._PERIOD);
         assertNotNull(SK._COMMA);
-        
+
         // Test all string constants are not null
         assertNotNull(SK.SPACE);
         assertNotNull(SK.PERIOD);
         assertNotNull(SK.COMMA);
-        
+
         // Test SQL keywords are not null
         assertNotNull(SK.SELECT);
         assertNotNull(SK.FROM);
@@ -376,7 +376,7 @@ public class SKTest extends TestBase {
         assertNotNull(SK.INSERT);
         assertNotNull(SK.UPDATE);
         assertNotNull(SK.DELETE);
-        
+
         // Test functions are not null
         assertNotNull(SK.COUNT);
         assertNotNull(SK.SUM);
@@ -386,7 +386,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Character to String Consistency
-    
+
     @Test
     void testCharacterToStringConsistency() {
         // Verify that character constants match their string equivalents
@@ -419,7 +419,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Case Sensitivity
-    
+
     @Test
     void testSQLKeywordsAreUpperCase() {
         // SQL keywords should be uppercase
@@ -431,18 +431,18 @@ public class SKTest extends TestBase {
         assertTrue(SK.DELETE.equals(SK.DELETE.toUpperCase()));
         assertTrue(SK.CREATE.equals(SK.CREATE.toUpperCase()));
         assertTrue(SK.DROP.equals(SK.DROP.toUpperCase()));
-        
+
         // Join keywords
         assertTrue(SK.JOIN.equals(SK.JOIN.toUpperCase()));
         assertTrue(SK.INNER_JOIN.equals(SK.INNER_JOIN.toUpperCase()));
         assertTrue(SK.LEFT_JOIN.equals(SK.LEFT_JOIN.toUpperCase()));
         assertTrue(SK.RIGHT_JOIN.equals(SK.RIGHT_JOIN.toUpperCase()));
-        
+
         // Logical operators
         assertTrue(SK.AND.equals(SK.AND.toUpperCase()));
         assertTrue(SK.OR.equals(SK.OR.toUpperCase()));
         assertTrue(SK.NOT.equals(SK.NOT.toUpperCase()));
-        
+
         // Functions
         assertTrue(SK.COUNT.equals(SK.COUNT.toUpperCase()));
         assertTrue(SK.SUM.equals(SK.SUM.toUpperCase()));
@@ -452,7 +452,7 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Compound String Correctness
-    
+
     @Test
     void testCompoundStringCorrectness() {
         // Test that compound strings are correctly formed
@@ -468,25 +468,25 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Special Cases
-    
+
     @Test
     void testSpecialConstants() {
         // Test special constants that might have unique characteristics
         assertEquals("ALL", SK.ALL); // ALL is represented as asterisk
-        
+
         // Test question mark constant for prepared statements
         assertEquals("?", SK.QUESTION_MARK);
         assertEquals('?', SK._QUESTION_MARK);
     }
 
     // Tests for SQL Specific Edge Cases
-    
+
     @Test
     void testSQLSpecificEdgeCases() {
         // Test that OUTER has trailing space (common SQL syntax)
         assertEquals("OUTER ", SK.OUTER);
         assertTrue(SK.OUTER.endsWith(" "));
-        
+
         // Test compound keywords with proper spacing
         assertEquals("GROUP BY", SK.GROUP_BY);
         assertEquals("ORDER BY", SK.ORDER_BY);
@@ -496,7 +496,7 @@ public class SKTest extends TestBase {
         assertEquals("NOT EXISTS", SK.NOT_EXISTS);
         assertEquals("NOT IN", SK.NOT_IN);
         assertEquals("NOT LIKE", SK.NOT_LIKE);
-        
+
         // Verify each compound has exactly one space between words
         assertEquals(1, SK.GROUP_BY.split(" ").length - 1);
         assertEquals(1, SK.ORDER_BY.split(" ").length - 1);
@@ -506,73 +506,73 @@ public class SKTest extends TestBase {
     }
 
     // Tests for Character Encoding
-    
+
     @Test
     void testCharacterEncodingCorrectness() {
         // Test special characters are correctly encoded
-        assertEquals(0, (int) SK.CHAR_ZERO);
-        assertEquals(10, (int) SK.CHAR_LF); // Line feed
-        assertEquals(13, (int) SK.CHAR_CR); // Carriage return
-        
+        assertEquals(0, SK.CHAR_ZERO);
+        assertEquals(10, SK.CHAR_LF); // Line feed
+        assertEquals(13, SK.CHAR_CR); // Carriage return
+
         // Test printable ASCII characters
-        assertEquals(32, (int) SK._SPACE); // Space
-        assertEquals(33, (int) SK._EXCLAMATION); // !
-        assertEquals(34, (int) SK._QUOTATION_D); // "
-        assertEquals(35, (int) SK._SHARP); // #
-        assertEquals(36, (int) SK._DOLLAR); // $
-        assertEquals(37, (int) SK._PERCENT); // %
-        assertEquals(38, (int) SK._AMPERSAND); // &
-        assertEquals(39, (int) SK._QUOTATION_S); // '
-        assertEquals(40, (int) SK._PARENTHESES_L); // (
-        assertEquals(41, (int) SK._PARENTHESES_R); // )
-        assertEquals(42, (int) SK._ASTERISK); // *
-        assertEquals(43, (int) SK._PLUS); // +
-        assertEquals(44, (int) SK._COMMA); // ,
-        assertEquals(45, (int) SK._MINUS); // -
-        assertEquals(46, (int) SK._PERIOD); // .
-        assertEquals(47, (int) SK._SLASH); // /
+        assertEquals(32, SK._SPACE); // Space
+        assertEquals(33, SK._EXCLAMATION); // !
+        assertEquals(34, SK._QUOTATION_D); // "
+        assertEquals(35, SK._SHARP); // #
+        assertEquals(36, SK._DOLLAR); // $
+        assertEquals(37, SK._PERCENT); // %
+        assertEquals(38, SK._AMPERSAND); // &
+        assertEquals(39, SK._QUOTATION_S); // '
+        assertEquals(40, SK._PARENTHESES_L); // (
+        assertEquals(41, SK._PARENTHESES_R); // )
+        assertEquals(42, SK._ASTERISK); // *
+        assertEquals(43, SK._PLUS); // +
+        assertEquals(44, SK._COMMA); // ,
+        assertEquals(45, SK._MINUS); // -
+        assertEquals(46, SK._PERIOD); // .
+        assertEquals(47, SK._SLASH); // /
     }
 
     // Performance and Memory Tests
-    
+
     @Test
     void testConstantsAreStaticFinal() {
         // This test ensures constants are properly initialized and accessible
         // We can't test the final modifier directly, but we can ensure values don't change
-        
+
         String selectValue = SK.SELECT;
         String fromValue = SK.FROM;
         String whereValue = SK.WHERE;
-        
+
         // Call multiple times to ensure they're not recalculated
         assertEquals(selectValue, SK.SELECT);
         assertEquals(fromValue, SK.FROM);
         assertEquals(whereValue, SK.WHERE);
-        
+
         // Test character constants similarly
         char spaceValue = SK._SPACE;
         char commaValue = SK._COMMA;
-        
+
         assertEquals(spaceValue, SK._SPACE);
         assertEquals(commaValue, SK._COMMA);
     }
 
     // Integration Test
-    
+
     @Test
     void testConstantsInQueryBuilding() {
         // Test using constants to build a simple SQL query
-        String query = SK.SELECT + SK.SPACE + SK.ASTERISK + SK.SPACE + 
+        String query = SK.SELECT + SK.SPACE + SK.ASTERISK + SK.SPACE +
                       SK.FROM + SK.SPACE + "users" + SK.SPACE +
                       SK.WHERE + SK.SPACE + "active" + SK.SPACE + SK.EQUAL + SK.SPACE + "1";
-        
+
         assertEquals("SELECT * FROM users WHERE active = 1", query);
-        
+
         // Test with compound constants
         String query2 = SK.SELECT + SK.SPACE + "name" + SK.COMMA_SPACE + "email" + SK.SPACE +
                        SK.FROM + SK.SPACE + "users" + SK.SPACE +
                        SK.ORDER_BY + SK.SPACE + "name" + SK.SPACE + SK.ASC;
-        
+
         assertEquals("SELECT name, email FROM users ORDER BY name ASC", query2);
     }
 }

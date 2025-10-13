@@ -19,8 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.ParsedSql;
-import com.landawn.abacus.query.SQLMapper;
 import com.landawn.abacus.util.ImmutableMap;
 
 public class SQLMapperTest extends TestBase {

@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.SortDirection;
 
 public class SortDirectionTest extends TestBase {
 
@@ -19,7 +18,7 @@ public class SortDirectionTest extends TestBase {
         // Test ASC
         SortDirection ascDirection = SortDirection.ASC;
         assertTrue(ascDirection.isAscending());
-        
+
         // Test DESC
         SortDirection descDirection = SortDirection.DESC;
         assertFalse(descDirection.isAscending());
@@ -30,7 +29,7 @@ public class SortDirectionTest extends TestBase {
         // Test that we have exactly 2 values
         SortDirection[] values = SortDirection.values();
         assertEquals(2, values.length);
-        
+
         // Test that ASC and DESC are present
         boolean hasAsc = false;
         boolean hasDesc = false;
@@ -50,7 +49,7 @@ public class SortDirectionTest extends TestBase {
         // Test valueOf for valid values
         assertEquals(SortDirection.ASC, SortDirection.valueOf("ASC"));
         assertEquals(SortDirection.DESC, SortDirection.valueOf("DESC"));
-        
+
         // Test valueOf for invalid value
         assertThrows(IllegalArgumentException.class, () -> SortDirection.valueOf("INVALID"));
     }
@@ -68,11 +67,11 @@ public class SortDirectionTest extends TestBase {
         SortDirection asc1 = SortDirection.ASC;
         SortDirection asc2 = SortDirection.ASC;
         assertSame(asc1, asc2);
-        
+
         SortDirection desc1 = SortDirection.DESC;
         SortDirection desc2 = SortDirection.DESC;
         assertSame(desc1, desc2);
-        
+
         // Test that ASC and DESC are different
         assertNotSame(SortDirection.ASC, SortDirection.DESC);
     }

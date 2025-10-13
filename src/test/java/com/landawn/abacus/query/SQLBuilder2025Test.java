@@ -17,7 +17,6 @@
 package com.landawn.abacus.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,7 +32,6 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.ConditionFactory;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.entity.Account;
-import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class SQLBuilder2025Test extends TestBase {
