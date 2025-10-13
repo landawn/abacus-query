@@ -450,15 +450,16 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Clears all parameters from all conditions in this criteria.
-     * This is useful for releasing resources when the criteria contains large parameter lists.
+     * Clears all parameter values by setting them to null to free memory.
+     * 
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
      * 
      * <p>Example:</p>
      * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where(CF.in("id", largeIdList));
-     * // Use the criteria...
-     * criteria.clearParameters(); // Releases the large list
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override

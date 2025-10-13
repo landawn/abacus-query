@@ -243,16 +243,16 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * Clears all parameters by setting values to null or clearing nested conditions.
-     * This is useful for releasing resources while maintaining the condition structure.
-     * If the min/max values are themselves conditions (like subqueries), their parameters
-     * are cleared recursively.
-     *
-     * <p>Example usage:
+     * Clears all parameter values by setting them to null to free memory.
+     * 
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
+     * 
+     * <p>Example:</p>
      * <pre>{@code
-     * NotBetween condition = new NotBetween("age", 18, 65);
-     * condition.clearParameters();
-     * // minValue and maxValue are now null
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override

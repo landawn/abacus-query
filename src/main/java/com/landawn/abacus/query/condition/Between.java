@@ -246,15 +246,16 @@ public class Between extends AbstractCondition {
     }
 
     /**
-     * Clears the parameters of this BETWEEN condition.
-     * If minValue or maxValue are Conditions, their parameters are cleared.
-     * Otherwise, they are set to null to release resources.
+     * Clears all parameter values by setting them to null to free memory.
+     * 
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
      * 
      * <p>Example:</p>
      * <pre>{@code
-     * Between condition = new Between("id", largeMinList, largeMaxList);
-     * // Use the condition in queries...
-     * condition.clearParameters(); // Releases both lists
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override

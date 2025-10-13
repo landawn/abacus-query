@@ -295,14 +295,16 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Clears all parameters from the join condition.
-     * This releases any resources held by parameter values in the condition.
-     * Does nothing if there's no condition.
+     * Clears all parameter values by setting them to null to free memory.
      * 
-     * <p>Example usage:
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
+     * 
+     * <p>Example:</p>
      * <pre>{@code
-     * Join join = new Join("orders o", someConditionWithParams);
-     * join.clearParameters(); // Clears parameters in the condition
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override

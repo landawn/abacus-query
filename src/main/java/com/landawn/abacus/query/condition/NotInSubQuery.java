@@ -201,8 +201,17 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     * Clears all parameters from the subquery.
-     * This is useful for reusing the condition structure with different parameter values.
+     * Clears all parameter values by setting them to null to free memory.
+     * 
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
+     * 
+     * <p>Example:</p>
+     * <pre>{@code
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * }</pre>
      */
     @Override
     public void clearParameters() {

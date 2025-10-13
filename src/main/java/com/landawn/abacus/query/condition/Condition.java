@@ -214,15 +214,16 @@ public interface Condition {
     List<Object> getParameters();
 
     /**
-     * Clears all parameters associated with this condition.
-     * This method is used to release resources, particularly for large parameter values.
-     * After calling this method, the condition should not be used for queries.
+     * Clears all parameter values by setting them to null to free memory.
+     * 
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
      * 
      * <p>Example:</p>
      * <pre>{@code
-     * Condition condition = CF.in("id", largeIdList);
-     * // Use the condition in query...
-     * condition.clearParameters(); // Release the large list
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     void clearParameters();

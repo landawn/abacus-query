@@ -137,15 +137,16 @@ public class Cell extends AbstractCondition {
     }
 
     /**
-     * Clears the parameters of the wrapped condition.
-     * This method delegates to the wrapped condition's clearParameters method.
-     * Used to release resources when the condition is no longer needed.
+     * Clears all parameter values by setting them to null to free memory.
+     * 
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
      * 
      * <p>Example:</p>
      * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, CF.in("id", largeIdList));
-     * // Use the cell in queries...
-     * cell.clearParameters(); // Releases the large list
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override

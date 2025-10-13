@@ -191,15 +191,16 @@ public class Binary extends AbstractCondition {
     }
 
     /**
-     * Clears the parameters of this condition.
-     * If the value is a Condition, clears its parameters.
-     * Otherwise, sets the value to null to release resources.
+     * Clears all parameter values by setting them to null to free memory.
+     * 
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
      * 
      * <p>Example:</p>
      * <pre>{@code
-     * Binary condition = new In("id", largeIdList);
-     * // Use the condition in queries...
-     * condition.clearParameters(); // Releases the large list
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override

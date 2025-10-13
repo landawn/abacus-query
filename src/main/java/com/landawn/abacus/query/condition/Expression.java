@@ -1543,13 +1543,16 @@ public class Expression extends AbstractCondition {
     }
 
     /**
-     * Does nothing as expressions have no parameters to clear.
-     * This method is provided for consistency with the Condition interface.
-     *
+     * Clears all parameter values by setting them to null to free memory.
+     * 
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
+     * 
      * <p>Example:</p>
      * <pre>{@code
-     * Expression expr = Expression.of("CURRENT_TIMESTAMP");
-     * expr.clearParameters(); // No effect
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override

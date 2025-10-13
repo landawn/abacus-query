@@ -359,19 +359,16 @@ public class Junction extends AbstractCondition {
     }
 
     /**
-     * Clears parameters from all conditions in this junction.
-     * This method recursively clears parameters from all nested conditions,
-     * including those in nested junctions. Useful for memory management
-     * when reusing condition objects.
+     * Clears all parameter values by setting them to null to free memory.
      * 
-     * <p>Example usage:
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
+     * 
+     * <p>Example:</p>
      * <pre>{@code
-     * Junction junction = new Junction(Operator.AND,
-     *     new Equal("status", "active"),
-     *     new In("type", Arrays.asList("A", "B", "C"))
-     * );
-     * 
-     * junction.clearParameters(); // Releases parameter values
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override

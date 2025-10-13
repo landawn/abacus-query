@@ -213,14 +213,16 @@ public class Limit extends AbstractCondition {
     }
 
     /**
-     * Clears any parameters associated with this condition.
-     * Since LIMIT has no bindable parameters, this method performs no operation.
-     * It exists to maintain consistency with the Condition interface.
+     * Clears all parameter values by setting them to null to free memory.
      * 
-     * <p>Example usage:
+     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Use this method to release large objects when the condition is no longer needed.</p>
+     * 
+     * <p>Example:</p>
      * <pre>{@code
-     * Limit limit = new Limit(10);
-     * limit.clearParameters(); // No effect
+     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override
