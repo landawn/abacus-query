@@ -33,7 +33,6 @@ public class AccountContact {
     private Timestamp createTime;
 
     /**
-     * 
      */
     public AccountContact() {
     }

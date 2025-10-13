@@ -38,14 +38,14 @@ public class Union extends Clause {
 
     /**
      * Constructs a UNION clause with the specified subquery.
-     * 
-     * @param condition the subquery to be combined using UNION
-     * 
+     *
      * <p>Example:</p>
      * <pre>{@code
      * SubQuery activeUsers = new SubQuery("SELECT user_id FROM active_users");
      * Union union = new Union(activeUsers);
      * }</pre>
+     *
+     * @param condition the subquery to be combined using UNION
      */
     public Union(final SubQuery condition) {
         super(Operator.UNION, condition);

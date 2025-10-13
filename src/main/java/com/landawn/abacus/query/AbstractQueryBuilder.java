@@ -677,7 +677,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         String tableAlias = getTableAlias(alias, entityClass);
 
-        if (Strings.isNotEmpty(tableAlias)) {
+        if (Strings.isEmpty(tableAlias)) {
             res.add(getTableName(entityClass, namingPolicy));
         } else {
             res.add(getTableName(entityClass, namingPolicy) + " " + tableAlias);
@@ -3537,7 +3537,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         String sql = null;
 
         try {
-            sql = _sb.charAt(0) == ' ' ? _sb.substring(1) : _sb.toString();
+            sql = _sb.length() > 0 && _sb.charAt(0) == ' ' ? _sb.substring(1) : _sb.toString();
         } finally {
             Objectory.recycle(_sb);
             _sb = null;
@@ -4308,7 +4308,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         for (int i = 0, len = words.size(); i < len; i++) {
             word = words.get(i);
 
-            if (!Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
+            if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
                 _sb.append(word);
             } else {
                 _sb.append(formalizeColumnName(_propColumnNameMap, word));
@@ -4434,7 +4434,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             appendStringExpr(propName, true);
 
             int idx = -1;
-            if (isForSelect && (withClassAlias || propAlias.length() >= _sb.length() || _sb.charAt(_sb.length() - propAlias.length() - 1) != _SPACE
+            if (isForSelect && (withClassAlias || propAlias.length() > _sb.length()
+                    || (propAlias.length() <= _sb.length() && _sb.length() - propAlias.length() - 1 >= 0 && _sb.charAt(_sb.length() - propAlias.length() - 1) != _SPACE)
                     || _sb.indexOf(propAlias, _sb.length() - propAlias.length()) < 0 || ((idx = propAlias.indexOf(SK._PERIOD)) > 0
                             && (Strings.isEmpty(tableAlias) || tableAlias.length() != idx || !propAlias.startsWith(tableAlias))))) {
                 _sb.append(_SPACE_AS_SPACE);
@@ -4482,7 +4483,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 //    }
 
                 int idx = -1;
-                if (withClassAlias || propName.length() >= _sb.length() || _sb.charAt(_sb.length() - propName.length() - 1) != _SPACE
+                if (withClassAlias || propName.length() > _sb.length()
+                        || (propName.length() <= _sb.length() && _sb.length() - propName.length() - 1 >= 0 && _sb.charAt(_sb.length() - propName.length() - 1) != _SPACE)
                         || _sb.indexOf(propName, _sb.length() - propName.length()) < 0 || ((idx = propName.indexOf(SK._PERIOD)) > 0
                                 && (Strings.isEmpty(tableAlias) || tableAlias.length() != idx || !propName.startsWith(tableAlias)))) {
                     _sb.append(_SPACE_AS_SPACE);

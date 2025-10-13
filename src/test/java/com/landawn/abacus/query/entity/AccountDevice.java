@@ -30,7 +30,6 @@ public class AccountDevice {
     private Timestamp createTime;
 
     /**
-     * 
      */
     public AccountDevice() {
     }

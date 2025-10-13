@@ -54,7 +54,11 @@ package com.landawn.abacus.query.condition;
  */
 public class NotEqual extends Binary {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized NotEqual instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     NotEqual() {
     }
 

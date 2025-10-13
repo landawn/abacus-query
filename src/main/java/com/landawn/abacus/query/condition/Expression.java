@@ -1554,7 +1554,7 @@ public class Expression extends AbstractCondition {
      */
     @Override
     public void clearParameters() {
-        // TODO Auto-generated method stub
+        // No parameters to clear for Expression
     }
 
     /**
@@ -1628,7 +1628,7 @@ public class Expression extends AbstractCondition {
             for (int i = 0, len = words.size(); i < len; i++) {
                 word = words.get(i);
 
-                if (!Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
+                if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
                     sb.append(word);
                 } else {
                     sb.append(namingPolicy.convert(word));

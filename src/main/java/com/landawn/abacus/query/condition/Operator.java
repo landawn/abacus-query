@@ -372,13 +372,10 @@ public enum Operator {
 
     /**
      * Gets an Operator by its string representation.
-     * 
+     *
      * <p>This method performs case-insensitive lookup and caches results for performance.
      * It can handle both symbolic operators (like "=", ">") and word operators (like "AND", "OR").</p>
      *
-     * @param name the string representation of the operator
-     * @return the corresponding Operator enum value, or null if not found
-     * 
      * <p>Example:</p>
      * <pre>{@code
      * Operator eq = Operator.getOperator("=");        // Returns EQUAL
@@ -386,6 +383,9 @@ public enum Operator {
      * Operator gt = Operator.getOperator(">");        // Returns GREATER_THAN
      * Operator like = Operator.getOperator("like");   // Returns LIKE (case-insensitive)
      * }</pre>
+     *
+     * @param name the string representation of the operator
+     * @return the corresponding Operator enum value, or null if not found
      */
     public static synchronized Operator getOperator(final String name) {
         if (operatorMap.isEmpty()) {

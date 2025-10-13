@@ -215,7 +215,7 @@ public final class SQLParser {
                 sb.append(c);
 
                 // end in quote.
-                if (c == quoteChar && sql.charAt(index - 1) != '\\') {
+                if (c == quoteChar && (index == 0 || sql.charAt(index - 1) != '\\')) {
                     words.add(sb.toString());
                     sb.setLength(0);
 
@@ -316,7 +316,7 @@ public final class SQLParser {
                     words.add(temp);
                     index += 1;
                 } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
-                    if ((words.size() > 0) && !words.get(words.size() - 1).equals(SK.SPACE)) {
+                    if (!words.isEmpty() && !words.get(words.size() - 1).equals(SK.SPACE)) {
                         words.add(SK.SPACE);
                     }
                 } else {
@@ -666,14 +666,18 @@ public final class SQLParser {
         //    return (i < len - 1 && words.get(i + 1).charAt(0) == SK._PARENTHESES_L)
         //            || (i < len - 2 && SK.SPACE.equals(words.get(i + 1)) && words.get(i + 2).charAt(0) == SK._PARENTHESES_L);
 
-        if ((index < len - 1 && words.get(index + 1).charAt(0) == SK._PARENTHESES_L)) {
-            return true;
+        if (index < len - 1) {
+            String nextWord = words.get(index + 1);
+            if (!nextWord.isEmpty() && nextWord.charAt(0) == SK._PARENTHESES_L) {
+                return true;
+            }
         }
 
         for (int i = index + 1; i < len; i++) {
-            if (words.get(i).charAt(0) == SK._PARENTHESES_L) {
+            String word = words.get(i);
+            if (!word.isEmpty() && word.charAt(0) == SK._PARENTHESES_L) {
                 return true;
-            } else if (!SK.SPACE.equals(words.get(i))) {
+            } else if (!SK.SPACE.equals(word)) {
                 return false;
             }
         }

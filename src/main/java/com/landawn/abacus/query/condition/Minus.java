@@ -76,7 +76,8 @@ public class Minus extends Clause {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor should not be used directly in application code.
+     * This constructor creates an uninitialized Minus instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Minus() {
     }
@@ -84,9 +85,14 @@ public class Minus extends Clause {
     /**
      * Creates a new MINUS clause with the specified subquery.
      * The MINUS operation will return rows from the main query that are not
-     * present in this subquery.
-     * 
-     * <p>Example:
+     * present in this subquery. The result automatically excludes duplicates.
+     *
+     * <p>The MINUS operator performs a set difference operation, equivalent to
+     * A - B in set theory. Only rows that appear in the first query but not in
+     * the second query will be returned. Both queries must have compatible
+     * column structures (same number of columns with compatible types).
+     *
+     * <p>Example usage:
      * <pre>{@code
      * // Find products that are in inventory but have never been sold
      * SubQuery soldProducts = new SubQuery("SELECT product_id FROM sales");
@@ -95,9 +101,19 @@ public class Minus extends Clause {
      * // SELECT product_id FROM inventory
      * // MINUS
      * // SELECT product_id FROM sales
+     *
+     * // Find active employees not assigned to any project
+     * SubQuery assignedEmployees = new SubQuery("SELECT employee_id FROM project_assignments");
+     * Minus unassigned = new Minus(assignedEmployees);
+     * // SELECT employee_id FROM employees WHERE status = 'ACTIVE'
+     * // MINUS
+     * // SELECT employee_id FROM project_assignments
      * }</pre>
      *
      * @param condition the subquery whose results will be subtracted from the main query. Must not be null.
+     * @throws IllegalArgumentException if condition is null
+     * @see Except
+     * @see Union
      */
     public Minus(final SubQuery condition) {
         super(Operator.MINUS, condition);

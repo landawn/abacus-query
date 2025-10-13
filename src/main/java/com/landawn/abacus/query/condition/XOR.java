@@ -44,13 +44,10 @@ public class XOR extends Binary {
 
     /**
      * Constructs an XOR condition for the specified property and value.
-     * 
+     *
      * <p>The XOR condition is true when the property value and the provided value
      * differ in their boolean evaluation (one true, one false).</p>
      *
-     * @param propName the property name
-     * @param propValue the value to XOR against
-     * 
      * <p>Example:</p>
      * <pre>{@code
      * // Check if user has exactly one type of membership
@@ -58,6 +55,9 @@ public class XOR extends Binary {
      * // Combined with another XOR for platinum membership
      * // ensures user has gold XOR platinum, but not both or neither
      * }</pre>
+     *
+     * @param propName the property name
+     * @param propValue the value to XOR against
      */
     public XOR(final String propName, final Object propValue) {
         super(propName, Operator.XOR, propValue);

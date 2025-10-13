@@ -32,7 +32,6 @@ public class Account {
     private List<AccountDevice> devices;
 
     /**
-     * 
      */
     public Account() {
     }

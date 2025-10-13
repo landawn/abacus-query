@@ -18,36 +18,127 @@ package com.landawn.abacus.query.condition;
  * Represents a HAVING clause in SQL queries.
  * The HAVING clause is used to filter grouped results based on conditions applied to aggregated data.
  * It is typically used with GROUP BY clauses to filter groups based on aggregate functions.
- * 
- * <p>Usage example:</p>
+ * Unlike WHERE, which filters individual rows before grouping, HAVING filters entire groups after
+ * aggregation has been performed.
+ *
+ * <p>Key differences between WHERE and HAVING:
+ * <ul>
+ *   <li>WHERE filters rows before grouping; HAVING filters groups after aggregation</li>
+ *   <li>WHERE cannot use aggregate functions; HAVING is designed for aggregate function conditions</li>
+ *   <li>WHERE is processed earlier in query execution; HAVING is processed after GROUP BY</li>
+ *   <li>WHERE is more efficient for filtering individual rows; HAVING for filtering aggregated results</li>
+ * </ul>
+ *
+ * <p>Common use cases for HAVING:
+ * <ul>
+ *   <li>Finding groups with counts above/below a threshold</li>
+ *   <li>Filtering based on sum, average, min, or max values</li>
+ *   <li>Identifying outlier groups in statistical analysis</li>
+ *   <li>Enforcing business rules on aggregated data</li>
+ * </ul>
+ *
+ * <p>Usage examples:</p>
  * <pre>{@code
- * // Create a HAVING clause to filter groups where COUNT(*) > 5
- * Having having = new Having(CF.gt("COUNT(*)", 5));
- * 
- * // Use in a query with GROUP BY
- * query.groupBy("department")
- *      .having(new Having(CF.gt("AVG(salary)", 50000)));
+ * // Find departments with more than 5 employees
+ * Having moreThan5 = new Having(CF.gt("COUNT(*)", 5));
+ * // SQL: HAVING COUNT(*) > 5
+ *
+ * // Find categories with average price above 100
+ * Having avgPriceHigh = new Having(CF.gt("AVG(price)", 100));
+ * // SQL: HAVING AVG(price) > 100
+ *
+ * // Find customers with total orders over 10000
+ * Having bigSpenders = new Having(CF.gt("SUM(order_total)", 10000));
+ * // SQL: HAVING SUM(order_total) > 10000
+ *
+ * // Complex HAVING with multiple conditions
+ * Having complex = new Having(
+ *     CF.and(
+ *         CF.gt("COUNT(*)", 10),
+ *         CF.lt("AVG(age)", 40),
+ *         CF.gte("SUM(revenue)", 50000)
+ *     )
+ * );
+ * // SQL: HAVING COUNT(*) > 10 AND AVG(age) < 40 AND SUM(revenue) >= 50000
+ *
+ * // Complete query example
+ * query.select("department", "COUNT(*) as emp_count", "AVG(salary) as avg_salary")
+ *      .from("employees")
+ *      .groupBy("department")
+ *      .having(new Having(CF.and(
+ *          CF.gt("COUNT(*)", 5),
+ *          CF.gt("AVG(salary)", 50000)
+ *      )));
+ * // SQL: SELECT department, COUNT(*) as emp_count, AVG(salary) as avg_salary
+ * //      FROM employees
+ * //      GROUP BY department
+ * //      HAVING COUNT(*) > 5 AND AVG(salary) > 50000
  * }</pre>
- * 
+ *
  * @see Clause
  * @see Condition
  * @see GroupBy
+ * @see Where
  */
 public class Having extends Clause {
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Having instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Having() {
     }
 
     /**
      * Creates a new HAVING clause with the specified condition.
-     * 
-     * <p>Example:</p>
+     * The condition is applied to the aggregated groups after GROUP BY processing.
+     * This allows filtering based on aggregate function results such as COUNT, SUM,
+     * AVG, MIN, and MAX.
+     *
+     * <p>The condition typically involves aggregate functions and comparison operators.
+     * Multiple conditions can be combined using And/Or to create complex filtering logic.
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
-     * // Filter groups where the sum of sales is greater than 10000
-     * Having having = new Having(CF.gt("SUM(sales)", 10000));
+     * // Filter groups where the sum of sales exceeds 10000
+     * Having highSales = new Having(CF.gt("SUM(sales)", 10000));
+     * // SQL: HAVING SUM(sales) > 10000
+     *
+     * // Filter groups with at least 3 members
+     * Having minCount = new Having(CF.gte("COUNT(*)", 3));
+     * // SQL: HAVING COUNT(*) >= 3
+     *
+     * // Filter groups with average value in range
+     * Having avgRange = new Having(
+     *     CF.and(
+     *         CF.gte("AVG(score)", 60),
+     *         CF.lte("AVG(score)", 90)
+     *     )
+     * );
+     * // SQL: HAVING AVG(score) >= 60 AND AVG(score) <= 90
+     *
+     * // Filter groups with maximum value check
+     * Having maxCheck = new Having(CF.lt("MAX(temperature)", 100));
+     * // SQL: HAVING MAX(temperature) < 100
+     *
+     * // Multiple aggregate conditions
+     * Having multipleAggs = new Having(
+     *     CF.and(
+     *         CF.gt("COUNT(DISTINCT customer_id)", 10),
+     *         CF.gte("SUM(amount)", 5000),
+     *         CF.between("AVG(rating)", 3.0, 5.0)
+     *     )
+     * );
+     * // SQL: HAVING COUNT(DISTINCT customer_id) > 10
+     * //      AND SUM(amount) >= 5000
+     * //      AND AVG(rating) BETWEEN 3.0 AND 5.0
      * }</pre>
-     * 
-     * @param condition the condition to apply in the HAVING clause
+     *
+     * @param condition the condition to apply in the HAVING clause. Must not be null.
+     *                  Typically contains aggregate function expressions that operate on
+     *                  grouped data. Can use comparison operators (gt, lt, eq, etc.) and
+     *                  logical operators (and, or, not) to build complex filtering logic.
+     * @throws IllegalArgumentException if condition is null
      */
     public Having(final Condition condition) {
         super(Operator.HAVING, condition);

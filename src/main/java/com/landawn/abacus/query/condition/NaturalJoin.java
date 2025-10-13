@@ -64,7 +64,11 @@ import java.util.Collection;
  */
 public class NaturalJoin extends Join {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized NaturalJoin instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     NaturalJoin() {
     }
 

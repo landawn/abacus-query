@@ -67,7 +67,11 @@ package com.landawn.abacus.query.condition;
  * @see NotBetween
  */
 public class Not extends Cell {
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Not instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Not() {
     }
 
