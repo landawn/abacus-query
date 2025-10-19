@@ -5,7 +5,7 @@
 
 	<groupId>com.landawn</groupId>
 	<artifactId>abacus-query</artifactId>
-	<version>3.2.8</version>
+	<version>3.25.1</version>
 	<packaging>jar</packaging>
 	<name>abacus-query</name>
 	<description>Abacus Data Access and Analysis</description>
@@ -112,6 +112,13 @@
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
+			        <annotationProcessorPaths>
+			          <path>
+			            <groupId>org.projectlombok</groupId>
+			            <artifactId>lombok</artifactId>
+			            <version>1.18.42</version>
+			          </path>
+			        </annotationProcessorPaths>
 				</configuration> 
 			</plugin>
 
