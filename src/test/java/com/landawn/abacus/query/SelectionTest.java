@@ -24,12 +24,29 @@ public class SelectionTest extends TestBase {
         private String email;
 
         // Getters and setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
     }
 
     static class Order {
@@ -38,12 +55,29 @@ public class SelectionTest extends TestBase {
         private Double total;
 
         // Getters and setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getOrderDate() { return orderDate; }
-        public void setOrderDate(String orderDate) { this.orderDate = orderDate; }
-        public Double getTotal() { return total; }
-        public void setTotal(Double total) { this.total = total; }
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getOrderDate() {
+            return orderDate;
+        }
+
+        public void setOrderDate(String orderDate) {
+            this.orderDate = orderDate;
+        }
+
+        public Double getTotal() {
+            return total;
+        }
+
+        public void setTotal(Double total) {
+            this.total = total;
+        }
     }
 
     static class Product {
@@ -53,14 +87,37 @@ public class SelectionTest extends TestBase {
         private Double cost;
 
         // Getters and setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public Double getPrice() { return price; }
-        public void setPrice(Double price) { this.price = price; }
-        public Double getCost() { return cost; }
-        public void setCost(Double cost) { this.cost = cost; }
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Double getPrice() {
+            return price;
+        }
+
+        public void setPrice(Double price) {
+            this.price = price;
+        }
+
+        public Double getCost() {
+            return cost;
+        }
+
+        public void setCost(Double cost) {
+            this.cost = cost;
+        }
     }
 
     @Test
@@ -77,11 +134,11 @@ public class SelectionTest extends TestBase {
         // Test fluent setters
         Set<String> excludedProps = new HashSet<>(Arrays.asList("internalField"));
         selection.entityClass(User.class)
-            .tableAlias("u")
-            .classAlias("user")
-            .selectPropNames(Arrays.asList("id", "name"))
-            .includeSubEntityProperties(true)
-            .excludedPropNames(excludedProps);
+                .tableAlias("u")
+                .classAlias("user")
+                .selectPropNames(Arrays.asList("id", "name"))
+                .includeSubEntityProperties(true)
+                .excludedPropNames(excludedProps);
 
         assertEquals(User.class, selection.entityClass());
         assertEquals("u", selection.tableAlias());
@@ -91,14 +148,7 @@ public class SelectionTest extends TestBase {
         assertEquals(excludedProps, selection.excludedPropNames());
 
         // Test all-args constructor
-        Selection selection2 = new Selection(
-            Order.class,
-            "o",
-            "order",
-            Arrays.asList("id", "orderDate"),
-            false,
-            new HashSet<>(Arrays.asList("internalNote"))
-        );
+        Selection selection2 = new Selection(Order.class, "o", "order", Arrays.asList("id", "orderDate"), false, new HashSet<>(Arrays.asList("internalNote")));
 
         assertEquals(Order.class, selection2.entityClass());
         assertEquals("o", selection2.tableAlias());
@@ -182,15 +232,12 @@ public class SelectionTest extends TestBase {
         // Create a mock function to test apply
         List<Selection> capturedSelections = null;
 
-        SQLBuilder result = Selection.multiSelectionBuilder()
-            .add(User.class, "u", "user")
-            .add(Order.class, "o", "order")
-            .apply(selections -> {
-                // Capture selections for verification
-                assertNotNull(selections);
-                assertEquals(2, selections.size());
-                return new SQLBuilder.PSC();
-            });
+        SQLBuilder result = Selection.multiSelectionBuilder().add(User.class, "u", "user").add(Order.class, "o", "order").apply(selections -> {
+            // Capture selections for verification
+            assertNotNull(selections);
+            assertEquals(2, selections.size());
+            return new SQLBuilder.PSC();
+        });
 
         assertNotNull(result);
         assertTrue(result instanceof SQLBuilder);
@@ -201,13 +248,12 @@ public class SelectionTest extends TestBase {
         // Test that all add methods return the builder for chaining
         Selection.MultiSelectionBuilder builder = Selection.multiSelectionBuilder();
 
-        Selection.MultiSelectionBuilder result = builder
-            .add(User.class)
-            .add(Order.class, Arrays.asList("id", "total"))
-            .add(Product.class, "p", "product")
-            .add(User.class, "u", "user", Arrays.asList("name"))
-            .add(Order.class, true, new HashSet<>())
-            .add(Product.class, "p2", "product2", false, new HashSet<>());
+        Selection.MultiSelectionBuilder result = builder.add(User.class)
+                .add(Order.class, Arrays.asList("id", "total"))
+                .add(Product.class, "p", "product")
+                .add(User.class, "u", "user", Arrays.asList("name"))
+                .add(Order.class, true, new HashSet<>())
+                .add(Product.class, "p2", "product2", false, new HashSet<>());
 
         assertSame(builder, result);
 

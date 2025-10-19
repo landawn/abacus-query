@@ -562,16 +562,14 @@ public class SKTest extends TestBase {
     @Test
     void testConstantsInQueryBuilding() {
         // Test using constants to build a simple SQL query
-        String query = SK.SELECT + SK.SPACE + SK.ASTERISK + SK.SPACE +
-                      SK.FROM + SK.SPACE + "users" + SK.SPACE +
-                      SK.WHERE + SK.SPACE + "active" + SK.SPACE + SK.EQUAL + SK.SPACE + "1";
+        String query = SK.SELECT + SK.SPACE + SK.ASTERISK + SK.SPACE + SK.FROM + SK.SPACE + "users" + SK.SPACE + SK.WHERE + SK.SPACE + "active" + SK.SPACE
+                + SK.EQUAL + SK.SPACE + "1";
 
         assertEquals("SELECT * FROM users WHERE active = 1", query);
 
         // Test with compound constants
-        String query2 = SK.SELECT + SK.SPACE + "name" + SK.COMMA_SPACE + "email" + SK.SPACE +
-                       SK.FROM + SK.SPACE + "users" + SK.SPACE +
-                       SK.ORDER_BY + SK.SPACE + "name" + SK.SPACE + SK.ASC;
+        String query2 = SK.SELECT + SK.SPACE + "name" + SK.COMMA_SPACE + "email" + SK.SPACE + SK.FROM + SK.SPACE + "users" + SK.SPACE + SK.ORDER_BY + SK.SPACE
+                + "name" + SK.SPACE + SK.ASC;
 
         assertEquals("SELECT name, email FROM users ORDER BY name ASC", query2);
     }

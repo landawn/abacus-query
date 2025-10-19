@@ -473,7 +473,7 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         builder.from().append("users");
         builder.limitByRowNum(100);
         String sql = builder.build();
-        assertEquals("SELECT * FROM users ROWNUM < 100", sql);
+        assertEquals("SELECT * FROM users ROWNUM <= 100", sql);
     }
 
     @Test
@@ -563,8 +563,7 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     public void testComplexQuery() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
         builder.select().append("u.id").append("u.name").append("COUNT(o.id)", "order_count");
-        builder.from().append("users", "u")
-            .leftJoin("orders o", "u.id = o.user_id");
+        builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
         builder.where().append("u.status = ?").and("u.created_date > ?");
         builder.groupBy().append("u.id").append("u.name");
         builder.having().append("COUNT(o.id) > 0");
@@ -586,10 +585,11 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     public void testMultipleJoins() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
         builder.select().append("*");
-        builder.from().append("users", "u")
-            .innerJoin("orders o", "u.id = o.user_id")
-            .leftJoin("products p", "o.product_id = p.id")
-            .rightJoin("categories c", "p.category_id = c.id");
+        builder.from()
+                .append("users", "u")
+                .innerJoin("orders o", "u.id = o.user_id")
+                .leftJoin("products p", "o.product_id = p.id")
+                .rightJoin("categories c", "p.category_id = c.id");
         String sql = builder.build();
 
         assertTrue(sql.contains("INNER JOIN"));

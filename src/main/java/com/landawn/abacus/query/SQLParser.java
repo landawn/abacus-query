@@ -34,7 +34,7 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * String sql = "SELECT * FROM users WHERE age > 25 ORDER BY name";
  * List<String> words = SQLParser.parse(sql);
- * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER BY", " ", "name"]
+ * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER", " ", "BY", " ", "name"]
  * }</pre>
  * 
  * @author HaiYang Li
@@ -215,7 +215,7 @@ public final class SQLParser {
                 sb.append(c);
 
                 // end in quote.
-                if (c == quoteChar && (index == 0 || sql.charAt(index - 1) != '\\')) {
+                if (c == quoteChar && (index == 0 || (index > 0 && sql.charAt(index - 1) != '\\'))) {
                     words.add(sb.toString());
                     sb.setLength(0);
 
@@ -359,10 +359,10 @@ public final class SQLParser {
      * <pre>{@code
      * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
      * int index = SQLParser.indexWord(sql, "ORDER BY", 0, false);
-     * // Returns: 41 (the position where "ORDER BY" starts)
-     * 
+     * // Returns: 40 (the position where "ORDER BY" starts)
+     *
      * int whereIndex = SQLParser.indexWord(sql, "WHERE", 0, false);
-     * // Returns: 21 (the position where "WHERE" starts)
+     * // Returns: 20 (the position where "WHERE" starts)
      * }</pre>
      * 
      * @param sql the SQL statement to search within
@@ -506,8 +506,8 @@ public final class SQLParser {
      * <pre>{@code
      * String sql = "SELECT   name,   age FROM users";
      * String word1 = SQLParser.nextWord(sql, 6);  // Returns: "name" (skips spaces after SELECT)
-     * String word2 = SQLParser.nextWord(sql, 10); // Returns: ","
-     * String word3 = SQLParser.nextWord(sql, 11); // Returns: "age" (skips spaces after comma)
+     * String word2 = SQLParser.nextWord(sql, 13); // Returns: ","
+     * String word3 = SQLParser.nextWord(sql, 14); // Returns: "age" (skips spaces after comma)
      * }</pre>
      * 
      * @param sql the SQL statement to extract the word from
@@ -529,7 +529,7 @@ public final class SQLParser {
                 sb.append(c);
 
                 // end in quote.
-                if (c == quoteChar) {
+                if (c == quoteChar && (index == fromIndex || sql.charAt(index - 1) != '\\')) {
                     break;
                 }
             } else if (isSeparator(sql, sqlLength, index, c)) {
@@ -622,7 +622,7 @@ public final class SQLParser {
      * <p>Example usage:</p>
      * <pre>{@code
      * String sql = "WHERE id = #{userId} AND age > 25";
-     * boolean isSep1 = SQLParser.isSeparator(sql, sql.length(), 10, '=');  // Returns: true
+     * boolean isSep1 = SQLParser.isSeparator(sql, sql.length(), 9, '=');  // Returns: true
      * boolean isSep2 = SQLParser.isSeparator(sql, sql.length(), 11, '#');  // Returns: false (part of #{userId})
      * }</pre>
      * 

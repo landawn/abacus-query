@@ -1746,10 +1746,10 @@ public class ConditionFactory {
      *     ConditionFactory.gt("priority", 5),
      *     ConditionFactory.isNull("deleted_at")
      * );
-     * // Results in: status = 'active' OR priority > 5 OR deleted_at IS NULL
+     * // Results in: ((status = 'active') OR (priority > 5) OR (deleted_at IS NULL))
      * }</pre>
      *
-     * @param conditions array of conditions to combine with OR
+     * @param conditions the array of conditions to combine with OR
      * @return an Or junction
      */
     public static Or or(final Condition... conditions) {
@@ -1759,7 +1759,7 @@ public class ConditionFactory {
     /**
      * Creates an OR junction combining multiple conditions from a collection.
      * At least one condition must be true for the OR to be true.
-     * 
+     *
      * <p>Example usage:</p>
      * <pre>{@code
      * List<Condition> conditions = Arrays.asList(
@@ -1769,7 +1769,7 @@ public class ConditionFactory {
      * Or condition = ConditionFactory.or(conditions);
      * }</pre>
      *
-     * @param conditions collection of conditions to combine with OR
+     * @param conditions the collection of conditions to combine with OR
      * @return an Or junction
      */
     public static Or or(final Collection<? extends Condition> conditions) {
@@ -1779,7 +1779,7 @@ public class ConditionFactory {
     /**
      * Creates an AND junction combining multiple conditions.
      * All conditions must be true for the AND to be true.
-     * 
+     *
      * <p>Example usage:</p>
      * <pre>{@code
      * And condition = ConditionFactory.and(
@@ -1787,10 +1787,10 @@ public class ConditionFactory {
      *     ConditionFactory.ge("age", 18),
      *     ConditionFactory.isNotNull("email")
      * );
-     * // Results in: status = 'active' AND age >= 18 AND email IS NOT NULL
+     * // Results in: ((status = 'active') AND (age >= 18) AND (email IS NOT NULL))
      * }</pre>
      *
-     * @param conditions array of conditions to combine with AND
+     * @param conditions the array of conditions to combine with AND
      * @return an And junction
      */
     public static And and(final Condition... conditions) {
@@ -1800,7 +1800,7 @@ public class ConditionFactory {
     /**
      * Creates an AND junction combining multiple conditions from a collection.
      * All conditions must be true for the AND to be true.
-     * 
+     *
      * <p>Example usage:</p>
      * <pre>{@code
      * List<Condition> conditions = Arrays.asList(
@@ -1810,7 +1810,7 @@ public class ConditionFactory {
      * And condition = ConditionFactory.and(conditions);
      * }</pre>
      *
-     * @param conditions collection of conditions to combine with AND
+     * @param conditions the collection of conditions to combine with AND
      * @return an And junction
      */
     public static And and(final Collection<? extends Condition> conditions) {
@@ -1820,7 +1820,7 @@ public class ConditionFactory {
     /**
      * Creates a junction with a custom operator combining multiple conditions.
      * This allows for database-specific junction types beyond AND/OR.
-     * 
+     *
      * <p>Example usage:</p>
      * <pre>{@code
      * Junction condition = ConditionFactory.junction(CustomOperator.NAND,
@@ -1830,7 +1830,7 @@ public class ConditionFactory {
      * }</pre>
      *
      * @param operator the junction operator to use
-     * @param conditions array of conditions to combine
+     * @param conditions the array of conditions to combine
      * @return a Junction with the specified operator
      */
     @Beta
@@ -1848,7 +1848,7 @@ public class ConditionFactory {
      * }</pre>
      *
      * @param operator the junction operator to use
-     * @param conditions collection of conditions to combine
+     * @param conditions the collection of conditions to combine
      * @return a Junction with the specified operator
      */
     @Beta
@@ -2315,8 +2315,8 @@ public class ConditionFactory {
      * // Results in SQL like: ON user_id = id
      * }</pre>
      *
-     * @param propName first column name
-     * @param anoPropName second column name to join with
+     * @param propName the first column name
+     * @param anoPropName the second column name to join with
      * @return an On clause
      */
     public static On on(final String propName, final String anoPropName) {
@@ -2835,8 +2835,8 @@ public class ConditionFactory {
      * 
      * <p>Example usage:</p>
      * <pre>{@code
-     * NotIn condition = ConditionFactory.notIn("excluded_ids", new long[]{100L, 200L, 300L});
-     * // Results in SQL like: WHERE excluded_ids NOT IN (100, 200, 300)
+     * NotIn condition = ConditionFactory.notIn("excluded_ids", new long[]{110L, 120L, 130L});
+     * // Results in SQL like: WHERE excluded_ids NOT IN (110, 120, 130)
      * }</pre>
      *
      * @param propName the property/column name

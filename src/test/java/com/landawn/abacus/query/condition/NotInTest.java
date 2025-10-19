@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.NotIn;
-import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.ConditionFactory.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
@@ -117,7 +115,7 @@ public class NotInTest extends TestBase {
         String result = notIn.toString();
         Assertions.assertTrue(result.contains("category"));
         Assertions.assertTrue(result.contains("NOT IN"));
-        Assertions.assertTrue(result.contains("(A, B, C)"));
+        Assertions.assertTrue(result.contains("category NOT IN ('A', 'B', 'C')"));
     }
 
     @Test
@@ -128,7 +126,7 @@ public class NotInTest extends TestBase {
         String result = notIn.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
         Assertions.assertTrue(result.contains("USER_STATUS"));
         Assertions.assertTrue(result.contains("NOT IN"));
-        Assertions.assertTrue(result.contains("(active, pending)"));
+        Assertions.assertTrue(result.contains("USER_STATUS NOT IN ('active', 'pending')"));
     }
 
     @Test

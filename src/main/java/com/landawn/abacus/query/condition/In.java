@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.landawn.abacus.query.SK;
 import com.landawn.abacus.util.ImmutableList;
-import com.landawn.abacus.util.Joiner;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 
@@ -166,16 +165,17 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * 
-     * <p>The parameter list size remains unchanged, but all elements become null.
+     * Clears all values in the IN clause by setting them to null to free memory.
+     *
+     * <p>The values list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     *
      * <p>Example:</p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * In in = new In("status", Arrays.asList("active", "pending", "review"));
+     * List<Object> parameters = in.getParameters(); // Returns [active, pending, review]
+     * in.clearParameters(); // All values become null
+     * List<Object> updatedParameters = in.getParameters(); // Returns [null, null, null]
      * }</pre>
      */
     @SuppressWarnings("rawtypes")
@@ -211,11 +211,18 @@ public class In extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        //noinspection resource
-        return Joiner.with(SK.COMMA_SPACE, namingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L, SK.PARENTHESES_R)
-                .reuseCachedBuffer()
-                .appendAll(values)
-                .toString();
+        final StringBuilder sb = new StringBuilder();
+        sb.append(namingPolicy.convert(propName)).append(SK._SPACE).append(getOperator().toString()).append(SK.SPACE_PARENTHESES_L);
+
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) {
+                sb.append(SK.COMMA_SPACE);
+            }
+            sb.append(parameter2String(values.get(i), namingPolicy));
+        }
+
+        sb.append(SK._PARENTHESES_R);
+        return sb.toString();
     }
 
     /**

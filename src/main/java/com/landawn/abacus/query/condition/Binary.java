@@ -191,16 +191,20 @@ public class Binary extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * 
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     * Clears the parameter value by setting it to null to free memory.
+     * If the value is a nested Condition, delegates to that condition's clearParameters() method.
+     *
+     * <p>This method sets the propValue field to null unless it's a Condition,
+     * in which case it recursively clears parameters in the nested condition.</p>
+     *
      * <p>Example:</p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * Binary eq = new Binary("age", Operator.EQUAL, 25);
+     * eq.clearParameters(); // propValue becomes null
+     *
+     * // With nested condition
+     * Binary withSubquery = new Binary("id", Operator.IN, new SubQuery("SELECT id FROM users"));
+     * withSubquery.clearParameters(); // Delegates to SubQuery.clearParameters()
      * }</pre>
      */
     @Override

@@ -11,8 +11,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.In;
-import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class InTest extends TestBase {
@@ -204,7 +202,7 @@ public class InTest extends TestBase {
         Assertions.assertEquals("SINGLE", condition.getValues().get(0));
         
         String result = condition.toString();
-        Assertions.assertTrue(result.contains("type IN (SINGLE)"));
+        Assertions.assertTrue(result.contains("type IN ('SINGLE')"));
     }
 
     @Test

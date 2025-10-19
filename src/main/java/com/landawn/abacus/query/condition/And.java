@@ -44,11 +44,11 @@ import com.landawn.abacus.util.N;
  *     CF.gt("age", 18),
  *     CF.lt("age", 65)
  * );
- * // Results in: status = 'active' AND age > 18 AND age < 65
- * 
+ * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
+ *
  * // Chain additional conditions
  * And extended = and.and(CF.eq("country", "USA"));
- * // Results in: status = 'active' AND age > 18 AND age < 65 AND country = 'USA'
+ * // Results in: ((status = 'active') AND (age > 18) AND (age < 65) AND (country = 'USA'))
  * 
  * // Create from a collection
  * List<Condition> conditions = Arrays.asList(
@@ -80,7 +80,7 @@ public class And extends Junction {
      *     CF.eq("department", "Sales"),
      *     CF.gte("salary", 50000)
      * );
-     * // Results in: department = 'Sales' AND salary >= 50000
+     * // Results in: ((department = 'Sales') AND (salary >= 50000))
      * 
      * // Complex AND with multiple conditions
      * And complex = new And(
@@ -136,7 +136,7 @@ public class And extends Junction {
      *     .and(CF.gt("score", 80))
      *     .and(CF.lt("attempts", 3))
      *     .and(CF.eq("verified", true));
-     * // Results in: status = 'active' AND score > 80 AND attempts < 3 AND verified = true
+     * // Results in: ((status = 'active') AND (score > 80) AND (attempts < 3) AND (verified = true))
      * 
      * // Original 'and' is unchanged
      * // extended is a new instance with all conditions

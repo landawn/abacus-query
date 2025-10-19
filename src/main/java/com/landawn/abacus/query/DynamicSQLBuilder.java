@@ -93,6 +93,7 @@ public class DynamicSQLBuilder {
      *
      * <h3>Example:</h3>
      * <pre>{@code
+     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.select().append("id").append("name", "user_name");
      * // Generates: SELECT id, name AS user_name
      * }</pre>
@@ -109,6 +110,7 @@ public class DynamicSQLBuilder {
      *
      * <h3>Example:</h3>
      * <pre>{@code
+     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
      * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
      * }</pre>
@@ -125,6 +127,7 @@ public class DynamicSQLBuilder {
      *
      * <h3>Example:</h3>
      * <pre>{@code
+     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.where().append("status = ?").and("created_date > ?");
      * // Generates: WHERE status = ? AND created_date > ?
      * }</pre>
@@ -145,6 +148,7 @@ public class DynamicSQLBuilder {
      *
      * <h3>Example:</h3>
      * <pre>{@code
+     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.groupBy().append("department").append("year");
      * // Generates: GROUP BY department, year
      * }</pre>
@@ -165,6 +169,7 @@ public class DynamicSQLBuilder {
      *
      * <h3>Example:</h3>
      * <pre>{@code
+     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.having().append("COUNT(*) > ?").and("SUM(amount) < ?");
      * // Generates: HAVING COUNT(*) > ? AND SUM(amount) < ?
      * }</pre>
@@ -185,6 +190,7 @@ public class DynamicSQLBuilder {
      *
      * <h3>Example:</h3>
      * <pre>{@code
+     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.orderBy().append("created_date DESC").append("name ASC");
      * // Generates: ORDER BY created_date DESC, name ASC
      * }</pre>
@@ -223,6 +229,9 @@ public class DynamicSQLBuilder {
      *
      * <h3>Example:</h3>
      * <pre>{@code
+     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * builder.select().append("*");
+     * builder.from().append("users");
      * builder.limit(10);
      * // Generates: LIMIT 10
      * }</pre>
@@ -242,6 +251,9 @@ public class DynamicSQLBuilder {
      *
      * <h3>Example:</h3>
      * <pre>{@code
+     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * builder.select().append("*");
+     * builder.from().append("users");
      * builder.limit(20, 10);
      * // Generates: LIMIT 20, 10 (skip 20 rows, return next 10)
      * }</pre>
@@ -258,19 +270,19 @@ public class DynamicSQLBuilder {
 
     /**
      * Adds an Oracle-style ROWNUM condition to limit results.
-     * Generates: {@code ROWNUM < n}
+     * Generates: {@code ROWNUM <= n}
      *
      * <h3>Example:</h3>
      * <pre>{@code
      * builder.limitByRowNum(10);
-     * // Generates: ROWNUM < 10
+     * // Generates: ROWNUM <= 10
      * }</pre>
      *
-     * @param count the maximum number of rows (ROWNUM will be less than this value)
+     * @param count the maximum number of rows to return
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder limitByRowNum(final int count) {
-        getStringBuilderForMoreParts().append(" ROWNUM < ").append(count);
+        getStringBuilderForMoreParts().append(" ROWNUM <= ").append(count);
 
         return this;
     }
@@ -1565,9 +1577,9 @@ public class DynamicSQLBuilder {
     /**
      * A convenience subclass of DynamicSQLBuilder with a shorter name.
      * Functionality is identical to the parent class.
-     * 
+     *
      * <p>This class exists purely for brevity when the full class name would be too verbose.</p>
-     * 
+     *
      * <h3>Example usage:</h3>
      * <pre>{@code
      * DSB.create()
@@ -1582,6 +1594,16 @@ public class DynamicSQLBuilder {
          * Instantiates a new dsb.
          */
         private DSB() {
+        }
+
+        /**
+         * Creates a new instance of DSB.
+         * This is a shorthand for DynamicSQLBuilder.create() with a shorter class name.
+         *
+         * @return a new DSB instance
+         */
+        public static DSB create() {
+            return new DSB();
         }
     }
 }

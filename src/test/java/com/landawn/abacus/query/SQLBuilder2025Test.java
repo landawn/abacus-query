@@ -103,99 +103,80 @@ public class SQLBuilder2025Test extends TestBase {
 
     @Test
     public void testWhereMultipleConditions() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.eq("status", "active").and(ConditionFactory.gt("age", 18)))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.eq("status", "active").and(ConditionFactory.gt("age", 18))).sql();
         assertTrue(sql.contains("AND"));
     }
 
     @Test
     public void testWhereOr() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.eq("role", "admin").or(ConditionFactory.eq("role", "moderator")))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.eq("role", "admin").or(ConditionFactory.eq("role", "moderator"))).sql();
         assertTrue(sql.contains("OR"));
     }
 
     @Test
     public void testWhereBetween() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.between("age", 18, 65))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.between("age", 18, 65)).sql();
         assertTrue(sql.contains("BETWEEN"));
     }
 
     @Test
     public void testWhereLike() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.like("name", "%John%"))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.like("name", "%John%")).sql();
         assertTrue(sql.contains("LIKE"));
     }
 
     @Test
     public void testWhereIsNull() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.isNull("deleted_at"))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.isNull("deleted_at")).sql();
         assertTrue(sql.contains("IS NULL"));
     }
 
     @Test
     public void testWhereIsNotNull() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.isNotNull("email"))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.isNotNull("email")).sql();
         assertTrue(sql.contains("IS NOT NULL"));
     }
 
     // JOIN tests
     @Test
     public void testInnerJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .join("orders").on("users.id = orders.user_id")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").join("orders").on("users.id = orders.user_id").sql();
         assertTrue(sql.contains("JOIN"));
         assertTrue(sql.contains("ON"));
     }
 
     @Test
     public void testLeftJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .leftJoin("orders").on("users.id = orders.user_id")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").leftJoin("orders").on("users.id = orders.user_id").sql();
         assertTrue(sql.contains("LEFT JOIN"));
     }
 
     @Test
     public void testRightJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .rightJoin("departments").on("users.dept_id = departments.id")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").rightJoin("departments").on("users.dept_id = departments.id").sql();
         assertTrue(sql.contains("RIGHT JOIN"));
     }
 
     @Test
     public void testFullJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .fullJoin("departments").on("users.dept_id = departments.id")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").fullJoin("departments").on("users.dept_id = departments.id").sql();
         assertTrue(sql.contains("FULL JOIN"));
     }
 
     @Test
     public void testCrossJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .crossJoin("roles")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").crossJoin("roles").sql();
         assertTrue(sql.contains("CROSS JOIN"));
     }
 
     @Test
     public void testMultipleJoins() {
-        String sql = SQLBuilder.PSC.select("*").from("users u")
-                .innerJoin("orders o").on("u.id = o.user_id")
-                .leftJoin("products p").on("o.product_id = p.id")
+        String sql = SQLBuilder.PSC.select("*")
+                .from("users u")
+                .innerJoin("orders o")
+                .on("u.id = o.user_id")
+                .leftJoin("products p")
+                .on("o.product_id = p.id")
                 .sql();
         assertTrue(sql.contains("INNER JOIN"));
         assertTrue(sql.contains("LEFT JOIN"));
@@ -204,24 +185,21 @@ public class SQLBuilder2025Test extends TestBase {
     // GROUP BY tests
     @Test
     public void testGroupBy() {
-        String sql = SQLBuilder.PSC.select("department", "COUNT(*)").from("employees")
-                .groupBy("department")
-                .sql();
+        String sql = SQLBuilder.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").sql();
         assertTrue(sql.contains("GROUP BY department"));
     }
 
     @Test
     public void testGroupByMultipleColumns() {
-        String sql = SQLBuilder.PSC.select("year", "month", "COUNT(*)").from("sales")
-                .groupBy("year", "month")
-                .sql();
+        String sql = SQLBuilder.PSC.select("year", "month", "COUNT(*)").from("sales").groupBy("year", "month").sql();
         assertTrue(sql.contains("GROUP BY"));
     }
 
     // HAVING tests
     @Test
     public void testHaving() {
-        String sql = SQLBuilder.PSC.select("department", "COUNT(*)").from("employees")
+        String sql = SQLBuilder.PSC.select("department", "COUNT(*)")
+                .from("employees")
                 .groupBy("department")
                 .having(ConditionFactory.expr("COUNT(*) > 5"))
                 .sql();
@@ -231,61 +209,47 @@ public class SQLBuilder2025Test extends TestBase {
     // ORDER BY tests
     @Test
     public void testOrderBy() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .orderBy("name")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").orderBy("name").sql();
         assertTrue(sql.contains("ORDER BY name"));
     }
 
     @Test
     public void testOrderByAsc() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .orderBy("name", SortDirection.ASC)
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").orderBy("name", SortDirection.ASC).sql();
         assertTrue(sql.contains("ORDER BY"));
         assertTrue(sql.contains("ASC"));
     }
 
     @Test
     public void testOrderByDesc() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .orderBy("created_date", SortDirection.DESC)
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").orderBy("created_date", SortDirection.DESC).sql();
         assertTrue(sql.contains("ORDER BY"));
         assertTrue(sql.contains("DESC"));
     }
 
     @Test
     public void testOrderByMultipleColumns() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .orderBy("last_name", "first_name")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").orderBy("last_name", "first_name").sql();
         assertTrue(sql.contains("ORDER BY"));
     }
 
     // LIMIT tests
     @Test
     public void testLimit() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .limit(10)
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").limit(10).sql();
         assertTrue(sql.contains("LIMIT 10"));
     }
 
     @Test
     public void testLimitWithOffset() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .limit(10, 20)
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").limit(10, 20).sql();
         assertTrue(sql.contains("LIMIT"));
     }
 
     // DISTINCT tests
     @Test
     public void testDistinct() {
-        String sql = SQLBuilder.PSC.select("status").from("users")
-                .distinct()
-                .sql();
+        String sql = SQLBuilder.PSC.select("status").from("users").distinct().sql();
         assertTrue(sql.contains("DISTINCT"));
     }
 
@@ -305,47 +269,33 @@ public class SQLBuilder2025Test extends TestBase {
     // UPDATE tests
     @Test
     public void testUpdate() {
-        String sql = SQLBuilder.PSC.update("users")
-                .set("status", "inactive")
-                .where(ConditionFactory.eq("id", 1))
-                .sql();
+        String sql = SQLBuilder.PSC.update("users").set("status", "inactive").where(ConditionFactory.eq("id", 1)).sql();
         assertTrue(sql.contains("UPDATE users"));
         assertTrue(sql.contains("SET"));
     }
 
     @Test
     public void testUpdateMultipleColumns() {
-        String sql = SQLBuilder.PSC.update("users")
-                .set("first_name", "John")
-                .set("last_name", "Doe")
-                .where(ConditionFactory.eq("id", 1))
-                .sql();
+        String sql = SQLBuilder.PSC.update("users").set("first_name", "John").set("last_name", "Doe").where(ConditionFactory.eq("id", 1)).sql();
         assertTrue(sql.contains("SET"));
     }
 
     @Test
     public void testUpdateWithEntityClass() {
-        String sql = SQLBuilder.PSC.update(Account.class)
-                .set("status", "active")
-                .where(ConditionFactory.eq("id", 1))
-                .sql();
+        String sql = SQLBuilder.PSC.update(Account.class).set("status", "active").where(ConditionFactory.eq("id", 1)).sql();
         assertNotNull(sql);
     }
 
     // DELETE tests
     @Test
     public void testDeleteFrom() {
-        String sql = SQLBuilder.PSC.deleteFrom("users")
-                .where(ConditionFactory.eq("id", 1))
-                .sql();
+        String sql = SQLBuilder.PSC.deleteFrom("users").where(ConditionFactory.eq("id", 1)).sql();
         assertTrue(sql.contains("DELETE FROM users"));
     }
 
     @Test
     public void testDeleteFromWithEntityClass() {
-        String sql = SQLBuilder.PSC.deleteFrom(Account.class)
-                .where(ConditionFactory.eq("id", 1))
-                .sql();
+        String sql = SQLBuilder.PSC.deleteFrom(Account.class).where(ConditionFactory.eq("id", 1)).sql();
         assertNotNull(sql);
     }
 
@@ -354,7 +304,8 @@ public class SQLBuilder2025Test extends TestBase {
     public void testComplexSelectQuery() {
         String sql = SQLBuilder.PSC.select("u.id", "u.name", "COUNT(o.id) as order_count")
                 .from("users u")
-                .leftJoin("orders o").on("u.id = o.user_id")
+                .leftJoin("orders o")
+                .on("u.id = o.user_id")
                 .where(ConditionFactory.eq("u.status", "active"))
                 .groupBy("u.id", "u.name")
                 .having(ConditionFactory.expr("COUNT(o.id) > 5"))
@@ -374,25 +325,20 @@ public class SQLBuilder2025Test extends TestBase {
     // Naming policy tests
     @Test
     public void testSelectWithLowerCaseUnderscore() {
-        String sql = SQLBuilder.PSC.select(Account.class)
-                .from(Account.class)
-                .sql();
+        String sql = SQLBuilder.PSC.select(Account.class).from(Account.class).sql();
         assertNotNull(sql);
     }
 
     @Test
     public void testSelectWithUpperCaseUnderscore() {
-        String sql = SQLBuilder.PAC.select(Account.class)
-                .from(Account.class)
-                .sql();
+        String sql = SQLBuilder.PAC.select(Account.class).from(Account.class).sql();
         assertNotNull(sql);
     }
 
     // Parameterized query tests
     @Test
     public void testPairWithParameters() {
-        SQLBuilder builder = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.eq("id", 1));
+        SQLBuilder builder = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.eq("id", 1));
         AbstractQueryBuilder.SP pair = builder.build();
         assertNotNull(pair);
         assertNotNull(pair.query);
@@ -403,9 +349,7 @@ public class SQLBuilder2025Test extends TestBase {
     @Test
     public void testSubquery() {
         String subquery = SQLBuilder.PSC.select("id").from("active_users").sql();
-        String sql = SQLBuilder.PSC.select("*").from("orders")
-                .where("user_id IN (" + subquery + ")")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("orders").where("user_id IN (" + subquery + ")").sql();
         assertTrue(sql.contains("IN"));
         assertTrue(sql.contains("SELECT"));
     }
@@ -475,70 +419,52 @@ public class SQLBuilder2025Test extends TestBase {
     // Multiple where conditions with different operators
     @Test
     public void testWhereGreaterThan() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.gt("age", 18))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.gt("age", 18)).sql();
         assertTrue(sql.contains(">"));
     }
 
     @Test
     public void testWhereLessThan() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.lt("age", 65))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.lt("age", 65)).sql();
         assertTrue(sql.contains("<"));
     }
 
     @Test
     public void testWhereGreaterEqual() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.ge("age", 21))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.ge("age", 21)).sql();
         assertTrue(sql.contains(">="));
     }
 
     @Test
     public void testWhereLessEqual() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.le("age", 60))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.le("age", 60)).sql();
         assertTrue(sql.contains("<="));
     }
 
     @Test
     public void testWhereNotEqual() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.ne("status", "deleted"))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.ne("status", "deleted")).sql();
         assertTrue(sql.contains("!=") || sql.contains("<>"));
     }
 
     // IN clause tests
     @Test
     public void testWhereIn() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where("id IN (1, 2, 3)")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where("id IN (1, 2, 3)").sql();
         assertTrue(sql.contains("IN"));
     }
 
     // CASE WHEN tests
     @Test
     public void testCaseWhen() {
-        String sql = SQLBuilder.PSC.select("CASE WHEN age < 18 THEN 'minor' ELSE 'adult' END as age_group")
-                .from("users")
-                .sql();
+        String sql = SQLBuilder.PSC.select("CASE WHEN age < 18 THEN 'minor' ELSE 'adult' END as age_group").from("users").sql();
         assertTrue(sql.contains(" case when age < 18 then 'minor' else 'adult' end AS age_group "));
     }
 
     // Multiple table sources
     @Test
     public void testFromMultipleTablesWithJoin() {
-        String sql = SQLBuilder.PSC.select("*")
-                .from("users u")
-                .join("orders o").on("u.id = o.user_id")
-                .join("products p").on("o.product_id = p.id")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id").join("products p").on("o.product_id = p.id").sql();
         assertTrue(sql.contains("users u"));
         assertTrue(sql.contains("orders o"));
         assertTrue(sql.contains("products p"));
@@ -547,7 +473,8 @@ public class SQLBuilder2025Test extends TestBase {
     // Chaining tests
     @Test
     public void testChainedAndConditions() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
+        String sql = SQLBuilder.PSC.select("*")
+                .from("users")
                 .where(ConditionFactory.eq("status", "active").and(ConditionFactory.gt("age", 18)).and(ConditionFactory.lt("age", 65)))
                 .sql();
         assertTrue(sql.contains("AND"));
@@ -555,7 +482,8 @@ public class SQLBuilder2025Test extends TestBase {
 
     @Test
     public void testChainedOrConditions() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
+        String sql = SQLBuilder.PSC.select("*")
+                .from("users")
                 .where(ConditionFactory.eq("role", "admin").or(ConditionFactory.eq("role", "moderator")).or(ConditionFactory.eq("role", "owner")))
                 .sql();
         assertTrue(sql.contains("OR"));
@@ -631,24 +559,17 @@ public class SQLBuilder2025Test extends TestBase {
         props.put("first_name", "John");
         props.put("last_name", "Doe");
 
-        String sql = SQLBuilder.PSC.update("users")
-                .set(props)
-                .where(ConditionFactory.eq("id", 1))
-                .sql();
+        String sql = SQLBuilder.PSC.update("users").set(props).where(ConditionFactory.eq("id", 1)).sql();
         assertTrue(sql.contains("SET"));
     }
 
     // Complex conditions
     @Test
     public void testWhereWithNestedAndOr() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.and(
-                    ConditionFactory.eq("status", "active"),
-                    ConditionFactory.or(
-                        ConditionFactory.eq("role", "admin"),
-                        ConditionFactory.eq("role", "moderator")
-                    )
-                ))
+        String sql = SQLBuilder.PSC.select("*")
+                .from("users")
+                .where(ConditionFactory.and(ConditionFactory.eq("status", "active"),
+                        ConditionFactory.or(ConditionFactory.eq("role", "admin"), ConditionFactory.eq("role", "moderator"))))
                 .sql();
         assertNotNull(sql);
     }
@@ -656,9 +577,7 @@ public class SQLBuilder2025Test extends TestBase {
     // NULL handling
     @Test
     public void testWhereNullCheck() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .where(ConditionFactory.isNull("deleted_at").and(ConditionFactory.isNotNull("email")))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(ConditionFactory.isNull("deleted_at").and(ConditionFactory.isNotNull("email"))).sql();
         assertTrue(sql.contains("IS NULL"));
         assertTrue(sql.contains("IS NOT NULL"));
     }
@@ -666,27 +585,21 @@ public class SQLBuilder2025Test extends TestBase {
     // Preselect tests
     @Test
     public void testPreselectDistinct() {
-        String sql = SQLBuilder.PSC.select("status").from("users")
-                .preselect("DISTINCT")
-                .sql();
+        String sql = SQLBuilder.PSC.select("status").from("users").preselect("DISTINCT").sql();
         assertTrue(sql.contains("DISTINCT"));
     }
 
     // USING clause tests
     @Test
     public void testJoinUsing() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .join("orders").using("user_id")
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").join("orders").using("user_id").sql();
         assertTrue(sql.contains("USING"));
     }
 
     // Offset tests
     @Test
     public void testOffset() {
-        String sql = SQLBuilder.PSC.select("*").from("users")
-                .offset(20)
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").offset(20).sql();
         assertTrue(sql.contains("OFFSET") || sql.contains("20"));
     }
 

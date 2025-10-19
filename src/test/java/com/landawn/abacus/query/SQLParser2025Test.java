@@ -298,7 +298,6 @@ public class SQLParser2025Test extends TestBase {
         assertTrue(words.contains("HAVING"));
     }
 
-
     @Test
     public void testParseWithSubquery() {
         String sql = "SELECT * FROM users WHERE id IN (SELECT user_id FROM orders)";

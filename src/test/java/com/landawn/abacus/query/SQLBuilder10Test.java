@@ -857,7 +857,10 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testApplyFunction() throws Exception {
-        List<String> result = PSC.select("*").from("account").where(ConditionFactory.eq("status", "ACTIVE")).apply(sp -> Arrays.asList(sp.query, sp.parameters.toString()));
+        List<String> result = PSC.select("*")
+                .from("account")
+                .where(ConditionFactory.eq("status", "ACTIVE"))
+                .apply(sp -> Arrays.asList(sp.query, sp.parameters.toString()));
 
         assertEquals(2, result.size());
         assertEquals("SELECT * FROM account WHERE status = ?", result.get(0));
@@ -1009,14 +1012,20 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testConditionsWithAnd() {
-        String sql = PSC.select("*").from("users").where(ConditionFactory.and(ConditionFactory.gt("age", 18), ConditionFactory.lt("age", 65), ConditionFactory.eq("status", "ACTIVE"))).sql();
+        String sql = PSC.select("*")
+                .from("users")
+                .where(ConditionFactory.and(ConditionFactory.gt("age", 18), ConditionFactory.lt("age", 65), ConditionFactory.eq("status", "ACTIVE")))
+                .sql();
 
         assertTrue(sql.contains("WHERE (age > ?) AND (age < ?) AND (status = ?)"));
     }
 
     @Test
     public void testConditionsWithOr() {
-        String sql = PSC.select("*").from("users").where(ConditionFactory.or(ConditionFactory.eq("status", "ACTIVE"), ConditionFactory.eq("status", "PENDING"))).sql();
+        String sql = PSC.select("*")
+                .from("users")
+                .where(ConditionFactory.or(ConditionFactory.eq("status", "ACTIVE"), ConditionFactory.eq("status", "PENDING")))
+                .sql();
 
         assertTrue(sql.contains("WHERE (status = ?) OR (status = ?)"));
     }
@@ -1079,7 +1088,12 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testCriteriaCondition() {
-        Criteria criteria = ConditionFactory.criteria().where(ConditionFactory.gt("age", 18)).groupBy("status").having(ConditionFactory.gt("COUNT(*)", 5)).orderBy("status").limit(10);
+        Criteria criteria = ConditionFactory.criteria()
+                .where(ConditionFactory.gt("age", 18))
+                .groupBy("status")
+                .having(ConditionFactory.gt("COUNT(*)", 5))
+                .orderBy("status")
+                .limit(10);
 
         String sql = PSC.select("status", "COUNT(*)").from("users").append(criteria).sql();
 
@@ -1236,7 +1250,11 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testComplexJoinConditions() {
-        String sql = PSC.select("*").from("users u").leftJoin("orders o").on(ConditionFactory.and(ConditionFactory.eq("u.id", "o.user_id"), ConditionFactory.eq("o.status", "COMPLETED"))).sql();
+        String sql = PSC.select("*")
+                .from("users u")
+                .leftJoin("orders o")
+                .on(ConditionFactory.and(ConditionFactory.eq("u.id", "o.user_id"), ConditionFactory.eq("o.status", "COMPLETED")))
+                .sql();
 
         assertTrue(sql.contains("LEFT JOIN orders o ON"));
         assertTrue(sql.contains("u.id = ?"));
@@ -1257,7 +1275,12 @@ public class SQLBuilder10Test extends TestBase {
     public void testMultipleWhereConditions() {
 
         assertThrows(IllegalStateException.class, () -> {
-            PSC.select("*").from("users").where(ConditionFactory.gt("age", 18)).where(ConditionFactory.eq("status", "ACTIVE")).where(ConditionFactory.like("email", "%@company.com")).sql();
+            PSC.select("*")
+                    .from("users")
+                    .where(ConditionFactory.gt("age", 18))
+                    .where(ConditionFactory.eq("status", "ACTIVE"))
+                    .where(ConditionFactory.like("email", "%@company.com"))
+                    .sql();
         });
 
     }
@@ -1309,7 +1332,8 @@ public class SQLBuilder10Test extends TestBase {
 
         String sql = PSC.update("users")
                 .set(updateValues)
-                .where(ConditionFactory.and(ConditionFactory.lt("lastLoginDate", new Date()), ConditionFactory.or(ConditionFactory.eq("status", "PENDING"), ConditionFactory.eq("status", "ACTIVE"))))
+                .where(ConditionFactory.and(ConditionFactory.lt("lastLoginDate", new Date()),
+                        ConditionFactory.or(ConditionFactory.eq("status", "PENDING"), ConditionFactory.eq("status", "ACTIVE"))))
                 .sql();
 
         assertTrue(sql.contains("UPDATE users SET"));
@@ -1439,7 +1463,9 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testDeleteFromWithMultipleConditions() {
-        String sql = PSC.deleteFrom("users").where(ConditionFactory.and(ConditionFactory.eq("status", "DELETED"), ConditionFactory.lt("deletedDate", new Date()))).sql();
+        String sql = PSC.deleteFrom("users")
+                .where(ConditionFactory.and(ConditionFactory.eq("status", "DELETED"), ConditionFactory.lt("deletedDate", new Date())))
+                .sql();
 
         assertTrue(sql.contains("DELETE FROM users"));
         assertTrue(sql.contains("WHERE (status = ?) AND (deleted_date < ?)"));

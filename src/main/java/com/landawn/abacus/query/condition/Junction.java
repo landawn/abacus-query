@@ -360,16 +360,20 @@ public class Junction extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * 
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     * Clears parameters in all child conditions by recursively calling clearParameters() on each.
+     * This method delegates the clearing operation to each contained condition in the junction.
+     *
+     * <p>Use this method to release large objects held by any condition in the junction tree
+     * when the junction is no longer needed.</p>
+     *
      * <p>Example:</p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * Junction and = new And(
+     *     new Equal("status", "active"),
+     *     new GreaterThan("age", 18),
+     *     new In("role", Arrays.asList("admin", "moderator"))
+     * );
+     * and.clearParameters(); // Recursively clears all child conditions
      * }</pre>
      */
     @Override

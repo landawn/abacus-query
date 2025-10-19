@@ -65,8 +65,7 @@ public class Selection2025Test extends TestBase {
         List<String> propNames = Arrays.asList("id", "name");
         Set<String> excluded = new HashSet<>(Arrays.asList("password"));
 
-        Selection selection = new Selection()
-                .entityClass(String.class)
+        Selection selection = new Selection().entityClass(String.class)
                 .tableAlias("t")
                 .classAlias("alias")
                 .selectPropNames(propNames)
@@ -89,9 +88,7 @@ public class Selection2025Test extends TestBase {
 
     @Test
     public void testMultiSelectionBuilder_AddSimple() {
-        List<Selection> selections = Selection.multiSelectionBuilder()
-                .add(String.class)
-                .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class).build();
 
         assertEquals(1, selections.size());
         assertEquals(String.class, selections.get(0).entityClass());
@@ -104,9 +101,7 @@ public class Selection2025Test extends TestBase {
     public void testMultiSelectionBuilder_AddWithPropNames() {
         List<String> propNames = Arrays.asList("id", "name");
 
-        List<Selection> selections = Selection.multiSelectionBuilder()
-                .add(String.class, propNames)
-                .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class, propNames).build();
 
         assertEquals(1, selections.size());
         assertEquals(String.class, selections.get(0).entityClass());
@@ -117,9 +112,7 @@ public class Selection2025Test extends TestBase {
 
     @Test
     public void testMultiSelectionBuilder_AddWithAliases() {
-        List<Selection> selections = Selection.multiSelectionBuilder()
-                .add(String.class, "t", "alias")
-                .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class, "t", "alias").build();
 
         assertEquals(1, selections.size());
         assertEquals(String.class, selections.get(0).entityClass());
@@ -132,9 +125,7 @@ public class Selection2025Test extends TestBase {
     public void testMultiSelectionBuilder_AddWithFull() {
         List<String> propNames = Arrays.asList("id", "name");
 
-        List<Selection> selections = Selection.multiSelectionBuilder()
-                .add(String.class, "t", "alias", propNames)
-                .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class, "t", "alias", propNames).build();
 
         assertEquals(1, selections.size());
         assertEquals(String.class, selections.get(0).entityClass());
@@ -149,9 +140,7 @@ public class Selection2025Test extends TestBase {
     public void testMultiSelectionBuilder_AddWithSubEntity() {
         Set<String> excluded = new HashSet<>(Arrays.asList("password"));
 
-        List<Selection> selections = Selection.multiSelectionBuilder()
-                .add(String.class, true, excluded)
-                .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class, true, excluded).build();
 
         assertEquals(1, selections.size());
         assertEquals(String.class, selections.get(0).entityClass());
@@ -165,9 +154,7 @@ public class Selection2025Test extends TestBase {
     public void testMultiSelectionBuilder_AddWithAllOptions() {
         Set<String> excluded = new HashSet<>(Arrays.asList("password"));
 
-        List<Selection> selections = Selection.multiSelectionBuilder()
-                .add(String.class, "t", "alias", true, excluded)
-                .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class, "t", "alias", true, excluded).build();
 
         assertEquals(1, selections.size());
         assertEquals(String.class, selections.get(0).entityClass());
@@ -207,10 +194,7 @@ public class Selection2025Test extends TestBase {
 
     @Test
     public void testMultiSelectionBuilder_Build() {
-        List<Selection> selections = Selection.multiSelectionBuilder()
-                .add(String.class)
-                .add(Integer.class)
-                .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class).add(Integer.class).build();
 
         assertNotNull(selections);
         assertEquals(2, selections.size());
@@ -278,12 +262,7 @@ public class Selection2025Test extends TestBase {
 
     @Test
     public void testNullValues() {
-        Selection selection = new Selection()
-                .entityClass(null)
-                .tableAlias(null)
-                .classAlias(null)
-                .selectPropNames(null)
-                .excludedPropNames(null);
+        Selection selection = new Selection().entityClass(null).tableAlias(null).classAlias(null).selectPropNames(null).excludedPropNames(null);
 
         assertNull(selection.entityClass());
         assertNull(selection.tableAlias());

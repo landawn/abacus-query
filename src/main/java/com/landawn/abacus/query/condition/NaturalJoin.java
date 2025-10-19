@@ -111,7 +111,7 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the name of the entity/table to join
-     * @param condition additional condition to apply after the natural join
+     * @param condition the additional condition to apply after the natural join
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public NaturalJoin(final String joinEntity, final Condition condition) {
@@ -119,13 +119,13 @@ public class NaturalJoin extends Join {
     }
 
     /**
-     * Constructs a NATURAL JOIN with multiple entities/tables and a condition.
+     * Creates a new NATURAL JOIN with multiple entities/tables and a condition.
      * Useful for joining multiple tables in a single natural join operation.
-     * 
+     *
      * <p>When joining multiple tables, the natural join is performed sequentially.
      * Each table is joined based on columns with matching names. Care must be taken
      * to ensure the intended columns are matched, especially with multiple tables.</p>
-     * 
+     *
      * <p>Example usage:</p>
      * <pre>{@code
      * // Join customers, orders, and products naturally
@@ -135,8 +135,8 @@ public class NaturalJoin extends Join {
      * // Natural join across all tables on matching columns, filtered by amount
      * }</pre>
      *
-     * @param joinEntities collection of entity/table names to join
-     * @param condition additional condition to apply after the natural join
+     * @param joinEntities the collection of entity/table names to join
+     * @param condition the additional condition to apply after the natural join
      * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition condition) {

@@ -246,16 +246,21 @@ public class Between extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * 
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     * Clears the min and max parameter values by setting them to null to free memory.
+     * If either value is a nested Condition, delegates to that condition's clearParameters() method.
+     *
+     * <p>This method sets both minValue and maxValue fields to null unless they are Conditions,
+     * in which case it recursively clears parameters in the nested conditions.</p>
+     *
      * <p>Example:</p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * Between between = new Between("age", 18, 65);
+     * between.clearParameters(); // Both minValue and maxValue become null
+     * List<Object> parameters = between.getParameters(); // Returns [null, null]
+     *
+     * // With nested condition
+     * Between withSubquery = new Between("id", new SubQuery("SELECT MIN(id)"), new SubQuery("SELECT MAX(id)"));
+     * withSubquery.clearParameters(); // Delegates to both SubQuery.clearParameters()
      * }</pre>
      */
     @Override

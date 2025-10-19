@@ -983,7 +983,7 @@ public class ConditionFactoryTest extends TestBase {
         Assertions.assertNotNull(notIn1);
 
         // Test with long array
-        NotIn notIn2 = CF.notIn("excludeId", new long[] { 100L, 200L });
+        NotIn notIn2 = CF.notIn("excludeId", new long[] { 110L, 120L });
         Assertions.assertNotNull(notIn2);
 
         // Test with double array

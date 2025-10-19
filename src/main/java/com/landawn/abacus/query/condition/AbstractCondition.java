@@ -122,13 +122,13 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <pre>{@code
      * Condition c1 = CF.eq("status", "active");
      * Condition c2 = CF.gt("age", 18);
-     * And combined = c1.and(c2); 
-     * // Results in: status = 'active' AND age > 18
-     * 
+     * And combined = c1.and(c2);
+     * // Results in: ((status = 'active') AND (age > 18))
+     *
      * // Can be chained
      * Condition c3 = CF.lt("age", 65);
      * And allConditions = c1.and(c2).and(c3);
-     * // Results in: status = 'active' AND age > 18 AND age < 65
+     * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
      * }</pre>
      * 
      * @param condition the condition to AND with this condition
@@ -150,12 +150,12 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Condition c1 = CF.eq("status", "premium");
      * Condition c2 = CF.eq("status", "vip");
      * Or combined = c1.or(c2);
-     * // Results in: status = 'premium' OR status = 'vip'
-     * 
+     * // Results in: ((status = 'premium') OR (status = 'vip'))
+     *
      * // Can be chained
      * Condition c3 = CF.eq("status", "gold");
      * Or anyStatus = c1.or(c2).or(c3);
-     * // Results in: status = 'premium' OR status = 'vip' OR status = 'gold'
+     * // Results in: ((status = 'premium') OR (status = 'vip') OR (status = 'gold'))
      * }</pre>
      * 
      * @param condition the condition to OR with this condition
@@ -176,11 +176,11 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <pre>{@code
      * Condition c = CF.eq("status", "inactive");
      * Not negated = c.not();
-     * // Results in: NOT (status = 'inactive')
-     * 
+     * // Results in: NOT status = 'inactive'
+     *
      * // Double negation
      * Not doubleNegated = negated.not();
-     * // Results in: NOT (NOT (status = 'inactive'))
+     * // Results in: NOT NOT status = 'inactive'
      * 
      * // Complex negation
      * Condition complex = CF.and(

@@ -731,7 +731,10 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testComplexQueryWithConditions() {
-            SQLBuilder sb = SCSB.select("firstName", "lastName").from("account").where(ConditionFactory.eq("status", "'ACTIVE'").and(ConditionFactory.gt("age", 18))).orderBy("lastName");
+            SQLBuilder sb = SCSB.select("firstName", "lastName")
+                    .from("account")
+                    .where(ConditionFactory.eq("status", "'ACTIVE'").and(ConditionFactory.gt("age", 18)))
+                    .orderBy("lastName");
 
             Assertions.assertNotNull(sb);
             String sql = sb.sql();
@@ -1778,7 +1781,8 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testParseCondition() {
-            Condition cond = ConditionFactory.and(ConditionFactory.eq("status", "'ACTIVE'"), ConditionFactory.between("registrationDate", "2020-01-01", "2023-12-31"));
+            Condition cond = ConditionFactory.and(ConditionFactory.eq("status", "'ACTIVE'"),
+                    ConditionFactory.between("registrationDate", "2020-01-01", "2023-12-31"));
 
             SQLBuilder sb = LCSB.parse(cond, Customer.class);
             Assertions.assertNotNull(sb);

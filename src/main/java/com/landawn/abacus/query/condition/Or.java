@@ -46,12 +46,12 @@ import com.landawn.abacus.util.N;
  *     new Equal("status", "pending"),
  *     new Equal("status", "review")
  * );
- * // Results in: status = 'active' OR status = 'pending' OR status = 'review'
- * 
+ * // Results in: ((status = 'active') OR (status = 'pending') OR (status = 'review'))
+ *
  * // Build OR condition fluently
  * Or or2 = new Or(new GreaterThan("age", 65))
  *     .or(new LessThan("age", 18));
- * // Results in: age > 65 OR age < 18
+ * // Results in: ((age > 65) OR (age < 18))
  * }</pre>
  * 
  * @see And
@@ -64,9 +64,9 @@ public class Or extends Junction {
     }
 
     /**
-     * Constructs an OR condition with the specified conditions.
+     * Creates a new OR condition with the specified conditions.
      * All provided conditions will be combined using the OR operator.
-     * 
+     *
      * <p>The conditions are evaluated left to right, and the first true condition
      * will make the entire OR expression true. This constructor accepts a variable
      * number of conditions for convenience.</p>
@@ -88,7 +88,7 @@ public class Or extends Junction {
      * );
      * }</pre>
      * 
-     * @param condition variable number of conditions to be combined with OR
+     * @param condition the variable number of conditions to be combined with OR
      * @throws IllegalArgumentException if no conditions are provided
      */
     public Or(final Condition... condition) {
@@ -96,12 +96,12 @@ public class Or extends Junction {
     }
 
     /**
-     * Constructs an OR condition with a collection of conditions.
+     * Creates a new OR condition with a collection of conditions.
      * This constructor is useful when conditions are built dynamically.
-     * 
+     *
      * <p>All conditions in the collection will be combined using the OR operator.
      * The collection is copied internally to ensure immutability of the condition.</p>
-     * 
+     *
      * <p>Example usage:</p>
      * <pre>{@code
      * // Dynamic condition building
@@ -110,15 +110,15 @@ public class Or extends Junction {
      *     conditions.add(new Like("name", "%" + name + "%"));
      * }
      * Or or = new Or(conditions);
-     * 
+     *
      * // Combining existing conditions
      * Set<Condition> statusConditions = new HashSet<>();
      * statusConditions.add(new Equal("status", "active"));
      * statusConditions.add(new Equal("status", "pending"));
      * Or statusOr = new Or(statusConditions);
      * }</pre>
-     * 
-     * @param conditions collection of conditions to be combined with OR
+     *
+     * @param conditions the collection of conditions to be combined with OR
      * @throws IllegalArgumentException if conditions is null or empty
      */
     public Or(final Collection<? extends Condition> conditions) {

@@ -33,7 +33,7 @@ import com.landawn.abacus.util.Tuple.Tuple2;
 
 public class QueryUtilTest extends TestBase {
 
-    @Table(name = "test_user", alias = "tu", columnFields = {"id", "name"}, nonColumnFields = {"tempData"})
+    @Table(name = "test_user", alias = "tu", columnFields = { "id", "name" }, nonColumnFields = { "tempData" })
     static class TestUser {
         @Id
         private Long id;
@@ -52,28 +52,74 @@ public class QueryUtilTest extends TestBase {
         private TestAddress address;
 
         // Getters and setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
-        public String getNotColumnField() { return notColumnField; }
-        public void setNotColumnField(String notColumnField) { this.notColumnField = notColumnField; }
-        public String getTempData() { return tempData; }
-        public void setTempData(String tempData) { this.tempData = tempData; }
-        public TestAddress getAddress() { return address; }
-        public void setAddress(TestAddress address) { this.address = address; }
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getNotColumnField() {
+            return notColumnField;
+        }
+
+        public void setNotColumnField(String notColumnField) {
+            this.notColumnField = notColumnField;
+        }
+
+        public String getTempData() {
+            return tempData;
+        }
+
+        public void setTempData(String tempData) {
+            this.tempData = tempData;
+        }
+
+        public TestAddress getAddress() {
+            return address;
+        }
+
+        public void setAddress(TestAddress address) {
+            this.address = address;
+        }
     }
 
     static class TestAddress {
         private String street;
         private String city;
 
-        public String getStreet() { return street; }
-        public void setStreet(String street) { this.street = street; }
-        public String getCity() { return city; }
-        public void setCity(String city) { this.city = city; }
+        public String getStreet() {
+            return street;
+        }
+
+        public void setStreet(String street) {
+            this.street = street;
+        }
+
+        public String getCity() {
+            return city;
+        }
+
+        public void setCity(String city) {
+            this.city = city;
+        }
     }
 
     static class SimpleEntity {
@@ -81,17 +127,33 @@ public class QueryUtilTest extends TestBase {
         private Integer id;
         private String name;
 
-        public Integer getId() { return id; }
-        public void setId(Integer id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public Integer getId() {
+            return id;
+        }
+
+        public void setId(Integer id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 
     static class NoIdEntity {
         private String data;
 
-        public String getData() { return data; }
-        public void setData(String data) { this.data = data; }
+        public String getData() {
+            return data;
+        }
+
+        public void setData(String data) {
+            this.data = data;
+        }
     }
 
     @Test

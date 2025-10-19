@@ -62,16 +62,16 @@ import com.landawn.abacus.util.Strings;
  * // Basic join (usually through subclasses)
  * Join join = new Join("orders");
  * // Generates: JOIN orders
- * 
- * // Join with condition
- * Join joinWithCondition = new Join("orders o", 
- *     new Equal("customers.id", "o.customer_id"));
- * // Generates: JOIN orders o ON customers.id = o.customer_id
- * 
+ *
+ * // Join with condition (use Expression for column references)
+ * Join joinWithCondition = new Join("orders o",
+ *     ConditionFactory.expr("customers.id = o.customer_id"));
+ * // Generates: JOIN orders o customers.id = o.customer_id
+ *
  * // Join multiple tables
  * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
- *     new Equal("o.id", "oi.order_id"));
- * // Generates: JOIN orders o, order_items oi ON o.id = oi.order_id
+ *     ConditionFactory.expr("o.id = oi.order_id"));
+ * // Generates: JOIN orders o, order_items oi o.id = oi.order_id
  * }</pre>
  * 
  * @see InnerJoin
@@ -144,18 +144,18 @@ public class Join extends AbstractCondition {
      * 
      * <p>Example usage:
      * <pre>{@code
-     * // Join with simple condition
+     * // Join with simple condition (use Expression for column references)
      * Join orderJoin = new Join("orders o",
-     *     new Equal("customers.id", "o.customer_id"));
-     * // Generates: JOIN orders o ON customers.id = o.customer_id
-     * 
+     *     ConditionFactory.expr("customers.id = o.customer_id"));
+     * // Generates: JOIN orders o customers.id = o.customer_id
+     *
      * // Join with complex condition
      * Join complexJoin = new Join("products p",
      *     new And(
-     *         new Equal("categories.id", "p.category_id"),
+     *         ConditionFactory.expr("categories.id = p.category_id"),
      *         new Equal("p.active", true)
      *     ));
-     * // Generates: JOIN products p ON categories.id = p.category_id AND p.active = true
+     * // Generates: JOIN products p ((categories.id = p.category_id) AND (p.active = true))
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -194,15 +194,15 @@ public class Join extends AbstractCondition {
      * 
      * <p>Example usage:
      * <pre>{@code
-     * // Join multiple tables
+     * // Join multiple tables (use Expression for column references)
      * List<String> tables = Arrays.asList("orders o", "customers c", "addresses a");
      * Join multiJoin = new Join(tables,
      *     new And(
-     *         new Equal("o.customer_id", "c.id"),
-     *         new Equal("c.address_id", "a.id")
+     *         ConditionFactory.expr("o.customer_id = c.id"),
+     *         ConditionFactory.expr("c.address_id = a.id")
      *     ));
-     * // Generates: JOIN orders o, customers c, addresses a 
-     * //            ON o.customer_id = c.id AND c.address_id = a.id
+     * // Generates: JOIN orders o, customers c, addresses a
+     * //            ((o.customer_id = c.id) AND (c.address_id = a.id))
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with
@@ -259,9 +259,10 @@ public class Join extends AbstractCondition {
      * 
      * <p>Example usage:
      * <pre>{@code
-     * Equal condition = new Equal("a.id", "b.a_id");
+     * // Use Expression for column references in join conditions
+     * Expression condition = ConditionFactory.expr("a.id = b.a_id");
      * Join join = new Join("table_b b", condition);
-     * Condition retrieved = join.getCondition(); // Returns the Equal condition
+     * Condition retrieved = join.getCondition(); // Returns the Expression condition
      * }</pre>
      *
      * @param <T> the type of the condition
@@ -354,18 +355,18 @@ public class Join extends AbstractCondition {
      * // Simple join
      * Join j1 = new Join("orders");
      * j1.toString(policy); // "JOIN orders"
-     * 
-     * // Join with condition
-     * Join j2 = new Join("orders o", new Equal("c.id", "o.customer_id"));
-     * j2.toString(policy); // "JOIN orders o ON c.id = o.customer_id"
-     * 
+     *
+     * // Join with condition (use Expression for column references)
+     * Join j2 = new Join("orders o", ConditionFactory.expr("c.id = o.customer_id"));
+     * j2.toString(policy); // "JOIN orders o c.id = o.customer_id"
+     *
      * // Multiple tables
-     * Join j3 = new Join(Arrays.asList("t1", "t2"), condition);
-     * j3.toString(policy); // "JOIN t1, t2 ON ..."
+     * Join j3 = new Join(Arrays.asList("t1", "t2"), ConditionFactory.expr("t1.id = t2.t1_id"));
+     * j3.toString(policy); // "JOIN t1, t2 t1.id = t2.t1_id"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply
-     * @return the string representation, e.g., "INNER JOIN orders o ON customers.id = o.customer_id"
+     * @return the string representation, e.g., "JOIN orders o customers.id = o.customer_id"
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -380,8 +381,9 @@ public class Join extends AbstractCondition {
      * 
      * <p>Example usage:
      * <pre>{@code
-     * Join j1 = new Join("orders o", new Equal("c.id", "o.customer_id"));
-     * Join j2 = new Join("orders o", new Equal("c.id", "o.customer_id"));
+     * Expression expr = ConditionFactory.expr("c.id = o.customer_id");
+     * Join j1 = new Join("orders o", expr);
+     * Join j2 = new Join("orders o", expr);
      * assert j1.hashCode() == j2.hashCode();
      * }</pre>
      *
