@@ -48,7 +48,7 @@ package com.landawn.abacus.query.condition;
  * <pre>{@code
  * // Find all names starting with "John"
  * Like startsWithJohn = new Like("name", "John%");
- * // Generates: name LIKE 'John%'
+ * // SQL: name LIKE 'John%'
  * // Matches: "John", "Johnson", "Johnny", etc.
  * 
  * // Find all emails ending with "@example.com"
@@ -126,8 +126,7 @@ public class Like extends Binary {
      * // Check your database documentation for escape syntax
      * }</pre>
      *
-     * @param propName the name of the property to match against. Must not be null.
-     *                 This should be a string or text column in your database.
+     * @param propName the property/column name (must not be null or empty)
      * @param propValue the pattern to match, including wildcards. Must not be null.
      *                  Use % for any characters, _ for single character.
      * @throws IllegalArgumentException if propName is null

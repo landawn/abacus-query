@@ -69,7 +69,11 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      */
     protected final Operator operator;
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized AbstractCondition instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     AbstractCondition() {
         operator = null;
     }
@@ -77,8 +81,8 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     /**
      * Creates a new AbstractCondition with the specified operator.
      * The operator is immutable once set and defines the behavior of this condition.
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * // In a subclass constructor
      * public Equal(String propName, Object propValue) {
@@ -87,7 +91,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *     this.propValue = propValue;
      * }
      * }</pre>
-     * 
+     *
      * @param operator the operator for this condition (must not be null)
      */
     protected AbstractCondition(final Operator operator) {
@@ -97,16 +101,16 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     /**
      * Gets the operator for this condition.
      * The operator defines the type of operation (e.g., EQUAL, GREATER_THAN, AND, OR).
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * Condition condition = CF.eq("status", "active");
      * Operator op = condition.getOperator(); // Returns Operator.EQUAL
-     * 
+     *
      * Condition andCondition = CF.and(c1, c2);
      * Operator andOp = andCondition.getOperator(); // Returns Operator.AND
      * }</pre>
-     * 
+     *
      * @return the operator for this condition
      */
     @Override
@@ -117,8 +121,8 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     /**
      * Creates a new AND condition combining this condition with another.
      * Both conditions must be true for the AND condition to be true.
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * Condition c1 = CF.eq("status", "active");
      * Condition c2 = CF.gt("age", 18);
@@ -130,7 +134,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * And allConditions = c1.and(c2).and(c3);
      * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
      * }</pre>
-     * 
+     *
      * @param condition the condition to AND with this condition
      * @return a new And condition containing both conditions
      */
@@ -144,8 +148,8 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     /**
      * Creates a new OR condition combining this condition with another.
      * At least one condition must be true for the OR condition to be true.
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * Condition c1 = CF.eq("status", "premium");
      * Condition c2 = CF.eq("status", "vip");
@@ -157,7 +161,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Or anyStatus = c1.or(c2).or(c3);
      * // Results in: ((status = 'premium') OR (status = 'vip') OR (status = 'gold'))
      * }</pre>
-     * 
+     *
      * @param condition the condition to OR with this condition
      * @return a new Or condition containing both conditions
      */
@@ -171,8 +175,8 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     /**
      * Creates a new NOT condition that negates this condition.
      * The NOT condition is true when this condition is false, and vice versa.
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * Condition c = CF.eq("status", "inactive");
      * Not negated = c.not();
@@ -181,7 +185,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * // Double negation
      * Not doubleNegated = negated.not();
      * // Results in: NOT NOT status = 'inactive'
-     * 
+     *
      * // Complex negation
      * Condition complex = CF.and(
      *     CF.eq("type", "guest"),
@@ -190,7 +194,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Not negatedComplex = complex.not();
      * // Results in: NOT (type = 'guest' AND visits < 3)
      * }</pre>
-     * 
+     *
      * @return a new Not condition wrapping this condition
      */
     @Override
@@ -202,9 +206,10 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Creates a shallow copy of this condition using object cloning.
      * Subclasses should override this method to provide deep copying
      * of their specific fields to ensure complete independence between copies.
-     * 
-     * <p>Example implementation in a subclass:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
+     * // Example implementation in a subclass:
      * @Override
      * public <T extends Condition> T copy() {
      *     Binary copy = super.copy(); // Shallow copy
@@ -215,7 +220,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *     return (T) copy;
      * }
      * }</pre>
-     * 
+     *
      * @param <T> the type of condition to return
      * @return a copy of this condition
      */
@@ -236,14 +241,14 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     /**
      * Returns a string representation of this condition using the default naming policy.
      * This method delegates to {@link #toString(NamingPolicy)} with {@link NamingPolicy#NO_CHANGE}.
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * Condition condition = CF.eq("userName", "John");
      * String str = condition.toString();
      * // Returns: "userName = 'John'"
      * }</pre>
-     * 
+     *
      * @return a string representation of this condition
      */
     @Override
@@ -255,18 +260,18 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Converts a parameter value to its string representation for use in condition strings.
      * Handles special cases like strings (adds quotes), conditions (recursive toString),
      * and null values.
-     * 
+     *
      * <p>This utility method is used internally by condition implementations to format
      * parameter values consistently across the framework.</p>
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * parameter2String("John", policy);     // Returns: 'John'
      * parameter2String(123, policy);        // Returns: 123
      * parameter2String(null, policy);       // Returns: null
      * parameter2String(subCondition, policy); // Returns: subCondition.toString(policy)
      * }</pre>
-     * 
+     *
      * @param parameter the parameter value to convert
      * @param namingPolicy the naming policy to apply
      * @return the string representation of the parameter
@@ -294,17 +299,17 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     /**
      * Concatenates property names into a formatted string.
      * Handles different array sizes efficiently, adding parentheses for multiple names.
-     * 
+     *
      * <p>This utility method is used internally for formatting multiple property names
      * in conditions like GROUP BY or ORDER BY.</p>
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * concatPropNames("name");              // Returns: name
      * concatPropNames("city", "state");     // Returns: (city, state)
      * concatPropNames("a", "b", "c");       // Returns: (a, b, c)
      * }</pre>
-     * 
+     *
      * @param propNames the property names to concatenate
      * @return a formatted string of property names
      */
@@ -352,19 +357,19 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     /**
      * Concatenates property names from a collection into a formatted string.
      * Handles different collection sizes efficiently, adding parentheses for multiple names.
-     * 
+     *
      * <p>This utility method is used internally for formatting multiple property names
      * from collections in conditions like IN or GROUP BY.</p>
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * List<String> names = Arrays.asList("city", "state", "zip");
      * concatPropNames(names); // Returns: (city, state, zip)
-     * 
+     *
      * Set<String> single = Collections.singleton("id");
      * concatPropNames(single); // Returns: id
      * }</pre>
-     * 
+     *
      * @param propNames the collection of property names to concatenate
      * @return a formatted string of property names
      */

@@ -101,10 +101,8 @@ public class IsNotNaN extends IsNot {
      * // Generates: ph_level IS NOT NAN
      * }</pre>
      *
-     * @param propName the name of the numeric property to check. Must not be null.
-     *                 This should be a column containing floating-point values that
-     *                 need to be validated as proper numbers.
-     * @throws IllegalArgumentException if propName is null
+     * @param propName the property/column name (must not be null or empty)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNotNaN(final String propName) {
         super(propName, IsNaN.NAN);

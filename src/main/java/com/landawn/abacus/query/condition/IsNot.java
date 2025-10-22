@@ -80,10 +80,9 @@ public class IsNot extends Binary {
      * // Generates: order_status IS NOT PENDING
      * }</pre>
      *
-     * @param propName the name of the property to check. Must not be null.
-     * @param propValue the value to compare against. Can be null or special Expression values.
-     *                  Common values include null, NaN, INFINITE, or custom database-specific values.
-     * @throws IllegalArgumentException if propName is null
+     * @param propName the property/column name (must not be null or empty)
+     * @param propValue the value to compare against (can be null, literal value, or subquery)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);

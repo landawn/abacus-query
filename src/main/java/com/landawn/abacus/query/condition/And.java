@@ -65,7 +65,11 @@ import com.landawn.abacus.util.N;
  */
 public class And extends Junction {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized And instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     And() {
     }
 
@@ -92,6 +96,7 @@ public class And extends Junction {
      * }</pre>
      * 
      * @param conditions the conditions to combine with AND logic
+     * @throws IllegalArgumentException if conditions is null
      */
     public And(final Condition... conditions) {
         super(Operator.AND, conditions);
@@ -115,7 +120,8 @@ public class And extends Junction {
      * // Results in dynamic AND condition based on the list
      * }</pre>
      * 
-     * @param conditions the collection of conditions to combine with AND logic 
+     * @param conditions the collection of conditions to combine with AND logic
+     * @throws IllegalArgumentException if conditions is null 
      */
     public And(final Collection<? extends Condition> conditions) {
         super(Operator.AND, conditions);
@@ -144,6 +150,7 @@ public class And extends Junction {
      * 
      * @param condition the condition to add to this AND
      * @return a new AND condition containing all conditions
+     * @throws IllegalArgumentException if condition is null
      */
     @Override
     public And and(final Condition condition) {

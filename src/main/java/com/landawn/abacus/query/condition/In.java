@@ -95,20 +95,20 @@ public class In extends AbstractCondition {
      * // Filter by multiple categories
      * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers", "phones"));
      * In categoryFilter = new In("category", categories);
-     * // Generates: category IN ('electronics', 'computers', 'phones')
+     * // SQL: category IN ('electronics', 'computers', 'phones')
      * 
      * // Filter by specific IDs
      * List<Long> ids = Arrays.asList(101L, 102L, 103L);
      * In idFilter = new In("product_id", ids);
-     * // Generates: product_id IN (101, 102, 103)
+     * // SQL: product_id IN (101, 102, 103)
      * 
      * // Filter by enum values
      * List<String> priorities = Arrays.asList("HIGH", "CRITICAL");
      * In priorityFilter = new In("priority", priorities);
-     * // Generates: priority IN ('HIGH', 'CRITICAL')
+     * // SQL: priority IN ('HIGH', 'CRITICAL')
      * }</pre>
      *
-     * @param propName the name of the property to check. Must not be null.
+     * @param propName the property/column name (must not be null or empty)
      * @param values the collection of values to check against. Must not be null or empty.
      *               The collection is copied to prevent external modifications.
      * @throws IllegalArgumentException if propName is null or values is null/empty
@@ -144,7 +144,7 @@ public class In extends AbstractCondition {
      * Sets new values for this IN condition.
      *
      * @param values the new collection of values. Must not be null or empty.
-     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
     public void setValues(final List<?> values) {

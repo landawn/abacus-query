@@ -63,14 +63,18 @@ package com.landawn.abacus.query.condition;
  */
 public class All extends Cell {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized All instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     All() {
     }
 
     /**
      * Creates a new ALL condition with the specified subquery.
      * The ALL operator ensures that a comparison is true for every value returned by the subquery.
-     * 
+     *
      * <p>Example:</p>
      * <pre>{@code
      * // Create a subquery for competitor prices
@@ -78,10 +82,10 @@ public class All extends Cell {
      *     "SELECT price FROM competitor_products WHERE product_type = 'Premium'"
      * );
      * All allCompetitors = new All(competitorPrices);
-     * 
+     *
      * // Can be used to find products priced above all competitors:
      * // WHERE our_price > ALL (SELECT price FROM competitor_products WHERE product_type = 'Premium')
-     * 
+     *
      * // Another example: find students who scored higher than all class averages
      * SubQuery classAverages = CF.subQuery(
      *     "SELECT avg_score FROM class_statistics WHERE year = 2024"
@@ -89,8 +93,9 @@ public class All extends Cell {
      * All allAverages = new All(classAverages);
      * // Use with: WHERE student_score > ALL (...)
      * }</pre>
-     * 
-     * @param condition the subquery that returns values to compare against
+     *
+     * @param condition the subquery that returns values to compare against. Must not be null.
+     * @throws IllegalArgumentException if condition is null
      */
     public All(final SubQuery condition) {
         super(Operator.ALL, condition);

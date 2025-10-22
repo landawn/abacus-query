@@ -15,36 +15,63 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents a greater than (>) condition in a query.
- * This condition checks if a property value is strictly greater than a specified value.
- * 
- * <p>The GreaterThan condition is used for range queries where you need to find records
- * with values exceeding a threshold. It supports various data types including numbers,
- * dates, strings (lexicographical comparison), and can also work with subqueries.</p>
- * 
- * <p>Usage example:</p>
+ * Represents a greater-than (>) comparison condition in SQL-like queries.
+ * This class is used to create conditions that check if a property value is greater than
+ * a specified value. The greater-than operator is fundamental for implementing lower bounds,
+ * range queries, and various filtering scenarios where you need to exclude values at or
+ * below a certain threshold.
+ *
+ * <p>This condition is commonly used for:
+ * <ul>
+ *   <li>Setting exclusive lower bounds on numeric values</li>
+ *   <li>Date comparisons (after a certain date)</li>
+ *   <li>String comparisons using lexicographical ordering</li>
+ *   <li>Implementing exclusive range queries with LessThan</li>
+ *   <li>Age requirements, threshold checks, and minimum validations</li>
+ * </ul>
+ *
+ * <p>The GreaterThan operator works with various data types:
+ * <ul>
+ *   <li>Numbers: Natural numeric comparison</li>
+ *   <li>Dates/Times: Chronological comparison</li>
+ *   <li>Strings: Lexicographical (dictionary) order</li>
+ *   <li>Any Comparable type supported by the database</li>
+ * </ul>
+ *
+ * <p>Example usage:
  * <pre>{@code
- * // Create a condition where age > 18
- * GreaterThan ageCondition = new GreaterThan("age", 18);
- * 
- * // Use in a query for high-value orders
- * query.where(new GreaterThan("orderTotal", 1000.0));
- * 
- * // Date comparison - find future events
- * GreaterThan futureEvents = new GreaterThan("eventDate", LocalDate.now());
- * 
- * // String comparison (alphabetical)
- * GreaterThan afterM = new GreaterThan("lastName", "M");
+ * // Check if age is greater than 18
+ * GreaterThan adults = new GreaterThan("age", 18);
+ * // SQL: age > 18
+ *
+ * // Check if price is greater than 99.99
+ * GreaterThan premium = new GreaterThan("price", 99.99);
+ * // SQL: price > 99.99
+ *
+ * // Check if date is after a start date
+ * GreaterThan afterStart = new GreaterThan("start_date", "2023-01-01");
+ * // SQL: start_date > '2023-01-01'
+ *
+ * // Combine with LessThan for exclusive range
+ * And priceRange = new And(
+ *     new GreaterThan("price", 10.00),
+ *     new LessThan("price", 100.00)
+ * );
+ * // SQL: (price > 10.00) AND (price < 100.00)
  * }</pre>
- * 
- * @see Binary
+ *
  * @see GreaterEqual
  * @see LessThan
- * @see Condition
+ * @see Between
+ * @see Binary
  */
 public class GreaterThan extends Binary {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized GreaterThan instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     GreaterThan() {
     }
 
@@ -68,8 +95,8 @@ public class GreaterThan extends Binary {
      * GreaterThan aboveAverage = new GreaterThan("price", avgPrice);
      * }</pre>
      * 
-     * @param propName the name of the property to compare
-     * @param propValue the value to compare against
+     * @param propName the property/column name (must not be null or empty)
+     * @param propValue the value to compare against (can be null, literal value, or subquery)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public GreaterThan(final String propName, final Object propValue) {

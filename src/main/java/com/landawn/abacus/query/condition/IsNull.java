@@ -47,15 +47,15 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * <pre>{@code
  * // Check if email is null
  * IsNull emailCheck = new IsNull("email");
- * // Generates: email IS NULL
+ * // SQL: email IS NULL
  * 
  * // Find customers without phone numbers
  * IsNull phoneCheck = new IsNull("phone_number");
- * // Generates: phone_number IS NULL
+ * // SQL: phone_number IS NULL
  * 
  * // Find unassigned tasks
  * IsNull assigneeCheck = new IsNull("assigned_to");
- * // Generates: assigned_to IS NULL
+ * // SQL: assigned_to IS NULL
  * 
  * // Combine with other conditions
  * And incompleteProfile = new And(
@@ -97,28 +97,27 @@ public class IsNull extends Is {
      * <pre>{@code
      * // Find records with missing data
      * IsNull birthdateCheck = new IsNull("birth_date");
-     * // Generates: birth_date IS NULL
+     * // SQL: birth_date IS NULL
      * 
      * // Find unprocessed records
      * IsNull processedCheck = new IsNull("processed_date");
-     * // Generates: processed_date IS NULL
+     * // SQL: processed_date IS NULL
      * 
      * // Find products without descriptions
      * IsNull descCheck = new IsNull("description");
-     * // Generates: description IS NULL
+     * // SQL: description IS NULL
      * 
      * // Find employees without managers (top-level)
      * IsNull managerCheck = new IsNull("manager_id");
-     * // Generates: manager_id IS NULL
+     * // SQL: manager_id IS NULL
      * 
      * // Check for missing optional fields
      * IsNull middleNameCheck = new IsNull("middle_name");
-     * // Generates: middle_name IS NULL
+     * // SQL: middle_name IS NULL
      * }</pre>
      *
-     * @param propName the name of the property to check. Must not be null.
-     *                 This should be the column name or field name in your query.
-     * @throws IllegalArgumentException if propName is null
+     * @param propName the property/column name (must not be null or empty)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNull(final String propName) {
         super(propName, NULL);

@@ -40,11 +40,11 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * // Limit to first 10 rows
  * Limit limit1 = new Limit(10);
- * // Generates: LIMIT 10
+ * // SQL: LIMIT 10
  * 
  * // Pagination: Get 20 rows starting from row 50
  * Limit limit2 = new Limit(50, 20);
- * // Generates: LIMIT 20 OFFSET 50
+ * // SQL: LIMIT 20 OFFSET 50
  * 
  * // Custom expression for specific databases
  * Limit limit3 = new Limit("10 OFFSET 20");

@@ -64,27 +64,32 @@ import java.util.Collection;
  */
 public class RightJoin extends Join {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized RightJoin instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     RightJoin() {
     }
 
     /**
-     * Constructs a RIGHT JOIN with the specified entity/table.
-     * 
-     * <p>Creates a basic right join without an explicit ON condition.
-     * The join condition should be specified separately or will use natural join behavior.
-     * This constructor is useful when the join condition will be added later or when
-     * using natural join semantics.</p>
-     * 
-     * <p>Example usage:</p>
+     * Creates a RIGHT JOIN clause for the specified table/entity.
+     * This creates a join without an ON condition, which may need to be
+     * specified separately or will use implicit join conditions based on
+     * foreign key relationships (if supported by the database).
+     *
+     * <p>Example usage:
      * <pre>{@code
-     * // Join to show all customers, even those without orders
-     * RightJoin join = new RightJoin("customers");
-     * // Use when you want all customers, even those without orders
-     * // SELECT * FROM orders RIGHT JOIN customers
+     * // Simple right join without condition
+     * RightJoin join = new RightJoin("departments");
+     * // Generates: RIGHT JOIN departments
+     *
+     * // Right join with table alias
+     * RightJoin aliasJoin = new RightJoin("all_customers c");
+     * // Generates: RIGHT JOIN all_customers c
      * }</pre>
      *
-     * @param joinEntity the name of the entity/table to right join
+     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public RightJoin(final String joinEntity) {
@@ -92,56 +97,60 @@ public class RightJoin extends Join {
     }
 
     /**
-     * Constructs a RIGHT JOIN with the specified entity/table and join condition.
-     * 
-     * <p>This is the most common form, specifying both the table to join and how to join it.
-     * The condition typically uses ON or USING clauses to define the relationship between tables.
-     * All rows from the right table (joinEntity) will be included in the result.</p>
-     * 
-     * <p>Example usage:</p>
+     * Creates a RIGHT JOIN clause with a join condition.
+     * This is the most common form of RIGHT JOIN, specifying both the table to join
+     * and the condition for matching rows. All rows from the right table are preserved,
+     * with NULL values for non-matching rows from the left table.
+     *
+     * <p>Example usage:
      * <pre>{@code
-     * // Get all products, even those never ordered
-     * On onClause = new On("order_items.product_id", "products.id");
-     * RightJoin join = new RightJoin("products", onClause);
-     * // Results in: RIGHT JOIN products ON order_items.product_id = products.id
-     * 
-     * // With additional conditions
-     * And complexCondition = new And(
-     *     new On("orders.product_id", "products.id"),
-     *     new Equal("products.active", true)
-     * );
-     * RightJoin activeProducts = new RightJoin("products", complexCondition);
+     * // Join orders with all products (use Expression for column references)
+     * RightJoin allProducts = new RightJoin("products p",
+     *     ConditionFactory.expr("order_items.product_id = p.id"));
+     * // Generates: RIGHT JOIN products p order_items.product_id = p.id
+     *
+     * // Find all departments including those with no employees
+     * RightJoin allDepts = new RightJoin("departments d",
+     *     ConditionFactory.expr("employees.dept_id = d.id"));
+     * // Generates: RIGHT JOIN departments d employees.dept_id = d.id
+     *
+     * // Complex join with filtering in the join condition
+     * RightJoin activeCategories = new RightJoin("categories c",
+     *     new And(
+     *         ConditionFactory.expr("products.category_id = c.id"),
+     *         new Equal("c.active", true),
+     *         new GreaterThan("c.created_date", "2023-01-01")
+     *     ));
+     * // Generates: RIGHT JOIN categories c ((products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01'))
      * }</pre>
      *
-     * @param joinEntity the name of the entity/table to right join
-     * @param condition the join condition (typically an ON or USING clause)
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @param joinEntity the table or entity to join with. Can include alias.
+     * @param condition the join condition (typically an equality condition between columns).
+     *                  Can be a complex condition using And/Or for multiple criteria.
+     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
      */
     public RightJoin(final String joinEntity, final Condition condition) {
         super(Operator.RIGHT_JOIN, joinEntity, condition);
     }
 
     /**
-     * Constructs a RIGHT JOIN with multiple entities/tables and a condition.
-     * 
-     * <p>Useful for joining multiple tables in a single right join operation.
-     * When multiple tables are specified, they are typically joined sequentially.
-     * The condition should account for the relationships between all tables.</p>
-     * 
-     * <p>Example usage:</p>
+     * Creates a RIGHT JOIN clause with multiple tables/entities and a join condition.
+     * This allows joining multiple tables in a single RIGHT JOIN operation.
+     *
+     * <p>Example usage:
      * <pre>{@code
-     * // Right join multiple related tables
-     * List<String> tables = Arrays.asList("categories", "subcategories");
-     * Condition joinCondition = new And(
-     *     new On("products.category_id", "categories.id"),
-     *     new On("products.subcategory_id", "subcategories.id")
-     * );
-     * RightJoin join = new RightJoin(tables, joinCondition);
-     * // Gets all categories and subcategories, even those with no products
+     * // Join multiple related tables
+     * List<String> tables = Arrays.asList("categories c", "subcategories sc");
+     * RightJoin join = new RightJoin(tables,
+     *     new And(
+     *         ConditionFactory.expr("p.category_id = c.id"),
+     *         ConditionFactory.expr("p.subcategory_id = sc.id")
+     *     ));
+     * // Generates: RIGHT JOIN categories c, subcategories sc ((p.category_id = c.id) AND (p.subcategory_id = sc.id))
      * }</pre>
      *
-     * @param joinEntities collection of entity/table names to right join
-     * @param condition the join condition
+     * @param joinEntities the collection of tables or entities to join with.
+     * @param condition the join condition to apply.
      * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public RightJoin(final Collection<String> joinEntities, final Condition condition) {

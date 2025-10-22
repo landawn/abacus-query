@@ -63,7 +63,11 @@ package com.landawn.abacus.query.condition;
  */
 public class Exists extends Cell {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Exists instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Exists() {
     }
 
@@ -102,6 +106,7 @@ public class Exists extends Cell {
      * }</pre>
      * 
      * @param condition the subquery to check for existence of rows
+     * @throws IllegalArgumentException if condition is null
      */
     public Exists(final SubQuery condition) {
         super(Operator.EXISTS, condition);

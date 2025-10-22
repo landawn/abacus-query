@@ -67,7 +67,11 @@ package com.landawn.abacus.query.condition;
  */
 public class Except extends Clause {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Except instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Except() {
     }
 
@@ -99,6 +103,7 @@ public class Except extends Clause {
      * }</pre>
      * 
      * @param condition the subquery whose results will be excluded from the main query
+     * @throws IllegalArgumentException if condition is null
      */
     public Except(final SubQuery condition) {
         super(Operator.EXCEPT, condition);

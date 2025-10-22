@@ -63,14 +63,22 @@ import com.landawn.abacus.util.Strings;
  * @see LessEqual
  */
 public class Between extends AbstractCondition {
-    // For Kryo
+    /**
+     * The property name being checked.
+     * This field stores the name of the column or property that will be tested against the range.
+     * It's package-private for serialization frameworks.
+     */
     final String propName;
 
     private Object minValue;
 
     private Object maxValue;
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Between instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Between() {
         propName = null;
     }
@@ -98,7 +106,7 @@ public class Between extends AbstractCondition {
      * Between nearAverage = new Between("score", avgMinus10, avgPlus10);
      * }</pre>
      * 
-     * @param propName the property name to check
+     * @param propName the property/column name (must not be null or empty)
      * @param minValue the minimum value (inclusive), can be a literal or Condition
      * @param maxValue the maximum value (inclusive), can be a literal or Condition
      * @throws IllegalArgumentException if propName is null or empty
@@ -162,7 +170,7 @@ public class Between extends AbstractCondition {
      * }</pre>
      * 
      * @param minValue the new minimum value
-     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
     public void setMinValue(final Object minValue) {
@@ -201,7 +209,7 @@ public class Between extends AbstractCondition {
      * }</pre>
      * 
      * @param maxValue the new maximum value
-     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
     public void setMaxValue(final Object maxValue) {

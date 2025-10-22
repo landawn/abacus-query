@@ -50,7 +50,11 @@ package com.landawn.abacus.query.condition;
  */
 public class Where extends Clause {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Where instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Where() {
     }
 

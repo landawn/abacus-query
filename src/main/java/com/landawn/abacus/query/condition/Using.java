@@ -63,27 +63,31 @@ import com.landawn.abacus.util.N;
  */
 public class Using extends Cell {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Using instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Using() {
     }
 
     /**
-     * Constructs a USING clause with the specified column names.
+     * Creates a USING clause with the specified column names.
      * The columns must exist with identical names in both tables being joined.
      * The join will match rows where all specified columns have equal values.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
      * // Simple join on employee_id
      * Using using = new Using("employee_id");
      * // In query: SELECT * FROM orders JOIN employees USING (employee_id)
-     * 
+     *
      * // Composite key join
      * Using multiColumn = new Using("company_id", "department_id", "team_id");
      * // In query: SELECT * FROM projects JOIN assignments USING (company_id, department_id, team_id)
      * }</pre>
      *
-     * @param columnNames variable number of column names to join on. 
+     * @param columnNames variable number of column names to join on.
      *                    All columns must exist in both tables with identical names.
      * @throws IllegalArgumentException if columnNames is null or empty
      */
@@ -92,16 +96,16 @@ public class Using extends Cell {
     }
 
     /**
-     * Constructs a USING clause with a collection of column names.
+     * Creates a USING clause with a collection of column names.
      * This constructor is useful when column names are determined dynamically
      * or retrieved from metadata/configuration.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
      * // Dynamic column list from metadata
      * List<String> sharedColumns = metadata.getSharedColumns("orders", "customers");
      * Using using = new Using(sharedColumns);
-     * 
+     *
      * // Multi-tenant join pattern
      * Set<String> tenantColumns = new LinkedHashSet<>();
      * tenantColumns.add("tenant_id");
@@ -152,7 +156,7 @@ public class Using extends Cell {
      */
     static Condition createUsingCondition(final Collection<String> columnNames) {
         if (N.isEmpty(columnNames)) {
-            throw new IllegalArgumentException("To create the using condition, columnNames " + columnNames + " must has one or more than one column name. ");
+            throw new IllegalArgumentException("To create the using condition, columnNames " + columnNames + " must have one or more column names. ");
         }
 
         return CF.expr(concatPropNames(columnNames));

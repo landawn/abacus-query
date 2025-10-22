@@ -56,31 +56,35 @@ package com.landawn.abacus.query.condition;
  */
 public class Some extends Cell {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Some instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Some() {
     }
 
     /**
      * Constructs a SOME condition with the specified subquery.
      * The SOME operator must be used with a comparison operator in the containing condition.
-     * 
+     *
      * <p>The SOME operator is typically used in scenarios where you want to find records
      * that meet a criteria compared to at least one value from another dataset. It's
      * particularly useful for finding records that exceed minimum thresholds or fall
      * below maximum limits from a dynamic set of values.</p>
-     * 
+     *
      * <p>Example usage:</p>
      * <pre>{@code
      * // Subquery to get department budgets
      * SubQuery deptBudgets = new SubQuery("SELECT budget FROM departments");
      * Some someCondition = new Some(deptBudgets);
-     * 
+     *
      * // Can be used in conditions like:
      * // project_cost < SOME (SELECT budget FROM departments)
      * // This returns projects that cost less than at least one department's budget
      * }</pre>
      *
-     * @param condition the subquery that returns values to compare against
+     * @param condition the subquery that returns values to compare against. Must not be null.
      * @throws IllegalArgumentException if condition is null
      */
     public Some(final SubQuery condition) {

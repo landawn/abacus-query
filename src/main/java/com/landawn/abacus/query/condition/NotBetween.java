@@ -99,7 +99,7 @@ public class NotBetween extends AbstractCondition {
      * // Matches: Sunday (1) and Saturday (7)
      * }</pre>
      *
-     * @param propName the property name to check
+     * @param propName the property/column name (must not be null or empty)
      * @param minValue the minimum value of the range to exclude
      * @param maxValue the maximum value of the range to exclude
      * @throws IllegalArgumentException if propName is null or empty

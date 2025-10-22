@@ -61,7 +61,11 @@ package com.landawn.abacus.query.condition;
  */
 public class Any extends Cell {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Any instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Any() {
     }
 
@@ -69,7 +73,7 @@ public class Any extends Cell {
      * Creates a new ANY condition with the specified subquery.
      * The ANY operator is used in conjunction with comparison operators to test
      * if the comparison is true for any value returned by the subquery.
-     * 
+     *
      * <p>Example:</p>
      * <pre>{@code
      * // Create a subquery for department budgets
@@ -77,11 +81,11 @@ public class Any extends Cell {
      *     "SELECT budget FROM departments WHERE region = 'West'"
      * );
      * Any anyBudget = new Any(budgetQuery);
-     * 
+     *
      * // Can be used in conditions like:
      * // expense > ANY (SELECT budget FROM departments WHERE region = 'West')
      * // This finds expenses greater than at least one department budget in West region
-     * 
+     *
      * // Another example: find students with score higher than any passing score
      * SubQuery passingScores = CF.subQuery(
      *     "SELECT passing_score FROM exams WHERE subject = 'Math'"
@@ -89,8 +93,9 @@ public class Any extends Cell {
      * Any anyPassingScore = new Any(passingScores);
      * // Use with: WHERE student_score > ANY (...)
      * }</pre>
-     * 
-     * @param condition the subquery that returns values to compare against
+     *
+     * @param condition the subquery that returns values to compare against. Must not be null.
+     * @throws IllegalArgumentException if condition is null
      */
     public Any(final SubQuery condition) {
         super(Operator.ANY, condition);

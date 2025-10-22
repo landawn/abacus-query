@@ -36,27 +36,39 @@ package com.landawn.abacus.query.condition;
  *   <li>Remove records matching unwanted patterns</li>
  *   <li>Exclude specific file types or formats</li>
  * </ul>
- * 
+ *
+ * <p>Performance considerations:</p>
+ * <ul>
+ *   <li>Patterns starting with % prevent index usage (full table scan)</li>
+ *   <li>Patterns starting with literal characters can use indexes more efficiently</li>
+ *   <li>Consider alternative approaches for complex exclusion patterns</li>
+ *   <li>Case sensitivity depends on database collation settings</li>
+ * </ul>
+ *
  * <p>Example usage:</p>
  * <pre>{@code
  * // Exclude names starting with 'John'
  * NotLike condition1 = new NotLike("name", "John%");
- * // Results in: name NOT LIKE 'John%'
+ * // SQL: name NOT LIKE 'John%'
  * 
  * // Exclude emails from gmail domain
  * NotLike condition2 = new NotLike("email", "%@gmail.com");
- * // Results in: email NOT LIKE '%@gmail.com'
+ * // SQL: email NOT LIKE '%@gmail.com'
  * 
  * // Exclude 3-letter codes
  * NotLike condition3 = new NotLike("code", "___");
- * // Results in: code NOT LIKE '___'
+ * // SQL: code NOT LIKE '___'
  * }</pre>
  * 
  * @see Like
  */
 public class NotLike extends Binary {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized NotLike instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     NotLike() {
     }
 
@@ -77,7 +89,7 @@ public class NotLike extends Binary {
      * NotLike notLike2 = new NotLike("filename", "%.tmp");
      * }</pre>
      * 
-     * @param propName the property name to check
+     * @param propName the property/column name (must not be null or empty)
      * @param propValue the pattern to match against (can include % and _ wildcards)
      * @throws IllegalArgumentException if propName is null or empty
      */

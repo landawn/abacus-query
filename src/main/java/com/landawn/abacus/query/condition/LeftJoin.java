@@ -136,8 +136,8 @@ public class LeftJoin extends Join {
      *
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param condition the join condition (typically an equality condition between columns).
-     *                  Complex conditions can be used to filter the joined data.
-     * @throws IllegalArgumentException if joinEntity is null/empty or condition is null
+     *                  Can be a complex condition using And/Or for multiple criteria.
+     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
      */
     public LeftJoin(final String joinEntity, final Condition condition) {
         super(Operator.LEFT_JOIN, joinEntity, condition);
@@ -146,20 +146,22 @@ public class LeftJoin extends Join {
     /**
      * Creates a LEFT JOIN clause with multiple tables/entities and a join condition.
      * This allows joining multiple tables in a single LEFT JOIN operation.
-     * 
-     * <p>Example:
+     *
+     * <p>Example usage:
      * <pre>{@code
      * // Join multiple related tables
      * List<String> tables = Arrays.asList("orders o", "order_items oi");
      * LeftJoin join = new LeftJoin(tables,
      *     new And(
-     *         new Equal("c.id", "o.customer_id"),
-     *         new Equal("o.id", "oi.order_id")
+     *         ConditionFactory.expr("c.id = o.customer_id"),
+     *         ConditionFactory.expr("o.id = oi.order_id")
      *     ));
+     * // Generates: LEFT JOIN orders o, order_items oi ((c.id = o.customer_id) AND (o.id = oi.order_id))
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
      * @param condition the join condition to apply.
+     * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.LEFT_JOIN, joinEntities, condition);

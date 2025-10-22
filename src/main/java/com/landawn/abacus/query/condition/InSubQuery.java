@@ -101,7 +101,7 @@ public class InSubQuery extends AbstractCondition {
      * // Can be used in: SELECT * FROM products WHERE category_id IN (SELECT category_id FROM categories WHERE active = true)
      * }</pre>
      *
-     * @param propName the name of the property to check. Must not be null.
+     * @param propName the property/column name (must not be null or empty)
      * @param subQuery the subquery that returns the values to check against. Must not be null.
      * @throws IllegalArgumentException if subQuery is null
      */
@@ -180,7 +180,7 @@ public class InSubQuery extends AbstractCondition {
      * Note: Modifying conditions after creation is not recommended as they should be immutable.
      *
      * @param subQuery the new subquery to set. Must not be null.
-     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
     public void setSubQuery(final SubQuery subQuery) {

@@ -78,59 +78,63 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  */
 public class On extends Cell {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized On instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     On() {
     }
 
     /**
-     * Constructs an ON clause with a custom condition.
+     * Creates an ON clause with a custom condition.
      * This is the most flexible constructor, accepting any type of condition
      * for maximum control over the join logic.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
-     * // Simple equality condition
-     * Equal simpleJoin = new Equal("a.id", new Expression("b.a_id"));
-     * On on1 = new On(simpleJoin);
-     * 
+     * // Simple equality condition (use Expression for column references)
+     * On on1 = new On(ConditionFactory.expr("a.id = b.a_id"));
+     *
      * // Complex multi-condition join
      * And complexCondition = new And(
-     *     new Equal("orders.customer_id", new Expression("customers.id")),
+     *     ConditionFactory.expr("orders.customer_id = customers.id"),
      *     new Between("orders.order_date", "2024-01-01", "2024-12-31"),
      *     new NotEqual("customers.status", "DELETED")
      * );
      * On on2 = new On(complexCondition);
-     * 
+     *
      * // Range join
      * And rangeJoin = new And(
-     *     new GreaterEqual("emp.salary", new Expression("salary_grades.min_salary")),
-     *     new LessEqual("emp.salary", new Expression("salary_grades.max_salary"))
+     *     ConditionFactory.expr("emp.salary >= salary_grades.min_salary"),
+     *     ConditionFactory.expr("emp.salary <= salary_grades.max_salary")
      * );
      * On on3 = new On(rangeJoin);
      * }</pre>
      *
      * @param condition the join condition, can be any type of condition including
      *                  Equal, And, Or, or more complex expressions
+     * @throws IllegalArgumentException if condition is null
      */
     public On(final Condition condition) {
         super(Operator.ON, condition);
     }
 
     /**
-     * Constructs an ON clause for simple column equality between tables.
+     * Creates an ON clause for simple column equality between tables.
      * This is a convenience constructor for the most common join scenario
      * where you're joining on equal values between two columns.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
      * // Basic foreign key join
      * On on1 = new On("orders.customer_id", "customers.id");
      * // Results in: ON orders.customer_id = customers.id
-     * 
+     *
      * // Join with table aliases
      * On on2 = new On("o.product_id", "p.id");
      * // Results in: ON o.product_id = p.id
-     * 
+     *
      * // Self-join scenario
      * On on3 = new On("emp1.manager_id", "emp2.employee_id");
      * // Results in: ON emp1.manager_id = emp2.employee_id
@@ -138,16 +142,17 @@ public class On extends Cell {
      *
      * @param propName the column name from the first table (can include table name/alias)
      * @param anoPropName the column name from the second table (can include table name/alias)
+     * @throws IllegalArgumentException if propName or anoPropName is null or empty
      */
     public On(final String propName, final String anoPropName) {
         this(createOnCondition(propName, anoPropName));
     }
 
     /**
-     * Constructs an ON clause with multiple column equality conditions.
+     * Creates an ON clause with multiple column equality conditions.
      * All conditions in the map are combined with AND. This is useful for
      * composite key joins or when multiple columns must match between tables.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
      * // Composite primary key join
@@ -155,9 +160,9 @@ public class On extends Cell {
      * compositeKey.put("order_items.order_id", "orders.id");
      * compositeKey.put("order_items.customer_id", "orders.customer_id");
      * On on1 = new On(compositeKey);
-     * // Results in: ON order_items.order_id = orders.id 
+     * // Results in: ON order_items.order_id = orders.id
      * //             AND order_items.customer_id = orders.customer_id
-     * 
+     *
      * // Multi-column natural key join
      * Map<String, String> naturalKey = new LinkedHashMap<>();
      * naturalKey.put("addresses.country_code", "countries.code");
@@ -169,6 +174,7 @@ public class On extends Cell {
      *
      * @param propNamePair map of column pairs where key is from first table,
      *                     value is from second table. Order is preserved if LinkedHashMap is used.
+     * @throws IllegalArgumentException if propNamePair is null or empty
      */
     public On(final Map<String, String> propNamePair) {
         this(createOnCondition(propNamePair));

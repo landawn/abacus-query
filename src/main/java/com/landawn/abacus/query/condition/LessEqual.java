@@ -41,22 +41,22 @@ package com.landawn.abacus.query.condition;
  * <pre>{@code
  * // Check if age is 18 or younger
  * LessEqual ageLimit = new LessEqual("age", 18);
- * // Generates: age <= 18
+ * // SQL: age <= 18
  * 
  * // Check if price is at most $99.99
  * LessEqual priceLimit = new LessEqual("price", 99.99);
- * // Generates: price <= 99.99
+ * // SQL: price <= 99.99
  * 
  * // Check if date is on or before a deadline
  * LessEqual deadline = new LessEqual("submit_date", "2023-12-31");
- * // Generates: submit_date <= '2023-12-31'
+ * // SQL: submit_date <= '2023-12-31'
  * 
  * // Combine with GreaterEqual for inclusive range
  * And priceRange = new And(
  *     new GreaterEqual("price", 10.00),
  *     new LessEqual("price", 100.00)
  * );
- * // Generates: (price >= 10.00) AND (price <= 100.00)
+ * // SQL: (price >= 10.00) AND (price <= 100.00)
  * }</pre>
  * 
  * @see LessThan
@@ -83,7 +83,7 @@ public class LessEqual extends Binary {
      * <pre>{@code
      * // Limit quantity to maximum stock
      * LessEqual stockLimit = new LessEqual("quantity", 100);
-     * // Generates: quantity <= 100
+     * // SQL: quantity <= 100
      * 
      * // Find all orders on or before today
      * LessEqual todayOrEarlier = new LessEqual("order_date", LocalDate.now());
@@ -91,21 +91,20 @@ public class LessEqual extends Binary {
      * 
      * // Set maximum allowed discount
      * LessEqual maxDiscount = new LessEqual("discount_percent", 50);
-     * // Generates: discount_percent <= 50
+     * // SQL: discount_percent <= 50
      * 
      * // Check temperature threshold
      * LessEqual tempThreshold = new LessEqual("temperature", 25.5);
-     * // Generates: temperature <= 25.5
+     * // SQL: temperature <= 25.5
      * 
      * // String comparison (alphabetical order)
      * LessEqual alphabetical = new LessEqual("last_name", "M");
-     * // Generates: last_name <= 'M'
+     * // SQL: last_name <= 'M'
      * }</pre>
      *
-     * @param propName the name of the property to compare. Must not be null.
-     * @param propValue the value to compare against. Can be any comparable value (number, string, date, etc.).
-     *                  The value type should match the property's data type in the database.
-     * @throws IllegalArgumentException if propName is null
+     * @param propName the property/column name (must not be null or empty)
+     * @param propValue the value to compare against (can be null, literal value, or subquery)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public LessEqual(final String propName, final Object propValue) {
         super(propName, Operator.LESS_EQUAL, propValue);

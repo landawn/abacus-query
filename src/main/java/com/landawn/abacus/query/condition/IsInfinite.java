@@ -76,6 +76,14 @@ public class IsInfinite extends Is {
     static final Expression INFINITE = CF.expr("INFINITE");
 
     /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized IsInfinite instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
+    IsInfinite() {
+    }
+
+    /**
      * Creates a new IsInfinite condition for the specified property.
      * This condition checks if the property's numeric value is infinite
      * (either positive or negative infinity). This is particularly useful
@@ -100,10 +108,8 @@ public class IsInfinite extends Is {
      * // Generates: exponential_growth IS INFINITE
      * }</pre>
      *
-     * @param propName the name of the numeric property to check. Must not be null.
-     *                 This should be a column containing floating-point values that
-     *                 might contain infinity as a result of calculations.
-     * @throws IllegalArgumentException if propName is null
+     * @param propName the property/column name (must not be null or empty)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public IsInfinite(final String propName) {
         super(propName, INFINITE);

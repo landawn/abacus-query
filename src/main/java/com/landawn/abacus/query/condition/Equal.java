@@ -58,7 +58,11 @@ package com.landawn.abacus.query.condition;
  */
 public class Equal extends Binary {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Equal instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Equal() {
     }
 
@@ -85,7 +89,7 @@ public class Equal extends Binary {
      * Equal avgCheck = new Equal("salary", avgSalary);
      * }</pre>
      * 
-     * @param propName the name of the property to compare (must not be null or empty)
+     * @param propName the property/column name (must not be null or empty)
      * @param propValue the value to compare against (can be null, literal value, or subquery)
      * @throws IllegalArgumentException if propName is null or empty
      */

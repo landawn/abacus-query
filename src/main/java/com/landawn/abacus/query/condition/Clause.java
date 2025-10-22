@@ -68,7 +68,11 @@ package com.landawn.abacus.query.condition;
  */
 public abstract class Clause extends Cell {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Clause instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Clause() {
     }
 
@@ -76,16 +80,17 @@ public abstract class Clause extends Cell {
      * Creates a new Clause with the specified operator and condition.
      * The operator identifies the type of clause (WHERE, HAVING, etc.),
      * and the condition contains the actual filtering or sorting logic.
-     * 
-     * <p>Example implementation in a subclass:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
+     * // Example implementation in a subclass:
      * public class Where extends Clause {
      *     public Where(Condition condition) {
      *         super(Operator.WHERE, condition);
      *     }
      * }
      * }</pre>
-     * 
+     *
      * @param operator the clause operator (e.g., WHERE, HAVING, GROUP_BY)
      * @param condition the condition to be wrapped by this clause
      */
@@ -96,16 +101,16 @@ public abstract class Clause extends Cell {
     /**
      * This operation is not supported for Clause objects.
      * Clauses cannot be combined using AND logic.
-     * 
+     *
      * <p>Clauses represent complete SQL components that cannot be logically combined.
      * For example, you cannot have "WHERE ... AND HAVING ..." at the same level.
      * Instead, use AND within the condition of a single clause.</p>
-     * 
-     * <p>Example of correct usage:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * // Wrong - trying to AND clauses
      * // where.and(having); // Throws UnsupportedOperationException
-     * 
+     *
      * // Correct - AND conditions within a clause
      * Where where = new Where(
      *     CF.and(
@@ -114,7 +119,7 @@ public abstract class Clause extends Cell {
      *     )
      * );
      * }</pre>
-     * 
+     *
      * @param condition the condition to AND with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown
@@ -127,16 +132,16 @@ public abstract class Clause extends Cell {
     /**
      * This operation is not supported for Clause objects.
      * Clauses cannot be combined using OR logic.
-     * 
+     *
      * <p>Clauses are structural components of SQL that must maintain their independence.
      * You cannot OR two different clause types together. Use OR within the condition
      * of a single clause instead.</p>
-     * 
-     * <p>Example of correct usage:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * // Wrong - trying to OR clauses
      * // where.or(orderBy); // Throws UnsupportedOperationException
-     * 
+     *
      * // Correct - OR conditions within a clause
      * Where where = new Where(
      *     CF.or(
@@ -145,7 +150,7 @@ public abstract class Clause extends Cell {
      *     )
      * );
      * }</pre>
-     * 
+     *
      * @param condition the condition to OR with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown
@@ -158,24 +163,24 @@ public abstract class Clause extends Cell {
     /**
      * This operation is not supported for Clause objects.
      * Clauses cannot be negated using NOT logic.
-     * 
+     *
      * <p>SQL clauses don't have a NOT form. You cannot have "NOT WHERE" or "NOT ORDER BY".
      * Instead, use NOT within the condition of the clause.</p>
-     * 
-     * <p>Example of correct usage:</p>
+     *
+     * <p>Example usage:</p>
      * <pre>{@code
      * // Wrong - trying to negate a clause
      * // where.not(); // Throws UnsupportedOperationException
-     * 
+     *
      * // Correct - NOT condition within a clause
      * Where where = new Where(
      *     CF.not(CF.eq("status", "inactive"))
      * );
-     * 
+     *
      * // Or use specific NOT operations
      * Where where2 = new Where(CF.notIn("id", Arrays.asList(1, 2, 3)));
      * }</pre>
-     * 
+     *
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown
      */

@@ -71,6 +71,8 @@ package com.landawn.abacus.query.condition;
  * @see Union
  * @see UnionAll
  * @see Intersect
+ * @see SubQuery
+ * @see Clause
  */
 public class Minus extends Clause {
 

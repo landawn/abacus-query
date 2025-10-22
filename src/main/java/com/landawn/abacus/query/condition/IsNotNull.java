@@ -37,11 +37,11 @@ import com.landawn.abacus.annotation.NotNull;
  * <pre>{@code
  * // Check if email is not null
  * IsNotNull emailCheck = new IsNotNull("email");
- * // Generates: email IS NOT NULL
+ * // SQL: email IS NOT NULL
  * 
  * // Ensure required fields are populated
  * IsNotNull nameCheck = new IsNotNull("customer_name");
- * // Generates: customer_name IS NOT NULL
+ * // SQL: customer_name IS NOT NULL
  * 
  * // Validate multiple required fields
  * And requiredFields = new And(
@@ -74,24 +74,23 @@ public class IsNotNull extends IsNot {
      * <pre>{@code
      * // Ensure user has an email address
      * IsNotNull emailCheck = new IsNotNull("email");
-     * // Generates: email IS NOT NULL
+     * // SQL: email IS NOT NULL
      * 
      * // Filter for customers with phone numbers
      * IsNotNull phoneCheck = new IsNotNull("phone_number");
-     * // Generates: phone_number IS NOT NULL
+     * // SQL: phone_number IS NOT NULL
      * 
      * // Find all orders with shipping addresses
      * IsNotNull addressCheck = new IsNotNull("shipping_address");
-     * // Generates: shipping_address IS NOT NULL
+     * // SQL: shipping_address IS NOT NULL
      * 
      * // Validate that a date field is populated
      * IsNotNull dateCheck = new IsNotNull("registration_date");
-     * // Generates: registration_date IS NOT NULL
+     * // SQL: registration_date IS NOT NULL
      * }</pre>
      *
-     * @param propName the name of the property to check. Must not be null.
-     *                 This should be the column name or field name in your query.
-     * @throws IllegalArgumentException if propName is null
+     * @param propName the property/column name (must not be null or empty)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNotNull(final String propName) {
         super(propName, IsNull.NULL);

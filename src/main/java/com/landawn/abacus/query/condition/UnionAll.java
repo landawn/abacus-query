@@ -55,11 +55,19 @@ package com.landawn.abacus.query.condition;
  * }</pre>
  * 
  * @see Union
+ * @see Intersect
+ * @see Except
+ * @see Minus
  * @see SubQuery
+ * @see Clause
  */
 public class UnionAll extends Clause {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized UnionAll instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     UnionAll() {
     }
 

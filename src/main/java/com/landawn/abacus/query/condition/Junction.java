@@ -285,7 +285,7 @@ public class Junction extends AbstractCondition {
      * }</pre>
      *
      * @param conditions the conditions to remove
-     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
     public final void remove(final Condition... conditions) {
@@ -306,7 +306,7 @@ public class Junction extends AbstractCondition {
      * }</pre>
      *
      * @param conditions the collection of conditions to remove
-     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
     public void remove(final Collection<? extends Condition> conditions) {

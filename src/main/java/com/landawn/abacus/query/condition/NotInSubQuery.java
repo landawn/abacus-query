@@ -92,7 +92,7 @@ public class NotInSubQuery extends AbstractCondition {
      * NotInSubQuery notHR = new NotInSubQuery("id", deptQuery);
      * }</pre>
      * 
-     * @param propName the property name to check against the subquery results
+     * @param propName the property/column name (must not be null or empty)
      * @param subQuery the subquery that returns the values to check against
      * @throws IllegalArgumentException if propName is null/empty or subQuery is null
      */
@@ -173,7 +173,7 @@ public class NotInSubQuery extends AbstractCondition {
     /**
      * Sets a new subquery for this NOT IN condition.
      * This method allows updating the subquery after construction.
-     * 
+     *
      * <p>Example usage:</p>
      * <pre>{@code
      * NotInSubQuery condition = new NotInSubQuery("userId", oldSubQuery);
@@ -181,10 +181,12 @@ public class NotInSubQuery extends AbstractCondition {
      * SubQuery newSubQuery = new SubQuery("SELECT id FROM users WHERE active = false");
      * condition.setSubQuery(newSubQuery);
      * }</pre>
-     * 
+     *
      * @param subQuery the new subquery to set
      * @throws IllegalArgumentException if subQuery is null
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
+    @Deprecated
     public void setSubQuery(final SubQuery subQuery) {
         this.subQuery = subQuery;
     }

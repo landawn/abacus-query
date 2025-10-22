@@ -73,21 +73,22 @@ public class NaturalJoin extends Join {
     }
 
     /**
-     * Constructs a NATURAL JOIN with the specified entity/table.
+     * Creates a NATURAL JOIN clause for the specified table/entity.
      * The join will automatically use all columns with matching names between the tables.
-     * 
+     *
      * <p>This constructor creates a pure natural join without additional conditions.
      * The database engine will identify all columns with identical names in both tables
-     * and create an implicit equality condition for each pair.</p>
-     * 
-     * <p>Example usage:</p>
+     * and create an implicit equality condition for each pair.
+     *
+     * <p>Example usage:
      * <pre>{@code
      * // If 'orders' and 'customers' both have 'customer_id' column
      * NaturalJoin join = new NaturalJoin("customers");
+     * // Generates: NATURAL JOIN customers
      * // Automatically joins on orders.customer_id = customers.customer_id
      * }</pre>
      *
-     * @param joinEntity the name of the entity/table to join
+     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public NaturalJoin(final String joinEntity) {
@@ -95,48 +96,51 @@ public class NaturalJoin extends Join {
     }
 
     /**
-     * Constructs a NATURAL JOIN with the specified entity/table and an additional condition.
+     * Creates a NATURAL JOIN clause with an additional condition.
      * The natural join occurs on matching column names, with the condition as an extra filter.
-     * 
+     *
      * <p>The condition parameter acts as an additional filter after the natural join
      * is performed. This is useful when you want to combine the automatic column matching
-     * of natural join with specific filtering criteria.</p>
-     * 
-     * <p>Example usage:</p>
+     * of natural join with specific filtering criteria.
+     *
+     * <p>Example usage:
      * <pre>{@code
      * // Natural join filtered by date
      * Condition recentOnly = new GreaterThan("orderDate", "2024-01-01");
      * NaturalJoin join = new NaturalJoin("orders", recentOnly);
+     * // Generates: NATURAL JOIN orders (orderDate > '2024-01-01')
      * // Natural join on matching columns, then filter by order date
      * }</pre>
      *
-     * @param joinEntity the name of the entity/table to join
-     * @param condition the additional condition to apply after the natural join
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @param joinEntity the table or entity to join with. Can include alias.
+     * @param condition the join condition (typically an equality condition between columns).
+     *                  Can be a complex condition using And/Or for multiple criteria.
+     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
      */
     public NaturalJoin(final String joinEntity, final Condition condition) {
         super(Operator.NATURAL_JOIN, joinEntity, condition);
     }
 
     /**
-     * Creates a new NATURAL JOIN with multiple entities/tables and a condition.
-     * Useful for joining multiple tables in a single natural join operation.
+     * Creates a NATURAL JOIN clause with multiple tables/entities and a condition.
+     * This allows joining multiple tables in a single natural join operation.
      *
      * <p>When joining multiple tables, the natural join is performed sequentially.
      * Each table is joined based on columns with matching names. Care must be taken
-     * to ensure the intended columns are matched, especially with multiple tables.</p>
+     * to ensure the intended columns are matched, especially with multiple tables.
      *
-     * <p>Example usage:</p>
+     * <p>Example usage:
      * <pre>{@code
      * // Join customers, orders, and products naturally
      * List<String> tables = Arrays.asList("customers", "orders", "products");
      * Condition highValue = new GreaterThan("totalAmount", 1000);
      * NaturalJoin join = new NaturalJoin(tables, highValue);
+     * // Generates: NATURAL JOIN customers, orders, products (totalAmount > 1000)
      * // Natural join across all tables on matching columns, filtered by amount
      * }</pre>
      *
-     * @param joinEntities the collection of entity/table names to join
-     * @param condition the additional condition to apply after the natural join
+     * @param joinEntities the collection of tables or entities to join with.
+     * @param condition the join condition to apply.
      * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition condition) {

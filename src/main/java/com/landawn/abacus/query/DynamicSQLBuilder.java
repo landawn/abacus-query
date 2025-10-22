@@ -76,12 +76,12 @@ public class DynamicSQLBuilder {
      * Creates a new instance of DynamicSQLBuilder.
      * This is the entry point for building dynamic SQL queries.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * }</pre>
      *
-     * @return a new DynamicSQLBuilder instance
+     * @return a new DynamicSQLBuilder instance for method chaining
      */
     public static DynamicSQLBuilder create() {
         return new DynamicSQLBuilder();
@@ -91,14 +91,14 @@ public class DynamicSQLBuilder {
      * Returns the SELECT clause builder for defining columns to retrieve.
      * Multiple calls to this method return the same Select instance.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.select().append("id").append("name", "user_name");
      * // Generates: SELECT id, name AS user_name
      * }</pre>
      *
-     * @return the Select clause builder
+     * @return the Select clause builder for method chaining
      */
     public Select select() {
         return select;
@@ -108,14 +108,14 @@ public class DynamicSQLBuilder {
      * Returns the FROM clause builder for defining tables and joins.
      * Multiple calls to this method return the same From instance.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
      * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
-     * @return the From clause builder
+     * @return the From clause builder for method chaining
      */
     public From from() {
         return from;
@@ -125,14 +125,14 @@ public class DynamicSQLBuilder {
      * Returns the WHERE clause builder for defining query conditions.
      * Creates a new Where instance on first call and returns the same instance on subsequent calls.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.where().append("status = ?").and("created_date > ?");
      * // Generates: WHERE status = ? AND created_date > ?
      * }</pre>
      *
-     * @return the Where clause builder
+     * @return the Where clause builder for method chaining
      */
     public Where where() {
         if (where == null) {
@@ -146,14 +146,14 @@ public class DynamicSQLBuilder {
      * Returns the GROUP BY clause builder for defining grouping columns.
      * Creates a new GroupBy instance on first call and returns the same instance on subsequent calls.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.groupBy().append("department").append("year");
      * // Generates: GROUP BY department, year
      * }</pre>
      *
-     * @return the GroupBy clause builder
+     * @return the GroupBy clause builder for method chaining
      */
     public GroupBy groupBy() {
         if (groupBy == null) {
@@ -167,14 +167,14 @@ public class DynamicSQLBuilder {
      * Returns the HAVING clause builder for defining conditions on grouped results.
      * Creates a new Having instance on first call and returns the same instance on subsequent calls.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.having().append("COUNT(*) > ?").and("SUM(amount) < ?");
      * // Generates: HAVING COUNT(*) > ? AND SUM(amount) < ?
      * }</pre>
      *
-     * @return the Having clause builder
+     * @return the Having clause builder for method chaining
      */
     public Having having() {
         if (having == null) {
@@ -188,14 +188,14 @@ public class DynamicSQLBuilder {
      * Returns the ORDER BY clause builder for defining result ordering.
      * Creates a new OrderBy instance on first call and returns the same instance on subsequent calls.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.orderBy().append("created_date DESC").append("name ASC");
      * // Generates: ORDER BY created_date DESC, name ASC
      * }</pre>
      *
-     * @return the OrderBy clause builder
+     * @return the OrderBy clause builder for method chaining
      */
     public OrderBy orderBy() {
         if (orderBy == null) {
@@ -209,7 +209,7 @@ public class DynamicSQLBuilder {
      * Appends a custom LIMIT clause to the SQL query.
      * This method allows for database-specific limit syntax.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.limit("LIMIT 10 OFFSET 20");
      * }</pre>
@@ -227,7 +227,7 @@ public class DynamicSQLBuilder {
      * Adds a LIMIT clause to restrict the number of rows returned.
      * Generates standard SQL: {@code LIMIT n}
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.select().append("*");
@@ -249,7 +249,7 @@ public class DynamicSQLBuilder {
      * Adds a LIMIT clause with offset for pagination.
      * Generates MySQL-style syntax: {@code LIMIT offset, count}
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.select().append("*");
@@ -272,7 +272,7 @@ public class DynamicSQLBuilder {
      * Adds an Oracle-style ROWNUM condition to limit results.
      * Generates: {@code ROWNUM <= n}
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.limitByRowNum(10);
      * // Generates: ROWNUM <= 10
@@ -291,7 +291,7 @@ public class DynamicSQLBuilder {
      * Adds an OFFSET clause for SQL:2008 standard pagination.
      * Typically used with {@link #fetchNextNRowsOnly(int)} or {@link #fetchFirstNRowsOnly(int)}.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.offsetRows(20).fetchNextNRowsOnly(10);
      * // Generates: OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
@@ -310,7 +310,7 @@ public class DynamicSQLBuilder {
      * Adds a FETCH NEXT clause for SQL:2008 standard result limiting.
      * Typically used after {@link #offsetRows(int)}.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.offsetRows(100).fetchNextNRowsOnly(25);
      * // Generates: OFFSET 100 ROWS FETCH NEXT 25 ROWS ONLY
@@ -329,7 +329,7 @@ public class DynamicSQLBuilder {
      * Adds a FETCH FIRST clause for SQL:2008 standard result limiting.
      * This is an alternative to FETCH NEXT with the same functionality.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.fetchFirstNRowsOnly(10);
      * // Generates: FETCH FIRST 10 ROWS ONLY
@@ -356,7 +356,7 @@ public class DynamicSQLBuilder {
      * Adds a UNION operator to combine results with another query.
      * UNION removes duplicate rows from the combined result set.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.union("SELECT id, name FROM archived_users");
      * }</pre>
@@ -374,7 +374,7 @@ public class DynamicSQLBuilder {
      * Adds a UNION ALL operator to combine results with another query.
      * UNION ALL keeps all rows including duplicates.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.unionAll("SELECT id, name FROM temp_users");
      * }</pre>
@@ -392,7 +392,7 @@ public class DynamicSQLBuilder {
      * Adds an INTERSECT operator to find common rows between queries.
      * Returns only rows that appear in both result sets.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.intersect("SELECT user_id FROM premium_users");
      * }</pre>
@@ -410,7 +410,7 @@ public class DynamicSQLBuilder {
      * Adds an EXCEPT operator to find rows in the first query but not in the second.
      * This is the SQL standard operator (used by PostgreSQL, SQL Server).
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.except("SELECT user_id FROM blocked_users");
      * }</pre>
@@ -428,7 +428,7 @@ public class DynamicSQLBuilder {
      * Adds a MINUS operator to find rows in the first query but not in the second.
      * This is Oracle's equivalent of EXCEPT.
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * builder.minus("SELECT user_id FROM inactive_users");
      * }</pre>
@@ -451,7 +451,7 @@ public class DynamicSQLBuilder {
      * the complete SQL statement. Internal StringBuilder objects are recycled
      * to the object pool for performance optimization.</p>
      *
-     * <h3>Example:</h3>
+     * <p>Example usage:</p>
      * <pre>{@code
      * String sql = DynamicSQLBuilder.create()
      *     .select().append("*")
@@ -534,7 +534,7 @@ public class DynamicSQLBuilder {
          * Appends a single column to the SELECT clause.
          * Automatically adds "SELECT " prefix on first call and comma separators for subsequent columns.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * select.append("user_id").append("username");
          * // Generates: SELECT user_id, username
@@ -559,7 +559,7 @@ public class DynamicSQLBuilder {
          * Appends a column with an alias to the SELECT clause.
          * Generates: {@code column AS alias}
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * select.append("first_name", "fname").append("last_name", "lname");
          * // Generates: SELECT first_name AS fname, last_name AS lname
@@ -585,7 +585,7 @@ public class DynamicSQLBuilder {
          * Appends multiple columns to the SELECT clause.
          * Columns are separated by commas.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * select.append(Arrays.asList("id", "name", "email"));
          * // Generates: SELECT id, name, email
@@ -610,7 +610,7 @@ public class DynamicSQLBuilder {
          * Appends multiple columns with their aliases to the SELECT clause.
          * Each entry in the map represents a column-alias pair.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * Map<String, String> cols = new HashMap<>();
          * cols.put("first_name", "fname");
@@ -638,7 +638,7 @@ public class DynamicSQLBuilder {
          * Conditionally appends a string to the SELECT clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * select.appendIf(includeSalary, "salary")
          *       .appendIf(includeBonus, "bonus");
@@ -666,9 +666,9 @@ public class DynamicSQLBuilder {
          * Appends one of two strings to the SELECT clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
-         * select.appendIfOrElse(showFullName, 
+         * select.appendIfOrElse(showFullName,
          *                      "first_name || ' ' || last_name AS full_name",
          *                      "first_name");
          * }</pre>
@@ -722,7 +722,7 @@ public class DynamicSQLBuilder {
          * Appends a table to the FROM clause.
          * Multiple tables are separated by commas (creating a cross join).
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * from.append("users").append("departments");
          * // Generates: FROM users, departments
@@ -747,7 +747,7 @@ public class DynamicSQLBuilder {
          * Appends a table with an alias to the FROM clause.
          * The alias can be used to reference the table in other clauses.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * from.append("users", "u").append("orders", "o");
          * // Generates: FROM users u, orders o
@@ -772,7 +772,7 @@ public class DynamicSQLBuilder {
         /**
          * Adds a JOIN clause (implicit INNER JOIN) with the specified table and join condition.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * from.append("users u").join("orders o", "u.id = o.user_id");
          * // Generates: FROM users u JOIN orders o ON u.id = o.user_id
@@ -792,7 +792,7 @@ public class DynamicSQLBuilder {
          * Adds an INNER JOIN clause with the specified table and join condition.
          * Returns only rows that have matching values in both tables.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * from.append("users u").innerJoin("orders o", "u.id = o.user_id");
          * // Generates: FROM users u INNER JOIN orders o ON u.id = o.user_id
@@ -812,7 +812,7 @@ public class DynamicSQLBuilder {
          * Adds a LEFT JOIN clause with the specified table and join condition.
          * Returns all rows from the left table and matched rows from the right table.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * from.append("users u").leftJoin("orders o", "u.id = o.user_id");
          * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
@@ -832,7 +832,7 @@ public class DynamicSQLBuilder {
          * Adds a RIGHT JOIN clause with the specified table and join condition.
          * Returns all rows from the right table and matched rows from the left table.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * from.append("orders o").rightJoin("users u", "o.user_id = u.id");
          * // Generates: FROM orders o RIGHT JOIN users u ON o.user_id = u.id
@@ -852,7 +852,7 @@ public class DynamicSQLBuilder {
          * Adds a FULL JOIN clause with the specified table and join condition.
          * Returns all rows when there is a match in either table.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * from.append("employees e").fullJoin("departments d", "e.dept_id = d.id");
          * // Generates: FROM employees e FULL JOIN departments d ON e.dept_id = d.id
@@ -872,7 +872,7 @@ public class DynamicSQLBuilder {
          * Conditionally appends a string to the FROM clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * from.appendIf(includeArchive, "archived_users");
          * }</pre>
@@ -899,7 +899,7 @@ public class DynamicSQLBuilder {
          * Appends one of two strings to the FROM clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * from.appendIfOrElse(useArchive, "archived_users", "active_users");
          * }</pre>
@@ -961,7 +961,7 @@ public class DynamicSQLBuilder {
          * Appends a condition to the WHERE clause.
          * Automatically adds "WHERE " prefix on first call.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * where.append("active = true").append("AND deleted = false");
          * // Generates: WHERE active = true AND deleted = false
@@ -986,7 +986,7 @@ public class DynamicSQLBuilder {
          * Appends question mark placeholders for parameterized queries.
          * Useful for IN clauses or multiple parameters.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * where.append("id IN (").repeatQM(3).append(")");
          * // Generates: id IN (?, ?, ?)
@@ -1014,7 +1014,7 @@ public class DynamicSQLBuilder {
          * Appends question mark placeholders surrounded by prefix and postfix.
          * Commonly used for IN clauses with automatic parentheses.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * where.append("status IN ").repeatQM(3, "(", ")");
          * // Generates: status IN (?, ?, ?)
@@ -1047,7 +1047,7 @@ public class DynamicSQLBuilder {
         /**
          * Adds an AND condition to the WHERE clause.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * where.append("active = true").and("age >= 18").and("country = ?");
          * // Generates: WHERE active = true AND age >= 18 AND country = ?
@@ -1065,7 +1065,7 @@ public class DynamicSQLBuilder {
         /**
          * Adds an OR condition to the WHERE clause.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * where.append("role = 'admin'").or("role = 'moderator'");
          * // Generates: WHERE role = 'admin' OR role = 'moderator'
@@ -1084,7 +1084,7 @@ public class DynamicSQLBuilder {
          * Conditionally appends a string to the WHERE clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * where.append("active = true")
          *      .appendIf(filterByDate, "AND created_date > ?");
@@ -1112,7 +1112,7 @@ public class DynamicSQLBuilder {
          * Appends one of two strings to the WHERE clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * where.appendIfOrElse(includeDeleted, 
          *                      "status IN ('active', 'deleted')",
@@ -1175,7 +1175,7 @@ public class DynamicSQLBuilder {
          * Appends a column to the GROUP BY clause.
          * Automatically adds "GROUP BY " prefix on first call and comma separators for subsequent columns.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * groupBy.append("category").append("subcategory");
          * // Generates: GROUP BY category, subcategory
@@ -1200,7 +1200,7 @@ public class DynamicSQLBuilder {
          * Appends multiple columns to the GROUP BY clause.
          * Columns are separated by commas.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * groupBy.append(Arrays.asList("year", "quarter", "region"));
          * // Generates: GROUP BY year, quarter, region
@@ -1225,7 +1225,7 @@ public class DynamicSQLBuilder {
          * Conditionally appends a string to the GROUP BY clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * groupBy.append("product_id")
          *        .appendIf(groupByRegion, "region_id");
@@ -1253,7 +1253,7 @@ public class DynamicSQLBuilder {
          * Appends one of two strings to the GROUP BY clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * groupBy.appendIfOrElse(detailedReport,
          *                        "year, month, day",
@@ -1315,7 +1315,7 @@ public class DynamicSQLBuilder {
          * Appends a condition to the HAVING clause.
          * Automatically adds "HAVING " prefix on first call.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * having.append("SUM(amount) > 1000");
          * // Generates: HAVING SUM(amount) > 1000
@@ -1339,7 +1339,7 @@ public class DynamicSQLBuilder {
         /**
          * Adds an AND condition to the HAVING clause.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * having.append("COUNT(*) > 5").and("MAX(price) < 1000");
          * // Generates: HAVING COUNT(*) > 5 AND MAX(price) < 1000
@@ -1357,7 +1357,7 @@ public class DynamicSQLBuilder {
         /**
          * Adds an OR condition to the HAVING clause.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * having.append("MIN(score) > 80").or("AVG(score) > 90");
          * // Generates: HAVING MIN(score) > 80 OR AVG(score) > 90
@@ -1376,7 +1376,7 @@ public class DynamicSQLBuilder {
          * Conditionally appends a string to the HAVING clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * having.append("COUNT(*) > 0")
          *       .appendIf(checkRevenue, "AND SUM(revenue) > ?");
@@ -1404,7 +1404,7 @@ public class DynamicSQLBuilder {
          * Appends one of two strings to the HAVING clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * having.appendIfOrElse(strictFilter,
          *                       "COUNT(*) > 100",
@@ -1467,7 +1467,7 @@ public class DynamicSQLBuilder {
          * Appends a column (with optional sort direction) to the ORDER BY clause.
          * Automatically adds "ORDER BY " prefix on first call and comma separators for subsequent columns.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * orderBy.append("created_date DESC").append("name ASC");
          * // Generates: ORDER BY created_date DESC, name ASC
@@ -1492,7 +1492,7 @@ public class DynamicSQLBuilder {
          * Appends multiple columns to the ORDER BY clause.
          * Columns are separated by commas. Sort direction can be included with each column.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * orderBy.append(Arrays.asList("year DESC", "month DESC", "day DESC"));
          * // Generates: ORDER BY year DESC, month DESC, day DESC
@@ -1517,7 +1517,7 @@ public class DynamicSQLBuilder {
          * Conditionally appends a string to the ORDER BY clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * orderBy.append("priority DESC")
          *        .appendIf(sortByDate, "created_date DESC");
@@ -1545,7 +1545,7 @@ public class DynamicSQLBuilder {
          * Appends one of two strings to the ORDER BY clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
-         * <h3>Example:</h3>
+         * <p>Example usage:</p>
          * <pre>{@code
          * orderBy.appendIfOrElse(newestFirst,
          *                        "created_date DESC",

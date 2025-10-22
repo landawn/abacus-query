@@ -61,77 +61,84 @@ import java.util.Collection;
  */
 public class CrossJoin extends Join {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized CrossJoin instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     CrossJoin() {
     }
 
     /**
-     * Creates a new CROSS JOIN with the specified table/entity.
-     * This creates a simple CROSS JOIN without any condition, producing
-     * a Cartesian product of the tables.
-     * 
-     * <p>Example:</p>
+     * Creates a CROSS JOIN clause for the specified table/entity.
+     * This creates a Cartesian product join without an ON condition,
+     * combining every row from the first table with every row from the second table.
+     *
+     * <p>Example usage:
      * <pre>{@code
-     * // Create all combinations of products and colors
+     * // Simple cross join - all combinations
      * CrossJoin join = new CrossJoin("colors");
-     * // SQL: CROSS JOIN colors
+     * // Generates: CROSS JOIN colors
      * // If products has 10 rows and colors has 5 rows, result has 50 rows
-     * 
-     * // Generate all possible date-time slot combinations
-     * CrossJoin timeSlots = new CrossJoin("available_times");
-     * // Each date will be combined with each available time
+     *
+     * // Cross join with table alias
+     * CrossJoin aliasJoin = new CrossJoin("available_sizes s");
+     * // Generates: CROSS JOIN available_sizes s
      * }</pre>
-     * 
-     * @param joinEntity the table or entity name to join
+     *
+     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public CrossJoin(final String joinEntity) {
         super(Operator.CROSS_JOIN, joinEntity);
     }
 
     /**
-     * Creates a new CROSS JOIN with the specified table/entity and condition.
-     * While CROSS JOINs typically don't have conditions, this allows for non-standard usage.
+     * Creates a CROSS JOIN clause with a join condition.
+     * While CROSS JOINs typically don't use conditions, this form allows for non-standard usage.
      * Adding a condition makes it functionally equivalent to an INNER JOIN.
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:
      * <pre>{@code
-     * // CROSS JOIN with filter (unusual usage)
-     * CrossJoin join = new CrossJoin("products", CF.eq("available", true));
-     * // Only crosses with available products
-     * 
-     * // More typical approach would be:
-     * // 1. Use CROSS JOIN without condition for Cartesian product
-     * // 2. Add WHERE clause to filter results
-     * CrossJoin pure = new CrossJoin("products");
-     * // Then: WHERE available = true
+     * // Cross join with filter (use Expression for column references)
+     * CrossJoin filtered = new CrossJoin("products p",
+     *     ConditionFactory.expr("p.category = 'electronics'"));
+     * // Generates: CROSS JOIN products p p.category = 'electronics'
+     *
+     * // Complex cross join with multiple conditions
+     * CrossJoin complexCross = new CrossJoin("inventory i",
+     *     new And(
+     *         ConditionFactory.expr("i.warehouse_id = w.id"),
+     *         new Equal("i.active", true)
+     *     ));
+     * // Generates: CROSS JOIN inventory i ((i.warehouse_id = w.id) AND (i.active = true))
      * }</pre>
-     * 
-     * @param joinEntity the table or entity name to join
-     * @param condition the join condition (optional for CROSS JOIN)
+     *
+     * @param joinEntity the table or entity to join with. Can include alias.
+     * @param condition the join condition (typically an equality condition between columns).
+     *                  Can be a complex condition using And/Or for multiple criteria.
+     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
      */
     public CrossJoin(final String joinEntity, final Condition condition) {
         super(Operator.CROSS_JOIN, joinEntity, condition);
     }
 
     /**
-     * Creates a new CROSS JOIN with multiple tables/entities and a condition.
+     * Creates a CROSS JOIN clause with multiple tables/entities and a join condition.
      * This allows creating Cartesian products of multiple tables in a single operation.
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:
      * <pre>{@code
-     * // Create all combinations of sizes, colors, and styles
-     * List<String> tables = Arrays.asList("sizes", "colors", "styles");
-     * CrossJoin join = new CrossJoin(tables, CF.eq("active", true));
-     * // Creates a cross join of all three tables where active = true
-     * 
-     * // Generate test data combinations
-     * Collection<String> testTables = Arrays.asList("test_users", "test_permissions");
-     * CrossJoin testData = new CrossJoin(testTables, null);
-     * // Every test user gets every test permission
+     * // Join multiple tables for all combinations
+     * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
+     * CrossJoin join = new CrossJoin(tables,
+     *     new Equal("active", true));
+     * // Generates: CROSS JOIN sizes s, colors c, styles st (active = true)
      * }</pre>
-     * 
-     * @param joinEntities the collection of table or entity names to join
-     * @param condition the join condition (optional for CROSS JOIN)
+     *
+     * @param joinEntities the collection of tables or entities to join with.
+     * @param condition the join condition to apply.
+     * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public CrossJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.CROSS_JOIN, joinEntities, condition);

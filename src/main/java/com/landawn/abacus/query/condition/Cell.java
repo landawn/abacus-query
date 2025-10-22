@@ -48,7 +48,11 @@ public class Cell extends AbstractCondition {
 
     private Condition condition;
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Cell instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Cell() {
     }
 
@@ -108,7 +112,7 @@ public class Cell extends AbstractCondition {
      * }</pre>
      * 
      * @param condition the new condition to wrap
-     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
     public void setCondition(final Condition condition) {

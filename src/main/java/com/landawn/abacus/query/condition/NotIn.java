@@ -66,12 +66,20 @@ import com.landawn.abacus.util.NamingPolicy;
  */
 public class NotIn extends AbstractCondition {
 
-    // For Kryo
+    /**
+     * The property name to check.
+     * This field stores the name of the column or property that will be compared
+     * against the list of values. It's package-private for serialization frameworks.
+     */
     final String propName;
 
     private List<?> values;
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized NotIn instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     NotIn() {
         propName = null;
     }
@@ -80,7 +88,7 @@ public class NotIn extends AbstractCondition {
      * Constructs a NOT IN condition for the specified property and collection of values.
      * The condition will match records where the property value is not equal to any of the
      * provided values. A defensive copy of the values collection is made to ensure immutability.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
      * // Exclude specific product categories
@@ -88,11 +96,11 @@ public class NotIn extends AbstractCondition {
      * NotIn notIn = new NotIn("category", excludedCategories);
      * // Use in query: SELECT * FROM products WHERE category NOT IN ('discontinued', 'internal', 'test')
      * }</pre>
-     * 
-     * @param propName the property name to check
-     * @param values the collection of values that the property should NOT match. 
+     *
+     * @param propName the property/column name (must not be null or empty)
+     * @param values the collection of values that the property should NOT match.
      *               The collection is copied to ensure immutability.
-     * @throws IllegalArgumentException if values is null or empty
+     * @throws IllegalArgumentException if propName is null or values is null or empty
      */
     public NotIn(final String propName, final Collection<?> values) {
         super(Operator.NOT_IN);
@@ -129,7 +137,7 @@ public class NotIn extends AbstractCondition {
      * Consider creating a new condition instead.
      *
      * @param values the new collection of values to exclude
-     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
     public void setValues(final List<?> values) {

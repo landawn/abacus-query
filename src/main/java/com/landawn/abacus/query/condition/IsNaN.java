@@ -114,10 +114,8 @@ public class IsNaN extends Is {
      * // Generates: pressure_reading IS NAN
      * }</pre>
      *
-     * @param propName the name of the numeric property to check. Must not be null.
-     *                 This should be a column containing floating-point values that
-     *                 might contain NaN as a result of calculations.
-     * @throws IllegalArgumentException if propName is null
+     * @param propName the property/column name (must not be null or empty)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNaN(final String propName) {
         super(propName, NAN);

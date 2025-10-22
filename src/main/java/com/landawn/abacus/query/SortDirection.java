@@ -43,7 +43,11 @@ public enum SortDirection {
      */
     DESC;
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized SortDirection instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     SortDirection() {
     }
 

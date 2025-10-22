@@ -85,8 +85,8 @@ public class NotEqual extends Binary {
      * <p>Note: For null comparisons, consider using {@link IsNull} or {@link IsNotNull}
      * as SQL NULL comparisons behave differently (NULL != value returns NULL, not true).</p>
      *
-     * @param propName the property name to compare
-     * @param propValue the value that the property should not equal
+     * @param propName the property/column name (must not be null or empty)
+     * @param propValue the value to compare against (can be null, literal value, or subquery)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public NotEqual(final String propName, final Object propValue) {

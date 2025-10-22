@@ -154,7 +154,7 @@ public class Binary extends AbstractCondition {
      * }</pre>
      * 
      * @param propValue the new property value
-     * @deprecated Condition should be immutable except using {@code clearParameter()} to release resources.
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
     public void setPropValue(final Object propValue) {

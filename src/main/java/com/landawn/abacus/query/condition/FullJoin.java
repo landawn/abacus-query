@@ -55,79 +55,94 @@ import java.util.Collection;
  */
 public class FullJoin extends Join {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized FullJoin instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     FullJoin() {
     }
 
     /**
-     * Creates a new FULL JOIN with the specified table/entity.
-     * This creates a simple FULL JOIN without any condition, which will produce
-     * a Cartesian product filtered by WHERE conditions if any.
-     * 
-     * <p>Example:</p>
+     * Creates a FULL JOIN clause for the specified table/entity.
+     * This creates a join without an ON condition, which may need to be
+     * specified separately or will use implicit join conditions based on
+     * foreign key relationships (if supported by the database).
+     *
+     * <p>Example usage:
      * <pre>{@code
+     * // Simple full join without condition
      * FullJoin join = new FullJoin("departments");
-     * // SQL: FULL JOIN departments
-     * 
-     * // Typically used with a WHERE clause later
-     * criteria.fullJoin("departments")
-     *         .where(CF.eq("employees.dept_id", "departments.id"));
+     * // Generates: FULL JOIN departments
+     *
+     * // Full join with table alias
+     * FullJoin aliasJoin = new FullJoin("employee_departments ed");
+     * // Generates: FULL JOIN employee_departments ed
      * }</pre>
-     * 
-     * @param joinEntity the table or entity name to join
+     *
+     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public FullJoin(final String joinEntity) {
         super(Operator.FULL_JOIN, joinEntity);
     }
 
     /**
-     * Creates a new FULL JOIN with the specified table/entity and join condition.
-     * This is the most common form of FULL JOIN, specifying how the tables relate.
-     * 
-     * <p>Example:</p>
+     * Creates a FULL JOIN clause with a join condition.
+     * This is the most common form of FULL JOIN, specifying both the table to join
+     * and the condition for matching rows. All rows from both tables are preserved,
+     * with NULL values for non-matching rows.
+     *
+     * <p>Example usage:
      * <pre>{@code
-     * // Full join employees with departments
-     * FullJoin join = new FullJoin("employees", 
-     *     CF.eq("departments.id", "employees.dept_id"));
-     * // Returns all departments and all employees:
-     * // - Matched: departments with their employees
-     * // - Unmatched: departments with no employees (NULL employee fields)
-     * // - Unmatched: employees with no department (NULL department fields)
-     * 
-     * // Full join to reconcile two data sources
-     * FullJoin reconcile = new FullJoin("external_users",
-     *     CF.eq("internal_users.email", "external_users.email"));
-     * // Shows all users from both systems for comparison
+     * // Join employees with departments (use Expression for column references)
+     * FullJoin empDept = new FullJoin("departments d",
+     *     ConditionFactory.expr("employees.dept_id = d.id"));
+     * // Generates: FULL JOIN departments d employees.dept_id = d.id
+     *
+     * // Find all users and orders, showing orphaned records
+     * FullJoin allData = new FullJoin("orders o",
+     *     ConditionFactory.expr("users.id = o.user_id"));
+     * // Generates: FULL JOIN orders o users.id = o.user_id
+     *
+     * // Complex join with filtering in the join condition
+     * FullJoin reconcileData = new FullJoin("external_inventory ei",
+     *     new And(
+     *         ConditionFactory.expr("internal_inventory.product_id = ei.product_id"),
+     *         new Equal("ei.active", true),
+     *         new GreaterThan("ei.updated_date", "2023-01-01")
+     *     ));
+     * // Generates: FULL JOIN external_inventory ei ((internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
      * }</pre>
-     * 
-     * @param joinEntity the table or entity name to join
-     * @param condition the join condition
+     *
+     * @param joinEntity the table or entity to join with. Can include alias.
+     * @param condition the join condition (typically an equality condition between columns).
+     *                  Can be a complex condition using And/Or for multiple criteria.
+     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
      */
     public FullJoin(final String joinEntity, final Condition condition) {
         super(Operator.FULL_JOIN, joinEntity, condition);
     }
 
     /**
-     * Creates a new FULL JOIN with multiple tables/entities and a join condition.
+     * Creates a FULL JOIN clause with multiple tables/entities and a join condition.
      * This allows joining multiple tables in a single FULL JOIN operation.
-     * 
-     * <p>Example:</p>
+     *
+     * <p>Example usage:
      * <pre>{@code
-     * // Full join multiple related tables
-     * List<String> tables = Arrays.asList("employees", "contractors");
-     * FullJoin join = new FullJoin(tables, 
-     *     CF.eq("departments.id", "person.dept_id"));
-     * // Full joins both employees and contractors tables with departments
-     * 
-     * // Compare multiple data sources
-     * Collection<String> sources = Arrays.asList("system_a_data", "system_b_data");
-     * FullJoin multiSource = new FullJoin(sources,
-     *     CF.eq("master_data.record_id", "source.record_id"));
-     * // Shows all records from all systems
+     * // Join multiple related tables
+     * List<String> tables = Arrays.asList("employees e", "contractors c");
+     * FullJoin join = new FullJoin(tables,
+     *     new And(
+     *         ConditionFactory.expr("d.id = e.dept_id"),
+     *         ConditionFactory.expr("d.id = c.dept_id")
+     *     ));
+     * // Generates: FULL JOIN employees e, contractors c ((d.id = e.dept_id) AND (d.id = c.dept_id))
      * }</pre>
-     * 
-     * @param joinEntities the collection of table or entity names to join
-     * @param condition the join condition
+     *
+     * @param joinEntities the collection of tables or entities to join with.
+     * @param condition the join condition to apply.
+     * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public FullJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.FULL_JOIN, joinEntities, condition);

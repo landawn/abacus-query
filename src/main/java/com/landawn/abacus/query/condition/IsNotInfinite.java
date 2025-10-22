@@ -97,9 +97,8 @@ public class IsNotInfinite extends IsNot {
      * // Generates: exponential_result IS NOT INFINITE
      * }</pre>
      *
-     * @param propName the name of the numeric property to check. Must not be null.
-     *                 This should be a column containing floating-point values.
-     * @throws IllegalArgumentException if propName is null
+     * @param propName the property/column name (must not be null or empty)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNotInfinite(final String propName) {
         super(propName, IsInfinite.INFINITE);

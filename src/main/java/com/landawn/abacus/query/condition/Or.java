@@ -59,7 +59,11 @@ import com.landawn.abacus.util.N;
  */
 public class Or extends Junction {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Or instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Or() {
     }
 
@@ -88,11 +92,11 @@ public class Or extends Junction {
      * );
      * }</pre>
      * 
-     * @param condition the variable number of conditions to be combined with OR
-     * @throws IllegalArgumentException if no conditions are provided
+     * @param conditions the variable number of conditions to be combined with OR
+     * @throws IllegalArgumentException if conditions is null
      */
-    public Or(final Condition... condition) {
-        super(Operator.OR, condition);
+    public Or(final Condition... conditions) {
+        super(Operator.OR, conditions);
     }
 
     /**
@@ -119,7 +123,7 @@ public class Or extends Junction {
      * }</pre>
      *
      * @param conditions the collection of conditions to be combined with OR
-     * @throws IllegalArgumentException if conditions is null or empty
+     * @throws IllegalArgumentException if conditions is null
      */
     public Or(final Collection<? extends Condition> conditions) {
         super(Operator.OR, conditions);

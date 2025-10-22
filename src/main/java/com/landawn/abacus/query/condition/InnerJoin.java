@@ -89,13 +89,13 @@ public class InnerJoin extends Join {
      * This creates a join without an ON condition, which may need to be
      * specified separately or will use implicit join conditions based on
      * foreign key relationships (if supported by the database).
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
      * // Simple join without explicit condition
      * InnerJoin join = new InnerJoin("products");
      * // Generates: INNER JOIN products
-     * 
+     *
      * // Join with table alias
      * InnerJoin aliasJoin = new InnerJoin("order_details od");
      * // Generates: INNER JOIN order_details od
@@ -113,36 +113,36 @@ public class InnerJoin extends Join {
      * This is the most common form of INNER JOIN, specifying both the table to join
      * and the condition for matching rows. The condition typically compares key columns
      * between the tables.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
-     * // Join orders with customers
+     * // Join orders with customers (use Expression for column references)
      * InnerJoin customerOrders = new InnerJoin("customers c",
-     *     new Equal("orders.customer_id", "c.id"));
-     * // Generates: INNER JOIN customers c ON orders.customer_id = c.id
-     * 
+     *     ConditionFactory.expr("orders.customer_id = c.id"));
+     * // Generates: INNER JOIN customers c orders.customer_id = c.id
+     *
      * // Join with composite key
      * InnerJoin compositeJoin = new InnerJoin("order_items oi",
      *     new And(
-     *         new Equal("orders.id", "oi.order_id"),
-     *         new Equal("orders.version", "oi.order_version")
+     *         ConditionFactory.expr("orders.id = oi.order_id"),
+     *         ConditionFactory.expr("orders.version = oi.order_version")
      *     ));
-     * // Generates: INNER JOIN order_items oi ON orders.id = oi.order_id AND orders.version = oi.order_version
-     * 
+     * // Generates: INNER JOIN order_items oi ((orders.id = oi.order_id) AND (orders.version = oi.order_version))
+     *
      * // Join with additional filter conditions
      * InnerJoin filteredJoin = new InnerJoin("products p",
      *     new And(
-     *         new Equal("order_items.product_id", "p.id"),
+     *         ConditionFactory.expr("order_items.product_id = p.id"),
      *         new Equal("p.active", true),
      *         new GreaterThan("p.stock", 0)
      *     ));
-     * // Generates: INNER JOIN products p ON order_items.product_id = p.id AND p.active = true AND p.stock > 0
+     * // Generates: INNER JOIN products p ((order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0))
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param condition the join condition (typically an equality condition between columns).
      *                  Can be a complex condition using And/Or for multiple criteria.
-     * @throws IllegalArgumentException if joinEntity is null/empty or condition is null
+     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
      */
     public InnerJoin(final String joinEntity, final Condition condition) {
         super(Operator.INNER_JOIN, joinEntity, condition);
@@ -152,27 +152,28 @@ public class InnerJoin extends Join {
      * Creates an INNER JOIN clause with multiple tables/entities and a join condition.
      * This allows joining multiple tables in a single INNER JOIN operation, though
      * this syntax is less common than chaining individual joins.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
      * // Join multiple related tables
      * List<String> tables = Arrays.asList("orders o", "customers c");
      * InnerJoin multiJoin = new InnerJoin(tables,
-     *     new Equal("o.customer_id", "c.id"));
-     * // Generates: INNER JOIN orders o, customers c ON o.customer_id = c.id
-     * 
+     *     ConditionFactory.expr("o.customer_id = c.id"));
+     * // Generates: INNER JOIN orders o, customers c o.customer_id = c.id
+     *
      * // Complex multi-table join
      * List<String> entities = Arrays.asList("products p", "categories cat", "suppliers s");
      * InnerJoin complexMulti = new InnerJoin(entities,
      *     new And(
-     *         new Equal("p.category_id", "cat.id"),
-     *         new Equal("p.supplier_id", "s.id")
+     *         ConditionFactory.expr("p.category_id = cat.id"),
+     *         ConditionFactory.expr("p.supplier_id = s.id")
      *     ));
+     * // Generates: INNER JOIN products p, categories cat, suppliers s ((p.category_id = cat.id) AND (p.supplier_id = s.id))
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
      * @param condition the join condition to apply across all tables.
-     * @throws IllegalArgumentException if joinEntities is null/empty or condition is null
+     * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public InnerJoin(final Collection<String> joinEntities, final Condition condition) {
         super(Operator.INNER_JOIN, joinEntities, condition);

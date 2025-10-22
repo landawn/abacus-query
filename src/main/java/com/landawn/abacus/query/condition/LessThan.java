@@ -42,22 +42,22 @@ package com.landawn.abacus.query.condition;
  * <pre>{@code
  * // Check if age is less than 18
  * LessThan underAge = new LessThan("age", 18);
- * // Generates: age < 18
+ * // SQL: age < 18
  * 
  * // Check if price is less than 99.99
  * LessThan priceLimit = new LessThan("price", 99.99);
- * // Generates: price < 99.99
+ * // SQL: price < 99.99
  * 
  * // Check if date is before a deadline
  * LessThan beforeDeadline = new LessThan("submit_date", "2023-12-31");
- * // Generates: submit_date < '2023-12-31'
+ * // SQL: submit_date < '2023-12-31'
  * 
  * // Combine with GreaterThan for exclusive range
  * And priceRange = new And(
  *     new GreaterThan("price", 10.00),
  *     new LessThan("price", 100.00)
  * );
- * // Generates: (price > 10.00) AND (price < 100.00)
+ * // SQL: (price > 10.00) AND (price < 100.00)
  * }</pre>
  * 
  * @see LessEqual
@@ -84,11 +84,11 @@ public class LessThan extends Binary {
      * <pre>{@code
      * // Check for minors (under 18)
      * LessThan minorCheck = new LessThan("age", 18);
-     * // Generates: age < 18
+     * // SQL: age < 18
      * 
      * // Ensure salary is below threshold
      * LessThan salaryLimit = new LessThan("salary", 50000);
-     * // Generates: salary < 50000
+     * // SQL: salary < 50000
      * 
      * // Find items expiring before tomorrow
      * LessThan expiringItems = new LessThan("expiry_date", LocalDate.now().plusDays(1));
@@ -96,17 +96,16 @@ public class LessThan extends Binary {
      * 
      * // Temperature below freezing
      * LessThan freezing = new LessThan("temperature", 0);
-     * // Generates: temperature < 0
+     * // SQL: temperature < 0
      * 
      * // String comparison (alphabetical)
      * LessThan alphabetical = new LessThan("last_name", "M");
-     * // Generates: last_name < 'M'
+     * // SQL: last_name < 'M'
      * }</pre>
      *
-     * @param propName the name of the property to compare. Must not be null.
-     * @param propValue the value to compare against. Can be any comparable value (number, string, date, etc.).
-     *                  The value type should match the property's data type in the database.
-     * @throws IllegalArgumentException if propName is null
+     * @param propName the property/column name (must not be null or empty)
+     * @param propValue the value to compare against (can be null, literal value, or subquery)
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public LessThan(final String propName, final Object propValue) {
         super(propName, Operator.LESS_THAN, propValue);

@@ -70,7 +70,11 @@ import com.landawn.abacus.util.Objectory;
  */
 public class OrderBy extends Clause {
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized OrderBy instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     OrderBy() {
     }
 
