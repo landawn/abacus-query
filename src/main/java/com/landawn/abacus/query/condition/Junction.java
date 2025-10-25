@@ -53,7 +53,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Parameter collection from all nested conditions</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create an AND junction
  * Junction and = new Junction(Operator.AND, 
@@ -104,7 +104,7 @@ public class Junction extends AbstractCondition {
      * This constructor initializes the junction with a set of conditions that will
      * be combined using the specified logical operator.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create an AND junction with multiple conditions
      * Junction activeAdults = new Junction(Operator.AND,
@@ -135,7 +135,7 @@ public class Junction extends AbstractCondition {
      * Creates a new Junction with the specified operator and collection of conditions.
      * This constructor is useful when conditions are already collected in a list or set.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create conditions dynamically
      * List<Condition> conditions = new ArrayList<>();
@@ -163,7 +163,7 @@ public class Junction extends AbstractCondition {
      * The returned list is the internal representation and modifications to it
      * will affect the junction. Use with caution.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
      * junction.add(new Equal("status", "active"));
@@ -182,7 +182,7 @@ public class Junction extends AbstractCondition {
      * Replaces all conditions in this junction with the specified conditions.
      * This method clears existing conditions before adding the new ones.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
      * junction.add(new Equal("old", true));
@@ -206,7 +206,7 @@ public class Junction extends AbstractCondition {
      * Replaces all conditions in this junction with the specified collection of conditions.
      * This method clears existing conditions before adding the new ones.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.OR);
      * List<Condition> newConditions = Arrays.asList(
@@ -227,7 +227,7 @@ public class Junction extends AbstractCondition {
      * Adds the specified conditions to this junction.
      * The conditions are appended to the existing list of conditions.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
      *
@@ -262,7 +262,7 @@ public class Junction extends AbstractCondition {
      * Adds the specified collection of conditions to this junction.
      * The conditions are appended to the existing list of conditions.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.OR);
      *
@@ -288,7 +288,7 @@ public class Junction extends AbstractCondition {
      * Removes the specified conditions from this junction.
      * Only exact object matches are removed, not logically equivalent conditions.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
      * Condition cond1 = new Equal("status", "active");
@@ -313,7 +313,7 @@ public class Junction extends AbstractCondition {
      * Removes the specified collection of conditions from this junction.
      * Only exact object matches are removed, not logically equivalent conditions.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
      * List<Condition> toRemove = getObsoleteConditions();
@@ -332,7 +332,7 @@ public class Junction extends AbstractCondition {
      * Removes all conditions from this junction.
      * After this operation, the junction will be empty but can still accept new conditions.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
      * junction.add(new Equal("status", "active"));
@@ -349,7 +349,7 @@ public class Junction extends AbstractCondition {
      * including those in nested junctions. The order of parameters matches
      * the order they would appear in the generated SQL.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND,
      *     new Equal("status", "active"),
@@ -407,7 +407,7 @@ public class Junction extends AbstractCondition {
      * The copy includes copies of all contained conditions, ensuring that
      * modifications to the copy don't affect the original.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction original = new Junction(Operator.AND,
      *     new Equal("status", "active"),
@@ -440,7 +440,7 @@ public class Junction extends AbstractCondition {
      * The output format wraps each condition in parentheses and joins them with the operator.
      * This ensures proper precedence in complex logical expressions.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND,
      *     new Equal("status", "active"),
@@ -497,7 +497,7 @@ public class Junction extends AbstractCondition {
      * The hash code is consistent with equals() - junctions with the same operator
      * and conditions will have the same hash code.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction j1 = new Junction(Operator.AND, new Equal("a", 1));
      * Junction j2 = new Junction(Operator.AND, new Equal("a", 1));
@@ -518,7 +518,7 @@ public class Junction extends AbstractCondition {
      * Two junctions are considered equal if they have the same operator
      * and contain the same conditions in the same order.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction j1 = new Junction(Operator.AND,
      *     new Equal("status", "active"),

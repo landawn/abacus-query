@@ -34,7 +34,7 @@ package com.landawn.abacus.query.condition;
  *   <li>NOT NULL = NULL (in SQL three-valued logic)</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // NOT with LIKE - find names that don't contain "test"
  * Like likeCondition = new Like("name", "%test%");
@@ -80,7 +80,7 @@ public class Not extends Cell {
      * The resulting condition will be true when the input condition is false,
      * and false when the input condition is true.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple negation
      * Equal isActive = new Equal("active", true);

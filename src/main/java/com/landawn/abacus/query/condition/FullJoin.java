@@ -69,7 +69,7 @@ public class FullJoin extends Join {
      * specified separately or will use implicit join conditions based on
      * foreign key relationships (if supported by the database).
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple full join without condition
      * FullJoin join = new FullJoin("departments");
@@ -93,7 +93,7 @@ public class FullJoin extends Join {
      * and the condition for matching rows. All rows from both tables are preserved,
      * with NULL values for non-matching rows.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join employees with departments (use Expression for column references)
      * FullJoin empDept = new FullJoin("departments d",
@@ -128,7 +128,7 @@ public class FullJoin extends Join {
      * Creates a FULL JOIN clause with multiple tables/entities and a join condition.
      * This allows joining multiple tables in a single FULL JOIN operation.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join multiple related tables
      * List<String> tables = Arrays.asList("employees e", "contractors c");

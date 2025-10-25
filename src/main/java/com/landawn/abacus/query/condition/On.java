@@ -40,7 +40,7 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  *   <li>Conditional joins: including business logic in the join</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple column equality join
  * On on1 = new On("orders.customer_id", "customers.id");
@@ -91,7 +91,7 @@ public class On extends Cell {
      * This is the most flexible constructor, accepting any type of condition
      * for maximum control over the join logic.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple equality condition (use Expression for column references)
      * On on1 = new On(ConditionFactory.expr("a.id = b.a_id"));
@@ -125,7 +125,7 @@ public class On extends Cell {
      * This is a convenience constructor for the most common join scenario
      * where you're joining on equal values between two columns.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Basic foreign key join
      * On on1 = new On("orders.customer_id", "customers.id");
@@ -153,7 +153,7 @@ public class On extends Cell {
      * All conditions in the map are combined with AND. This is useful for
      * composite key joins or when multiple columns must match between tables.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Composite primary key join
      * Map<String, String> compositeKey = new LinkedHashMap<>();
@@ -185,7 +185,7 @@ public class On extends Cell {
      * This static factory method is used internally to create Equal conditions
      * for the convenience constructors.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition joinCondition = On.createOnCondition("users.id", "posts.user_id");
      * // Creates: Equal("users.id", Expression("posts.user_id"))
@@ -204,7 +204,7 @@ public class On extends Cell {
      * If only one pair is provided, returns a simple Equal condition.
      * If multiple pairs are provided, combines them with AND.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, String> joinColumns = new LinkedHashMap<>();
      * joinColumns.put("t1.col1", "t2.col1");

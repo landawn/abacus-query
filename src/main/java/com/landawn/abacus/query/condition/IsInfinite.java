@@ -40,7 +40,7 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  *   <li>Ensuring data integrity before statistical analysis</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if a calculation resulted in infinity
  * IsInfinite overflowCheck = new IsInfinite("growth_rate");
@@ -89,7 +89,7 @@ public class IsInfinite extends Is {
      * (either positive or negative infinity). This is particularly useful
      * for validating calculation results and identifying numeric overflow.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check for infinite values in calculations
      * IsInfinite rateCheck = new IsInfinite("interest_rate");

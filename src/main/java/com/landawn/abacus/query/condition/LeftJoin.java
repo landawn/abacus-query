@@ -41,7 +41,7 @@ import java.util.Collection;
  *   <li>Order matters: LEFT JOIN is not commutative</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple left join
  * LeftJoin join1 = new LeftJoin("orders");
@@ -88,7 +88,7 @@ public class LeftJoin extends Join {
      * specified separately or will use implicit join conditions based on
      * foreign key relationships (if supported by the database).
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple left join without condition
      * LeftJoin join = new LeftJoin("departments");
@@ -112,7 +112,7 @@ public class LeftJoin extends Join {
      * and the condition for matching rows. All rows from the left table are preserved,
      * with NULL values for non-matching rows from the right table.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join customers with their orders (use Expression for column references)
      * LeftJoin customerOrders = new LeftJoin("orders o",
@@ -147,7 +147,7 @@ public class LeftJoin extends Join {
      * Creates a LEFT JOIN clause with multiple tables/entities and a join condition.
      * This allows joining multiple tables in a single LEFT JOIN operation.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join multiple related tables
      * List<String> tables = Arrays.asList("orders o", "order_items oi");

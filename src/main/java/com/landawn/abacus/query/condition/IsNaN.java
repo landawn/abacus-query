@@ -41,7 +41,7 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  *   <li>Must use IS NAN or IS NOT NAN to check for NaN values</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if a calculation result is NaN
  * IsNaN calcCheck = new IsNaN("calculation_result");
@@ -91,7 +91,7 @@ public class IsNaN extends Is {
      * which indicates an invalid or undefined mathematical result. This is crucial
      * for data validation and identifying calculation errors.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if temperature reading is NaN
      * IsNaN tempCheck = new IsNaN("temperature");

@@ -37,7 +37,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Implementing business rules that require valid numbers</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if a calculation result is a valid number
  * IsNotNaN validResult = new IsNotNaN("calculation_result");
@@ -78,7 +78,7 @@ public class IsNotNaN extends IsNot {
      * This condition checks if the property's numeric value is NOT NaN (is a valid number),
      * which is essential for ensuring data quality and preventing calculation errors.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Ensure temperature readings are valid numbers
      * IsNotNaN tempCheck = new IsNotNaN("temperature");

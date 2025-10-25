@@ -40,7 +40,7 @@ import com.landawn.abacus.util.N;
  *   <li>Less flexible than ON for complex join conditions</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Single column join - joining employees and departments on department_id
  * Using using1 = new Using("department_id");
@@ -76,7 +76,7 @@ public class Using extends Cell {
      * The columns must exist with identical names in both tables being joined.
      * The join will match rows where all specified columns have equal values.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple join on employee_id
      * Using using = new Using("employee_id");
@@ -100,7 +100,7 @@ public class Using extends Cell {
      * This constructor is useful when column names are determined dynamically
      * or retrieved from metadata/configuration.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Dynamic column list from metadata
      * List<String> sharedColumns = metadata.getSharedColumns("orders", "customers");
@@ -127,7 +127,7 @@ public class Using extends Cell {
      * This static factory method constructs the appropriate condition expression
      * for the USING clause from the provided column names.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition usingCondition = Using.createUsingCondition("customer_id", "order_date");
      * // Creates condition for: USING (customer_id, order_date)

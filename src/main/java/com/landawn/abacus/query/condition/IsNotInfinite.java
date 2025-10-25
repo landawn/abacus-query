@@ -36,7 +36,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Support statistical analysis that requires finite values</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if a calculated ratio is finite
  * IsNotInfinite finiteRatio = new IsNotInfinite("price_ratio");
@@ -78,7 +78,7 @@ public class IsNotInfinite extends IsNot {
      * (neither positive nor negative infinity), ensuring the value is within
      * the finite range of floating-point numbers.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Ensure calculated values are finite
      * IsNotInfinite calcCheck = new IsNotInfinite("calculation_result");

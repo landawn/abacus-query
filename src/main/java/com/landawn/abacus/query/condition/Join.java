@@ -57,7 +57,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Consider denormalization for frequently joined tables</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Basic join (usually through subclasses)
  * Join join = new Join("orders");
@@ -99,7 +99,7 @@ public class Join extends AbstractCondition {
      * Uses the default JOIN operator without any ON condition. This form is rarely used
      * in practice as it relies on implicit join conditions or results in a cross join.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple join (rarely used directly)
      * Join join = new Join("products");
@@ -142,7 +142,7 @@ public class Join extends AbstractCondition {
      * Uses the default JOIN operator with an ON condition. This specifies how
      * the tables are related and which rows should be combined.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join with simple condition (use Expression for column references)
      * Join orderJoin = new Join("orders o",
@@ -192,7 +192,7 @@ public class Join extends AbstractCondition {
      * Uses the default JOIN operator. This form allows joining multiple tables
      * in a single join clause, though chaining individual joins is often clearer.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join multiple tables (use Expression for column references)
      * List<String> tables = Arrays.asList("orders o", "customers c", "addresses a");
@@ -240,7 +240,7 @@ public class Join extends AbstractCondition {
      * Gets the list of tables/entities involved in this join.
      * Returns the tables that are being joined, including any aliases.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Join join = new Join(Arrays.asList("orders o", "customers c"), condition);
      * List<String> entities = join.getJoinEntities(); // Returns ["orders o", "customers c"]
@@ -257,7 +257,7 @@ public class Join extends AbstractCondition {
      * Returns the condition that specifies how the tables are related.
      * May return null if no condition was specified (natural join or cross join).
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Use Expression for column references in join conditions
      * Expression condition = ConditionFactory.expr("a.id = b.a_id");
@@ -278,7 +278,7 @@ public class Join extends AbstractCondition {
      * Returns any bound parameters used in the join condition. Returns an empty
      * list if there's no condition or the condition has no parameters.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Join join = new Join("orders o", 
      *     new And(
@@ -320,7 +320,7 @@ public class Join extends AbstractCondition {
      * The copy includes copies of all join entities and the condition,
      * ensuring that modifications to the copy don't affect the original.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Join original = new Join("orders o", new Equal("o.customer_id", "c.id"));
      * Join copy = original.copy();
@@ -379,7 +379,7 @@ public class Join extends AbstractCondition {
      * The hash code is based on the operator, join entities, and condition,
      * ensuring consistent hashing for equivalent joins.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = ConditionFactory.expr("c.id = o.customer_id");
      * Join j1 = new Join("orders o", expr);
@@ -407,7 +407,7 @@ public class Join extends AbstractCondition {
      * Two Join instances are equal if they have the same operator, join entities,
      * and condition.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Join j1 = new Join("orders o", new Equal("c.id", "o.customer_id"));
      * Join j2 = new Join("orders o", new Equal("c.id", "o.customer_id"));

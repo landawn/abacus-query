@@ -78,7 +78,7 @@ public class RightJoin extends Join {
      * specified separately or will use implicit join conditions based on
      * foreign key relationships (if supported by the database).
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple right join without condition
      * RightJoin join = new RightJoin("departments");
@@ -102,7 +102,7 @@ public class RightJoin extends Join {
      * and the condition for matching rows. All rows from the right table are preserved,
      * with NULL values for non-matching rows from the left table.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join orders with all products (use Expression for column references)
      * RightJoin allProducts = new RightJoin("products p",
@@ -137,7 +137,7 @@ public class RightJoin extends Join {
      * Creates a RIGHT JOIN clause with multiple tables/entities and a join condition.
      * This allows joining multiple tables in a single RIGHT JOIN operation.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join multiple related tables
      * List<String> tables = Arrays.asList("categories c", "subcategories sc");

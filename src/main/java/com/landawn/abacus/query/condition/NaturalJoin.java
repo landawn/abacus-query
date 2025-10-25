@@ -80,7 +80,7 @@ public class NaturalJoin extends Join {
      * The database engine will identify all columns with identical names in both tables
      * and create an implicit equality condition for each pair.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // If 'orders' and 'customers' both have 'customer_id' column
      * NaturalJoin join = new NaturalJoin("customers");
@@ -103,7 +103,7 @@ public class NaturalJoin extends Join {
      * is performed. This is useful when you want to combine the automatic column matching
      * of natural join with specific filtering criteria.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Natural join filtered by date
      * Condition recentOnly = new GreaterThan("orderDate", "2024-01-01");
@@ -129,7 +129,7 @@ public class NaturalJoin extends Join {
      * Each table is joined based on columns with matching names. Care must be taken
      * to ensure the intended columns are matched, especially with multiple tables.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join customers, orders, and products naturally
      * List<String> tables = Arrays.asList("customers", "orders", "products");

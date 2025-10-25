@@ -74,7 +74,7 @@ public class CrossJoin extends Join {
      * This creates a Cartesian product join without an ON condition,
      * combining every row from the first table with every row from the second table.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple cross join - all combinations
      * CrossJoin join = new CrossJoin("colors");
@@ -98,7 +98,7 @@ public class CrossJoin extends Join {
      * While CROSS JOINs typically don't use conditions, this form allows for non-standard usage.
      * Adding a condition makes it functionally equivalent to an INNER JOIN.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Cross join with filter (use Expression for column references)
      * CrossJoin filtered = new CrossJoin("products p",
@@ -127,7 +127,7 @@ public class CrossJoin extends Join {
      * Creates a CROSS JOIN clause with multiple tables/entities and a join condition.
      * This allows creating Cartesian products of multiple tables in a single operation.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join multiple tables for all combinations
      * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");

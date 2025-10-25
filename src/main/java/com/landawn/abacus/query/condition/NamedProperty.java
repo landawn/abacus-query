@@ -55,7 +55,7 @@ public final class NamedProperty {
      * Constructs a NamedProperty with the specified property name.
      * This constructor is primarily used internally by the {@link #of(String)} factory method.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty age = new NamedProperty("age");
      * // However, prefer using: NamedProperty.of("age") for caching benefits
@@ -109,7 +109,7 @@ public final class NamedProperty {
      * This is a convenience method that generates an equality comparison condition
      * using the property name already stored in this NamedProperty instance.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("status").eq("active"); // status = 'active'
      * NamedProperty.of("count").eq(5); // count = 5
@@ -129,7 +129,7 @@ public final class NamedProperty {
      * This is a convenience method that generates multiple equality conditions combined with OR logic.
      * Each value in the array is compared for equality with the property, and the results are ORed together.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("color").eqOr("red", "green", "blue");
      * // Results in: color = 'red' OR color = 'green' OR color = 'blue'
@@ -158,7 +158,7 @@ public final class NamedProperty {
      * This is similar to {@link #eqOr(Object...)} but accepts a collection instead of varargs.
      * Useful when the values are already in a collection or list.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
      * NamedProperty.of("city").eqOr(cities);
@@ -188,7 +188,7 @@ public final class NamedProperty {
      * Creates a NOT EQUAL condition for this property.
      * This generates a condition that checks if the property value is not equal to the specified value.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("status").ne("deleted"); // status != 'deleted'
      * NamedProperty.of("count").ne(0); // count != 0
@@ -207,7 +207,7 @@ public final class NamedProperty {
      * Creates a GREATER THAN condition for this property.
      * This generates a condition that checks if the property value is strictly greater than the specified value.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("age").gt(18); // age > 18
      * NamedProperty.of("price").gt(99.99); // price > 99.99
@@ -226,7 +226,7 @@ public final class NamedProperty {
      * Creates a GREATER THAN OR EQUAL condition for this property.
      * This generates a condition that checks if the property value is greater than or equal to the specified value.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("score").ge(60); // score >= 60
      * NamedProperty.of("age").ge(21); // age >= 21
@@ -245,7 +245,7 @@ public final class NamedProperty {
      * Creates a LESS THAN condition for this property.
      * This generates a condition that checks if the property value is strictly less than the specified value.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("price").lt(100); // price < 100
      * NamedProperty.of("age").lt(18); // age < 18
@@ -264,7 +264,7 @@ public final class NamedProperty {
      * Creates a LESS THAN OR EQUAL condition for this property.
      * This generates a condition that checks if the property value is less than or equal to the specified value.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("quantity").le(10); // quantity <= 10
      * NamedProperty.of("age").le(65); // age <= 65
@@ -283,7 +283,7 @@ public final class NamedProperty {
      * Creates an IS NULL condition for this property.
      * This generates a condition that checks if the property value is NULL in the database.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("deletedDate").isNull(); // deletedDate IS NULL
      * NamedProperty.of("endDate").isNull(); // endDate IS NULL
@@ -301,7 +301,7 @@ public final class NamedProperty {
      * Creates an IS NOT NULL condition for this property.
      * This generates a condition that checks if the property value is not NULL in the database.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("email").isNotNull(); // email IS NOT NULL
      * NamedProperty.of("phoneNumber").isNotNull(); // phoneNumber IS NOT NULL
@@ -319,7 +319,7 @@ public final class NamedProperty {
      * Creates a BETWEEN condition for this property.
      * This generates a condition that checks if the property value falls within the specified range (inclusive).
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("age").between(18, 65); // age BETWEEN 18 AND 65
      * NamedProperty.of("price").between(10.0, 100.0); // price BETWEEN 10.0 AND 100.0
@@ -352,7 +352,7 @@ public final class NamedProperty {
      * Creates a LIKE condition for this property.
      * This generates a pattern matching condition using SQL LIKE syntax with wildcards.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("name").like("John%"); // name LIKE 'John%'
      * NamedProperty.of("email").like("%@example.com"); // email LIKE '%@example.com'
@@ -371,7 +371,7 @@ public final class NamedProperty {
      * Creates a NOT LIKE condition for this property.
      * This generates a pattern matching condition that excludes values matching the SQL LIKE pattern.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("email").notLike("%@temp.com"); // email NOT LIKE '%@temp.com'
      * NamedProperty.of("name").notLike("test%"); // name NOT LIKE 'test%'
@@ -390,7 +390,7 @@ public final class NamedProperty {
      * Creates a LIKE condition that matches values starting with the specified prefix.
      * This is a convenience method that automatically appends the % wildcard to the value.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("name").startsWith("John"); // name LIKE 'John%'
      * NamedProperty.of("code").startsWith("PRD"); // code LIKE 'PRD%'
@@ -409,7 +409,7 @@ public final class NamedProperty {
      * Creates a LIKE condition that matches values ending with the specified suffix.
      * This is a convenience method that automatically prepends the % wildcard to the value.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("email").endsWith("@example.com"); // email LIKE '%@example.com'
      * NamedProperty.of("filename").endsWith(".pdf"); // filename LIKE '%.pdf'
@@ -428,7 +428,7 @@ public final class NamedProperty {
      * Creates a LIKE condition that matches values containing the specified substring.
      * This is a convenience method that automatically adds % wildcards to both sides of the value.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("description").contains("important"); // description LIKE '%important%'
      * NamedProperty.of("title").contains("query"); // title LIKE '%query%'
@@ -447,7 +447,7 @@ public final class NamedProperty {
      * Creates an IN condition for this property with an array of values.
      * This generates a condition that checks if the property value matches any of the specified values.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("status").in("active", "pending", "approved");
      * // Results in: status IN ('active', 'pending', 'approved')
@@ -470,7 +470,7 @@ public final class NamedProperty {
      * This is similar to {@link #in(Object...)} but accepts a collection instead of varargs.
      * Useful when the values are already in a collection or list.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<Integer> validIds = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
      * NamedProperty.of("id").in(validIds);
@@ -495,7 +495,7 @@ public final class NamedProperty {
      * Two NamedProperty instances with the same property name will have the same hash code,
      * ensuring correct behavior in hash-based collections.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty p1 = NamedProperty.of("age");
      * NamedProperty p2 = NamedProperty.of("age");
@@ -514,7 +514,7 @@ public final class NamedProperty {
      * Two NamedProperty instances are equal if they have the same property name.
      * The comparison is case-sensitive and requires exact match.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty p1 = NamedProperty.of("age");
      * NamedProperty p2 = NamedProperty.of("age");
@@ -536,7 +536,7 @@ public final class NamedProperty {
      * Returns the string representation of this NamedProperty.
      * The string representation is simply the property name itself.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty age = NamedProperty.of("age");
      * String str = age.toString(); // Returns "age"

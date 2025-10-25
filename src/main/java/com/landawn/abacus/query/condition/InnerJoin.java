@@ -41,7 +41,7 @@ import java.util.Collection;
  *   <li>Can be chained for multi-table joins</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple inner join
  * InnerJoin join1 = new InnerJoin("orders");
@@ -90,7 +90,7 @@ public class InnerJoin extends Join {
      * specified separately or will use implicit join conditions based on
      * foreign key relationships (if supported by the database).
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple join without explicit condition
      * InnerJoin join = new InnerJoin("products");
@@ -114,7 +114,7 @@ public class InnerJoin extends Join {
      * and the condition for matching rows. The condition typically compares key columns
      * between the tables.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join orders with customers (use Expression for column references)
      * InnerJoin customerOrders = new InnerJoin("customers c",
@@ -153,7 +153,7 @@ public class InnerJoin extends Join {
      * This allows joining multiple tables in a single INNER JOIN operation, though
      * this syntax is less common than chaining individual joins.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join multiple related tables
      * List<String> tables = Arrays.asList("orders o", "customers c");
