@@ -29,7 +29,7 @@ package com.landawn.abacus.query.condition;
  *   <li>score >= ALL (subquery) - true if score is greater than or equal to all values</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find products more expensive than ALL products in 'Electronics' category
  * SubQuery electronicsQuery = CF.subQuery(
@@ -75,7 +75,7 @@ public class All extends Cell {
      * Creates a new ALL condition with the specified subquery.
      * The ALL operator ensures that a comparison is true for every value returned by the subquery.
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a subquery for competitor prices
      * SubQuery competitorPrices = CF.subQuery(

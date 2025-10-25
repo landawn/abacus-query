@@ -29,7 +29,7 @@ import com.landawn.abacus.util.Strings;
  * <p>NamedProperty simplifies the creation of various SQL conditions by providing convenient
  * methods that automatically include the property name.</p>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create a named property
  * NamedProperty age = NamedProperty.of("age");
@@ -71,7 +71,7 @@ public final class NamedProperty {
      * Gets or creates a NamedProperty instance for the specified property name.
      * This method uses caching to ensure only one instance exists per property name.
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty username = NamedProperty.of("username");
      * NamedProperty status = NamedProperty.of("status");
@@ -92,7 +92,7 @@ public final class NamedProperty {
     /**
      * Returns the property name associated with this NamedProperty.
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty age = NamedProperty.of("age");
      * String name = age.propName(); // Returns "age"

@@ -42,7 +42,7 @@ import java.util.Collection;
  *   <li>Best used when table relationships are well-defined and stable</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple natural join
  * NaturalJoin join1 = new NaturalJoin("employees");

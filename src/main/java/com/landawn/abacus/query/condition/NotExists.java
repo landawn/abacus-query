@@ -32,7 +32,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Short-circuits evaluation on first row found</li>
  * </ul>
  *
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who have not placed any orders
  * SubQuery orderNotExists = new SubQuery(
@@ -70,7 +70,7 @@ public class NotExists extends Cell {
      * checking for missing relationships, finding orphaned records, or identifying
      * entities without certain attributes.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find employees without any assigned projects
      * SubQuery projectCheck = new SubQuery(

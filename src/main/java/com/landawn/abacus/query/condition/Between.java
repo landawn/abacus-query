@@ -37,8 +37,8 @@ import com.landawn.abacus.util.Strings;
  *   <li>Dates: {@code BETWEEN '2023-01-01' AND '2023-12-31'}</li>
  *   <li>Strings: {@code BETWEEN 'A' AND 'M'} (alphabetical range)</li>
  * </ul>
- * 
- * <p>Usage example:</p>
+ *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Numeric range
  * Between ageRange = new Between("age", 18, 65);
@@ -87,7 +87,7 @@ public class Between extends AbstractCondition {
      * Creates a new BETWEEN condition.
      * The condition checks if the property value falls within the specified range, inclusive.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if age is between 18 and 65 (inclusive)
      * Between ageRange = new Between("age", 18, 65);
@@ -126,7 +126,7 @@ public class Between extends AbstractCondition {
     /**
      * Gets the property name being checked.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("age", 18, 65);
      * String prop = condition.getPropName(); // Returns "age"
@@ -142,7 +142,7 @@ public class Between extends AbstractCondition {
      * Gets the minimum value of the range.
      * The returned value can be safely cast to its expected type.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("price", 10.0, 50.0);
      * Double min = condition.getMinValue(); // Returns 10.0
@@ -163,7 +163,7 @@ public class Between extends AbstractCondition {
      * Sets the minimum value of the range.
      * This method should generally not be used as conditions should be immutable.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("age", 18, 65);
      * // Not recommended: condition.setMinValue(21);
@@ -181,7 +181,7 @@ public class Between extends AbstractCondition {
      * Gets the maximum value of the range.
      * The returned value can be safely cast to its expected type.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("price", 10.0, 50.0);
      * Double max = condition.getMaxValue(); // Returns 50.0
@@ -202,7 +202,7 @@ public class Between extends AbstractCondition {
      * Sets the maximum value of the range.
      * This method should generally not be used as conditions should be immutable.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("age", 18, 65);
      * // Not recommended: condition.setMaxValue(70);
@@ -221,7 +221,7 @@ public class Between extends AbstractCondition {
      * Returns a list containing the minimum and maximum values.
      * If either value is a Condition (subquery), its parameters are included instead.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("age", 18, 65);
      * List<Object> params = condition.getParameters(); // Returns [18, 65]
@@ -260,7 +260,7 @@ public class Between extends AbstractCondition {
      * <p>This method sets both minValue and maxValue fields to null unless they are Conditions,
      * in which case it recursively clears parameters in the nested conditions.</p>
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between between = new Between("age", 18, 65);
      * between.clearParameters(); // Both minValue and maxValue become null
@@ -290,7 +290,7 @@ public class Between extends AbstractCondition {
      * Creates a deep copy of this BETWEEN condition.
      * If minValue or maxValue are Conditions, they are also copied to ensure complete independence.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between original = new Between("price", 10, 50);
      * Between copy = original.copy();
@@ -325,7 +325,7 @@ public class Between extends AbstractCondition {
      * Returns a string representation of this BETWEEN condition using the specified naming policy.
      * The format is: propertyName BETWEEN (minValue, maxValue)
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("orderDate", date1, date2);
      * String str = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
@@ -349,7 +349,7 @@ public class Between extends AbstractCondition {
      * Returns the hash code of this BETWEEN condition.
      * The hash code is computed based on property name, operator, minValue, and maxValue.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between b1 = new Between("age", 18, 65);
      * Between b2 = new Between("age", 18, 65);
@@ -372,7 +372,7 @@ public class Between extends AbstractCondition {
      * Two BETWEEN conditions are equal if they have the same property name,
      * operator, minValue, and maxValue.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between b1 = new Between("age", 18, 65);
      * Between b2 = new Between("age", 18, 65);

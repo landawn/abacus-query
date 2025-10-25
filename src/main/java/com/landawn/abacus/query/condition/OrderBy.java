@@ -40,7 +40,7 @@ import com.landawn.abacus.util.Objectory;
  *   <li>Support for expressions and custom conditions</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple ordering by single column (default ASC)
  * OrderBy orderBy1 = new OrderBy("lastName");
@@ -85,7 +85,7 @@ public class OrderBy extends Clause {
      * <p>Use this constructor when you need to order by calculated values,
      * case expressions, or other complex SQL expressions.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = new Expression("CASE WHEN status='urgent' THEN 1 ELSE 2 END");
      * OrderBy orderBy = new OrderBy(expr);
@@ -104,7 +104,7 @@ public class OrderBy extends Clause {
      * <p>The order of properties in the parameter list determines the sort priority.
      * The first property has the highest priority, followed by subsequent properties.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * OrderBy orderBy = new OrderBy("country", "state", "city");
      * // Results in: ORDER BY country, state, city
@@ -121,7 +121,7 @@ public class OrderBy extends Clause {
      * Constructs an ORDER BY clause with a single property and sort direction.
      * This is the most common use case for ordering query results.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * OrderBy orderBy = new OrderBy("price", SortDirection.DESC);
      * // Results in: ORDER BY price DESC
@@ -142,7 +142,7 @@ public class OrderBy extends Clause {
      * <p>This is useful when you want to sort by multiple columns in the same direction,
      * such as sorting multiple date fields in descending order.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> dateFields = Arrays.asList("created", "updated", "published");
      * OrderBy orderBy = new OrderBy(dateFields, SortDirection.DESC);
@@ -160,11 +160,11 @@ public class OrderBy extends Clause {
     /**
      * Constructs an ORDER BY clause with properties having different sort directions.
      * This provides maximum flexibility for complex sorting requirements.
-     * 
+     *
      * <p>The map should maintain insertion order (use LinkedHashMap) to ensure
      * predictable sort priority. Each entry maps a property name to its sort direction.</p>
-     * 
-     * <p>Example usage:</p>
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
      * orders.put("isActive", SortDirection.DESC);  // Active records first
@@ -173,20 +173,20 @@ public class OrderBy extends Clause {
      * OrderBy orderBy = new OrderBy(orders);
      * // Results in: ORDER BY isActive DESC, priority DESC, created ASC
      * }</pre>
-     * 
+     *
      * @param orders should be a {@code LinkedHashMap} to preserve insertion order.
      *               Maps property names to their respective sort directions.
      * @throws IllegalArgumentException if orders is null or empty
      */
     public OrderBy(final Map<String, SortDirection> orders) {
-        this(createCondition(orders));
+        this(CF.expr(createCondition(orders)));
     }
 
     /**
      * Creates a comma-separated string of property names for ordering.
      * This static helper method formats property names for the ORDER BY clause.
-     * 
-     * <p>Example usage:</p>
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String condition = OrderBy.createCondition("name", "age", "city");
      * // Returns: "name, age, city"
@@ -194,6 +194,7 @@ public class OrderBy extends Clause {
      *
      * @param propNames array of property names
      * @return formatted string for ORDER BY clause
+     * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
      */
     static String createCondition(final String... propNames) {
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -201,6 +202,10 @@ public class OrderBy extends Clause {
         try {
             int i = 0;
             for (final String propName : propNames) {
+                if (propName == null || propName.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Property name cannot be null or empty");
+                }
+
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }
@@ -217,8 +222,8 @@ public class OrderBy extends Clause {
     /**
      * Creates an ordering condition for a single property with direction.
      * This static helper method formats a property name with its sort direction.
-     * 
-     * <p>Example usage:</p>
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String condition = OrderBy.createCondition("price", SortDirection.DESC);
      * // Returns: "price DESC"
@@ -227,16 +232,23 @@ public class OrderBy extends Clause {
      * @param propName the property name
      * @param direction the sort direction
      * @return formatted string for ORDER BY clause
+     * @throws IllegalArgumentException if propName is null/empty or direction is null
      */
     static String createCondition(final String propName, final SortDirection direction) {
+        if (propName == null || propName.trim().isEmpty()) {
+            throw new IllegalArgumentException("propName cannot be null or empty");
+        }
+        if (direction == null) {
+            throw new IllegalArgumentException("direction cannot be null");
+        }
         return propName + SPACE + direction.toString();
     }
 
     /**
      * Creates an ordering condition for multiple properties with the same direction.
      * This static helper method formats multiple property names with a single sort direction.
-     * 
-     * <p>Example usage:</p>
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> props = Arrays.asList("created", "modified");
      * String condition = OrderBy.createCondition(props, SortDirection.DESC);
@@ -246,13 +258,22 @@ public class OrderBy extends Clause {
      * @param propNames collection of property names
      * @param direction the sort direction
      * @return formatted string for ORDER BY clause
+     * @throws IllegalArgumentException if propNames is null/empty, direction is null, or propNames contains null/empty elements
      */
     static String createCondition(final Collection<String> propNames, final SortDirection direction) {
+        if (direction == null) {
+            throw new IllegalArgumentException("direction cannot be null");
+        }
+
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
             int i = 0;
             for (final String propName : propNames) {
+                if (propName == null || propName.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Property name in collection cannot be null or empty");
+                }
+
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }
@@ -272,8 +293,8 @@ public class OrderBy extends Clause {
     /**
      * Creates an ordering condition from a map of properties and their directions.
      * This static helper method formats multiple property-direction pairs for complex ordering.
-     * 
-     * <p>Example usage:</p>
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
      * orders.put("priority", SortDirection.DESC);
@@ -284,6 +305,7 @@ public class OrderBy extends Clause {
      *
      * @param orders map of property names to sort directions
      * @return formatted string for ORDER BY clause
+     * @throws IllegalArgumentException if orders is null/empty, or contains null/empty keys or null values
      */
     static String createCondition(final Map<String, SortDirection> orders) {
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -291,13 +313,23 @@ public class OrderBy extends Clause {
         try {
             int i = 0;
             for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+                final String key = entry.getKey();
+                final SortDirection value = entry.getValue();
+
+                if (key == null || key.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Property name in orders cannot be null or empty");
+                }
+                if (value == null) {
+                    throw new IllegalArgumentException("SortDirection in orders cannot be null");
+                }
+
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }
 
-                sb.append(entry.getKey());
+                sb.append(key);
                 sb.append(SPACE);
-                sb.append(entry.getValue().toString());
+                sb.append(value.toString());
             }
 
             return sb.toString();

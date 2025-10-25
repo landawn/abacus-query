@@ -43,7 +43,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Multiple columns: {@code (column1, column2) IN (SELECT col1, col2 FROM ...)}</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Single column IN subquery - find orders from premium customers
  * SubQuery premiumCustomers = new SubQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
@@ -92,8 +92,8 @@ public class InSubQuery extends AbstractCondition {
      * Creates an IN subquery condition for a single property.
      * Use this constructor when checking if a single column value exists in the subquery result.
      * The subquery should return a single column of compatible type.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find all products in active categories
      * SubQuery activeCategories = new SubQuery("SELECT category_id FROM categories WHERE active = true");
@@ -119,8 +119,8 @@ public class InSubQuery extends AbstractCondition {
      * Creates an IN subquery condition for multiple properties.
      * Use this constructor for composite key checks or when multiple columns need to match
      * the subquery results. The subquery must return the same number of columns in the same order.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find employees assigned to valid department/location combinations
      * List<String> columns = Arrays.asList("dept_id", "loc_id");
@@ -204,7 +204,7 @@ public class InSubQuery extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
      * condition.clearParameters(); // All parameters become null
@@ -274,8 +274,8 @@ public class InSubQuery extends AbstractCondition {
      * Converts this InSubQuery condition to its string representation according to the specified naming policy.
      * The naming policy is applied to the property names to handle different naming conventions
      * (e.g., camelCase to snake_case).
-     * 
-     * <p>Example output:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Single column: "user_id IN (SELECT id FROM users WHERE active = true)"
      * // Multiple columns: "(dept_id, location_id) IN (SELECT d_id, l_id FROM assignments)"

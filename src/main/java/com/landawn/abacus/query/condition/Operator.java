@@ -39,7 +39,7 @@ import com.landawn.abacus.util.Strings;
  *   <li><b>Set operations:</b> UNION, UNION_ALL, INTERSECT, EXCEPT</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Direct operator usage
  * Operator op = Operator.EQUAL;
@@ -376,7 +376,7 @@ public enum Operator {
      * <p>This method performs case-insensitive lookup and caches results for performance.
      * It can handle both symbolic operators (like "=", ">") and word operators (like "AND", "OR").</p>
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Operator eq = Operator.getOperator("=");        // Returns EQUAL
      * Operator and = Operator.getOperator("AND");     // Returns AND

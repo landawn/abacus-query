@@ -42,7 +42,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Couchbase style: $1, $2, etc.</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
  * String parameterized = parsed.getParameterizedSql(); // "SELECT * FROM users WHERE id = ? AND status = ?"
@@ -156,7 +156,7 @@ public final class ParsedSql {
      * This method uses an internal cache to avoid re-parsing the same SQL statements.
      * The SQL is analyzed to extract named parameters and convert them to standard JDBC placeholders.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Using named parameters
      * ParsedSql ps1 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
@@ -209,7 +209,7 @@ public final class ParsedSql {
      * Gets the parameterized SQL with all named parameters replaced by JDBC placeholders (?).
      * This SQL can be used directly with JDBC PreparedStatement.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
      * String sql = parsed.getParameterizedSql(); // Returns: "SELECT * FROM users WHERE id = ?"
@@ -244,7 +244,7 @@ public final class ParsedSql {
      * Gets the list of named parameters extracted from the SQL in order of appearance.
      * For SQL with no named parameters, returns an empty list.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE age > :minAge AND age < :maxAge");
      * List<String> params = parsed.getNamedParameters(); // Returns: ["minAge", "maxAge"]
@@ -279,7 +279,7 @@ public final class ParsedSql {
      * Gets the total number of parameters (named or positional) in the SQL.
      * This count includes all occurrences of ?, :paramName, or #{paramName}.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (?, ?, ?)");
      * int count = parsed.getParameterCount(); // Returns: 3

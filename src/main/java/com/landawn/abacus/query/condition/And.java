@@ -77,7 +77,7 @@ public class And extends Junction {
      * Creates a new AND condition with the specified conditions.
      * All provided conditions must be true for this AND condition to evaluate to true.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple AND with two conditions
      * And and = new And(
@@ -106,7 +106,7 @@ public class And extends Junction {
      * Creates a new AND condition with the specified collection of conditions.
      * All conditions in the collection must be true for this AND condition to evaluate to true.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Build conditions dynamically
      * List<Condition> conditions = new ArrayList<>();
@@ -132,7 +132,7 @@ public class And extends Junction {
      * This method returns a new AND instance containing all existing conditions plus the new one.
      * The original AND condition remains unchanged.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Start with a basic AND
      * And and = new And(CF.eq("status", "active"));

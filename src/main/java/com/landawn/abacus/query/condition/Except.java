@@ -32,7 +32,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Order of rows is not guaranteed unless ORDER BY is used</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who haven't placed any orders
  * SubQuery customersWithOrders = CF.subQuery(
@@ -80,7 +80,7 @@ public class Except extends Clause {
      * The result will contain all rows from the main query that are not present
      * in the subquery results.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find employees who are not managers
      * SubQuery managers = CF.subQuery(

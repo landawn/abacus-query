@@ -38,7 +38,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Use UNION when you need distinct results</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Get all transactions from both tables, including duplicates
  * SubQuery currentTransactions = new SubQuery("SELECT * FROM transactions WHERE year = 2024");
@@ -79,7 +79,7 @@ public class UnionAll extends Clause {
      * and the data types must be compatible. The column names from the first query
      * in the UNION ALL operation will be used for the final result set.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Combine orders from multiple regions
      * SubQuery eastRegion = new SubQuery("SELECT * FROM orders WHERE region = 'EAST'");

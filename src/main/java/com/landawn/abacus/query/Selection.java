@@ -42,7 +42,7 @@ import lombok.experimental.Accessors;
  *   <li>Property exclusion</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple selection
  * Selection userSelection = new Selection()
@@ -81,7 +81,7 @@ public final class Selection {
      * Creates a new MultiSelectionBuilder for building complex multi-table selections.
      * This builder provides a fluent API for constructing multiple Selection objects.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLBuilder sqlBuilder = Selection.multiSelectionBuilder()
      *     .add(User.class, "u", "user")
@@ -202,7 +202,7 @@ public final class Selection {
          * Applies the built selections to the SQLBuilder function and returns the resulting SQLBuilder.
          * This method provides a convenient way to integrate the selections with SQLBuilder methods.
          * 
-         * <p>Example usage:</p>
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SQLBuilder query = Selection.multiSelectionBuilder()
          *     .add(User.class, "u", "user")

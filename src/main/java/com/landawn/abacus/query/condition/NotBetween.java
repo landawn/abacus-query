@@ -43,8 +43,8 @@ import com.landawn.abacus.util.Strings;
  *   <li>Can use expressions or subqueries as range boundaries</li>
  *   <li>NULL values: if the column value or either boundary is NULL, the result is NULL (not true)</li>
  * </ul>
- * 
- * <p>Example usage:
+ *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Exclude normal temperature range
  * NotBetween abnormalTemp = new NotBetween("temperature", 36.0, 37.5);
@@ -87,8 +87,8 @@ public class NotBetween extends AbstractCondition {
      * Constructs a NOT BETWEEN condition for the specified property and range.
      * The condition will match values that are less than minValue OR greater than maxValue.
      * Both boundaries are excluded from the match (opposite of BETWEEN's inclusive behavior).
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find products with extreme prices (very cheap or very expensive)
      * NotBetween priceRange = new NotBetween("price", 10.0, 1000.0);
@@ -120,7 +120,7 @@ public class NotBetween extends AbstractCondition {
      * Gets the property name for this NOT BETWEEN condition.
      * This is the name of the column or field being tested against the range.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
      * String prop = condition.getPropName(); // Returns "age"
@@ -137,7 +137,7 @@ public class NotBetween extends AbstractCondition {
      * Values less than this will match the condition (since they fall outside the range).
      * The type parameter allows the value to be cast to the expected type.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("temperature", 36.0, 37.5);
      * Double min = condition.getMinValue(); // Returns 36.0
@@ -156,7 +156,7 @@ public class NotBetween extends AbstractCondition {
      * Note: Modifying conditions after creation is not recommended as they should be immutable.
      * This method exists for backward compatibility but should be avoided in new code.
      *
-     * <p>Example (discouraged):
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
      * condition.setMinValue(21); // Not recommended - creates mutable state
@@ -176,7 +176,7 @@ public class NotBetween extends AbstractCondition {
      * Values greater than this will match the condition (since they fall outside the range).
      * The type parameter allows the value to be cast to the expected type.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("temperature", 36.0, 37.5);
      * Double max = condition.getMaxValue(); // Returns 37.5
@@ -195,7 +195,7 @@ public class NotBetween extends AbstractCondition {
      * Note: Modifying conditions after creation is not recommended as they should be immutable.
      * This method exists for backward compatibility but should be avoided in new code.
      *
-     * <p>Example (discouraged):
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
      * condition.setMaxValue(70); // Not recommended - creates mutable state
@@ -214,8 +214,8 @@ public class NotBetween extends AbstractCondition {
      * Gets the list of parameters for this condition.
      * If min/max values are themselves conditions (like subqueries), their parameters are included.
      * Otherwise, the values themselves are returned as parameters.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
      * List<Object> params = condition.getParameters(); // Returns [18, 65]
@@ -248,7 +248,7 @@ public class NotBetween extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
      * condition.clearParameters(); // All parameters become null
@@ -274,8 +274,8 @@ public class NotBetween extends AbstractCondition {
      * Creates a deep copy of this NOT BETWEEN condition.
      * If min/max values are conditions themselves (like expressions or subqueries),
      * they are also copied to ensure complete independence.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween original = new NotBetween("score", 60, 80);
      * NotBetween copy = original.copy();
@@ -304,8 +304,8 @@ public class NotBetween extends AbstractCondition {
     /**
      * Converts this NOT BETWEEN condition to its string representation.
      * The naming policy is applied to the property name to handle different naming conventions.
-     * 
-     * <p>Example output:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // With numeric values: "age NOT BETWEEN (18, 65)"
      * // With string values: "grade NOT BETWEEN ('A', 'C')"
@@ -327,7 +327,7 @@ public class NotBetween extends AbstractCondition {
      * Two NotBetween instances with the same property, operator, and range values will have
      * the same hash code, ensuring correct behavior in hash-based collections.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween c1 = new NotBetween("age", 18, 65);
      * NotBetween c2 = new NotBetween("age", 18, 65);
@@ -339,7 +339,7 @@ public class NotBetween extends AbstractCondition {
     @Override
     public int hashCode() {
         int h = 17;
-        h = (h * 31) + propName.hashCode();
+        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
         h = (h * 31) + operator.hashCode();
         h = (h * 31) + ((minValue == null) ? 0 : minValue.hashCode());
         return (h * 31) + ((maxValue == null) ? 0 : maxValue.hashCode());
@@ -350,7 +350,7 @@ public class NotBetween extends AbstractCondition {
      * Two NOT BETWEEN conditions are equal if they have the same property name,
      * operator, and range boundaries (both min and max values).
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween c1 = new NotBetween("age", 18, 65);
      * NotBetween c2 = new NotBetween("age", 18, 65);

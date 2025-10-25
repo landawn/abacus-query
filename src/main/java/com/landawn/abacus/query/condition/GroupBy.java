@@ -43,7 +43,7 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  *   <li>Data summarization and reporting</li>
  * </ul>
  * 
- * <p>Usage examples:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple GROUP BY
  * GroupBy byDept = new GroupBy("department");
@@ -84,7 +84,7 @@ public class GroupBy extends Clause {
      * Creates a new GROUP BY clause with the specified condition.
      * This constructor allows for custom grouping expressions beyond simple column names.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Group by year extracted from date
      * GroupBy byYear = new GroupBy(CF.expr("YEAR(order_date)"));
@@ -107,7 +107,7 @@ public class GroupBy extends Clause {
      * The columns will be grouped in the order provided. This is the most common
      * way to create GROUP BY clauses for simple column-based grouping.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Group by single column
      * GroupBy byStatus = new GroupBy("status");
@@ -133,7 +133,7 @@ public class GroupBy extends Clause {
      * Creates a new GROUP BY clause with a single property and sort direction.
      * This allows grouping by a single column with explicit ordering of the groups.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Group by sales amount in descending order
      * GroupBy topSales = new GroupBy("sales_amount", SortDirection.DESC);
@@ -157,7 +157,7 @@ public class GroupBy extends Clause {
      * All properties will use the same sort direction. This is useful when you want
      * consistent ordering across all grouping columns.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Group by multiple columns, all descending
      * List<String> columns = Arrays.asList("department", "location", "year");
@@ -181,11 +181,11 @@ public class GroupBy extends Clause {
     /**
      * Creates a new GROUP BY clause with custom sort directions for each property.
      * This provides maximum flexibility by allowing different sort directions for each
-     * grouping column. The map should maintain insertion order (use LinkedHashMap) to 
+     * grouping column. The map should maintain insertion order (use LinkedHashMap) to
      * preserve the grouping order, as the order of columns in GROUP BY can affect performance
      * and results.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Complex grouping with mixed sort directions
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
@@ -194,7 +194,7 @@ public class GroupBy extends Clause {
      * orders.put("hire_year", SortDirection.ASC);
      * GroupBy complex = new GroupBy(orders);
      * // SQL: GROUP BY department ASC, salary_range DESC, hire_year ASC
-     * 
+     *
      * // Grouping for sales analysis
      * Map<String, SortDirection> salesGroup = new LinkedHashMap<>();
      * salesGroup.put("region", SortDirection.ASC);
@@ -202,12 +202,12 @@ public class GroupBy extends Clause {
      * GroupBy salesAnalysis = new GroupBy(salesGroup);
      * // SQL: GROUP BY region ASC, total_sales DESC
      * }</pre>
-     * 
+     *
      * @param orders a map of property names to their sort directions. Should be a LinkedHashMap
      *               to maintain order. Must not be null or empty.
      * @throws IllegalArgumentException if orders is null or empty
      */
     public GroupBy(final Map<String, SortDirection> orders) {
-        this(OrderBy.createCondition(orders));
+        this(CF.expr(OrderBy.createCondition(orders)));
     }
 }

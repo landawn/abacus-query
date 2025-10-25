@@ -197,7 +197,7 @@ public class Junction2025Test extends TestBase {
         Junction junction = new Junction(Operator.AND,
             CF.eq("status", "active"),
             CF.between("age", 18, 65),
-            CF.in("city", new String[]{"NYC", "LA"})
+            CF.in("city", new String[] {"NYC", "LA"})
         );
 
         List<Object> params = junction.getParameters();
@@ -245,7 +245,7 @@ public class Junction2025Test extends TestBase {
     public void testClearParameters() {
         Junction junction = new Junction(Operator.AND,
             CF.eq("status", "active"),
-            CF.in("type", new String[]{"A", "B", "C"})
+            CF.in("type", new String[] {"A", "B", "C"})
         );
 
         assertFalse(junction.getParameters().isEmpty());

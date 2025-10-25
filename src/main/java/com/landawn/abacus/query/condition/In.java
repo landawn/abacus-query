@@ -45,7 +45,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *   <li>Some databases have limits on the number of values in an IN clause</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if status is one of several values
  * In statusCheck = new In("status", Arrays.asList("active", "pending", "approved"));
@@ -89,8 +89,8 @@ public class In extends AbstractCondition {
      * Creates a new IN condition with the specified property name and collection of values.
      * The condition checks if the property value matches any value in the collection.
      * This is the primary constructor for creating IN conditions.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Filter by multiple categories
      * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers", "phones"));
@@ -170,7 +170,7 @@ public class In extends AbstractCondition {
      * <p>The values list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In in = new In("status", Arrays.asList("active", "pending", "review"));
      * List<Object> parameters = in.getParameters(); // Returns [active, pending, review]

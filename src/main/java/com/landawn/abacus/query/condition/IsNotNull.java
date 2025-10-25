@@ -33,7 +33,7 @@ import com.landawn.abacus.annotation.NotNull;
  * <p>This condition is crucial for data validation and ensuring that required fields
  * contain values before processing or joining with other data.
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if email is not null
  * IsNotNull emailCheck = new IsNotNull("email");
@@ -69,8 +69,8 @@ public class IsNotNull extends IsNot {
      * Creates a new IsNotNull condition for the specified property.
      * This condition checks if the property value is not null, which is essential
      * for filtering records that have values in the specified field.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Ensure user has an email address
      * IsNotNull emailCheck = new IsNotNull("email");

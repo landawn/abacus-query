@@ -37,7 +37,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Any Comparable type supported by the database</li>
  * </ul>
  *
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if age is 18 or older
  * GreaterEqual ageLimit = new GreaterEqual("age", 18);
@@ -78,7 +78,7 @@ public class GreaterEqual extends Binary {
      * Creates a new GreaterEqual condition.
      * The condition evaluates to true when the property value is greater than or equal to the specified value.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if salary is at least 50000
      * GreaterEqual salaryCondition = new GreaterEqual("salary", 50000);

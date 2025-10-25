@@ -43,7 +43,7 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  *   <li>Implementing business logic for incomplete data</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if email is null
  * IsNull emailCheck = new IsNull("email");
@@ -92,8 +92,8 @@ public class IsNull extends Is {
      * This condition checks if the property value is NULL, which indicates
      * the absence of a value in the database. This is different from empty
      * string or zero values.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find records with missing data
      * IsNull birthdateCheck = new IsNull("birth_date");

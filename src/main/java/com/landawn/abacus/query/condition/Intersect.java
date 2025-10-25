@@ -37,7 +37,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Set-based analysis and reporting</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who are both active AND have recent orders
  * SubQuery activeCustomers = new SubQuery("SELECT customer_id FROM customers WHERE status = 'active'");
@@ -76,7 +76,7 @@ public class Intersect extends Clause {
      * the main query and this subquery. This is the primary way to find
      * common records between two result sets.
      * 
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find users who are both premium AND active in the last 30 days
      * SubQuery premiumUsers = new SubQuery("SELECT user_id FROM users WHERE plan = 'premium'");

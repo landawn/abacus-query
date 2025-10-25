@@ -43,8 +43,8 @@ package com.landawn.abacus.query.condition;
  *   <li>Consider full-text search for complex text searching needs</li>
  *   <li>Case sensitivity depends on database collation settings</li>
  * </ul>
- * 
- * <p>Example usage:
+ *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find all names starting with "John"
  * Like startsWithJohn = new Like("name", "John%");
@@ -90,8 +90,8 @@ public class Like extends Binary {
      * The pattern should include SQL wildcards (% or _) for pattern matching.
      * If special characters need to be matched literally, they should be escaped
      * according to your database's escape syntax.
-     * 
-     * <p>Example patterns and usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Starts with pattern - uses index efficiently
      * Like startsWith = new Like("title", "The%");

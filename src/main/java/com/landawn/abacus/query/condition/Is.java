@@ -31,8 +31,8 @@ package com.landawn.abacus.query.condition;
  *   <li>Checking if a numeric value is INFINITE (though IsInfinite class is preferred)</li>
  *   <li>Custom IS expressions for database-specific values</li>
  * </ul>
- * 
- * <p>Example usage:
+ *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if a property is null (prefer IsNull class)
  * Is nullCheck = new Is("email", null);
@@ -64,8 +64,8 @@ public class Is extends Binary {
      * This condition checks if the property is equal to the specified value using the SQL IS operator.
      * The IS operator is essential for comparing special SQL values that cannot be compared
      * using the standard equals operator.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check for NULL (though IsNull is preferred)
      * Is nullCheck = new Is("phone_number", null);

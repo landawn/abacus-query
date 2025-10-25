@@ -121,7 +121,7 @@ public final class QueryUtil {
      * The map includes variations of column names in lowercase and uppercase for case-insensitive lookups.
      * Column names are derived from @Column annotations on the entity properties.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ImmutableMap<String, String> columnMap = QueryUtil.getColumn2PropNameMap(User.class);
      * String propName = columnMap.get("user_name"); // returns "userName"
@@ -159,7 +159,7 @@ public final class QueryUtil {
      * Gets a mapping of property names to column names for the specified entity class using the given naming policy.
      * This method handles nested properties and respects @Table annotations for column field configurations.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ImmutableMap<String, String> propMap = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
      * String columnName = propMap.get("firstName"); // returns "first_name"
@@ -264,7 +264,7 @@ public final class QueryUtil {
      * This method considers ID fields and excludes properties marked as non-insertable.
      * If ID fields have default values, they are excluded from the insert property list.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User();
      * Collection<String> props = QueryUtil.getInsertPropNames(user, Collections.emptySet());
@@ -309,7 +309,7 @@ public final class QueryUtil {
      * Gets the property names to be used for INSERT operations on the given entity class.
      * This method returns all insertable properties excluding those specified in excludedPropNames.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Collection<String> props = QueryUtil.getInsertPropNames(User.class, Set.of("createdTime"));
      * // Returns all insertable properties except "createdTime"
@@ -339,7 +339,7 @@ public final class QueryUtil {
      * Gets the property names to be used for SELECT operations on the given entity class.
      * This method can optionally include sub-entity properties for nested object retrieval.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Get all properties including nested ones
      * Collection<String> props = QueryUtil.getSelectPropNames(User.class, true, Collections.emptySet());
@@ -371,7 +371,7 @@ public final class QueryUtil {
      * Gets the property names to be used for UPDATE operations on the given entity class.
      * This method excludes ID fields and properties marked as non-updatable.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Collection<String> props = QueryUtil.getUpdatePropNames(User.class, Set.of("createdTime"));
      * // Returns updatable properties like ["name", "email", "lastModified"] excluding ID and createdTime
@@ -401,7 +401,7 @@ public final class QueryUtil {
      * Gets the ID field names for the specified entity class.
      * ID fields are identified by @Id annotations on the entity properties.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> idFields = QueryUtil.getIdFieldNames(User.class);
      * // Returns ["id"] for single ID or ["userId", "tenantId"] for composite ID
@@ -442,7 +442,7 @@ public final class QueryUtil {
      * Determines whether a property should be excluded from database column mapping.
      * A property is not a column if it's transient, annotated with @NotColumn, or excluded by @Table configuration.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * PropInfo propInfo = ...; // property info for "tempData" field
      * boolean excluded = QueryUtil.isNotColumn(columnFields, nonColumnFields, propInfo);
@@ -494,7 +494,7 @@ public final class QueryUtil {
      * This is commonly used for building parameterized SQL queries with multiple placeholders.
      * Common values are pre-cached for performance optimization.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String placeholders = QueryUtil.repeatQM(3); // Returns "?, ?, ?"
      * String sql = "INSERT INTO users (name, email, age) VALUES (" + placeholders + ")";
@@ -520,7 +520,7 @@ public final class QueryUtil {
      * Gets the table alias from the @Table annotation on the entity class.
      * The alias can be used in SQL queries to reference the table with a shorter name.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * @Table(name = "user_accounts", alias = "ua")
      * public class UserAccount { ... }
@@ -542,7 +542,7 @@ public final class QueryUtil {
      * Gets the table name and optional alias for the entity class using default naming policy.
      * If @Table annotation is present, uses its values; otherwise derives from class name.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String tableInfo = QueryUtil.getTableNameAndAlias(UserAccount.class);
      * // Returns "user_accounts ua" if alias defined, or just "user_account" if not
@@ -559,7 +559,7 @@ public final class QueryUtil {
      * Gets the table name and optional alias for the entity class using specified naming policy.
      * If @Table annotation is present, uses its values; otherwise derives from class name using the naming policy.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String tableInfo = QueryUtil.getTableNameAndAlias(UserAccount.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
      * // Returns "USER_ACCOUNTS UA" if alias defined, or just "USER_ACCOUNT" if not

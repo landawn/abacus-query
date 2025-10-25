@@ -43,7 +43,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Finding customers without orders, products never sold, etc.</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who have never placed an order
  * SubQuery allCustomers = new SubQuery("SELECT customer_id FROM customers");
@@ -94,7 +94,7 @@ public class Minus extends Clause {
      * the second query will be returned. Both queries must have compatible
      * column structures (same number of columns with compatible types).
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find products that are in inventory but have never been sold
      * SubQuery soldProducts = new SubQuery("SELECT product_id FROM sales");

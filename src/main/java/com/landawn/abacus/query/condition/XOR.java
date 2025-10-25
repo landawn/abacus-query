@@ -46,7 +46,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Validation rules where only one option should be selected</li>
  * </ul>
  *
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Ensure exactly one authentication method is enabled
  * XOR authCheck = new XOR("usePasswordAuth", true);
@@ -96,7 +96,7 @@ public class XOR extends Binary {
      * differ in their boolean evaluation (one true, one false). This is useful for
      * enforcing business rules where only one of two options should be active.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Enforce exactly one authentication method
      * XOR passwordAuth = new XOR("usePassword", true);

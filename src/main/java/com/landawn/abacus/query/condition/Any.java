@@ -29,7 +29,7 @@ package com.landawn.abacus.query.condition;
  *   <li>id = ANY (subquery) - equivalent to id IN (subquery)</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find products with price greater than ANY product in category 'Electronics'
  * SubQuery electronicsQuery = CF.subQuery(
@@ -74,7 +74,7 @@ public class Any extends Cell {
      * The ANY operator is used in conjunction with comparison operators to test
      * if the comparison is true for any value returned by the subquery.
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a subquery for department budgets
      * SubQuery budgetQuery = CF.subQuery(

@@ -72,7 +72,7 @@ public class Binary extends AbstractCondition {
      * Creates a new Binary condition.
      * This constructor initializes a binary condition with a property name, operator, and value.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a custom binary condition
      * Binary condition = new Binary("price", Operator.GREATER_THAN, 100.0);
@@ -102,7 +102,7 @@ public class Binary extends AbstractCondition {
      * Gets the property name being compared.
      * This is the left-hand side of the binary operation.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("userName", "John");
      * String prop = condition.getPropName(); // Returns "userName"
@@ -122,7 +122,7 @@ public class Binary extends AbstractCondition {
      * The value can be a literal value or a Condition (for subqueries).
      * The returned value can be safely cast to its expected type.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("age", 25);
      * Integer age = condition.getPropValue(); // Returns 25
@@ -147,7 +147,7 @@ public class Binary extends AbstractCondition {
      * Sets the value being compared against.
      * This method should generally not be used as conditions should be immutable.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("status", "active");
      * // Not recommended: condition.setPropValue("inactive");
@@ -166,7 +166,7 @@ public class Binary extends AbstractCondition {
      * If the value is a Condition (subquery), returns its parameters.
      * Otherwise, returns a list containing the single value.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("status", "active");
      * List<Object> params = condition.getParameters(); // Returns ["active"]
@@ -197,7 +197,7 @@ public class Binary extends AbstractCondition {
      * <p>This method sets the propValue field to null unless it's a Condition,
      * in which case it recursively clears parameters in the nested condition.</p>
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary eq = new Binary("age", Operator.EQUAL, 25);
      * eq.clearParameters(); // propValue becomes null
@@ -220,7 +220,7 @@ public class Binary extends AbstractCondition {
      * Creates a deep copy of this Binary condition.
      * If the value is a Condition, it is also copied to ensure complete independence.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary original = new Equal("name", "John");
      * Binary copy = original.copy();
@@ -251,7 +251,7 @@ public class Binary extends AbstractCondition {
      * Returns a string representation of this Binary condition using the specified naming policy.
      * The format is: propertyName OPERATOR value
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("userName", "John");
      * String str1 = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
@@ -277,7 +277,7 @@ public class Binary extends AbstractCondition {
      * Returns the hash code of this Binary condition.
      * The hash code is computed based on the property name, operator, and value.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary c1 = new Equal("name", "John");
      * Binary c2 = new Equal("name", "John");
@@ -298,7 +298,7 @@ public class Binary extends AbstractCondition {
      * Checks if this Binary condition is equal to another object.
      * Two Binary conditions are equal if they have the same property name, operator, and value.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary c1 = new Equal("name", "John");
      * Binary c2 = new Equal("name", "John");

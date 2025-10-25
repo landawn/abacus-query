@@ -30,8 +30,8 @@ package com.landawn.abacus.query.condition;
  *   <li>Support for subquery comparisons</li>
  *   <li>Case-sensitive for string comparisons (database-dependent)</li>
  * </ul>
- * 
- * <p>Usage example:</p>
+ *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple equality check
  * Equal statusCheck = new Equal("status", "active");
@@ -70,7 +70,7 @@ public class Equal extends Binary {
      * Creates a new Equal condition.
      * The condition evaluates to true when the property value exactly matches the specified value.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // String equality
      * Equal nameCheck = new Equal("name", "John");

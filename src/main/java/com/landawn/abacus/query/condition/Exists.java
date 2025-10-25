@@ -31,7 +31,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Can be negated with NOT EXISTS</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who have placed at least one order
  * SubQuery orderExists = CF.subQuery(
@@ -75,7 +75,7 @@ public class Exists extends Cell {
      * Creates a new EXISTS condition with the specified subquery.
      * The condition evaluates to true if the subquery returns at least one row.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if employee has any subordinates
      * SubQuery subordinatesQuery = CF.subQuery(

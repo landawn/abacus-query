@@ -26,7 +26,7 @@ import com.landawn.abacus.annotation.Internal;
  * <p>All fields in this class are public static final constants representing either
  * single characters (prefixed with underscore) or their string equivalents.</p>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * String query = SK.SELECT + SK.SPACE + "*" + SK.SPACE + SK.FROM + SK.SPACE + "users";
  * String csv = "John" + SK.COMMA_SPACE + "Doe" + SK.COMMA_SPACE + "30";
@@ -64,7 +64,7 @@ public final class SK {
     /**
      * Represents the space character: {@code ' '}.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * char space = SK._SPACE;
      * String text = "Hello" + space + "World";
@@ -76,7 +76,7 @@ public final class SK {
      * Represents the space string: {@code " "}.
      * Useful for string concatenation operations.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String fullName = firstName + SK.SPACE + lastName;
      * }</pre>
@@ -92,7 +92,7 @@ public final class SK {
     /**
      * Represents the period string: {@code "."}.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String filename = "document" + SK.PERIOD + "pdf";
      * }</pre>
@@ -108,7 +108,7 @@ public final class SK {
     /**
      * Represents the comma string: {@code ","}.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String csv = value1 + SK.COMMA + value2 + SK.COMMA + value3;
      * }</pre>
@@ -119,7 +119,7 @@ public final class SK {
      * Represents comma followed by space: {@code ", "}.
      * Commonly used for readable list formatting.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String list = "apple" + SK.COMMA_SPACE + "banana" + SK.COMMA_SPACE + "orange";
      * }</pre>
@@ -141,7 +141,7 @@ public final class SK {
      * Represents colon followed by space: {@code ": "}.
      * Commonly used in key-value formatting.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String keyValue = "Name" + SK.COLON_SPACE + "John Doe";
      * }</pre>
@@ -523,7 +523,7 @@ public final class SK {
      * SQL WITH keyword: {@code "WITH"}.
      * Used for common table expressions (CTEs).
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String cte = SK.WITH + " temp_table AS (SELECT * FROM users)";
      * }</pre>
@@ -540,7 +540,7 @@ public final class SK {
      * SQL SELECT keyword: {@code "SELECT"}.
      * Used to query data from database tables.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String query = SK.SELECT + " * " + SK.FROM + " users";
      * }</pre>
@@ -749,7 +749,7 @@ public final class SK {
      * SQL WHERE keyword: {@code "WHERE"}.
      * Used to filter query results.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String query = SK.SELECT + " * " + SK.FROM + " users " + SK.WHERE + " age > 18";
      * }</pre>

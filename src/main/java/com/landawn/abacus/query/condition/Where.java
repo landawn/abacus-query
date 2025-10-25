@@ -32,7 +32,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Evaluated before GROUP BY, HAVING, and ORDER BY</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple condition
  * Condition condition = new Equal("status", "active");
@@ -68,7 +68,7 @@ public class Where extends Clause {
      * in the result set. NULL comparisons require special handling with IS NULL
      * or IS NOT NULL operators.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple WHERE clause
      * Condition condition = new Like("name", "%John%");

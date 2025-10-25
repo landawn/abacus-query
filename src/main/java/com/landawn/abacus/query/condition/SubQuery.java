@@ -48,7 +48,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>FROM clause for derived tables</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Raw SQL subquery
  * SubQuery subQuery1 = new SubQuery("SELECT id FROM users WHERE status = 'active'");
@@ -110,7 +110,7 @@ public class SubQuery extends AbstractCondition {
      *   <li>Performance-tuned SQL is required</li>
      * </ul>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple subquery
      * SubQuery subQuery = new SubQuery("SELECT MAX(salary) FROM employees");
@@ -138,7 +138,7 @@ public class SubQuery extends AbstractCondition {
      * <p>This constructor allows associating a logical entity name with a raw SQL subquery,
      * which can be useful for documentation or framework integration purposes.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = new SubQuery("orders", 
      *     "SELECT order_id FROM orders WHERE total > 1000");
@@ -165,11 +165,11 @@ public class SubQuery extends AbstractCondition {
     /**
      * Constructs a structured subquery with entity name, selected properties, and condition.
      * This approach provides type safety and automatic SQL generation.
-     * 
+     *
      * <p>The generated SQL follows the pattern: SELECT [properties] FROM [entity] WHERE [condition].
      * If the condition is not already a clause (like WHERE), it will be automatically wrapped in a WHERE clause.</p>
-     * 
-     * <p>Example usage:</p>
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Select specific columns with conditions
      * List<String> props = Arrays.asList("id", "email");
@@ -184,10 +184,18 @@ public class SubQuery extends AbstractCondition {
      * @param entityName the entity/table name
      * @param propNames collection of property names to select
      * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
-     * @throws IllegalArgumentException if entityName is null/empty or propNames is null
+     * @throws IllegalArgumentException if entityName is null/empty or propNames is null/empty
      */
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
+
+        if (Strings.isEmpty(entityName)) {
+            throw new IllegalArgumentException("Entity name cannot be null or empty");
+        }
+        if (propNames == null) {
+            throw new IllegalArgumentException("Property names cannot be null");
+        }
+
         this.entityName = entityName;
         entityClass = null;
         this.propNames = propNames;
@@ -203,19 +211,19 @@ public class SubQuery extends AbstractCondition {
     /**
      * Constructs a structured subquery with entity class, selected properties, and condition.
      * The entity name is derived from the class's simple name.
-     * 
+     *
      * <p>This constructor provides the strongest type safety by using the entity class.
      * It's particularly useful in JPA-style applications where entity classes represent tables.</p>
-     * 
-     * <p>Example usage:</p>
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Type-safe subquery construction
-     * SubQuery subQuery = new SubQuery(Product.class, 
+     * SubQuery subQuery = new SubQuery(Product.class,
      *     Arrays.asList("id", "categoryId"),
      *     new Like("name", "%electronics%")
      * );
      * // Generates: SELECT id, categoryId FROM Product WHERE name LIKE '%electronics%'
-     * 
+     *
      * // With complex conditions
      * SubQuery activeProducts = new SubQuery(Product.class,
      *     Arrays.asList("id", "name", "price"),
@@ -229,10 +237,18 @@ public class SubQuery extends AbstractCondition {
      * @param entityClass the entity class
      * @param propNames collection of property names to select
      * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
-     * @throws IllegalArgumentException if entityClass is null or propNames is null
+     * @throws IllegalArgumentException if entityClass is null or propNames is null/empty
      */
     public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
+
+        if (entityClass == null) {
+            throw new IllegalArgumentException("Entity class cannot be null");
+        }
+        if (propNames == null) {
+            throw new IllegalArgumentException("Property names cannot be null");
+        }
+
         entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
         this.propNames = propNames;
@@ -307,7 +323,7 @@ public class SubQuery extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
      * condition.clearParameters(); // All parameters become null
@@ -325,7 +341,7 @@ public class SubQuery extends AbstractCondition {
      * Creates a deep copy of this subquery.
      * The copy includes deep copies of property names and conditions to ensure complete independence.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery original = new SubQuery("users", Arrays.asList("id"), new Equal("active", true));
      * SubQuery copy = original.copy();

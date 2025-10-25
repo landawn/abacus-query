@@ -38,7 +38,7 @@ import com.landawn.abacus.util.N;
  *   <li>Evaluation may short-circuit for performance</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create OR with multiple conditions
  * Or or = new Or(
@@ -75,7 +75,7 @@ public class Or extends Junction {
      * will make the entire OR expression true. This constructor accepts a variable
      * number of conditions for convenience.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find users in specific cities
      * Or or = new Or(
@@ -106,7 +106,7 @@ public class Or extends Junction {
      * <p>All conditions in the collection will be combined using the OR operator.
      * The collection is copied internally to ensure immutability of the condition.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Dynamic condition building
      * List<Condition> conditions = new ArrayList<>();
@@ -137,7 +137,7 @@ public class Or extends Junction {
      * Each call returns a new OR instance, preserving immutability. The new condition
      * is added to the end of the existing conditions.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Build condition step by step
      * Or or = new Or(new Equal("type", "A"))

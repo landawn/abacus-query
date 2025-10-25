@@ -124,7 +124,7 @@ public class WhereTest extends TestBase {
 
     @Test
     public void testWithInCondition() {
-        Condition inCondition = ConditionFactory.in("status", new String[]{"active", "pending", "approved"});
+        Condition inCondition = ConditionFactory.in("status", new String[] {"active", "pending", "approved"});
         Where where = ConditionFactory.where(inCondition);
         
         Assertions.assertNotNull(where);

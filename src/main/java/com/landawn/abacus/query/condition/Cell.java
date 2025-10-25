@@ -60,7 +60,7 @@ public class Cell extends AbstractCondition {
      * Creates a new Cell with the specified operator and condition.
      * The Cell wraps the given condition and applies the specified operator to it.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a NOT cell that negates a condition
      * Cell notCell = new Cell(Operator.NOT, CF.isNull("email"));
@@ -83,7 +83,7 @@ public class Cell extends AbstractCondition {
      * Gets the wrapped condition.
      * The returned condition can be cast to its specific type if needed.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell = new Cell(Operator.NOT, CF.eq("status", "active"));
      * Equal eq = cell.getCondition(); // Returns the Equal condition
@@ -105,7 +105,7 @@ public class Cell extends AbstractCondition {
      * Sets the wrapped condition.
      * This method should generally not be used as conditions should be immutable.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell = new Cell(Operator.NOT, CF.eq("status", "active"));
      * // Not recommended: cell.setCondition(CF.eq("status", "inactive"));
@@ -123,7 +123,7 @@ public class Cell extends AbstractCondition {
      * Gets the parameters from the wrapped condition.
      * This method delegates to the wrapped condition's getParameters method.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell = new Cell(Operator.NOT, CF.eq("name", "John"));
      * List<Object> params = cell.getParameters(); // Returns ["John"]
@@ -146,7 +146,7 @@ public class Cell extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
      * condition.clearParameters(); // All parameters become null
@@ -165,7 +165,7 @@ public class Cell extends AbstractCondition {
      * The wrapped condition is also copied if present, ensuring complete independence
      * between the original and the copy.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell original = new Cell(Operator.NOT, CF.eq("status", "active"));
      * Cell copy = original.copy();
@@ -195,7 +195,7 @@ public class Cell extends AbstractCondition {
      * Returns a string representation of this Cell using the specified naming policy.
      * The output format is: OPERATOR condition_string
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell = new Cell(Operator.NOT, CF.eq("userName", "John"));
      * String str = cell.toString(NamingPolicy.LOWER_CAMEL_CASE);
@@ -218,7 +218,7 @@ public class Cell extends AbstractCondition {
      * Returns the hash code of this Cell.
      * The hash code is computed based on the operator and wrapped condition.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell1 = new Cell(Operator.NOT, CF.eq("status", "active"));
      * Cell cell2 = new Cell(Operator.NOT, CF.eq("status", "active"));
@@ -238,7 +238,7 @@ public class Cell extends AbstractCondition {
      * Checks if this Cell is equal to another object.
      * Two Cells are equal if they have the same operator and wrapped condition.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell1 = new Cell(Operator.NOT, CF.eq("status", "active"));
      * Cell cell2 = new Cell(Operator.NOT, CF.eq("status", "active"));

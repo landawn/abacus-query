@@ -40,7 +40,7 @@ import java.util.Collection;
  *   <li>Identifying missing relationships from the right table perspective</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple right join
  * RightJoin join1 = new RightJoin("departments");

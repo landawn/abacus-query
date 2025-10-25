@@ -44,7 +44,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *   <li>The values list is copied during construction to ensure immutability</li>
  * </ul>
  * 
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Exclude inactive statuses
  * List<String> inactiveStatuses = Arrays.asList("deleted", "archived", "suspended");
@@ -89,7 +89,7 @@ public class NotIn extends AbstractCondition {
      * The condition will match records where the property value is not equal to any of the
      * provided values. A defensive copy of the values collection is made to ensure immutability.
      *
-     * <p>Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude specific product categories
      * List<String> excludedCategories = Arrays.asList("discontinued", "internal", "test");
@@ -162,7 +162,7 @@ public class NotIn extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
      * condition.clearParameters(); // All parameters become null
@@ -181,8 +181,8 @@ public class NotIn extends AbstractCondition {
      * Creates a deep copy of this NOT IN condition.
      * The copy includes a new list containing the same values, ensuring complete
      * independence from the original condition.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn original = new NotIn("status", Arrays.asList("inactive", "deleted"));
      * NotIn copy = original.copy();
@@ -206,8 +206,8 @@ public class NotIn extends AbstractCondition {
      * Converts this NOT IN condition to its string representation using the specified naming policy.
      * The naming policy is applied to the property name to handle different naming conventions.
      * Values are formatted appropriately based on their types.
-     * 
-     * <p>Example output:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // With values ["A", "B", "C"] and snake_case naming:
      * // "property_name NOT IN (A, B, C)"
@@ -244,7 +244,7 @@ public class NotIn extends AbstractCondition {
     @Override
     public int hashCode() {
         int h = 17;
-        h = (h * 31) + propName.hashCode();
+        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
         h = (h * 31) + operator.hashCode();
         return (h * 31) + ((values == null) ? 0 : values.hashCode());
     }

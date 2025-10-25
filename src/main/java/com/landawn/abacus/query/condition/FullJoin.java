@@ -32,7 +32,7 @@ import java.util.Collection;
  *   <li>All rows from both tables are included in the result set</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Full join to see all users and all orders
  * FullJoin join = new FullJoin("orders", CF.eq("users.id", "orders.user_id"));
@@ -41,9 +41,9 @@ import java.util.Collection;
  * // - Users with orders (matched records)
  * // - Users without orders (NULLs for order columns)
  * // - Orders without users (NULLs for user columns)
- * 
+ *
  * // Full join to compare two inventory systems
- * FullJoin inventoryJoin = new FullJoin("warehouse_inventory", 
+ * FullJoin inventoryJoin = new FullJoin("warehouse_inventory",
  *     CF.eq("online_inventory.product_id", "warehouse_inventory.product_id"));
  * // Shows all products from both systems, highlighting discrepancies
  * }</pre>

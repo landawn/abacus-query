@@ -77,7 +77,7 @@ public interface Condition {
      * For example, an Equal condition has the EQUAL operator, while an
      * And condition has the AND operator.</p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition eq = CF.eq("name", "John");
      * Operator op1 = eq.getOperator(); // Returns Operator.EQUAL
@@ -105,7 +105,7 @@ public interface Condition {
      *   <li>false AND false = false</li>
      * </ul></p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition age = CF.gt("age", 18);
      * Condition status = CF.eq("status", "active");
@@ -135,7 +135,7 @@ public interface Condition {
      *   <li>false OR false = false</li>
      * </ul></p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition premium = CF.eq("memberType", "premium");
      * Condition vip = CF.eq("memberType", "vip");
@@ -163,7 +163,7 @@ public interface Condition {
      *   <li>NOT false = true</li>
      * </ul></p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition isNull = CF.isNull("email");
      * Not isNotNull = isNull.not();
@@ -186,7 +186,7 @@ public interface Condition {
      * Creates a deep copy of this condition.
      * The copy is independent of the original and can be modified without affecting it.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition original = CF.eq("status", "active");
      * Condition copy = original.copy();
@@ -202,7 +202,7 @@ public interface Condition {
      * Gets the list of parameter values associated with this condition.
      * Parameters are the actual values used in comparisons (e.g., the "John" in name = "John").
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition condition = CF.between("age", 18, 65);
      * List<Object> params = condition.getParameters();
@@ -219,7 +219,7 @@ public interface Condition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
      * condition.clearParameters(); // All parameters become null
@@ -232,7 +232,7 @@ public interface Condition {
      * Returns a string representation of this condition using the specified naming policy.
      * The naming policy determines how property names are formatted in the output.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition condition = CF.eq("firstName", "John");
      * String sql = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);

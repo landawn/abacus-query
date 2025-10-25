@@ -29,7 +29,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Case sensitivity: String comparisons may be case-sensitive depending on the database</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple not equal comparison
  * NotEqual condition1 = new NotEqual("status", "deleted");
@@ -70,7 +70,7 @@ public class NotEqual extends Binary {
      * It's particularly useful for filtering out deleted records, excluding default values,
      * or finding records that don't match a specific criteria.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude specific user
      * NotEqual notAdmin = new NotEqual("username", "admin");

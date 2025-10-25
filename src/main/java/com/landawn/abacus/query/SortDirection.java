@@ -18,7 +18,7 @@ package com.landawn.abacus.query;
  * Enumeration representing the sort direction for database queries and collections.
  * Provides two possible sort orders: ascending (ASC) and descending (DESC).
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * SortDirection direction = SortDirection.ASC;
  * if (direction.isAscending()) {
@@ -55,7 +55,7 @@ public enum SortDirection {
      * Checks if this sort direction is ascending.
      * This is a convenience method equivalent to checking if the direction equals ASC.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SortDirection dir = SortDirection.ASC;
      * if (dir.isAscending()) {

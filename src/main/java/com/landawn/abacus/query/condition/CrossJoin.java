@@ -37,17 +37,17 @@ import java.util.Collection;
  * traditional CROSS JOIN doesn't use one. Adding a condition makes it
  * functionally equivalent to an INNER JOIN.</p>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple CROSS JOIN - all combinations of products and colors
  * CrossJoin join = new CrossJoin("colors");
  * // Results in: CROSS JOIN colors
  * // Each product will be paired with each color
- * 
+ *
  * // CROSS JOIN multiple tables
  * CrossJoin multiJoin = new CrossJoin(Arrays.asList("sizes", "colors"));
  * // Results in all combinations of products × sizes × colors
- * 
+ *
  * // CROSS JOIN with condition (unusual but supported)
  * CrossJoin filtered = new CrossJoin("categories", CF.eq("active", true));
  * // Functionally equivalent to INNER JOIN with the condition

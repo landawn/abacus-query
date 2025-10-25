@@ -35,7 +35,7 @@ import com.landawn.abacus.annotation.Internal;
  *   <li>Other: SHOW, DESCRIBE, CALL, UNKNOWN</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Get operation from SQL statement
  * String sql = "SELECT * FROM users";
@@ -157,7 +157,7 @@ public enum SQLOperation {
      * Retrieves the SQLOperation enum value corresponding to the given operation name.
      * The lookup is case-sensitive and returns null if no matching operation is found.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLOperation selectOp = SQLOperation.of("SELECT"); // returns SELECT
      * SQLOperation unknownOp = SQLOperation.of("TRUNCATE"); // returns null
@@ -177,7 +177,7 @@ public enum SQLOperation {
      * For standard SQL operations, this will be the standard SQL keyword (e.g., "SELECT", "INSERT").
      * For composite operations like BEGIN_TRANSACTION, it returns the appropriate command text.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLOperation op = SQLOperation.SELECT;
      * String sqlKeyword = op.sqlText(); // Returns "SELECT"

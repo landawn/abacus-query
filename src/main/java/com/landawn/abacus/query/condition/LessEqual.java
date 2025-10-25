@@ -36,8 +36,8 @@ package com.landawn.abacus.query.condition;
  *   <li>Strings: Lexicographical (dictionary) order</li>
  *   <li>Any Comparable type supported by the database</li>
  * </ul>
- * 
- * <p>Example usage:
+ *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if age is 18 or younger
  * LessEqual ageLimit = new LessEqual("age", 18);
@@ -78,8 +78,8 @@ public class LessEqual extends Binary {
      * Creates a new less-than-or-equal-to condition with the specified property name and value.
      * This condition checks if the property value is less than or equal to the specified value,
      * providing an inclusive upper bound check.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Limit quantity to maximum stock
      * LessEqual stockLimit = new LessEqual("quantity", 100);

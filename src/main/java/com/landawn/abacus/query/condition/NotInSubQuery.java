@@ -39,7 +39,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Empty subquery results: If subquery returns no rows, all values pass the NOT IN check</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Single property NOT IN subquery
  * SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
@@ -81,7 +81,7 @@ public class NotInSubQuery extends AbstractCondition {
      * that returns a single column of values. This is the most common use case
      * for NOT IN subqueries.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude deleted items
      * SubQuery deletedItems = new SubQuery("SELECT id FROM deleted_items");
@@ -115,7 +115,7 @@ public class NotInSubQuery extends AbstractCondition {
      * or multiple related fields. The number and order of properties must match
      * the columns returned by the subquery.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude based on composite key
      * List<String> props = Arrays.asList("country", "city");
@@ -174,14 +174,6 @@ public class NotInSubQuery extends AbstractCondition {
      * Sets a new subquery for this NOT IN condition.
      * This method allows updating the subquery after construction.
      *
-     * <p>Example usage:</p>
-     * <pre>{@code
-     * NotInSubQuery condition = new NotInSubQuery("userId", oldSubQuery);
-     * // Update with new criteria
-     * SubQuery newSubQuery = new SubQuery("SELECT id FROM users WHERE active = false");
-     * condition.setSubQuery(newSubQuery);
-     * }</pre>
-     *
      * @param subQuery the new subquery to set
      * @throws IllegalArgumentException if subQuery is null
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -208,7 +200,7 @@ public class NotInSubQuery extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
      * condition.clearParameters(); // All parameters become null
@@ -275,8 +267,8 @@ public class NotInSubQuery extends AbstractCondition {
     /**
      * Converts this NOT IN subquery condition to its string representation using the specified naming policy.
      * The output format depends on whether this is a single or multi-property condition.
-     * 
-     * <p>Example output:</p>
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Single property: "user_id NOT IN (SELECT id FROM inactive_users)"
      * // Multiple properties: "(first_name, last_name) NOT IN (SELECT fname, lname FROM blacklist)"

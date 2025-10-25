@@ -68,7 +68,7 @@ import com.landawn.abacus.util.XmlUtil;
  *   <li>timeout - query timeout in seconds</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Load from single file
  * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
@@ -148,7 +148,7 @@ public final class SQLMapper {
      * Creates a SQLMapper instance by loading SQL definitions from one or more XML files.
      * Multiple file paths can be specified separated by comma (,) or semicolon (;).
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Single file
      * SQLMapper mapper = SQLMapper.fromFile("config/sql-mapper.xml");

@@ -95,7 +95,7 @@ public final class CriteriaUtil {
      * Gets the set of all valid clause operators.
      * The set maintains the proper SQL clause ordering and is immutable.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<Operator> clauses = CriteriaUtil.getClauseOperators();
      * // Contains: JOIN, LEFT_JOIN, WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.
@@ -114,7 +114,7 @@ public final class CriteriaUtil {
      * Checks if the given operator is a valid clause operator.
      * Clause operators represent major SQL query components like WHERE, JOIN, GROUP BY, etc.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * boolean isClause = CriteriaUtil.isClause(Operator.WHERE); // true
      * boolean isClause2 = CriteriaUtil.isClause(Operator.GROUP_BY); // true
@@ -133,7 +133,7 @@ public final class CriteriaUtil {
      * Checks if the given operator string represents a valid clause operator.
      * This method converts the string to an Operator and checks if it's a clause.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * boolean isClause = CriteriaUtil.isClause("WHERE"); // true
      * boolean isClause2 = CriteriaUtil.isClause("LEFT JOIN"); // true
@@ -152,7 +152,7 @@ public final class CriteriaUtil {
      * Checks if the given condition is a clause condition.
      * A condition is a clause if its operator is a clause operator.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition where = new Where(CF.eq("status", "active"));
      * boolean isClause = CriteriaUtil.isClause(where); // true
@@ -193,7 +193,7 @@ public final class CriteriaUtil {
      * Adds conditions to the specified criteria.
      * This method provides access to the protected add method of Criteria for framework use.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria();
      * CriteriaUtil.add(criteria, 
@@ -213,7 +213,7 @@ public final class CriteriaUtil {
      * Adds a collection of conditions to the specified criteria.
      * This method provides access to the protected add method of Criteria for framework use.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria();
      * List<Condition> conditions = Arrays.asList(
@@ -234,7 +234,7 @@ public final class CriteriaUtil {
      * Removes all conditions with the specified operator from the criteria.
      * This method provides access to the protected remove method of Criteria for framework use.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = // ... existing criteria with WHERE and ORDER BY
      * CriteriaUtil.remove(criteria, Operator.WHERE);
@@ -255,7 +255,7 @@ public final class CriteriaUtil {
      * Removes specific conditions from the criteria.
      * This method provides access to the protected remove method of Criteria for framework use.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Where whereClause = new Where(CF.eq("status", "active"));
      * OrderBy orderByClause = new OrderBy("name");

@@ -96,7 +96,7 @@ public class Criteria extends AbstractCondition {
      * Creates a new empty Criteria instance.
      * The Criteria starts with no conditions and can be built up using the fluent API.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria();
      * criteria.where(CF.eq("status", "active"))
@@ -113,7 +113,7 @@ public class Criteria extends AbstractCondition {
      * Gets the preselect modifier (e.g., DISTINCT, DISTINCTROW).
      * The preselect modifier appears before the SELECT columns in SQL.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().distinct();
      * String modifier = criteria.preselect(); // Returns "DISTINCT"
@@ -129,7 +129,7 @@ public class Criteria extends AbstractCondition {
      * Gets all JOIN clauses in this criteria.
      * Returns all types of joins (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) in the order they were added.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .join("orders", CF.eq("users.id", "orders.user_id"))
@@ -155,7 +155,7 @@ public class Criteria extends AbstractCondition {
      * Gets the WHERE clause from this criteria.
      * Returns null if no WHERE clause has been set.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().where(CF.eq("status", "active"));
      * Cell where = criteria.getWhere(); // Returns the WHERE clause
@@ -172,7 +172,7 @@ public class Criteria extends AbstractCondition {
      * Gets the GROUP BY clause from this criteria.
      * Returns null if no GROUP BY clause has been set.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().groupBy("department", "role");
      * Cell groupBy = criteria.getGroupBy(); // Returns the GROUP BY clause
@@ -188,7 +188,7 @@ public class Criteria extends AbstractCondition {
      * Gets the HAVING clause from this criteria.
      * Returns null if no HAVING clause has been set.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy("department")
@@ -206,7 +206,7 @@ public class Criteria extends AbstractCondition {
      * Gets all aggregation operations (UNION, UNION ALL, INTERSECT, EXCEPT, MINUS).
      * These are set operations that combine results from multiple queries.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = CF.subQuery("SELECT id FROM archived_users");
      * Criteria criteria = new Criteria()
@@ -241,7 +241,7 @@ public class Criteria extends AbstractCondition {
      * Gets the ORDER BY clause from this criteria.
      * Returns null if no ORDER BY clause has been set.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().orderBy("name", DESC);
      * Cell orderBy = criteria.getOrderBy(); // Returns the ORDER BY clause
@@ -257,7 +257,7 @@ public class Criteria extends AbstractCondition {
      * Gets the LIMIT clause from this criteria.
      * Returns null if no LIMIT clause has been set.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().limit(10);
      * Limit limit = criteria.getLimit(); // Returns the LIMIT clause
@@ -274,7 +274,7 @@ public class Criteria extends AbstractCondition {
      * Gets all conditions in this criteria.
      * Returns all conditions in the order they were added, including all clauses.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .where(CF.eq("active", true))
@@ -292,7 +292,7 @@ public class Criteria extends AbstractCondition {
      * Gets all conditions with the specified operator.
      * Useful for retrieving all conditions of a specific type.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .join("orders", condition1)
@@ -368,7 +368,7 @@ public class Criteria extends AbstractCondition {
      * Clears all conditions from this criteria.
      * After calling this method, the criteria will be empty and can be rebuilt.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .where(CF.eq("active", true))
@@ -386,7 +386,7 @@ public class Criteria extends AbstractCondition {
      * The order follows SQL clause precedence: JOIN, WHERE, HAVING, aggregations.
      * Parameters from GROUP BY, ORDER BY, and LIMIT are not included as they typically don't have parameters.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .where(CF.eq("status", "active"))
@@ -455,7 +455,7 @@ public class Criteria extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
      * condition.clearParameters(); // All parameters become null
@@ -473,7 +473,7 @@ public class Criteria extends AbstractCondition {
      * Sets the DISTINCT modifier for the query.
      * DISTINCT removes duplicate rows from the result set.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .distinct()
@@ -493,7 +493,7 @@ public class Criteria extends AbstractCondition {
      * Sets the DISTINCT modifier with specific columns.
      * Only the specified columns are considered for duplicate removal.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .distinctBy("department, location");
@@ -517,7 +517,7 @@ public class Criteria extends AbstractCondition {
      * Sets the DISTINCTROW modifier for the query.
      * DISTINCTROW is similar to DISTINCT but may have database-specific behavior.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .distinctRow()
@@ -536,7 +536,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets the DISTINCTROW modifier with specific columns.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .distinctRowBy("category, subcategory");
@@ -556,7 +556,7 @@ public class Criteria extends AbstractCondition {
      * Sets a custom preselect modifier.
      * This allows for database-specific modifiers not covered by other methods.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .preselect("SQL_CALC_FOUND_ROWS")
@@ -577,7 +577,7 @@ public class Criteria extends AbstractCondition {
      * Adds JOIN clauses to this criteria.
      * Multiple joins can be added in a single call.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .join(
@@ -598,7 +598,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Adds JOIN clauses to this criteria.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Join> joins = Arrays.asList(
      *     new LeftJoin("orders", condition1),
@@ -620,7 +620,7 @@ public class Criteria extends AbstractCondition {
      * Adds a simple INNER JOIN to this criteria.
      * This creates a join without an explicit condition.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .join("orders")
@@ -641,7 +641,7 @@ public class Criteria extends AbstractCondition {
      * Adds an INNER JOIN with a condition to this criteria.
      * This is the most common form of join.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .join("orders", CF.eq("users.id", "orders.user_id"))
@@ -662,7 +662,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Adds an INNER JOIN with multiple entities and a condition.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Collection<String> tables = Arrays.asList("orders", "order_items");
      * Criteria criteria = new Criteria()
@@ -683,7 +683,7 @@ public class Criteria extends AbstractCondition {
      * Sets or replaces the WHERE clause.
      * If a WHERE clause already exists, it will be replaced.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .where(CF.and(
@@ -710,7 +710,7 @@ public class Criteria extends AbstractCondition {
      * Sets the WHERE clause using a string expression.
      * Useful for complex conditions that are easier to express as SQL.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .where("age > 18 AND status = 'active'");
@@ -732,7 +732,7 @@ public class Criteria extends AbstractCondition {
      * Sets or replaces the GROUP BY clause.
      * If a GROUP BY clause already exists, it will be replaced.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy(CF.expr("YEAR(order_date), MONTH(order_date)"));
@@ -755,7 +755,7 @@ public class Criteria extends AbstractCondition {
      * Sets the GROUP BY clause with property names.
      * Groups results by the specified columns in ascending order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy("department", "location", "role");
@@ -774,7 +774,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets the GROUP BY clause with a property and sort direction.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy("total_sales", SortDirection.DESC);
@@ -794,7 +794,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets the GROUP BY clause with two properties and their sort directions.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy("year", DESC, "month", ASC);
@@ -816,7 +816,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets the GROUP BY clause with three properties and their sort directions.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy("country", ASC, "state", ASC, "city", DESC);
@@ -842,7 +842,7 @@ public class Criteria extends AbstractCondition {
      * Sets the GROUP BY clause with multiple properties.
      * All properties will be sorted in ascending order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> groupCols = Arrays.asList("region", "product_type");
      * Criteria criteria = new Criteria()
@@ -861,7 +861,7 @@ public class Criteria extends AbstractCondition {
      * Sets the GROUP BY clause with multiple properties and sort direction.
      * All properties will use the same sort direction.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> groupCols = new HashSet<>(Arrays.asList("category", "brand"));
      * Criteria criteria = new Criteria()
@@ -883,7 +883,7 @@ public class Criteria extends AbstractCondition {
      * Sets the GROUP BY clause with custom sort directions per property.
      * The map should be a LinkedHashMap to preserve order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> grouping = new LinkedHashMap<>();
      * grouping.put("department", ASC);
@@ -907,7 +907,7 @@ public class Criteria extends AbstractCondition {
      * HAVING is used to filter grouped results after GROUP BY.
      * If a HAVING clause already exists, it will be replaced.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy("department")
@@ -934,7 +934,7 @@ public class Criteria extends AbstractCondition {
      * Sets the HAVING clause using a string expression.
      * Useful for aggregate function conditions.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy("product_category")
@@ -954,7 +954,7 @@ public class Criteria extends AbstractCondition {
      * Sets the ORDER BY clause with ascending order.
      * Convenience method that sorts all specified columns in ascending order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .orderByAsc("lastName", "firstName", "middleName");
@@ -973,7 +973,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets the ORDER BY clause with ascending order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> sortCols = Arrays.asList("country", "state", "city");
      * Criteria criteria = new Criteria()
@@ -993,7 +993,7 @@ public class Criteria extends AbstractCondition {
      * Sets the ORDER BY clause with descending order.
      * Convenience method that sorts all specified columns in descending order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .orderByDesc("score", "createdDate");
@@ -1012,7 +1012,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets the ORDER BY clause with descending order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> sortCols = new HashSet<>(Arrays.asList("revenue", "profit"));
      * Criteria criteria = new Criteria()
@@ -1032,7 +1032,7 @@ public class Criteria extends AbstractCondition {
      * Sets or replaces the ORDER BY clause.
      * If an ORDER BY clause already exists, it will be replaced.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Complex ordering expression
      * Criteria criteria = new Criteria()
@@ -1056,7 +1056,7 @@ public class Criteria extends AbstractCondition {
      * Sets the ORDER BY clause with property names.
      * Orders by the specified columns in ascending order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .orderBy("department", "lastName", "firstName");
@@ -1075,7 +1075,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets the ORDER BY clause with a property and sort direction.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .orderBy("createdDate", SortDirection.DESC);
@@ -1095,7 +1095,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets the ORDER BY clause with two properties and their sort directions.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .orderBy("priority", DESC, "createdDate", ASC);
@@ -1117,7 +1117,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets the ORDER BY clause with three properties and their sort directions.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .orderBy("category", ASC, "price", DESC, "name", ASC);
@@ -1143,7 +1143,7 @@ public class Criteria extends AbstractCondition {
      * Sets the ORDER BY clause with multiple properties.
      * All properties will be sorted in ascending order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> sortCols = Arrays.asList("country", "state", "city");
      * Criteria criteria = new Criteria()
@@ -1162,7 +1162,7 @@ public class Criteria extends AbstractCondition {
      * Sets the ORDER BY clause with multiple properties and sort direction.
      * All properties will use the same sort direction.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> sortCols = new HashSet<>(Arrays.asList("score", "rating"));
      * Criteria criteria = new Criteria()
@@ -1184,7 +1184,7 @@ public class Criteria extends AbstractCondition {
      * Sets the ORDER BY clause with custom sort directions per property.
      * The map should be a LinkedHashMap to preserve order.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> ordering = new LinkedHashMap<>();
      * ordering.put("priority", DESC);
@@ -1207,7 +1207,7 @@ public class Criteria extends AbstractCondition {
      * Sets or replaces the LIMIT clause.
      * If a LIMIT clause already exists, it will be replaced.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit customLimit = CF.limit(100);
      * Criteria criteria = new Criteria()
@@ -1227,7 +1227,7 @@ public class Criteria extends AbstractCondition {
      * Sets the LIMIT clause with a count.
      * Limits the number of rows returned by the query.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .where(CF.eq("status", "active"))
@@ -1248,7 +1248,7 @@ public class Criteria extends AbstractCondition {
      * Sets the LIMIT clause with offset and count.
      * Used for pagination - skips 'offset' rows and returns up to 'count' rows.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Page 3 with 20 items per page (skip 40, take 20)
      * Criteria criteria = new Criteria()
@@ -1271,7 +1271,7 @@ public class Criteria extends AbstractCondition {
      * Sets the LIMIT clause using a string expression.
      * Allows for database-specific limit syntax.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .limit("10 OFFSET 20");
@@ -1293,7 +1293,7 @@ public class Criteria extends AbstractCondition {
      * Adds a UNION operation with a subquery.
      * UNION combines results and removes duplicates.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery archivedUsers = CF.subQuery("SELECT * FROM archived_users WHERE active = true");
      * Criteria criteria = new Criteria()
@@ -1315,7 +1315,7 @@ public class Criteria extends AbstractCondition {
      * Adds a UNION ALL operation with a subquery.
      * UNION ALL combines results and keeps duplicates.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery pendingOrders = CF.subQuery("SELECT * FROM pending_orders");
      * Criteria criteria = new Criteria()
@@ -1337,7 +1337,7 @@ public class Criteria extends AbstractCondition {
      * Adds an INTERSECT operation with a subquery.
      * INTERSECT returns only rows that appear in both result sets.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery premiumUsers = CF.subQuery("SELECT user_id FROM premium_members");
      * Criteria criteria = new Criteria()
@@ -1359,7 +1359,7 @@ public class Criteria extends AbstractCondition {
      * Adds an EXCEPT operation with a subquery.
      * EXCEPT returns rows from the first query that don't appear in the second.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery excludedUsers = CF.subQuery("SELECT user_id FROM blacklist");
      * Criteria criteria = new Criteria()
@@ -1381,7 +1381,7 @@ public class Criteria extends AbstractCondition {
      * Adds a MINUS operation with a subquery.
      * MINUS is equivalent to EXCEPT in some databases (like Oracle).
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery inactiveUsers = CF.subQuery("SELECT user_id FROM inactive_users");
      * Criteria criteria = new Criteria()
@@ -1404,7 +1404,7 @@ public class Criteria extends AbstractCondition {
      * All conditions are also copied, ensuring complete independence between
      * the original and the copy.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria original = new Criteria()
      *     .where(CF.eq("status", "active"))
@@ -1435,7 +1435,7 @@ public class Criteria extends AbstractCondition {
      * Returns a string representation of this Criteria using the specified naming policy.
      * The output follows SQL clause ordering conventions and includes all conditions.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .distinct()
@@ -1486,7 +1486,7 @@ public class Criteria extends AbstractCondition {
      * Returns the hash code of this Criteria.
      * The hash code is based on the preselect modifier and all conditions.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria c1 = new Criteria().where(CF.eq("status", "active"));
      * Criteria c2 = new Criteria().where(CF.eq("status", "active"));
@@ -1505,7 +1505,7 @@ public class Criteria extends AbstractCondition {
      * Checks if this Criteria is equal to another object.
      * Two Criteria are equal if they have the same preselect modifier and conditions.
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria c1 = new Criteria()
      *     .distinct()

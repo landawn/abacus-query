@@ -91,7 +91,7 @@ import com.landawn.abacus.util.stream.Stream;
  * <p>The builder must be finalized by calling {@code sql()} or {@code build()} to generate 
  * the SQL string and release resources.</p>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple SELECT
  * String sql = PSC.select("firstName", "lastName")
@@ -4677,7 +4677,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Sets a custom handler for formatting named parameters in SQL strings.
      * The default handler formats parameters as ":paramName".
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Set MyBatis-style parameter handler
      * SQLBuilder.setHandlerForNamedParameter((sb, propName) -> 
@@ -4700,7 +4700,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Resets the named parameter handler to the default format.
      * The default handler formats parameters as ":paramName".
      * 
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // After using a custom handler, reset to default
      * SQLBuilder.resetHandlerForNamedParameter();

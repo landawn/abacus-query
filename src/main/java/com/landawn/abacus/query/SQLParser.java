@@ -30,7 +30,7 @@ import com.landawn.abacus.util.Strings;
  * This parser recognizes SQL keywords, operators, identifiers, and various SQL-specific
  * separators while preserving the structure and meaning of the SQL statement.
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * String sql = "SELECT * FROM users WHERE age > 25 ORDER BY name";
  * List<String> words = SQLParser.parse(sql);
@@ -186,7 +186,7 @@ public final class SQLParser {
      * This method tokenizes the SQL string while preserving the semantic meaning
      * of SQL constructs such as keywords, operators, identifiers, and literals.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> words = SQLParser.parse("SELECT name, age FROM users WHERE age >= 18");
      * // Result: ["SELECT", " ", "name", ",", " ", "age", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">=", " ", "18"]
@@ -355,7 +355,7 @@ public final class SQLParser {
      *   <li>Multi-character operators</li>
      * </ul>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
      * int index = SQLParser.indexWord(sql, "ORDER BY", 0, false);
@@ -502,7 +502,7 @@ public final class SQLParser {
      *   <li>Single-character tokens</li>
      * </ul>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT   name,   age FROM users";
      * String word1 = SQLParser.nextWord(sql, 6);  // Returns: "name" (skips spaces after SELECT)
@@ -568,7 +568,7 @@ public final class SQLParser {
      * Once registered, this character will be recognized as a token separator
      * during SQL parsing operations.
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLParser.registerSeparator('$'); // Register $ as a separator
      * List<String> words = SQLParser.parse("SELECT$FROM$users");
@@ -589,7 +589,7 @@ public final class SQLParser {
      * <p>If the separator is a single character, it will also be registered
      * as a character separator for efficiency.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLParser.registerSeparator("<=>"); // Register the NULL-safe equal operator
      * SQLParser.registerSeparator("::"); // Register PostgreSQL cast operator
@@ -619,7 +619,7 @@ public final class SQLParser {
      *   <li>All registered separators are checked</li>
      * </ul>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "WHERE id = #{userId} AND age > 25";
      * boolean isSep1 = SQLParser.isSeparator(sql, sql.length(), 9, '=');  // Returns: true
@@ -648,7 +648,7 @@ public final class SQLParser {
      * 
      * <p>This method is useful for identifying SQL function calls during parsing or analysis.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> words = SQLParser.parse("SELECT COUNT(*), MAX(age) FROM users");
      * // Assuming words = ["SELECT", " ", "COUNT", "(", "*", ")", ",", " ", "MAX", "(", "age", ")", " ", "FROM", " ", "users"]

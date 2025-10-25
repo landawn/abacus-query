@@ -82,7 +82,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Creates a new AbstractCondition with the specified operator.
      * The operator is immutable once set and defines the behavior of this condition.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // In a subclass constructor
      * public Equal(String propName, Object propValue) {
@@ -102,7 +102,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Gets the operator for this condition.
      * The operator defines the type of operation (e.g., EQUAL, GREATER_THAN, AND, OR).
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition condition = CF.eq("status", "active");
      * Operator op = condition.getOperator(); // Returns Operator.EQUAL
@@ -122,7 +122,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Creates a new AND condition combining this condition with another.
      * Both conditions must be true for the AND condition to be true.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition c1 = CF.eq("status", "active");
      * Condition c2 = CF.gt("age", 18);
@@ -149,7 +149,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Creates a new OR condition combining this condition with another.
      * At least one condition must be true for the OR condition to be true.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition c1 = CF.eq("status", "premium");
      * Condition c2 = CF.eq("status", "vip");
@@ -176,7 +176,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Creates a new NOT condition that negates this condition.
      * The NOT condition is true when this condition is false, and vice versa.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition c = CF.eq("status", "inactive");
      * Not negated = c.not();
@@ -207,7 +207,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Subclasses should override this method to provide deep copying
      * of their specific fields to ensure complete independence between copies.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Example implementation in a subclass:
      * @Override
@@ -242,7 +242,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Returns a string representation of this condition using the default naming policy.
      * This method delegates to {@link #toString(NamingPolicy)} with {@link NamingPolicy#NO_CHANGE}.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition condition = CF.eq("userName", "John");
      * String str = condition.toString();
@@ -264,7 +264,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p>This utility method is used internally by condition implementations to format
      * parameter values consistently across the framework.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * parameter2String("John", policy);     // Returns: 'John'
      * parameter2String(123, policy);        // Returns: 123
@@ -303,7 +303,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p>This utility method is used internally for formatting multiple property names
      * in conditions like GROUP BY or ORDER BY.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * concatPropNames("name");              // Returns: name
      * concatPropNames("city", "state");     // Returns: (city, state)
@@ -361,7 +361,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p>This utility method is used internally for formatting multiple property names
      * from collections in conditions like IN or GROUP BY.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> names = Arrays.asList("city", "state", "zip");
      * concatPropNames(names); // Returns: (city, state, zip)

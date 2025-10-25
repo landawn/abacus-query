@@ -57,7 +57,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Consider adding indexes on columns used in UNION queries</li>
  * </ul>
  *
- * <p>Example usage:
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Combine customers from different cities, removing duplicates
  * SubQuery nyCustomers = new SubQuery("SELECT id, name FROM customers WHERE city='NY'");
@@ -100,7 +100,7 @@ public class Union extends Clause {
     /**
      * Constructs a UNION clause with the specified subquery.
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery activeUsers = new SubQuery("SELECT user_id FROM active_users");
      * Union union = new Union(activeUsers);

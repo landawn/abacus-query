@@ -45,7 +45,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Case sensitivity depends on database collation settings</li>
  * </ul>
  *
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Exclude names starting with 'John'
  * NotLike condition1 = new NotLike("name", "John%");
@@ -80,7 +80,7 @@ public class NotLike extends Binary {
      * This operator is case-sensitive in most databases, though behavior may vary
      * based on database configuration and collation settings.</p>
      * 
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude products with 'temp' in the name
      * NotLike notLike = new NotLike("productName", "%temp%");

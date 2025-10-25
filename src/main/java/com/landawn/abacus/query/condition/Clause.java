@@ -81,7 +81,7 @@ public abstract class Clause extends Cell {
      * The operator identifies the type of clause (WHERE, HAVING, etc.),
      * and the condition contains the actual filtering or sorting logic.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Example implementation in a subclass:
      * public class Where extends Clause {
@@ -106,7 +106,7 @@ public abstract class Clause extends Cell {
      * For example, you cannot have "WHERE ... AND HAVING ..." at the same level.
      * Instead, use AND within the condition of a single clause.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Wrong - trying to AND clauses
      * // where.and(having); // Throws UnsupportedOperationException
@@ -137,7 +137,7 @@ public abstract class Clause extends Cell {
      * You cannot OR two different clause types together. Use OR within the condition
      * of a single clause instead.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Wrong - trying to OR clauses
      * // where.or(orderBy); // Throws UnsupportedOperationException
@@ -167,7 +167,7 @@ public abstract class Clause extends Cell {
      * <p>SQL clauses don't have a NOT form. You cannot have "NOT WHERE" or "NOT ORDER BY".
      * Instead, use NOT within the condition of the clause.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Wrong - trying to negate a clause
      * // where.not(); // Throws UnsupportedOperationException

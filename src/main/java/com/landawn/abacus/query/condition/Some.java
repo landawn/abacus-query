@@ -37,7 +37,7 @@ package com.landawn.abacus.query.condition;
  *   <li>SOME/ANY are more permissive than ALL</li>
  * </ul>
  * 
- * <p>Example usage:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find employees earning more than SOME managers
  * SubQuery managerSalaries = new SubQuery("SELECT salary FROM employees WHERE role = 'manager'");
@@ -73,7 +73,7 @@ public class Some extends Cell {
      * particularly useful for finding records that exceed minimum thresholds or fall
      * below maximum limits from a dynamic set of values.</p>
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Subquery to get department budgets
      * SubQuery deptBudgets = new SubQuery("SELECT budget FROM departments");

@@ -37,7 +37,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Enforcing business rules on aggregated data</li>
  * </ul>
  *
- * <p>Usage examples:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find departments with more than 5 employees
  * Having moreThan5 = new Having(CF.gt("COUNT(*)", 5));
@@ -98,7 +98,7 @@ public class Having extends Clause {
      * <p>The condition typically involves aggregate functions and comparison operators.
      * Multiple conditions can be combined using And/Or to create complex filtering logic.
      *
-     * <p>Example usage:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Filter groups where the sum of sales exceeds 10000
      * Having highSales = new Having(CF.gt("SUM(sales)", 10000));

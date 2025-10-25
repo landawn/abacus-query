@@ -29,8 +29,8 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>This class serves as the base for more specific IS NOT conditions like IsNotNull,
  * IsNotNaN, and IsNotInfinite, but can also be used directly for custom IS NOT expressions.
- * 
- * <p>Example usage:
+ *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if a property is not null (prefer IsNotNull class)
  * IsNot notNull = new IsNot("email", null);
@@ -59,11 +59,11 @@ public class IsNot extends Binary {
 
     /**
      * Creates a new IS NOT condition with the specified property name and value.
-     * This condition checks if the property is not equal to the specified value using 
+     * This condition checks if the property is not equal to the specified value using
      * the SQL IS NOT operator. This operator is essential for negating comparisons
      * with special SQL values that have no direct inequality semantics.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check for NOT NULL (though IsNotNull is preferred)
      * IsNot notNull = new IsNot("phone_number", null);

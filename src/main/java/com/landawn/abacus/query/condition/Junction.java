@@ -226,17 +226,17 @@ public class Junction extends AbstractCondition {
     /**
      * Adds the specified conditions to this junction.
      * The conditions are appended to the existing list of conditions.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
-     * 
+     *
      * // Add initial conditions
      * junction.add(
      *     new Equal("status", "active"),
      *     new GreaterThan("score", 0)
      * );
-     * 
+     *
      * // Add more conditions later
      * junction.add(
      *     new LessThan("price", 100),
@@ -245,27 +245,42 @@ public class Junction extends AbstractCondition {
      * }</pre>
      *
      * @param conditions the conditions to add
+     * @throws IllegalArgumentException if conditions array is null or contains null elements
      */
     public final void add(final Condition... conditions) {
-        conditionList.addAll(Arrays.asList(conditions));
+        if (conditions != null) {
+            for (final Condition condition : conditions) {
+                if (condition == null) {
+                    throw new IllegalArgumentException("Condition cannot be null");
+                }
+            }
+            conditionList.addAll(Arrays.asList(conditions));
+        }
     }
 
     /**
      * Adds the specified collection of conditions to this junction.
      * The conditions are appended to the existing list of conditions.
-     * 
+     *
      * <p>Example usage:
      * <pre>{@code
      * Junction junction = new Junction(Operator.OR);
-     * 
+     *
      * // Add conditions from another source
      * List<Condition> userConditions = getUserDefinedConditions();
      * junction.add(userConditions);
      * }</pre>
      *
      * @param conditions the collection of conditions to add
+     * @throws NullPointerException if conditions collection is null
+     * @throws IllegalArgumentException if conditions contains null elements
      */
     public void add(final Collection<? extends Condition> conditions) {
+        for (final Condition condition : conditions) {
+            if (condition == null) {
+                throw new IllegalArgumentException("Condition cannot be null");
+            }
+        }
         conditionList.addAll(conditions);
     }
 
@@ -353,7 +368,9 @@ public class Junction extends AbstractCondition {
         final List<Object> parameters = new ArrayList<>();
 
         for (final Condition condition : conditionList) {
-            parameters.addAll(condition.getParameters());
+            if (condition != null) {
+                parameters.addAll(condition.getParameters());
+            }
         }
 
         return ImmutableList.wrap(parameters);
@@ -366,7 +383,7 @@ public class Junction extends AbstractCondition {
      * <p>Use this method to release large objects held by any condition in the junction tree
      * when the junction is no longer needed.</p>
      *
-     * <p>Example:</p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction and = new And(
      *     new Equal("status", "active"),
@@ -379,7 +396,9 @@ public class Junction extends AbstractCondition {
     @Override
     public void clearParameters() {
         for (final Condition condition : conditionList) {
-            condition.clearParameters();
+            if (condition != null) {
+                condition.clearParameters();
+            }
         }
     }
 
@@ -446,16 +465,25 @@ public class Junction extends AbstractCondition {
         try {
             sb.append(_PARENTHESES_L);
 
+            boolean first = true;
             for (int i = 0; i < conditionList.size(); i++) {
-                if (i > 0) {
+                final Condition condition = conditionList.get(i);
+
+                if (condition == null) {
+                    continue;
+                }
+
+                if (!first) {
                     sb.append(_SPACE);
                     sb.append(getOperator().toString());
                     sb.append(_SPACE);
                 }
 
                 sb.append(_PARENTHESES_L);
-                sb.append(conditionList.get(i).toString(namingPolicy));
+                sb.append(condition.toString(namingPolicy));
                 sb.append(_PARENTHESES_R);
+
+                first = false;
             }
 
             sb.append(_PARENTHESES_R);

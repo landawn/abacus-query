@@ -37,8 +37,8 @@ package com.landawn.abacus.query.condition;
  *   <li>Strings: Lexicographical (dictionary) order</li>
  *   <li>Any Comparable type supported by the database</li>
  * </ul>
- * 
- * <p>Example usage:
+ *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if age is less than 18
  * LessThan underAge = new LessThan("age", 18);
@@ -79,8 +79,8 @@ public class LessThan extends Binary {
      * Creates a new less-than condition with the specified property name and value.
      * This condition checks if the property value is less than the specified value,
      * providing an exclusive upper bound check. The comparison excludes the boundary value itself.
-     * 
-     * <p>Example usage:
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check for minors (under 18)
      * LessThan minorCheck = new LessThan("age", 18);
