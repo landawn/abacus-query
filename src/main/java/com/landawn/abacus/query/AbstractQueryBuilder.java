@@ -3537,7 +3537,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         String sql = null;
 
         try {
-            sql = _sb.length() > 0 && _sb.charAt(0) == ' ' ? _sb.substring(1) : _sb.toString();
+            sql = !_sb.isEmpty() && _sb.charAt(0) == ' ' ? _sb.substring(1) : _sb.toString();
         } finally {
             Objectory.recycle(_sb);
             _sb = null;
@@ -4435,8 +4435,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             int idx = -1;
             if (isForSelect && (withClassAlias || propAlias.length() > _sb.length()
-                    || (propAlias.length() <= _sb.length() && _sb.length() - propAlias.length() - 1 >= 0
-                            && _sb.charAt(_sb.length() - propAlias.length() - 1) != _SPACE)
+                    || (_sb.length() - propAlias.length() - 1 >= 0 && _sb.charAt(_sb.length() - propAlias.length() - 1) != _SPACE)
                     || _sb.indexOf(propAlias, _sb.length() - propAlias.length()) < 0 || ((idx = propAlias.indexOf(SK._PERIOD)) > 0
                             && (Strings.isEmpty(tableAlias) || tableAlias.length() != idx || !propAlias.startsWith(tableAlias))))) {
                 _sb.append(_SPACE_AS_SPACE);
@@ -4485,8 +4484,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 int idx = -1;
                 if (withClassAlias || propName.length() > _sb.length()
-                        || (propName.length() <= _sb.length() && _sb.length() - propName.length() - 1 >= 0
-                                && _sb.charAt(_sb.length() - propName.length() - 1) != _SPACE)
+                        || (_sb.length() - propName.length() - 1 >= 0 && _sb.charAt(_sb.length() - propName.length() - 1) != _SPACE)
                         || _sb.indexOf(propName, _sb.length() - propName.length()) < 0 || ((idx = propName.indexOf(SK._PERIOD)) > 0
                                 && (Strings.isEmpty(tableAlias) || tableAlias.length() != idx || !propName.startsWith(tableAlias)))) {
                     _sb.append(_SPACE_AS_SPACE);

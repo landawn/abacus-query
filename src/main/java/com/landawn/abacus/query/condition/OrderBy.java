@@ -241,7 +241,7 @@ public class OrderBy extends Clause {
         if (direction == null) {
             throw new IllegalArgumentException("direction cannot be null");
         }
-        return propName + SPACE + direction.toString();
+        return propName + SPACE + direction;
     }
 
     /**
@@ -282,7 +282,7 @@ public class OrderBy extends Clause {
             }
 
             sb.append(SPACE);
-            sb.append(direction.toString());
+            sb.append(direction);
 
             return sb.toString();
         } finally {
@@ -329,7 +329,7 @@ public class OrderBy extends Clause {
 
                 sb.append(key);
                 sb.append(SPACE);
-                sb.append(value.toString());
+                sb.append(value);
             }
 
             return sb.toString();

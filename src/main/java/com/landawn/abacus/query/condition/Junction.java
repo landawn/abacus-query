@@ -466,9 +466,7 @@ public class Junction extends AbstractCondition {
             sb.append(_PARENTHESES_L);
 
             boolean first = true;
-            for (int i = 0; i < conditionList.size(); i++) {
-                final Condition condition = conditionList.get(i);
-
+            for (final Condition condition : conditionList) {
                 if (condition == null) {
                     continue;
                 }
