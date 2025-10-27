@@ -199,6 +199,12 @@ public final class ParsedSql {
      * Gets the original SQL string as provided to the parse method.
      * This is the SQL before any parameter conversion or processing.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
+     * String original = parsed.sql(); // Returns: "SELECT * FROM users WHERE id = :userId"
+     * }</pre>
+     *
      * @return the original SQL string
      */
     public String sql() {
@@ -224,6 +230,13 @@ public final class ParsedSql {
     /**
      * Gets the parameterized SQL formatted for the specified database system.
      * For Couchbase, parameters are converted to $1, $2, etc. format.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
+     * String jdbcSql = parsed.getParameterizedSql(false); // Returns: "SELECT * FROM users WHERE id = ? AND status = ?"
+     * String couchbaseSql = parsed.getParameterizedSql(true); // Returns: "SELECT * FROM users WHERE id = $1 AND status = $2"
+     * }</pre>
      *
      * @param isForCouchbase true to get Couchbase-formatted SQL, {@code false} for standard JDBC format
      * @return the parameterized SQL string
@@ -260,6 +273,13 @@ public final class ParsedSql {
      * Gets the list of named parameters formatted for the specified database system.
      * For Couchbase, this may include positional parameter names if no named parameters exist.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("UPDATE users SET name = :name, email = :email WHERE id = :id");
+     * List<String> jdbcParams = parsed.getNamedParameters(false); // Returns: ["name", "email", "id"]
+     * List<String> couchbaseParams = parsed.getNamedParameters(true); // Returns: ["name", "email", "id"]
+     * }</pre>
+     *
      * @param isForCouchbase true to get Couchbase-formatted parameters, {@code false} for standard format
      * @return an immutable list of parameter names
      */
@@ -293,6 +313,13 @@ public final class ParsedSql {
 
     /**
      * Gets the parameter count formatted for the specified database system.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("INSERT INTO orders (user_id, product_id, qty) VALUES (:userId, :productId, :qty)");
+     * int jdbcCount = parsed.getParameterCount(false); // Returns: 3
+     * int couchbaseCount = parsed.getParameterCount(true); // Returns: 3
+     * }</pre>
      *
      * @param isForCouchbase true to get Couchbase parameter count, {@code false} for standard count
      * @return the number of parameters

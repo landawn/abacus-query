@@ -113,6 +113,13 @@ public final class Selection {
          * Adds a simple selection for the specified entity class with default settings.
          * All properties will be selected without any aliases.
          *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = Selection.multiSelectionBuilder()
+         *     .add(User.class)
+         *     .build();
+         * }</pre>
+         *
          * @param entityClass the entity class to select from
          * @return this builder instance for method chaining
          */
@@ -122,6 +129,13 @@ public final class Selection {
 
         /**
          * Adds a selection for the specified entity class with specific properties to select.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = Selection.multiSelectionBuilder()
+         *     .add(User.class, Arrays.asList("id", "name", "email"))
+         *     .build();
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param selectPropNames the property names to include in the selection
@@ -135,6 +149,14 @@ public final class Selection {
          * Adds a selection for the specified entity class with table and class aliases.
          * All properties will be selected.
          *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = Selection.multiSelectionBuilder()
+         *     .add(User.class, "u", "user")
+         *     .add(Order.class, "o", "order")
+         *     .build();
+         * }</pre>
+         *
          * @param entityClass the entity class to select from
          * @param tableAlias the alias to use for the table in SQL
          * @param classAlias the alias to use for result mapping
@@ -146,6 +168,14 @@ public final class Selection {
 
         /**
          * Adds a selection for the specified entity class with full configuration options.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = Selection.multiSelectionBuilder()
+         *     .add(User.class, "u", "user", Arrays.asList("id", "name"))
+         *     .add(Order.class, "o", "order", Arrays.asList("orderId", "orderDate", "total"))
+         *     .build();
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param tableAlias the alias to use for the table in SQL (can be null)
@@ -163,6 +193,13 @@ public final class Selection {
         /**
          * Adds a selection with sub-entity property control and exclusion options.
          *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = Selection.multiSelectionBuilder()
+         *     .add(User.class, true, Set.of("password", "internalNotes"))
+         *     .build();
+         * }</pre>
+         *
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties from sub-entities
          * @param excludedPropNames property names to exclude from the selection
@@ -174,6 +211,14 @@ public final class Selection {
 
         /**
          * Adds a selection with full configuration including sub-entity and exclusion options.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = Selection.multiSelectionBuilder()
+         *     .add(User.class, "u", "user", true, Set.of("password"))
+         *     .add(Order.class, "o", "order", false, Set.of("internalNotes", "costPrice"))
+         *     .build();
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param tableAlias the alias to use for the table in SQL (can be null)
@@ -191,6 +236,14 @@ public final class Selection {
 
         /**
          * Builds and returns the list of Selection objects configured in this builder.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = Selection.multiSelectionBuilder()
+         *     .add(User.class, "u", "user")
+         *     .add(Order.class, "o", "order")
+         *     .build();
+         * }</pre>
          *
          * @return an unmodifiable list of Selection objects
          */

@@ -206,6 +206,13 @@ public final class SQLMapper {
     /**
      * Returns a set of all SQL identifiers registered in this mapper.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     * Set<String> sqlIds = mapper.keySet();
+     * sqlIds.forEach(id -> System.out.println("Available SQL: " + id));
+     * }</pre>
+     *
      * @return an unmodifiable set of SQL identifiers
      */
     public Set<String> keySet() {
@@ -214,6 +221,13 @@ public final class SQLMapper {
 
     /**
      * Retrieves the parsed SQL associated with the specified identifier.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     * ParsedSql sql = mapper.get("findAccountById");
+     * String sqlString = sql.sql();
+     * }</pre>
      *
      * @param id the SQL identifier
      * @return the ParsedSql object, or null if the id is empty, too long, or not found
@@ -230,6 +244,13 @@ public final class SQLMapper {
      * Retrieves the attributes associated with the specified SQL identifier.
      * Attributes may include batchSize, fetchSize, resultSetType, timeout, etc.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     * ImmutableMap<String, String> attrs = mapper.getAttrs("batchInsertAccounts");
+     * Integer batchSize = Integer.parseInt(attrs.getOrDefault("batchSize", "100"));
+     * }</pre>
+     *
      * @param id the SQL identifier
      * @return an immutable map of attribute names to values, or null if the id is invalid or not found
      */
@@ -243,6 +264,13 @@ public final class SQLMapper {
 
     /**
      * Adds or replaces a parsed SQL with the specified identifier.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper mapper = new SQLMapper();
+     * ParsedSql parsedSql = ParsedSql.parse("select * from users where id = ?");
+     * mapper.add("findUserById", parsedSql);
+     * }</pre>
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed 128 characters)
      * @param sql the parsed SQL to associate with the identifier
@@ -258,6 +286,13 @@ public final class SQLMapper {
     /**
      * Adds a SQL string with the specified identifier and attributes.
      * The SQL string will be parsed before storing.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper mapper = new SQLMapper();
+     * Map<String, String> attrs = Map.of("batchSize", "100", "timeout", "30");
+     * mapper.add("insertUser", "insert into users (id, name) values (?, ?)", attrs);
+     * }</pre>
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed 128 characters)
      * @param sql the SQL string to parse and store
@@ -301,6 +336,12 @@ public final class SQLMapper {
      * Removes the SQL associated with the specified identifier.
      * If the id is empty, too long, or not found, this method does nothing.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     * mapper.remove("deprecatedQuery");
+     * }</pre>
+     *
      * @param id the SQL identifier to remove
      */
     public void remove(final String id) {
@@ -314,6 +355,13 @@ public final class SQLMapper {
     /**
      * Creates a deep copy of this SQLMapper instance.
      * The copy contains all SQL definitions and attributes from the original.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper original = SQLMapper.fromFile("sql/queries.xml");
+     * SQLMapper copy = original.copy();
+     * copy.add("newQuery", "select * from new_table", Map.of());
+     * }</pre>
      *
      * @return a new SQLMapper instance with the same content
      */
@@ -382,6 +430,14 @@ public final class SQLMapper {
 
     /**
      * Checks if this mapper contains no SQL definitions.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper mapper = new SQLMapper();
+     * if (mapper.isEmpty()) {
+     *     System.out.println("No SQL definitions loaded");
+     * }
+     * }</pre>
      *
      * @return {@code true} if the mapper contains no SQL definitions, {@code false} otherwise
      */
