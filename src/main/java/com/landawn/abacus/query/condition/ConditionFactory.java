@@ -109,7 +109,7 @@ public class ConditionFactory {
      *                                    : ConditionFactory.alwaysTrue();
      * }</pre>
      *
-     * @return an Expression that always evaluates to true (1 < 2)
+     * @return an Expression that always evaluates to true (1 &lt; 2)
      */
     public static Expression alwaysTrue() {
         return ALWAYS_TRUE;
@@ -711,12 +711,12 @@ public class ConditionFactory {
 
     /**
      * Creates a BETWEEN-like condition using greater than and less than comparisons.
-     * The result is: propName > minValue AND propName < maxValue.
+     * The result is: propName &gt; minValue AND propName &lt; maxValue.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = ConditionFactory.gtAndLt("age", 18, 65);
-     * // Results in SQL like: WHERE age > 18 AND age < 65
+     * // Results in SQL like: WHERE age &gt; 18 AND age &lt; 65
      * }</pre>
      *
      * @param propName the property/column name
@@ -730,12 +730,12 @@ public class ConditionFactory {
 
     /**
      * Creates a parameterized BETWEEN-like condition for prepared statements.
-     * The result is: propName > ? AND propName < ?.
+     * The result is: propName &gt; ? AND propName &lt; ?.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = ConditionFactory.gtAndLt("price");
-     * // Results in SQL like: WHERE price > ? AND price < ?
+     * // Results in SQL like: WHERE price &gt; ? AND price &lt; ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -747,12 +747,12 @@ public class ConditionFactory {
 
     /**
      * Creates a BETWEEN-like condition using greater than or equal and less than comparisons.
-     * The result is: propName >= minValue AND propName < maxValue.
+     * The result is: propName &gt;= minValue AND propName &lt; maxValue.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = ConditionFactory.geAndLt("price", 100, 500);
-     * // Results in SQL like: WHERE price >= 100 AND price < 500
+     * // Results in SQL like: WHERE price &gt;= 100 AND price &lt; 500
      * }</pre>
      *
      * @param propName the property/column name
@@ -766,12 +766,12 @@ public class ConditionFactory {
 
     /**
      * Creates a parameterized BETWEEN-like condition for prepared statements.
-     * The result is: propName >= ? AND propName < ?.
+     * The result is: propName &gt;= ? AND propName &lt; ?.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = ConditionFactory.geAndLt("score");
-     * // Results in SQL like: WHERE score >= ? AND score < ?
+     * // Results in SQL like: WHERE score &gt;= ? AND score &lt; ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -783,12 +783,12 @@ public class ConditionFactory {
 
     /**
      * Creates a BETWEEN-like condition using greater than or equal and less than or equal comparisons.
-     * The result is: propName >= minValue AND propName <= maxValue.
+     * The result is: propName &gt;= minValue AND propName &lt;= maxValue.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = ConditionFactory.geAndLe("date", startDate, endDate);
-     * // Results in SQL like: WHERE date >= '2023-01-01' AND date <= '2023-12-31'
+     * // Results in SQL like: WHERE date &gt;= '2023-01-01' AND date &lt;= '2023-12-31'
      * }</pre>
      *
      * @param propName the property/column name
@@ -802,12 +802,12 @@ public class ConditionFactory {
 
     /**
      * Creates a parameterized BETWEEN-like condition for prepared statements.
-     * The result is: propName >= ? AND propName <= ?.
+     * The result is: propName &gt;= ? AND propName &lt;= ?.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = ConditionFactory.geAndLe("amount");
-     * // Results in SQL like: WHERE amount >= ? AND amount <= ?
+     * // Results in SQL like: WHERE amount &gt;= ? AND amount &lt;= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -819,12 +819,12 @@ public class ConditionFactory {
 
     /**
      * Creates a BETWEEN-like condition using greater than and less than or equal comparisons.
-     * The result is: propName > minValue AND propName <= maxValue.
+     * The result is: propName &gt; minValue AND propName &lt;= maxValue.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = ConditionFactory.gtAndLe("score", 0, 100);
-     * // Results in SQL like: WHERE score > 0 AND score <= 100
+     * // Results in SQL like: WHERE score &gt; 0 AND score &lt;= 100
      * }</pre>
      *
      * @param propName the property/column name
@@ -838,12 +838,12 @@ public class ConditionFactory {
 
     /**
      * Creates a parameterized BETWEEN-like condition for prepared statements.
-     * The result is: propName > ? AND propName <= ?.
+     * The result is: propName &gt; ? AND propName &lt;= ?.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = ConditionFactory.gtAndLe("temperature");
-     * // Results in SQL like: WHERE temperature > ? AND temperature <= ?
+     * // Results in SQL like: WHERE temperature &gt; ? AND temperature &lt;= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1134,12 +1134,12 @@ public class ConditionFactory {
     }
 
     /**
-     * Creates a less-than condition (<) for the specified property and value.
+     * Creates a less-than condition (&lt;) for the specified property and value.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = ConditionFactory.lessThan("age", 65);
-     * // Results in SQL like: WHERE age < 65
+     * // Results in SQL like: WHERE age &lt; 65
      * }</pre>
      *
      * @param propName the property/column name
@@ -1156,7 +1156,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = ConditionFactory.lessThan("max_price");
-     * // Results in SQL like: WHERE max_price < ?
+     * // Results in SQL like: WHERE max_price &lt; ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1168,7 +1168,7 @@ public class ConditionFactory {
     }
 
     /**
-     * Creates a less-than condition (<) for the specified property and value.
+     * Creates a less-than condition (&lt;) for the specified property and value.
      * This is a shorthand alias for {@link #lessThan(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1203,12 +1203,12 @@ public class ConditionFactory {
     }
 
     /**
-     * Creates a less-than-or-equal condition (<=) for the specified property and value.
+     * Creates a less-than-or-equal condition (&lt;=) for the specified property and value.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessEqual condition = ConditionFactory.lessEqual("discount", 50);
-     * // Results in SQL like: WHERE discount <= 50
+     * // Results in SQL like: WHERE discount &lt;= 50
      * }</pre>
      *
      * @param propName the property/column name
@@ -1225,7 +1225,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessEqual condition = ConditionFactory.lessEqual("max_attempts");
-     * // Results in SQL like: WHERE max_attempts <= ?
+     * // Results in SQL like: WHERE max_attempts &lt;= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1237,7 +1237,7 @@ public class ConditionFactory {
     }
 
     /**
-     * Creates a less-than-or-equal condition (<=) for the specified property and value.
+     * Creates a less-than-or-equal condition (&lt;=) for the specified property and value.
      * This is a shorthand alias for {@link #lessEqual(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>

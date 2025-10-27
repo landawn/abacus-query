@@ -97,13 +97,13 @@ public interface Condition {
      * Creates a new AND condition combining this condition with another.
      * Both conditions must be true for the result to be true.
      * 
-     * <p>The AND operation follows standard logical conjunction rules:
+     * <p>The AND operation follows standard logical conjunction rules:</p>
      * <ul>
      *   <li>true AND true = true</li>
      *   <li>true AND false = false</li>
      *   <li>false AND true = false</li>
      *   <li>false AND false = false</li>
-     * </ul></p>
+     * </ul>
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -127,13 +127,13 @@ public interface Condition {
      * Creates a new OR condition combining this condition with another.
      * Either condition can be true for the result to be true.
      * 
-     * <p>The OR operation follows standard logical disjunction rules:
+     * <p>The OR operation follows standard logical disjunction rules:</p>
      * <ul>
      *   <li>true OR true = true</li>
      *   <li>true OR false = true</li>
      *   <li>false OR true = true</li>
      *   <li>false OR false = false</li>
-     * </ul></p>
+     * </ul>
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -157,11 +157,11 @@ public interface Condition {
      * Creates a new NOT condition that negates this condition.
      * The result is true when this condition is false, and vice versa.
      * 
-     * <p>The NOT operation follows standard logical negation rules:
+     * <p>The NOT operation follows standard logical negation rules:</p>
      * <ul>
      *   <li>NOT true = false</li>
      *   <li>NOT false = true</li>
-     * </ul></p>
+     * </ul>
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

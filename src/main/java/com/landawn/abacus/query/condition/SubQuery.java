@@ -43,7 +43,7 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>IN/NOT IN conditions for set membership tests</li>
  *   <li>EXISTS/NOT EXISTS for existence checks</li>
- *   <li>Scalar subqueries in comparisons (=, >, <, etc.)</li>
+ *   <li>Scalar subqueries in comparisons (=, &gt;, &lt;, etc.)
  *   <li>ANY/ALL/SOME for multi-row comparisons</li>
  *   <li>FROM clause for derived tables</li>
  * </ul>

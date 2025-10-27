@@ -28,8 +28,8 @@ import com.landawn.abacus.util.Strings;
  * The BETWEEN operator selects values within a given range, inclusive of both endpoints.
  * 
  * <p>The BETWEEN condition is a convenient way to filter data within a range.
- * It's equivalent to: property >= minValue AND property <= maxValue.
- * The condition evaluates to true if: minValue <= propertyValue <= maxValue.</p>
+ * It's equivalent to: property &gt;= minValue AND property &lt;= maxValue.
+ * The condition evaluates to true if: minValue &lt;= propertyValue &lt;= maxValue.</p>
  * 
  * <p>BETWEEN can be used with various data types:</p>
  * <ul>

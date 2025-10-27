@@ -120,12 +120,12 @@ import com.landawn.abacus.util.stream.Stream;
  *   <li>{@link NLC} - Named SQL with lowerCamelCase naming</li>
  * </ul>
  * 
- * @see {@link com.landawn.abacus.annotation.ReadOnly}
- * @see {@link com.landawn.abacus.annotation.ReadOnlyId}
- * @see {@link com.landawn.abacus.annotation.NonUpdatable}
- * @see {@link com.landawn.abacus.annotation.Transient}
- * @see {@link com.landawn.abacus.annotation.Table}
- * @see {@link com.landawn.abacus.annotation.Column}
+ * @see com.landawn.abacus.annotation.ReadOnly
+ * @see com.landawn.abacus.annotation.ReadOnlyId
+ * @see com.landawn.abacus.annotation.NonUpdatable
+ * @see com.landawn.abacus.annotation.Transient
+ * @see com.landawn.abacus.annotation.Table
+ * @see com.landawn.abacus.annotation.Column
  * 
  * @param <This> the concrete implementation type that extends this builder for method chaining
  */

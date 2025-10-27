@@ -19,14 +19,14 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>The SOME operator returns {@code true} if the comparison is true for at least one
  * value returned by the subquery. It's functionally equivalent to the ANY operator
- * in SQL. The operator is used with a comparison operator (=, !=, >, <, >=, <=)
+ * in SQL. The operator is used with a comparison operator (=, !=, &gt;, &lt;, &gt;=, &lt;=)
  * to compare a value against a set of values from a subquery.</p>
  * 
  * <p>Comparison behavior:</p>
  * <ul>
  *   <li>column = SOME (subquery) - true if column equals any value from subquery</li>
- *   <li>column > SOME (subquery) - true if column is greater than at least one value</li>
- *   <li>column < SOME (subquery) - true if column is less than at least one value</li>
+ *   <li>column &gt; SOME (subquery) - true if column is greater than at least one value</li>
+ *   <li>column &lt; SOME (subquery) - true if column is less than at least one value
  *   <li>column != SOME (subquery) - true if column differs from at least one value</li>
  * </ul>
  * 

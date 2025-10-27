@@ -34,7 +34,7 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Important:</b> Always call {@link #build()} to generate the final SQL string and 
  * release resources. The builder uses object pooling internally for performance optimization.</p>
  * 
- * <h3>Example usage:</h3>
+ * <h2>Example usage:</h2>
  * <pre>{@code
  * String sql = DynamicSQLBuilder.create()
  *     .select().append("id", "user_id").append("name")
@@ -512,8 +512,8 @@ public class DynamicSQLBuilder {
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#select()}
      * to get an instance.</p>
-     * 
-     * <h3>Example usage:</h3>
+     *
+     * <h2>Example usage:</h2>
      * <pre>{@code
      * builder.select()
      *     .append("id")
@@ -701,8 +701,8 @@ public class DynamicSQLBuilder {
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#from()}
      * to get an instance.</p>
-     * 
-     * <h3>Example usage:</h3>
+     *
+     * <h2>Example usage:</h2>
      * <pre>{@code
      * builder.from()
      *     .append("users", "u")
@@ -932,8 +932,8 @@ public class DynamicSQLBuilder {
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#where()}
      * to get an instance.</p>
-     * 
-     * <h3>Example usage:</h3>
+     *
+     * <h2>Example usage:</h2>
      * <pre>{@code
      * builder.where()
      *     .append("status = ?")
@@ -1147,8 +1147,8 @@ public class DynamicSQLBuilder {
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#groupBy()}
      * to get an instance.</p>
-     * 
-     * <h3>Example usage:</h3>
+     *
+     * <h2>Example usage:</h2>
      * <pre>{@code
      * builder.groupBy()
      *     .append("department")
@@ -1288,8 +1288,8 @@ public class DynamicSQLBuilder {
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#having()}
      * to get an instance.</p>
-     * 
-     * <h3>Example usage:</h3>
+     *
+     * <h2>Example usage:</h2>
      * <pre>{@code
      * builder.groupBy().append("department")
      *        .having().append("COUNT(*) > ?")
@@ -1439,8 +1439,8 @@ public class DynamicSQLBuilder {
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#orderBy()}
      * to get an instance.</p>
-     * 
-     * <h3>Example usage:</h3>
+     *
+     * <h2>Example usage:</h2>
      * <pre>{@code
      * builder.orderBy()
      *     .append("created_date DESC")
@@ -1580,7 +1580,7 @@ public class DynamicSQLBuilder {
      *
      * <p>This class exists purely for brevity when the full class name would be too verbose.</p>
      *
-     * <h3>Example usage:</h3>
+     * <h2>Example usage:</h2>
      * <pre>{@code
      * DSB.create()
      *    .select().append("*")

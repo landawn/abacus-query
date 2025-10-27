@@ -418,13 +418,13 @@ public final class SK {
     public static final String BRACKET_R = "]";
 
     /**
-     * Represents the left curly brace character: {@code '{'}.
+     * Represents the left curly brace character: <code>'{'</code>.
      * Used for block delimiters and object literals.
      */
     public static final char _BRACE_L = '{';
 
     /**
-     * Represents the left curly brace string: {@code "{"}.
+     * Represents the left curly brace string: <code>"{"</code>.
      */
     public static final String BRACE_L = "{";
 

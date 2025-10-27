@@ -18,7 +18,7 @@ package com.landawn.abacus.query.condition;
  * Represents a NOT EQUAL (!=) condition in SQL queries.
  * This condition checks if a property value is not equal to a specified value.
  * 
- * <p>The NOT EQUAL operator can be represented as != or <> in SQL, depending on the database.
+ * <p>The NOT EQUAL operator can be represented as != or &lt;&gt; in SQL, depending on the database.
  * This implementation uses the standard != operator. The condition evaluates to true when
  * the property value differs from the specified value.</p>
  * 

@@ -98,12 +98,12 @@ import com.landawn.abacus.util.u.Optional;
  *   <li>{@link NLC} - Named SQL with lowerCamelCase naming</li>
  * </ul>
  * 
- * @see {@link com.landawn.abacus.annotation.ReadOnly}
- * @see {@link com.landawn.abacus.annotation.ReadOnlyId}
- * @see {@link com.landawn.abacus.annotation.NonUpdatable}
- * @see {@link com.landawn.abacus.annotation.Transient}
- * @see {@link com.landawn.abacus.annotation.Table}
- * @see {@link com.landawn.abacus.annotation.Column}
+ * @see com.landawn.abacus.annotation.ReadOnly
+ * @see com.landawn.abacus.annotation.ReadOnlyId
+ * @see com.landawn.abacus.annotation.NonUpdatable
+ * @see com.landawn.abacus.annotation.Transient
+ * @see com.landawn.abacus.annotation.Table
+ * @see com.landawn.abacus.annotation.Column
  */
 @SuppressWarnings("deprecation")
 public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // NOSONAR
@@ -786,8 +786,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param propsList list of entities or property maps to insert
          * @return a new SQLBuilder instance for batch INSERT operation
          * @throws IllegalArgumentException if propsList is null or empty
-         * 
-         * @apiNote This is a beta feature and may be subject to change
+         * <p>
+         * <b>Note:</b> This is a beta feature and may be subject to change
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -2071,8 +2071,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param propsList list of entities or property maps to insert
          * @return a new SQLBuilder instance configured for batch INSERT operation
          * @throws IllegalArgumentException if propsList is null or empty
-         * 
-         * @apiNote This is a beta feature and may be subject to change
+         * <p>
+         * <b>Note:</b> This is a beta feature and may be subject to change
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -3359,8 +3359,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param propsList collection of entities or property maps to batch insert
          * @return a new SQLBuilder instance configured for batch INSERT operation
          * @throws IllegalArgumentException if propsList is null or empty
-         * 
-         * @apiNote This is a beta feature and may be subject to change
+         * <p>
+         * <b>Note:</b> This is a beta feature and may be subject to change
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -5977,11 +5977,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an UPDATE statement for an entity class.
-         * 
+         *
          * <p>This method creates an UPDATE statement where the table name is derived from the entity
-         * class name or @Table annotation. All updatable properties (excluding those marked with
-         * @ReadOnly or @NonUpdatable) are included by default.</p>
-         * 
+         * class name or {@code @Table} annotation. All updatable properties (excluding those marked with
+         * {@code @ReadOnly} or {@code @NonUpdatable}) are included by default.
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.update(Account.class)
@@ -9953,7 +9953,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param propsList collection of entities or property maps to insert
          * @return a new SQLBuilder instance configured for batch INSERT operation
          * @throws IllegalArgumentException if propsList is null or empty
-         * @beta This is a beta feature and may be subject to changes
+         * <p>
+         * <b>Note:</b> This is a beta feature and may be subject to changes
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -11217,7 +11218,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param propsList list of entities or property maps to insert
          * @return a new SQLBuilder instance configured for batch INSERT operation
          * @throws IllegalArgumentException if propsList is null or empty
-         * @beta This API is in beta and may change in future versions
+         * <p>
+         * <b>Note:</b> This API is in beta and may change in future versions
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -12364,7 +12366,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param propsList collection of entities or property maps to insert
          * @return an SQLBuilder configured for batch INSERT operation
          * @throws IllegalArgumentException if propsList is null or empty
-         * @Beta This is a beta feature and may change in future versions
+         * <p>
+         * <b>Note:</b> This is a beta feature and may change in future versions
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -13580,7 +13583,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param propsList collection of entities or property maps to insert
          * @return an SQLBuilder configured for batch INSERT operation
          * @throws IllegalArgumentException if propsList is null or empty
-         * @Beta This is a beta feature and may change in future versions
+         * <p>
+         * <b>Note:</b> This is a beta feature and may change in future versions
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -14895,7 +14899,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @return the SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propsList is null or empty
          * 
-         * @Beta This is a beta feature and may change in future versions
+         * <p>
+         * <b>Note:</b> This is a beta feature and may change in future versions
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -16036,7 +16041,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param propsList collection of entities or property maps to insert
          * @return the SQLBuilder instance for method chaining
          * 
-         * @Beta This is a beta feature and may change in future versions
+         * <p>
+         * <b>Note:</b> This is a beta feature and may change in future versions
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -18358,7 +18364,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param propsList list of entities or properties maps to batch insert
          * @return a new SQLBuilder instance configured for batch INSERT operation
          * @throws IllegalArgumentException if propsList is null or empty
-         * @beta This API is in beta and may change in future versions
+         * <p>
+         * <b>Note:</b> This API is in beta and may change in future versions
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {

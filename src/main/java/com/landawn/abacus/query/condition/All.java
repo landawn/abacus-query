@@ -18,14 +18,14 @@ package com.landawn.abacus.query.condition;
  * Represents the SQL ALL operator for use with subqueries.
  * The ALL operator returns {@code true} if the comparison is true for ALL values returned by the subquery.
  * 
- * <p>ALL is used with comparison operators (=, !=, >, <, >=, <=) and a subquery.
+ * <p>ALL is used with comparison operators (=, !=, &gt;, &lt;, &gt;=, &lt;=) and a subquery.
  * The condition is satisfied only if the comparison is true for every value from the subquery.
  * This provides a way to ensure a value meets a criteria compared to an entire set of values.</p>
  * 
  * <p>Common usage patterns:</p>
  * <ul>
  *   <li>salary > ALL (subquery) - true if salary is greater than every value (greater than maximum)</li>
- *   <li>price < ALL (subquery) - true if price is less than every value (less than minimum)</li>
+ *   <li>price &lt; ALL (subquery) - true if price is less than every value (less than minimum)</li>
  *   <li>score >= ALL (subquery) - true if score is greater than or equal to all values</li>
  * </ul>
  * 
@@ -49,11 +49,11 @@ package com.landawn.abacus.query.condition;
  * <p>Behavior with different operators:</p>
  * <ul>
  *   <li>> ALL: true if greater than the maximum value in subquery</li>
- *   <li>< ALL: true if less than the minimum value in subquery</li>
+ *   <li>&lt; ALL: true if less than the minimum value in subquery</li>
  *   <li>= ALL: true if equal to all values (only possible if all values are the same)</li>
  *   <li>!= ALL: true if different from all values (equivalent to NOT IN)</li>
  *   <li>>= ALL: true if greater than or equal to the maximum value</li>
- *   <li><= ALL: true if less than or equal to the minimum value</li>
+ *   <li>&lt;= ALL: true if less than or equal to the minimum value
  * </ul>
  * 
  * @see Any

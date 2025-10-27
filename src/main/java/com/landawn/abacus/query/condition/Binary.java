@@ -34,10 +34,10 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>{@link Equal} - property = value</li>
  *   <li>{@link NotEqual} - property != value</li>
- *   <li>{@link GreaterThan} - property > value</li>
- *   <li>{@link GreaterEqual} - property >= value</li>
- *   <li>{@link LessThan} - property < value</li>
- *   <li>{@link LessEqual} - property <= value</li>
+ *   <li>{@link GreaterThan} - property &gt; value</li>
+ *   <li>{@link GreaterEqual} - property &gt;= value</li>
+ *   <li>{@link LessThan} - property &lt; value</li>
+ *   <li>{@link LessEqual} - property &lt;= value</li>
  *   <li>{@link Like} - property LIKE value</li>
  *   <li>{@link In} - property IN (values)</li>
  * </ul>

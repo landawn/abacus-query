@@ -18,14 +18,14 @@ package com.landawn.abacus.query.condition;
  * Represents the SQL ANY operator for use with subqueries.
  * The ANY operator returns {@code true} if the comparison is true for ANY of the values returned by the subquery.
  * 
- * <p>ANY is typically used with comparison operators (=, !=, >, <, >=, <=) and a subquery.
+ * <p>ANY is typically used with comparison operators (=, !=, &gt;, &lt;, &gt;=, &lt;=) and a subquery.
  * The condition is satisfied if the comparison is true for at least one value from the subquery.
  * This provides a powerful way to compare a value against a set of values returned by a subquery.</p>
  * 
  * <p>Common usage patterns:</p>
  * <ul>
  *   <li>salary > ANY (subquery) - true if salary is greater than at least one value from subquery</li>
- *   <li>price <= ANY (subquery) - true if price is less than or equal to at least one value</li>
+ *   <li>price &lt;= ANY (subquery) - true if price is less than or equal to at least one value
  *   <li>id = ANY (subquery) - equivalent to id IN (subquery)</li>
  * </ul>
  * 
@@ -50,7 +50,7 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>= ANY: true if equal to any value in the subquery (equivalent to IN)</li>
  *   <li>> ANY: true if greater than at least one value (greater than the minimum)</li>
- *   <li>< ANY: true if less than at least one value (less than the maximum)</li>
+ *   <li>&lt; ANY: true if less than at least one value (less than the maximum)
  *   <li>!= ANY: true if different from at least one value</li>
  * </ul>
  * 

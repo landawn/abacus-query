@@ -69,7 +69,7 @@ public enum Operator {
     NOT_EQUAL(SK.NOT_EQUAL),
 
     /**
-     * Alternative not equal operator (<>).
+     * Alternative not equal operator (&lt;&gt;).
      * Some databases prefer this syntax over !=.
      */
     NOT_EQUAL2(SK.NOT_EQUAL2),
@@ -111,7 +111,7 @@ public enum Operator {
     AND(SK.AND),
 
     /**
-     * AND operator symbol (&&).
+     * AND operator symbol (&amp;&amp;).
      * Alternative representation of AND.
      */
     AND_OP(SK.AND_OP),
@@ -141,13 +141,13 @@ public enum Operator {
     GREATER_EQUAL(SK.GREATER_EQUAL),
 
     /**
-     * Less than operator (<).
+     * Less than operator (&lt;).
      * Used for "less than" comparisons.
      */
     LESS_THAN(SK.LESS_THAN),
 
     /**
-     * Less than or equal operator (<=).
+     * Less than or equal operator (&lt;=).
      * Used for "less than or equal" comparisons.
      */
     LESS_EQUAL(SK.LESS_EQUAL),
