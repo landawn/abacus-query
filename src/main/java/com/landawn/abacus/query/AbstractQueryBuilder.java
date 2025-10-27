@@ -979,7 +979,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Specifies the target table for an INSERT operation with explicit table name and entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.insert(account).into("account_archive", Account.class).sql();
+     * // Inserts into specified table with Account class mapping
+     * }</pre>
+     *
      * @param tableName the name of the table to insert into
      * @param entityClass the entity class for property mapping (can be null)
      * @return this SQLBuilder instance for method chaining
@@ -1358,7 +1364,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a JOIN clause with a table name and entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users u").join("orders", Order.class).on("u.id = orders.user_id").sql();
+     * // Output: SELECT * FROM users u JOIN orders ON u.id = orders.user_id
+     * }</pre>
+     *
      * @param tableName the table name to join
      * @param entityClass the entity class (currently unused but reserved for future use)
      * @return this SQLBuilder instance for method chaining
@@ -1441,7 +1453,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an INNER JOIN clause with a table name and entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users u").innerJoin("orders", Order.class).on("u.id = orders.user_id").sql();
+     * // Output: SELECT * FROM users u INNER JOIN orders ON u.id = orders.user_id
+     * }</pre>
+     *
      * @param tableName the table name to join
      * @param entityClass the entity class (currently unused but reserved for future use)
      * @return this SQLBuilder instance for method chaining
@@ -1453,7 +1471,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an INNER JOIN clause using an entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class).innerJoin(Order.class).on("users.id = orders.user_id").sql();
+     * // Output: SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @return this SQLBuilder instance for method chaining
      */
@@ -1463,7 +1487,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an INNER JOIN clause using an entity class with an alias.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class, "u").innerJoin(Order.class, "o").on("u.id = o.user_id").sql();
+     * // Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @param alias the table alias
      * @return this SQLBuilder instance for method chaining
@@ -1508,7 +1538,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a LEFT JOIN clause with a table name and entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users u").leftJoin("orders", Order.class).on("u.id = orders.user_id").sql();
+     * // Output: SELECT * FROM users u LEFT JOIN orders ON u.id = orders.user_id
+     * }</pre>
+     *
      * @param tableName the table name to join
      * @param entityClass the entity class (currently unused but reserved for future use)
      * @return this SQLBuilder instance for method chaining
@@ -1520,7 +1556,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a LEFT JOIN clause using an entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class).leftJoin(Order.class).on("users.id = orders.user_id").sql();
+     * // Output: SELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @return this SQLBuilder instance for method chaining
      */
@@ -1530,7 +1572,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a LEFT JOIN clause using an entity class with an alias.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class, "u").leftJoin(Order.class, "o").on("u.id = o.user_id").sql();
+     * // Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @param alias the table alias
      * @return this SQLBuilder instance for method chaining
@@ -1575,7 +1623,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a RIGHT JOIN clause with a table name and entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users u").rightJoin("orders", Order.class).on("u.id = orders.user_id").sql();
+     * // Output: SELECT * FROM users u RIGHT JOIN orders ON u.id = orders.user_id
+     * }</pre>
+     *
      * @param tableName the table name to join
      * @param entityClass the entity class (currently unused but reserved for future use)
      * @return this SQLBuilder instance for method chaining
@@ -1587,7 +1641,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a RIGHT JOIN clause using an entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class).rightJoin(Order.class).on("users.id = orders.user_id").sql();
+     * // Output: SELECT * FROM users RIGHT JOIN orders ON users.id = orders.user_id
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @return this SQLBuilder instance for method chaining
      */
@@ -1597,7 +1657,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a RIGHT JOIN clause using an entity class with an alias.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class, "u").rightJoin(Order.class, "o").on("u.id = o.user_id").sql();
+     * // Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @param alias the table alias
      * @return this SQLBuilder instance for method chaining
@@ -1642,7 +1708,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a FULL JOIN clause with a table name and entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users u").fullJoin("orders", Order.class).on("u.id = orders.user_id").sql();
+     * // Output: SELECT * FROM users u FULL JOIN orders ON u.id = orders.user_id
+     * }</pre>
+     *
      * @param tableName the table name to join
      * @param entityClass the entity class (currently unused but reserved for future use)
      * @return this SQLBuilder instance for method chaining
@@ -1654,7 +1726,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a FULL JOIN clause using an entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class).fullJoin(Order.class).on("users.id = orders.user_id").sql();
+     * // Output: SELECT * FROM users FULL JOIN orders ON users.id = orders.user_id
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @return this SQLBuilder instance for method chaining
      */
@@ -1664,7 +1742,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a FULL JOIN clause using an entity class with an alias.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class, "u").fullJoin(Order.class, "o").on("u.id = o.user_id").sql();
+     * // Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @param alias the table alias
      * @return this SQLBuilder instance for method chaining
@@ -1709,7 +1793,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a CROSS JOIN clause with a table name and entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users").crossJoin("orders", Order.class).sql();
+     * // Output: SELECT * FROM users CROSS JOIN orders
+     * }</pre>
+     *
      * @param tableName the table name to join
      * @param entityClass the entity class (currently unused but reserved for future use)
      * @return this SQLBuilder instance for method chaining
@@ -1721,7 +1811,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a CROSS JOIN clause using an entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class).crossJoin(Order.class).sql();
+     * // Output: SELECT * FROM users CROSS JOIN orders
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @return this SQLBuilder instance for method chaining
      */
@@ -1731,7 +1827,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a CROSS JOIN clause using an entity class with an alias.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class, "u").crossJoin(Order.class, "o").sql();
+     * // Output: SELECT * FROM users u CROSS JOIN orders o
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @param alias the table alias
      * @return this SQLBuilder instance for method chaining
@@ -1776,7 +1878,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a NATURAL JOIN clause with a table name and entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from("users").naturalJoin("orders", Order.class).sql();
+     * // Output: SELECT * FROM users NATURAL JOIN orders
+     * }</pre>
+     *
      * @param tableName the table name to join
      * @param entityClass the entity class (currently unused but reserved for future use)
      * @return this SQLBuilder instance for method chaining
@@ -1788,7 +1896,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a NATURAL JOIN clause using an entity class.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class).naturalJoin(Order.class).sql();
+     * // Output: SELECT * FROM users NATURAL JOIN orders
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @return this SQLBuilder instance for method chaining
      */
@@ -1798,7 +1912,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a NATURAL JOIN clause using an entity class with an alias.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*").from(User.class, "u").naturalJoin(Order.class, "o").sql();
+     * // Output: SELECT * FROM users u NATURAL JOIN orders o
+     * }</pre>
+     *
      * @param entityClass the entity class to join
      * @param alias the table alias
      * @return this SQLBuilder instance for method chaining

@@ -1600,7 +1600,13 @@ public class DynamicSQLBuilder {
          * Creates a new instance of DSB.
          * This is a shorthand for DynamicSQLBuilder.create() with a shorter class name.
          *
-         * @return a new DSB instance
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * DSB builder = DSB.create();
+         * String sql = builder.select().append("*").from().append("users").build();
+         * }</pre>
+         *
+         * @return a new DSB instance for method chaining
          */
         public static DSB create() {
             return new DSB();

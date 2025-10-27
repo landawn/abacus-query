@@ -9437,14 +9437,26 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT statement for multiple entity classes (for joins).
-         * 
+         *
+         * <p>This method is useful for selecting columns from multiple entities in a join query.
+         * Each entity's properties are prefixed with the class alias in the result set.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * String sql = PLC.select(Account.class, "a", "account", Order.class, "o", "order")
+         *                 .from("account a")
+         *                 .innerJoin("orders o").on("a.id = o.accountId")
+         *                 .sql();
+         * // Output: SELECT a.firstName AS "account.firstName", o.totalAmount AS "order.totalAmount" ... FROM account a INNER JOIN orders o ON a.id = o.accountId
+         * }</pre>
+         *
          * @param entityClassA First entity class
          * @param tableAliasA Table alias for first entity
          * @param classAliasA Property prefix for first entity
          * @param entityClassB Second entity class
          * @param tableAliasB Table alias for second entity
          * @param classAliasB Property prefix for second entity
-         * @return A new SQLBuilder instance for method chaining
+         * @return a new SQLBuilder instance for method chaining
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -9453,7 +9465,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT statement for multiple entity classes with exclusions.
-         * 
+         *
+         * <p>This method allows selective property exclusion from each entity in a multi-entity SELECT,
+         * useful for excluding sensitive or unnecessary fields like passwords or large blobs.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> accExcluded = N.asSet("password", "securityToken");
+         * Set<String> ordExcluded = N.asSet("internalNotes");
+         * String sql = PLC.select(Account.class, "a", "account", accExcluded,
+         *                        Order.class, "o", "order", ordExcluded)
+         *                 .from("account a")
+         *                 .innerJoin("orders o").on("a.id = o.accountId")
+         *                 .sql();
+         * // Output: SELECT a.firstName AS "account.firstName", a.email AS "account.email", o.totalAmount AS "order.totalAmount" ... FROM account a INNER JOIN orders o ON a.id = o.accountId
+         * }</pre>
+         *
          * @param entityClassA First entity class
          * @param tableAliasA Table alias for first entity
          * @param classAliasA Property prefix for first entity
@@ -9462,7 +9489,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB Table alias for second entity
          * @param classAliasB Property prefix for second entity
          * @param excludedPropNamesB Excluded properties for second entity
-         * @return A new SQLBuilder instance for method chaining
+         * @return a new SQLBuilder instance for method chaining
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -9476,9 +9503,25 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT statement for multiple entity selections.
-         * 
+         *
+         * <p>This method provides the most flexible way to select from multiple entities,
+         * allowing fine-grained control over each entity's selected properties through Selection objects.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = N.asList(
+         *     new Selection(Account.class, "a", "account", N.asSet("firstName", "lastName")),
+         *     new Selection(Order.class, "o", "order", N.asSet("totalAmount", "orderDate"))
+         * );
+         * String sql = PLC.select(selections)
+         *                 .from("account a")
+         *                 .innerJoin("orders o").on("a.id = o.accountId")
+         *                 .sql();
+         * // Output: SELECT a.firstName AS "account.firstName", a.lastName AS "account.lastName", o.totalAmount AS "order.totalAmount" ... FROM account a INNER JOIN orders o ON a.id = o.accountId
+         * }</pre>
+         *
          * @param multiSelects List of Selection objects defining what to select from each entity
-         * @return A new SQLBuilder instance for method chaining
+         * @return a new SQLBuilder instance for method chaining
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -9494,14 +9537,25 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement for multiple entity classes.
-         * 
+         *
+         * <p>This convenience method combines SELECT and FROM operations for multi-entity queries,
+         * automatically deriving table names from entity classes and setting up the FROM clause.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * String sql = PLC.selectFrom(Account.class, "a", "account", Order.class, "o", "order")
+         *                 .where(CF.eq("a.id", "o.accountId"))
+         *                 .sql();
+         * // Output: SELECT a.firstName AS "account.firstName", o.totalAmount AS "order.totalAmount" ... FROM account a, orders o WHERE a.id = o.accountId
+         * }</pre>
+         *
          * @param entityClassA First entity class
          * @param tableAliasA Table alias for first entity
          * @param classAliasA Property prefix for first entity
          * @param entityClassB Second entity class
          * @param tableAliasB Table alias for second entity
          * @param classAliasB Property prefix for second entity
-         * @return A new SQLBuilder instance for method chaining
+         * @return a new SQLBuilder instance for method chaining
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -9510,7 +9564,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement for multiple entity classes with exclusions.
-         * 
+         *
+         * <p>This method combines SELECT and FROM operations while allowing property exclusions for each entity,
+         * useful for excluding sensitive fields or optimizing query performance by selecting only needed columns.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> accExcluded = N.asSet("password");
+         * Set<String> ordExcluded = N.asSet("internalComments");
+         * String sql = PLC.selectFrom(Account.class, "a", "account", accExcluded,
+         *                            Order.class, "o", "order", ordExcluded)
+         *                 .where(CF.eq("a.id", "o.accountId"))
+         *                 .sql();
+         * // Output: SELECT a.firstName AS "account.firstName", a.email AS "account.email", o.totalAmount AS "order.totalAmount" ... FROM account a, orders o WHERE a.id = o.accountId
+         * }</pre>
+         *
          * @param entityClassA First entity class
          * @param tableAliasA Table alias for first entity
          * @param classAliasA Property prefix for first entity
@@ -9519,7 +9587,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB Table alias for second entity
          * @param classAliasB Property prefix for second entity
          * @param excludedPropNamesB Excluded properties for second entity
-         * @return A new SQLBuilder instance for method chaining
+         * @return a new SQLBuilder instance for method chaining
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -9534,9 +9602,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement for multiple entity selections.
-         * 
+         *
+         * <p>This method provides maximum flexibility for multi-entity queries by accepting Selection objects
+         * that define exactly what properties to select from each entity, along with automatic FROM clause generation.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = N.asList(
+         *     new Selection(Account.class, "a", "account", N.asSet("firstName", "email")),
+         *     new Selection(Order.class, "o", "order", N.asSet("totalAmount"))
+         * );
+         * String sql = PLC.selectFrom(selections)
+         *                 .where(CF.eq("a.id", "o.accountId"))
+         *                 .sql();
+         * // Output: SELECT a.firstName AS "account.firstName", a.email AS "account.email", o.totalAmount AS "order.totalAmount" FROM account a, orders o WHERE a.id = o.accountId
+         * }</pre>
+         *
          * @param multiSelects List of Selection objects defining what to select from each entity
-         * @return A new SQLBuilder instance for method chaining
+         * @return a new SQLBuilder instance for method chaining
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -14862,12 +14945,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement for an entity class with automatic table name detection,
          * excluding specified properties.
-         * 
-         * <p>Combines automatic table name detection with property exclusion.</p>
+         *
+         * <p>Combines automatic table name detection with property exclusion. This is useful when
+         * certain properties should not be inserted (e.g., auto-generated IDs, calculated fields).</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("id", "createdDate");
+         * String sql = MSC.insertInto(Account.class, excluded)
+         *                 .values("John", "john@email.com", "ACTIVE")
+         *                 .sql();
+         * // Output: INSERT INTO ACCOUNT (FIRST_NAME, EMAIL, STATUS) VALUES (?, ?, ?)
+         * }</pre>
          *
          * @param entityClass the entity class to insert
          * @param excludedPropNames set of property names to exclude
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -15069,13 +15162,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a DELETE statement for a table with entity class context.
-         * 
+         *
          * <p>This method is useful when you want to use a custom table name
          * but still benefit from entity class metadata for column mapping in WHERE conditions.</p>
          *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * String sql = MSC.deleteFrom("ACCOUNT_ARCHIVE", Account.class)
+         *                 .where(CF.lt("lastLogin", "2020-01-01"))
+         *                 .sql();
+         * // Output: DELETE FROM ACCOUNT_ARCHIVE WHERE LAST_LOGIN < ?
+         * }</pre>
+         *
          * @param tableName the name of the table to delete from
          * @param entityClass the entity class for column mapping
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
@@ -15302,14 +15403,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT statement for an entity class with full control over selection.
-         * 
+         *
          * <p>This method combines sub-entity inclusion control with property exclusion,
          * providing maximum flexibility in determining what to select.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("password", "securityToken");
+         * String sql = MSC.select(Account.class, true, excluded)
+         *                 .from("ACCOUNT")
+         *                 .sql();
+         * // Output: SELECT ID, FIRST_NAME, EMAIL ... FROM ACCOUNT (excludes password, securityToken; includes sub-entity properties)
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @param excludedPropNames set of property names to exclude from selection
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
@@ -15371,13 +15481,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement with sub-entity inclusion control.
-         * 
+         *
          * <p>When sub-entities are included, the query may generate JOINs to fetch
          * related entity data in a single query.</p>
          *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * String sql = MSC.selectFrom(Order.class, true)
+         *                 .where(CF.gt("totalAmount", 100))
+         *                 .sql();
+         * // Output: SELECT o.ID, o.TOTAL_AMOUNT, c.NAME ... FROM ORDERS o LEFT JOIN CUSTOMERS c ON ... WHERE o.TOTAL_AMOUNT > ?
+         * }</pre>
+         *
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties of sub-entities
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
@@ -15386,13 +15504,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement with table alias and sub-entity control.
-         * 
+         *
          * <p>Combines table aliasing with sub-entity property inclusion for complex queries.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * String sql = MSC.selectFrom(Order.class, "ord", true)
+         *                 .where(CF.eq("ord.status", "'PENDING'"))
+         *                 .sql();
+         * // Output: SELECT ord.ID, ord.TOTAL_AMOUNT, c.NAME ... FROM ORDERS ord LEFT JOIN CUSTOMERS c ON ... WHERE ord.status = ?
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param alias the table alias to use
          * @param includeSubEntityProperties whether to include properties of sub-entities
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
@@ -15401,13 +15527,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement excluding specified properties.
-         * 
+         *
          * <p>This is a convenience method that combines property exclusion with
          * automatic FROM clause generation.</p>
          *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("password", "internalNotes");
+         * String sql = MSC.selectFrom(Account.class, excluded)
+         *                 .where(CF.eq("status", "'ACTIVE'"))
+         *                 .sql();
+         * // Output: SELECT ID, FIRST_NAME, EMAIL FROM ACCOUNT WHERE STATUS = ?
+         * }</pre>
+         *
          * @param entityClass the entity class to select from
          * @param excludedPropNames set of property names to exclude
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -15416,13 +15551,22 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement with alias and property exclusion.
-         * 
+         *
          * <p>Provides table aliasing while excluding specific properties from selection.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("largeBlob");
+         * String sql = MSC.selectFrom(Document.class, "doc", excluded)
+         *                 .where(CF.like("doc.title", "'%report%'"))
+         *                 .sql();
+         * // Output: SELECT doc.ID, doc.TITLE, doc.AUTHOR FROM DOCUMENTS doc WHERE doc.TITLE LIKE ?
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param alias the table alias to use
          * @param excludedPropNames set of property names to exclude
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
@@ -15431,14 +15575,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement with sub-entity control and property exclusion.
-         * 
+         *
          * <p>This method provides control over both sub-entity inclusion and property exclusion
          * without specifying a table alias.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> excluded = N.asSet("internalData");
+         * String sql = MSC.selectFrom(Order.class, true, excluded)
+         *                 .where(CF.gt("totalAmount", 500))
+         *                 .sql();
+         * // Output: SELECT o.ID, o.TOTAL_AMOUNT, c.NAME ... FROM ORDERS o LEFT JOIN CUSTOMERS c ON ... WHERE o.TOTAL_AMOUNT > ?
+         * }</pre>
          *
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties of sub-entities
          * @param excludedPropNames set of property names to exclude
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
@@ -15514,9 +15667,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT statement for joining two entity classes with property exclusion.
-         * 
+         *
          * <p>This method extends the two-entity select by allowing you to exclude specific
          * properties from each entity class independently.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> userExcluded = N.asSet("PASSWORD", "SECURITY_TOKEN");
+         * Set<String> orderExcluded = N.asSet("INTERNAL_NOTES");
+         * String sql = MSC.select(User.class, "u", "user", userExcluded,
+         *                        Order.class, "o", "order", orderExcluded)
+         *                 .from("USERS u")
+         *                 .join("ORDERS o").on("u.ID = o.USER_ID")
+         *                 .sql();
+         * // Output: SELECT u.ID AS "user.ID", u.NAME AS "user.NAME", o.ID AS "order.ID" FROM USERS u JOIN ORDERS o ON u.ID = o.USER_ID
+         * }</pre>
          *
          * @param entityClassA the first entity class
          * @param tableAliasA table alias for the first entity
@@ -15526,7 +15691,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB table alias for the second entity
          * @param classAliasB column prefix for the second entity's columns
          * @param excludedPropNamesB properties to exclude from the second entity
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
@@ -15573,9 +15738,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM statement for joining two entities.
-         * 
+         *
          * <p>This is a convenience method that combines multi-entity selection with
          * automatic FROM clause generation including proper table aliases.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * String sql = MSC.selectFrom(User.class, "u", "user", Order.class, "o", "order")
+         *                 .where(CF.eq("u.ID", "o.USER_ID"))
+         *                 .sql();
+         * // Output: SELECT u.ID AS "user.ID", u.NAME AS "user.NAME", o.ID AS "order.ID" FROM USERS u, ORDERS o WHERE u.ID = o.USER_ID
+         * }</pre>
          *
          * @param entityClassA the first entity class
          * @param tableAliasA table alias for the first entity
@@ -15583,7 +15756,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param entityClassB the second entity class
          * @param tableAliasB table alias for the second entity
          * @param classAliasB column prefix for the second entity's columns
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
@@ -15593,9 +15766,20 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement for two entities with property exclusion.
-         * 
+         *
          * <p>Combines multi-entity selection with property exclusion and automatic
          * FROM clause generation.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> userExcluded = N.asSet("PASSWORD");
+         * Set<String> orderExcluded = N.asSet("NOTES");
+         * String sql = MSC.selectFrom(User.class, "u", "user", userExcluded,
+         *                            Order.class, "o", "order", orderExcluded)
+         *                 .where(CF.eq("u.ID", "o.USER_ID"))
+         *                 .sql();
+         * // Output: SELECT u.ID AS "user.ID", u.NAME AS "user.NAME", o.ID AS "order.ID" FROM USERS u, ORDERS o WHERE u.ID = o.USER_ID
+         * }</pre>
          *
          * @param entityClassA the first entity class
          * @param tableAliasA table alias for the first entity
@@ -15605,7 +15789,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @param tableAliasB table alias for the second entity
          * @param classAliasB column prefix for the second entity's columns
          * @param excludedPropNamesB properties to exclude from the second entity
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
@@ -15621,12 +15805,25 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement for multiple entities with detailed configuration.
-         * 
+         *
          * <p>This method automatically generates the appropriate FROM clause with all
          * necessary table names and aliases based on the Selection configurations.</p>
          *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = N.asList(
+         *     new Selection(User.class, "u", "user"),
+         *     new Selection(Order.class, "o", "order"),
+         *     new Selection(Product.class, "p", "product")
+         * );
+         * String sql = MSC.selectFrom(selections)
+         *                 .where(CF.and(CF.eq("u.ID", "o.USER_ID"), CF.eq("o.PRODUCT_ID", "p.ID")))
+         *                 .sql();
+         * // Output: SELECT u.ID AS "user.ID", o.ID AS "order.ID", p.NAME AS "product.NAME" FROM USERS u, ORDERS o, PRODUCTS p WHERE ...
+         * }</pre>
+         *
          * @param multiSelects list of Selection configurations for each entity
-         * @return the SQLBuilder instance for method chaining
+         * @return this builder instance for method chaining
          * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid configurations
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
