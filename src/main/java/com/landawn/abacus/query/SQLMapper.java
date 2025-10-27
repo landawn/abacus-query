@@ -248,7 +248,8 @@ public final class SQLMapper {
      * <pre>{@code
      * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
      * ImmutableMap<String, String> attrs = mapper.getAttrs("batchInsertAccounts");
-     * Integer batchSize = Integer.parseInt(attrs.getOrDefault("batchSize", "100"));
+     * String batchSizeStr = attrs.get("batchSize");
+     * Integer batchSize = batchSizeStr != null ? Integer.parseInt(batchSizeStr) : 100;
      * }</pre>
      *
      * @param id the SQL identifier
@@ -290,7 +291,9 @@ public final class SQLMapper {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLMapper mapper = new SQLMapper();
-     * Map<String, String> attrs = Map.of("batchSize", "100", "timeout", "30");
+     * Map<String, String> attrs = new HashMap<>();
+     * attrs.put("batchSize", "100");
+     * attrs.put("timeout", "30");
      * mapper.add("insertUser", "insert into users (id, name) values (?, ?)", attrs);
      * }</pre>
      *
@@ -360,7 +363,7 @@ public final class SQLMapper {
      * <pre>{@code
      * SQLMapper original = SQLMapper.fromFile("sql/queries.xml");
      * SQLMapper copy = original.copy();
-     * copy.add("newQuery", "select * from new_table", Map.of());
+     * copy.add("newQuery", "select * from new_table", Collections.emptyMap());
      * }</pre>
      *
      * @return a new SQLMapper instance with the same content

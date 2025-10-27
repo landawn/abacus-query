@@ -824,19 +824,30 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Specifies the target table for an INSERT operation.
-     * <p>Must be called after setting the columns/values to insert.</p>
-     * 
+     * Specifies the target table for an INSERT or SELECT INTO operation.
+     * <p>Must be called after setting the columns/values to insert or columns to select.</p>
+     *
+     * <p><b>INSERT Example:</b></p>
      * <pre>{@code
      * String sql = PSC.insert("firstName", "lastName")
      *                 .into("account")
      *                 .sql();
      * // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
      * }</pre>
-     * 
+     *
+     * <p><b>SELECT INTO Example:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("firstName", "lastName")
+     *                 .into("account_backup")
+     *                 .from("account")
+     *                 .where("active = ?")
+     *                 .sql();
+     * // Output: INSERT INTO account_backup (first_name, last_name) SELECT first_name, last_name FROM account WHERE active = ?
+     * }</pre>
+     *
      * @param tableName the name of the table to insert into
      * @return this SQLBuilder instance for method chaining
-     * @throws RuntimeException if called on non-INSERT operation or if columns/values not set
+     * @throws RuntimeException if called on non-INSERT/SELECT operation or if columns/values not set
      */
     public This into(final String tableName) {
         if (!(_op == OperationType.ADD || _op == OperationType.QUERY)) {
@@ -2541,7 +2552,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a LIMIT clause with an offset for pagination.
-     * 
+     *
      * <pre>{@code
      * String sql = PSC.select("*")
      *                 .from("users")
@@ -2549,9 +2560,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .sql();
      * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
      * }</pre>
-     * 
-     * @param offset the number of rows to skip
-     * @param count the maximum number of rows to return
+     *
+     * @param offset the number of rows to skip (appears as OFFSET in SQL)
+     * @param count the maximum number of rows to return (appears as LIMIT in SQL)
      * @return this SQLBuilder instance for method chaining
      */
     public This limit(final int offset, final int count) {

@@ -245,7 +245,7 @@ public final class Selection {
          *     .build();
          * }</pre>
          *
-         * @return an unmodifiable list of Selection objects
+         * @return a list of Selection objects
          */
         public List<Selection> build() {
             return selections;

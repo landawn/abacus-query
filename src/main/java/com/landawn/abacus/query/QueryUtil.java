@@ -262,7 +262,8 @@ public final class QueryUtil {
     /**
      * Gets the property names to be used for INSERT operations on the given entity.
      * This method considers ID fields and excludes properties marked as non-insertable.
-     * If ID fields have default values, they are excluded from the insert property list.
+     * If all ID fields have default values (e.g., uninitialized), they are excluded from the insert property list.
+     * If any ID field has a non-default value, all insertable properties including IDs are returned.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
