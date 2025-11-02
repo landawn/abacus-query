@@ -45,9 +45,6 @@ import com.landawn.abacus.util.Strings;
  *     .build();
  * // Result: SELECT id AS user_id, name FROM users u WHERE u.active = ? AND u.age > ? ORDER BY u.name ASC LIMIT 10
  * }</pre>
- * 
- * @author HaiYang Li
- * @since 1.0
  */
 @SuppressWarnings("java:S1192")
 public class DynamicSQLBuilder {

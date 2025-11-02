@@ -37,7 +37,6 @@ import com.landawn.abacus.util.Strings;
  * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER", " ", "BY", " ", "name"]
  * }</pre>
  * 
- * @author HaiYang Li
  */
 public final class SQLParser {
 

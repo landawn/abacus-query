@@ -272,7 +272,6 @@ public class Junction extends AbstractCondition {
      * }</pre>
      *
      * @param conditions the collection of conditions to add
-     * @throws NullPointerException if conditions collection is null
      * @throws IllegalArgumentException if conditions contains null elements
      */
     public void add(final Collection<? extends Condition> conditions) {

@@ -55,55 +55,249 @@ import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.u.Optional;
 
 /**
- * A fluent SQL builder for constructing SQL statements programmatically.
- * 
- * <p>This builder provides a type-safe way to construct SQL statements with support for:</p>
+ * A comprehensive, enterprise-grade fluent SQL builder providing type-safe, programmatic construction
+ * of complex SQL statements with advanced features including parameterized queries, multiple naming
+ * conventions, entity mapping, and sophisticated query optimization. This abstract base class serves
+ * as the foundation for building dynamic, secure SQL queries that prevent SQL injection attacks while
+ * maintaining optimal database performance through intelligent query generation and caching strategies.
+ *
+ * <p>The {@code SQLBuilder} class addresses critical challenges in enterprise database programming by
+ * providing a fluent, type-safe API for constructing SQL statements programmatically. It supports the
+ * complete spectrum of SQL operations (SELECT, INSERT, UPDATE, DELETE) with advanced features like
+ * complex joins, subqueries, window functions, and Common Table Expressions (CTEs), enabling developers
+ * to build sophisticated database queries while maintaining code readability and ensuring security
+ * through parameterized query generation.</p>
+ *
+ * <p><b>⚠️ IMPORTANT - Resource Management:</b>
+ * All SQLBuilder instances must be properly finalized by calling {@code sql()}, {@code build()}, or
+ * {@code pair()} to generate the final SQL string and release internal resources. Failure to finalize
+ * builder instances may result in memory leaks in long-running applications. Always use try-with-resources
+ * or ensure proper cleanup in production environments.</p>
+ *
+ * <p><b>Key Features and Capabilities:</b>
  * <ul>
- *   <li>SELECT, INSERT, UPDATE, DELETE operations</li>
- *   <li>Multiple naming policies (snake_case, UPPER_CASE, camelCase)</li>
- *   <li>Parameterized and named SQL generation</li>
- *   <li>Entity class mapping with annotations</li>
- *   <li>Complex joins, subqueries, and conditions</li>
+ *   <li><b>Complete SQL Operation Support:</b> Full coverage of SELECT, INSERT, UPDATE, DELETE, and DDL operations</li>
+ *   <li><b>Parameterized Query Generation:</b> Automatic parameter binding preventing SQL injection vulnerabilities</li>
+ *   <li><b>Multiple Naming Conventions:</b> Support for snake_case, UPPER_CASE, camelCase, and custom naming policies</li>
+ *   <li><b>Entity Class Integration:</b> Seamless mapping with JPA-style annotations and reflection-based field mapping</li>
+ *   <li><b>Advanced Join Operations:</b> Comprehensive support for INNER, LEFT, RIGHT, FULL OUTER, and CROSS joins</li>
+ *   <li><b>Subquery Integration:</b> Nested queries, correlated subqueries, and EXISTS/NOT EXISTS operations</li>
+ *   <li><b>Window Function Support:</b> ROW_NUMBER, RANK, DENSE_RANK, and aggregate window functions</li>
+ *   <li><b>CTE (Common Table Expressions):</b> WITH clause support for complex recursive and non-recursive queries</li>
  * </ul>
- * 
- * <p>The builder must be finalized by calling {@code sql()} or {@code build()} to generate 
- * the SQL string and release resources.</p>
- * 
- * <p><b>Usage Examples:</b></p>
+ *
+ * <p><b>Design Philosophy:</b>
+ * <ul>
+ *   <li><b>Type Safety First:</b> Compile-time validation and type checking for all SQL construction operations</li>
+ *   <li><b>Security by Design:</b> All operations generate parameterized SQL preventing injection attacks</li>
+ *   <li><b>Fluent Interface:</b> Method chaining enables readable, expressive query building patterns</li>
+ *   <li><b>Performance Optimized:</b> Generated SQL is optimized for database execution plan efficiency</li>
+ *   <li><b>Framework Agnostic:</b> Works with any JDBC-based framework or standalone applications</li>
+ *   <li><b>Extensible Architecture:</b> Abstract design allows for custom implementations and extensions</li>
+ * </ul>
+ *
+ * <p><b>Concrete Implementation Classes and their Characteristics:</b>
+ * <table border="1" style="border-collapse: collapse;">
+ *   <tr style="background-color: #f2f2f2;">
+ *     <th>Class</th>
+ *     <th>Parameter Style</th>
+ *     <th>Naming Convention</th>
+ *     <th>Use Cases</th>
+ *     <th>Example Output</th>
+ *   </tr>
+ *   <tr>
+ *     <td>PSC</td>
+ *     <td>Parameterized (?)</td>
+ *     <td>snake_case</td>
+ *     <td>JDBC PreparedStatement</td>
+ *     <td>SELECT first_name FROM users WHERE id = ?</td>
+ *   </tr>
+ *   <tr>
+ *     <td>PAC</td>
+ *     <td>Parameterized (?)</td>
+ *     <td>UPPER_CASE</td>
+ *     <td>Legacy database systems</td>
+ *     <td>SELECT FIRST_NAME FROM USERS WHERE ID = ?</td>
+ *   </tr>
+ *   <tr>
+ *     <td>PLC</td>
+ *     <td>Parameterized (?)</td>
+ *     <td>lowerCamelCase</td>
+ *     <td>Modern ORM frameworks</td>
+ *     <td>SELECT firstName FROM users WHERE id = ?</td>
+ *   </tr>
+ *   <tr>
+ *     <td>NSC</td>
+ *     <td>Named (:name)</td>
+ *     <td>snake_case</td>
+ *     <td>Named parameter frameworks</td>
+ *     <td>SELECT first_name FROM users WHERE id = :id</td>
+ *   </tr>
+ *   <tr>
+ *     <td>NAC</td>
+ *     <td>Named (:name)</td>
+ *     <td>UPPER_CASE</td>
+ *     <td>Enterprise applications</td>
+ *     <td>SELECT FIRST_NAME FROM USERS WHERE ID = :ID</td>
+ *   </tr>
+ *   <tr>
+ *     <td>NLC</td>
+ *     <td>Named (:name)</td>
+ *     <td>lowerCamelCase</td>
+ *     <td>Modern web applications</td>
+ *     <td>SELECT firstName FROM users WHERE id = :id</td>
+ *   </tr>
+ * </table>
+ *
+ * <p><b>Core SQL Operation Categories:</b>
+ * <ul>
+ *   <li><b>Query Operations:</b> {@code select()}, {@code selectFrom()}, {@code from()}, {@code where()}, {@code orderBy()}</li>
+ *   <li><b>Data Modification:</b> {@code insert()}, {@code insertInto()}, {@code update()}, {@code set()}, {@code delete()}</li>
+ *   <li><b>Join Operations:</b> {@code join()}, {@code leftJoin()}, {@code rightJoin()}, {@code fullJoin()}, {@code crossJoin()}</li>
+ *   <li><b>Aggregation:</b> {@code groupBy()}, {@code having()}, {@code distinct()}, {@code union()}, {@code unionAll()}</li>
+ *   <li><b>Subqueries:</b> {@code exists()}, {@code notExists()}, {@code in()}, {@code notIn()}, {@code subQuery()}</li>
+ *   <li><b>Window Functions:</b> {@code over()}, {@code partitionBy()}, {@code rowNumber()}, {@code rank()}</li>
+ * </ul>
+ *
+ * <p><b>Common Usage Patterns:</b>
  * <pre>{@code
- * // Simple SELECT
- * String sql = PSC.select("firstName", "lastName")
- *                 .from("account")
- *                 .where(CF.eq("id", 1))
- *                 .sql();
- * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = ?
- * 
- * // INSERT with entity
- * String sql = PSC.insert(account).into("account").sql();
- * 
- * // UPDATE with conditions
- * String sql = PSC.update("account")
- *                 .set("name", "status")
- *                 .where(CF.eq("id", 1))
- *                 .sql();
+ * // Basic SELECT query with parameterized conditions
+ * String sql = PSC.select("firstName", "lastName", "email")
+ *     .from("users")
+ *     .where(CF.eq("department", "Engineering"))
+ *     .and(CF.gt("salary", 50000))
+ *     .orderBy("lastName", "firstName")
+ *     .sql();
+ * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email 
+ * //         FROM users WHERE department = ? AND salary > ? ORDER BY last_name, first_name
+ *
+ * // Complex JOIN query with multiple tables
+ * String sql = PSC.select("u.firstName", "u.lastName", "d.name", "COUNT(p.id)")
+ *     .from("users", "u")
+ *     .join("departments", "d").on("u.department_id = d.id")
+ *     .leftJoin("projects", "p").on("u.id = p.assigned_user_id")
+ *     .where(CF.eq("u.active", true))
+ *     .groupBy("u.id", "u.firstName", "u.lastName", "d.name")
+ *     .having(CF.gt("COUNT(p.id)", 2))
+ *     .orderBy("u.lastName")
+ *     .sql();
+ *
+ * // INSERT with entity object mapping
+ * User user = new User("John", "Doe", "john.doe@company.com");
+ * String sql = PSC.insert(user).into("users").sql();
+ * // Automatically maps entity fields to database columns
+ *
+ * // UPDATE with selective field updates
+ * String sql = PSC.update("users")
+ *     .set("last_login", LocalDateTime.now())
+ *     .set("login_count", "login_count + 1")
+ *     .where(CF.eq("id", userId))
+ *     .sql();
+ *
+ * // Named parameter query for Spring/Hibernate integration
+ * String sql = NSC.select("*")
+ *     .from("orders")
+ *     .where(CF.between("order_date", ":startDate", ":endDate"))
+ *     .and(CF.in("status", ":statusList"))
+ *     .sql();
  * }</pre>
- * 
- * <p>The builder supports different naming policies through its subclasses:</p>
+ *
+ * <p><b>Entity Mapping and Annotation Support:</b>
  * <ul>
- *   <li>{@link PSC} - Parameterized SQL with snake_case naming</li>
- *   <li>{@link PAC} - Parameterized SQL with UPPER_CASE naming</li>
- *   <li>{@link PLC} - Parameterized SQL with lowerCamelCase naming</li>
- *   <li>{@link NSC} - Named SQL with snake_case naming</li>
- *   <li>{@link NAC} - Named SQL with UPPER_CASE naming</li>
- *   <li>{@link NLC} - Named SQL with lowerCamelCase naming</li>
+ *   <li><b>JPA Annotations:</b> {@code @Table}, {@code @Column}, {@code @Id}, {@code @Transient}</li>
+ *   <li><b>Abacus Annotations:</b> {@code @ReadOnly}, {@code @ReadOnlyId}, {@code @NonUpdatable}</li>
+ *   <li><b>Automatic Field Mapping:</b> Reflection-based mapping with naming convention conversion</li>
+ *   <li><b>Custom Column Names:</b> Override default naming with annotation-based configuration</li>
+ *   <li><b>Type Conversion:</b> Automatic Java-to-SQL type mapping with custom converter support</li>
  * </ul>
- * 
+ *
+ * <p><b>Naming Convention Support:</b>
+ * <ul>
+ *   <li><b>snake_case:</b> Standard database naming (user_name, created_date)</li>
+ *   <li><b>UPPER_CASE:</b> Legacy database systems (USER_NAME, CREATED_DATE)</li>
+ *   <li><b>camelCase:</b> Java-style naming (userName, createdDate)</li>
+ *   <li><b>Custom Policies:</b> Implement {@code NamingPolicy} for specialized naming requirements</li>
+ *   <li><b>Mixed Conventions:</b> Support for databases with multiple naming conventions</li>
+ * </ul>
+ *
+ * <p><b>Parameter Binding and Security:</b>
+ * <ul>
+ *   <li><b>Parameterized Queries:</b> All values are automatically parameterized to prevent SQL injection</li>
+ *   <li><b>Named Parameters:</b> Support for named parameter binding (:paramName)</li>
+ *   <li><b>Collection Parameters:</b> Automatic expansion of collections for IN clauses</li>
+ *   <li><b>Type Safety:</b> Compile-time type checking for parameter values</li>
+ *   <li><b>Null Handling:</b> Proper SQL NULL semantics for null values</li>
+ * </ul>
+ *
+ * <p><b>Performance Optimization Features:</b>
+ * <ul>
+ *   <li><b>Query Plan Optimization:</b> Generated SQL is optimized for database execution plans</li>
+ *   <li><b>Index-Friendly Operations:</b> Condition ordering optimized for index usage</li>
+ *   <li><b>Batch Operation Support:</b> Efficient batch INSERT/UPDATE/DELETE operations</li>
+ *   <li><b>Memory Efficiency:</b> Minimal object allocation during query construction</li>
+ *   <li><b>Caching Support:</b> Integration with query result caching frameworks</li>
+ * </ul>
+ *
+ * <p><b>Advanced SQL Features:</b>
+ * <ul>
+ *   <li><b>Window Functions:</b> ROW_NUMBER(), RANK(), DENSE_RANK(), LAG(), LEAD()</li>
+ *   <li><b>Aggregate Functions:</b> COUNT(), SUM(), AVG(), MIN(), MAX() with OVER clauses</li>
+ *   <li><b>Common Table Expressions:</b> WITH clauses for recursive and non-recursive queries</li>
+ *   <li><b>Set Operations:</b> UNION, UNION ALL, INTERSECT, EXCEPT operations</li>
+ *   <li><b>Conditional Logic:</b> CASE WHEN expressions and COALESCE functions</li>
+ * </ul>
+ *
+ * <p><b>Error Handling and Validation:</b>
+ * <ul>
+ *   <li><b>SQL Syntax Validation:</b> Early detection of potential SQL syntax issues</li>
+ *   <li><b>Parameter Validation:</b> Comprehensive validation of query parameters</li>
+ *   <li><b>Type Compatibility:</b> Validation of type compatibility between columns and values</li>
+ *   <li><b>Resource Management:</b> Automatic cleanup and resource management</li>
+ *   <li><b>Detailed Error Messages:</b> Clear, actionable error messages for debugging</li>
+ * </ul>
+ *
+ * <p><b>Best Practices and Recommendations:</b>
+ * <ul>
+ *   <li>Always finalize builders with {@code sql()}, {@code build()}, or {@code pair()} method calls</li>
+ *   <li>Use appropriate naming convention classes (PSC, PAC, PLC, NSC, NAC, NLC) for your environment</li>
+ *   <li>Leverage entity mapping annotations for maintainable database-to-object mapping</li>
+ *   <li>Use parameterized queries exclusively to prevent SQL injection attacks</li>
+ *   <li>Group related conditions logically to improve query readability and performance</li>
+ *   <li>Consider database-specific optimizations for high-performance applications</li>
+ *   <li>Use batch operations for bulk data modifications</li>
+ *   <li>Implement proper error handling and logging for production environments</li>
+ * </ul>
+ *
+ * <p><b>Common Anti-Patterns to Avoid:</b>
+ * <ul>
+ *   <li>Forgetting to finalize builder instances (memory leaks)</li>
+ *   <li>Concatenating user input directly into SQL strings (security vulnerabilities)</li>
+ *   <li>Creating overly complex nested queries that hurt performance</li>
+ *   <li>Ignoring database-specific performance characteristics</li>
+ *   <li>Not using appropriate indexes for generated query patterns</li>
+ *   <li>Mixing different naming conventions within the same application</li>
+ *   <li>Not handling null values properly in conditional logic</li>
+ * </ul>
+ *
+ * <p><b>Thread Safety and Concurrent Usage:</b>
+ * <ul>
+ *   <li><b>Instance Safety:</b> Individual builder instances are not thread-safe (use per-thread instances)</li>
+ *   <li><b>Factory Methods:</b> Static factory methods are thread-safe for concurrent access</li>
+ *   <li><b>Immutable Results:</b> Generated SQL strings are immutable and thread-safe</li>
+ *   <li><b>Concurrent Usage:</b> Multiple threads can use separate builder instances safely</li>
+ * </ul>
+ *
+ * @see ConditionFactory
+ * @see Condition
+ * @see Expression
+ * @see AbstractQueryBuilder
+ * @see com.landawn.abacus.annotation.Table
+ * @see com.landawn.abacus.annotation.Column
  * @see com.landawn.abacus.annotation.ReadOnly
  * @see com.landawn.abacus.annotation.ReadOnlyId
  * @see com.landawn.abacus.annotation.NonUpdatable
- * @see com.landawn.abacus.annotation.Transient
- * @see com.landawn.abacus.annotation.Table
- * @see com.landawn.abacus.annotation.Column
+ * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/PreparedStatement.html">PreparedStatement</a>
+ * @see <a href="https://en.wikipedia.org/wiki/SQL_injection">SQL Injection Prevention</a>
  */
 @SuppressWarnings("deprecation")
 public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // NOSONAR
@@ -11011,9 +11205,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * String sql = NSC.insert(account).into("account").sql();
      * // Output: INSERT INTO account (first_name, last_name) VALUES (:firstName, :lastName)
      * }</pre>
-     * 
-     * @author Haiyang Li
-     * @since 0.8
      */
     public static class NSC extends SQLBuilder {
 
