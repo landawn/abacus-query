@@ -64,12 +64,12 @@ public class NotExists extends Cell {
     /**
      * Creates a new NOT EXISTS condition with the specified subquery.
      * The condition evaluates to true when the subquery returns no rows.
-     * 
+     *
      * <p>The subquery typically contains a correlated reference to the outer query,
      * allowing it to check for the absence of related records. Common patterns include
      * checking for missing relationships, finding orphaned records, or identifying
      * entities without certain attributes.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find employees without any assigned projects
@@ -78,9 +78,25 @@ public class NotExists extends Cell {
      *     "WHERE project_assignments.employee_id = employees.id"
      * );
      * NotExists noProjects = new NotExists(projectCheck);
+     * // Generates: NOT EXISTS (SELECT 1 FROM project_assignments WHERE project_assignments.employee_id = employees.id)
+     *
+     * // Find customers who have never placed an order
+     * SubQuery orderCheck = new SubQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+     * NotExists noOrders = new NotExists(orderCheck);
+     * // Generates: NOT EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id)
+     *
+     * // Find products with no reviews
+     * SubQuery reviewCheck = new SubQuery("SELECT 1 FROM reviews WHERE reviews.product_id = products.id");
+     * NotExists noReviews = new NotExists(reviewCheck);
+     * // Generates: NOT EXISTS (SELECT 1 FROM reviews WHERE reviews.product_id = products.id)
+     *
+     * // Find departments without employees
+     * SubQuery empCheck = new SubQuery("SELECT 1 FROM employees WHERE employees.dept_id = departments.id");
+     * NotExists emptyDept = new NotExists(empCheck);
+     * // Generates: NOT EXISTS (SELECT 1 FROM employees WHERE employees.dept_id = departments.id)
      * }</pre>
      *
-     * @param condition the subquery to check for non-existence of rows
+     * @param condition the subquery to check for non-existence of rows. Must not be null.
      * @throws IllegalArgumentException if condition is null
      */
     public NotExists(final SubQuery condition) {

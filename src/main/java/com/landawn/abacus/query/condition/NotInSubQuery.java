@@ -67,7 +67,11 @@ public class NotInSubQuery extends AbstractCondition {
 
     private SubQuery subQuery;
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized NotInSubQuery instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     NotInSubQuery() {
         propName = null;
         propNames = null;
@@ -76,25 +80,27 @@ public class NotInSubQuery extends AbstractCondition {
     /**
      * Constructs a NOT IN subquery condition for a single property.
      * This checks if the property value is not present in the subquery results.
-     * 
+     *
      * <p>Use this constructor when comparing a single column against a subquery
      * that returns a single column of values. This is the most common use case
      * for NOT IN subqueries.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude deleted items
      * SubQuery deletedItems = new SubQuery("SELECT id FROM deleted_items");
      * NotInSubQuery condition = new NotInSubQuery("itemId", deletedItems);
-     * 
+     * // Generates: itemId NOT IN (SELECT id FROM deleted_items)
+     *
      * // Exclude users from specific departments
      * SubQuery deptQuery = new SubQuery("SELECT user_id FROM dept_users WHERE dept = 'HR'");
      * NotInSubQuery notHR = new NotInSubQuery("id", deptQuery);
+     * // Generates: id NOT IN (SELECT user_id FROM dept_users WHERE dept = 'HR')
      * }</pre>
-     * 
-     * @param propName the property/column name (must not be null or empty)
-     * @param subQuery the subquery that returns the values to check against
-     * @throws IllegalArgumentException if propName is null/empty or subQuery is null
+     *
+     * @param propName the property/column name. Must not be null or empty.
+     * @param subQuery the subquery that returns the values to check against. Must not be null.
+     * @throws IllegalArgumentException if propName is null or subQuery is null
      */
     public NotInSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.NOT_IN);
@@ -110,27 +116,31 @@ public class NotInSubQuery extends AbstractCondition {
      * Constructs a NOT IN subquery condition for multiple properties.
      * Used for composite key comparisons where multiple columns need to be
      * checked against a subquery returning multiple columns.
-     * 
+     *
      * <p>This constructor is useful for excluding records based on composite keys
      * or multiple related fields. The number and order of properties must match
      * the columns returned by the subquery.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude based on composite key
      * List<String> props = Arrays.asList("country", "city");
      * SubQuery restricted = new SubQuery("SELECT country, city FROM restricted_locations");
      * NotInSubQuery condition = new NotInSubQuery(props, restricted);
-     * 
+     * // Generates: (country, city) NOT IN (SELECT country, city FROM restricted_locations)
+     *
      * // Exclude duplicate entries
      * List<String> uniqueProps = Arrays.asList("firstName", "lastName", "email");
      * SubQuery existing = new SubQuery("SELECT fname, lname, email FROM existing_users");
      * NotInSubQuery noDupes = new NotInSubQuery(uniqueProps, existing);
+     * // Generates: (firstName, lastName, email) NOT IN (SELECT fname, lname, email FROM existing_users)
      * }</pre>
-     * 
-     * @param propNames collection of property names to check against the subquery results
-     * @param subQuery the subquery that returns the values to check against
-     * @throws IllegalArgumentException if propNames is empty or subQuery is null
+     *
+     * @param propNames collection of property names to check against the subquery results.
+     *                  Must not be null or empty.
+     * @param subQuery the subquery that returns the values to check against. Must not be null.
+     *                 Must return the same number of columns as propNames.size().
+     * @throws IllegalArgumentException if propNames is null/empty or subQuery is null
      */
     public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.NOT_IN);
@@ -185,8 +195,9 @@ public class NotInSubQuery extends AbstractCondition {
 
     /**
      * Gets the list of parameters from the subquery.
-     * These are the parameter values that will be bound when executing the query.
-     * 
+     * These are the parameter values that will be bound to the prepared statement placeholders
+     * when the query is executed.
+     *
      * @return list of parameter values from the subquery
      */
     @Override

@@ -95,22 +95,22 @@ public class In extends AbstractCondition {
      * // Filter by multiple categories
      * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers", "phones"));
      * In categoryFilter = new In("category", categories);
-     * // SQL: category IN ('electronics', 'computers', 'phones')
-     * 
+     * // Generates: category IN ('electronics', 'computers', 'phones')
+     *
      * // Filter by specific IDs
      * List<Long> ids = Arrays.asList(101L, 102L, 103L);
      * In idFilter = new In("product_id", ids);
-     * // SQL: product_id IN (101, 102, 103)
-     * 
+     * // Generates: product_id IN (101, 102, 103)
+     *
      * // Filter by enum values
      * List<String> priorities = Arrays.asList("HIGH", "CRITICAL");
      * In priorityFilter = new In("priority", priorities);
-     * // SQL: priority IN ('HIGH', 'CRITICAL')
+     * // Generates: priority IN ('HIGH', 'CRITICAL')
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name. Must not be null or empty.
      * @param values the collection of values to check against. Must not be null or empty.
-     *               The collection is copied to prevent external modifications.
+     *               The collection is copied internally to prevent external modifications.
      * @throws IllegalArgumentException if propName is null or values is null/empty
      */
     public In(final String propName, final Collection<?> values) {
@@ -133,6 +133,7 @@ public class In extends AbstractCondition {
 
     /**
      * Gets the collection of values to check against.
+     * Returns the internal list of values used in the IN condition.
      *
      * @return the list of values
      */
@@ -142,6 +143,8 @@ public class In extends AbstractCondition {
 
     /**
      * Sets new values for this IN condition.
+     * Note: Modifying conditions after creation is not recommended as they should be immutable.
+     * Consider creating a new condition instead.
      *
      * @param values the new collection of values. Must not be null or empty.
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -156,8 +159,9 @@ public class In extends AbstractCondition {
     /**
      * Gets all parameter values from this IN condition.
      * The returned list contains all the values that the property is being checked against.
+     * These values will be bound to the prepared statement placeholders when the query is executed.
      *
-     * @return the list of values as parameters, or an empty list if no values are set
+     * @return an immutable list of values as parameters, or an empty list if no values are set
      */
     @Override
     public List<Object> getParameters() {
@@ -165,7 +169,7 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * Clears all values in the IN clause by setting them to null to free memory.
+     * Clears all parameter values by setting them to null to free memory.
      *
      * <p>The values list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
@@ -188,6 +192,8 @@ public class In extends AbstractCondition {
 
     /**
      * Creates a deep copy of this IN condition.
+     * The copy includes a new list containing the same values, ensuring complete
+     * independence from the original condition.
      *
      * @param <T> the type of the condition
      * @return a new IN instance with a copy of all values
@@ -204,7 +210,8 @@ public class In extends AbstractCondition {
 
     /**
      * Converts this IN condition to its string representation according to the specified naming policy.
-     * The output format is: propName IN (value1, value2, ..., valueN)
+     * The naming policy is applied to the property name to handle different naming conventions.
+     * Values are formatted appropriately based on their types.
      *
      * @param namingPolicy the naming policy to apply to the property name
      * @return the string representation, e.g., "status IN ('active', 'pending')"

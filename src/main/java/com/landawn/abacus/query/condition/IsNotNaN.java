@@ -75,33 +75,46 @@ public class IsNotNaN extends IsNot {
 
     /**
      * Creates a new IsNotNaN condition for the specified property.
-     * This condition checks if the property's numeric value is NOT NaN (is a valid number),
-     * which is essential for ensuring data quality and preventing calculation errors.
-     * 
+     * This condition generates an "IS NOT NAN" SQL clause to check if the property's
+     * numeric value is NOT NaN (i.e., is a valid number). This is essential for filtering
+     * out invalid data and ensuring that only valid numeric values are processed in
+     * calculations and analyses.
+     *
+     * <p>The generated SQL uses the IS NOT NAN operator because NaN has special comparison
+     * semantics where NaN != NaN evaluates to true, and normal comparison operators cannot
+     * reliably test for the absence of NaN. IS NOT NAN is the correct way to verify a
+     * value is a valid number.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Ensure temperature readings are valid numbers
      * IsNotNaN tempCheck = new IsNotNaN("temperature");
-     * // Generates: temperature IS NOT NAN
-     * 
+     * // Generates SQL: temperature IS NOT NAN
+     *
      * // Find all records with valid calculations
      * IsNotNaN calcCheck = new IsNotNaN("computed_value");
-     * // Generates: computed_value IS NOT NAN
-     * 
+     * // Generates SQL: computed_value IS NOT NAN
+     *
      * // Validate statistical measures
      * IsNotNaN statsCheck = new IsNotNaN("standard_deviation");
-     * // Generates: standard_deviation IS NOT NAN
-     * 
+     * // Generates SQL: standard_deviation IS NOT NAN
+     *
      * // Filter for valid financial metrics
      * IsNotNaN financeCheck = new IsNotNaN("return_on_investment");
-     * // Generates: return_on_investment IS NOT NAN
-     * 
+     * // Generates SQL: return_on_investment IS NOT NAN
+     *
      * // Ensure scientific measurements are valid
      * IsNotNaN measurementCheck = new IsNotNaN("ph_level");
-     * // Generates: ph_level IS NOT NAN
+     * // Generates SQL: ph_level IS NOT NAN
+     *
+     * // Use in query builders to filter valid data
+     * List<Calculation> validCalculations = queryExecutor
+     *     .prepareQuery(Calculation.class)
+     *     .where(new IsNotNaN("result_value"))
+     *     .list();
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name to check for non-NaN (must not be null or empty)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNotNaN(final String propName) {

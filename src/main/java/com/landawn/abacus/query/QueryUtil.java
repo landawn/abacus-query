@@ -121,14 +121,23 @@ public final class QueryUtil {
      * The map includes variations of column names in lowercase and uppercase for case-insensitive lookups.
      * Column names are derived from @Column annotations on the entity properties.
      *
+     * <p>This method is useful when you need to map database result set columns back to entity properties,
+     * especially when dealing with case-insensitive database systems or when column names don't match
+     * the exact case in your code.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Given a User entity with property 'userName' mapped to column 'user_name'
      * ImmutableMap<String, String> columnMap = QueryUtil.getColumn2PropNameMap(User.class);
-     * String propName = columnMap.get("user_name"); // returns "userName"
+     *
+     * String propName = columnMap.get("user_name");   // returns "userName"
+     * String propName2 = columnMap.get("USER_NAME");  // returns "userName"
+     * String propName3 = columnMap.get("User_Name");  // returns null (only exact, lower, upper stored)
      * }</pre>
      *
-     * @param entityClass the entity class to analyze
+     * @param entityClass the entity class to analyze (must not be null)
      * @return an immutable map of column names (including case variations) to property names
+     * @throws IllegalArgumentException if entityClass is null
      */
     public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
@@ -157,12 +166,21 @@ public final class QueryUtil {
 
     /**
      * Gets a mapping of property names to column names for the specified entity class using the given naming policy.
-     * This method handles nested properties and respects @Table annotations for column field configurations.
-     * 
+     * This method handles nested properties and respects {@code @Table} annotations for column field configurations.
+     *
+     * <p>The naming policy determines how property names are converted to column names when no explicit
+     * {@code @Column} annotation is present. For nested bean properties, the method recursively builds mappings
+     * with dot notation (e.g., "address.street" -> "address.street").
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * ImmutableMap<String, String> propMap = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-     * String columnName = propMap.get("firstName"); // returns "first_name"
+     * // Get property to column mapping with underscore naming
+     * ImmutableMap<String, String> propMap = QueryUtil.getProp2ColumnNameMap(
+     *     User.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+     *
+     * String columnName = propMap.get("firstName");   // returns "first_name"
+     * String columnName2 = propMap.get("lastName");   // returns "last_name"
+     * String columnName3 = propMap.get("address.street"); // returns "address.street"
      * }</pre>
      *
      * @param entityClass the entity class to analyze
@@ -260,20 +278,35 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the property names to be used for INSERT operations on the given entity.
+     * Gets the property names to be used for INSERT operations on the given entity instance.
      * This method considers ID fields and excludes properties marked as non-insertable.
-     * If all ID fields have default values (e.g., uninitialized), they are excluded from the insert property list.
-     * If any ID field has a non-default value, all insertable properties including IDs are returned.
+     *
+     * <p>The method intelligently handles ID fields:</p>
+     * <ul>
+     *   <li>If all ID fields have default values (0 for numbers, null for objects), they are excluded from the result</li>
+     *   <li>If any ID field has a non-default value, all insertable properties including IDs are returned</li>
+     *   <li>This allows both auto-generated IDs and manually-assigned IDs to work correctly</li>
+     * </ul>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Entity with auto-generated ID (id = 0 by default)
      * User user = new User();
+     * user.setName("John");
+     * user.setEmail("john@example.com");
      * Collection<String> props = QueryUtil.getInsertPropNames(user, Collections.emptySet());
-     * // Returns properties like ["name", "email", "age"] excluding auto-generated ID
+     * // Returns: ["name", "email"] - excludes "id" since it has default value 0
+     *
+     * // Entity with manually-assigned ID
+     * User user2 = new User();
+     * user2.setId(100L);
+     * user2.setName("Jane");
+     * Collection<String> props2 = QueryUtil.getInsertPropNames(user2, Collections.emptySet());
+     * // Returns: ["id", "name", "email"] - includes "id" since it was explicitly set
      * }</pre>
      *
-     * @param entity the entity instance to analyze
-     * @param excludedPropNames set of property names to exclude from the result
+     * @param entity the entity instance to analyze (must not be null)
+     * @param excludedPropNames set of property names to exclude from the result (can be empty)
      * @return collection of property names suitable for INSERT operations
      * @deprecated for internal use only
      */
@@ -308,17 +341,26 @@ public final class QueryUtil {
 
     /**
      * Gets the property names to be used for INSERT operations on the given entity class.
-     * This method returns all insertable properties excluding those specified in excludedPropNames.
+     * This method returns all insertable properties (including ID fields) excluding those specified in excludedPropNames.
+     *
+     * <p>Unlike the instance-based version, this method does not check for default ID values since no
+     * entity instance is provided. It returns all insertable properties including IDs.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Get all insertable properties except specific ones
      * Collection<String> props = QueryUtil.getInsertPropNames(User.class, Set.of("createdTime"));
-     * // Returns all insertable properties except "createdTime"
+     * // Returns: ["id", "name", "email", "age"] excluding "createdTime"
+     *
+     * // Get all insertable properties
+     * Collection<String> allProps = QueryUtil.getInsertPropNames(User.class, Collections.emptySet());
+     * // Returns: ["id", "name", "email", "age", "createdTime"]
      * }</pre>
      *
-     * @param entityClass the entity class to analyze
-     * @param excludedPropNames set of property names to exclude from the result
+     * @param entityClass the entity class to analyze (must not be null)
+     * @param excludedPropNames set of property names to exclude from the result (can be empty)
      * @return collection of property names suitable for INSERT operations
+     * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal use only
      */
     @Internal
@@ -340,17 +382,33 @@ public final class QueryUtil {
      * Gets the property names to be used for SELECT operations on the given entity class.
      * This method can optionally include sub-entity properties for nested object retrieval.
      *
+     * <p>When includeSubEntityProperties is true, the method returns nested properties using
+     * dot notation (e.g., "address.street"). This is useful for building SELECT statements
+     * that need to retrieve data for nested entity relationships.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Get all properties including nested ones
-     * Collection<String> props = QueryUtil.getSelectPropNames(User.class, true, Collections.emptySet());
-     * // May return ["id", "name", "address.street", "address.city"]
+     * Collection<String> propsWithNested = QueryUtil.getSelectPropNames(
+     *     User.class, true, Collections.emptySet());
+     * // May return: ["id", "name", "email", "address.street", "address.city", "address.zipCode"]
+     *
+     * // Get only top-level properties
+     * Collection<String> propsOnly = QueryUtil.getSelectPropNames(
+     *     User.class, false, Collections.emptySet());
+     * // Returns: ["id", "name", "email"]
+     *
+     * // Exclude specific properties
+     * Collection<String> filtered = QueryUtil.getSelectPropNames(
+     *     User.class, false, Set.of("password", "internalNotes"));
+     * // Returns: ["id", "name", "email"] without excluded properties
      * }</pre>
      *
-     * @param entityClass the entity class to analyze
-     * @param includeSubEntityProperties whether to include properties from nested entities
-     * @param excludedPropNames set of property names to exclude from the result
+     * @param entityClass the entity class to analyze (must not be null)
+     * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
+     * @param excludedPropNames set of property names to exclude from the result (can be empty)
      * @return collection of property names suitable for SELECT operations
+     * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal use only
      */
     @Internal
@@ -370,17 +428,30 @@ public final class QueryUtil {
 
     /**
      * Gets the property names to be used for UPDATE operations on the given entity class.
-     * This method excludes ID fields and properties marked as non-updatable.
+     * This method automatically excludes ID fields and properties marked as non-updatable.
+     *
+     * <p>Properties are considered non-updatable if they are:</p>
+     * <ul>
+     *   <li>Annotated with @Id</li>
+     *   <li>Marked as insertable=false, updatable=false in @Column</li>
+     *   <li>Listed in the excludedPropNames parameter</li>
+     * </ul>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Get updatable properties, excluding specific ones
      * Collection<String> props = QueryUtil.getUpdatePropNames(User.class, Set.of("createdTime"));
-     * // Returns updatable properties like ["name", "email", "lastModified"] excluding ID and createdTime
+     * // Returns: ["name", "email", "lastModified"] (excludes "id" and "createdTime")
+     *
+     * // Get all updatable properties
+     * Collection<String> allUpdateable = QueryUtil.getUpdatePropNames(User.class, Collections.emptySet());
+     * // Returns: ["name", "email", "lastModified", "createdTime"] (excludes only "id")
      * }</pre>
      *
-     * @param entityClass the entity class to analyze
-     * @param excludedPropNames set of property names to exclude from the result
+     * @param entityClass the entity class to analyze (must not be null)
+     * @param excludedPropNames set of property names to exclude from the result (can be empty)
      * @return collection of property names suitable for UPDATE operations
+     * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal use only
      */
     @Internal
@@ -402,14 +473,27 @@ public final class QueryUtil {
      * Gets the ID field names for the specified entity class.
      * ID fields are identified by @Id annotations on the entity properties.
      *
+     * <p>This method returns all properties annotated with @Id. For entities without
+     * explicit ID fields, an empty list is returned.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Single ID field
      * List<String> idFields = QueryUtil.getIdFieldNames(User.class);
-     * // Returns ["id"] for single ID or ["userId", "tenantId"] for composite ID
+     * // Returns: ["id"]
+     *
+     * // Composite ID
+     * List<String> compositeIds = QueryUtil.getIdFieldNames(OrderItem.class);
+     * // Returns: ["orderId", "productId"]
+     *
+     * // No ID fields
+     * List<String> noIds = QueryUtil.getIdFieldNames(DTO.class);
+     * // Returns: [] (empty list)
      * }</pre>
      *
-     * @param targetClass the entity class to analyze
-     * @return an immutable list of ID field names
+     * @param targetClass the entity class to analyze (must not be null)
+     * @return an immutable list of ID field names, or empty list if no ID fields are defined
+     * @throws IllegalArgumentException if targetClass is null
      * @deprecated for internal only.
      */
     @Deprecated
@@ -521,16 +605,29 @@ public final class QueryUtil {
      * Gets the table alias from the @Table annotation on the entity class.
      * The alias can be used in SQL queries to reference the table with a shorter name.
      *
+     * <p>If no @Table annotation exists or if the alias is not specified in the annotation,
+     * this method returns null.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Entity with table alias
      * @Table(name = "user_accounts", alias = "ua")
      * public class UserAccount { ... }
-     * 
-     * String alias = QueryUtil.getTableAlias(UserAccount.class); // Returns "ua"
+     *
+     * String alias = QueryUtil.getTableAlias(UserAccount.class);
+     * // Returns: "ua"
+     *
+     * // Entity without alias
+     * @Table(name = "orders")
+     * public class Order { ... }
+     *
+     * String noAlias = QueryUtil.getTableAlias(Order.class);
+     * // Returns: null
      * }</pre>
      *
-     * @param entityClass the entity class to check
+     * @param entityClass the entity class to check (must not be null)
      * @return the table alias if defined in @Table annotation, null otherwise
+     * @throws IllegalArgumentException if entityClass is null
      */
     public static String getTableAlias(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
@@ -540,35 +637,71 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the table name and optional alias for the entity class using default naming policy.
-     * If @Table annotation is present, uses its values; otherwise derives from class name.
+     * Gets the table name and optional alias for the entity class using the default naming policy.
+     * If @Table annotation is present, uses its values; otherwise derives the table name from the class name
+     * using LOWER_CASE_WITH_UNDERSCORE naming policy.
+     *
+     * <p>The returned string is formatted as "tableName" or "tableName alias" depending on whether
+     * an alias is defined.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Entity with @Table annotation including alias
+     * @Table(name = "user_accounts", alias = "ua")
+     * public class UserAccount { ... }
+     *
      * String tableInfo = QueryUtil.getTableNameAndAlias(UserAccount.class);
-     * // Returns "user_accounts ua" if alias defined, or just "user_account" if not
+     * // Returns: "user_accounts ua"
+     *
+     * // Entity without @Table annotation
+     * public class Customer { ... }
+     *
+     * String derivedTable = QueryUtil.getTableNameAndAlias(Customer.class);
+     * // Returns: "customer" (derived using default naming policy)
      * }</pre>
      *
-     * @param entityClass the entity class to analyze
+     * @param entityClass the entity class to analyze (must not be null)
      * @return the table name, optionally followed by space and alias
+     * @throws IllegalArgumentException if entityClass is null
      */
     public static String getTableNameAndAlias(final Class<?> entityClass) {
         return getTableNameAndAlias(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
     }
 
     /**
-     * Gets the table name and optional alias for the entity class using specified naming policy.
-     * If @Table annotation is present, uses its values; otherwise derives from class name using the naming policy.
+     * Gets the table name and optional alias for the entity class using the specified naming policy.
+     * If @Table annotation is present, uses its values; otherwise derives the table name from the class name
+     * using the provided naming policy.
+     *
+     * <p>The naming policy is only used when no @Table annotation is present. If @Table is defined,
+     * its name and alias values are used directly without any transformation.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String tableInfo = QueryUtil.getTableNameAndAlias(UserAccount.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-     * // Returns "USER_ACCOUNTS UA" if alias defined, or just "USER_ACCOUNT" if not
+     * // With @Table annotation (naming policy is ignored)
+     * @Table(name = "user_accounts", alias = "ua")
+     * public class UserAccount { ... }
+     *
+     * String tableInfo = QueryUtil.getTableNameAndAlias(
+     *     UserAccount.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+     * // Returns: "user_accounts ua" (uses @Table values, not naming policy)
+     *
+     * // Without @Table annotation (naming policy is applied)
+     * public class CustomerOrder { ... }
+     *
+     * String upperCase = QueryUtil.getTableNameAndAlias(
+     *     CustomerOrder.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+     * // Returns: "CUSTOMER_ORDER"
+     *
+     * String lowerCase = QueryUtil.getTableNameAndAlias(
+     *     CustomerOrder.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+     * // Returns: "customer_order"
      * }</pre>
      *
-     * @param entityClass the entity class to analyze
-     * @param namingPolicy the naming policy to use for table name conversion if @Table not present
+     * @param entityClass the entity class to analyze (must not be null)
+     * @param namingPolicy the naming policy to use for table name conversion when @Table is not present
      * @return the table name, optionally followed by space and alias
+     * @throws IllegalArgumentException if entityClass is null
      */
     public static String getTableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);

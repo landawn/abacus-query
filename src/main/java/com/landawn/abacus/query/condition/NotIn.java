@@ -94,13 +94,18 @@ public class NotIn extends AbstractCondition {
      * // Exclude specific product categories
      * List<String> excludedCategories = Arrays.asList("discontinued", "internal", "test");
      * NotIn notIn = new NotIn("category", excludedCategories);
-     * // Use in query: SELECT * FROM products WHERE category NOT IN ('discontinued', 'internal', 'test')
+     * // Generates: category NOT IN ('discontinued', 'internal', 'test')
+     *
+     * // Exclude test users by ID
+     * Set<Integer> testUserIds = new HashSet<>(Arrays.asList(1, 2, 999));
+     * NotIn excludeUsers = new NotIn("user_id", testUserIds);
+     * // Generates: user_id NOT IN (1, 2, 999)
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name. Must not be null or empty.
      * @param values the collection of values that the property should NOT match.
-     *               The collection is copied to ensure immutability.
-     * @throws IllegalArgumentException if propName is null or values is null or empty
+     *               The collection is copied internally to ensure immutability.
+     * @throws IllegalArgumentException if propName is null or values is null/empty
      */
     public NotIn(final String propName, final Collection<?> values) {
         super(Operator.NOT_IN);
@@ -149,7 +154,7 @@ public class NotIn extends AbstractCondition {
      * Returns the values that should be excluded when the query is executed.
      * These values will be bound to the prepared statement placeholders.
      *
-     * @return list of parameter values, or empty list if values is null
+     * @return an immutable list of parameter values, or empty list if values is null
      */
     @Override
     public List<Object> getParameters() {

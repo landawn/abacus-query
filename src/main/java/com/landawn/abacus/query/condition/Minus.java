@@ -86,23 +86,28 @@ public class Minus extends Clause {
 
     /**
      * Creates a new MINUS clause with the specified subquery.
-     * The MINUS operation will return rows from the main query that are not
-     * present in this subquery. The result automatically excludes duplicates.
+     * The MINUS operation returns rows from the main query that are not present in this subquery,
+     * performing a set difference operation (A - B). The result automatically excludes duplicates.
      *
-     * <p>The MINUS operator performs a set difference operation, equivalent to
-     * A - B in set theory. Only rows that appear in the first query but not in
-     * the second query will be returned. Both queries must have compatible
-     * column structures (same number of columns with compatible types).
+     * <p>The MINUS operator performs a set difference operation, equivalent to A - B in set theory.
+     * Only rows that appear in the first query but not in the second query will be returned.
+     * Both queries must have compatible column structures (same number of columns with compatible types).
+     * MINUS is functionally equivalent to EXCEPT and is primarily used in Oracle and DB2 databases.</p>
+     *
+     * <p>MINUS is useful for identifying gaps, finding missing data, or determining records
+     * that exist in one dataset but not another. Common use cases include finding customers
+     * without orders, products never sold, or employees not assigned to projects.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find products that are in inventory but have never been sold
      * SubQuery soldProducts = new SubQuery("SELECT product_id FROM sales");
-     * Minus minus = new Minus(soldProducts);
+     * Minus unsoldProducts = new Minus(soldProducts);
      * // When used with a query selecting from inventory:
      * // SELECT product_id FROM inventory
      * // MINUS
      * // SELECT product_id FROM sales
+     * // Returns product_id values in inventory but not in sales
      *
      * // Find active employees not assigned to any project
      * SubQuery assignedEmployees = new SubQuery("SELECT employee_id FROM project_assignments");
@@ -110,12 +115,30 @@ public class Minus extends Clause {
      * // SELECT employee_id FROM employees WHERE status = 'ACTIVE'
      * // MINUS
      * // SELECT employee_id FROM project_assignments
+     * // Returns active employees with no project assignments
+     *
+     * // Find customers who have never placed an order
+     * SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+     * Minus customersWithoutOrders = new Minus(customersWithOrders);
+     * // SELECT customer_id FROM customers
+     * // MINUS
+     * // SELECT DISTINCT customer_id FROM orders
+     * // Returns customers who have never ordered
+     *
+     * // Find skills not required for a position
+     * SubQuery requiredSkills = new SubQuery("SELECT skill_id FROM position_requirements WHERE position_id = 5");
+     * Minus optionalSkills = new Minus(requiredSkills);
+     * // SELECT skill_id FROM all_skills
+     * // MINUS
+     * // SELECT skill_id FROM position_requirements WHERE position_id = 5
      * }</pre>
      *
      * @param condition the subquery whose results will be subtracted from the main query. Must not be null.
+     *                  The subquery must have the same number of columns with compatible types as the main query.
      * @throws IllegalArgumentException if condition is null
      * @see Except
      * @see Union
+     * @see Intersect
      */
     public Minus(final SubQuery condition) {
         super(Operator.MINUS, condition);

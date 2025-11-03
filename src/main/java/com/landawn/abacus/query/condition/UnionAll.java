@@ -72,24 +72,47 @@ public class UnionAll extends Clause {
     }
 
     /**
-     * Constructs a UNION ALL clause with the specified subquery.
-     * The subquery will be combined with the main query, keeping all rows including duplicates.
-     * 
+     * Creates a new UNION ALL clause with the specified subquery.
+     * The UNION ALL operation will combine results from the main query and this subquery,
+     * keeping all rows including duplicates. This provides better performance than UNION
+     * since it skips the duplicate elimination step.
+     *
      * <p>The subquery must return the same number of columns as the main query,
      * and the data types must be compatible. The column names from the first query
      * in the UNION ALL operation will be used for the final result set.</p>
-     * 
+     *
+     * <p>Use UNION ALL when you know there are no duplicates in the combined result,
+     * or when you want to preserve all rows regardless of duplication. This is
+     * significantly faster than UNION for large datasets.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Combine orders from multiple regions
-     * SubQuery eastRegion = new SubQuery("SELECT * FROM orders WHERE region = 'EAST'");
-     * SubQuery westRegion = new SubQuery("SELECT * FROM orders WHERE region = 'WEST'");
-     * UnionAll allOrders = new UnionAll(westRegion);
-     * // Keeps all orders, even if some might appear in both regions
+     * SubQuery eastOrders = new SubQuery("SELECT order_id, amount FROM orders WHERE region = 'EAST'");
+     * UnionAll allOrders = new UnionAll(eastOrders);
+     * // When combined with West region query:
+     * // SELECT order_id, amount FROM orders WHERE region = 'WEST'
+     * // UNION ALL
+     * // SELECT order_id, amount FROM orders WHERE region = 'EAST'
+     * // Keeps all orders, including any duplicates
+     *
+     * // Merge current and archived transactions
+     * SubQuery archivedTxns = new SubQuery("SELECT txn_id, date, amount FROM archived_transactions");
+     * UnionAll allTxns = new UnionAll(archivedTxns);
+     * // Combines with current transactions, preserving all records
+     *
+     * // Combine data from partitioned tables
+     * SubQuery q1Data = new SubQuery("SELECT * FROM sales_q1");
+     * SubQuery q2Data = new SubQuery("SELECT * FROM sales_q2");
+     * UnionAll allSales = new UnionAll(q2Data);
+     * // Efficiently combines quarterly data without duplicate check
      * }</pre>
      *
-     * @param condition the subquery to combine with UNION ALL
+     * @param condition the subquery to combine with UNION ALL. Must not be null. The subquery
+     *                  must have the same number of columns with compatible types as the main query.
      * @throws IllegalArgumentException if condition is null
+     * @see Union
+     * @see Intersect
      */
     public UnionAll(final SubQuery condition) {
         super(Operator.UNION_ALL, condition);

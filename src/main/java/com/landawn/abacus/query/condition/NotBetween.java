@@ -63,8 +63,9 @@ import com.landawn.abacus.util.Strings;
  * // Results in: order_date NOT BETWEEN '2024-01-01' AND '2024-12-31'
  * }</pre>
  * 
+ * @see AbstractCondition
  * @see Between
- * @see NotIn
+ * @see Condition
  */
 public class NotBetween extends AbstractCondition {
     // For Kryo

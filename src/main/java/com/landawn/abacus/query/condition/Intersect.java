@@ -73,30 +73,48 @@ public class Intersect extends Clause {
     /**
      * Creates a new INTERSECT clause with the specified subquery.
      * The INTERSECT operation will return only rows that appear in both
-     * the main query and this subquery. This is the primary way to find
-     * common records between two result sets.
-     * 
+     * the main query and this subquery, automatically removing duplicates.
+     * This is the primary way to find common records between two result sets.
+     *
+     * <p>INTERSECT is useful for finding the intersection of two datasets,
+     * such as customers who meet multiple criteria, products available in
+     * multiple locations, or users with overlapping permissions. Both queries
+     * must have the same number of columns with compatible data types.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find users who are both premium AND active in the last 30 days
-     * SubQuery premiumUsers = new SubQuery("SELECT user_id FROM users WHERE plan = 'premium'");
      * SubQuery activeUsers = new SubQuery("SELECT user_id FROM activity WHERE last_login > CURRENT_DATE - 30");
      * Intersect premiumActive = new Intersect(activeUsers);
-     * 
+     * // When combined with premium users query:
+     * // SELECT user_id FROM users WHERE plan = 'premium'
+     * // INTERSECT
+     * // SELECT user_id FROM activity WHERE last_login > CURRENT_DATE - 30
+     * // Returns only user_id values present in both result sets
+     *
      * // Find employees who work in both projects
-     * SubQuery projectA = new SubQuery("SELECT employee_id FROM assignments WHERE project = 'A'");
      * SubQuery projectB = new SubQuery("SELECT employee_id FROM assignments WHERE project = 'B'");
      * Intersect bothProjects = new Intersect(projectB);
-     * 
+     * // Use with project A query to find employees assigned to both projects
+     *
      * // Find common skills between two job positions
-     * SubQuery position1Skills = new SubQuery("SELECT skill_id FROM position_skills WHERE position_id = 1");
      * SubQuery position2Skills = new SubQuery("SELECT skill_id FROM position_skills WHERE position_id = 2");
      * Intersect commonSkills = new Intersect(position2Skills);
+     * // Identifies skills required by both positions
+     *
+     * // Find products in stock AND on promotion
+     * SubQuery onPromotion = new SubQuery("SELECT product_id FROM promotions WHERE active = true");
+     * Intersect availablePromotions = new Intersect(onPromotion);
+     * // SELECT product_id FROM inventory WHERE quantity > 0
+     * // INTERSECT
+     * // SELECT product_id FROM promotions WHERE active = true
      * }</pre>
      *
      * @param condition the subquery to intersect with. Must not be null. The subquery should
      *                  return the same number of columns with compatible types as the main query.
      * @throws IllegalArgumentException if condition is null
+     * @see Union
+     * @see Except
      */
     public Intersect(final SubQuery condition) {
         super(Operator.INTERSECT, condition);

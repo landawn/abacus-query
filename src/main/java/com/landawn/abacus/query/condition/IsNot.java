@@ -42,10 +42,9 @@ package com.landawn.abacus.query.condition;
  * // Generates: status IS NOT UNKNOWN
  * }</pre>
  * 
- * @see IsNotNull
- * @see IsNotNaN
- * @see IsNotInfinite
  * @see Binary
+ * @see Is
+ * @see Condition
  */
 public class IsNot extends Binary {
 

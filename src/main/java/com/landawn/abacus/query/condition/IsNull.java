@@ -89,34 +89,44 @@ public class IsNull extends Is {
 
     /**
      * Creates a new IsNull condition for the specified property.
-     * This condition checks if the property value is NULL, which indicates
-     * the absence of a value in the database. This is different from empty
-     * string or zero values.
+     * This condition generates an "IS NULL" SQL clause to check if the property value is NULL,
+     * which represents the absence of a value in the database. NULL is distinctly different
+     * from empty strings, zero values, or false boolean values.
+     *
+     * <p>The generated SQL uses the IS NULL operator (not = NULL) because NULL comparisons
+     * have special semantics in SQL where NULL = NULL evaluates to unknown/false, but
+     * NULL IS NULL evaluates to true.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find records with missing data
      * IsNull birthdateCheck = new IsNull("birth_date");
-     * // SQL: birth_date IS NULL
-     * 
+     * // Generates SQL: birth_date IS NULL
+     *
      * // Find unprocessed records
      * IsNull processedCheck = new IsNull("processed_date");
-     * // SQL: processed_date IS NULL
-     * 
+     * // Generates SQL: processed_date IS NULL
+     *
      * // Find products without descriptions
      * IsNull descCheck = new IsNull("description");
-     * // SQL: description IS NULL
-     * 
-     * // Find employees without managers (top-level)
+     * // Generates SQL: description IS NULL
+     *
+     * // Find employees without managers (top-level employees)
      * IsNull managerCheck = new IsNull("manager_id");
-     * // SQL: manager_id IS NULL
-     * 
+     * // Generates SQL: manager_id IS NULL
+     *
      * // Check for missing optional fields
      * IsNull middleNameCheck = new IsNull("middle_name");
-     * // SQL: middle_name IS NULL
+     * // Generates SQL: middle_name IS NULL
+     *
+     * // Use in query builders
+     * List<User> usersWithoutEmail = queryExecutor
+     *     .prepareQuery(User.class)
+     *     .where(new IsNull("email"))
+     *     .list();
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name to check for NULL (must not be null or empty)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNull(final String propName) {

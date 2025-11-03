@@ -155,22 +155,34 @@ public final class ParsedSql {
      * Parses the given SQL string and returns a ParsedSql instance.
      * This method uses an internal cache to avoid re-parsing the same SQL statements.
      * The SQL is analyzed to extract named parameters and convert them to standard JDBC placeholders.
-     * 
+     *
+     * <p>The parser automatically detects and converts different parameter styles:</p>
+     * <ul>
+     *   <li>Named parameters starting with ':' (e.g., :userId)</li>
+     *   <li>iBatis/MyBatis style parameters enclosed in #{} (e.g., #{userName})</li>
+     *   <li>Standard JDBC placeholders (?)</li>
+     * </ul>
+     *
+     * <p>Note: Mixing different parameter styles in the same SQL statement will result in an IllegalArgumentException.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Using named parameters
      * ParsedSql ps1 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-     * 
+     * System.out.println(ps1.getParameterizedSql()); // "SELECT * FROM users WHERE id = ?"
+     *
      * // Using iBatis/MyBatis style
      * ParsedSql ps2 = ParsedSql.parse("INSERT INTO users (name, email) VALUES (#{name}, #{email})");
-     * 
+     * System.out.println(ps2.getNamedParameters()); // ["name", "email"]
+     *
      * // Using standard JDBC placeholders
      * ParsedSql ps3 = ParsedSql.parse("UPDATE users SET status = ? WHERE id = ?");
+     * System.out.println(ps3.getParameterCount()); // 2
      * }</pre>
      *
-     * @param sql the SQL string to parse
+     * @param sql the SQL string to parse (must not be null or empty)
      * @return a ParsedSql instance containing the parsed information
-     * @throws IllegalArgumentException if sql is null or empty
+     * @throws IllegalArgumentException if sql is null, empty, or mixes different parameter styles
      */
     public static ParsedSql parse(final String sql) {
         N.checkArgNotEmpty(sql, "sql");
@@ -229,17 +241,24 @@ public final class ParsedSql {
 
     /**
      * Gets the parameterized SQL formatted for the specified database system.
-     * For Couchbase, parameters are converted to $1, $2, etc. format.
+     * When isForCouchbase is true, JDBC placeholders (?) are converted to Couchbase positional parameters ($1, $2, etc.).
+     * When false, returns standard JDBC SQL with ? placeholders.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
-     * String jdbcSql = parsed.getParameterizedSql(false); // Returns: "SELECT * FROM users WHERE id = ? AND status = ?"
-     * String couchbaseSql = parsed.getParameterizedSql(true); // Returns: "SELECT * FROM users WHERE id = $1 AND status = $2"
+     *
+     * // Get standard JDBC format
+     * String jdbcSql = parsed.getParameterizedSql(false);
+     * // Returns: "SELECT * FROM users WHERE id = ? AND status = ?"
+     *
+     * // Get Couchbase format
+     * String couchbaseSql = parsed.getParameterizedSql(true);
+     * // Returns: "SELECT * FROM users WHERE id = $1 AND status = $2"
      * }</pre>
      *
-     * @param isForCouchbase true to get Couchbase-formatted SQL, {@code false} for standard JDBC format
-     * @return the parameterized SQL string
+     * @param isForCouchbase {@code true} to get Couchbase-formatted SQL with $n parameters, {@code false} for standard JDBC format with ? placeholders
+     * @return the parameterized SQL string in the requested format
      */
     public String getParameterizedSql(final boolean isForCouchbase) {
         if (isForCouchbase) {
@@ -271,16 +290,24 @@ public final class ParsedSql {
 
     /**
      * Gets the list of named parameters formatted for the specified database system.
-     * For Couchbase, this may include positional parameter names if no named parameters exist.
+     * When isForCouchbase is true, returns parameter names suitable for Couchbase N1QL positional binding.
+     * For SQL with positional parameters only (using ?), Couchbase format returns an empty list since
+     * parameters are bound by position.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("UPDATE users SET name = :name, email = :email WHERE id = :id");
-     * List<String> jdbcParams = parsed.getNamedParameters(false); // Returns: ["name", "email", "id"]
-     * List<String> couchbaseParams = parsed.getNamedParameters(true); // Returns: ["name", "email", "id"]
+     *
+     * // Get standard named parameters
+     * List<String> jdbcParams = parsed.getNamedParameters(false);
+     * // Returns: ["name", "email", "id"]
+     *
+     * // Get Couchbase-formatted parameters
+     * List<String> couchbaseParams = parsed.getNamedParameters(true);
+     * // Returns: ["name", "email", "id"] (same in this case)
      * }</pre>
      *
-     * @param isForCouchbase true to get Couchbase-formatted parameters, {@code false} for standard format
+     * @param isForCouchbase {@code true} to get Couchbase-formatted parameter names, {@code false} for standard format
      * @return an immutable list of parameter names
      */
     public ImmutableList<String> getNamedParameters(final boolean isForCouchbase) {

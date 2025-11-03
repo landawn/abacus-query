@@ -79,17 +79,25 @@ public final class Selection {
 
     /**
      * Creates a new MultiSelectionBuilder for building complex multi-table selections.
-     * This builder provides a fluent API for constructing multiple Selection objects.
-     * 
+     * This builder provides a fluent API for constructing multiple Selection objects that can be
+     * used with SQLBuilder to create complex SELECT statements involving multiple tables.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Build multiple selections and apply to SQLBuilder
      * SQLBuilder sqlBuilder = Selection.multiSelectionBuilder()
      *     .add(User.class, "u", "user")
      *     .add(Order.class, "o", "order", Arrays.asList("id", "orderDate", "total"))
      *     .apply(PSC::selectFrom);
+     *
+     * // Or build and use separately
+     * List<Selection> selections = Selection.multiSelectionBuilder()
+     *     .add(User.class, "u", "user")
+     *     .add(Address.class, "a", "address")
+     *     .build();
      * }</pre>
      *
-     * @return a new MultiSelectionBuilder instance
+     * @return a new MultiSelectionBuilder instance for constructing multi-table selections
      */
     public static MultiSelectionBuilder multiSelectionBuilder() {
         return new MultiSelectionBuilder();
@@ -252,15 +260,23 @@ public final class Selection {
         }
 
         /**
-         * Applies the built selections to the SQLBuilder function and returns the resulting SQLBuilder.
-         * This method provides a convenient way to integrate the selections with SQLBuilder methods.
-         * 
+         * Applies the built selections to the provided SQLBuilder function and returns the resulting SQLBuilder.
+         * This method provides a convenient way to integrate the selections directly with SQLBuilder methods
+         * without needing to call build() explicitly.
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
+         * // Using with PreparedSQLBuilder (PSC)
          * SQLBuilder query = Selection.multiSelectionBuilder()
          *     .add(User.class, "u", "user")
          *     .add(Order.class, "o", "order")
          *     .apply(PSC::selectFrom);
+         *
+         * // Using with NamedSQLBuilder (NSC)
+         * SQLBuilder namedQuery = Selection.multiSelectionBuilder()
+         *     .add(Product.class, "p", "product")
+         *     .add(Category.class, "c", "category")
+         *     .apply(NSC::select);
          * }</pre>
          *
          * @param func the function to apply the selections to (e.g., PSC::select, NSC::selectFrom)

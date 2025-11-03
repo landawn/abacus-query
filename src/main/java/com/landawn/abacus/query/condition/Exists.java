@@ -74,38 +74,42 @@ public class Exists extends Cell {
     /**
      * Creates a new EXISTS condition with the specified subquery.
      * The condition evaluates to true if the subquery returns at least one row.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if employee has any subordinates
-     * SubQuery subordinatesQuery = CF.subQuery(
+     * SubQuery subordinatesQuery = new SubQuery(
      *     "SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id"
      * );
      * Exists hasSubordinates = new Exists(subordinatesQuery);
-     * 
-     * // Use in a query to find all managers
-     * Criteria criteria = CF.criteria()
-     *     .where(hasSubordinates);
-     * 
+     * // Generates: EXISTS (SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id)
+     *
      * // Check if product is in any active order
-     * SubQuery activeOrderQuery = CF.subQuery(
+     * SubQuery activeOrderQuery = new SubQuery(
      *     "SELECT 1 FROM order_items oi " +
      *     "JOIN orders o ON oi.order_id = o.id " +
      *     "WHERE oi.product_id = products.id " +
      *     "AND o.status = 'active'"
      * );
      * Exists inActiveOrder = new Exists(activeOrderQuery);
-     * 
-     * // More complex: Find users with specific permissions
-     * SubQuery permissionQuery = CF.subQuery(
+     * // Generates: EXISTS (SELECT 1 FROM order_items oi JOIN orders o ...)
+     *
+     * // Find users with specific permissions
+     * SubQuery permissionQuery = new SubQuery(
      *     "SELECT 1 FROM user_permissions up " +
      *     "WHERE up.user_id = users.id " +
      *     "AND up.permission = 'admin'"
      * );
      * Exists isAdmin = new Exists(permissionQuery);
+     * // Generates: EXISTS (SELECT 1 FROM user_permissions up WHERE ...)
+     *
+     * // Find departments with employees
+     * SubQuery hasEmployees = new SubQuery("SELECT 1 FROM employees WHERE dept_id = departments.id");
+     * Exists deptHasEmployees = new Exists(hasEmployees);
+     * // Generates: EXISTS (SELECT 1 FROM employees WHERE dept_id = departments.id)
      * }</pre>
-     * 
-     * @param condition the subquery to check for existence of rows
+     *
+     * @param condition the subquery to check for existence of rows. Must not be null.
      * @throws IllegalArgumentException if condition is null
      */
     public Exists(final SubQuery condition) {

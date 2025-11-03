@@ -52,8 +52,6 @@ package com.landawn.abacus.query.condition;
  * 
  * @see Binary
  * @see NotEqual
- * @see IsNull
- * @see In
  * @see Condition
  */
 public class Equal extends Binary {

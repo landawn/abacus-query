@@ -87,34 +87,45 @@ public class IsNaN extends Is {
 
     /**
      * Creates a new IsNaN condition for the specified property.
-     * This condition checks if the property's numeric value is NaN (Not a Number),
-     * which indicates an invalid or undefined mathematical result. This is crucial
-     * for data validation and identifying calculation errors.
-     * 
+     * This condition generates an "IS NAN" SQL clause to check if the property's numeric
+     * value is NaN (Not a Number), which represents an invalid or undefined mathematical
+     * result. This is crucial for data validation, quality checks, and identifying
+     * calculation errors in floating-point operations.
+     *
+     * <p>The generated SQL uses the IS NAN operator because NaN has special comparison
+     * semantics where NaN != NaN evaluates to true, and NaN == NaN evaluates to false.
+     * The IS NAN operator is the only reliable way to test for NaN values.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if temperature reading is NaN
      * IsNaN tempCheck = new IsNaN("temperature");
-     * // Generates: temperature IS NAN
-     * 
+     * // Generates SQL: temperature IS NAN
+     *
      * // Find all records with invalid calculations
      * IsNaN calcError = new IsNaN("computed_value");
-     * // Generates: computed_value IS NAN
-     * 
-     * // Identify division errors
+     * // Generates SQL: computed_value IS NAN
+     *
+     * // Identify division by zero errors (0/0 results in NaN)
      * IsNaN divError = new IsNaN("average_score");
-     * // Generates: average_score IS NAN
-     * 
+     * // Generates SQL: average_score IS NAN
+     *
      * // Check statistical calculations
      * IsNaN statsCheck = new IsNaN("standard_deviation");
-     * // Generates: standard_deviation IS NAN
-     * 
+     * // Generates SQL: standard_deviation IS NAN
+     *
      * // Validate sensor readings
      * IsNaN sensorError = new IsNaN("pressure_reading");
-     * // Generates: pressure_reading IS NAN
+     * // Generates SQL: pressure_reading IS NAN
+     *
+     * // Use in query builders to find problematic data
+     * List<Measurement> invalidMeasurements = queryExecutor
+     *     .prepareQuery(Measurement.class)
+     *     .where(new IsNaN("sensor_value"))
+     *     .list();
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name to check for NaN (must not be null or empty)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNaN(final String propName) {

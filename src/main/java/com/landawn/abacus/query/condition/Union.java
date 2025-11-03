@@ -98,16 +98,42 @@ public class Union extends Clause {
     }
 
     /**
-     * Constructs a UNION clause with the specified subquery.
+     * Creates a new UNION clause with the specified subquery.
+     * The UNION operation will combine results from the main query and this subquery,
+     * automatically removing duplicate rows. Both queries must have the same number of
+     * columns with compatible data types.
+     *
+     * <p>The UNION operator is useful when you need to merge data from different sources
+     * or conditions while ensuring result uniqueness. It performs duplicate elimination
+     * which may impact performance for large result sets.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery activeUsers = new SubQuery("SELECT user_id FROM active_users");
-     * Union union = new Union(activeUsers);
+     * // Combine customers from different regions
+     * SubQuery eastCustomers = new SubQuery("SELECT customer_id, name FROM customers WHERE region = 'East'");
+     * Union union = new Union(eastCustomers);
+     * // When combined with West region query:
+     * // SELECT customer_id, name FROM customers WHERE region = 'West'
+     * // UNION
+     * // SELECT customer_id, name FROM customers WHERE region = 'East'
+     * // Duplicates are automatically removed
+     *
+     * // Merge active and inactive users
+     * SubQuery inactiveUsers = new SubQuery("SELECT user_id, email FROM inactive_users");
+     * Union allUsers = new Union(inactiveUsers);
+     * // Use with active users query to get complete list without duplicates
+     *
+     * // Combine current and historical orders
+     * SubQuery historicalOrders = new SubQuery("SELECT order_id, total FROM archived_orders");
+     * Union allOrders = new Union(historicalOrders);
+     * // Merges with current orders, removing any duplicate order_id entries
      * }</pre>
      *
-     * @param condition the subquery to be combined using UNION. Must not be null.
+     * @param condition the subquery to be combined using UNION. Must not be null. The subquery
+     *                  must have the same number of columns with compatible types as the main query.
      * @throws IllegalArgumentException if condition is null
+     * @see UnionAll
+     * @see Intersect
      */
     public Union(final SubQuery condition) {
         super(Operator.UNION, condition);

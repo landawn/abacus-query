@@ -48,9 +48,9 @@ package com.landawn.abacus.query.condition;
  * // Results in: created != '2024-01-01'
  * }</pre>
  * 
+ * @see Binary
  * @see Equal
- * @see IsNull
- * @see IsNotNull
+ * @see Condition
  */
 public class NotEqual extends Binary {
 

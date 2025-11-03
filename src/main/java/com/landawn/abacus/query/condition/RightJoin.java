@@ -44,18 +44,26 @@ import java.util.Collection;
  * <pre>{@code
  * // Simple right join
  * RightJoin join1 = new RightJoin("departments");
- * // Results in: RIGHT JOIN departments
- * 
- * // Right join with condition
- * On onCondition = new On("employees.dept_id", "departments.id");
- * RightJoin join2 = new RightJoin("departments", onCondition);
- * // Results in: RIGHT JOIN departments ON employees.dept_id = departments.id
+ * // Generates: RIGHT JOIN departments
+ *
+ * // Right join with ON condition
+ * RightJoin join2 = new RightJoin("departments",
+ *     new On("employees.dept_id", "departments.id"));
+ * // Generates: RIGHT JOIN departments ON employees.dept_id = departments.id
  * // This returns all departments, even those with no employees
- * 
- * // Multiple table right join
- * List<String> tables = Arrays.asList("orders", "order_items");
- * Condition condition = new Equal("orders.id", new Expression("order_items.order_id"));
- * RightJoin join3 = new RightJoin(tables, condition);
+ *
+ * // Complex right join with multiple conditions
+ * RightJoin complexJoin = new RightJoin("products p",
+ *     new And(
+ *         new On("order_items.product_id", "p.id"),
+ *         new Equal("p.active", true)
+ *     ));
+ * // Generates: RIGHT JOIN products p (ON order_items.product_id = p.id) AND (p.active = true)
+ *
+ * // Using Expression for custom join logic
+ * RightJoin exprJoin = new RightJoin("departments",
+ *     ConditionFactory.expr("employees.dept_id = departments.id"));
+ * // Generates: RIGHT JOIN departments employees.dept_id = departments.id
  * }</pre>
  * 
  * @see LeftJoin
@@ -104,30 +112,35 @@ public class RightJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join orders with all products (use Expression for column references)
+     * // Join orders with all products using ON
      * RightJoin allProducts = new RightJoin("products p",
-     *     ConditionFactory.expr("order_items.product_id = p.id"));
-     * // Generates: RIGHT JOIN products p order_items.product_id = p.id
+     *     new On("order_items.product_id", "p.id"));
+     * // Generates: RIGHT JOIN products p ON order_items.product_id = p.id
      *
      * // Find all departments including those with no employees
      * RightJoin allDepts = new RightJoin("departments d",
-     *     ConditionFactory.expr("employees.dept_id = d.id"));
-     * // Generates: RIGHT JOIN departments d employees.dept_id = d.id
+     *     new On("employees.dept_id", "d.id"));
+     * // Generates: RIGHT JOIN departments d ON employees.dept_id = d.id
      *
-     * // Complex join with filtering in the join condition
+     * // Complex join with ON condition and filtering
      * RightJoin activeCategories = new RightJoin("categories c",
      *     new And(
-     *         ConditionFactory.expr("products.category_id = c.id"),
+     *         new On("products.category_id", "c.id"),
      *         new Equal("c.active", true),
      *         new GreaterThan("c.created_date", "2023-01-01")
      *     ));
-     * // Generates: RIGHT JOIN categories c ((products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01'))
+     * // Generates: RIGHT JOIN categories c (ON products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01')
+     *
+     * // Using Expression for custom join logic
+     * RightJoin exprJoin = new RightJoin("products p",
+     *     ConditionFactory.expr("order_items.product_id = p.id AND p.stock > 0"));
+     * // Generates: RIGHT JOIN products p order_items.product_id = p.id AND p.stock > 0
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param condition the join condition (typically an equality condition between columns).
+     * @param condition the join condition (typically an On condition for column equality).
      *                  Can be a complex condition using And/Or for multiple criteria.
-     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public RightJoin(final String joinEntity, final Condition condition) {
         super(Operator.RIGHT_JOIN, joinEntity, condition);
@@ -139,14 +152,19 @@ public class RightJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join multiple related tables
+     * // Join multiple related tables with ON conditions
      * List<String> tables = Arrays.asList("categories c", "subcategories sc");
      * RightJoin join = new RightJoin(tables,
      *     new And(
-     *         ConditionFactory.expr("p.category_id = c.id"),
-     *         ConditionFactory.expr("p.subcategory_id = sc.id")
+     *         new On("p.category_id", "c.id"),
+     *         new On("p.subcategory_id", "sc.id")
      *     ));
-     * // Generates: RIGHT JOIN categories c, subcategories sc ((p.category_id = c.id) AND (p.subcategory_id = sc.id))
+     * // Generates: RIGHT JOIN categories c, subcategories sc (ON p.category_id = c.id) AND (ON p.subcategory_id = sc.id)
+     *
+     * // Using Expression for multiple tables
+     * RightJoin exprJoin = new RightJoin(tables,
+     *     ConditionFactory.expr("p.category_id = c.id AND p.subcategory_id = sc.id"));
+     * // Generates: RIGHT JOIN categories c, subcategories sc p.category_id = c.id AND p.subcategory_id = sc.id
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

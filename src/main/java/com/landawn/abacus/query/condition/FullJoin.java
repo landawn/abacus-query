@@ -35,8 +35,9 @@ import java.util.Collection;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Full join to see all users and all orders
- * FullJoin join = new FullJoin("orders", CF.eq("users.id", "orders.user_id"));
- * // Results in: FULL JOIN orders ON users.id = orders.user_id
+ * FullJoin join = new FullJoin("orders",
+ *     new On("users.id", "orders.user_id"));
+ * // Generates: FULL JOIN orders ON users.id = orders.user_id
  * // Returns:
  * // - Users with orders (matched records)
  * // - Users without orders (NULLs for order columns)
@@ -44,8 +45,16 @@ import java.util.Collection;
  *
  * // Full join to compare two inventory systems
  * FullJoin inventoryJoin = new FullJoin("warehouse_inventory",
- *     CF.eq("online_inventory.product_id", "warehouse_inventory.product_id"));
+ *     new On("online_inventory.product_id", "warehouse_inventory.product_id"));
  * // Shows all products from both systems, highlighting discrepancies
+ *
+ * // Complex full join with filtering
+ * FullJoin complexJoin = new FullJoin("external_data e",
+ *     new And(
+ *         new On("internal_data.id", "e.id"),
+ *         new GreaterThan("e.updated_date", "2024-01-01")
+ *     ));
+ * // Generates: FULL JOIN external_data e (ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01')
  * }</pre>
  * 
  * @see Join
@@ -95,30 +104,35 @@ public class FullJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join employees with departments (use Expression for column references)
+     * // Join employees with departments using ON
      * FullJoin empDept = new FullJoin("departments d",
-     *     ConditionFactory.expr("employees.dept_id = d.id"));
-     * // Generates: FULL JOIN departments d employees.dept_id = d.id
+     *     new On("employees.dept_id", "d.id"));
+     * // Generates: FULL JOIN departments d ON employees.dept_id = d.id
      *
      * // Find all users and orders, showing orphaned records
      * FullJoin allData = new FullJoin("orders o",
-     *     ConditionFactory.expr("users.id = o.user_id"));
-     * // Generates: FULL JOIN orders o users.id = o.user_id
+     *     new On("users.id", "o.user_id"));
+     * // Generates: FULL JOIN orders o ON users.id = o.user_id
      *
-     * // Complex join with filtering in the join condition
+     * // Complex join with ON condition and filtering
      * FullJoin reconcileData = new FullJoin("external_inventory ei",
      *     new And(
-     *         ConditionFactory.expr("internal_inventory.product_id = ei.product_id"),
+     *         new On("internal_inventory.product_id", "ei.product_id"),
      *         new Equal("ei.active", true),
      *         new GreaterThan("ei.updated_date", "2023-01-01")
      *     ));
-     * // Generates: FULL JOIN external_inventory ei ((internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
+     * // Generates: FULL JOIN external_inventory ei (ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01')
+     *
+     * // Using Expression for custom join logic
+     * FullJoin exprJoin = new FullJoin("departments d",
+     *     ConditionFactory.expr("employees.dept_id = d.id AND d.active = true"));
+     * // Generates: FULL JOIN departments d employees.dept_id = d.id AND d.active = true
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param condition the join condition (typically an equality condition between columns).
+     * @param condition the join condition (typically an On condition for column equality).
      *                  Can be a complex condition using And/Or for multiple criteria.
-     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public FullJoin(final String joinEntity, final Condition condition) {
         super(Operator.FULL_JOIN, joinEntity, condition);
@@ -130,14 +144,19 @@ public class FullJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join multiple related tables
+     * // Join multiple related tables with ON conditions
      * List<String> tables = Arrays.asList("employees e", "contractors c");
      * FullJoin join = new FullJoin(tables,
      *     new And(
-     *         ConditionFactory.expr("d.id = e.dept_id"),
-     *         ConditionFactory.expr("d.id = c.dept_id")
+     *         new On("d.id", "e.dept_id"),
+     *         new On("d.id", "c.dept_id")
      *     ));
-     * // Generates: FULL JOIN employees e, contractors c ((d.id = e.dept_id) AND (d.id = c.dept_id))
+     * // Generates: FULL JOIN employees e, contractors c (ON d.id = e.dept_id) AND (ON d.id = c.dept_id)
+     *
+     * // Using Expression for multiple tables
+     * FullJoin exprJoin = new FullJoin(tables,
+     *     ConditionFactory.expr("d.id = e.dept_id AND d.id = c.dept_id"));
+     * // Generates: FULL JOIN employees e, contractors c d.id = e.dept_id AND d.id = c.dept_id
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

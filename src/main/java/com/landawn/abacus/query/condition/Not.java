@@ -79,31 +79,32 @@ public class Not extends Cell {
      * Constructs a NOT condition that negates the specified condition.
      * The resulting condition will be true when the input condition is false,
      * and false when the input condition is true.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple negation
      * Equal isActive = new Equal("active", true);
      * Not isInactive = new Not(isActive);
      * // Results in: NOT (active = true)
-     * 
+     *
      * // Negating BETWEEN
      * Between ageRange = new Between("age", 18, 65);
      * Not outsideRange = new Not(ageRange);
      * // Results in: NOT (age BETWEEN 18 AND 65)
-     * 
+     *
      * // Negating OR condition
      * Or multiStatus = new Or(
      *     new Equal("status", "PENDING"),
      *     new Equal("status", "PROCESSING")
      * );
      * Not notPendingOrProcessing = new Not(multiStatus);
-     * // Results in: NOT (status = 'PENDING' OR status = 'PROCESSING')
+     * // Results in: NOT ((status = 'PENDING') OR (status = 'PROCESSING'))
      * }</pre>
      *
      * @param condition the condition to be negated. Can be any type of condition
      *                  including simple comparisons, complex logical conditions,
-     *                  or subquery conditions.
+     *                  or subquery conditions. Must not be null.
+     * @throws IllegalArgumentException if condition is null
      */
     public Not(final Condition condition) {
         super(Operator.NOT, condition);

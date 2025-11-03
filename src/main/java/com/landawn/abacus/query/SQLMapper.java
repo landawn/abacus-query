@@ -265,12 +265,16 @@ public final class SQLMapper {
 
     /**
      * Adds or replaces a parsed SQL with the specified identifier.
+     * If an SQL with the same ID already exists, this method will throw an exception.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLMapper mapper = new SQLMapper();
      * ParsedSql parsedSql = ParsedSql.parse("select * from users where id = ?");
      * mapper.add("findUserById", parsedSql);
+     *
+     * // Later, retrieve the SQL
+     * ParsedSql retrieved = mapper.get("findUserById");
      * }</pre>
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed 128 characters)
@@ -380,7 +384,8 @@ public final class SQLMapper {
     /**
      * Saves all SQL definitions in this mapper to an XML file.
      * The output format matches the expected input format for {@link #fromFile(String)}.
-     * 
+     * If the file already exists, it will be overwritten.
+     *
      * <p>Example output:</p>
      * <pre>{@code
      * <sqlMapper>
@@ -389,8 +394,15 @@ public final class SQLMapper {
      * </sqlMapper>
      * }</pre>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper mapper = new SQLMapper();
+     * mapper.add("findUser", "select * from users where id = ?", Collections.emptyMap());
+     * mapper.saveTo(new File("sql/queries.xml"));
+     * }</pre>
+     *
      * @param file the file to write to (will be created if it doesn't exist)
-     * @throws UncheckedIOException if an I/O error occurs
+     * @throws UncheckedIOException if an I/O error occurs while writing to the file
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void saveTo(final File file) {

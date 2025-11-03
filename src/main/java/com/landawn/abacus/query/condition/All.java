@@ -78,20 +78,23 @@ public class All extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a subquery for competitor prices
-     * SubQuery competitorPrices = CF.subQuery(
+     * SubQuery competitorPrices = new SubQuery(
      *     "SELECT price FROM competitor_products WHERE product_type = 'Premium'"
      * );
      * All allCompetitors = new All(competitorPrices);
+     * // Used with: WHERE our_price > ALL (SELECT price FROM competitor_products WHERE product_type = 'Premium')
      *
-     * // Can be used to find products priced above all competitors:
-     * // WHERE our_price > ALL (SELECT price FROM competitor_products WHERE product_type = 'Premium')
-     *
-     * // Another example: find students who scored higher than all class averages
-     * SubQuery classAverages = CF.subQuery(
+     * // Find students who scored higher than all class averages
+     * SubQuery classAverages = new SubQuery(
      *     "SELECT avg_score FROM class_statistics WHERE year = 2024"
      * );
      * All allAverages = new All(classAverages);
-     * // Use with: WHERE student_score > ALL (...)
+     * // Used with: WHERE student_score > ALL (SELECT avg_score FROM class_statistics WHERE year = 2024)
+     *
+     * // Find products cheaper than all premium items
+     * SubQuery premiumPrices = new SubQuery("SELECT price FROM products WHERE category = 'premium'");
+     * All allPremium = new All(premiumPrices);
+     * // Used with: WHERE price < ALL (SELECT price FROM products WHERE category = 'premium')
      * }</pre>
      *
      * @param condition the subquery that returns values to compare against. Must not be null.

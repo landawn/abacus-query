@@ -119,8 +119,8 @@ public class XOR extends Binary {
      * // Features A and B are mutually exclusive
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
-     * @param propValue the value to compare against (can be null, literal value, or subquery)
+     * @param propName the property/column name. Must not be null or empty.
+     * @param propValue the value to compare against. Can be null, a literal value, or a subquery.
      * @throws IllegalArgumentException if propName is null or empty
      */
     public XOR(final String propName, final Object propValue) {

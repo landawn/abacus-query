@@ -60,7 +60,9 @@ package com.landawn.abacus.query.condition;
  * // SQL: code NOT LIKE '___'
  * }</pre>
  * 
+ * @see Binary
  * @see Like
+ * @see Condition
  */
 public class NotLike extends Binary {
 

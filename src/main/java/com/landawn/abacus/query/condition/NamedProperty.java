@@ -23,26 +23,62 @@ import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Strings;
 
 /**
- * A utility class that provides a fluent API for creating conditions based on a property name.
- * This class caches instances to avoid creating duplicate objects for the same property name.
- * 
+ * A utility class that provides a fluent API for creating SQL conditions based on a property name.
+ * This class caches instances to avoid creating duplicate objects for the same property name,
+ * improving memory efficiency and performance when the same property is referenced multiple times.
+ *
  * <p>NamedProperty simplifies the creation of various SQL conditions by providing convenient
- * methods that automatically include the property name.</p>
- * 
+ * methods that automatically include the property name. Instead of repeatedly specifying the
+ * property name in each condition, you create a NamedProperty once and use it to build multiple
+ * conditions fluently.</p>
+ *
+ * <p>Key features:</p>
+ * <ul>
+ *   <li>Instance caching for memory efficiency (using {@link #of(String)})</li>
+ *   <li>Fluent API for creating various SQL conditions</li>
+ *   <li>Support for comparison operators (eq, ne, gt, ge, lt, le)</li>
+ *   <li>Support for pattern matching (like, notLike, startsWith, endsWith, contains)</li>
+ *   <li>Support for null checks (isNull, isNotNull)</li>
+ *   <li>Support for range and set operations (between, in)</li>
+ *   <li>Convenience methods for OR combinations (eqOr)</li>
+ * </ul>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Create a named property
+ * // Create a named property (cached instance)
  * NamedProperty age = NamedProperty.of("age");
- * 
+ * NamedProperty status = NamedProperty.of("status");
+ * NamedProperty name = NamedProperty.of("name");
+ *
  * // Use it to create various conditions
- * Condition c1 = age.eq(25);              // age = 25
- * Condition c2 = age.gt(18);              // age > 18
- * Condition c3 = age.between(20, 30);     // age BETWEEN 20 AND 30
+ * Condition c1 = age.eq(25);                      // age = 25
+ * Condition c2 = age.gt(18);                      // age > 18
+ * Condition c3 = age.between(20, 30);             // age BETWEEN 20 AND 30
  * Condition c4 = age.in(Arrays.asList(25, 30, 35)); // age IN (25, 30, 35)
- * 
- * // Chain conditions
- * Or orCondition = age.eqOr(25, 30, 35); // age = 25 OR age = 30 OR age = 35
+ *
+ * // Pattern matching conditions
+ * Condition c5 = name.like("John%");              // name LIKE 'John%'
+ * Condition c6 = name.startsWith("J");            // name LIKE 'J%'
+ * Condition c7 = name.contains("oh");             // name LIKE '%oh%'
+ *
+ * // Null checks
+ * Condition c8 = status.isNotNull();              // status IS NOT NULL
+ *
+ * // Chain conditions with OR
+ * Or orCondition = age.eqOr(25, 30, 35);          // age = 25 OR age = 30 OR age = 35
+ *
+ * // Combine with AND/OR for complex queries
+ * Condition complex = age.gt(18).and(status.eq("active"));
+ * // Results in: age > 18 AND status = 'active'
+ *
+ * // Use in query building
+ * Query query = QB.select()
+ *     .from("users")
+ *     .where(age.ge(21).and(status.in("active", "pending")));
  * }</pre>
+ *
+ * @see Condition
+ * @see ConditionFactory.CF
  */
 public final class NamedProperty {
 

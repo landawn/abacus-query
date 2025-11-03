@@ -72,8 +72,9 @@ package com.landawn.abacus.query.condition;
  * // Matches: "PRD-2023-001", "PRD-2024-ABC", etc.
  * }</pre>
  * 
- * @see NotLike
  * @see Binary
+ * @see NotLike
+ * @see Condition
  */
 public class Like extends Binary {
 

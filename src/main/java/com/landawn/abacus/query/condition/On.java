@@ -44,30 +44,34 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * <pre>{@code
  * // Simple column equality join
  * On on1 = new On("orders.customer_id", "customers.id");
- * // Results in: ON orders.customer_id = customers.id
- * 
- * // Complex condition with custom logic
+ * // Generates: ON orders.customer_id = customers.id
+ *
+ * // Used in a JOIN
+ * InnerJoin join = new InnerJoin("customers", on1);
+ * // Generates: INNER JOIN customers ON orders.customer_id = customers.id
+ *
+ * // Complex condition with custom logic using Expression
  * And complexJoin = new And(
- *     new Equal("o.customer_id", new Expression("c.id")),
- *     new GreaterThan("o.order_date", new Expression("c.registration_date"))
+ *     new On("o.customer_id", "c.id"),
+ *     ConditionFactory.expr("o.order_date > c.registration_date")
  * );
- * On on2 = new On(complexJoin);
- * // Results in: ON o.customer_id = c.id AND o.order_date > c.registration_date
- * 
- * // Multiple join conditions using Map
+ * LeftJoin leftJoin = new LeftJoin("customers c", complexJoin);
+ * // Generates: LEFT JOIN customers c (ON o.customer_id = c.id) AND (o.order_date > c.registration_date)
+ *
+ * // Multiple join conditions using Map (composite key)
  * Map<String, String> joinMap = new LinkedHashMap<>();
  * joinMap.put("emp.department_id", "dept.id");
  * joinMap.put("emp.location_id", "dept.location_id");
  * On on3 = new On(joinMap);
- * // Results in: ON emp.department_id = dept.id AND emp.location_id = dept.location_id
- * 
- * // Join with additional filter
+ * // Generates: ON emp.department_id = dept.id AND emp.location_id = dept.location_id
+ *
+ * // Join with ON condition and additional filter
  * And filteredJoin = new And(
- *     new Equal("products.category_id", new Expression("categories.id")),
+ *     new On("products.category_id", "categories.id"),
  *     new Equal("categories.active", true)
  * );
- * On on4 = new On(filteredJoin);
- * // Results in: ON products.category_id = categories.id AND categories.active = true
+ * RightJoin rightJoin = new RightJoin("categories", filteredJoin);
+ * // Generates: RIGHT JOIN categories (ON products.category_id = categories.id) AND (categories.active = true)
  * }</pre>
  * 
  * @see Using
@@ -89,12 +93,15 @@ public class On extends Cell {
     /**
      * Creates an ON clause with a custom condition.
      * This is the most flexible constructor, accepting any type of condition
-     * for maximum control over the join logic.
+     * for maximum control over the join logic. Typically used for complex joins
+     * that go beyond simple column equality.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Simple equality condition (use Expression for column references)
+     * // Simple equality using Expression
      * On on1 = new On(ConditionFactory.expr("a.id = b.a_id"));
+     * InnerJoin join1 = new InnerJoin("table_b b", on1);
+     * // Generates: INNER JOIN table_b b a.id = b.a_id
      *
      * // Complex multi-condition join
      * And complexCondition = new And(
@@ -103,17 +110,21 @@ public class On extends Cell {
      *     new NotEqual("customers.status", "DELETED")
      * );
      * On on2 = new On(complexCondition);
+     * LeftJoin join2 = new LeftJoin("customers", on2);
+     * // Generates: LEFT JOIN customers (orders.customer_id = customers.id) AND (orders.order_date BETWEEN '2024-01-01' AND '2024-12-31') AND (customers.status != 'DELETED')
      *
-     * // Range join
+     * // Range join for salary bands
      * And rangeJoin = new And(
      *     ConditionFactory.expr("emp.salary >= salary_grades.min_salary"),
      *     ConditionFactory.expr("emp.salary <= salary_grades.max_salary")
      * );
      * On on3 = new On(rangeJoin);
+     * InnerJoin join3 = new InnerJoin("salary_grades", on3);
+     * // Generates: INNER JOIN salary_grades (emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary)
      * }</pre>
      *
      * @param condition the join condition, can be any type of condition including
-     *                  Equal, And, Or, or more complex expressions
+     *                  Expression, Equal, And, Or, Between, or more complex conditions
      * @throws IllegalArgumentException if condition is null
      */
     public On(final Condition condition) {
@@ -129,15 +140,18 @@ public class On extends Cell {
      * <pre>{@code
      * // Basic foreign key join
      * On on1 = new On("orders.customer_id", "customers.id");
-     * // Results in: ON orders.customer_id = customers.id
+     * InnerJoin join1 = new InnerJoin("customers", on1);
+     * // Generates: INNER JOIN customers ON orders.customer_id = customers.id
      *
      * // Join with table aliases
      * On on2 = new On("o.product_id", "p.id");
-     * // Results in: ON o.product_id = p.id
+     * LeftJoin join2 = new LeftJoin("products p", on2);
+     * // Generates: LEFT JOIN products p ON o.product_id = p.id
      *
      * // Self-join scenario
      * On on3 = new On("emp1.manager_id", "emp2.employee_id");
-     * // Results in: ON emp1.manager_id = emp2.employee_id
+     * LeftJoin join3 = new LeftJoin("employees emp2", on3);
+     * // Generates: LEFT JOIN employees emp2 ON emp1.manager_id = emp2.employee_id
      * }</pre>
      *
      * @param propName the column name from the first table (can include table name/alias)
@@ -160,16 +174,26 @@ public class On extends Cell {
      * compositeKey.put("order_items.order_id", "orders.id");
      * compositeKey.put("order_items.customer_id", "orders.customer_id");
      * On on1 = new On(compositeKey);
-     * // Results in: ON order_items.order_id = orders.id
-     * //             AND order_items.customer_id = orders.customer_id
+     * InnerJoin join1 = new InnerJoin("orders", on1);
+     * // Generates: INNER JOIN orders ON order_items.order_id = orders.id
+     * //                             AND order_items.customer_id = orders.customer_id
      *
      * // Multi-column natural key join
      * Map<String, String> naturalKey = new LinkedHashMap<>();
      * naturalKey.put("addresses.country_code", "countries.code");
      * naturalKey.put("addresses.region_code", "countries.region_code");
-     * naturalKey.put("addresses.postal_code", "postal_codes.code");
      * On on2 = new On(naturalKey);
-     * // Results in complex multi-column join condition
+     * LeftJoin join2 = new LeftJoin("countries", on2);
+     * // Generates: LEFT JOIN countries ON addresses.country_code = countries.code
+     * //                                AND addresses.region_code = countries.region_code
+     *
+     * // Three-column composite join
+     * Map<String, String> tripleKey = new LinkedHashMap<>();
+     * tripleKey.put("t1.col1", "t2.col1");
+     * tripleKey.put("t1.col2", "t2.col2");
+     * tripleKey.put("t1.col3", "t2.col3");
+     * On on3 = new On(tripleKey);
+     * // Generates: ON t1.col1 = t2.col1 AND t1.col2 = t2.col2 AND t1.col3 = t2.col3
      * }</pre>
      *
      * @param propNamePair map of column pairs where key is from first table,

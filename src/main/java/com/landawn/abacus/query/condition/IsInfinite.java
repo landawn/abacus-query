@@ -85,30 +85,42 @@ public class IsInfinite extends Is {
 
     /**
      * Creates a new IsInfinite condition for the specified property.
-     * This condition checks if the property's numeric value is infinite
-     * (either positive or negative infinity). This is particularly useful
-     * for validating calculation results and identifying numeric overflow.
-     * 
+     * This condition generates an "IS INFINITE" SQL clause to check if the property's
+     * numeric value is infinite (either positive infinity or negative infinity).
+     * This is particularly useful for identifying numeric overflow conditions,
+     * division by zero results, and other exceptional calculation outcomes.
+     *
+     * <p>The generated SQL uses the IS INFINITE operator to properly detect both
+     * positive and negative infinity values. Standard comparison operators cannot
+     * reliably test for infinity because infinity has special arithmetic properties
+     * (e.g., infinity == infinity is true, but infinity - infinity is NaN).
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check for infinite values in calculations
      * IsInfinite rateCheck = new IsInfinite("interest_rate");
-     * // Generates: interest_rate IS INFINITE
-     * 
+     * // Generates SQL: interest_rate IS INFINITE
+     *
      * // Find records with overflow in computations
      * IsInfinite overflowCheck = new IsInfinite("computed_value");
-     * // Generates: computed_value IS INFINITE
-     * 
-     * // Identify division by zero results
+     * // Generates SQL: computed_value IS INFINITE
+     *
+     * // Identify division by zero results (non-zero / 0 = infinity)
      * IsInfinite divByZero = new IsInfinite("average_per_unit");
-     * // Generates: average_per_unit IS INFINITE
-     * 
+     * // Generates SQL: average_per_unit IS INFINITE
+     *
      * // Check exponential calculation results
      * IsInfinite expCheck = new IsInfinite("exponential_growth");
-     * // Generates: exponential_growth IS INFINITE
+     * // Generates SQL: exponential_growth IS INFINITE
+     *
+     * // Use in query builders to identify problematic calculations
+     * List<Calculation> infiniteResults = queryExecutor
+     *     .prepareQuery(Calculation.class)
+     *     .where(new IsInfinite("result_value"))
+     *     .list();
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name to check for infinity (must not be null or empty)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public IsInfinite(final String propName) {

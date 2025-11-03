@@ -59,10 +59,10 @@ package com.landawn.abacus.query.condition;
  * // SQL: (price >= 10.00) AND (price <= 100.00)
  * }</pre>
  * 
+ * @see Binary
  * @see LessThan
  * @see GreaterEqual
- * @see Between
- * @see Binary
+ * @see Condition
  */
 public class LessEqual extends Binary {
 

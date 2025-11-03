@@ -74,30 +74,42 @@ public class IsNotInfinite extends IsNot {
 
     /**
      * Creates a new IsNotInfinite condition for the specified property.
-     * This condition checks if the property's numeric value is NOT infinite
-     * (neither positive nor negative infinity), ensuring the value is within
-     * the finite range of floating-point numbers.
-     * 
+     * This condition generates an "IS NOT INFINITE" SQL clause to check if the property's
+     * numeric value is NOT infinite (neither positive infinity nor negative infinity).
+     * This ensures that values are within the finite range of floating-point numbers
+     * and is essential for data validation before performing calculations or analysis.
+     *
+     * <p>The generated SQL uses the IS NOT INFINITE operator to properly verify finite
+     * values. Standard comparison operators cannot reliably test for the absence of
+     * infinity because infinity has special arithmetic properties. IS NOT INFINITE is
+     * the correct way to filter for finite numeric values.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Ensure calculated values are finite
      * IsNotInfinite calcCheck = new IsNotInfinite("calculation_result");
-     * // Generates: calculation_result IS NOT INFINITE
-     * 
+     * // Generates SQL: calculation_result IS NOT INFINITE
+     *
      * // Filter for records with finite growth rates
      * IsNotInfinite growthCheck = new IsNotInfinite("year_over_year_growth");
-     * // Generates: year_over_year_growth IS NOT INFINITE
-     * 
+     * // Generates SQL: year_over_year_growth IS NOT INFINITE
+     *
      * // Validate division results
      * IsNotInfinite divisionCheck = new IsNotInfinite("average_score");
-     * // Generates: average_score IS NOT INFINITE
-     * 
+     * // Generates SQL: average_score IS NOT INFINITE
+     *
      * // Check scientific calculations
      * IsNotInfinite scientificCheck = new IsNotInfinite("exponential_result");
-     * // Generates: exponential_result IS NOT INFINITE
+     * // Generates SQL: exponential_result IS NOT INFINITE
+     *
+     * // Use in query builders to filter finite values
+     * List<Metric> finiteMetrics = queryExecutor
+     *     .prepareQuery(Metric.class)
+     *     .where(new IsNotInfinite("metric_value"))
+     *     .list();
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name to check for non-infinity (must not be null or empty)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNotInfinite(final String propName) {

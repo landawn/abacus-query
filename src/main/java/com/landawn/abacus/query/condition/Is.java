@@ -44,10 +44,9 @@ package com.landawn.abacus.query.condition;
  * // Generates: status IS UNKNOWN
  * }</pre>
  * 
- * @see IsNull
- * @see IsNaN
- * @see IsInfinite
  * @see Binary
+ * @see IsNot
+ * @see Condition
  */
 public class Is extends Binary {
 

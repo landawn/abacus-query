@@ -132,19 +132,20 @@ public class Or extends Junction {
     /**
      * Adds another condition to this OR clause using the OR operator.
      * Creates a new OR instance containing all existing conditions plus the new one.
-     * 
+     * The original OR condition remains unchanged (immutable).
+     *
      * <p>This method provides a fluent interface for building OR conditions incrementally.
      * Each call returns a new OR instance, preserving immutability. The new condition
      * is added to the end of the existing conditions.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Build condition step by step
      * Or or = new Or(new Equal("type", "A"))
      *     .or(new Equal("type", "B"))
      *     .or(new Equal("type", "C"));
-     * // Results in: type = 'A' OR type = 'B' OR type = 'C'
-     * 
+     * // Results in: ((type = 'A') OR (type = 'B') OR (type = 'C'))
+     *
      * // Add conditions conditionally
      * Or baseOr = new Or(new Equal("status", "active"));
      * if (includeInactive) {
@@ -154,9 +155,9 @@ public class Or extends Junction {
      *     baseOr = baseOr.or(new Equal("status", "pending"));
      * }
      * }</pre>
-     * 
-     * @param condition the condition to add with OR
-     * @return a new OR instance with the additional condition
+     *
+     * @param condition the condition to add with OR. Must not be null.
+     * @return a new OR instance containing all existing conditions plus the new one
      * @throws IllegalArgumentException if condition is null
      */
     @Override

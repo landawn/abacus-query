@@ -67,29 +67,40 @@ public class IsNotNull extends IsNot {
 
     /**
      * Creates a new IsNotNull condition for the specified property.
-     * This condition checks if the property value is not null, which is essential
-     * for filtering records that have values in the specified field.
+     * This condition generates an "IS NOT NULL" SQL clause to check if the property value
+     * is not NULL, effectively filtering for records that have values in the specified field.
+     * This is essential for data validation and ensuring required fields are populated.
+     *
+     * <p>The generated SQL uses the IS NOT NULL operator (not != NULL) because NULL comparisons
+     * have special semantics in SQL where NULL != NULL evaluates to unknown/false, but
+     * NULL IS NOT NULL evaluates to false (correctly identifying non-NULL values).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Ensure user has an email address
      * IsNotNull emailCheck = new IsNotNull("email");
-     * // SQL: email IS NOT NULL
-     * 
+     * // Generates SQL: email IS NOT NULL
+     *
      * // Filter for customers with phone numbers
      * IsNotNull phoneCheck = new IsNotNull("phone_number");
-     * // SQL: phone_number IS NOT NULL
-     * 
+     * // Generates SQL: phone_number IS NOT NULL
+     *
      * // Find all orders with shipping addresses
      * IsNotNull addressCheck = new IsNotNull("shipping_address");
-     * // SQL: shipping_address IS NOT NULL
-     * 
+     * // Generates SQL: shipping_address IS NOT NULL
+     *
      * // Validate that a date field is populated
      * IsNotNull dateCheck = new IsNotNull("registration_date");
-     * // SQL: registration_date IS NOT NULL
+     * // Generates SQL: registration_date IS NOT NULL
+     *
+     * // Use in query builders
+     * List<User> usersWithEmail = queryExecutor
+     *     .prepareQuery(User.class)
+     *     .where(new IsNotNull("email"))
+     *     .list();
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name to check for non-NULL (must not be null or empty)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNotNull(final String propName) {

@@ -98,6 +98,7 @@ import com.landawn.abacus.util.u.Optional;
  *
  * <p><b>Concrete Implementation Classes and their Characteristics:</b>
  * <table border="1" style="border-collapse: collapse;">
+ *   <caption>SQLBuilder Implementation Classes and Their Characteristics</caption>
  *   <tr style="background-color: #f2f2f2;">
  *     <th>Class</th>
  *     <th>Parameter Style</th>

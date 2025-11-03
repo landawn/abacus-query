@@ -17,18 +17,27 @@ package com.landawn.abacus.query;
 /**
  * Enumeration representing the sort direction for database queries and collections.
  * Provides two possible sort orders: ascending (ASC) and descending (DESC).
- * 
+ *
+ * <p>This enum is commonly used with SQLBuilder to specify the order of results in SQL queries.
+ * The enum values correspond to the standard SQL ORDER BY clause keywords.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
+ * // Check sort direction
  * SortDirection direction = SortDirection.ASC;
  * if (direction.isAscending()) {
- *     // Sort in ascending order
+ *     System.out.println("Sorting in ascending order");
  * }
- * 
+ *
  * // Use in SQL building
  * String sql = "SELECT * FROM users ORDER BY name " + SortDirection.DESC;
+ *
+ * // Use with SQLBuilder (typical use case)
+ * SQLBuilder builder = PSC.selectFrom(User.class)
+ *     .orderBy("lastName", SortDirection.ASC)
+ *     .orderBy("firstName", SortDirection.ASC);
  * }</pre>
- * 
+ *
  * @see SQLBuilder
  */
 public enum SortDirection {

@@ -59,8 +59,7 @@ import com.landawn.abacus.util.Strings;
  * 
  * @see AbstractCondition
  * @see NotBetween
- * @see GreaterEqual
- * @see LessEqual
+ * @see Condition
  */
 public class Between extends AbstractCondition {
     /**

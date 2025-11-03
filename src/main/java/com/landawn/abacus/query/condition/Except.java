@@ -77,33 +77,55 @@ public class Except extends Clause {
 
     /**
      * Creates a new EXCEPT clause with the specified subquery.
-     * The result will contain all rows from the main query that are not present
-     * in the subquery results.
-     * 
+     * The EXCEPT operation returns all distinct rows from the main query that are not
+     * present in the subquery results, performing a set difference operation (A - B).
+     * Duplicates are automatically removed from the final result.
+     *
+     * <p>EXCEPT is useful for finding records that exist in one dataset but not in another,
+     * such as customers without orders, products never sold, or employees not assigned to projects.
+     * Both queries must have the same number of columns with compatible data types.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find employees who are not managers
-     * SubQuery managers = CF.subQuery(
-     *     "SELECT employee_id FROM employees WHERE is_manager = true"
-     * );
+     * SubQuery managers = new SubQuery("SELECT employee_id FROM employees WHERE is_manager = true");
      * Except notManagers = new Except(managers);
-     * 
-     * // Use in criteria
-     * Criteria criteria = CF.criteria()
-     *     .where(CF.eq("department", "Sales"))
-     *     .except(managers);
-     * // Returns all Sales employees who are not managers
-     * 
+     * // When combined with all employees query:
+     * // SELECT employee_id FROM employees WHERE department = 'Sales'
+     * // EXCEPT
+     * // SELECT employee_id FROM employees WHERE is_manager = true
+     * // Returns Sales employees who are not managers
+     *
+     * // Find customers who haven't placed orders
+     * SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+     * Except customersWithoutOrders = new Except(customersWithOrders);
+     * // SELECT customer_id FROM customers
+     * // EXCEPT
+     * // SELECT DISTINCT customer_id FROM orders
+     * // Returns customers with no orders
+     *
      * // Find skills not required for a specific job
-     * SubQuery requiredSkills = CF.subQuery(
-     *     "SELECT skill_id FROM job_requirements WHERE job_id = 123"
-     * );
+     * SubQuery requiredSkills = new SubQuery("SELECT skill_id FROM job_requirements WHERE job_id = 123");
      * Except otherSkills = new Except(requiredSkills);
-     * // Use to find all skills except the required ones
+     * // SELECT skill_id FROM skills
+     * // EXCEPT
+     * // SELECT skill_id FROM job_requirements WHERE job_id = 123
+     * // Returns all skills except those required for job 123
+     *
+     * // Find products in inventory but never sold
+     * SubQuery soldProducts = new SubQuery("SELECT product_id FROM sales");
+     * Except unsoldProducts = new Except(soldProducts);
+     * // SELECT product_id FROM inventory
+     * // EXCEPT
+     * // SELECT product_id FROM sales
      * }</pre>
-     * 
-     * @param condition the subquery whose results will be excluded from the main query
+     *
+     * @param condition the subquery whose results will be excluded from the main query. Must not be null.
+     *                  The subquery must have the same number of columns with compatible types as the main query.
      * @throws IllegalArgumentException if condition is null
+     * @see Minus
+     * @see Union
+     * @see Intersect
      */
     public Except(final SubQuery condition) {
         super(Operator.EXCEPT, condition);

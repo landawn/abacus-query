@@ -81,7 +81,8 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor should not be used directly in application code.
+     * This constructor creates an uninitialized InSubQuery instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     InSubQuery() {
         propName = null;
@@ -98,12 +99,17 @@ public class InSubQuery extends AbstractCondition {
      * // Find all products in active categories
      * SubQuery activeCategories = new SubQuery("SELECT category_id FROM categories WHERE active = true");
      * InSubQuery condition = new InSubQuery("category_id", activeCategories);
-     * // Can be used in: SELECT * FROM products WHERE category_id IN (SELECT category_id FROM categories WHERE active = true)
+     * // Generates: category_id IN (SELECT category_id FROM categories WHERE active = true)
+     *
+     * // Find employees in departments with high budgets
+     * SubQuery richDepts = new SubQuery("SELECT dept_id FROM departments WHERE budget > 1000000");
+     * InSubQuery condition2 = new InSubQuery("department_id", richDepts);
+     * // Generates: department_id IN (SELECT dept_id FROM departments WHERE budget > 1000000)
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name. Must not be null or empty.
      * @param subQuery the subquery that returns the values to check against. Must not be null.
-     * @throws IllegalArgumentException if subQuery is null
+     * @throws IllegalArgumentException if propName is null or subQuery is null
      */
     public InSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.IN);
@@ -189,7 +195,8 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Gets all parameters from the subquery.
-     * These are the parameter values that will be bound to the prepared statement placeholders.
+     * These are the parameter values that will be bound to the prepared statement placeholders
+     * when the query is executed.
      *
      * @return the list of parameters from the subquery
      */

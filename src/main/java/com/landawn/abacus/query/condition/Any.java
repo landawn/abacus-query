@@ -77,21 +77,24 @@ public class Any extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a subquery for department budgets
-     * SubQuery budgetQuery = CF.subQuery(
+     * SubQuery budgetQuery = new SubQuery(
      *     "SELECT budget FROM departments WHERE region = 'West'"
      * );
      * Any anyBudget = new Any(budgetQuery);
-     *
-     * // Can be used in conditions like:
-     * // expense > ANY (SELECT budget FROM departments WHERE region = 'West')
+     * // Used with: WHERE expense > ANY (SELECT budget FROM departments WHERE region = 'West')
      * // This finds expenses greater than at least one department budget in West region
      *
-     * // Another example: find students with score higher than any passing score
-     * SubQuery passingScores = CF.subQuery(
+     * // Find students with score higher than any passing score
+     * SubQuery passingScores = new SubQuery(
      *     "SELECT passing_score FROM exams WHERE subject = 'Math'"
      * );
      * Any anyPassingScore = new Any(passingScores);
-     * // Use with: WHERE student_score > ANY (...)
+     * // Used with: WHERE student_score > ANY (SELECT passing_score FROM exams WHERE subject = 'Math')
+     *
+     * // Find products with price equal to any competitor price
+     * SubQuery competitorPrices = new SubQuery("SELECT price FROM competitor_products");
+     * Any anyPrice = new Any(competitorPrices);
+     * // Used with: WHERE price = ANY (SELECT price FROM competitor_products)
      * }</pre>
      *
      * @param condition the subquery that returns values to compare against. Must not be null.

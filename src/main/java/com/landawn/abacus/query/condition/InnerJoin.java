@@ -46,27 +46,28 @@ import java.util.Collection;
  * // Simple inner join
  * InnerJoin join1 = new InnerJoin("orders");
  * // Generates: INNER JOIN orders
- * 
- * // Inner join with condition
- * InnerJoin join2 = new InnerJoin("orders o", 
- *     new Equal("customers.id", "o.customer_id"));
+ *
+ * // Inner join with ON condition
+ * InnerJoin join2 = new InnerJoin("orders o",
+ *     new On("customers.id", "o.customer_id"));
  * // Generates: INNER JOIN orders o ON customers.id = o.customer_id
- * 
+ *
  * // Join customers with their orders (only customers who have orders)
  * InnerJoin customerOrders = new InnerJoin("orders o",
  *     new And(
- *         new Equal("c.customer_id", "o.customer_id"),
+ *         new On("c.customer_id", "o.customer_id"),
  *         new Equal("o.status", "completed")
  *     ));
- * // Generates: INNER JOIN orders o ON c.customer_id = o.customer_id AND o.status = 'completed'
- * 
+ * // Generates: INNER JOIN orders o (ON c.customer_id = o.customer_id) AND (o.status = 'completed')
+ *
  * // Complex multi-condition join
  * InnerJoin complexJoin = new InnerJoin("inventory i",
  *     new And(
- *         new Equal("p.product_id", "i.product_id"),
- *         new Equal("p.warehouse_id", "i.warehouse_id"),
+ *         new On("p.product_id", "i.product_id"),
+ *         new On("p.warehouse_id", "i.warehouse_id"),
  *         new GreaterThan("i.quantity", 0)
  *     ));
+ * // Generates: INNER JOIN inventory i (ON p.product_id = i.product_id) AND (ON p.warehouse_id = i.warehouse_id) AND (i.quantity > 0)
  * }</pre>
  * 
  * @see LeftJoin
@@ -116,33 +117,38 @@ public class InnerJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join orders with customers (use Expression for column references)
+     * // Join orders with customers using ON
      * InnerJoin customerOrders = new InnerJoin("customers c",
-     *     ConditionFactory.expr("orders.customer_id = c.id"));
-     * // Generates: INNER JOIN customers c orders.customer_id = c.id
+     *     new On("orders.customer_id", "c.id"));
+     * // Generates: INNER JOIN customers c ON orders.customer_id = c.id
      *
-     * // Join with composite key
+     * // Join with composite key using multiple ON conditions
      * InnerJoin compositeJoin = new InnerJoin("order_items oi",
      *     new And(
-     *         ConditionFactory.expr("orders.id = oi.order_id"),
-     *         ConditionFactory.expr("orders.version = oi.order_version")
+     *         new On("orders.id", "oi.order_id"),
+     *         new On("orders.version", "oi.order_version")
      *     ));
-     * // Generates: INNER JOIN order_items oi ((orders.id = oi.order_id) AND (orders.version = oi.order_version))
+     * // Generates: INNER JOIN order_items oi (ON orders.id = oi.order_id) AND (ON orders.version = oi.order_version)
      *
-     * // Join with additional filter conditions
+     * // Join with ON condition and additional filter conditions
      * InnerJoin filteredJoin = new InnerJoin("products p",
      *     new And(
-     *         ConditionFactory.expr("order_items.product_id = p.id"),
+     *         new On("order_items.product_id", "p.id"),
      *         new Equal("p.active", true),
      *         new GreaterThan("p.stock", 0)
      *     ));
-     * // Generates: INNER JOIN products p ((order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0))
+     * // Generates: INNER JOIN products p (ON order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0)
+     *
+     * // Using Expression for custom join logic
+     * InnerJoin exprJoin = new InnerJoin("customers c",
+     *     ConditionFactory.expr("orders.customer_id = c.id"));
+     * // Generates: INNER JOIN customers c orders.customer_id = c.id
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param condition the join condition (typically an equality condition between columns).
+     * @param condition the join condition (typically an On condition for column equality).
      *                  Can be a complex condition using And/Or for multiple criteria.
-     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public InnerJoin(final String joinEntity, final Condition condition) {
         super(Operator.INNER_JOIN, joinEntity, condition);
@@ -155,20 +161,25 @@ public class InnerJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join multiple related tables
+     * // Join multiple related tables with ON condition
      * List<String> tables = Arrays.asList("orders o", "customers c");
      * InnerJoin multiJoin = new InnerJoin(tables,
-     *     ConditionFactory.expr("o.customer_id = c.id"));
-     * // Generates: INNER JOIN orders o, customers c o.customer_id = c.id
+     *     new On("o.customer_id", "c.id"));
+     * // Generates: INNER JOIN orders o, customers c ON o.customer_id = c.id
      *
-     * // Complex multi-table join
+     * // Complex multi-table join with multiple ON conditions
      * List<String> entities = Arrays.asList("products p", "categories cat", "suppliers s");
      * InnerJoin complexMulti = new InnerJoin(entities,
      *     new And(
-     *         ConditionFactory.expr("p.category_id = cat.id"),
-     *         ConditionFactory.expr("p.supplier_id = s.id")
+     *         new On("p.category_id", "cat.id"),
+     *         new On("p.supplier_id", "s.id")
      *     ));
-     * // Generates: INNER JOIN products p, categories cat, suppliers s ((p.category_id = cat.id) AND (p.supplier_id = s.id))
+     * // Generates: INNER JOIN products p, categories cat, suppliers s (ON p.category_id = cat.id) AND (ON p.supplier_id = s.id)
+     *
+     * // Using Expression for multiple tables
+     * InnerJoin exprMulti = new InnerJoin(tables,
+     *     ConditionFactory.expr("o.customer_id = c.id AND o.status = 'active'"));
+     * // Generates: INNER JOIN orders o, customers c o.customer_id = c.id AND o.status = 'active'
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

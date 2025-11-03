@@ -41,16 +41,24 @@ import java.util.Collection;
  * <pre>{@code
  * // Simple CROSS JOIN - all combinations of products and colors
  * CrossJoin join = new CrossJoin("colors");
- * // Results in: CROSS JOIN colors
+ * // Generates: CROSS JOIN colors
  * // Each product will be paired with each color
  *
  * // CROSS JOIN multiple tables
  * CrossJoin multiJoin = new CrossJoin(Arrays.asList("sizes", "colors"));
+ * // Generates: CROSS JOIN sizes, colors
  * // Results in all combinations of products × sizes × colors
  *
  * // CROSS JOIN with condition (unusual but supported)
- * CrossJoin filtered = new CrossJoin("categories", CF.eq("active", true));
- * // Functionally equivalent to INNER JOIN with the condition
+ * CrossJoin filtered = new CrossJoin("categories",
+ *     new Equal("active", true));
+ * // Generates: CROSS JOIN categories (active = true)
+ * // Note: Functionally equivalent to INNER JOIN with the condition
+ *
+ * // CROSS JOIN with Expression
+ * CrossJoin exprJoin = new CrossJoin("inventory",
+ *     ConditionFactory.expr("quantity > 0"));
+ * // Generates: CROSS JOIN inventory quantity > 0
  * }</pre>
  * 
  * @see Join
@@ -100,24 +108,30 @@ public class CrossJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Cross join with filter (use Expression for column references)
+     * // Cross join with filter using Expression
      * CrossJoin filtered = new CrossJoin("products p",
      *     ConditionFactory.expr("p.category = 'electronics'"));
      * // Generates: CROSS JOIN products p p.category = 'electronics'
      *
+     * // Cross join with ON condition (unusual usage)
+     * CrossJoin withOn = new CrossJoin("inventory i",
+     *     new On("w.id", "i.warehouse_id"));
+     * // Generates: CROSS JOIN inventory i ON w.id = i.warehouse_id
+     * // Note: This is functionally the same as INNER JOIN
+     *
      * // Complex cross join with multiple conditions
      * CrossJoin complexCross = new CrossJoin("inventory i",
      *     new And(
-     *         ConditionFactory.expr("i.warehouse_id = w.id"),
+     *         new On("i.warehouse_id", "w.id"),
      *         new Equal("i.active", true)
      *     ));
-     * // Generates: CROSS JOIN inventory i ((i.warehouse_id = w.id) AND (i.active = true))
+     * // Generates: CROSS JOIN inventory i (ON i.warehouse_id = w.id) AND (i.active = true)
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param condition the join condition (typically an equality condition between columns).
+     * @param condition the join condition. Can be On, Expression, or any other condition type.
      *                  Can be a complex condition using And/Or for multiple criteria.
-     * @throws IllegalArgumentException if joinEntity is null or empty, or condition is null
+     * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public CrossJoin(final String joinEntity, final Condition condition) {
         super(Operator.CROSS_JOIN, joinEntity, condition);
@@ -129,15 +143,26 @@ public class CrossJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join multiple tables for all combinations
+     * // Join multiple tables for all combinations with filter
      * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
      * CrossJoin join = new CrossJoin(tables,
      *     new Equal("active", true));
      * // Generates: CROSS JOIN sizes s, colors c, styles st (active = true)
+     *
+     * // Using ON conditions (makes it similar to INNER JOIN)
+     * List<String> relatedTables = Arrays.asList("table1 t1", "table2 t2");
+     * CrossJoin withOn = new CrossJoin(relatedTables,
+     *     new On("t1.id", "t2.t1_id"));
+     * // Generates: CROSS JOIN table1 t1, table2 t2 ON t1.id = t2.t1_id
+     *
+     * // Using Expression for complex conditions
+     * CrossJoin exprJoin = new CrossJoin(tables,
+     *     ConditionFactory.expr("active = true AND archived = false"));
+     * // Generates: CROSS JOIN sizes s, colors c, styles st active = true AND archived = false
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param condition the join condition to apply.
+     * @param condition the join condition to apply. Can be null, On, Expression, or any condition type.
      * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public CrossJoin(final Collection<String> joinEntities, final Condition condition) {

@@ -130,26 +130,26 @@ public class And extends Junction {
     /**
      * Creates a new AND condition by adding another condition to this AND.
      * This method returns a new AND instance containing all existing conditions plus the new one.
-     * The original AND condition remains unchanged.
-     * 
+     * The original AND condition remains unchanged (immutable).
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Start with a basic AND
      * And and = new And(CF.eq("status", "active"));
-     * 
+     *
      * // Add more conditions through chaining
      * And extended = and
      *     .and(CF.gt("score", 80))
      *     .and(CF.lt("attempts", 3))
      *     .and(CF.eq("verified", true));
      * // Results in: ((status = 'active') AND (score > 80) AND (attempts < 3) AND (verified = true))
-     * 
+     *
      * // Original 'and' is unchanged
      * // extended is a new instance with all conditions
      * }</pre>
-     * 
-     * @param condition the condition to add to this AND
-     * @return a new AND condition containing all conditions
+     *
+     * @param condition the condition to add to this AND. Must not be null.
+     * @return a new AND condition containing all existing conditions plus the new one
      * @throws IllegalArgumentException if condition is null
      */
     @Override
