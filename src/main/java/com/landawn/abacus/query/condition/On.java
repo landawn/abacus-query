@@ -208,7 +208,7 @@ public class On extends Cell {
      * Creates an ON condition for simple column equality.
      * This static factory method is used internally to create Equal conditions
      * for the convenience constructors.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition joinCondition = On.createOnCondition("users.id", "posts.user_id");
@@ -218,6 +218,7 @@ public class On extends Cell {
      * @param propName the first column name
      * @param anoPropName the second column name
      * @return an Equal condition comparing the two columns
+     * @throws IllegalArgumentException if propName or anoPropName is null or empty
      */
     static Condition createOnCondition(final String propName, final String anoPropName) {
         return new Equal(propName, CF.expr(anoPropName));
@@ -227,19 +228,20 @@ public class On extends Cell {
      * Creates an ON condition from multiple column pairs.
      * If only one pair is provided, returns a simple Equal condition.
      * If multiple pairs are provided, combines them with AND.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, String> joinColumns = new LinkedHashMap<>();
      * joinColumns.put("t1.col1", "t2.col1");
      * joinColumns.put("t1.col2", "t2.col2");
      * Condition condition = On.createOnCondition(joinColumns);
-     * // Creates: And(Equal("t1.col1", Expression("t2.col1")), 
+     * // Creates: And(Equal("t1.col1", Expression("t2.col1")),
      * //              Equal("t1.col2", Expression("t2.col2")))
      * }</pre>
      *
      * @param propNamePair map of column name pairs
      * @return a single Equal condition or an And condition combining multiple equalities
+     * @throws IllegalArgumentException if propNamePair is null or empty, or contains null/empty keys or values
      */
     static Condition createOnCondition(final Map<String, String> propNamePair) {
         if (propNamePair.size() == 1) {

@@ -119,6 +119,12 @@ public class NotIn extends AbstractCondition {
     /**
      * Gets the property name for this NOT IN condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
+     * String propName = condition.getPropName(); // Returns "status"
+     * }</pre>
+     *
      * @return the property name
      */
     public String getPropName() {
@@ -129,6 +135,13 @@ public class NotIn extends AbstractCondition {
      * Gets the collection of values that the property should NOT match.
      * Returns the internal list of values. Modifications to this list are discouraged
      * as conditions should be immutable.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> statuses = Arrays.asList("deleted", "archived", "suspended");
+     * NotIn condition = new NotIn("status", statuses);
+     * List<?> values = condition.getValues(); // Returns ["deleted", "archived", "suspended"]
+     * }</pre>
      *
      * @return list of values to exclude
      */
@@ -242,7 +255,15 @@ public class NotIn extends AbstractCondition {
 
     /**
      * Generates the hash code for this NOT IN condition.
-     * The hash code is computed based on the property name, operator, and values list.
+     * The hash code is computed based on the property name, operator, and values list,
+     * ensuring consistent hashing for equivalent conditions.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn c1 = new NotIn("status", Arrays.asList("deleted", "archived"));
+     * NotIn c2 = new NotIn("status", Arrays.asList("deleted", "archived"));
+     * assert c1.hashCode() == c2.hashCode();
+     * }</pre>
      *
      * @return hash code based on property name, operator, and values
      */
@@ -258,6 +279,16 @@ public class NotIn extends AbstractCondition {
      * Checks if this NOT IN condition is equal to another object.
      * Two NOT IN conditions are equal if they have the same property name,
      * operator, and values list.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn c1 = new NotIn("status", Arrays.asList("deleted", "archived"));
+     * NotIn c2 = new NotIn("status", Arrays.asList("deleted", "archived"));
+     * assert c1.equals(c2); // true
+     *
+     * NotIn c3 = new NotIn("type", Arrays.asList("deleted", "archived"));
+     * assert !c1.equals(c3); // false - different property
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

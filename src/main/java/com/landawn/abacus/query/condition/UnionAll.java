@@ -108,8 +108,8 @@ public class UnionAll extends Clause {
      * // Efficiently combines quarterly data without duplicate check
      * }</pre>
      *
-     * @param condition the subquery to combine with UNION ALL. Must not be null. The subquery
-     *                  must have the same number of columns with compatible types as the main query.
+     * @param condition the subquery to combine with UNION ALL. Must not be null.
+     *                  The subquery must have the same number of columns with compatible types as the main query.
      * @throws IllegalArgumentException if condition is null
      * @see Union
      * @see Intersect

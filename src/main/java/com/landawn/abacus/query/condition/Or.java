@@ -74,7 +74,7 @@ public class Or extends Junction {
      * <p>The conditions are evaluated left to right, and the first true condition
      * will make the entire OR expression true. This constructor accepts a variable
      * number of conditions for convenience.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find users in specific cities
@@ -83,16 +83,18 @@ public class Or extends Junction {
      *     new Equal("city", "Los Angeles"),
      *     new Equal("city", "Chicago")
      * );
-     * 
+     * // Results in: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
+     *
      * // Complex OR with different condition types
      * Or complexOr = new Or(
      *     new Like("email", "%@gmail.com"),
      *     new Like("email", "%@yahoo.com"),
      *     new IsNull("email")
      * );
+     * // Results in: ((email LIKE '%@gmail.com') OR (email LIKE '%@yahoo.com') OR (email IS NULL))
      * }</pre>
-     * 
-     * @param conditions the variable number of conditions to be combined with OR
+     *
+     * @param conditions the variable number of conditions to be combined with OR. Must not be null.
      * @throws IllegalArgumentException if conditions is null
      */
     public Or(final Condition... conditions) {
@@ -114,15 +116,17 @@ public class Or extends Junction {
      *     conditions.add(new Like("name", "%" + name + "%"));
      * }
      * Or or = new Or(conditions);
+     * // Results in: ((name LIKE '%name1%') OR (name LIKE '%name2%') OR ...)
      *
      * // Combining existing conditions
      * Set<Condition> statusConditions = new HashSet<>();
      * statusConditions.add(new Equal("status", "active"));
      * statusConditions.add(new Equal("status", "pending"));
      * Or statusOr = new Or(statusConditions);
+     * // Results in: ((status = 'active') OR (status = 'pending'))
      * }</pre>
      *
-     * @param conditions the collection of conditions to be combined with OR
+     * @param conditions the collection of conditions to be combined with OR. Must not be null.
      * @throws IllegalArgumentException if conditions is null
      */
     public Or(final Collection<? extends Condition> conditions) {
@@ -132,7 +136,7 @@ public class Or extends Junction {
     /**
      * Adds another condition to this OR clause using the OR operator.
      * Creates a new OR instance containing all existing conditions plus the new one.
-     * The original OR condition remains unchanged (immutable).
+     * The original OR condition remains unchanged (immutable pattern).
      *
      * <p>This method provides a fluent interface for building OR conditions incrementally.
      * Each call returns a new OR instance, preserving immutability. The new condition
@@ -154,6 +158,7 @@ public class Or extends Junction {
      * if (includePending) {
      *     baseOr = baseOr.or(new Equal("status", "pending"));
      * }
+     * // Results vary based on flags
      * }</pre>
      *
      * @param condition the condition to add with OR. Must not be null.

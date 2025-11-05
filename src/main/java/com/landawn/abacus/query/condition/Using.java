@@ -107,7 +107,7 @@ public class Using extends Cell {
      * }</pre>
      *
      * @param columnNames variable number of column names to join on.
-     *                    All columns must exist in both tables with identical names.
+     *                    All columns must exist in both tables with identical names. Must not be null or empty.
      * @throws IllegalArgumentException if columnNames is null or empty
      */
     public Using(final String... columnNames) {
@@ -142,7 +142,7 @@ public class Using extends Cell {
      * // Generates: RIGHT JOIN locations USING (region_id, country_id, state_id)
      * }</pre>
      *
-     * @param columnNames collection of column names to join on.
+     * @param columnNames collection of column names to join on. Must not be null or empty.
      *                    Order matters for some databases. Use LinkedHashSet or List to preserve order.
      * @throws IllegalArgumentException if columnNames is null or empty
      */
@@ -154,14 +154,14 @@ public class Using extends Cell {
      * Creates a USING condition from an array of column names.
      * This static factory method constructs the appropriate condition expression
      * for the USING clause from the provided column names.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition usingCondition = Using.createUsingCondition("customer_id", "order_date");
      * // Creates condition for: USING (customer_id, order_date)
      * }</pre>
      *
-     * @param columnNames array of column names
+     * @param columnNames array of column names. Must not be null or empty.
      * @return a condition representing the USING clause
      * @throws IllegalArgumentException if columnNames is null or empty
      */
@@ -178,7 +178,7 @@ public class Using extends Cell {
      * This static factory method constructs the appropriate condition expression
      * for the USING clause from the provided column collection.
      *
-     * @param columnNames collection of column names
+     * @param columnNames collection of column names. Must not be null or empty.
      * @return a condition representing the USING clause
      * @throws IllegalArgumentException if columnNames is null or empty
      */

@@ -62,29 +62,34 @@ public class Where extends Clause {
      * Constructs a WHERE clause with the specified condition.
      * The condition can be any valid SQL condition including simple comparisons,
      * logical combinations (AND/OR), or complex expressions.
-     * 
+     *
      * <p>The WHERE clause is essential for filtering query results. It's evaluated
      * row by row, and only rows where the condition evaluates to true are included
      * in the result set. NULL comparisons require special handling with IS NULL
      * or IS NOT NULL operators.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple WHERE clause
      * Condition condition = new Like("name", "%John%");
      * Where where = new Where(condition);
      * // Results in: WHERE name LIKE '%John%'
-     * 
+     *
      * // Complex WHERE with multiple conditions
      * Or complexCondition = new Or(
      *     new And(new Equal("status", "active"), new GreaterThan("balance", 1000)),
      *     new Equal("vip", true)
      * );
      * Where complexWhere = new Where(complexCondition);
-     * // Results in: WHERE (status = 'active' AND balance > 1000) OR vip = true
+     * // Results in: WHERE ((status = 'active') AND (balance > 1000)) OR (vip = true)
+     *
+     * // WHERE with subquery
+     * SubQuery activeUsers = new SubQuery("SELECT id FROM users WHERE active = true");
+     * Where whereIn = new Where(new In("user_id", activeUsers));
+     * // Results in: WHERE user_id IN (SELECT id FROM users WHERE active = true)
      * }</pre>
-     * 
-     * @param condition the condition to be used in the WHERE clause
+     *
+     * @param condition the condition to be used in the WHERE clause. Must not be null.
      * @throws IllegalArgumentException if condition is null
      */
     public Where(final Condition condition) {

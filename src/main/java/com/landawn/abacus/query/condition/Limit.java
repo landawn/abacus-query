@@ -154,6 +154,15 @@ public class Limit extends AbstractCondition {
      * This method returns the raw expression string passed to the constructor,
      * or null if the Limit was created with count/offset parameters.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Limit limit1 = new Limit("10 OFFSET 20");
+     * String expr = limit1.getExpr(); // Returns "10 OFFSET 20"
+     *
+     * Limit limit2 = new Limit(10, 20);
+     * String expr2 = limit2.getExpr(); // Returns null
+     * }</pre>
+     *
      * @return the custom expression string, or null if constructed with count/offset
      */
     public String getExpr() {
