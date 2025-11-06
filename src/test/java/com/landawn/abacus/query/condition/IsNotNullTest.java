@@ -16,7 +16,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testConstructorWithPropName() {
         IsNotNull condition = new IsNotNull("email");
-        
+
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("email", condition.getPropName());
         Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
@@ -25,11 +25,11 @@ public class IsNotNullTest extends TestBase {
 
     @Test
     public void testConstructorWithDifferentPropNames() {
-        String[] propNames = {"customer_name", "phone_number", "address", "description"};
-        
+        String[] propNames = { "customer_name", "phone_number", "address", "description" };
+
         for (String propName : propNames) {
             IsNotNull condition = new IsNotNull(propName);
-            
+
             Assertions.assertEquals(propName, condition.getPropName());
             Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
             Assertions.assertEquals(IsNull.NULL, condition.getPropValue());
@@ -40,7 +40,7 @@ public class IsNotNullTest extends TestBase {
     public void testGetParameters() {
         IsNotNull condition = new IsNotNull("status");
         List<Object> params = condition.getParameters();
-        
+
         Assertions.assertNotNull(params);
         Assertions.assertEquals(0, params.size());
     }
@@ -49,7 +49,7 @@ public class IsNotNullTest extends TestBase {
     public void testClearParameters() {
         IsNotNull condition = new IsNotNull("field");
         condition.clearParameters();
-        
+
         List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertEquals(0, params.size());
@@ -59,7 +59,7 @@ public class IsNotNullTest extends TestBase {
     public void testCopy() {
         IsNotNull original = new IsNotNull("username");
         IsNotNull copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals(original.getOperator(), copy.getOperator());
@@ -70,7 +70,7 @@ public class IsNotNullTest extends TestBase {
     public void testToString() {
         IsNotNull condition = new IsNotNull("email");
         String result = condition.toString();
-        
+
         Assertions.assertTrue(result.contains("email"));
         Assertions.assertTrue(result.contains("IS NOT"));
         Assertions.assertTrue(result.contains("NULL"));
@@ -80,7 +80,7 @@ public class IsNotNullTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         IsNotNull condition = new IsNotNull("firstName");
         String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-        
+
         Assertions.assertTrue(result.contains("FIRST_NAME"));
         Assertions.assertTrue(result.contains("IS NOT"));
         Assertions.assertTrue(result.contains("NULL"));
@@ -90,7 +90,7 @@ public class IsNotNullTest extends TestBase {
     public void testToStringWithCamelCase() {
         IsNotNull condition = new IsNotNull("phoneNumber");
         String result = condition.toString(NamingPolicy.LOWER_CAMEL_CASE);
-        
+
         Assertions.assertTrue(result.contains("phoneNumber"));
         Assertions.assertTrue(result.contains("IS NOT"));
         Assertions.assertTrue(result.contains("NULL"));
@@ -101,7 +101,7 @@ public class IsNotNullTest extends TestBase {
         IsNotNull condition1 = new IsNotNull("field1");
         IsNotNull condition2 = new IsNotNull("field1");
         IsNotNull condition3 = new IsNotNull("field2");
-        
+
         Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
         Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
     }
@@ -111,7 +111,7 @@ public class IsNotNullTest extends TestBase {
         IsNotNull condition1 = new IsNotNull("field1");
         IsNotNull condition2 = new IsNotNull("field1");
         IsNotNull condition3 = new IsNotNull("field2");
-        
+
         Assertions.assertEquals(condition1, condition1);
         Assertions.assertEquals(condition1, condition2);
         Assertions.assertNotEquals(condition1, condition3);
@@ -122,7 +122,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testInheritedMethods() {
         IsNotNull condition = new IsNotNull("value");
-        
+
         // Test methods inherited from IsNot
         Assertions.assertEquals("value", condition.getPropName());
         Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
@@ -133,7 +133,7 @@ public class IsNotNullTest extends TestBase {
     public void testSharedNULLConstant() {
         IsNotNull condition1 = new IsNotNull("field1");
         IsNotNull condition2 = new IsNotNull("field2");
-        
+
         // Both should use the same NULL constant from IsNull
         Assertions.assertSame(condition1.getPropValue(), condition2.getPropValue());
         Assertions.assertEquals(IsNull.NULL, condition1.getPropValue());
@@ -143,15 +143,12 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testCommonUseCases() {
         // Test common field names that are often checked for NOT NULL
-        String[] commonFields = {
-            "email", "customer_name", "phone_number", "user_id",
-            "created_date", "status", "password", "address"
-        };
-        
+        String[] commonFields = { "email", "customer_name", "phone_number", "user_id", "created_date", "status", "password", "address" };
+
         for (String field : commonFields) {
             IsNotNull condition = new IsNotNull(field);
             String result = condition.toString();
-            
+
             Assertions.assertTrue(result.contains(field));
             Assertions.assertTrue(result.contains("IS NOT NULL"));
         }

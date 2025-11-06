@@ -50,7 +50,7 @@ public class FullJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("employees", "contractors");
         FullJoin join = new FullJoin(entities, new Equal("departments.id", "person.dept_id"));
         assertNotNull(join);
-        assertEquals(2, (int)join.getJoinEntities().size());
+        assertEquals(2, (int) join.getJoinEntities().size());
         assertEquals(Operator.FULL_JOIN, join.getOperator());
     }
 
@@ -59,7 +59,7 @@ public class FullJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         FullJoin join = new FullJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int)result.size());
+        assertEquals(2, (int) result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -88,7 +88,7 @@ public class FullJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         FullJoin join = new FullJoin("products", new Equal("active", true));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals(true, params.get(0));
     }
 
@@ -193,7 +193,7 @@ public class FullJoin2025Test extends TestBase {
     public void testMultiTableFullJoin() {
         List<String> tables = Arrays.asList("system_a_data", "system_b_data");
         FullJoin join = new FullJoin(tables, new Equal("master_data.record_id", "source.record_id"));
-        assertEquals(2, (int)join.getJoinEntities().size());
+        assertEquals(2, (int) join.getJoinEntities().size());
     }
 
     @Test

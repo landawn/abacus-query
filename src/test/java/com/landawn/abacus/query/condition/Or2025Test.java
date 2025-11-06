@@ -49,7 +49,7 @@ public class Or2025Test extends TestBase {
         Equal cond2 = new Equal("b", 2);
         Or junction = new Or(cond1, cond2);
 
-        assertEquals(2, (int)junction.getConditions().size());
+        assertEquals(2, (int) junction.getConditions().size());
         assertEquals(Operator.OR, junction.getOperator());
     }
 
@@ -60,14 +60,14 @@ public class Or2025Test extends TestBase {
         List<Condition> conditions = Arrays.asList(cond1, cond2);
 
         Or junction = new Or(conditions);
-        assertEquals(2, (int)junction.getConditions().size());
+        assertEquals(2, (int) junction.getConditions().size());
     }
 
     @Test
     public void testConstructor_SingleCondition() {
         Equal cond = new Equal("status", "active");
         Or junction = new Or(cond);
-        assertEquals((Object)Integer.valueOf(1), junction.getConditions().size());
+        assertEquals((Object) Integer.valueOf(1), junction.getConditions().size());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class Or2025Test extends TestBase {
 
         List<Condition> conditions = junction.getConditions();
         assertNotNull(conditions);
-        assertEquals(2, (int)conditions.size());
+        assertEquals(2, (int) conditions.size());
     }
 
     @Test
@@ -94,19 +94,16 @@ public class Or2025Test extends TestBase {
         Equal cond2 = new Equal("b", 2);
 
         junction.set(cond1, cond2);
-        assertEquals(2, (int)junction.getConditions().size());
+        assertEquals(2, (int) junction.getConditions().size());
     }
 
     @Test
     public void testSet_Collection() {
         Or junction = new Or();
-        List<Condition> conditions = Arrays.asList(
-            new Equal("a", 1),
-            new Equal("b", 2)
-        );
+        List<Condition> conditions = Arrays.asList(new Equal("a", 1), new Equal("b", 2));
 
         junction.set(conditions);
-        assertEquals(2, (int)junction.getConditions().size());
+        assertEquals(2, (int) junction.getConditions().size());
     }
 
     @Test
@@ -114,7 +111,7 @@ public class Or2025Test extends TestBase {
         Or junction = new Or(new Equal("old", 1));
         junction.set(new Equal("new", 2));
 
-        assertEquals((Object)Integer.valueOf(1), junction.getConditions().size());
+        assertEquals((Object) Integer.valueOf(1), junction.getConditions().size());
         Equal condition = (Equal) junction.getConditions().get(0);
         assertEquals("new", condition.getPropName());
     }
@@ -123,46 +120,37 @@ public class Or2025Test extends TestBase {
     public void testAdd_VarArgs() {
         Or junction = new Or();
         junction.add(new Equal("a", 1), new Equal("b", 2));
-        assertEquals(2, (int)junction.getConditions().size());
+        assertEquals(2, (int) junction.getConditions().size());
     }
 
     @Test
     public void testAdd_Collection() {
         Or junction = new Or();
-        List<Condition> conditions = Arrays.asList(
-            new Equal("a", 1),
-            new Equal("b", 2)
-        );
+        List<Condition> conditions = Arrays.asList(new Equal("a", 1), new Equal("b", 2));
         junction.add(conditions);
-        assertEquals(2, (int)junction.getConditions().size());
+        assertEquals(2, (int) junction.getConditions().size());
     }
 
     @Test
     public void testAdd_Incremental() {
         Or junction = new Or(new Equal("a", 1));
         junction.add(new Equal("b", 2));
-        assertEquals(2, (int)junction.getConditions().size());
+        assertEquals(2, (int) junction.getConditions().size());
     }
 
     @Test
     public void testClear() {
-        Or junction = new Or(
-            new Equal("a", 1),
-            new Equal("b", 2)
-        );
+        Or junction = new Or(new Equal("a", 1), new Equal("b", 2));
         junction.clear();
         assertEquals(Integer.valueOf(0), junction.getConditions().size());
     }
 
     @Test
     public void testGetParameters() {
-        Or junction = new Or(
-            new Equal("a", 1),
-            new Equal("b", "test")
-        );
+        Or junction = new Or(new Equal("a", 1), new Equal("b", "test"));
         List<Object> params = junction.getParameters();
-        assertEquals(2, (int)params.size());
-        assertEquals((Object)Integer.valueOf(1), params.get(0));
+        assertEquals(2, (int) params.size());
+        assertEquals((Object) Integer.valueOf(1), params.get(0));
         assertEquals("test", params.get(1));
     }
 
@@ -170,7 +158,7 @@ public class Or2025Test extends TestBase {
     public void testGetParameters_EmptyConditions() {
         Or junction = new Or();
         List<Object> params = junction.getParameters();
-        assertEquals(0, (int)params.size());
+        assertEquals(0, (int) params.size());
     }
 
     @Test
@@ -206,15 +194,12 @@ public class Or2025Test extends TestBase {
 
         // Copy should not be affected
         Equal copiedCond = (Equal) copy.getConditions().get(0);
-        assertEquals(1, (int)copiedCond.getPropValue());
+        assertEquals(1, (int) copiedCond.getPropValue());
     }
 
     @Test
     public void testToString_NoChange() {
-        Or junction = new Or(
-            new Equal("a", 1),
-            new Equal("b", 2)
-        );
+        Or junction = new Or(new Equal("a", 1), new Equal("b", 2));
         String result = junction.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("OR"));
         assertTrue(result.contains("a"));
@@ -279,7 +264,7 @@ public class Or2025Test extends TestBase {
         Or extended = original.or(cond3);
 
         assertEquals(Integer.valueOf(3), extended.getConditions().size());
-        assertEquals(2, (int)original.getConditions().size());
+        assertEquals(2, (int) original.getConditions().size());
     }
 
     @Test
@@ -290,17 +275,11 @@ public class Or2025Test extends TestBase {
 
     @Test
     public void testNestedJunctions() {
-        Or inner = new Or(
-            new Equal("a", 1),
-            new Equal("b", 2)
-        );
-        Or outer = new Or(
-            inner,
-            new Equal("c", 3)
-        );
+        Or inner = new Or(new Equal("a", 1), new Equal("b", 2));
+        Or outer = new Or(inner, new Equal("c", 3));
 
-        assertEquals(2, (int)outer.getConditions().size());
+        assertEquals(2, (int) outer.getConditions().size());
         List<Object> params = outer.getParameters();
-        assertEquals(3, (int)params.size());
+        assertEquals(3, (int) params.size());
     }
 }

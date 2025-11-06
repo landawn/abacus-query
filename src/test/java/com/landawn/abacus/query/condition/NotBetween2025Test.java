@@ -60,8 +60,8 @@ public class NotBetween2025Test extends TestBase {
         NotBetween condition = new NotBetween("price", 10.0, 100.0);
 
         assertEquals("price", condition.getPropName());
-        assertEquals(10.0, (Double)condition.getMinValue());
-        assertEquals(100.0, (Double)condition.getMaxValue());
+        assertEquals(10.0, (Double) condition.getMinValue());
+        assertEquals(100.0, (Double) condition.getMaxValue());
     }
 
     @Test
@@ -181,8 +181,8 @@ public class NotBetween2025Test extends TestBase {
 
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object)original.getMinValue(), (Object)copy.getMinValue());
-        assertEquals((Object)original.getMaxValue(), (Object)copy.getMaxValue());
+        assertEquals((Object) original.getMinValue(), (Object) copy.getMinValue());
+        assertEquals((Object) original.getMaxValue(), (Object) copy.getMaxValue());
     }
 
     @Test
@@ -334,7 +334,7 @@ public class NotBetween2025Test extends TestBase {
         List<Object> params = abnormalTemp.getParameters();
 
         assertEquals(2, params.size());
-        assertEquals(36.0, (Double)params.get(0));
-        assertEquals(37.5, (Double)params.get(1));
+        assertEquals(36.0, (Double) params.get(0));
+        assertEquals(37.5, (Double) params.get(1));
     }
 }

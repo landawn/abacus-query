@@ -50,7 +50,7 @@ public class InnerJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("orders o", "customers c");
         InnerJoin join = new InnerJoin(entities, new Equal("o.customer_id", "c.id"));
         assertNotNull(join);
-        assertEquals(2, (int)join.getJoinEntities().size());
+        assertEquals(2, (int) join.getJoinEntities().size());
         assertEquals(Operator.INNER_JOIN, join.getOperator());
     }
 
@@ -59,7 +59,7 @@ public class InnerJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         InnerJoin join = new InnerJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int)result.size());
+        assertEquals(2, (int) result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -88,7 +88,7 @@ public class InnerJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         InnerJoin join = new InnerJoin("orders o", new Equal("status", "active"));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -177,14 +177,9 @@ public class InnerJoin2025Test extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        And andCondition = new And(
-            Arrays.asList(
-                new Equal("o.customer_id", "c.id"),
-                new GreaterThan("o.total", (Object) 100)
-            )
-        );
+        And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", (Object) 100)));
         InnerJoin join = new InnerJoin("orders o", andCondition);
-        assertEquals(2, (int)join.getParameters().size());
+        assertEquals(2, (int) join.getParameters().size());
     }
 
     @Test
@@ -196,27 +191,17 @@ public class InnerJoin2025Test extends TestBase {
 
     @Test
     public void testWithCompositeKey() {
-        And compositeKey = new And(
-            Arrays.asList(
-                new Equal("orders.id", "oi.order_id"),
-                new Equal("orders.version", "oi.order_version")
-            )
-        );
+        And compositeKey = new And(Arrays.asList(new Equal("orders.id", "oi.order_id"), new Equal("orders.version", "oi.order_version")));
         InnerJoin join = new InnerJoin("order_items oi", compositeKey);
         assertNotNull(join.getCondition());
-        assertEquals(2, (int)join.getParameters().size());
+        assertEquals(2, (int) join.getParameters().size());
     }
 
     @Test
     public void testWithMultipleConditions() {
         And multipleConditions = new And(
-            Arrays.asList(
-                new Equal("order_items.product_id", "p.id"),
-                new Equal("p.active", true),
-                new GreaterThan("p.stock", (Object) 0)
-            )
-        );
+                Arrays.asList(new Equal("order_items.product_id", "p.id"), new Equal("p.active", true), new GreaterThan("p.stock", (Object) 0)));
         InnerJoin join = new InnerJoin("products p", multipleConditions);
-        assertEquals(3, (int)join.getParameters().size());
+        assertEquals(3, (int) join.getParameters().size());
     }
 }

@@ -162,10 +162,7 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testGetParametersFromCondition() {
-        Condition condition = CF.and(
-            CF.eq("status", "active"),
-            CF.between("age", 18, 65)
-        );
+        Condition condition = CF.and(CF.eq("status", "active"), CF.between("age", 18, 65));
 
         SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
 
@@ -378,10 +375,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testComplexSubQueryWithMultipleProperties() {
         Collection<String> props = Arrays.asList("id", "name", "email", "age");
-        Condition condition = CF.and(
-            CF.eq("status", "active"),
-            CF.between("age", 18, 65)
-        );
+        Condition condition = CF.and(CF.eq("status", "active"), CF.between("age", 18, 65));
 
         SubQuery subQuery = new SubQuery("users", props, condition);
 

@@ -22,7 +22,7 @@ public class GroupByTest extends TestBase {
     public void testConstructorWithCondition() {
         Condition condition = CF.expr("YEAR(order_date)");
         GroupBy groupBy = new GroupBy(condition);
-        
+
         Assertions.assertNotNull(groupBy);
         Assertions.assertEquals(Operator.GROUP_BY, groupBy.getOperator());
         Assertions.assertEquals(condition, groupBy.getCondition());
@@ -31,7 +31,7 @@ public class GroupByTest extends TestBase {
     @Test
     public void testConstructorWithVarArgs() {
         GroupBy groupBy = new GroupBy("department", "location");
-        
+
         Assertions.assertNotNull(groupBy);
         Assertions.assertEquals(Operator.GROUP_BY, groupBy.getOperator());
         String result = groupBy.toString();
@@ -42,7 +42,7 @@ public class GroupByTest extends TestBase {
     @Test
     public void testConstructorWithSinglePropName() {
         GroupBy groupBy = new GroupBy("category");
-        
+
         Assertions.assertNotNull(groupBy);
         String result = groupBy.toString();
         Assertions.assertTrue(result.contains("GROUP BY"));
@@ -52,7 +52,7 @@ public class GroupByTest extends TestBase {
     @Test
     public void testConstructorWithPropNameAndDirection() {
         GroupBy groupBy = new GroupBy("sales_amount", SortDirection.DESC);
-        
+
         Assertions.assertNotNull(groupBy);
         String result = groupBy.toString();
         Assertions.assertTrue(result.contains("sales_amount"));
@@ -63,7 +63,7 @@ public class GroupByTest extends TestBase {
     public void testConstructorWithCollectionAndDirection() {
         List<String> columns = Arrays.asList("department", "location");
         GroupBy groupBy = new GroupBy(columns, SortDirection.DESC);
-        
+
         Assertions.assertNotNull(groupBy);
         String result = groupBy.toString();
         Assertions.assertTrue(result.contains("department"));
@@ -77,9 +77,9 @@ public class GroupByTest extends TestBase {
         orders.put("department", SortDirection.ASC);
         orders.put("salary", SortDirection.DESC);
         orders.put("hire_date", SortDirection.ASC);
-        
+
         GroupBy groupBy = new GroupBy(orders);
-        
+
         Assertions.assertNotNull(groupBy);
         String result = groupBy.toString();
         Assertions.assertTrue(result.contains("department"));
@@ -110,7 +110,7 @@ public class GroupByTest extends TestBase {
     public void testCopy() {
         GroupBy original = new GroupBy("department", SortDirection.DESC);
         GroupBy copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getOperator(), copy.getOperator());
         Assertions.assertEquals(original.toString(), copy.toString());
@@ -120,7 +120,7 @@ public class GroupByTest extends TestBase {
     public void testToString() {
         GroupBy groupBy = new GroupBy("product_category");
         String result = groupBy.toString();
-        
+
         Assertions.assertTrue(result.contains("GROUP BY"));
         Assertions.assertTrue(result.contains("product_category"));
     }
@@ -129,7 +129,7 @@ public class GroupByTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         GroupBy groupBy = new GroupBy("productCategory");
         String result = groupBy.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-        
+
         Assertions.assertTrue(result.contains("GROUP BY"));
         Assertions.assertTrue(result.contains("PRODUCT_CATEGORY"));
     }
@@ -139,7 +139,7 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy1 = new GroupBy("department");
         GroupBy groupBy2 = new GroupBy("department");
         GroupBy groupBy3 = new GroupBy("location");
-        
+
         Assertions.assertEquals(groupBy1.hashCode(), groupBy2.hashCode());
         Assertions.assertNotEquals(groupBy1.hashCode(), groupBy3.hashCode());
     }
@@ -149,7 +149,7 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy1 = new GroupBy("department");
         GroupBy groupBy2 = new GroupBy("department");
         GroupBy groupBy3 = new GroupBy("location");
-        
+
         Assertions.assertEquals(groupBy1, groupBy1);
         Assertions.assertEquals(groupBy1, groupBy2);
         Assertions.assertNotEquals(groupBy1, groupBy3);
@@ -168,7 +168,7 @@ public class GroupByTest extends TestBase {
     public void testMultiplePropNamesWithSortDirection() {
         GroupBy groupBy = new GroupBy(Arrays.asList("col1", "col2", "col3"), SortDirection.ASC);
         String result = groupBy.toString();
-        
+
         Assertions.assertTrue(result.contains("col1"));
         Assertions.assertTrue(result.contains("col2"));
         Assertions.assertTrue(result.contains("col3"));

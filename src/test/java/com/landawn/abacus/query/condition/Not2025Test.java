@@ -68,10 +68,7 @@ public class Not2025Test extends TestBase {
 
     @Test
     public void testGetCondition_ComplexCondition() {
-        And innerAnd = new And(
-            new Equal("a", 1),
-            new Equal("b", 2)
-        );
+        And innerAnd = new And(new Equal("a", 1), new Equal("b", 2));
         Not condition = new Not(innerAnd);
 
         And retrieved = condition.getCondition();
@@ -90,7 +87,7 @@ public class Not2025Test extends TestBase {
         Not condition = new Not(innerCondition);
 
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("John", params.get(0));
     }
 
@@ -100,9 +97,9 @@ public class Not2025Test extends TestBase {
         Not condition = new Not(between);
 
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int)params.size());
-        assertEquals(18, (int)params.get(0));
-        assertEquals(65, (int)params.get(1));
+        assertEquals(2, (int) params.size());
+        assertEquals(18, (int) params.get(0));
+        assertEquals(65, (int) params.get(1));
     }
 
     @Test
@@ -132,7 +129,7 @@ public class Not2025Test extends TestBase {
         Not copy = original.copy();
         Equal copiedInner = copy.getCondition();
         assertEquals("age", copiedInner.getPropName());
-        assertEquals(30, (int)copiedInner.getPropValue());
+        assertEquals(30, (int) copiedInner.getPropValue());
     }
 
     @Test
@@ -197,14 +194,11 @@ public class Not2025Test extends TestBase {
 
     @Test
     public void testNestedCondition() {
-        And innerAnd = new And(
-            new Equal("status", "active"),
-            new GreaterThan("age", 18)
-        );
+        And innerAnd = new And(new Equal("status", "active"), new GreaterThan("age", 18));
         Not condition = new Not(innerAnd);
 
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int)params.size());
+        assertEquals(2, (int) params.size());
     }
 
     @Test

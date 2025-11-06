@@ -84,7 +84,7 @@ public class XOR2025Test extends TestBase {
     public void testGetParameters() {
         XOR condition = new XOR("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -102,7 +102,7 @@ public class XOR2025Test extends TestBase {
 
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object)original.getPropValue(), (Object)copy.getPropValue());
+        assertEquals((Object) original.getPropValue(), (Object) copy.getPropValue());
     }
 
     @Test

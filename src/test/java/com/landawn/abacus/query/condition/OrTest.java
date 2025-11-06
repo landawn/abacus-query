@@ -20,9 +20,9 @@ public class OrTest extends TestBase {
         Equal eq1 = CF.eq("status", "active");
         Equal eq2 = CF.eq("status", "pending");
         Equal eq3 = CF.eq("status", "review");
-        
+
         Or or = CF.or(eq1, eq2, eq3);
-        
+
         Assertions.assertNotNull(or);
         Assertions.assertEquals(Operator.OR, or.getOperator());
         Assertions.assertEquals(3, or.getConditions().size());
@@ -31,20 +31,17 @@ public class OrTest extends TestBase {
     @Test
     public void testConstructorWithEmptyVarArgs() {
         Or or = CF.or();
-        
+
         Assertions.assertNotNull(or);
         Assertions.assertEquals(0, or.getConditions().size());
     }
 
     @Test
     public void testConstructorWithCollection() {
-        List<Condition> conditions = Arrays.asList(
-            CF.like("name", "John%"),
-            CF.like("name", "Jane%")
-        );
-        
+        List<Condition> conditions = Arrays.asList(CF.like("name", "John%"), CF.like("name", "Jane%"));
+
         Or or = CF.or(conditions);
-        
+
         Assertions.assertEquals(2, or.getConditions().size());
     }
 
@@ -52,17 +49,15 @@ public class OrTest extends TestBase {
     public void testOrMethodWithSingleCondition() {
         Or or = CF.or(CF.eq("type", "A"));
         Or result = or.or(CF.eq("type", "B"));
-        
+
         Assertions.assertNotSame(or, result);
         Assertions.assertEquals(2, result.getConditions().size());
     }
 
     @Test
     public void testOrMethodChaining() {
-        Or or = CF.or(CF.eq("type", "A"))
-            .or(CF.eq("type", "B"))
-            .or(CF.eq("type", "C"));
-        
+        Or or = CF.or(CF.eq("type", "A")).or(CF.eq("type", "B")).or(CF.eq("type", "C"));
+
         Assertions.assertEquals(3, or.getConditions().size());
     }
 
@@ -70,10 +65,10 @@ public class OrTest extends TestBase {
     public void testGetConditionList() {
         Equal eq1 = CF.eq("status", "active");
         Equal eq2 = CF.eq("status", "pending");
-        
+
         Or or = CF.or(eq1, eq2);
         List<Condition> conditions = or.getConditions();
-        
+
         Assertions.assertEquals(2, conditions.size());
         Assertions.assertTrue(conditions.contains(eq1));
         Assertions.assertTrue(conditions.contains(eq2));
@@ -81,12 +76,8 @@ public class OrTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Or or = CF.or(
-            CF.eq("status", "active"),
-            CF.gt("age", 18),
-            CF.like("name", "%John%")
-        );
-        
+        Or or = CF.or(CF.eq("status", "active"), CF.gt("age", 18), CF.like("name", "%John%"));
+
         List<Object> params = or.getParameters();
         Assertions.assertEquals(3, params.size());
         Assertions.assertTrue(params.contains("active"));
@@ -96,25 +87,18 @@ public class OrTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Or or = CF.or(
-            CF.eq("status", "active"),
-            CF.in("id", Arrays.asList(1, 2, 3))
-        );
-        
+        Or or = CF.or(CF.eq("status", "active"), CF.in("id", Arrays.asList(1, 2, 3)));
+
         or.clearParameters();
-        
+
         List<Object> params = or.getParameters();
         Assertions.assertTrue(params.stream().allMatch(p -> p == null));
     }
 
     @Test
     public void testToString() {
-        Or or = CF.or(
-            CF.eq("city", "New York"),
-            CF.eq("city", "Los Angeles"),
-            CF.eq("city", "Chicago")
-        );
-        
+        Or or = CF.or(CF.eq("city", "New York"), CF.eq("city", "Los Angeles"), CF.eq("city", "Chicago"));
+
         String result = or.toString();
         Assertions.assertTrue(result.contains("OR"));
         Assertions.assertTrue(result.contains("city"));
@@ -125,13 +109,10 @@ public class OrTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Or original = CF.or(
-            CF.eq("status", "active"),
-            CF.gt("age", 18)
-        );
-        
+        Or original = CF.or(CF.eq("status", "active"), CF.gt("age", 18));
+
         Or copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getConditions().size(), copy.getConditions().size());
         Assertions.assertNotSame(original.getConditions(), copy.getConditions());
@@ -141,7 +122,7 @@ public class OrTest extends TestBase {
     public void testHashCode() {
         Or or1 = CF.or(CF.eq("status", "active"), CF.eq("status", "pending"));
         Or or2 = CF.or(CF.eq("status", "active"), CF.eq("status", "pending"));
-        
+
         Assertions.assertEquals(or1.hashCode(), or2.hashCode());
     }
 
@@ -150,7 +131,7 @@ public class OrTest extends TestBase {
         Or or1 = CF.or(CF.eq("status", "active"), CF.eq("status", "pending"));
         Or or2 = CF.or(CF.eq("status", "active"), CF.eq("status", "pending"));
         Or or3 = CF.or(CF.eq("status", "active"), CF.eq("status", "inactive"));
-        
+
         Assertions.assertTrue(or1.equals(or1));
         Assertions.assertTrue(or1.equals(or2));
         Assertions.assertFalse(or1.equals(or3));
@@ -160,12 +141,9 @@ public class OrTest extends TestBase {
 
     @Test
     public void testComplexOrConditions() {
-        Or or = CF.or(
-            CF.and(CF.eq("category", "electronics"), CF.gt("price", 100)),
-            CF.and(CF.eq("category", "books"), CF.gt("price", 50)),
-            CF.eq("featured", true)
-        );
-        
+        Or or = CF.or(CF.and(CF.eq("category", "electronics"), CF.gt("price", 100)), CF.and(CF.eq("category", "books"), CF.gt("price", 50)),
+                CF.eq("featured", true));
+
         Assertions.assertEquals(3, or.getConditions().size());
         Assertions.assertTrue(or.getParameters().size() >= 5);
     }
@@ -175,7 +153,7 @@ public class OrTest extends TestBase {
         Or or = CF.or();
         or.add(CF.eq("status", "active"));
         or.add(CF.eq("status", "pending"));
-        
+
         Assertions.assertEquals(2, or.getConditions().size());
     }
 

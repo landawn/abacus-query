@@ -74,7 +74,7 @@ public class InSubQuery2025Test extends TestBase {
     @Test
     public void testConstructor_NullPropNames() {
         SubQuery subQuery = new SubQuery("SELECT id FROM users");
-        assertThrows(IllegalArgumentException.class, () -> new InSubQuery((Collection<String>)null, subQuery));
+        assertThrows(IllegalArgumentException.class, () -> new InSubQuery((Collection<String>) null, subQuery));
     }
 
     @Test

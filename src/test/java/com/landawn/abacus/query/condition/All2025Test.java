@@ -82,7 +82,7 @@ public class All2025Test extends TestBase {
         All condition = new All(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("Premium", params.get(0));
     }
 
@@ -226,9 +226,7 @@ public class All2025Test extends TestBase {
     @Test
     public void testGreaterThanAllScenario() {
         // price > ALL (SELECT price FROM competitor_products)
-        SubQuery subQuery = new SubQuery(
-            "SELECT price FROM competitor_products WHERE product_type = 'Premium'"
-        );
+        SubQuery subQuery = new SubQuery("SELECT price FROM competitor_products WHERE product_type = 'Premium'");
         All condition = new All(subQuery);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ALL"));
@@ -246,9 +244,7 @@ public class All2025Test extends TestBase {
     @Test
     public void testSalaryComparison() {
         // Find employees earning more than ALL managers
-        SubQuery subQuery = new SubQuery(
-            "SELECT salary FROM employees WHERE is_manager = true"
-        );
+        SubQuery subQuery = new SubQuery("SELECT salary FROM employees WHERE is_manager = true");
         All condition = new All(subQuery);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ALL"));
@@ -256,16 +252,11 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testWithMultipleConditions() {
-        And andCondition = new And(
-            Arrays.asList(
-                new Equal("active", true),
-                new Equal("category", "Electronics")
-            )
-        );
+        And andCondition = new And(Arrays.asList(new Equal("active", true), new Equal("category", "Electronics")));
         SubQuery subQuery = new SubQuery("products", Arrays.asList("price"), andCondition);
         All condition = new All(subQuery);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int)params.size());
+        assertEquals(2, (int) params.size());
     }
 
     @Test

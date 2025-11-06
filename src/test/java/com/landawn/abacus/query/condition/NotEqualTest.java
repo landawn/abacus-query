@@ -16,7 +16,7 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testConstructor() {
         NotEqual notEqual = CF.ne("status", "deleted");
-        
+
         Assertions.assertNotNull(notEqual);
         Assertions.assertEquals("status", notEqual.getPropName());
         Assertions.assertEquals("deleted", notEqual.getPropValue());
@@ -26,7 +26,7 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testConstructorWithNumericValue() {
         NotEqual notEqual = CF.ne("quantity", 0);
-        
+
         Assertions.assertEquals("quantity", notEqual.getPropName());
         Assertions.assertEquals(0, (Integer) notEqual.getPropValue());
     }
@@ -34,7 +34,7 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testConstructorWithNullValue() {
         NotEqual notEqual = CF.ne("assignee", null);
-        
+
         Assertions.assertEquals("assignee", notEqual.getPropName());
         Assertions.assertNull(notEqual.getPropValue());
     }
@@ -42,7 +42,7 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testConstructorWithDateString() {
         NotEqual notEqual = CF.ne("created", "2024-01-01");
-        
+
         Assertions.assertEquals("created", notEqual.getPropName());
         Assertions.assertEquals("2024-01-01", notEqual.getPropValue());
     }
@@ -50,7 +50,7 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testGetParameters() {
         NotEqual notEqual = CF.ne("username", "admin");
-        
+
         Assertions.assertEquals(1, notEqual.getParameters().size());
         Assertions.assertEquals("admin", notEqual.getParameters().get(0));
     }
@@ -58,16 +58,16 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testGetParametersWithNull() {
         NotEqual notEqual = CF.ne("value", null);
-        
+
         Assertions.assertNull(notEqual.getParameters().get(0));
     }
 
     @Test
     public void testClearParameters() {
         NotEqual notEqual = CF.ne("type", "default");
-        
+
         notEqual.clearParameters();
-        
+
         Assertions.assertNull(notEqual.getPropValue());
         Assertions.assertNull(notEqual.getParameters().get(0));
     }
@@ -75,7 +75,7 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testToString() {
         NotEqual notEqual = CF.ne("status", "inactive");
-        
+
         String result = notEqual.toString();
         Assertions.assertTrue(result.contains("status"));
         Assertions.assertTrue(result.contains("!="));
@@ -85,7 +85,7 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         NotEqual notEqual = CF.ne("user_status", "banned");
-        
+
         String result = notEqual.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
         Assertions.assertTrue(result.contains("USER_STATUS"));
         Assertions.assertTrue(result.contains("!="));
@@ -95,9 +95,9 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testCopy() {
         NotEqual original = CF.ne("role", "guest");
-        
+
         NotEqual copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());

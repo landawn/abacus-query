@@ -28,7 +28,7 @@ public class ClauseTest extends TestBase {
     public void testConstructor() {
         Equal eq = ConditionFactory.eq("status", "active");
         TestClause clause = new TestClause(Operator.WHERE, eq);
-        
+
         Assertions.assertNotNull(clause);
         Assertions.assertEquals(Operator.WHERE, clause.getOperator());
         Assertions.assertEquals(eq, clause.getCondition());
@@ -37,7 +37,7 @@ public class ClauseTest extends TestBase {
     @Test
     public void testAndThrowsException() {
         TestClause clause = new TestClause(Operator.WHERE, ConditionFactory.eq("id", 1));
-        
+
         Assertions.assertThrows(UnsupportedOperationException.class, () -> {
             clause.and(ConditionFactory.eq("name", "test"));
         });
@@ -46,7 +46,7 @@ public class ClauseTest extends TestBase {
     @Test
     public void testOrThrowsException() {
         TestClause clause = new TestClause(Operator.HAVING, ConditionFactory.gt("COUNT(*)", 5));
-        
+
         Assertions.assertThrows(UnsupportedOperationException.class, () -> {
             clause.or(ConditionFactory.lt("SUM(amount)", 1000));
         });
@@ -55,7 +55,7 @@ public class ClauseTest extends TestBase {
     @Test
     public void testNotThrowsException() {
         TestClause clause = new TestClause(Operator.GROUP_BY, ConditionFactory.expr("department"));
-        
+
         Assertions.assertThrows(UnsupportedOperationException.class, () -> {
             clause.not();
         });
@@ -65,16 +65,16 @@ public class ClauseTest extends TestBase {
     public void testInheritedMethodsFromCell() {
         GreaterThan gt = ConditionFactory.gt("price", 100);
         TestClause clause = new TestClause(Operator.WHERE, gt);
-        
+
         // Test getCondition
         Condition retrieved = clause.getCondition();
         Assertions.assertEquals(gt, retrieved);
-        
+
         // Test getParameters
         var params = clause.getParameters();
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(100, params.get(0));
-        
+
         // Test clearParameters
         clause.clearParameters();
         Assertions.assertNull(clause.getCondition().getParameters().get(0));
@@ -84,9 +84,9 @@ public class ClauseTest extends TestBase {
     public void testCopy() {
         Between between = ConditionFactory.between("age", 18, 65);
         TestClause original = new TestClause(Operator.WHERE, between);
-        
+
         TestClause copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getOperator(), copy.getOperator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
@@ -97,7 +97,7 @@ public class ClauseTest extends TestBase {
     public void testToString() {
         Equal eq = ConditionFactory.eq("status", "active");
         TestClause clause = new TestClause(Operator.WHERE, eq);
-        
+
         String result = clause.toString();
         Assertions.assertTrue(result.contains("WHERE"));
         Assertions.assertTrue(result.contains("status = 'active'"));
@@ -107,11 +107,11 @@ public class ClauseTest extends TestBase {
     public void testEquals() {
         Equal eq1 = ConditionFactory.eq("id", 1);
         Equal eq2 = ConditionFactory.eq("id", 1);
-        
+
         TestClause clause1 = new TestClause(Operator.WHERE, eq1);
         TestClause clause2 = new TestClause(Operator.WHERE, eq2);
         TestClause clause3 = new TestClause(Operator.HAVING, eq1);
-        
+
         Assertions.assertEquals(clause1, clause2);
         Assertions.assertNotEquals(clause1, clause3);
     }
@@ -121,7 +121,7 @@ public class ClauseTest extends TestBase {
         In in = ConditionFactory.in("type", Arrays.asList("A", "B", "C"));
         TestClause clause1 = new TestClause(Operator.WHERE, in);
         TestClause clause2 = new TestClause(Operator.WHERE, in);
-        
+
         Assertions.assertEquals(clause1.hashCode(), clause2.hashCode());
     }
 }

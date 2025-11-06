@@ -48,14 +48,9 @@ public class LeftJoin2025Test extends TestBase {
     @Test
     public void testConstructor_MultipleEntities() {
         List<String> entities = Arrays.asList("orders o", "order_items oi");
-        LeftJoin join = new LeftJoin(entities, new And(
-            Arrays.asList(
-                new Equal("c.id", "o.customer_id"),
-                new Equal("o.id", "oi.order_id")
-            )
-        ));
+        LeftJoin join = new LeftJoin(entities, new And(Arrays.asList(new Equal("c.id", "o.customer_id"), new Equal("o.id", "oi.order_id"))));
         assertNotNull(join);
-        assertEquals(2, (int)join.getJoinEntities().size());
+        assertEquals(2, (int) join.getJoinEntities().size());
         assertEquals(Operator.LEFT_JOIN, join.getOperator());
     }
 
@@ -64,7 +59,7 @@ public class LeftJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         LeftJoin join = new LeftJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int)result.size());
+        assertEquals(2, (int) result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -93,7 +88,7 @@ public class LeftJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         LeftJoin join = new LeftJoin("orders o", new Equal("status", "active"));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -182,14 +177,9 @@ public class LeftJoin2025Test extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        And andCondition = new And(
-            Arrays.asList(
-                new Equal("customers.id", "o.customer_id"),
-                new Equal("o.status", "active")
-            )
-        );
+        And andCondition = new And(Arrays.asList(new Equal("customers.id", "o.customer_id"), new Equal("o.status", "active")));
         LeftJoin join = new LeftJoin("orders o", andCondition);
-        assertEquals(2, (int)join.getParameters().size());
+        assertEquals(2, (int) join.getParameters().size());
     }
 
     @Test
@@ -209,14 +199,9 @@ public class LeftJoin2025Test extends TestBase {
     @Test
     public void testWithAdditionalFilters() {
         And multipleConditions = new And(
-            Arrays.asList(
-                new Equal("orders.id", "oi.order_id"),
-                new Equal("oi.status", "active"),
-                new GreaterThan("oi.created_date", "2023-01-01")
-            )
-        );
+                Arrays.asList(new Equal("orders.id", "oi.order_id"), new Equal("oi.status", "active"), new GreaterThan("oi.created_date", "2023-01-01")));
         LeftJoin join = new LeftJoin("order_items oi", multipleConditions);
-        assertEquals(3, (int)join.getParameters().size());
+        assertEquals(3, (int) join.getParameters().size());
     }
 
     @Test

@@ -50,7 +50,7 @@ public class NamedPropertyTest extends TestBase {
     public void testOfMethodCaching() {
         NamedProperty prop1 = NamedProperty.of("cachedProperty");
         NamedProperty prop2 = NamedProperty.of("cachedProperty");
-        
+
         // Should return the same instance due to caching
         Assertions.assertSame(prop1, prop2);
     }
@@ -73,7 +73,7 @@ public class NamedPropertyTest extends TestBase {
     public void testEq() {
         NamedProperty prop = NamedProperty.of("status");
         Equal condition = prop.eq("active");
-        
+
         Assertions.assertEquals("status", condition.getPropName());
         Assertions.assertEquals("active", condition.getPropValue());
     }
@@ -82,7 +82,7 @@ public class NamedPropertyTest extends TestBase {
     public void testEqOrWithArray() {
         NamedProperty prop = NamedProperty.of("color");
         Or condition = prop.eqOr("red", "green", "blue");
-        
+
         Assertions.assertEquals(3, condition.getConditions().size());
     }
 
@@ -91,7 +91,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop = NamedProperty.of("city");
         List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
         Or condition = prop.eqOr(cities);
-        
+
         Assertions.assertEquals(3, condition.getConditions().size());
     }
 
@@ -99,7 +99,7 @@ public class NamedPropertyTest extends TestBase {
     public void testNe() {
         NamedProperty prop = NamedProperty.of("status");
         NotEqual condition = prop.ne("deleted");
-        
+
         Assertions.assertEquals("status", condition.getPropName());
         Assertions.assertEquals("deleted", condition.getPropValue());
     }
@@ -108,16 +108,16 @@ public class NamedPropertyTest extends TestBase {
     public void testGt() {
         NamedProperty prop = NamedProperty.of("age");
         GreaterThan condition = prop.gt(18);
-        
+
         Assertions.assertEquals("age", condition.getPropName());
-        Assertions.assertEquals(18, (Integer)(Integer) condition.getPropValue());
+        Assertions.assertEquals(18, (Integer) (Integer) condition.getPropValue());
     }
 
     @Test
     public void testGe() {
         NamedProperty prop = NamedProperty.of("score");
         GreaterEqual condition = prop.ge(60);
-        
+
         Assertions.assertEquals("score", condition.getPropName());
         Assertions.assertEquals(60, (Integer) condition.getPropValue());
     }
@@ -126,7 +126,7 @@ public class NamedPropertyTest extends TestBase {
     public void testLt() {
         NamedProperty prop = NamedProperty.of("price");
         LessThan condition = prop.lt(100);
-        
+
         Assertions.assertEquals("price", condition.getPropName());
         Assertions.assertEquals(100, (Integer) condition.getPropValue());
     }
@@ -135,7 +135,7 @@ public class NamedPropertyTest extends TestBase {
     public void testLe() {
         NamedProperty prop = NamedProperty.of("quantity");
         LessEqual condition = prop.le(10);
-        
+
         Assertions.assertEquals("quantity", condition.getPropName());
         Assertions.assertEquals(10, (Integer) condition.getPropValue());
     }
@@ -144,7 +144,7 @@ public class NamedPropertyTest extends TestBase {
     public void testIsNull() {
         NamedProperty prop = NamedProperty.of("deletedDate");
         IsNull condition = prop.isNull();
-        
+
         Assertions.assertEquals("deletedDate", condition.getPropName());
     }
 
@@ -152,7 +152,7 @@ public class NamedPropertyTest extends TestBase {
     public void testIsNotNull() {
         NamedProperty prop = NamedProperty.of("email");
         IsNotNull condition = prop.isNotNull();
-        
+
         Assertions.assertEquals("email", condition.getPropName());
     }
 
@@ -160,9 +160,9 @@ public class NamedPropertyTest extends TestBase {
     public void testBetween() {
         NamedProperty prop = NamedProperty.of("age");
         Between condition = prop.between(18, 65);
-        
+
         Assertions.assertEquals("age", condition.getPropName());
-        Assertions.assertEquals(18, (Integer)(Integer) condition.getMinValue());
+        Assertions.assertEquals(18, (Integer) (Integer) condition.getMinValue());
         Assertions.assertEquals(65, (Integer) condition.getMaxValue());
     }
 
@@ -170,7 +170,7 @@ public class NamedPropertyTest extends TestBase {
     public void testBt() {
         NamedProperty prop = NamedProperty.of("salary");
         Between condition = prop.bt(30000, 80000);
-        
+
         Assertions.assertEquals("salary", condition.getPropName());
         Assertions.assertEquals(30000, (Integer) condition.getMinValue());
         Assertions.assertEquals(80000, (Integer) condition.getMaxValue());
@@ -180,7 +180,7 @@ public class NamedPropertyTest extends TestBase {
     public void testLike() {
         NamedProperty prop = NamedProperty.of("name");
         Like condition = prop.like("John%");
-        
+
         Assertions.assertEquals("name", condition.getPropName());
         Assertions.assertEquals("John%", condition.getPropValue());
     }
@@ -189,7 +189,7 @@ public class NamedPropertyTest extends TestBase {
     public void testNotLike() {
         NamedProperty prop = NamedProperty.of("email");
         NotLike condition = prop.notLike("%@temp.com");
-        
+
         Assertions.assertEquals("email", condition.getPropName());
         Assertions.assertEquals("%@temp.com", condition.getPropValue());
     }
@@ -198,7 +198,7 @@ public class NamedPropertyTest extends TestBase {
     public void testStartsWith() {
         NamedProperty prop = NamedProperty.of("name");
         Like condition = prop.startsWith("John");
-        
+
         Assertions.assertEquals("name", condition.getPropName());
         Assertions.assertEquals("John%", condition.getPropValue());
     }
@@ -207,7 +207,7 @@ public class NamedPropertyTest extends TestBase {
     public void testEndsWith() {
         NamedProperty prop = NamedProperty.of("email");
         Like condition = prop.endsWith("@example.com");
-        
+
         Assertions.assertEquals("email", condition.getPropName());
         Assertions.assertEquals("%@example.com", condition.getPropValue());
     }
@@ -216,7 +216,7 @@ public class NamedPropertyTest extends TestBase {
     public void testContains() {
         NamedProperty prop = NamedProperty.of("description");
         Like condition = prop.contains("important");
-        
+
         Assertions.assertEquals("description", condition.getPropName());
         Assertions.assertEquals("%important%", condition.getPropValue());
     }
@@ -225,7 +225,7 @@ public class NamedPropertyTest extends TestBase {
     public void testInWithArray() {
         NamedProperty prop = NamedProperty.of("status");
         In condition = prop.in("active", "pending", "approved");
-        
+
         Assertions.assertEquals("status", condition.getPropName());
         Assertions.assertEquals(3, condition.getValues().size());
     }
@@ -235,7 +235,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop = NamedProperty.of("id");
         Set<Integer> ids = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
         In condition = prop.in(ids);
-        
+
         Assertions.assertEquals("id", condition.getPropName());
         Assertions.assertEquals(5, condition.getValues().size());
     }
@@ -245,7 +245,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop1 = new NamedProperty("property");
         NamedProperty prop2 = new NamedProperty("property");
         NamedProperty prop3 = new NamedProperty("different");
-        
+
         Assertions.assertEquals(prop1.hashCode(), prop2.hashCode());
         Assertions.assertNotEquals(prop1.hashCode(), prop3.hashCode());
     }
@@ -256,7 +256,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop2 = new NamedProperty("property");
         NamedProperty prop3 = new NamedProperty("different");
         NamedProperty prop4 = NamedProperty.of("property");
-        
+
         Assertions.assertTrue(prop1.equals(prop1));
         Assertions.assertTrue(prop1.equals(prop2));
         Assertions.assertFalse(prop1.equals(prop3));
@@ -275,11 +275,11 @@ public class NamedPropertyTest extends TestBase {
     public void testChainedConditions() {
         NamedProperty age = NamedProperty.of("age");
         NamedProperty status = NamedProperty.of("status");
-        
+
         // Create complex conditions using named properties
         Or complexCondition = age.eqOr(25, 30, 35);
         In statusCondition = status.in(Arrays.asList("active", "pending"));
-        
+
         Assertions.assertEquals(3, complexCondition.getConditions().size());
         Assertions.assertEquals(2, statusCondition.getValues().size());
     }

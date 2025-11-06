@@ -74,23 +74,17 @@ public class On2025Test extends TestBase {
 
     @Test
     public void testGetParameters_WithValues() {
-        And complexCondition = new And(
-            new Equal("orders.customer_id", "customers.id"),
-            new Equal("orders.status", "active")
-        );
+        And complexCondition = new And(new Equal("orders.customer_id", "customers.id"), new Equal("orders.status", "active"));
         On on = new On(complexCondition);
         List<Object> params = on.getParameters();
-        assertEquals(2, (int)params.size());
+        assertEquals(2, (int) params.size());
         assertEquals("customers.id", params.get(0));
         assertEquals("active", params.get(1));
     }
 
     @Test
     public void testClearParameters() {
-        And condition = new And(
-            new Equal("a.id", "b.id"),
-            new Equal("a.status", "pending")
-        );
+        And condition = new And(new Equal("a.id", "b.id"), new Equal("a.status", "pending"));
         On on = new On(condition);
         assertFalse(on.getParameters().isEmpty());
         on.clearParameters();
@@ -174,10 +168,7 @@ public class On2025Test extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        And complexCondition = new And(
-            new Equal("orders.customer_id", "customers.id"),
-            new GreaterThan("orders.order_date", "customers.registration_date")
-        );
+        And complexCondition = new And(new Equal("orders.customer_id", "customers.id"), new GreaterThan("orders.order_date", "customers.registration_date"));
         On on = new On(complexCondition);
         assertNotNull(on.getCondition());
     }
@@ -193,11 +184,8 @@ public class On2025Test extends TestBase {
 
     @Test
     public void testWithAdditionalFilters() {
-        And filteredJoin = new And(
-            new Equal("products.category_id", "categories.id"),
-            new Equal("categories.active", true)
-        );
+        And filteredJoin = new And(new Equal("products.category_id", "categories.id"), new Equal("categories.active", true));
         On on = new On(filteredJoin);
-        assertEquals(2, (int)on.getParameters().size());
+        assertEquals(2, (int) on.getParameters().size());
     }
 }

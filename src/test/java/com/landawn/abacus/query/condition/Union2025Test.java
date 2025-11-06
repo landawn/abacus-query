@@ -55,7 +55,7 @@ public class Union2025Test extends TestBase {
         SubQuery subQuery = new SubQuery("customers", List.of("*"), new Equal("status", "active"));
         Union union = new Union(subQuery);
         List<Object> params = union.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
     }
 

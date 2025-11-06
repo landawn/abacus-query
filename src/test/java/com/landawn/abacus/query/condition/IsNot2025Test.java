@@ -47,7 +47,7 @@ public class IsNot2025Test extends TestBase {
     public void testConstructor() {
         IsNot condition = new IsNot("age", 25);
         assertEquals("age", condition.getPropName());
-        assertEquals(25, (int)condition.getPropValue());
+        assertEquals(25, (int) condition.getPropValue());
         assertEquals(Operator.IS_NOT, condition.getOperator());
     }
 
@@ -97,7 +97,7 @@ public class IsNot2025Test extends TestBase {
     public void testGetParameters() {
         IsNot condition = new IsNot("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -105,8 +105,8 @@ public class IsNot2025Test extends TestBase {
     public void testGetParameters_MultipleValues() {
         IsNot condition = new IsNot("count", 42);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int)params.size());
-        assertEquals(42, (int)params.get(0));
+        assertEquals(1, (int) params.size());
+        assertEquals(42, (int) params.get(0));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class IsNot2025Test extends TestBase {
 
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object)original.getPropValue(), (Object)copy.getPropValue());
+        assertEquals((Object) original.getPropValue(), (Object) copy.getPropValue());
         assertEquals(original.getOperator(), copy.getOperator());
     }
 

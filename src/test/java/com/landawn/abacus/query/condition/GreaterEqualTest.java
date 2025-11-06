@@ -21,7 +21,7 @@ public class GreaterEqualTest extends TestBase {
         GreaterEqual ge = ConditionFactory.ge("age", 18);
         Assertions.assertNotNull(ge);
         Assertions.assertEquals("age", ge.getPropName());
-        Assertions.assertEquals(18, (Integer)(Integer) ge.getPropValue());
+        Assertions.assertEquals(18, (Integer) (Integer) ge.getPropValue());
         Assertions.assertEquals(Operator.GREATER_EQUAL, ge.getOperator());
     }
 
@@ -87,7 +87,7 @@ public class GreaterEqualTest extends TestBase {
     public void testCopy() {
         GreaterEqual original = ConditionFactory.ge("score", 80.5);
         GreaterEqual copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
@@ -98,7 +98,7 @@ public class GreaterEqualTest extends TestBase {
     public void testGetParameters() {
         GreaterEqual ge = ConditionFactory.ge("price", 100.0);
         var params = ge.getParameters();
-        
+
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(100.0, params.get(0));
     }
@@ -107,7 +107,7 @@ public class GreaterEqualTest extends TestBase {
     public void testClearParameters() {
         GreaterEqual ge = ConditionFactory.ge("amount", 500);
         ge.clearParameters();
-        
+
         Assertions.assertNull(ge.getPropValue());
     }
 
@@ -116,7 +116,7 @@ public class GreaterEqualTest extends TestBase {
         GreaterEqual ge = ConditionFactory.ge("age", 18);
         LessThan lt = ConditionFactory.lt("age", 65);
         And and = ge.and(lt);
-        
+
         Assertions.assertNotNull(and);
         Assertions.assertEquals(Operator.AND, and.getOperator());
         Assertions.assertEquals(2, and.getConditions().size());
@@ -127,7 +127,7 @@ public class GreaterEqualTest extends TestBase {
         GreaterEqual ge = ConditionFactory.ge("score", 90);
         Equal eq = ConditionFactory.eq("grade", "A");
         Or or = ge.or(eq);
-        
+
         Assertions.assertNotNull(or);
         Assertions.assertEquals(Operator.OR, or.getOperator());
         Assertions.assertEquals(2, or.getConditions().size());
@@ -137,7 +137,7 @@ public class GreaterEqualTest extends TestBase {
     public void testNot() {
         GreaterEqual ge = ConditionFactory.ge("temperature", 0);
         Not not = ge.not();
-        
+
         Assertions.assertNotNull(not);
         Assertions.assertEquals(Operator.NOT, not.getOperator());
         Assertions.assertEquals(ge, not.getCondition());

@@ -60,21 +60,16 @@ public class Where2025Test extends TestBase {
         Equal condition = new Equal("status", "active");
         Where where = new Where(condition);
         List<Object> params = where.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
     public void testGetParameters_MultipleValues() {
-        And complexCondition = new And(
-            Arrays.asList(
-                new Equal("status", "active"),
-                new GreaterThan("balance", (Object) 1000)
-            )
-        );
+        And complexCondition = new And(Arrays.asList(new Equal("status", "active"), new GreaterThan("balance", (Object) 1000)));
         Where where = new Where(complexCondition);
         List<Object> params = where.getParameters();
-        assertEquals(2, (int)params.size());
+        assertEquals(2, (int) params.size());
     }
 
     @Test
@@ -106,10 +101,7 @@ public class Where2025Test extends TestBase {
 
     @Test
     public void testToString_Complex() {
-        Or complexCondition = new Or(
-            new And(new Equal("status", "active"), new GreaterThan("balance", (Object) 1000)),
-            new Equal("vip", true)
-        );
+        Or complexCondition = new Or(new And(new Equal("status", "active"), new GreaterThan("balance", (Object) 1000)), new Equal("vip", true));
         Where where = new Where(complexCondition);
         String result = where.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("WHERE"));
@@ -161,30 +153,27 @@ public class Where2025Test extends TestBase {
         Like condition = new Like("name", "%John%");
         Where where = new Where(condition);
         assertNotNull(where);
-        assertEquals(1, (int)where.getParameters().size());
+        assertEquals(1, (int) where.getParameters().size());
     }
 
     @Test
     public void testWithBetween() {
         Between condition = new Between("age", (Object) 18, (Object) 65);
         Where where = new Where(condition);
-        assertEquals(2, (int)where.getParameters().size());
+        assertEquals(2, (int) where.getParameters().size());
     }
 
     @Test
     public void testWithInOperator() {
         In condition = new In("status", Arrays.asList("active", "pending", "approved"));
         Where where = new Where(condition);
-        assertEquals(3, (int)where.getParameters().size());
+        assertEquals(3, (int) where.getParameters().size());
     }
 
     @Test
     public void testWithOrCondition() {
-        Or orCondition = new Or(
-            new Equal("type", "A"),
-            new Equal("type", "B")
-        );
+        Or orCondition = new Or(new Equal("type", "A"), new Equal("type", "B"));
         Where where = new Where(orCondition);
-        assertEquals(2, (int)where.getParameters().size());
+        assertEquals(2, (int) where.getParameters().size());
     }
 }

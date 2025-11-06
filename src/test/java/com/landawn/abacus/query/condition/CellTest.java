@@ -32,7 +32,6 @@ public class CellTest extends TestBase {
         Assertions.assertEquals(eq, cell.getCondition());
     }
 
-
     @Test
     public void testGetCondition() {
         Equal eq = ConditionFactory.eq("name", "John");
@@ -41,7 +40,6 @@ public class CellTest extends TestBase {
         Equal retrieved = cell.getCondition();
         Assertions.assertEquals(eq, retrieved);
     }
-
 
     @Test
     public void testGetParametersWithCondition() {
@@ -53,7 +51,6 @@ public class CellTest extends TestBase {
         Assertions.assertEquals(18, (Integer) params.get(0));
         Assertions.assertEquals(65, params.get(1));
     }
-
 
     @Test
     public void testClearParametersWithCondition() {
@@ -84,7 +81,6 @@ public class CellTest extends TestBase {
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }
 
-
     @Test
     public void testToString() {
         Equal eq = ConditionFactory.eq("name", "John");
@@ -94,7 +90,6 @@ public class CellTest extends TestBase {
         Assertions.assertTrue(result.startsWith("NOT"));
         Assertions.assertTrue(result.contains("name = 'John'"));
     }
-
 
     @Test
     public void testToStringWithNamingPolicy() {
@@ -130,7 +125,6 @@ public class CellTest extends TestBase {
 
         Assertions.assertEquals(cell1.hashCode(), cell2.hashCode());
     }
-
 
     @Test
     public void testAnd() {

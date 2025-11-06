@@ -19,7 +19,7 @@ public class NotInTest extends TestBase {
     public void testConstructorWithList() {
         List<String> values = Arrays.asList("deleted", "archived", "inactive");
         NotIn notIn = CF.notIn("status", values);
-        
+
         Assertions.assertNotNull(notIn);
         Assertions.assertEquals("status", notIn.getPropName());
         Assertions.assertEquals(values, notIn.getValues());
@@ -30,7 +30,7 @@ public class NotInTest extends TestBase {
     public void testConstructorWithSet() {
         Set<Integer> values = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
         NotIn notIn = CF.notIn("userId", values);
-        
+
         Assertions.assertEquals("userId", notIn.getPropName());
         Assertions.assertEquals(5, notIn.getValues().size());
         Assertions.assertTrue(notIn.getValues().containsAll(values));
@@ -39,7 +39,7 @@ public class NotInTest extends TestBase {
     @Test
     public void testConstructorWithEmptyCollection() {
         List<String> emptyList = new ArrayList<>();
-        
+
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             CF.notIn("status", emptyList);
         });
@@ -56,10 +56,10 @@ public class NotInTest extends TestBase {
     public void testSetValues() {
         List<String> originalValues = Arrays.asList("a", "b", "c");
         List<String> newValues = Arrays.asList("x", "y", "z");
-        
+
         NotIn notIn = CF.notIn("type", originalValues);
         notIn.setValues(newValues);
-        
+
         Assertions.assertEquals(newValues, notIn.getValues());
     }
 
@@ -67,7 +67,7 @@ public class NotInTest extends TestBase {
     public void testGetParameters() {
         List<Integer> values = Arrays.asList(10, 20, 30);
         NotIn notIn = CF.notIn("amount", values);
-        
+
         List<Object> params = notIn.getParameters();
         Assertions.assertEquals(values, params);
     }
@@ -77,7 +77,7 @@ public class NotInTest extends TestBase {
         List<String> values = Arrays.asList("a", "b");
         NotIn notIn = CF.notIn("code", values);
         notIn.setValues(null);
-        
+
         List<Object> params = notIn.getParameters();
         Assertions.assertTrue(params.isEmpty());
     }
@@ -86,9 +86,9 @@ public class NotInTest extends TestBase {
     public void testClearParameters() {
         List<String> values = new ArrayList<>(Arrays.asList("a", "b", "c"));
         NotIn notIn = CF.notIn("type", values);
-        
+
         notIn.clearParameters();
-        
+
         // Values should be filled with null
         Assertions.assertTrue(notIn.getValues().stream().allMatch(v -> v == null));
     }
@@ -97,9 +97,9 @@ public class NotInTest extends TestBase {
     public void testCopy() {
         List<String> values = Arrays.asList("temp", "draft", "test");
         NotIn original = CF.notIn("documentType", values);
-        
+
         NotIn copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertNotSame(original.getValues(), copy.getValues());
@@ -111,7 +111,7 @@ public class NotInTest extends TestBase {
     public void testToString() {
         List<String> values = Arrays.asList("A", "B", "C");
         NotIn notIn = CF.notIn("category", values);
-        
+
         String result = notIn.toString();
         Assertions.assertTrue(result.contains("category"));
         Assertions.assertTrue(result.contains("NOT IN"));
@@ -122,7 +122,7 @@ public class NotInTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         List<String> values = Arrays.asList("active", "pending");
         NotIn notIn = CF.notIn("user_status", values);
-        
+
         String result = notIn.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
         Assertions.assertTrue(result.contains("USER_STATUS"));
         Assertions.assertTrue(result.contains("NOT IN"));
@@ -134,12 +134,12 @@ public class NotInTest extends TestBase {
         List<String> values1 = Arrays.asList("a", "b", "c");
         List<String> values2 = Arrays.asList("a", "b", "c");
         List<String> values3 = Arrays.asList("x", "y", "z");
-        
+
         NotIn notIn1 = CF.notIn("type", values1);
         NotIn notIn2 = CF.notIn("type", values2);
         NotIn notIn3 = CF.notIn("type", values3);
         NotIn notIn4 = CF.notIn("category", values1);
-        
+
         Assertions.assertEquals(notIn1.hashCode(), notIn2.hashCode());
         Assertions.assertNotEquals(notIn1.hashCode(), notIn3.hashCode());
         Assertions.assertNotEquals(notIn1.hashCode(), notIn4.hashCode());
@@ -150,12 +150,12 @@ public class NotInTest extends TestBase {
         List<String> values1 = Arrays.asList("a", "b", "c");
         List<String> values2 = Arrays.asList("a", "b", "c");
         List<String> values3 = Arrays.asList("x", "y", "z");
-        
+
         NotIn notIn1 = CF.notIn("type", values1);
         NotIn notIn2 = CF.notIn("type", values2);
         NotIn notIn3 = CF.notIn("type", values3);
         NotIn notIn4 = CF.notIn("category", values1);
-        
+
         Assertions.assertTrue(notIn1.equals(notIn1));
         Assertions.assertTrue(notIn1.equals(notIn2));
         Assertions.assertFalse(notIn1.equals(notIn3));
@@ -168,7 +168,7 @@ public class NotInTest extends TestBase {
     public void testWithMixedTypes() {
         List<Object> values = Arrays.asList(1, "two", 3.0, true);
         NotIn notIn = CF.notIn("mixedField", values);
-        
+
         Assertions.assertEquals(4, notIn.getValues().size());
         Assertions.assertTrue(notIn.getValues().contains(1));
         Assertions.assertTrue(notIn.getValues().contains("two"));
@@ -182,9 +182,9 @@ public class NotInTest extends TestBase {
         for (int i = 0; i < 1000; i++) {
             values.add(i);
         }
-        
+
         NotIn notIn = CF.notIn("id", values);
-        
+
         Assertions.assertEquals(1000, notIn.getValues().size());
         Assertions.assertEquals(1000, notIn.getParameters().size());
     }

@@ -104,7 +104,7 @@ public class AbstractCondition2025Test extends TestBase {
         assertNotNull(copy);
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object)original.getPropValue(), (Object)copy.getPropValue());
+        assertEquals((Object) original.getPropValue(), (Object) copy.getPropValue());
     }
 
     @Test
@@ -126,7 +126,7 @@ public class AbstractCondition2025Test extends TestBase {
     public void testParameter2String_Null() {
         Equal condition = new Equal("name", null);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertNull(params.get(0));
     }
 
@@ -161,7 +161,7 @@ public class AbstractCondition2025Test extends TestBase {
         Equal cond3 = new Equal("c", 3);
 
         And and = cond1.and(cond2).and(cond3);
-        assertEquals(3, (int)and.getConditions().size());
+        assertEquals(3, (int) and.getConditions().size());
     }
 
     @Test

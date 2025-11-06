@@ -47,7 +47,7 @@ public class Binary2025Test extends TestBase {
     public void testConstructor() {
         Binary condition = new Binary("age", Operator.EQUAL, 25);
         assertEquals("age", condition.getPropName());
-        assertEquals(25, (int)condition.getPropValue());
+        assertEquals(25, (int) condition.getPropValue());
         assertEquals(Operator.EQUAL, condition.getOperator());
     }
 
@@ -97,7 +97,7 @@ public class Binary2025Test extends TestBase {
     public void testGetParameters() {
         Binary condition = new Binary("status", Operator.EQUAL, "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -131,7 +131,7 @@ public class Binary2025Test extends TestBase {
 
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object)original.getPropValue(), (Object)copy.getPropValue());
+        assertEquals((Object) original.getPropValue(), (Object) copy.getPropValue());
         assertEquals(original.getOperator(), copy.getOperator());
     }
 

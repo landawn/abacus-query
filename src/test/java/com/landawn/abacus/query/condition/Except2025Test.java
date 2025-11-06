@@ -52,7 +52,7 @@ public class Except2025Test extends TestBase {
         Except except = new Except(subQuery);
         List<Object> params = except.getParameters();
         // Raw SQL SubQuery has no parameters
-        assertEquals(0, (int)params.size());
+        assertEquals(0, (int) params.size());
     }
 
     @Test
@@ -135,6 +135,6 @@ public class Except2025Test extends TestBase {
     public void testFindMissingRecords() {
         SubQuery soldProducts = new SubQuery("order_items", List.of("product_id"), new GreaterThan("order_date", "2024-01-01"));
         Except except = new Except(soldProducts);
-        assertEquals(1, (int)except.getParameters().size());
+        assertEquals(1, (int) except.getParameters().size());
     }
 }

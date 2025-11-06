@@ -82,7 +82,7 @@ public class XORTest extends TestBase {
         // Test XOR in combination with AND
         XOR xor1 = ConditionFactory.xor("hasStudentDiscount", true);
         XOR xor2 = ConditionFactory.xor("hasSeniorDiscount", true);
-        
+
         var and = xor1.and(xor2);
         Assertions.assertNotNull(and);
         Assertions.assertEquals(2, and.getConditions().size());

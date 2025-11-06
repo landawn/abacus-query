@@ -62,7 +62,7 @@ public class IsTest extends TestBase {
     public void testCopy() {
         Is original = new Is("age", 25);
         Is copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals(original.getOperator(), copy.getOperator());
@@ -91,7 +91,7 @@ public class IsTest extends TestBase {
         Is condition1 = new Is("name", "value");
         Is condition2 = new Is("name", "value");
         Is condition3 = new Is("other", "value");
-        
+
         Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
         Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
     }
@@ -102,7 +102,7 @@ public class IsTest extends TestBase {
         Is condition2 = new Is("name", "value");
         Is condition3 = new Is("other", "value");
         Is condition4 = new Is("name", "other");
-        
+
         Assertions.assertEquals(condition1, condition1);
         Assertions.assertEquals(condition1, condition2);
         Assertions.assertNotEquals(condition1, condition3);

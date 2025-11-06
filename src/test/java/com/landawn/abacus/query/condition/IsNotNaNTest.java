@@ -16,7 +16,7 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testConstructorWithPropName() {
         IsNotNaN condition = new IsNotNaN("calculation_result");
-        
+
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("calculation_result", condition.getPropName());
         Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
@@ -26,7 +26,7 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testConstructorWithDifferentPropName() {
         IsNotNaN condition = new IsNotNaN("temperature");
-        
+
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("temperature", condition.getPropName());
         Assertions.assertEquals(IsNaN.NAN, condition.getPropValue());
@@ -36,7 +36,7 @@ public class IsNotNaNTest extends TestBase {
     public void testGetParameters() {
         IsNotNaN condition = new IsNotNaN("profit_ratio");
         List<Object> params = condition.getParameters();
-        
+
         Assertions.assertNotNull(params);
         Assertions.assertEquals(0, params.size());
     }
@@ -45,7 +45,7 @@ public class IsNotNaNTest extends TestBase {
     public void testClearParameters() {
         IsNotNaN condition = new IsNotNaN("computed_value");
         condition.clearParameters();
-        
+
         List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertEquals(0, params.size());
@@ -55,7 +55,7 @@ public class IsNotNaNTest extends TestBase {
     public void testCopy() {
         IsNotNaN original = new IsNotNaN("measurement");
         IsNotNaN copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals(original.getOperator(), copy.getOperator());
@@ -66,7 +66,7 @@ public class IsNotNaNTest extends TestBase {
     public void testToString() {
         IsNotNaN condition = new IsNotNaN("calculation_result");
         String result = condition.toString();
-        
+
         Assertions.assertTrue(result.contains("calculation_result"));
         Assertions.assertTrue(result.contains("IS NOT"));
         Assertions.assertTrue(result.contains("NAN"));
@@ -76,7 +76,7 @@ public class IsNotNaNTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         IsNotNaN condition = new IsNotNaN("computedValue");
         String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-        
+
         Assertions.assertTrue(result.contains("COMPUTED_VALUE"));
         Assertions.assertTrue(result.contains("IS NOT"));
         Assertions.assertTrue(result.contains("NAN"));
@@ -87,7 +87,7 @@ public class IsNotNaNTest extends TestBase {
         IsNotNaN condition1 = new IsNotNaN("field1");
         IsNotNaN condition2 = new IsNotNaN("field1");
         IsNotNaN condition3 = new IsNotNaN("field2");
-        
+
         Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
         Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
     }
@@ -97,7 +97,7 @@ public class IsNotNaNTest extends TestBase {
         IsNotNaN condition1 = new IsNotNaN("field1");
         IsNotNaN condition2 = new IsNotNaN("field1");
         IsNotNaN condition3 = new IsNotNaN("field2");
-        
+
         Assertions.assertEquals(condition1, condition1);
         Assertions.assertEquals(condition1, condition2);
         Assertions.assertNotEquals(condition1, condition3);
@@ -108,7 +108,7 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testInheritedMethods() {
         IsNotNaN condition = new IsNotNaN("value");
-        
+
         // Test methods inherited from IsNot
         Assertions.assertEquals("value", condition.getPropName());
         Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
@@ -119,7 +119,7 @@ public class IsNotNaNTest extends TestBase {
     public void testSharedNANConstant() {
         IsNotNaN condition1 = new IsNotNaN("calc1");
         IsNotNaN condition2 = new IsNotNaN("calc2");
-        
+
         // Both should use the same NAN constant from IsNaN
         Assertions.assertSame(condition1.getPropValue(), condition2.getPropValue());
         Assertions.assertEquals(IsNaN.NAN, condition1.getPropValue());
@@ -128,15 +128,15 @@ public class IsNotNaNTest extends TestBase {
 
     @Test
     public void testWithVariousPropNames() {
-        String[] propNames = {"temperature", "ratio", "calculated_value", "sensor_reading", "percentage"};
-        
+        String[] propNames = { "temperature", "ratio", "calculated_value", "sensor_reading", "percentage" };
+
         for (String propName : propNames) {
             IsNotNaN condition = new IsNotNaN(propName);
-            
+
             Assertions.assertEquals(propName, condition.getPropName());
             Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
             Assertions.assertEquals(IsNaN.NAN, condition.getPropValue());
-            
+
             String result = condition.toString();
             Assertions.assertTrue(result.contains(propName));
             Assertions.assertTrue(result.contains("IS NOT"));

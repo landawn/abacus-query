@@ -68,10 +68,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testGetParametersWithMultipleConditions() {
-        Condition condition = CF.and(
-            CF.gt("COUNT(*)", 5),
-            CF.lt("AVG(price)", 100)
-        );
+        Condition condition = CF.and(CF.gt("COUNT(*)", 5), CF.lt("AVG(price)", 100));
         Having having = new Having(condition);
 
         assertEquals(2, having.getParameters().size());
@@ -160,10 +157,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testWithComplexCondition() {
-        Condition complex = CF.and(
-            CF.gt("COUNT(*)", 10),
-            CF.between("AVG(salary)", 50000, 100000)
-        );
+        Condition complex = CF.and(CF.gt("COUNT(*)", 10), CF.between("AVG(salary)", 50000, 100000));
         Having having = new Having(complex);
 
         assertNotNull(having);
@@ -172,10 +166,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testWithOrCondition() {
-        Condition orCondition = CF.or(
-            CF.gt("SUM(revenue)", 1000000),
-            CF.eq("COUNT(*)", 0)
-        );
+        Condition orCondition = CF.or(CF.gt("SUM(revenue)", 1000000), CF.eq("COUNT(*)", 0));
         Having having = new Having(orCondition);
 
         String result = having.toString();
@@ -220,11 +211,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testMultipleAggregatesWithAnd() {
-        Condition condition = CF.and(
-            CF.gt("COUNT(*)", 5),
-            CF.gt("SUM(amount)", 10000),
-            CF.lt("AVG(price)", 500)
-        );
+        Condition condition = CF.and(CF.gt("COUNT(*)", 5), CF.gt("SUM(amount)", 10000), CF.lt("AVG(price)", 500));
         Having having = new Having(condition);
 
         assertEquals(3, having.getParameters().size());

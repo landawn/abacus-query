@@ -541,14 +541,8 @@ public class ConditionFactory2025Test extends TestBase {
 
     @Test
     public void testComplexConditionChaining() {
-        Condition condition = ConditionFactory.and(
-            ConditionFactory.equal("status", "active"),
-            ConditionFactory.greaterThan("age", 18),
-            ConditionFactory.or(
-                ConditionFactory.equal("role", "admin"),
-                ConditionFactory.equal("role", "moderator")
-            )
-        );
+        Condition condition = ConditionFactory.and(ConditionFactory.equal("status", "active"), ConditionFactory.greaterThan("age", 18),
+                ConditionFactory.or(ConditionFactory.equal("role", "admin"), ConditionFactory.equal("role", "moderator")));
         assertNotNull(condition);
     }
 

@@ -62,7 +62,7 @@ public class IsNotTest extends TestBase {
     public void testCopy() {
         IsNot original = new IsNot("age", 25);
         IsNot copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals(original.getOperator(), copy.getOperator());
@@ -91,7 +91,7 @@ public class IsNotTest extends TestBase {
         IsNot condition1 = new IsNot("name", "value");
         IsNot condition2 = new IsNot("name", "value");
         IsNot condition3 = new IsNot("other", "value");
-        
+
         Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
         Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
     }
@@ -102,7 +102,7 @@ public class IsNotTest extends TestBase {
         IsNot condition2 = new IsNot("name", "value");
         IsNot condition3 = new IsNot("other", "value");
         IsNot condition4 = new IsNot("name", "other");
-        
+
         Assertions.assertEquals(condition1, condition1);
         Assertions.assertEquals(condition1, condition2);
         Assertions.assertNotEquals(condition1, condition3);

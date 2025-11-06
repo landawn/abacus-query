@@ -82,7 +82,7 @@ public class Some2025Test extends TestBase {
         Some condition = new Some(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals(true, params.get(0));
     }
 
@@ -226,9 +226,7 @@ public class Some2025Test extends TestBase {
     @Test
     public void testGreaterThanSomeScenario() {
         // salary > SOME (SELECT salary FROM employees WHERE role = 'manager')
-        SubQuery subQuery = new SubQuery(
-            "SELECT salary FROM employees WHERE role = 'manager'"
-        );
+        SubQuery subQuery = new SubQuery("SELECT salary FROM employees WHERE role = 'manager'");
         Some condition = new Some(subQuery);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("SOME"));
@@ -259,16 +257,11 @@ public class Some2025Test extends TestBase {
 
     @Test
     public void testWithMultipleConditions() {
-        And andCondition = new And(
-            Arrays.asList(
-                new Equal("available", true),
-                new GreaterThan("stock", (Object) 10)
-            )
-        );
+        And andCondition = new And(Arrays.asList(new Equal("available", true), new GreaterThan("stock", (Object) 10)));
         SubQuery subQuery = new SubQuery("products", Arrays.asList("price"), andCondition);
         Some condition = new Some(subQuery);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int)params.size());
+        assertEquals(2, (int) params.size());
     }
 
     @Test
@@ -297,7 +290,7 @@ public class Some2025Test extends TestBase {
         Some copy = original.copy();
 
         copy.clearParameters();
-        assertEquals(1, (int)original.getParameters().size());
+        assertEquals(1, (int) original.getParameters().size());
         List<Object> copyParams = copy.getParameters();
         assertTrue(copyParams.size() == 1 && copyParams.stream().allMatch(param -> param == null));
     }

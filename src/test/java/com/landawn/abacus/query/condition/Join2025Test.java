@@ -48,14 +48,14 @@ public class Join2025Test extends TestBase {
     public void testConstructor_MultipleEntities() {
         Join join = new Join(Arrays.asList("orders o", "customers c"), new Equal("o.customer_id", "c.id"));
         assertNotNull(join);
-        assertEquals(2, (int)join.getJoinEntities().size());
+        assertEquals(2, (int) join.getJoinEntities().size());
     }
 
     @Test
     public void testGetJoinEntities() {
         Join join = new Join(Arrays.asList("table1", "table2"), null);
         List<String> entities = join.getJoinEntities();
-        assertEquals(2, (int)entities.size());
+        assertEquals(2, (int) entities.size());
         assertTrue(entities.contains("table1"));
         assertTrue(entities.contains("table2"));
     }
@@ -84,7 +84,7 @@ public class Join2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         Join join = new Join("orders o", new Equal("status", "active"));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -172,13 +172,8 @@ public class Join2025Test extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        And andCondition = new And(
-            Arrays.asList(
-                new Equal("o.customer_id", "c.id"),
-                new GreaterThan("o.total", (Object) 100)
-            )
-        );
+        And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", (Object) 100)));
         Join join = new Join("orders o", andCondition);
-        assertEquals(2, (int)join.getParameters().size());
+        assertEquals(2, (int) join.getParameters().size());
     }
 }

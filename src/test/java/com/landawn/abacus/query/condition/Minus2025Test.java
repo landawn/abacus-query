@@ -51,7 +51,7 @@ public class Minus2025Test extends TestBase {
         SubQuery subQuery = new SubQuery("sales", List.of("product_id"), new Equal("region", "WEST"));
         Minus minus = new Minus(subQuery);
         List<Object> params = minus.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("WEST", params.get(0));
     }
 
@@ -142,6 +142,6 @@ public class Minus2025Test extends TestBase {
     public void testFindUnassignedEmployees() {
         SubQuery assignedEmployees = new SubQuery("project_assignments", List.of("employee_id"), new Equal("status", "ACTIVE"));
         Minus minus = new Minus(assignedEmployees);
-        assertEquals(1, (int)minus.getParameters().size());
+        assertEquals(1, (int) minus.getParameters().size());
     }
 }

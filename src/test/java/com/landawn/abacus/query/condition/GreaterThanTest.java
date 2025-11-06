@@ -23,10 +23,10 @@ public class GreaterThanTest extends TestBase {
     @Test
     public void testConstructor() {
         GreaterThan gt = ConditionFactory.gt("age", 18);
-        
+
         Assertions.assertNotNull(gt);
         Assertions.assertEquals("age", gt.getPropName());
-        Assertions.assertEquals(18, (Integer)gt.getPropValue());
+        Assertions.assertEquals(18, (Integer) gt.getPropValue());
         Assertions.assertEquals(Operator.GREATER_THAN, gt.getOperator());
     }
 
@@ -35,16 +35,16 @@ public class GreaterThanTest extends TestBase {
         // Test with Double
         GreaterThan gtDouble = ConditionFactory.gt("price", 99.99);
         Assertions.assertEquals(99.99, gtDouble.getPropValue());
-        
+
         // Test with Long
         GreaterThan gtLong = ConditionFactory.gt("count", 1000000L);
         Assertions.assertEquals(1000000L, (Long) gtLong.getPropValue());
-        
+
         // Test with Date
         Date now = new Date();
         GreaterThan gtDate = ConditionFactory.gt("createdDate", now);
         Assertions.assertEquals(now, gtDate.getPropValue());
-        
+
         // Test with String (for alphabetical comparison)
         GreaterThan gtString = ConditionFactory.gt("name", "M");
         Assertions.assertEquals("M", gtString.getPropValue());
@@ -96,7 +96,7 @@ public class GreaterThanTest extends TestBase {
     public void testGetParameters() {
         GreaterThan gt = ConditionFactory.gt("temperature", 32.5);
         var params = gt.getParameters();
-        
+
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(32.5, params.get(0));
     }
@@ -105,7 +105,7 @@ public class GreaterThanTest extends TestBase {
     public void testClearParameters() {
         GreaterThan gt = ConditionFactory.gt("score", 85);
         Assertions.assertEquals(85, (Integer) gt.getPropValue());
-        
+
         gt.clearParameters();
         Assertions.assertNull(gt.getPropValue());
     }
@@ -114,7 +114,7 @@ public class GreaterThanTest extends TestBase {
     public void testCopy() {
         GreaterThan original = ConditionFactory.gt("level", 5);
         GreaterThan copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
@@ -127,7 +127,7 @@ public class GreaterThanTest extends TestBase {
         GreaterThan gt2 = ConditionFactory.gt("age", 21);
         GreaterThan gt3 = ConditionFactory.gt("age", 18);
         GreaterThan gt4 = ConditionFactory.gt("height", 21);
-        
+
         Assertions.assertEquals(gt1, gt1);
         Assertions.assertEquals(gt1, gt2);
         Assertions.assertNotEquals(gt1, gt3); // Different value
@@ -140,7 +140,7 @@ public class GreaterThanTest extends TestBase {
     public void testHashCode() {
         GreaterThan gt1 = ConditionFactory.gt("quantity", 100);
         GreaterThan gt2 = ConditionFactory.gt("quantity", 100);
-        
+
         Assertions.assertEquals(gt1.hashCode(), gt2.hashCode());
     }
 
@@ -148,9 +148,9 @@ public class GreaterThanTest extends TestBase {
     public void testAnd() {
         GreaterThan gt = ConditionFactory.gt("age", 18);
         LessThan lt = ConditionFactory.lt("age", 65);
-        
+
         And and = gt.and(lt);
-        
+
         Assertions.assertNotNull(and);
         Assertions.assertEquals(Operator.AND, and.getOperator());
         Assertions.assertEquals(2, and.getConditions().size());
@@ -162,9 +162,9 @@ public class GreaterThanTest extends TestBase {
     public void testOr() {
         GreaterThan gt = ConditionFactory.gt("score", 90);
         Equal eq = ConditionFactory.eq("grade", "A");
-        
+
         Or or = gt.or(eq);
-        
+
         Assertions.assertNotNull(or);
         Assertions.assertEquals(Operator.OR, or.getOperator());
         Assertions.assertEquals(2, or.getConditions().size());
@@ -173,9 +173,9 @@ public class GreaterThanTest extends TestBase {
     @Test
     public void testNot() {
         GreaterThan gt = ConditionFactory.gt("balance", 0);
-        
+
         Not not = gt.not();
-        
+
         Assertions.assertNotNull(not);
         Assertions.assertEquals(Operator.NOT, not.getOperator());
         Assertions.assertEquals(gt, not.getCondition());
@@ -185,9 +185,9 @@ public class GreaterThanTest extends TestBase {
     public void testWithSubQuery() {
         SubQuery subQuery = ConditionFactory.subQuery("SELECT AVG(salary) FROM employees");
         GreaterThan gt = new GreaterThan("salary", subQuery);
-        
+
         Assertions.assertEquals(subQuery, gt.getPropValue());
-        
+
         String result = gt.toString();
         Assertions.assertTrue(result.contains("salary >"));
         Assertions.assertTrue(result.contains("SELECT AVG(salary) FROM employees"));
@@ -197,7 +197,7 @@ public class GreaterThanTest extends TestBase {
     public void testSetPropValue() {
         GreaterThan gt = ConditionFactory.gt("price", 100);
         Assertions.assertEquals(100, (Integer) gt.getPropValue());
-        
+
         gt.setPropValue(200);
         Assertions.assertEquals(200, (Integer) gt.getPropValue());
     }
@@ -208,9 +208,9 @@ public class GreaterThanTest extends TestBase {
         GreaterThan salary = ConditionFactory.gt("salary", 50000);
         GreaterEqual experience = ConditionFactory.ge("yearsExperience", 5);
         LessThan age = ConditionFactory.lt("age", 50);
-        
+
         And qualified = salary.and(experience).and(age);
-        
+
         Assertions.assertNotNull(qualified);
         Assertions.assertEquals(3, qualified.getConditions().size());
     }

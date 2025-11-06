@@ -22,7 +22,7 @@ public class OrderByTest extends TestBase {
     public void testConstructorWithCondition() {
         Expression expr = CF.expr("CASE WHEN status='urgent' THEN 1 ELSE 2 END");
         OrderBy orderBy = CF.orderBy(expr);
-        
+
         Assertions.assertNotNull(orderBy);
         Assertions.assertEquals(Operator.ORDER_BY, orderBy.getOperator());
         Assertions.assertEquals(expr, orderBy.getCondition());
@@ -31,7 +31,7 @@ public class OrderByTest extends TestBase {
     @Test
     public void testConstructorWithVarArgs() {
         OrderBy orderBy = CF.orderBy("country", "state", "city");
-        
+
         Assertions.assertEquals(Operator.ORDER_BY, orderBy.getOperator());
         String result = orderBy.toString();
         Assertions.assertTrue(result.contains("country, state, city"));
@@ -40,7 +40,7 @@ public class OrderByTest extends TestBase {
     @Test
     public void testConstructorWithSingleProperty() {
         OrderBy orderBy = CF.orderBy("lastName");
-        
+
         String result = orderBy.toString();
         Assertions.assertTrue(result.contains("lastName"));
     }
@@ -48,7 +48,7 @@ public class OrderByTest extends TestBase {
     @Test
     public void testConstructorWithPropertyAndDirection() {
         OrderBy orderBy = CF.orderBy("price", SortDirection.DESC);
-        
+
         String result = orderBy.toString();
         Assertions.assertTrue(result.contains("price DESC"));
     }
@@ -57,7 +57,7 @@ public class OrderByTest extends TestBase {
     public void testConstructorWithCollectionAndDirection() {
         List<String> dateFields = Arrays.asList("created", "updated", "published");
         OrderBy orderBy = CF.orderBy(dateFields, SortDirection.DESC);
-        
+
         String result = orderBy.toString();
         Assertions.assertTrue(result.contains("created, updated, published DESC"));
     }
@@ -68,9 +68,9 @@ public class OrderByTest extends TestBase {
         orders.put("isActive", SortDirection.DESC);
         orders.put("priority", SortDirection.DESC);
         orders.put("created", SortDirection.ASC);
-        
+
         OrderBy orderBy = CF.orderBy(orders);
-        
+
         String result = orderBy.toString();
         Assertions.assertTrue(result.contains("isActive DESC"));
         Assertions.assertTrue(result.contains("priority DESC"));
@@ -114,7 +114,7 @@ public class OrderByTest extends TestBase {
         Map<String, SortDirection> orders = new LinkedHashMap<>();
         orders.put("col1", SortDirection.ASC);
         orders.put("col2", SortDirection.DESC);
-        
+
         String result = OrderBy.createCondition(orders);
         Assertions.assertEquals("col1 ASC, col2 DESC", result);
     }
@@ -130,14 +130,14 @@ public class OrderByTest extends TestBase {
     public void testGetCondition() {
         Expression expr = CF.expr("custom expression");
         OrderBy orderBy = CF.orderBy(expr);
-        
+
         Assertions.assertEquals(expr, orderBy.getCondition());
     }
 
     @Test
     public void testToString() {
         OrderBy orderBy = CF.orderBy("name", "age");
-        
+
         String result = orderBy.toString();
         Assertions.assertTrue(result.contains("ORDER BY"));
         Assertions.assertTrue(result.contains("name, age"));
@@ -146,9 +146,9 @@ public class OrderByTest extends TestBase {
     @Test
     public void testCopy() {
         OrderBy original = CF.orderBy("created", SortDirection.DESC);
-        
+
         OrderBy copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getOperator(), copy.getOperator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
@@ -160,7 +160,7 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy1 = CF.orderBy("name", "age");
         OrderBy orderBy2 = CF.orderBy("name", "age");
         OrderBy orderBy3 = CF.orderBy("age", "name");
-        
+
         Assertions.assertEquals(orderBy1.hashCode(), orderBy2.hashCode());
         Assertions.assertNotEquals(orderBy1.hashCode(), orderBy3.hashCode());
     }
@@ -170,7 +170,7 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy1 = CF.orderBy("name", "age");
         OrderBy orderBy2 = CF.orderBy("name", "age");
         OrderBy orderBy3 = CF.orderBy("age", "name");
-        
+
         Assertions.assertTrue(orderBy1.equals(orderBy1));
         Assertions.assertTrue(orderBy1.equals(orderBy2));
         Assertions.assertFalse(orderBy1.equals(orderBy3));
@@ -186,9 +186,9 @@ public class OrderByTest extends TestBase {
         complexOrder.put("priority", SortDirection.DESC);
         complexOrder.put("created_date", SortDirection.ASC);
         complexOrder.put("id", SortDirection.ASC);
-        
+
         OrderBy orderBy = CF.orderBy(complexOrder);
-        
+
         String result = orderBy.toString();
         Assertions.assertTrue(result.contains("status DESC"));
         Assertions.assertTrue(result.contains("priority DESC"));
@@ -201,11 +201,11 @@ public class OrderByTest extends TestBase {
         // Simple ascending order (default)
         OrderBy orderBy1 = CF.orderBy("lastName", "firstName");
         Assertions.assertTrue(orderBy1.toString().contains("lastName, firstName"));
-        
+
         // Descending order
         OrderBy orderBy2 = CF.orderBy("salary", SortDirection.DESC);
         Assertions.assertTrue(orderBy2.toString().contains("salary DESC"));
-        
+
         // Multiple columns with same direction
         OrderBy orderBy3 = CF.orderBy(Arrays.asList("created", "modified"), SortDirection.DESC);
         Assertions.assertTrue(orderBy3.toString().contains("created, modified DESC"));

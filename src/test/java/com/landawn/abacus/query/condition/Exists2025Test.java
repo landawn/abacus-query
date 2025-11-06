@@ -84,7 +84,7 @@ public class Exists2025Test extends TestBase {
         Exists condition = new Exists(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -227,9 +227,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testCorrelatedSubQuery() {
-        SubQuery subQuery = new SubQuery(
-            "SELECT 1 FROM orders o WHERE o.customer_id = customers.id"
-        );
+        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders o WHERE o.customer_id = customers.id");
         Exists condition = new Exists(subQuery);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("EXISTS"));
@@ -238,9 +236,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testComplexSubQueryWithJoin() {
-        SubQuery subQuery = new SubQuery(
-            "SELECT 1 FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE o.status = 'active'"
-        );
+        SubQuery subQuery = new SubQuery("SELECT 1 FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE o.status = 'active'");
         Exists condition = new Exists(subQuery);
         assertNotNull(condition);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
@@ -249,16 +245,11 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testSubQueryWithMultipleConditions() {
-        And andCondition = new And(
-            Arrays.asList(
-                new Equal("status", "active"),
-                new GreaterThan("total", (Object) 100)
-            )
-        );
+        And andCondition = new And(Arrays.asList(new Equal("status", "active"), new GreaterThan("total", (Object) 100)));
         SubQuery subQuery = new SubQuery("orders", Arrays.asList("id"), andCondition);
         Exists condition = new Exists(subQuery);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int)params.size());
+        assertEquals(2, (int) params.size());
     }
 
     @Test

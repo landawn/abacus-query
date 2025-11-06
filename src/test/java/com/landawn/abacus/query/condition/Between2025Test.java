@@ -84,16 +84,16 @@ public class Between2025Test extends TestBase {
     public void testGetParameters() {
         Between condition = new Between("age", 18, 65);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int)params.size());
-        assertEquals(18, (int)params.get(0));
-        assertEquals(65, (int)params.get(1));
+        assertEquals(2, (int) params.size());
+        assertEquals(18, (int) params.get(0));
+        assertEquals(65, (int) params.get(1));
     }
 
     @Test
     public void testGetParameters_WithNullValues() {
         Between condition = new Between("field", null, null);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int)params.size());
+        assertEquals(2, (int) params.size());
         assertNull(params.get(0));
         assertNull(params.get(1));
     }
@@ -113,8 +113,8 @@ public class Between2025Test extends TestBase {
 
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object)original.getMinValue(), (Object)copy.getMinValue());
-        assertEquals((Object)original.getMaxValue(), (Object)copy.getMaxValue());
+        assertEquals((Object) original.getMinValue(), (Object) copy.getMinValue());
+        assertEquals((Object) original.getMaxValue(), (Object) copy.getMaxValue());
     }
 
     @Test

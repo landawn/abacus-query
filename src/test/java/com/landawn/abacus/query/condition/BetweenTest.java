@@ -17,10 +17,10 @@ public class BetweenTest extends TestBase {
     @Test
     public void testConstructor() {
         Between between = CF.between("age", 18, 65);
-        
+
         Assertions.assertNotNull(between);
         Assertions.assertEquals("age", between.getPropName());
-        Assertions.assertEquals(18, (Integer)(Integer) between.getMinValue());
+        Assertions.assertEquals(18, (Integer) (Integer) between.getMinValue());
         Assertions.assertEquals(65, (Integer) between.getMaxValue());
         Assertions.assertEquals(Operator.BETWEEN, between.getOperator());
     }
@@ -31,14 +31,14 @@ public class BetweenTest extends TestBase {
         Between betweenDouble = CF.between("price", 10.0, 50.0);
         Assertions.assertEquals(10.0, betweenDouble.getMinValue());
         Assertions.assertEquals(50.0, betweenDouble.getMaxValue());
-        
+
         // Test with Date
         Date startDate = new Date();
         Date endDate = new Date(System.currentTimeMillis() + 86400000); // +1 day
         Between betweenDate = CF.between("createdDate", startDate, endDate);
         Assertions.assertEquals(startDate, betweenDate.getMinValue());
         Assertions.assertEquals(endDate, betweenDate.getMaxValue());
-        
+
         // Test with String (alphabetical range)
         Between betweenString = CF.between("lastName", "A", "M");
         Assertions.assertEquals("A", betweenString.getMinValue());
@@ -90,7 +90,7 @@ public class BetweenTest extends TestBase {
     public void testSetMinValue() {
         Between between = CF.between("range", 10, 20);
         Assertions.assertEquals(10, (Integer) between.getMinValue());
-        
+
         between.setMinValue(5);
         Assertions.assertEquals(5, (Integer) between.getMinValue());
     }
@@ -99,7 +99,7 @@ public class BetweenTest extends TestBase {
     public void testSetMaxValue() {
         Between between = CF.between("range", 10, 20);
         Assertions.assertEquals(20, (Integer) between.getMaxValue());
-        
+
         between.setMaxValue(30);
         Assertions.assertEquals(30, (Integer) between.getMaxValue());
     }
@@ -108,7 +108,7 @@ public class BetweenTest extends TestBase {
     public void testGetParameters() {
         Between between = CF.between("salary", 40000, 80000);
         List<Object> params = between.getParameters();
-        
+
         Assertions.assertEquals(2, params.size());
         Assertions.assertEquals(40000, params.get(0));
         Assertions.assertEquals(80000, params.get(1));
@@ -119,7 +119,7 @@ public class BetweenTest extends TestBase {
         SubQuery minQuery = CF.subQuery("SELECT MIN(price) FROM products");
         SubQuery maxQuery = CF.subQuery("SELECT MAX(price) FROM products");
         Between between = new Between("price", minQuery, maxQuery);
-        
+
         List<Object> params = between.getParameters();
         // Should get parameters from both subqueries
         Assertions.assertNotNull(params);
@@ -130,9 +130,9 @@ public class BetweenTest extends TestBase {
         Between between = CF.between("quantity", 10, 100);
         Assertions.assertEquals(10, (Integer) between.getMinValue());
         Assertions.assertEquals(100, (Integer) between.getMaxValue());
-        
+
         between.clearParameters();
-        
+
         Assertions.assertNull(between.getMinValue());
         Assertions.assertNull(between.getMaxValue());
     }
@@ -142,9 +142,9 @@ public class BetweenTest extends TestBase {
         In minIn = CF.in("id", Arrays.asList(1, 2, 3));
         In maxIn = CF.in("id", Arrays.asList(7, 8, 9));
         Between between = new Between("value", minIn, maxIn);
-        
+
         between.clearParameters();
-        
+
         // The subqueries' parameters should be cleared
         Assertions.assertTrue(between.getParameters().stream().allMatch(param -> param == null));
     }
@@ -153,7 +153,7 @@ public class BetweenTest extends TestBase {
     public void testCopy() {
         Between original = CF.between("level", 1, 10);
         Between copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals((Integer) original.getMinValue(), copy.getMinValue());
@@ -166,9 +166,9 @@ public class BetweenTest extends TestBase {
         SubQuery minQuery = CF.subQuery("SELECT MIN(value) FROM table");
         SubQuery maxQuery = CF.subQuery("SELECT MAX(value) FROM table");
         Between original = new Between("value", minQuery, maxQuery);
-        
+
         Between copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertNotSame(original.getMinValue(), copy.getMinValue());
         Assertions.assertNotSame(original.getMaxValue(), copy.getMaxValue());
@@ -211,7 +211,7 @@ public class BetweenTest extends TestBase {
         Between between3 = CF.between("age", 21, 65);
         Between between4 = CF.between("age", 18, 60);
         Between between5 = CF.between("height", 18, 65);
-        
+
         Assertions.assertEquals(between1, between1);
         Assertions.assertEquals(between1, between2);
         Assertions.assertNotEquals(between1, between3); // Different min
@@ -225,7 +225,7 @@ public class BetweenTest extends TestBase {
     public void testHashCode() {
         Between between1 = CF.between("price", 10.0, 50.0);
         Between between2 = CF.between("price", 10.0, 50.0);
-        
+
         Assertions.assertEquals(between1.hashCode(), between2.hashCode());
     }
 
@@ -233,9 +233,9 @@ public class BetweenTest extends TestBase {
     public void testAnd() {
         Between between = CF.between("age", 18, 65);
         Equal eq = CF.eq("status", "active");
-        
+
         And and = between.and(eq);
-        
+
         Assertions.assertNotNull(and);
         Assertions.assertEquals(2, and.getConditions().size());
         Assertions.assertTrue(and.getConditions().contains(between));
@@ -246,9 +246,9 @@ public class BetweenTest extends TestBase {
     public void testOr() {
         Between between = CF.between("salary", 30000, 50000);
         GreaterThan gt = CF.gt("experience", 10);
-        
+
         Or or = between.or(gt);
-        
+
         Assertions.assertNotNull(or);
         Assertions.assertEquals(2, or.getConditions().size());
     }
@@ -256,9 +256,9 @@ public class BetweenTest extends TestBase {
     @Test
     public void testNot() {
         Between between = CF.between("score", 60, 100);
-        
+
         Not not = between.not();
-        
+
         Assertions.assertNotNull(not);
         Assertions.assertEquals(between, not.getCondition());
     }
@@ -267,9 +267,9 @@ public class BetweenTest extends TestBase {
     public void testBetweenWithSubQueries() {
         SubQuery minSalary = CF.subQuery("SELECT MIN(salary) FROM employees WHERE department = 'IT'");
         SubQuery maxSalary = CF.subQuery("SELECT MAX(salary) FROM employees WHERE department = 'IT'");
-        
+
         Between between = new Between("salary", minSalary, maxSalary);
-        
+
         String result = between.toString();
         Assertions.assertTrue(result.contains("BETWEEN"));
         Assertions.assertTrue(result.contains("SELECT MIN(salary)"));
@@ -287,20 +287,16 @@ public class BetweenTest extends TestBase {
     @Test
     public void testComplexBetweenScenarios() {
         // Date range
-        Between dateRange = CF.between("createdDate",
-            LocalDate.of(2023, 1, 1), 
-            LocalDate.of(2023, 12, 31));
-        
+        Between dateRange = CF.between("createdDate", LocalDate.of(2023, 1, 1), LocalDate.of(2023, 12, 31));
+
         // Price range with calculations
         Expression minPrice = Expression.of("base_price * 0.9");
         Expression maxPrice = Expression.of("base_price * 1.1");
         Between priceRange = new Between("offer_price", minPrice, maxPrice);
-        
+
         // Complex condition with between
-        And complexCondition = dateRange.and(priceRange)
-                .and(CF.eq("status", "active"))
-                .and(CF.between("quantity", 0, 5).not());
-        
+        And complexCondition = dateRange.and(priceRange).and(CF.eq("status", "active")).and(CF.between("quantity", 0, 5).not());
+
         Assertions.assertNotNull(complexCondition);
         Assertions.assertEquals(4, complexCondition.getConditions().size());
     }

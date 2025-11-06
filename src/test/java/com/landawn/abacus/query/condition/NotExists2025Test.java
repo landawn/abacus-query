@@ -83,7 +83,7 @@ public class NotExists2025Test extends TestBase {
         NotExists condition = new NotExists(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("cancelled", params.get(0));
     }
 
@@ -226,9 +226,7 @@ public class NotExists2025Test extends TestBase {
 
     @Test
     public void testFindCustomersWithoutOrders() {
-        SubQuery subQuery = new SubQuery(
-            "SELECT 1 FROM orders WHERE orders.customer_id = customers.id"
-        );
+        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
         NotExists condition = new NotExists(subQuery);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("NOT EXISTS"));
@@ -237,9 +235,7 @@ public class NotExists2025Test extends TestBase {
 
     @Test
     public void testFindProductsWithoutReviews() {
-        SubQuery subQuery = new SubQuery(
-            "SELECT 1 FROM reviews WHERE reviews.product_id = products.id"
-        );
+        SubQuery subQuery = new SubQuery("SELECT 1 FROM reviews WHERE reviews.product_id = products.id");
         NotExists condition = new NotExists(subQuery);
         assertNotNull(condition);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
@@ -248,16 +244,11 @@ public class NotExists2025Test extends TestBase {
 
     @Test
     public void testSubQueryWithMultipleConditions() {
-        And andCondition = new And(
-            Arrays.asList(
-                new Equal("cancelled", true),
-                new LessThan("amount", (Object) 10)
-            )
-        );
+        And andCondition = new And(Arrays.asList(new Equal("cancelled", true), new LessThan("amount", (Object) 10)));
         SubQuery subQuery = new SubQuery("orders", Arrays.asList("id"), andCondition);
         NotExists condition = new NotExists(subQuery);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int)params.size());
+        assertEquals(2, (int) params.size());
     }
 
     @Test
@@ -275,9 +266,7 @@ public class NotExists2025Test extends TestBase {
 
     @Test
     public void testOrphanedRecordsCheck() {
-        SubQuery subQuery = new SubQuery(
-            "SELECT 1 FROM parent_table WHERE parent_table.id = child_table.parent_id"
-        );
+        SubQuery subQuery = new SubQuery("SELECT 1 FROM parent_table WHERE parent_table.id = child_table.parent_id");
         NotExists condition = new NotExists(subQuery);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("NOT EXISTS"));
@@ -286,9 +275,7 @@ public class NotExists2025Test extends TestBase {
 
     @Test
     public void testEmployeesWithoutProjects() {
-        SubQuery subQuery = new SubQuery(
-            "SELECT 1 FROM project_assignments WHERE project_assignments.employee_id = employees.id"
-        );
+        SubQuery subQuery = new SubQuery("SELECT 1 FROM project_assignments WHERE project_assignments.employee_id = employees.id");
         NotExists condition = new NotExists(subQuery);
         assertNotNull(condition);
     }

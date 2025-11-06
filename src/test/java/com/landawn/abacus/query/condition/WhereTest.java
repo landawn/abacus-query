@@ -116,7 +116,7 @@ public class WhereTest extends TestBase {
     public void testWithBetweenCondition() {
         Condition betweenCondition = ConditionFactory.between("age", 18, 65);
         Where where = ConditionFactory.where(betweenCondition);
-        
+
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.getOperator());
         Assertions.assertEquals(betweenCondition, where.getCondition());
@@ -124,9 +124,9 @@ public class WhereTest extends TestBase {
 
     @Test
     public void testWithInCondition() {
-        Condition inCondition = ConditionFactory.in("status", new String[] {"active", "pending", "approved"});
+        Condition inCondition = ConditionFactory.in("status", new String[] { "active", "pending", "approved" });
         Where where = ConditionFactory.where(inCondition);
-        
+
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.getOperator());
         Assertions.assertEquals(inCondition, where.getCondition());
@@ -136,7 +136,7 @@ public class WhereTest extends TestBase {
     public void testWithIsNullCondition() {
         Condition isNullCondition = ConditionFactory.isNull("deletedAt");
         Where where = ConditionFactory.where(isNullCondition);
-        
+
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.getOperator());
         Assertions.assertEquals(isNullCondition, where.getCondition());

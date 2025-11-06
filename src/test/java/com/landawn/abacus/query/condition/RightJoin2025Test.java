@@ -50,7 +50,7 @@ public class RightJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("orders", "order_items");
         RightJoin join = new RightJoin(entities, new Equal("orders.id", "order_items.order_id"));
         assertNotNull(join);
-        assertEquals(2, (int)join.getJoinEntities().size());
+        assertEquals(2, (int) join.getJoinEntities().size());
         assertEquals(Operator.RIGHT_JOIN, join.getOperator());
     }
 
@@ -59,7 +59,7 @@ public class RightJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         RightJoin join = new RightJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int)result.size());
+        assertEquals(2, (int) result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -88,7 +88,7 @@ public class RightJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         RightJoin join = new RightJoin("products", new Equal("active", true));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals(true, params.get(0));
     }
 
@@ -177,14 +177,9 @@ public class RightJoin2025Test extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        And andCondition = new And(
-            Arrays.asList(
-                new Equal("orders.product_id", "products.id"),
-                new Equal("products.active", true)
-            )
-        );
+        And andCondition = new And(Arrays.asList(new Equal("orders.product_id", "products.id"), new Equal("products.active", true)));
         RightJoin join = new RightJoin("products", andCondition);
-        assertEquals(2, (int)join.getParameters().size());
+        assertEquals(2, (int) join.getParameters().size());
     }
 
     @Test
@@ -197,14 +192,9 @@ public class RightJoin2025Test extends TestBase {
     @Test
     public void testMultiTableRightJoin() {
         List<String> tables = Arrays.asList("categories", "subcategories");
-        And condition = new And(
-            Arrays.asList(
-                new Equal("products.category_id", "categories.id"),
-                new Equal("products.subcategory_id", "subcategories.id")
-            )
-        );
+        And condition = new And(Arrays.asList(new Equal("products.category_id", "categories.id"), new Equal("products.subcategory_id", "subcategories.id")));
         RightJoin join = new RightJoin(tables, condition);
-        assertEquals(2, (int)join.getJoinEntities().size());
+        assertEquals(2, (int) join.getJoinEntities().size());
     }
 
     @Test

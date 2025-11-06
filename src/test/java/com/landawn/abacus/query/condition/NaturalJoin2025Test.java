@@ -50,7 +50,7 @@ public class NaturalJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("customers", "orders", "products");
         NaturalJoin join = new NaturalJoin(entities, new GreaterThan("totalAmount", (Object) 1000));
         assertNotNull(join);
-        assertEquals(3, (int)join.getJoinEntities().size());
+        assertEquals(3, (int) join.getJoinEntities().size());
         assertEquals(Operator.NATURAL_JOIN, join.getOperator());
     }
 
@@ -59,7 +59,7 @@ public class NaturalJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         NaturalJoin join = new NaturalJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int)result.size());
+        assertEquals(2, (int) result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -88,7 +88,7 @@ public class NaturalJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         NaturalJoin join = new NaturalJoin("orders", new Equal("status", "completed"));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("completed", params.get(0));
     }
 
@@ -186,6 +186,6 @@ public class NaturalJoin2025Test extends TestBase {
     public void testWithAdditionalFilter() {
         NaturalJoin join = new NaturalJoin("orders", new GreaterThan("orderDate", "2024-01-01"));
         assertNotNull(join.getCondition());
-        assertEquals(1, (int)join.getParameters().size());
+        assertEquals(1, (int) join.getParameters().size());
     }
 }

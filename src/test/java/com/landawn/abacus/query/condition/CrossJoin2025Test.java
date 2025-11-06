@@ -50,7 +50,7 @@ public class CrossJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("sizes", "colors", "styles");
         CrossJoin join = new CrossJoin(entities, new Equal("active", true));
         assertNotNull(join);
-        assertEquals(3, (int)join.getJoinEntities().size());
+        assertEquals(3, (int) join.getJoinEntities().size());
         assertEquals(Operator.CROSS_JOIN, join.getOperator());
     }
 
@@ -59,7 +59,7 @@ public class CrossJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         CrossJoin join = new CrossJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int)result.size());
+        assertEquals(2, (int) result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -88,7 +88,7 @@ public class CrossJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         CrossJoin join = new CrossJoin("products", new Equal("active", true));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals(true, params.get(0));
     }
 
@@ -187,7 +187,7 @@ public class CrossJoin2025Test extends TestBase {
     public void testAllCombinations() {
         List<String> tables = Arrays.asList("test_users", "test_permissions");
         CrossJoin join = new CrossJoin(tables, null);
-        assertEquals(2, (int)join.getJoinEntities().size());
+        assertEquals(2, (int) join.getJoinEntities().size());
     }
 
     @Test

@@ -255,8 +255,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGroupByThreeColumns() {
         Criteria criteria = new Criteria();
-        Criteria result = criteria.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC,
-                                           "day", SortDirection.DESC);
+        Criteria result = criteria.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC, "day", SortDirection.DESC);
         assertNotNull(result);
     }
 
@@ -359,8 +358,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testOrderByThreeColumns() {
         Criteria criteria = new Criteria();
-        Criteria result = criteria.orderBy("name", SortDirection.ASC, "age", SortDirection.DESC,
-                                          "email", SortDirection.ASC);
+        Criteria result = criteria.orderBy("name", SortDirection.ASC, "age", SortDirection.DESC, "email", SortDirection.ASC);
         assertNotNull(result);
     }
 
@@ -415,12 +413,11 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testChainedOperations() {
         Criteria criteria = new Criteria();
-        Criteria result = criteria
-            .where(ConditionFactory.equal("status", "active"))
-            .groupBy("department")
-            .having("COUNT(*) > 5")
-            .orderByDesc("created_date")
-            .limit(10);
+        Criteria result = criteria.where(ConditionFactory.equal("status", "active"))
+                .groupBy("department")
+                .having("COUNT(*) > 5")
+                .orderByDesc("created_date")
+                .limit(10);
         assertNotNull(result);
         assertNotNull(criteria.getWhere());
         assertNotNull(criteria.getGroupBy());
@@ -440,9 +437,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testMultipleJoins() {
         Criteria criteria = new Criteria();
-        criteria.join("orders")
-               .join("products")
-               .join("categories");
+        criteria.join("orders").join("products").join("categories");
         assertEquals(3, criteria.getJoins().size());
     }
 
@@ -462,11 +457,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testClearAll() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John"))
-               .groupBy("department")
-               .having("COUNT(*) > 5")
-               .orderBy("name")
-               .limit(10);
+        criteria.where(ConditionFactory.equal("name", "John")).groupBy("department").having("COUNT(*) > 5").orderBy("name").limit(10);
 
         criteria.clear();
 
@@ -484,9 +475,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGetParametersWithMultipleConditions() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John"))
-               .where(ConditionFactory.equal("age", 30))
-               .where(ConditionFactory.equal("status", "active"));
+        criteria.where(ConditionFactory.equal("name", "John")).where(ConditionFactory.equal("age", 30)).where(ConditionFactory.equal("status", "active"));
 
         List<Object> params = criteria.getParameters();
         assertNotNull(params);

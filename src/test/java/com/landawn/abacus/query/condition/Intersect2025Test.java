@@ -52,7 +52,7 @@ public class Intersect2025Test extends TestBase {
         Intersect intersect = new Intersect(subQuery);
         List<Object> params = intersect.getParameters();
         // Raw SQL SubQuery has no parameters
-        assertEquals(0, (int)params.size());
+        assertEquals(0, (int) params.size());
     }
 
     @Test
@@ -136,6 +136,6 @@ public class Intersect2025Test extends TestBase {
         SubQuery onSale = new SubQuery("SELECT product_id FROM promotions WHERE discount > 0");
         Intersect intersect = new Intersect(onSale);
         // Raw SQL SubQuery has no parameters
-        assertEquals(0, (int)intersect.getParameters().size());
+        assertEquals(0, (int) intersect.getParameters().size());
     }
 }

@@ -93,10 +93,10 @@ public class InSubQueryTest extends TestBase {
     public void testGetParametersWithMultipleValues() {
         SubQuery subQuery = new SubQuery("SELECT id FROM products WHERE price BETWEEN ? AND ?");
         InSubQuery condition = new InSubQuery("product_id", subQuery);
-        
+
         List<Object> params = condition.getParameters();
-        
-        Assertions.assertNotNull(params); 
+
+        Assertions.assertNotNull(params);
     }
 
     @Test

@@ -297,11 +297,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testCellWithComplexCondition() {
-        Condition complex = CF.and(
-            CF.eq("status", "active"),
-            CF.gt("age", 18),
-            CF.isNotNull("email")
-        );
+        Condition complex = CF.and(CF.eq("status", "active"), CF.gt("age", 18), CF.isNotNull("email"));
 
         Cell cell = new Cell(Operator.NOT, complex);
 

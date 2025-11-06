@@ -51,7 +51,7 @@ public class UnionAll2025Test extends TestBase {
         SubQuery subQuery = new SubQuery("customers", List.of("*"), new Equal("region", "EAST"));
         UnionAll unionAll = new UnionAll(subQuery);
         List<Object> params = unionAll.getParameters();
-        assertEquals(1, (int)params.size());
+        assertEquals(1, (int) params.size());
         assertEquals("EAST", params.get(0));
     }
 

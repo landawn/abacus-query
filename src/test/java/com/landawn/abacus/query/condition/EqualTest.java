@@ -24,7 +24,7 @@ public class EqualTest extends TestBase {
     @Test
     public void testConstructor() {
         Equal eq = ConditionFactory.eq("status", "active");
-        
+
         Assertions.assertNotNull(eq);
         Assertions.assertEquals("status", eq.getPropName());
         Assertions.assertEquals("active", eq.getPropValue());
@@ -36,20 +36,20 @@ public class EqualTest extends TestBase {
         // Test with Integer
         Equal eqInt = ConditionFactory.eq("count", 100);
         Assertions.assertEquals(100, (Integer) eqInt.getPropValue());
-        
+
         // Test with Boolean
         Equal eqBool = ConditionFactory.eq("active", true);
         Assertions.assertEquals(true, eqBool.getPropValue());
-        
+
         // Test with Double
         Equal eqDouble = ConditionFactory.eq("price", 99.99);
         Assertions.assertEquals(99.99, eqDouble.getPropValue());
-        
+
         // Test with Date
         Date now = new Date();
         Equal eqDate = ConditionFactory.eq("createdDate", now);
         Assertions.assertEquals(now, eqDate.getPropValue());
-        
+
         // Test with null
         Equal eqNull = ConditionFactory.eq("deletedDate", null);
         Assertions.assertNull(eqNull.getPropValue());
@@ -108,7 +108,7 @@ public class EqualTest extends TestBase {
     public void testGetParameters() {
         Equal eq = ConditionFactory.eq("email", "test@example.com");
         var params = eq.getParameters();
-        
+
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals("test@example.com", params.get(0));
     }
@@ -117,7 +117,7 @@ public class EqualTest extends TestBase {
     public void testClearParameters() {
         Equal eq = ConditionFactory.eq("id", 12345);
         Assertions.assertEquals(12345, (Integer) eq.getPropValue());
-        
+
         eq.clearParameters();
         Assertions.assertNull(eq.getPropValue());
     }
@@ -126,7 +126,7 @@ public class EqualTest extends TestBase {
     public void testCopy() {
         Equal original = ConditionFactory.eq("department", "Sales");
         Equal copy = original.copy();
-        
+
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
@@ -139,7 +139,7 @@ public class EqualTest extends TestBase {
         Equal eq2 = ConditionFactory.eq("status", "active");
         Equal eq3 = ConditionFactory.eq("status", "inactive");
         Equal eq4 = ConditionFactory.eq("type", "active");
-        
+
         Assertions.assertEquals(eq1, eq1);
         Assertions.assertEquals(eq1, eq2);
         Assertions.assertNotEquals(eq1, eq3); // Different value
@@ -152,7 +152,7 @@ public class EqualTest extends TestBase {
     public void testHashCode() {
         Equal eq1 = ConditionFactory.eq("code", "ABC123");
         Equal eq2 = ConditionFactory.eq("code", "ABC123");
-        
+
         Assertions.assertEquals(eq1.hashCode(), eq2.hashCode());
     }
 
@@ -160,9 +160,9 @@ public class EqualTest extends TestBase {
     public void testAnd() {
         Equal eq1 = ConditionFactory.eq("status", "active");
         Equal eq2 = ConditionFactory.eq("type", "premium");
-        
+
         And and = eq1.and(eq2);
-        
+
         Assertions.assertNotNull(and);
         Assertions.assertEquals(Operator.AND, and.getOperator());
         Assertions.assertEquals(2, and.getConditions().size());
@@ -174,9 +174,9 @@ public class EqualTest extends TestBase {
     public void testOr() {
         Equal eq1 = ConditionFactory.eq("department", "Sales");
         Equal eq2 = ConditionFactory.eq("department", "Marketing");
-        
+
         Or or = eq1.or(eq2);
-        
+
         Assertions.assertNotNull(or);
         Assertions.assertEquals(Operator.OR, or.getOperator());
         Assertions.assertEquals(2, or.getConditions().size());
@@ -185,9 +185,9 @@ public class EqualTest extends TestBase {
     @Test
     public void testNot() {
         Equal eq = ConditionFactory.eq("deleted", false);
-        
+
         Not not = eq.not();
-        
+
         Assertions.assertNotNull(not);
         Assertions.assertEquals(Operator.NOT, not.getOperator());
         Assertions.assertEquals(eq, not.getCondition());
@@ -197,9 +197,9 @@ public class EqualTest extends TestBase {
     public void testWithSubQuery() {
         SubQuery subQuery = ConditionFactory.subQuery("SELECT MAX(salary) FROM employees");
         Equal eq = new Equal("salary", subQuery);
-        
+
         Assertions.assertEquals(subQuery, eq.getPropValue());
-        
+
         String result = eq.toString();
         Assertions.assertTrue(result.contains("salary ="));
         Assertions.assertTrue(result.contains("SELECT MAX(salary) FROM employees"));
@@ -209,7 +209,7 @@ public class EqualTest extends TestBase {
     public void testSetPropValue() {
         Equal eq = ConditionFactory.eq("status", "pending");
         Assertions.assertEquals("pending", eq.getPropValue());
-        
+
         eq.setPropValue("approved");
         Assertions.assertEquals("approved", eq.getPropValue());
     }
@@ -218,9 +218,9 @@ public class EqualTest extends TestBase {
     public void testWithExpression() {
         Expression expr = Expression.of("CURRENT_TIMESTAMP");
         Equal eq = new Equal("lastModified", expr);
-        
+
         Assertions.assertEquals(expr, eq.getPropValue());
-        
+
         String result = eq.toString();
         Assertions.assertEquals("lastModified = CURRENT_TIMESTAMP", result);
     }
@@ -228,7 +228,7 @@ public class EqualTest extends TestBase {
     @Test
     public void testEqualWithQuestionMark() {
         Equal eq = ConditionFactory.equal("name");
-        
+
         Assertions.assertEquals(ConditionFactory.QME, eq.getPropValue());
         String result = eq.toString();
         Assertions.assertEquals("name = ?", result);
@@ -237,7 +237,7 @@ public class EqualTest extends TestBase {
     @Test
     public void testEqWithQuestionMark() {
         Equal eq = ConditionFactory.eq("id");
-        
+
         Assertions.assertEquals(ConditionFactory.QME, eq.getPropValue());
         String result = eq.toString();
         Assertions.assertEquals("id = ?", result);
@@ -249,9 +249,9 @@ public class EqualTest extends TestBase {
         GreaterThan age = ConditionFactory.gt("age", 18);
         LessEqual salary = ConditionFactory.le("salary", 100000);
         NotEqual type = ConditionFactory.ne("type", "temporary");
-        
+
         And complex = status.and(age).and(salary).and(type);
-        
+
         Assertions.assertNotNull(complex);
         Assertions.assertEquals(4, complex.getConditions().size());
     }

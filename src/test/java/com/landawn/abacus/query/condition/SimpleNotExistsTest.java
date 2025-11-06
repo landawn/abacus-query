@@ -29,7 +29,7 @@ public class SimpleNotExistsTest extends TestBase {
     @Test
     void testConstructorWithSubQuery() {
         NotExists notExists = new NotExists(simpleSubQuery);
-        
+
         assertNotNull(notExists);
         assertEquals(Operator.NOT_EXISTS, notExists.getOperator());
     }
@@ -59,7 +59,7 @@ public class SimpleNotExistsTest extends TestBase {
     @Test
     void testToString() {
         String result = notExistsCondition.toString();
-        
+
         assertNotNull(result);
         // Should contain NOT EXISTS in the output
         // Note: specific format may vary based on implementation
@@ -69,15 +69,15 @@ public class SimpleNotExistsTest extends TestBase {
     void testLogicalOperations() {
         // Test that logical operations work (inherited from Condition)
         Condition other = CF.eq("status", "active");
-        
+
         Condition and = notExistsCondition.and(other);
         assertNotNull(and);
         assertEquals(Operator.AND, and.getOperator());
-        
+
         Condition or = notExistsCondition.or(other);
         assertNotNull(or);
         assertEquals(Operator.OR, or.getOperator());
-        
+
         Condition not = notExistsCondition.not();
         assertNotNull(not);
         assertEquals(Operator.NOT, not.getOperator());
@@ -86,7 +86,7 @@ public class SimpleNotExistsTest extends TestBase {
     @Test
     void testCopy() {
         NotExists copy = notExistsCondition.copy();
-        
+
         assertNotNull(copy);
         assertEquals(notExistsCondition.getOperator(), copy.getOperator());
         assertEquals(notExistsCondition.getCondition().toString(), copy.getCondition().toString());
