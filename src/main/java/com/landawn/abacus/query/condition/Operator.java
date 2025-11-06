@@ -382,10 +382,11 @@ public enum Operator {
      * Operator and = Operator.getOperator("AND");     // Returns AND
      * Operator gt = Operator.getOperator(">");        // Returns GREATER_THAN
      * Operator like = Operator.getOperator("like");   // Returns LIKE (case-insensitive)
+     * Operator unknown = Operator.getOperator("XYZ"); // Returns null (not found)
      * }</pre>
      *
-     * @param name the string representation of the operator
-     * @return the corresponding Operator enum value, or null if not found
+     * @param name the string representation of the operator. Can be null.
+     * @return the corresponding Operator enum value, or {@code null} if name is null or not found
      */
     public static synchronized Operator getOperator(final String name) {
         if (name == null) {
@@ -414,18 +415,19 @@ public enum Operator {
     }
 
     /**
-     * Gets the string representation of this operator.
+     * Gets the SQL string representation of this operator.
      *
-     * @return the SQL string representation
+     * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Returns the string representation of this operator.
+     * Returns the SQL string representation of this operator.
+     * This is equivalent to calling {@link #getName()}.
      *
-     * @return the SQL string representation
+     * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */
     @Override
     public String toString() {

@@ -264,7 +264,7 @@ public class SubQuery extends AbstractCondition {
     /**
      * Returns the raw SQL script if this is a raw SQL subquery.
      *
-     * @return the SQL script, or null if this is a structured subquery
+     * @return the SQL script, or {@code null} if this is a structured subquery
      */
     public String getSql() {
         return sql;
@@ -273,7 +273,7 @@ public class SubQuery extends AbstractCondition {
     /**
      * Gets the entity/table name for this subquery.
      *
-     * @return the entity name
+     * @return the entity name, or {@code null} if not set
      */
     public String getEntityName() {
         return entityName;
@@ -282,7 +282,7 @@ public class SubQuery extends AbstractCondition {
     /**
      * Gets the entity class if this subquery was created with a class.
      *
-     * @return the entity class, or null if created with entity name
+     * @return the entity class, or {@code null} if created with entity name or raw SQL
      */
     public Class<?> getEntityClass() {
         return entityClass;
@@ -291,7 +291,7 @@ public class SubQuery extends AbstractCondition {
     /**
      * Gets the collection of property names to select in this subquery.
      *
-     * @return collection of property names, or null for raw SQL subqueries
+     * @return collection of property names, or {@code null} for raw SQL subqueries
      */
     public Collection<String> getSelectPropNames() {
         return propNames;
@@ -300,7 +300,7 @@ public class SubQuery extends AbstractCondition {
     /**
      * Gets the WHERE condition for this subquery.
      *
-     * @return the condition, or null if no condition or raw SQL subquery
+     * @return the condition, or {@code null} if no condition or raw SQL subquery
      */
     public Condition getCondition() {
         return condition;
@@ -310,7 +310,7 @@ public class SubQuery extends AbstractCondition {
      * Gets the list of parameter values from the condition.
      * These parameters will be bound to the prepared statement when executing the query.
      *
-     * @return list of parameters, or empty list if no condition
+     * @return list of parameter values, or an empty list if no condition or raw SQL subquery
      */
     @Override
     public List<Object> getParameters() {
@@ -340,7 +340,7 @@ public class SubQuery extends AbstractCondition {
     /**
      * Creates a deep copy of this subquery.
      * The copy includes deep copies of property names and conditions to ensure complete independence.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery original = new SubQuery("users", Arrays.asList("id"), new Equal("active", true));
@@ -349,7 +349,7 @@ public class SubQuery extends AbstractCondition {
      * }</pre>
      *
      * @param <T> the type of condition to return
-     * @return a new SubQuery instance with copied values
+     * @return a new SubQuery instance with deeply copied values
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -369,17 +369,17 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Converts this subquery to its string representation.
-     * 
+     *
      * <p>For raw SQL subqueries, returns the SQL as-is.
      * For structured subqueries, generates the SELECT statement with proper formatting.</p>
-     * 
+     *
      * <p>Example output:</p>
      * <pre>{@code
      * // Raw SQL: returns the SQL string directly
      * // Structured: "SELECT id, name FROM users WHERE status = 'active'"
      * }</pre>
      *
-     * @param namingPolicy the naming policy to apply
+     * @param namingPolicy the naming policy to apply to column and table names. Can be null.
      * @return string representation of the subquery
      */
     @Override

@@ -65,23 +65,26 @@ public class NotEqual extends Binary {
     /**
      * Constructs a NOT EQUAL condition for the specified property and value.
      * This condition will evaluate to true when the property value is not equal to the specified value.
-     * 
+     *
      * <p>The NOT EQUAL operator is commonly used to exclude specific values from query results.
      * It's particularly useful for filtering out deleted records, excluding default values,
      * or finding records that don't match a specific criteria.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude specific user
      * NotEqual notAdmin = new NotEqual("username", "admin");
-     * 
+     * // Generates: username != 'admin'
+     *
      * // Exclude default values
      * NotEqual notDefault = new NotEqual("configuration", "default");
-     * 
+     * // Generates: configuration != 'default'
+     *
      * // Filter out zero values
      * NotEqual notZero = new NotEqual("balance", 0);
+     * // Generates: balance != 0
      * }</pre>
-     * 
+     *
      * <p>Note: For null comparisons, consider using {@link IsNull} or {@link IsNotNull}
      * as SQL NULL comparisons behave differently (NULL != value returns NULL, not true).</p>
      *

@@ -81,17 +81,25 @@ public class OrderBy extends Clause {
     /**
      * Constructs an ORDER BY clause with a custom condition.
      * This allows for complex ordering expressions beyond simple column names.
-     * 
+     *
      * <p>Use this constructor when you need to order by calculated values,
      * case expressions, or other complex SQL expressions.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Order by CASE expression
      * Expression expr = new Expression("CASE WHEN status='urgent' THEN 1 ELSE 2 END");
      * OrderBy orderBy = new OrderBy(expr);
+     * // Results in: ORDER BY CASE WHEN status='urgent' THEN 1 ELSE 2 END
+     *
+     * // Order by calculated field
+     * Expression calcExpr = new Expression("(price * quantity) DESC");
+     * OrderBy totalOrder = new OrderBy(calcExpr);
+     * // Results in: ORDER BY (price * quantity) DESC
      * }</pre>
-     * 
-     * @param condition the ordering condition
+     *
+     * @param condition the ordering condition. Must not be null.
+     * @throws IllegalArgumentException if condition is null
      */
     public OrderBy(final Condition condition) {
         super(Operator.ORDER_BY, condition);
@@ -100,18 +108,23 @@ public class OrderBy extends Clause {
     /**
      * Constructs an ORDER BY clause with multiple property names.
      * All properties will be sorted in ascending order by default.
-     * 
+     *
      * <p>The order of properties in the parameter list determines the sort priority.
      * The first property has the highest priority, followed by subsequent properties.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Multi-level sort with default ASC direction
      * OrderBy orderBy = new OrderBy("country", "state", "city");
      * // Results in: ORDER BY country, state, city
+     *
+     * // Hierarchical sorting
+     * OrderBy hierarchical = new OrderBy("department", "team", "lastName", "firstName");
+     * // Results in: ORDER BY department, team, lastName, firstName
      * }</pre>
-     * 
-     * @param propNames variable number of property names to sort by
-     * @throws IllegalArgumentException if propNames is null or empty
+     *
+     * @param propNames variable number of property names to sort by. Must not be null or empty.
+     * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
      */
     public OrderBy(final String... propNames) {
         this(CF.expr(createCondition(propNames)));
@@ -120,16 +133,21 @@ public class OrderBy extends Clause {
     /**
      * Constructs an ORDER BY clause with a single property and sort direction.
      * This is the most common use case for ordering query results.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Sort by price descending
      * OrderBy orderBy = new OrderBy("price", SortDirection.DESC);
      * // Results in: ORDER BY price DESC
+     *
+     * // Sort by date ascending
+     * OrderBy dateOrder = new OrderBy("created_date", SortDirection.ASC);
+     * // Results in: ORDER BY created_date ASC
      * }</pre>
-     * 
-     * @param propName the property name to sort by
-     * @param direction the sort direction (ASC or DESC)
-     * @throws IllegalArgumentException if propName is null or empty
+     *
+     * @param propName the property name to sort by. Must not be null or empty.
+     * @param direction the sort direction (ASC or DESC). Must not be null.
+     * @throws IllegalArgumentException if propName is null/empty or direction is null
      */
     public OrderBy(final String propName, final SortDirection direction) {
         this(CF.expr(createCondition(propName, direction)));
@@ -138,20 +156,26 @@ public class OrderBy extends Clause {
     /**
      * Constructs an ORDER BY clause with multiple properties and a single sort direction.
      * All properties will use the same sort direction.
-     * 
+     *
      * <p>This is useful when you want to sort by multiple columns in the same direction,
      * such as sorting multiple date fields in descending order.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Sort multiple date fields in descending order
      * List<String> dateFields = Arrays.asList("created", "updated", "published");
      * OrderBy orderBy = new OrderBy(dateFields, SortDirection.DESC);
      * // Results in: ORDER BY created, updated, published DESC
+     *
+     * // Sort name fields in ascending order
+     * List<String> nameFields = Arrays.asList("lastName", "firstName", "middleName");
+     * OrderBy nameOrder = new OrderBy(nameFields, SortDirection.ASC);
+     * // Results in: ORDER BY lastName, firstName, middleName ASC
      * }</pre>
-     * 
-     * @param propNames collection of property names to sort by
-     * @param direction the sort direction to apply to all properties
-     * @throws IllegalArgumentException if propNames is null or empty
+     *
+     * @param propNames collection of property names to sort by. Must not be null or empty.
+     * @param direction the sort direction to apply to all properties. Must not be null.
+     * @throws IllegalArgumentException if propNames is null/empty, direction is null, or propNames contains null/empty elements
      */
     public OrderBy(final Collection<String> propNames, final SortDirection direction) {
         this(CF.expr(createCondition(propNames, direction)));

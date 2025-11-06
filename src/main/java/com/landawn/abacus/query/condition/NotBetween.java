@@ -119,7 +119,7 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Gets the property name for this NOT BETWEEN condition.
-     * This is the name of the column or field being tested against the range.
+     * Returns the name of the column or field being tested against the range.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

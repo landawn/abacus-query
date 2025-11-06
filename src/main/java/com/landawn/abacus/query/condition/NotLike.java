@@ -77,22 +77,29 @@ public class NotLike extends Binary {
     /**
      * Constructs a NOT LIKE condition for the specified property and pattern.
      * The condition evaluates to true when the property value does not match the given pattern.
-     * 
+     *
      * <p>The pattern can include SQL wildcards (% and _) for flexible matching.
      * This operator is case-sensitive in most databases, though behavior may vary
      * based on database configuration and collation settings.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude products with 'temp' in the name
      * NotLike notLike = new NotLike("productName", "%temp%");
-     * 
+     * // SQL: productName NOT LIKE '%temp%'
+     *
      * // Exclude files with .tmp extension
      * NotLike notLike2 = new NotLike("filename", "%.tmp");
+     * // SQL: filename NOT LIKE '%.tmp'
+     *
+     * // Exclude codes starting with 'TEST'
+     * NotLike testExclude = new NotLike("code", "TEST%");
+     * // SQL: code NOT LIKE 'TEST%'
      * }</pre>
-     * 
-     * @param propName the property/column name (must not be null or empty)
-     * @param propValue the pattern to match against (can include % and _ wildcards)
+     *
+     * @param propName the property/column name. Must not be null or empty.
+     * @param propValue the pattern to match against. Can include % and _ wildcards.
+     *                  Can be a String, Expression, or SubQuery.
      * @throws IllegalArgumentException if propName is null or empty
      */
     public NotLike(final String propName, final Object propValue) {

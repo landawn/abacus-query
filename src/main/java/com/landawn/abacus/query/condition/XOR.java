@@ -120,7 +120,7 @@ public class XOR extends Binary {
      * }</pre>
      *
      * @param propName the property/column name. Must not be null or empty.
-     * @param propValue the value to compare against. Can be null, a literal value, or a subquery.
+     * @param propValue the value to compare against. Can be null, a literal value, Expression, or SubQuery.
      * @throws IllegalArgumentException if propName is null or empty
      */
     public XOR(final String propName, final Object propValue) {
