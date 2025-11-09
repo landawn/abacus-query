@@ -50,25 +50,25 @@ class CodeHelper {
 
                 String lineToAdd = null;
                 if (Strings.containsAny(line, "String expr")) {
-                    lineToAdd = "            N.checkArgNotEmpty(expr, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotEmpty(expr, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 } else if (Strings.containsAny(line, "String... propOrColumnNames", "Collection<String> propOrColumnNames")) {
-                    lineToAdd = "            N.checkArgNotEmpty(propOrColumnNames, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotEmpty(propOrColumnNames, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 } else if (Strings.containsAny(line, "Object entity")) {
-                    lineToAdd = "            N.checkArgNotNull(entity, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotNull(entity, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 } else if (Strings.containsAny(line, "String tableName")) {
-                    lineToAdd = "            N.checkArgNotEmpty(tableName, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotEmpty(tableName, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 } else if (Strings.containsAny(line, "Map<String, Object> props")) {
-                    lineToAdd = "            N.checkArgNotEmpty(props, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotEmpty(props, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 } else if (Strings.containsAny(line, "Collection<?> propsList")) {
-                    lineToAdd = "            N.checkArgNotEmpty(propsList, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotEmpty(propsList, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 } else if (Strings.containsAny(line, "Class<?> entityClassA")) {
-                    lineToAdd = "            N.checkArgNotNull(entityClassA, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotNull(entityClassA, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 } else if (Strings.containsAny(line, "Class<?> entityClass")) {
-                    lineToAdd = "            N.checkArgNotNull(entityClass, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotNull(entityClass, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 } else if (Strings.containsAny(line, "String selectPart")) {
-                    lineToAdd = "            N.checkArgNotEmpty(selectPart, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotEmpty(selectPart, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 } else if (Strings.containsAny(line, "Map<String, String> propOrColumnNameAliases")) {
-                    lineToAdd = "            N.checkArgNotEmpty(propOrColumnNameAliases, " + parameterName + ");" + IOUtil.LINE_SEPARATOR;
+                    lineToAdd = "            N.checkArgNotEmpty(propOrColumnNameAliases, " + parameterName + ");" + IOUtil.LINE_SEPARATOR_UNIX;
                 }
 
                 if (Strings.isNotEmpty(parameterName) && Strings.isNotEmpty(lineToAdd)) {
