@@ -41,7 +41,7 @@ import com.landawn.abacus.util.N;
  *   <li>Set operations (UNION_ALL, UNION, INTERSECT, EXCEPT, MINUS)</li>
  * </ol>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if an operator is a clause operator
  * boolean isClause = CriteriaUtil.isClause(Operator.WHERE); // true

@@ -42,7 +42,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Standard toString() implementation</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Concrete implementations extend this class
  * public class Equal extends Binary {

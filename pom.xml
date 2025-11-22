@@ -5,7 +5,7 @@
 
 	<groupId>com.landawn</groupId>
 	<artifactId>abacus-query</artifactId>
-	<version>3.26.3</version>
+	<version>3.26.4</version>
 	<packaging>jar</packaging>
 	<name>abacus-query</name>
 	<description>Abacus Data Access and Analysis</description>

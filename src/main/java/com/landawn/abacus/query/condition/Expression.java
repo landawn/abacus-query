@@ -84,7 +84,7 @@ import com.landawn.abacus.util.Strings;
  * and functions, including arithmetic operations, string functions, mathematical functions,
  * and comparison operations. These methods help build type-safe SQL expressions.</p>
  *
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple expression
  * Expression expr = Expression.of("price * 0.9");

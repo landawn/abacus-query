@@ -30,7 +30,7 @@ import com.landawn.abacus.util.Strings;
  * or to create clause conditions like WHERE, HAVING, etc. It acts as a decorator
  * that adds an operator context to an existing condition.</p>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create a NOT cell
  * Cell notCell = new Cell(Operator.NOT, CF.eq("status", "active"));

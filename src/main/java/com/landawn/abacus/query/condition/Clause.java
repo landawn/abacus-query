@@ -38,7 +38,7 @@ package com.landawn.abacus.query.condition;
  *   <li>{@link Union}, {@link Intersect}, {@link Except} - Set operations</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Clauses are typically used through their specific implementations
  * Where where = new Where(CF.eq("status", "active"));

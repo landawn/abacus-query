@@ -42,7 +42,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>{@link In} - property IN (values)</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple binary conditions
  * Binary eq = new Equal("name", "John");

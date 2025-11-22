@@ -51,7 +51,7 @@ import com.landawn.abacus.util.Strings;
  * <p>Each clause is independent. A clause should not be included in another clause.
  * If there are multiple clauses, they should be composed in one {@code Criteria} condition.</p>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Build a complex query with multiple clauses
  * Criteria criteria = new Criteria()

@@ -45,7 +45,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *   <li><b>Subquery operations:</b> {@code Exists}, {@code NotExists}, {@code All}, {@code Any}</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create simple conditions
  * Condition ageCondition = CF.gt("age", 18);

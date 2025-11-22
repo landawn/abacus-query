@@ -36,7 +36,7 @@ import com.landawn.abacus.util.N;
  *   <li>Maintains order of conditions for predictable SQL generation</li>
  * </ul>
  * 
- * <p>Usage example:</p>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create an AND condition with multiple sub-conditions
  * And and = new And(
@@ -52,7 +52,7 @@ import com.landawn.abacus.util.N;
  * 
  * // Create from a collection
  * List<Condition> conditions = Arrays.asList(
- *     CF.notNull("email"),
+ *     CF.isNotNull("email"),
  *     CF.eq("verified", true)
  * );
  * And fromList = new And(conditions);
@@ -82,7 +82,7 @@ public class And extends Junction {
      * // Simple AND with two conditions
      * And and = new And(
      *     CF.eq("department", "Sales"),
-     *     CF.gte("salary", 50000)
+     *     CF.ge("salary", 50000)
      * );
      * // Results in: ((department = 'Sales') AND (salary >= 50000))
      * 
@@ -111,7 +111,7 @@ public class And extends Junction {
      * // Build conditions dynamically
      * List<Condition> conditions = new ArrayList<>();
      * conditions.add(CF.eq("status", "active"));
-     * conditions.add(CF.notNull("email"));
+     * conditions.add(CF.isNotNull("email"));
      * if (includeAgeFilter) {
      *     conditions.add(CF.gt("age", 21));
      * }
