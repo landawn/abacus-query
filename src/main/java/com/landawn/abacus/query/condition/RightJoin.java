@@ -66,9 +66,10 @@ import java.util.Collection;
  * // Generates: RIGHT JOIN departments employees.dept_id = departments.id
  * }</pre>
  * 
- * @see LeftJoin
  * @see InnerJoin
+ * @see LeftJoin
  * @see FullJoin
+ * @see Join
  */
 public class RightJoin extends Join {
 
@@ -98,7 +99,6 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     *                   Must not be null or empty.
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public RightJoin(final String joinEntity) {
@@ -138,9 +138,8 @@ public class RightJoin extends Join {
      * // Generates: RIGHT JOIN products p order_items.product_id = p.id AND p.stock > 0
      * }</pre>
      *
-     * @param joinEntity the table or entity to join with. Can include alias. Must not be null or empty.
-     * @param condition the join condition (typically an On condition for column equality).
-     *                  Can be a complex condition using And/Or for multiple criteria. Can be null.
+     * @param joinEntity the table or entity to join with. Can include alias.
+     * @param condition typically an On condition for column equality. Can be a complex condition using And/Or for multiple criteria.
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public RightJoin(final String joinEntity, final Condition condition) {
@@ -168,8 +167,8 @@ public class RightJoin extends Join {
      * // Generates: RIGHT JOIN categories c, subcategories sc p.category_id = c.id AND p.subcategory_id = sc.id
      * }</pre>
      *
-     * @param joinEntities the collection of tables or entities to join with. Must not be null or empty.
-     * @param condition the join condition to apply. Can be null.
+     * @param joinEntities the collection of tables or entities to join with.
+     * @param condition typically an On condition for column equality. Can be a complex condition using And/Or for multiple criteria.
      * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public RightJoin(final Collection<String> joinEntities, final Condition condition) {

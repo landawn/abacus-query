@@ -109,7 +109,7 @@ public class IsNotInfinite extends IsNot {
      *     .list();
      * }</pre>
      *
-     * @param propName the property/column name to check for non-infinity (must not be null or empty)
+     * @param propName the name of the property/column to check (must not be null or empty)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNotInfinite(final String propName) {

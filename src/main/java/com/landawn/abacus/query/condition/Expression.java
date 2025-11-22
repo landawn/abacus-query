@@ -1547,16 +1547,16 @@ public class Expression extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * 
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     * No-op method as Expression has no parameters to clear.
+     *
+     * <p>Expressions are literal SQL strings and don't have bindable parameters,
+     * so this method does nothing. It exists to satisfy the interface contract.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * Expression expr = Expression.of("price * 1.1");
+     * expr.clearParameters(); // Does nothing - Expression has no parameters
+     * List<Object> params = expr.getParameters(); // Still returns empty list
      * }</pre>
      */
     @Override

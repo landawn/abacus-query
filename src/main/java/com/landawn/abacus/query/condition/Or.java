@@ -21,7 +21,7 @@ import java.util.List;
 import com.landawn.abacus.util.N;
 
 /**
- * Represents an OR logical operator that combines multiple conditions.
+ * Represents a logical OR condition that combines multiple conditions.
  * The OR condition evaluates to true if at least one of its child conditions evaluates to true.
  * 
  * <p>This class extends Junction and provides a fluent API for building complex OR conditions.
@@ -42,20 +42,22 @@ import com.landawn.abacus.util.N;
  * <pre>{@code
  * // Create OR with multiple conditions
  * Or or = new Or(
- *     new Equal("status", "active"),
- *     new Equal("status", "pending"),
- *     new Equal("status", "review")
+ *     CF.eq("status", "active"),
+ *     CF.eq("status", "pending"),
+ *     CF.eq("status", "review")
  * );
  * // Results in: ((status = 'active') OR (status = 'pending') OR (status = 'review'))
  *
  * // Build OR condition fluently
- * Or or2 = new Or(new GreaterThan("age", 65))
- *     .or(new LessThan("age", 18));
+ * Or or2 = new Or(CF.gt("age", 65))
+ *     .or(CF.lt("age", 18));
  * // Results in: ((age > 65) OR (age < 18))
  * }</pre>
- * 
+ *
  * @see And
  * @see Junction
+ * @see Not
+ * @see Condition
  */
 public class Or extends Junction {
 
@@ -79,22 +81,22 @@ public class Or extends Junction {
      * <pre>{@code
      * // Find users in specific cities
      * Or or = new Or(
-     *     new Equal("city", "New York"),
-     *     new Equal("city", "Los Angeles"),
-     *     new Equal("city", "Chicago")
+     *     CF.eq("city", "New York"),
+     *     CF.eq("city", "Los Angeles"),
+     *     CF.eq("city", "Chicago")
      * );
      * // Results in: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
      *
      * // Complex OR with different condition types
      * Or complexOr = new Or(
-     *     new Like("email", "%@gmail.com"),
-     *     new Like("email", "%@yahoo.com"),
-     *     new IsNull("email")
+     *     CF.like("email", "%@gmail.com"),
+     *     CF.like("email", "%@yahoo.com"),
+     *     CF.isNull("email")
      * );
      * // Results in: ((email LIKE '%@gmail.com') OR (email LIKE '%@yahoo.com') OR (email IS NULL))
      * }</pre>
      *
-     * @param conditions the variable number of conditions to be combined with OR. Must not be null.
+     * @param conditions the conditions to combine with OR logic
      * @throws IllegalArgumentException if conditions is null
      */
     public Or(final Condition... conditions) {
@@ -113,20 +115,20 @@ public class Or extends Junction {
      * // Dynamic condition building
      * List<Condition> conditions = new ArrayList<>();
      * for (String name : searchNames) {
-     *     conditions.add(new Like("name", "%" + name + "%"));
+     *     conditions.add(CF.like("name", "%" + name + "%"));
      * }
      * Or or = new Or(conditions);
      * // Results in: ((name LIKE '%name1%') OR (name LIKE '%name2%') OR ...)
      *
      * // Combining existing conditions
      * Set<Condition> statusConditions = new HashSet<>();
-     * statusConditions.add(new Equal("status", "active"));
-     * statusConditions.add(new Equal("status", "pending"));
+     * statusConditions.add(CF.eq("status", "active"));
+     * statusConditions.add(CF.eq("status", "pending"));
      * Or statusOr = new Or(statusConditions);
      * // Results in: ((status = 'active') OR (status = 'pending'))
      * }</pre>
      *
-     * @param conditions the collection of conditions to be combined with OR. Must not be null.
+     * @param conditions the collection of conditions to combine with OR logic
      * @throws IllegalArgumentException if conditions is null
      */
     public Or(final Collection<? extends Condition> conditions) {
@@ -134,9 +136,9 @@ public class Or extends Junction {
     }
 
     /**
-     * Adds another condition to this OR clause using the OR operator.
-     * Creates a new OR instance containing all existing conditions plus the new one.
-     * The original OR condition remains unchanged (immutable pattern).
+     * Creates a new Or condition by adding another condition to this OR.
+     * This method returns a new Or instance containing all existing conditions plus the new one.
+     * The original Or condition remains unchanged (immutable).
      *
      * <p>This method provides a fluent interface for building OR conditions incrementally.
      * Each call returns a new OR instance, preserving immutability. The new condition
@@ -145,24 +147,24 @@ public class Or extends Junction {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Build condition step by step
-     * Or or = new Or(new Equal("type", "A"))
-     *     .or(new Equal("type", "B"))
-     *     .or(new Equal("type", "C"));
+     * Or or = new Or(CF.eq("type", "A"))
+     *     .or(CF.eq("type", "B"))
+     *     .or(CF.eq("type", "C"));
      * // Results in: ((type = 'A') OR (type = 'B') OR (type = 'C'))
      *
      * // Add conditions conditionally
-     * Or baseOr = new Or(new Equal("status", "active"));
+     * Or baseOr = new Or(CF.eq("status", "active"));
      * if (includeInactive) {
-     *     baseOr = baseOr.or(new Equal("status", "inactive"));
+     *     baseOr = baseOr.or(CF.eq("status", "inactive"));
      * }
      * if (includePending) {
-     *     baseOr = baseOr.or(new Equal("status", "pending"));
+     *     baseOr = baseOr.or(CF.eq("status", "pending"));
      * }
      * // Results vary based on flags
      * }</pre>
      *
-     * @param condition the condition to add with OR. Must not be null.
-     * @return a new OR instance containing all existing conditions plus the new one
+     * @param condition the condition to add to this OR. Must not be null.
+     * @return a new Or condition containing all existing conditions plus the new one
      * @throws IllegalArgumentException if condition is null
      */
     @Override

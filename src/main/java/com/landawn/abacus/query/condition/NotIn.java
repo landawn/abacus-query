@@ -63,6 +63,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * 
  * @see In
  * @see NotInSubQuery
+ * @see AbstractCondition
  */
 public class NotIn extends AbstractCondition {
 

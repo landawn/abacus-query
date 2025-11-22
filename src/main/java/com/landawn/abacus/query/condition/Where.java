@@ -45,6 +45,7 @@ package com.landawn.abacus.query.condition;
  * // Results in: WHERE age = 25 AND salary > 50000
  * }</pre>
  * 
+ * @see Clause
  * @see Having
  * @see Condition
  */
@@ -59,7 +60,7 @@ public class Where extends Clause {
     }
 
     /**
-     * Constructs a WHERE clause with the specified condition.
+     * Creates a WHERE clause with the specified condition.
      * The condition can be any valid SQL condition including simple comparisons,
      * logical combinations (AND/OR), or complex expressions.
      *

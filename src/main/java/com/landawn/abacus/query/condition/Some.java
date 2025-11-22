@@ -53,6 +53,7 @@ package com.landawn.abacus.query.condition;
  * @see Any
  * @see All
  * @see SubQuery
+ * @see Cell
  */
 public class Some extends Cell {
 

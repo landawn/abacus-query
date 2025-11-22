@@ -28,7 +28,7 @@ import com.landawn.abacus.util.N;
  * allowing you to combine multiple criteria where all must be satisfied. It follows
  * standard boolean algebra rules where the result is true only when all operands are true.</p>
  * 
- * <p>Key features:</p>
+ * <p>Key characteristics:</p>
  * <ul>
  *   <li>Short-circuit evaluation in most databases</li>
  *   <li>Can combine any types of conditions</li>

@@ -53,16 +53,23 @@ import com.landawn.abacus.util.Strings;
  * // Generates: (firstName, lastName) NOT IN (SELECT fname, lname FROM blacklist)
  * }</pre>
  * 
+ * @see InSubQuery
  * @see NotIn
  * @see NotExists
  * @see SubQuery
  */
 public class NotInSubQuery extends AbstractCondition {
 
-    // For Kryo
+    /**
+     * The property name for single-column NOT IN conditions.
+     * This field is used for serialization frameworks like Kryo.
+     */
     final String propName;
 
-    // For Kryo
+    /**
+     * The property names for multi-column NOT IN conditions.
+     * This field is used for serialization frameworks like Kryo.
+     */
     final Collection<String> propNames;
 
     private SubQuery subQuery;

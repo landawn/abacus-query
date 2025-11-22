@@ -14,8 +14,6 @@
 
 package com.landawn.abacus.query.condition;
 
-import org.apache.commons.lang3.ObjectUtils.Null;
-
 import com.landawn.abacus.query.condition.ConditionFactory.CF;
 
 /**
@@ -66,7 +64,6 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * }</pre>
  * 
  * @see IsNotNull
- * @see Null (alias)
  * @see Is
  */
 public class IsNull extends Is {
@@ -126,7 +123,7 @@ public class IsNull extends Is {
      *     .list();
      * }</pre>
      *
-     * @param propName the property/column name to check for NULL (must not be null or empty)
+     * @param propName the name of the property/column to check (must not be null or empty)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNull(final String propName) {

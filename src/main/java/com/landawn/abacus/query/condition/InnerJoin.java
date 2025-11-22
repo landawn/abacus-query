@@ -68,6 +68,11 @@ import java.util.Collection;
  *         new GreaterThan("i.quantity", 0)
  *     ));
  * // Generates: INNER JOIN inventory i (ON p.product_id = i.product_id) AND (ON p.warehouse_id = i.warehouse_id) AND (i.quantity > 0)
+ *
+ * // Using Expression for custom join logic
+ * InnerJoin exprJoin = new InnerJoin("customers c",
+ *     ConditionFactory.expr("orders.customer_id = c.id"));
+ * // Generates: INNER JOIN customers c orders.customer_id = c.id
  * }</pre>
  * 
  * @see LeftJoin

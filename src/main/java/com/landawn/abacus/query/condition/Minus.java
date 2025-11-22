@@ -133,11 +133,12 @@ public class Minus extends Clause {
      * // SELECT skill_id FROM position_requirements WHERE position_id = 5
      * }</pre>
      *
-     * @param condition the subquery whose results will be subtracted from the main query. Must not be null.
+     * @param condition the subquery to perform the MINUS operation with. Must not be null.
      *                  The subquery must have the same number of columns with compatible types as the main query.
      * @throws IllegalArgumentException if condition is null
      * @see Except
      * @see Union
+     * @see UnionAll
      * @see Intersect
      */
     public Minus(final SubQuery condition) {

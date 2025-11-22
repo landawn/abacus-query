@@ -15,14 +15,14 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents an equality (=) condition in a query.
+ * Represents an equality (=) condition in SQL queries.
  * This condition checks if a property value equals a specified value.
- * 
+ *
  * <p>The Equal condition is one of the most fundamental and commonly used conditions
  * in database queries. It performs exact matching between a column value and a
  * specified value, supporting various data types including strings, numbers, dates,
  * booleans, and even subqueries.</p>
- * 
+ *
  * <p>Key features:</p>
  * <ul>
  *   <li>Exact value matching</li>
@@ -35,21 +35,26 @@ package com.landawn.abacus.query.condition;
  * <pre>{@code
  * // Simple equality check
  * Equal statusCheck = new Equal("status", "active");
- * 
+ * // SQL: status = 'active'
+ *
  * // Numeric comparison
  * Equal idCheck = new Equal("userId", 12345);
- * 
+ * // SQL: userId = 12345
+ *
  * // Date comparison
  * Equal dateCheck = new Equal("createdDate", LocalDate.of(2024, 1, 1));
- * 
+ * // SQL: createdDate = '2024-01-01'
+ *
  * // Null check (though IsNull is preferred for clarity)
  * Equal nullCheck = new Equal("deletedDate", null);
- * 
+ * // SQL: deletedDate = NULL
+ *
  * // Subquery comparison
  * SubQuery maxSalary = CF.subQuery("SELECT MAX(salary) FROM employees");
  * Equal maxSalaryCheck = new Equal("salary", maxSalary);
+ * // SQL: salary = (SELECT MAX(salary) FROM employees)
  * }</pre>
- * 
+ *
  * @see Binary
  * @see NotEqual
  * @see Condition

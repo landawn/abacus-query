@@ -14,7 +14,6 @@
 
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.annotation.NotNull;
 
 /**
  * Represents a condition that checks if a property value is NOT NULL.
@@ -52,7 +51,6 @@ import com.landawn.abacus.annotation.NotNull;
  * }</pre>
  * 
  * @see IsNull
- * @see NotNull (alias)
  * @see IsNot
  */
 public class IsNotNull extends IsNot {
@@ -100,7 +98,7 @@ public class IsNotNull extends IsNot {
      *     .list();
      * }</pre>
      *
-     * @param propName the property/column name to check for non-NULL (must not be null or empty)
+     * @param propName the name of the property/column to check (must not be null or empty)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public IsNotNull(final String propName) {

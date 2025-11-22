@@ -84,6 +84,7 @@ package com.landawn.abacus.query.condition;
  * @see UnionAll
  * @see Intersect
  * @see Except
+ * @see Minus
  * @see SubQuery
  * @see Clause
  */
@@ -129,11 +130,13 @@ public class Union extends Clause {
      * // Merges with current orders, removing any duplicate order_id entries
      * }</pre>
      *
-     * @param condition the subquery to be combined using UNION. Must not be null.
+     * @param condition the subquery to perform the UNION operation with. Must not be null.
      *                  The subquery must have the same number of columns with compatible types as the main query.
      * @throws IllegalArgumentException if condition is null
      * @see UnionAll
      * @see Intersect
+     * @see Except
+     * @see Minus
      */
     public Union(final SubQuery condition) {
         super(Operator.UNION, condition);

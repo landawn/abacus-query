@@ -50,6 +50,7 @@ package com.landawn.abacus.query.condition;
  * @see Exists
  * @see SubQuery
  * @see NotIn
+ * @see Cell
  */
 public class NotExists extends Cell {
 

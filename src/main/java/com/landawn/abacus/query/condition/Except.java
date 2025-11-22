@@ -120,11 +120,12 @@ public class Except extends Clause {
      * // SELECT product_id FROM sales
      * }</pre>
      *
-     * @param condition the subquery whose results will be excluded from the main query. Must not be null.
+     * @param condition the subquery to perform the EXCEPT operation with. Must not be null.
      *                  The subquery must have the same number of columns with compatible types as the main query.
      * @throws IllegalArgumentException if condition is null
      * @see Minus
      * @see Union
+     * @see UnionAll
      * @see Intersect
      */
     public Except(final SubQuery condition) {
