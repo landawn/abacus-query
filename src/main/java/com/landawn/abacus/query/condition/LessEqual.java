@@ -84,22 +84,22 @@ public class LessEqual extends Binary {
      * // Limit quantity to maximum stock
      * LessEqual stockLimit = new LessEqual("quantity", 100);
      * // SQL: quantity <= 100
-     * 
+     *
      * // Find all orders on or before today
      * LessEqual todayOrEarlier = new LessEqual("order_date", LocalDate.now());
      * // Generates: order_date <= '2023-10-15' (assuming today's date)
-     * 
+     *
      * // Set maximum allowed discount
      * LessEqual maxDiscount = new LessEqual("discount_percent", 50);
      * // SQL: discount_percent <= 50
-     * 
+     *
      * // Check temperature threshold
      * LessEqual tempThreshold = new LessEqual("temperature", 25.5);
      * // SQL: temperature <= 25.5
-     * 
-     * // String comparison (alphabetical order)
-     * LessEqual alphabetical = new LessEqual("last_name", "M");
-     * // SQL: last_name <= 'M'
+     *
+     * // Use with subquery - find products priced at or below average
+     * SubQuery avgPrice = CF.subQuery("SELECT AVG(price) FROM products");
+     * LessEqual atOrBelowAverage = new LessEqual("price", avgPrice);
      * }</pre>
      *
      * @param propName the property/column name (must not be null or empty)

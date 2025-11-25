@@ -83,19 +83,19 @@ public class GroupBy extends Clause {
     /**
      * Creates a new GROUP BY clause with the specified condition.
      * This constructor allows for custom grouping expressions beyond simple column names.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Group by year extracted from date
      * GroupBy byYear = new GroupBy(CF.expr("YEAR(order_date)"));
      * // SQL: GROUP BY YEAR(order_date)
-     * 
+     *
      * // Group by calculated expression
      * GroupBy byRange = new GroupBy(CF.expr("CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END"));
      * // SQL: GROUP BY CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END
      * }</pre>
-     * 
-     * @param condition the grouping condition or expression
+     *
+     * @param condition the grouping condition or expression. Must not be null.
      * @throws IllegalArgumentException if condition is null
      */
     public GroupBy(final Condition condition) {
@@ -106,24 +106,24 @@ public class GroupBy extends Clause {
      * Creates a new GROUP BY clause with the specified property names.
      * The columns will be grouped in the order provided. This is the most common
      * way to create GROUP BY clauses for simple column-based grouping.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Group by single column
      * GroupBy byStatus = new GroupBy("status");
      * // SQL: GROUP BY status
-     * 
+     *
      * // Group by department and location
      * GroupBy byDeptLoc = new GroupBy("department", "location");
      * // SQL: GROUP BY department, location
-     * 
+     *
      * // Group by multiple dimensions for analysis
      * GroupBy byDimensions = new GroupBy("region", "product_category", "year");
      * // SQL: GROUP BY region, product_category, year
      * }</pre>
-     * 
-     * @param propNames the property names to group by, in order
-     * @throws IllegalArgumentException if propNames is null or empty
+     *
+     * @param propNames the property names to group by, in order. Must not be null or empty.
+     * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
      */
     public GroupBy(final String... propNames) {
         this(CF.expr(OrderBy.createCondition(propNames)));
@@ -132,21 +132,21 @@ public class GroupBy extends Clause {
     /**
      * Creates a new GROUP BY clause with a single property and sort direction.
      * This allows grouping by a single column with explicit ordering of the groups.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Group by sales amount in descending order
      * GroupBy topSales = new GroupBy("sales_amount", SortDirection.DESC);
      * // SQL: GROUP BY sales_amount DESC
-     * 
+     *
      * // Group by date in ascending order
      * GroupBy byDate = new GroupBy("order_date", SortDirection.ASC);
      * // SQL: GROUP BY order_date ASC
      * }</pre>
-     * 
-     * @param propName the property name to group by
-     * @param direction the sort direction (ASC or DESC)
-     * @throws IllegalArgumentException if propName is null or direction is null
+     *
+     * @param propName the property name to group by. Must not be null or empty.
+     * @param direction the sort direction (ASC or DESC). Must not be null.
+     * @throws IllegalArgumentException if propName is null/empty or direction is null
      */
     public GroupBy(final String propName, final SortDirection direction) {
         this(CF.expr(OrderBy.createCondition(propName, direction)));
@@ -156,23 +156,23 @@ public class GroupBy extends Clause {
      * Creates a new GROUP BY clause with multiple properties and a single sort direction.
      * All properties will use the same sort direction. This is useful when you want
      * consistent ordering across all grouping columns.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Group by multiple columns, all descending
      * List<String> columns = Arrays.asList("department", "location", "year");
      * GroupBy allDesc = new GroupBy(columns, SortDirection.DESC);
      * // SQL: GROUP BY department DESC, location DESC, year DESC
-     * 
+     *
      * // Group by categories in ascending order
      * Set<String> categories = new HashSet<>(Arrays.asList("type", "subtype"));
      * GroupBy byCategory = new GroupBy(categories, SortDirection.ASC);
      * // SQL: GROUP BY type ASC, subtype ASC
      * }</pre>
-     * 
-     * @param propNames the collection of property names to group by
-     * @param direction the sort direction to apply to all properties
-     * @throws IllegalArgumentException if propNames is null/empty or direction is null
+     *
+     * @param propNames the collection of property names to group by. Must not be null or empty.
+     * @param direction the sort direction to apply to all properties. Must not be null.
+     * @throws IllegalArgumentException if propNames is null/empty, direction is null, or propNames contains null/empty elements
      */
     public GroupBy(final Collection<String> propNames, final SortDirection direction) {
         this(CF.expr(OrderBy.createCondition(propNames, direction)));
@@ -205,7 +205,7 @@ public class GroupBy extends Clause {
      *
      * @param orders a map of property names to their sort directions. Should be a LinkedHashMap
      *               to maintain order. Must not be null or empty.
-     * @throws IllegalArgumentException if orders is null or empty
+     * @throws IllegalArgumentException if orders is null/empty, or contains null/empty keys or null values
      */
     public GroupBy(final Map<String, SortDirection> orders) {
         this(CF.expr(OrderBy.createCondition(orders)));

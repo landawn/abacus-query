@@ -94,9 +94,9 @@ public class And extends Junction {
      *     CF.isNotNull("email")
      * );
      * }</pre>
-     * 
+     *
      * @param conditions the conditions to combine with AND logic
-     * @throws IllegalArgumentException if conditions is null
+     * @throws IllegalArgumentException if conditions array is null or contains null elements
      */
     public And(final Condition... conditions) {
         super(Operator.AND, conditions);
@@ -119,9 +119,9 @@ public class And extends Junction {
      * And and = new And(conditions);
      * // Results in dynamic AND condition based on the list
      * }</pre>
-     * 
+     *
      * @param conditions the collection of conditions to combine with AND logic
-     * @throws IllegalArgumentException if conditions is null 
+     * @throws IllegalArgumentException if conditions is null or contains null elements
      */
     public And(final Collection<? extends Condition> conditions) {
         super(Operator.AND, conditions);

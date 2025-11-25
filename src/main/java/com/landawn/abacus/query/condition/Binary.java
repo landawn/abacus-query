@@ -168,20 +168,20 @@ public class Binary extends AbstractCondition {
      * Gets the parameters for this condition.
      * If the value is a Condition (subquery), returns its parameters.
      * Otherwise, returns a list containing the single value.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("status", "active");
      * List<Object> params = condition.getParameters(); // Returns ["active"]
-     * 
-     * Binary between = new Between("age", 18, 65);
-     * List<Object> rangeParams = between.getParameters(); // Returns [18, 65]
-     * 
+     *
+     * Binary numCondition = new GreaterThan("age", 18);
+     * List<Object> numParams = numCondition.getParameters(); // Returns [18]
+     *
      * // For subquery conditions
      * Binary inSubquery = new InSubQuery("id", subQuery);
      * List<Object> subParams = inSubquery.getParameters(); // Returns subquery's parameters
      * }</pre>
-     * 
+     *
      * @return a list of parameter values
      */
     @Override

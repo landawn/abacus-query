@@ -123,19 +123,49 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * Gets the property name being checked.
+     * Gets the property name being checked in this IN condition.
+     * Returns the name of the column or property that is being compared against
+     * the collection of values in this condition.
      *
-     * @return the property name
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = new In("status", Arrays.asList("active", "pending", "approved"));
+     * String propName = condition.getPropName(); // Returns "status"
+     *
+     * // Useful for introspection or debugging
+     * System.out.println("Checking property: " + condition.getPropName());
+     * }</pre>
+     *
+     * @return the property name (never null)
      */
     public String getPropName() {
         return propName;
     }
 
     /**
-     * Gets the collection of values to check against.
-     * Returns the internal list of values used in the IN condition.
+     * Gets the collection of values to check against in this IN condition.
+     * Returns the internal list of values used in the IN condition. These are the
+     * values that the property will be compared against when the query is executed.
      *
-     * @return the list of values
+     * <p>Note: The returned list is the internal mutable list. While modifications are
+     * not recommended (conditions should be immutable), this allows for backward compatibility
+     * with existing code. Consider using {@link #copy()} to create an independent instance
+     * if immutability is required.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> statuses = Arrays.asList("active", "pending", "approved");
+     * In condition = new In("status", statuses);
+     * List<?> values = condition.getValues(); // Returns ["active", "pending", "approved"]
+     *
+     * // Check how many values are in the condition
+     * int count = condition.getValues().size(); // Returns 3
+     *
+     * // Inspect the values (useful for debugging)
+     * System.out.println("Checking against values: " + condition.getValues());
+     * }</pre>
+     *
+     * @return the list of values to check against (may be null if cleared)
      */
     public List<?> getValues() { //NOSONAR
         return values;
@@ -143,11 +173,33 @@ public class In extends AbstractCondition {
 
     /**
      * Sets new values for this IN condition.
-     * Note: Modifying conditions after creation is not recommended as they should be immutable.
-     * Consider creating a new condition instead.
+     * This method allows replacing the collection of values that the property is checked against.
+     * However, modifying conditions after creation is strongly discouraged as conditions should
+     * be treated as immutable to ensure thread safety and predictable behavior.
+     *
+     * <p>Important notes:
+     * <ul>
+     *   <li>This method exists for backward compatibility only</li>
+     *   <li>Using this method breaks the immutability contract of conditions</li>
+     *   <li>Instead of modifying, create a new In instance with the desired values</li>
+     *   <li>Shared conditions modified this way can cause race conditions</li>
+     * </ul>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = new In("status", Arrays.asList("active", "pending"));
+     *
+     * // Not recommended - breaks immutability
+     * condition.setValues(Arrays.asList("active", "pending", "approved"));
+     *
+     * // Recommended approach - create a new condition
+     * In newCondition = new In("status", Arrays.asList("active", "pending", "approved"));
+     * }</pre>
      *
      * @param values the new collection of values. Must not be null or empty.
+     * @throws IllegalArgumentException if values is null or empty
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Create a new In instance instead of modifying existing conditions.
      */
     @Deprecated
     public void setValues(final List<?> values) {

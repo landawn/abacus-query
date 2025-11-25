@@ -85,22 +85,22 @@ public class LessThan extends Binary {
      * // Check for minors (under 18)
      * LessThan minorCheck = new LessThan("age", 18);
      * // SQL: age < 18
-     * 
+     *
      * // Ensure salary is below threshold
      * LessThan salaryLimit = new LessThan("salary", 50000);
      * // SQL: salary < 50000
-     * 
+     *
      * // Find items expiring before tomorrow
      * LessThan expiringItems = new LessThan("expiry_date", LocalDate.now().plusDays(1));
      * // Generates: expiry_date < '2023-10-16' (assuming tomorrow's date)
-     * 
+     *
      * // Temperature below freezing
      * LessThan freezing = new LessThan("temperature", 0);
      * // SQL: temperature < 0
-     * 
-     * // String comparison (alphabetical)
-     * LessThan alphabetical = new LessThan("last_name", "M");
-     * // SQL: last_name < 'M'
+     *
+     * // Use with subquery - find products priced below average
+     * SubQuery avgPrice = CF.subQuery("SELECT AVG(price) FROM products");
+     * LessThan belowAverage = new LessThan("price", avgPrice);
      * }</pre>
      *
      * @param propName the property/column name (must not be null or empty)

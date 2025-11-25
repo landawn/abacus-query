@@ -178,6 +178,13 @@ public class Using extends Cell {
      * This static factory method constructs the appropriate condition expression
      * for the USING clause from the provided column collection.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("tenant_id", "user_id");
+     * Condition usingCondition = Using.createUsingCondition(columns);
+     * // Creates condition for: USING (tenant_id, user_id)
+     * }</pre>
+     *
      * @param columnNames collection of column names. Must not be null or empty.
      * @return a condition representing the USING clause
      * @throws IllegalArgumentException if columnNames is null or empty

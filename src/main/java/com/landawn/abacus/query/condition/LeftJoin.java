@@ -68,7 +68,7 @@ import java.util.Collection;
  *
  * // Using Expression for custom join logic
  * LeftJoin exprJoin = new LeftJoin("orders o",
- *     ConditionFactory.expr("customers.id = o.customer_id"));
+ *     CF.expr("customers.id = o.customer_id"));
  * // Generates: LEFT JOIN orders o customers.id = o.customer_id
  * }</pre>
  * 
@@ -140,7 +140,7 @@ public class LeftJoin extends Join {
      *
      * // Using Expression for custom join logic
      * LeftJoin exprJoin = new LeftJoin("orders o",
-     *     ConditionFactory.expr("customers.id = o.customer_id AND o.amount > 100"));
+     *     CF.expr("customers.id = o.customer_id AND o.amount > 100"));
      * // Generates: LEFT JOIN orders o customers.id = o.customer_id AND o.amount > 100
      * }</pre>
      *
@@ -170,7 +170,7 @@ public class LeftJoin extends Join {
      *
      * // Using Expression for multiple tables
      * LeftJoin exprJoin = new LeftJoin(tables,
-     *     ConditionFactory.expr("c.id = o.customer_id AND o.id = oi.order_id"));
+     *     CF.expr("c.id = o.customer_id AND o.id = oi.order_id"));
      * // Generates: LEFT JOIN orders o, order_items oi c.id = o.customer_id AND o.id = oi.order_id
      * }</pre>
      *

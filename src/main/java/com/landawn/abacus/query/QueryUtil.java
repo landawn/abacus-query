@@ -76,6 +76,22 @@ public final class QueryUtil {
      * This method is for internal use only and provides detailed mapping information including whether properties
      * contain dots (indicating nested properties).
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Get property to column mapping with simple property flag
+     * ImmutableMap<String, Tuple2<String, Boolean>> propMap =
+     *     QueryUtil.prop2ColumnNameMap(User.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+     *
+     * Tuple2<String, Boolean> result = propMap.get("firstName");
+     * String columnName = result._1;  // "first_name"
+     * boolean isSimple = result._2;   // true (no dots in property name)
+     *
+     * // Nested property example
+     * Tuple2<String, Boolean> nested = propMap.get("address.street");
+     * String nestedColumn = nested._1;  // "address.street"
+     * boolean isNestedSimple = nested._2;  // false (contains dot)
+     * }</pre>
+     *
      * @param entityClass the entity class to analyze
      * @param namingPolicy the naming policy to use for column name conversion
      * @return an immutable map where keys are property names and values are tuples of (column name, isSimpleProperty)
@@ -306,7 +322,7 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param entity the entity instance to analyze (must not be null)
-     * @param excludedPropNames set of property names to exclude from the result (can be empty)
+     * @param excludedPropNames set of property names to exclude from the result (can be empty, must not be null)
      * @return collection of property names suitable for INSERT operations
      * @deprecated for internal use only
      */
@@ -358,7 +374,7 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be null)
-     * @param excludedPropNames set of property names to exclude from the result (can be empty)
+     * @param excludedPropNames set of property names to exclude from the result (can be empty, must not be null)
      * @return collection of property names suitable for INSERT operations
      * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal use only
@@ -406,7 +422,7 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be null)
      * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
-     * @param excludedPropNames set of property names to exclude from the result (can be empty)
+     * @param excludedPropNames set of property names to exclude from the result (can be empty, must not be null)
      * @return collection of property names suitable for SELECT operations
      * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal use only
@@ -449,7 +465,7 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be null)
-     * @param excludedPropNames set of property names to exclude from the result (can be empty)
+     * @param excludedPropNames set of property names to exclude from the result (can be empty, must not be null)
      * @return collection of property names suitable for UPDATE operations
      * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal use only
@@ -507,6 +523,25 @@ public final class QueryUtil {
      * Gets the ID field names for the specified entity class with option to return fake ID if none found.
      * This is useful for entities without explicit ID fields where a synthetic ID is needed.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Entity with ID field
+     * List<String> idFields = QueryUtil.getIdFieldNames(User.class, false);
+     * // Returns: ["id"]
+     *
+     * // Entity with ID field (fakeIdForEmpty doesn't matter)
+     * List<String> sameResult = QueryUtil.getIdFieldNames(User.class, true);
+     * // Returns: ["id"] (real ID exists)
+     *
+     * // Entity without ID field, no fake ID
+     * List<String> noIds = QueryUtil.getIdFieldNames(DTO.class, false);
+     * // Returns: [] (empty list)
+     *
+     * // Entity without ID field, with fake ID
+     * List<String> fakeIds = QueryUtil.getIdFieldNames(DTO.class, true);
+     * // Returns: ["not_defined_fake_id_in_abacus_..."] (synthetic ID)
+     * }</pre>
+     *
      * @param targetClass the entity class to analyze
      * @param fakeIdForEmpty if true, returns a fake ID when no ID fields are found
      * @return an immutable list of ID field names or fake ID if requested and none found
@@ -534,9 +569,9 @@ public final class QueryUtil {
      * // Returns true if property should not be mapped to a database column
      * }</pre>
      *
-     * @param columnFields set of field names explicitly included as columns (from @Table annotation)
-     * @param nonColumnFields set of field names explicitly excluded as columns (from @Table annotation)
-     * @param propInfo the property information to check
+     * @param columnFields set of field names explicitly included as columns (from @Table annotation, can be null or empty)
+     * @param nonColumnFields set of field names explicitly excluded as columns (from @Table annotation, can be null or empty)
+     * @param propInfo the property information to check (must not be null)
      * @return {@code true} if the property should not be mapped to a database column
      */
     public static boolean isNotColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
@@ -549,6 +584,23 @@ public final class QueryUtil {
     /**
      * Checks if the given ID property names represent a fake/synthetic ID.
      * Fake IDs are used internally when entities have no defined ID fields.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Get ID fields for entity without IDs
+     * List<String> fakeIds = QueryUtil.getIdFieldNames(DTO.class, true);
+     * boolean isFake = QueryUtil.isFakeId(fakeIds);
+     * // Returns: true (synthetic ID was generated)
+     *
+     * // Get ID fields for entity with real IDs
+     * List<String> realIds = QueryUtil.getIdFieldNames(User.class, false);
+     * boolean isReal = QueryUtil.isFakeId(realIds);
+     * // Returns: false (real ID field exists)
+     *
+     * // Check null list
+     * boolean nullCheck = QueryUtil.isFakeId(null);
+     * // Returns: false (null is not a fake ID)
+     * }</pre>
      *
      * @param idPropNames the list of ID property names to check
      * @return {@code true} if this is a fake ID

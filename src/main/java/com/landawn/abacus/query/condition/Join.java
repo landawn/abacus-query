@@ -70,7 +70,7 @@ import com.landawn.abacus.util.Strings;
  *
  * // Join with Expression for custom conditions
  * Join exprJoin = new Join("orders o",
- *     ConditionFactory.expr("customers.id = o.customer_id"));
+ *     CF.expr("customers.id = o.customer_id"));
  * // Generates: JOIN orders o customers.id = o.customer_id
  *
  * // Join multiple tables
@@ -156,7 +156,7 @@ public class Join extends AbstractCondition {
      *
      * // Join with Expression for custom condition
      * Join exprJoin = new Join("orders o",
-     *     ConditionFactory.expr("customers.id = o.customer_id"));
+     *     CF.expr("customers.id = o.customer_id"));
      * // Generates: JOIN orders o customers.id = o.customer_id
      *
      * // Join with complex condition using And
@@ -216,8 +216,8 @@ public class Join extends AbstractCondition {
      * // Join multiple tables with Expression
      * Join exprMultiJoin = new Join(tables,
      *     new And(
-     *         ConditionFactory.expr("o.customer_id = c.id"),
-     *         ConditionFactory.expr("o.status = 'active'")
+     *         CF.expr("o.customer_id = c.id"),
+     *         CF.expr("o.status = 'active'")
      *     ));
      * // Generates: JOIN orders o, customers c (o.customer_id = c.id) AND (o.status = 'active')
      * }</pre>
@@ -282,7 +282,7 @@ public class Join extends AbstractCondition {
      * Condition retrieved = join.getCondition(); // Returns the On condition
      *
      * // Create join with Expression
-     * Expression exprCondition = ConditionFactory.expr("a.id = b.a_id");
+     * Expression exprCondition = CF.expr("a.id = b.a_id");
      * Join exprJoin = new Join("table_b b", exprCondition);
      * Condition exprRetrieved = exprJoin.getCondition(); // Returns the Expression
      * }</pre>
@@ -384,7 +384,7 @@ public class Join extends AbstractCondition {
      * j2.toString(policy); // "JOIN orders o ON c.id = o.customer_id"
      *
      * // Join with Expression condition
-     * Join j3 = new Join("orders o", ConditionFactory.expr("c.id = o.customer_id"));
+     * Join j3 = new Join("orders o", CF.expr("c.id = o.customer_id"));
      * j3.toString(policy); // "JOIN orders o c.id = o.customer_id"
      *
      * // Multiple tables
@@ -408,7 +408,7 @@ public class Join extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression expr = ConditionFactory.expr("c.id = o.customer_id");
+     * Expression expr = CF.expr("c.id = o.customer_id");
      * Join j1 = new Join("orders o", expr);
      * Join j2 = new Join("orders o", expr);
      * assert j1.hashCode() == j2.hashCode();

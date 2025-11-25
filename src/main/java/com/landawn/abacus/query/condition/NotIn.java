@@ -152,11 +152,33 @@ public class NotIn extends AbstractCondition {
 
     /**
      * Sets new values for this NOT IN condition.
-     * Note: Modifying conditions after creation is not recommended as they should be immutable.
-     * Consider creating a new condition instead.
+     * This method allows replacing the collection of values to be excluded.
+     * However, modifying conditions after creation is strongly discouraged as conditions should
+     * be treated as immutable to ensure thread safety and predictable behavior.
+     *
+     * <p>Important notes:
+     * <ul>
+     *   <li>This method exists for backward compatibility only</li>
+     *   <li>Using this method breaks the immutability contract of conditions</li>
+     *   <li>Instead of modifying, create a new NotIn instance with the desired values</li>
+     *   <li>Shared conditions modified this way can cause race conditions</li>
+     *   <li>Unlike setValues in In, this method doesn't validate for empty collections</li>
+     * </ul>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
+     *
+     * // Not recommended - breaks immutability
+     * condition.setValues(Arrays.asList("deleted", "archived", "suspended"));
+     *
+     * // Recommended approach - create a new condition
+     * NotIn newCondition = new NotIn("status", Arrays.asList("deleted", "archived", "suspended"));
+     * }</pre>
      *
      * @param values the new collection of values to exclude
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Create a new NotIn instance instead of modifying existing conditions.
      */
     @Deprecated
     public void setValues(final List<?> values) {
@@ -177,15 +199,16 @@ public class NotIn extends AbstractCondition {
 
     /**
      * Clears all parameter values by setting them to null to free memory.
-     * 
+     *
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived", "suspended"));
+     * List<Object> parameters = condition.getParameters(); // Returns [deleted, archived, suspended]
      * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null]
      * }</pre>
      */
     @SuppressWarnings("rawtypes")

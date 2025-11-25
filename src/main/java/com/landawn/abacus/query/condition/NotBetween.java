@@ -245,15 +245,16 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Clears all parameter values by setting them to null to free memory.
-     * 
+     *
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * NotBetween condition = new NotBetween("age", 18, 65);
+     * List<Object> parameters = condition.getParameters(); // Returns [18, 65]
      * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null]
      * }</pre>
      */
     @Override

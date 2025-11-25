@@ -56,7 +56,7 @@ package com.landawn.abacus.query.condition;
  *     CF.and(
  *         CF.gt("COUNT(*)", 10),
  *         CF.lt("AVG(age)", 40),
- *         CF.gte("SUM(revenue)", 50000)
+ *         CF.ge("SUM(revenue)", 50000)
  *     )
  * );
  * // SQL: HAVING COUNT(*) > 10 AND AVG(age) < 40 AND SUM(revenue) >= 50000
@@ -105,14 +105,14 @@ public class Having extends Clause {
      * // SQL: HAVING SUM(sales) > 10000
      *
      * // Filter groups with at least 3 members
-     * Having minCount = new Having(CF.gte("COUNT(*)", 3));
+     * Having minCount = new Having(CF.ge("COUNT(*)", 3));
      * // SQL: HAVING COUNT(*) >= 3
      *
      * // Filter groups with average value in range
      * Having avgRange = new Having(
      *     CF.and(
-     *         CF.gte("AVG(score)", 60),
-     *         CF.lte("AVG(score)", 90)
+     *         CF.ge("AVG(score)", 60),
+     *         CF.le("AVG(score)", 90)
      *     )
      * );
      * // SQL: HAVING AVG(score) >= 60 AND AVG(score) <= 90
@@ -125,7 +125,7 @@ public class Having extends Clause {
      * Having multipleAggs = new Having(
      *     CF.and(
      *         CF.gt("COUNT(DISTINCT customer_id)", 10),
-     *         CF.gte("SUM(amount)", 5000),
+     *         CF.ge("SUM(amount)", 5000),
      *         CF.between("AVG(rating)", 3.0, 5.0)
      *     )
      * );
@@ -138,7 +138,6 @@ public class Having extends Clause {
      *                  Typically contains aggregate function expressions that operate on
      *                  grouped data. Can use comparison operators (gt, lt, eq, etc.) and
      *                  logical operators (and, or, not) to build complex filtering logic.
-     * @throws IllegalArgumentException if condition is null
      */
     public Having(final Condition condition) {
         super(Operator.HAVING, condition);

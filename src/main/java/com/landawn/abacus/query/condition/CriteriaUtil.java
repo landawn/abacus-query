@@ -192,16 +192,17 @@ public final class CriteriaUtil {
     /**
      * Adds conditions to the specified criteria.
      * This method provides access to the protected add method of Criteria for framework use.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria();
-     * CriteriaUtil.add(criteria, 
+     * CriteriaUtil.add(criteria,
      *     new Where(CF.eq("status", "active")),
      *     new OrderBy("name", SortDirection.ASC)
      * );
+     * // criteria now contains WHERE status = 'active' ORDER BY name ASC
      * }</pre>
-     * 
+     *
      * @param criteria the criteria to add conditions to
      * @param conditions the conditions to add
      */
@@ -212,7 +213,7 @@ public final class CriteriaUtil {
     /**
      * Adds a collection of conditions to the specified criteria.
      * This method provides access to the protected add method of Criteria for framework use.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria();
@@ -221,8 +222,9 @@ public final class CriteriaUtil {
      *     new Limit(10)
      * );
      * CriteriaUtil.add(criteria, conditions);
+     * // criteria now contains WHERE active = true LIMIT 10
      * }</pre>
-     * 
+     *
      * @param criteria the criteria to add conditions to
      * @param conditions the collection of conditions to add
      */

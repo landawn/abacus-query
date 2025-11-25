@@ -584,17 +584,17 @@ public final class SQLParser {
      * Registers a string as a SQL separator.
      * This can be used to register multi-character operators or separators
      * that should be recognized as single tokens during parsing.
-     * 
+     *
      * <p>If the separator is a single character, it will also be registered
      * as a character separator for efficiency.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLParser.registerSeparator("<=>"); // Register the NULL-safe equal operator
      * SQLParser.registerSeparator("::"); // Register PostgreSQL cast operator
      * }</pre>
-     * 
-     * @param separator the string to register as a separator
+     *
+     * @param separator the string to register as a separator (must not be null)
      * @throws IllegalArgumentException if separator is null
      */
     public static void registerSeparator(final String separator) {

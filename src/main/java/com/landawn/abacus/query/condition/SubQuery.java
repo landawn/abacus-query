@@ -184,7 +184,7 @@ public class SubQuery extends AbstractCondition {
      * @param entityName the entity/table name
      * @param propNames collection of property names to select
      * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
-     * @throws IllegalArgumentException if entityName is null/empty or propNames is null/empty
+     * @throws IllegalArgumentException if entityName is null or empty, or if propNames is null
      */
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
@@ -237,7 +237,7 @@ public class SubQuery extends AbstractCondition {
      * @param entityClass the entity class
      * @param propNames collection of property names to select
      * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
-     * @throws IllegalArgumentException if entityClass is null or propNames is null/empty
+     * @throws IllegalArgumentException if entityClass is null, or if propNames is null
      */
     public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);

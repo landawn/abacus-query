@@ -25,7 +25,6 @@ import com.landawn.abacus.query.SQLBuilder.PSC;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 /**
@@ -67,9 +66,25 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(fluent = true)
-@NoArgsConstructor
 @AllArgsConstructor
 public final class Selection {
+
+    /**
+     * Creates a new empty Selection instance.
+     * Use the fluent setter methods to configure the selection properties.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Selection selection = new Selection()
+     *     .entityClass(User.class)
+     *     .tableAlias("u")
+     *     .selectPropNames(Arrays.asList("id", "name"));
+     * }</pre>
+     */
+    public Selection() {
+        // Default constructor for fluent API usage
+    }
+
     private Class<?> entityClass;
     private String tableAlias;
     private String classAlias;

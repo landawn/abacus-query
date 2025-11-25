@@ -97,7 +97,7 @@ public class Or extends Junction {
      * }</pre>
      *
      * @param conditions the conditions to combine with OR logic
-     * @throws IllegalArgumentException if conditions is null
+     * @throws IllegalArgumentException if conditions array is null or contains null elements
      */
     public Or(final Condition... conditions) {
         super(Operator.OR, conditions);
@@ -129,7 +129,7 @@ public class Or extends Junction {
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with OR logic
-     * @throws IllegalArgumentException if conditions is null
+     * @throws IllegalArgumentException if conditions is null or contains null elements
      */
     public Or(final Collection<? extends Condition> conditions) {
         super(Operator.OR, conditions);

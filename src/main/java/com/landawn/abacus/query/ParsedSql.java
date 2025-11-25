@@ -348,7 +348,7 @@ public final class ParsedSql {
      * int couchbaseCount = parsed.getParameterCount(true); // Returns: 3
      * }</pre>
      *
-     * @param isForCouchbase true to get Couchbase parameter count, {@code false} for standard count
+     * @param isForCouchbase {@code true} to get Couchbase parameter count, {@code false} for standard count
      * @return the number of parameters
      */
     public int getParameterCount(final boolean isForCouchbase) {

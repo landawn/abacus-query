@@ -53,7 +53,7 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * // Complex condition with custom logic using Expression
  * And complexJoin = new And(
  *     new On("o.customer_id", "c.id"),
- *     ConditionFactory.expr("o.order_date > c.registration_date")
+ *     CF.expr("o.order_date > c.registration_date")
  * );
  * LeftJoin leftJoin = new LeftJoin("customers c", complexJoin);
  * // Generates: LEFT JOIN customers c (ON o.customer_id = c.id) AND (o.order_date > c.registration_date)
@@ -99,13 +99,13 @@ public class On extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple equality using Expression
-     * On on1 = new On(ConditionFactory.expr("a.id = b.a_id"));
+     * On on1 = new On(CF.expr("a.id = b.a_id"));
      * InnerJoin join1 = new InnerJoin("table_b b", on1);
      * // Generates: INNER JOIN table_b b a.id = b.a_id
      *
      * // Complex multi-condition join
      * And complexCondition = new And(
-     *     ConditionFactory.expr("orders.customer_id = customers.id"),
+     *     CF.expr("orders.customer_id = customers.id"),
      *     new Between("orders.order_date", "2024-01-01", "2024-12-31"),
      *     new NotEqual("customers.status", "DELETED")
      * );
@@ -115,8 +115,8 @@ public class On extends Cell {
      *
      * // Range join for salary bands
      * And rangeJoin = new And(
-     *     ConditionFactory.expr("emp.salary >= salary_grades.min_salary"),
-     *     ConditionFactory.expr("emp.salary <= salary_grades.max_salary")
+     *     CF.expr("emp.salary >= salary_grades.min_salary"),
+     *     CF.expr("emp.salary <= salary_grades.max_salary")
      * );
      * On on3 = new On(rangeJoin);
      * InnerJoin join3 = new InnerJoin("salary_grades", on3);
@@ -125,7 +125,6 @@ public class On extends Cell {
      *
      * @param condition the join condition, can be any type of condition including
      *                  Expression, Equal, And, Or, Between, or more complex conditions
-     * @throws IllegalArgumentException if condition is null
      */
     public On(final Condition condition) {
         super(Operator.ON, condition);
@@ -156,7 +155,6 @@ public class On extends Cell {
      *
      * @param propName the column name from the first table (can include table name/alias)
      * @param anoPropName the column name from the second table (can include table name/alias)
-     * @throws IllegalArgumentException if propName or anoPropName is null or empty
      */
     public On(final String propName, final String anoPropName) {
         this(createOnCondition(propName, anoPropName));
@@ -198,7 +196,6 @@ public class On extends Cell {
      *
      * @param propNamePair map of column pairs where key is from first table,
      *                     value is from second table. Order is preserved if LinkedHashMap is used.
-     * @throws IllegalArgumentException if propNamePair is null or empty
      */
     public On(final Map<String, String> propNamePair) {
         this(createOnCondition(propNamePair));
@@ -218,7 +215,6 @@ public class On extends Cell {
      * @param propName the first column name
      * @param anoPropName the second column name
      * @return an Equal condition comparing the two columns
-     * @throws IllegalArgumentException if propName or anoPropName is null or empty
      */
     static Condition createOnCondition(final String propName, final String anoPropName) {
         return new Equal(propName, CF.expr(anoPropName));
@@ -241,7 +237,6 @@ public class On extends Cell {
      *
      * @param propNamePair map of column name pairs
      * @return a single Equal condition or an And condition combining multiple equalities
-     * @throws IllegalArgumentException if propNamePair is null or empty, or contains null/empty keys or values
      */
     static Condition createOnCondition(final Map<String, String> propNamePair) {
         if (propNamePair.size() == 1) {

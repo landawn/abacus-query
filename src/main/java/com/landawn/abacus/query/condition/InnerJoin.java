@@ -55,10 +55,10 @@ import java.util.Collection;
  * // Join customers with their orders (only customers who have orders)
  * InnerJoin customerOrders = new InnerJoin("orders o",
  *     new And(
- *         new On("c.customer_id", "o.customer_id"),
+ *         new On("c.id", "o.customer_id"),
  *         new Equal("o.status", "completed")
  *     ));
- * // Generates: INNER JOIN orders o (ON c.customer_id = o.customer_id) AND (o.status = 'completed')
+ * // Generates: INNER JOIN orders o (ON c.id = o.customer_id) AND (o.status = 'completed')
  *
  * // Complex multi-condition join
  * InnerJoin complexJoin = new InnerJoin("inventory i",
@@ -71,7 +71,7 @@ import java.util.Collection;
  *
  * // Using Expression for custom join logic
  * InnerJoin exprJoin = new InnerJoin("customers c",
- *     ConditionFactory.expr("orders.customer_id = c.id"));
+ *     CF.expr("orders.customer_id = c.id"));
  * // Generates: INNER JOIN customers c orders.customer_id = c.id
  * }</pre>
  * 
@@ -146,7 +146,7 @@ public class InnerJoin extends Join {
      *
      * // Using Expression for custom join logic
      * InnerJoin exprJoin = new InnerJoin("customers c",
-     *     ConditionFactory.expr("orders.customer_id = c.id"));
+     *     CF.expr("orders.customer_id = c.id"));
      * // Generates: INNER JOIN customers c orders.customer_id = c.id
      * }</pre>
      *
@@ -183,7 +183,7 @@ public class InnerJoin extends Join {
      *
      * // Using Expression for multiple tables
      * InnerJoin exprMulti = new InnerJoin(tables,
-     *     ConditionFactory.expr("o.customer_id = c.id AND o.status = 'active'"));
+     *     CF.expr("o.customer_id = c.id AND o.status = 'active'"));
      * // Generates: INNER JOIN orders o, customers c o.customer_id = c.id AND o.status = 'active'
      * }</pre>
      *

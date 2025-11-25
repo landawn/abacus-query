@@ -73,20 +73,19 @@ public class Limit extends AbstractCondition {
      * Creates a LIMIT clause with the specified row count.
      * This constructor creates a simple LIMIT without OFFSET, returning rows from the beginning
      * of the result set up to the specified count.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Get top 5 customers
      * Limit topFive = new Limit(5);
      * // SQL: SELECT * FROM customers LIMIT 5
-     * 
+     *
      * // Limit search results to 100
      * Limit searchLimit = new Limit(100);
      * // SQL: SELECT * FROM products WHERE name LIKE '%phone%' LIMIT 100
      * }</pre>
      *
      * @param count the maximum number of rows to return. Must be non-negative.
-     * @throws IllegalArgumentException if count is negative
      */
     public Limit(final int count) {
         this(0, count);
@@ -97,17 +96,17 @@ public class Limit extends AbstractCondition {
      * This constructor enables pagination by specifying how many rows to skip (offset)
      * and how many rows to return (count). This is the standard way to implement
      * result pagination in SQL queries.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Page 1: First 10 results (offset 0)
      * Limit page1 = new Limit(0, 10);
      * // SQL: SELECT * FROM orders LIMIT 10 OFFSET 0
-     * 
+     *
      * // Page 3: Results 21-30 (offset 20, count 10)
      * Limit page3 = new Limit(20, 10);
      * // SQL: SELECT * FROM orders LIMIT 10 OFFSET 20
-     * 
+     *
      * // Get 50 products starting from the 101st
      * Limit products = new Limit(100, 50);
      * // SQL: SELECT * FROM products LIMIT 50 OFFSET 100
@@ -115,7 +114,6 @@ public class Limit extends AbstractCondition {
      *
      * @param offset the number of rows to skip before returning results. Must be non-negative.
      * @param count the maximum number of rows to return after the offset. Must be non-negative.
-     * @throws IllegalArgumentException if offset or count is negative
      */
     public Limit(final int offset, final int count) {
         super(Operator.LIMIT);
@@ -127,21 +125,20 @@ public class Limit extends AbstractCondition {
      * Creates a LIMIT clause from a string expression.
      * This constructor allows for custom LIMIT expressions to accommodate database-specific
      * syntax or complex limit scenarios that can't be expressed with simple count/offset.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Standard LIMIT with OFFSET
      * Limit standard = new Limit("10 OFFSET 20");
-     * 
+     *
      * // MySQL-style limit
      * Limit mysql = new Limit("20, 10");
-     * 
+     *
      * // Database-specific syntax
      * Limit custom = new Limit("FIRST 10 SKIP 20");
      * }</pre>
      *
      * @param expr the custom LIMIT expression as a string. Must not be null.
-     * @throws IllegalArgumentException if expr is null
      */
     public Limit(final String expr) {
         this(0, Integer.MAX_VALUE);
@@ -151,8 +148,8 @@ public class Limit extends AbstractCondition {
 
     /**
      * Returns the custom expression string if one was provided.
-     * This method returns the raw expression string passed to the constructor,
-     * or null if the Limit was created with count/offset parameters.
+     * This method returns the raw expression string passed to the string constructor,
+     * or {@code null} if the Limit was created with count/offset parameters.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -163,7 +160,7 @@ public class Limit extends AbstractCondition {
      * String expr2 = limit2.getExpr(); // Returns null
      * }</pre>
      *
-     * @return the custom expression string, or null if constructed with count/offset
+     * @return the custom expression string, or {@code null} if constructed with count/offset parameters
      */
     public String getExpr() {
         return expr;
@@ -171,15 +168,18 @@ public class Limit extends AbstractCondition {
 
     /**
      * Gets the maximum number of rows to return.
-     * For Limit instances created with a custom expression, this returns Integer.MAX_VALUE.
+     * For Limit instances created with a custom expression, this returns {@link Integer#MAX_VALUE}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit = new Limit(50, 20);
      * int maxRows = limit.getCount(); // Returns 20
+     *
+     * Limit customLimit = new Limit("10 OFFSET 20");
+     * int count = customLimit.getCount(); // Returns Integer.MAX_VALUE
      * }</pre>
      *
-     * @return the row count limit
+     * @return the row count limit, or {@link Integer#MAX_VALUE} if constructed with a custom expression
      */
     public int getCount() {
         return count;
@@ -187,16 +187,22 @@ public class Limit extends AbstractCondition {
 
     /**
      * Gets the number of rows to skip before returning results.
-     * For Limit instances created with only a count or with a custom expression,
-     * this returns 0.
-     * 
+     * For Limit instances created with only a count, this returns 0.
+     * For Limit instances created with a custom expression, this also returns 0.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit = new Limit(50, 20);
      * int skip = limit.getOffset(); // Returns 50
+     *
+     * Limit limitNoOffset = new Limit(10);
+     * int skip2 = limitNoOffset.getOffset(); // Returns 0
+     *
+     * Limit customLimit = new Limit("10 OFFSET 20");
+     * int skip3 = customLimit.getOffset(); // Returns 0
      * }</pre>
      *
-     * @return the offset value
+     * @return the offset value, or 0 if constructed with only count or with a custom expression
      */
     public int getOffset() {
         return offset;

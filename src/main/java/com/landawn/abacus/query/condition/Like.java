@@ -130,7 +130,7 @@ public class Like extends Binary {
      * @param propName the property/column name (must not be null or empty)
      * @param propValue the pattern to match, including wildcards. Must not be null.
      *                  Use % for any characters, _ for single character.
-     * @throws IllegalArgumentException if propName is null
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public Like(final String propName, final Object propValue) {
         super(propName, Operator.LIKE, propValue);

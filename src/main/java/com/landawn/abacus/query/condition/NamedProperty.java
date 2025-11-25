@@ -111,9 +111,16 @@ public final class NamedProperty {
      * <pre>{@code
      * NamedProperty username = NamedProperty.of("username");
      * NamedProperty status = NamedProperty.of("status");
+     *
+     * // Invalid usage - throws IllegalArgumentException
+     * try {
+     *     NamedProperty invalid = NamedProperty.of("");
+     * } catch (IllegalArgumentException e) {
+     *     // Handle empty property name
+     * }
      * }</pre>
      *
-     * @param propName the property name
+     * @param propName the property name. Must not be null or empty.
      * @return a cached or new NamedProperty instance
      * @throws IllegalArgumentException if propName is null or empty
      */

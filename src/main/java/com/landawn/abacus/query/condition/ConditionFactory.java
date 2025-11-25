@@ -3563,6 +3563,25 @@ public class ConditionFactory {
 
     /**
      * A utility class providing static factory methods identical to ConditionFactory.
+     * 
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Instead of ConditionFactory.eq("name", "John")
+     * Condition c = Filters.eq("name", "John");
+     * }</pre>
+     * 
+     * <p>All methods in ConditionFactory are available through Filters.</p>
+     */
+    @Beta
+    public static final class Filters extends ConditionFactory {
+
+        private Filters() {
+            // singleton for utility class.
+        }
+    }
+
+    /**
+     * A utility class providing static factory methods identical to ConditionFactory.
      * CF serves as a shorter alias for ConditionFactory to reduce verbosity.
      * 
      * <p><b>Usage Examples:</b></p>

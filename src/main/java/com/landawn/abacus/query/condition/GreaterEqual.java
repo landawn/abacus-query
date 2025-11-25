@@ -77,19 +77,23 @@ public class GreaterEqual extends Binary {
     /**
      * Creates a new GreaterEqual condition.
      * The condition evaluates to true when the property value is greater than or equal to the specified value.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if salary is at least 50000
      * GreaterEqual salaryCondition = new GreaterEqual("salary", 50000);
-     * 
+     *
      * // Check if score meets minimum requirement
      * GreaterEqual scoreCondition = new GreaterEqual("score", 60);
-     * 
+     *
      * // Check if date is on or after a specific date
      * GreaterEqual dateCondition = new GreaterEqual("expiryDate", LocalDate.now());
+     *
+     * // Use with subquery - find products priced at or above average
+     * SubQuery avgPrice = CF.subQuery("SELECT AVG(price) FROM products");
+     * GreaterEqual atOrAboveAverage = new GreaterEqual("price", avgPrice);
      * }</pre>
-     * 
+     *
      * @param propName the property/column name (must not be null or empty)
      * @param propValue the value to compare against (can be null, literal value, or subquery)
      * @throws IllegalArgumentException if propName is null or empty

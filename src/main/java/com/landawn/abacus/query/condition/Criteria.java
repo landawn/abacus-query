@@ -55,7 +55,7 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * // Build a complex query with multiple clauses
  * Criteria criteria = new Criteria()
- *     .join("orders", CF.eq("users.id", "orders.user_id"))
+ *     .join("orders", new On("users.id", "orders.user_id"))
  *     .where(CF.and(
  *         CF.eq("users.status", "active"),
  *         CF.gt("orders.amount", 100)
@@ -644,7 +644,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .join("orders", CF.eq("users.id", "orders.user_id"))
+     *     .join("orders", new On("users.id", "orders.user_id"))
      *     .where(CF.eq("users.status", "active"));
      * // Results in: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
      * }</pre>

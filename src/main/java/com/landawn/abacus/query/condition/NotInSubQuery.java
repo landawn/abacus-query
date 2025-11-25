@@ -107,7 +107,7 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * @param propName the property/column name. Must not be null or empty.
      * @param subQuery the subquery that returns the values to check against. Must not be null.
-     * @throws IllegalArgumentException if propName is null or subQuery is null
+     * @throws IllegalArgumentException if subQuery is null
      */
     public NotInSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.NOT_IN);
@@ -147,7 +147,7 @@ public class NotInSubQuery extends AbstractCondition {
      *                  Must not be null or empty.
      * @param subQuery the subquery that returns the values to check against. Must not be null.
      *                 Must return the same number of columns as propNames.size().
-     * @throws IllegalArgumentException if propNames is null/empty or subQuery is null
+     * @throws IllegalArgumentException if propNames is null or empty, or if subQuery is null
      */
     public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.NOT_IN);
@@ -221,7 +221,6 @@ public class NotInSubQuery extends AbstractCondition {
      * This method allows updating the subquery after construction.
      *
      * @param subQuery the new subquery to set
-     * @throws IllegalArgumentException if subQuery is null
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated

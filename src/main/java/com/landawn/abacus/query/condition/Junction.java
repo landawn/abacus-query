@@ -110,7 +110,7 @@ public class Junction extends AbstractCondition {
      * Junction activeAdults = new Junction(Operator.AND,
      *     new Equal("active", true),
      *     new GreaterEqual("age", 18),
-     *     new NotNull("email")
+     *     new IsNotNull("email")
      * );
      * 
      * // Create an OR junction for status checks
@@ -190,7 +190,7 @@ public class Junction extends AbstractCondition {
      * // Replace with new conditions
      * junction.set(
      *     new Equal("status", "active"),
-     *     new NotNull("email"),
+     *     new IsNotNull("email"),
      *     new GreaterThan("age", 18)
      * );
      * }</pre>

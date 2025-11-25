@@ -69,10 +69,9 @@ public class Cell extends AbstractCondition {
      * SubQuery subQuery = CF.subQuery("SELECT 1 FROM products WHERE price > 100");
      * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
      * }</pre>
-     * 
+     *
      * @param operator the operator to apply to the condition
      * @param condition the condition to wrap (must not be null)
-     * @throws IllegalArgumentException if condition is null
      */
     public Cell(final Operator operator, final Condition condition) {
         super(operator);

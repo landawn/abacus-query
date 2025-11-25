@@ -91,7 +91,6 @@ public class Where extends Clause {
      * }</pre>
      *
      * @param condition the condition to be used in the WHERE clause. Must not be null.
-     * @throws IllegalArgumentException if condition is null
      */
     public Where(final Condition condition) {
         super(Operator.WHERE, condition);

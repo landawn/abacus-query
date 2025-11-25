@@ -161,13 +161,13 @@ public class Between extends AbstractCondition {
     /**
      * Sets the minimum value of the range.
      * This method should generally not be used as conditions should be immutable.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("age", 18, 65);
      * // Not recommended: condition.setMinValue(21);
      * }</pre>
-     * 
+     *
      * @param minValue the new minimum value
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
@@ -200,13 +200,13 @@ public class Between extends AbstractCondition {
     /**
      * Sets the maximum value of the range.
      * This method should generally not be used as conditions should be immutable.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("age", 18, 65);
      * // Not recommended: condition.setMaxValue(70);
      * }</pre>
-     * 
+     *
      * @param maxValue the new maximum value
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
@@ -266,7 +266,9 @@ public class Between extends AbstractCondition {
      * List<Object> parameters = between.getParameters(); // Returns [null, null]
      *
      * // With nested condition
-     * Between withSubquery = new Between("id", new SubQuery("SELECT MIN(id)"), new SubQuery("SELECT MAX(id)"));
+     * SubQuery minSubQuery = CF.subQuery("SELECT MIN(id) FROM table");
+     * SubQuery maxSubQuery = CF.subQuery("SELECT MAX(id) FROM table");
+     * Between withSubquery = new Between("id", minSubQuery, maxSubQuery);
      * withSubquery.clearParameters(); // Delegates to both SubQuery.clearParameters()
      * }</pre>
      */

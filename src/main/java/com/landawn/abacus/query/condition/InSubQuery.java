@@ -109,7 +109,7 @@ public class InSubQuery extends AbstractCondition {
      *
      * @param propName the property/column name. Must not be null or empty.
      * @param subQuery the subquery that returns the values to check against. Must not be null.
-     * @throws IllegalArgumentException if propName is null or subQuery is null
+     * @throws IllegalArgumentException if subQuery is null
      */
     public InSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.IN);
@@ -141,7 +141,7 @@ public class InSubQuery extends AbstractCondition {
      *                  The order must match the column order in the subquery.
      * @param subQuery the subquery that returns the value combinations to check against. Must not be null.
      *                 Must return the same number of columns as propNames.size().
-     * @throws IllegalArgumentException if propNames is null/empty or subQuery is null
+     * @throws IllegalArgumentException if propNames is null or empty, or if subQuery is null
      */
     public InSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.IN);

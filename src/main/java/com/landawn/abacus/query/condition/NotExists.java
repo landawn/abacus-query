@@ -98,7 +98,6 @@ public class NotExists extends Cell {
      * }</pre>
      *
      * @param condition the subquery to check for non-existence of rows. Must not be null.
-     * @throws IllegalArgumentException if condition is null
      */
     public NotExists(final SubQuery condition) {
         super(Operator.NOT_EXISTS, condition);

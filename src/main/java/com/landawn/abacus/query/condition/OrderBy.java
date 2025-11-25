@@ -88,12 +88,12 @@ public class OrderBy extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Order by CASE expression
-     * Expression expr = new Expression("CASE WHEN status='urgent' THEN 1 ELSE 2 END");
+     * Condition expr = CF.expr("CASE WHEN status='urgent' THEN 1 ELSE 2 END");
      * OrderBy orderBy = new OrderBy(expr);
      * // Results in: ORDER BY CASE WHEN status='urgent' THEN 1 ELSE 2 END
      *
      * // Order by calculated field
-     * Expression calcExpr = new Expression("(price * quantity) DESC");
+     * Condition calcExpr = CF.expr("(price * quantity) DESC");
      * OrderBy totalOrder = new OrderBy(calcExpr);
      * // Results in: ORDER BY (price * quantity) DESC
      * }</pre>
