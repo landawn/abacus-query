@@ -57,6 +57,13 @@ package com.landawn.abacus.query.condition;
  *   <li>Consider adding indexes on columns used in UNION queries</li>
  * </ul>
  *
+ * <p>Database support:
+ * <ul>
+ *   <li>All major databases support UNION: MySQL, PostgreSQL, Oracle, SQL Server, SQLite, DB2</li>
+ *   <li>UNION is part of the SQL standard and widely portable</li>
+ *   <li>Performance characteristics may vary by database implementation</li>
+ * </ul>
+ *
  * <p>Relationship to other set operations:</p>
  * <ul>
  *   <li>UNION combines rows from both queries, removing duplicates</li>

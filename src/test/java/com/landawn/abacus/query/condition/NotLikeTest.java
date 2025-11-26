@@ -4,16 +4,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.NotLike;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class NotLikeTest extends TestBase {
 
     @Test
     public void testConstructor() {
-        NotLike notLike = CF.notLike("name", "John%");
+        NotLike notLike = Filters.notLike("name", "John%");
 
         Assertions.assertNotNull(notLike);
         Assertions.assertEquals("name", notLike.getPropName());
@@ -23,7 +20,7 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testConstructorWithWildcardPercent() {
-        NotLike notLike = CF.notLike("email", "%@gmail.com");
+        NotLike notLike = Filters.notLike("email", "%@gmail.com");
 
         Assertions.assertEquals("email", notLike.getPropName());
         Assertions.assertEquals("%@gmail.com", notLike.getPropValue());
@@ -31,7 +28,7 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testConstructorWithWildcardUnderscore() {
-        NotLike notLike = CF.notLike("code", "___");
+        NotLike notLike = Filters.notLike("code", "___");
 
         Assertions.assertEquals("code", notLike.getPropName());
         Assertions.assertEquals("___", notLike.getPropValue());
@@ -39,7 +36,7 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testConstructorWithMultipleWildcards() {
-        NotLike notLike = CF.notLike("productName", "%temp%");
+        NotLike notLike = Filters.notLike("productName", "%temp%");
 
         Assertions.assertEquals("productName", notLike.getPropName());
         Assertions.assertEquals("%temp%", notLike.getPropValue());
@@ -47,7 +44,7 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        NotLike notLike = CF.notLike("filename", "%.tmp");
+        NotLike notLike = Filters.notLike("filename", "%.tmp");
 
         Assertions.assertEquals(1, notLike.getParameters().size());
         Assertions.assertEquals("%.tmp", notLike.getParameters().get(0));
@@ -55,7 +52,7 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        NotLike notLike = CF.notLike("name", "%test%");
+        NotLike notLike = Filters.notLike("name", "%test%");
 
         notLike.clearParameters();
 
@@ -65,7 +62,7 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testToString() {
-        NotLike notLike = CF.notLike("description", "%important%");
+        NotLike notLike = Filters.notLike("description", "%important%");
 
         String result = notLike.toString();
         Assertions.assertTrue(result.contains("description"));
@@ -75,7 +72,7 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        NotLike notLike = CF.notLike("user_name", "admin%");
+        NotLike notLike = Filters.notLike("user_name", "admin%");
 
         String result = notLike.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
         Assertions.assertTrue(result.contains("USER_NAME"));
@@ -85,7 +82,7 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testCopy() {
-        NotLike original = CF.notLike("email", "%@temp.com");
+        NotLike original = Filters.notLike("email", "%@temp.com");
 
         NotLike copy = original.copy();
 
@@ -97,9 +94,9 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        NotLike notLike1 = CF.notLike("name", "%test%");
-        NotLike notLike2 = CF.notLike("name", "%test%");
-        NotLike notLike3 = CF.notLike("name", "%demo%");
+        NotLike notLike1 = Filters.notLike("name", "%test%");
+        NotLike notLike2 = Filters.notLike("name", "%test%");
+        NotLike notLike3 = Filters.notLike("name", "%demo%");
 
         Assertions.assertEquals(notLike1.hashCode(), notLike2.hashCode());
         Assertions.assertNotEquals(notLike1.hashCode(), notLike3.hashCode());
@@ -107,10 +104,10 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testEquals() {
-        NotLike notLike1 = CF.notLike("name", "%test%");
-        NotLike notLike2 = CF.notLike("name", "%test%");
-        NotLike notLike3 = CF.notLike("name", "%demo%");
-        NotLike notLike4 = CF.notLike("email", "%test%");
+        NotLike notLike1 = Filters.notLike("name", "%test%");
+        NotLike notLike2 = Filters.notLike("name", "%test%");
+        NotLike notLike3 = Filters.notLike("name", "%demo%");
+        NotLike notLike4 = Filters.notLike("email", "%test%");
 
         Assertions.assertTrue(notLike1.equals(notLike1));
         Assertions.assertTrue(notLike1.equals(notLike2));
@@ -122,7 +119,7 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testWithNullValue() {
-        NotLike notLike = CF.notLike("name", null);
+        NotLike notLike = Filters.notLike("name", null);
 
         Assertions.assertNull(notLike.getPropValue());
         Assertions.assertTrue(notLike.getParameters().size() == 1);
@@ -131,9 +128,9 @@ public class NotLikeTest extends TestBase {
     @Test
     public void testComplexPatterns() {
         // Test various complex patterns
-        NotLike pattern1 = CF.notLike("path", "/temp/%/%.tmp");
-        NotLike pattern2 = CF.notLike("email", "%@%.%");
-        NotLike pattern3 = CF.notLike("code", "A_B_C%");
+        NotLike pattern1 = Filters.notLike("path", "/temp/%/%.tmp");
+        NotLike pattern2 = Filters.notLike("email", "%@%.%");
+        NotLike pattern3 = Filters.notLike("code", "A_B_C%");
 
         Assertions.assertEquals("/temp/%/%.tmp", pattern1.getPropValue());
         Assertions.assertEquals("%@%.%", pattern2.getPropValue());

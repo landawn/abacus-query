@@ -154,13 +154,13 @@ public final class CriteriaUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition where = new Where(CF.eq("status", "active"));
+     * Condition where = new Where(Filters.eq("status", "active"));
      * boolean isClause = CriteriaUtil.isClause(where); // true
      * 
      * Condition orderBy = new OrderBy("name", SortDirection.ASC);
      * boolean isClause2 = CriteriaUtil.isClause(orderBy); // true
      * 
-     * Condition eq = CF.eq("status", "active");
+     * Condition eq = Filters.eq("status", "active");
      * boolean notClause = CriteriaUtil.isClause(eq); // false
      * }</pre>
      * 
@@ -197,7 +197,7 @@ public final class CriteriaUtil {
      * <pre>{@code
      * Criteria criteria = new Criteria();
      * CriteriaUtil.add(criteria,
-     *     new Where(CF.eq("status", "active")),
+     *     new Where(Filters.eq("status", "active")),
      *     new OrderBy("name", SortDirection.ASC)
      * );
      * // criteria now contains WHERE status = 'active' ORDER BY name ASC
@@ -218,7 +218,7 @@ public final class CriteriaUtil {
      * <pre>{@code
      * Criteria criteria = new Criteria();
      * List<Condition> conditions = Arrays.asList(
-     *     new Where(CF.eq("active", true)),
+     *     new Where(Filters.eq("active", true)),
      *     new Limit(10)
      * );
      * CriteriaUtil.add(criteria, conditions);
@@ -259,7 +259,7 @@ public final class CriteriaUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Where whereClause = new Where(CF.eq("status", "active"));
+     * Where whereClause = new Where(Filters.eq("status", "active"));
      * OrderBy orderByClause = new OrderBy("name");
      * Criteria criteria = // ... contains these conditions
      * 

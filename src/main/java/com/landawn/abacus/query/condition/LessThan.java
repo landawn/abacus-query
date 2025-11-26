@@ -75,7 +75,7 @@ public class LessThan extends Binary {
     }
 
     /**
-     * Creates a new less-than condition with the specified property name and value.
+     * Creates a new LessThan condition.
      * This condition checks if the property value is less than the specified value,
      * providing an exclusive upper bound check. The comparison excludes the boundary value itself.
      *
@@ -98,7 +98,7 @@ public class LessThan extends Binary {
      * // SQL: temperature < 0
      *
      * // Use with subquery - find products priced below average
-     * SubQuery avgPrice = CF.subQuery("SELECT AVG(price) FROM products");
+     * SubQuery avgPrice = Filters.subQuery("SELECT AVG(price) FROM products");
      * LessThan belowAverage = new LessThan("price", avgPrice);
      * }</pre>
      *

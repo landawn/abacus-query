@@ -38,6 +38,22 @@ package com.landawn.abacus.query.condition;
  *   <li>Use UNION when you need distinct results</li>
  * </ul>
  *
+ * <p>Performance considerations:
+ * <ul>
+ *   <li>UNION ALL is significantly faster than UNION as it skips duplicate elimination</li>
+ *   <li>No sorting or hashing required, making it ideal for large result sets</li>
+ *   <li>Preserves all rows in their original order from each query</li>
+ *   <li>Use UNION ALL whenever duplicates are acceptable or known to be impossible</li>
+ *   <li>Consider UNION ALL when combining partitioned or non-overlapping data</li>
+ * </ul>
+ *
+ * <p>Database support:
+ * <ul>
+ *   <li>All major databases support UNION ALL: MySQL, PostgreSQL, Oracle, SQL Server, SQLite, DB2</li>
+ *   <li>UNION ALL is part of the SQL standard and widely portable</li>
+ *   <li>Consistently offers better performance than UNION across all database systems</li>
+ * </ul>
+ *
  * <p>Relationship to other set operations:</p>
  * <ul>
  *   <li>UNION ALL combines rows from both queries, keeping duplicates (faster)</li>

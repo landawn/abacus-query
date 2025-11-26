@@ -110,7 +110,7 @@ public class IsNotInfinite extends IsNot {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
      */
     public IsNotInfinite(final String propName) {
         super(propName, IsInfinite.INFINITE);

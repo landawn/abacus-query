@@ -6,16 +6,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.Exists;
-import com.landawn.abacus.query.condition.Not;
-import com.landawn.abacus.query.condition.NotExists;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Or;
-import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class ExistsTest extends TestBase {
@@ -60,8 +50,7 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"),
-                Filters.and(Filters.eq("customer_id", 123), Filters.eq("status", "pending")));
+        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), Filters.and(Filters.eq("customer_id", 123), Filters.eq("status", "pending")));
         Exists exists = Filters.exists(subQuery);
 
         var params = exists.getParameters();

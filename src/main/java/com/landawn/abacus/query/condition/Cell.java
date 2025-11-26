@@ -33,10 +33,10 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create a NOT cell
- * Cell notCell = new Cell(Operator.NOT, CF.eq("status", "active"));
+ * Cell notCell = new Cell(Operator.NOT, Filters.eq("status", "active"));
  * 
  * // Create an EXISTS cell with a subquery
- * SubQuery subQuery = CF.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
+ * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
  * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
  * }</pre>
  * 
@@ -63,10 +63,10 @@ public class Cell extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a NOT cell that negates a condition
-     * Cell notCell = new Cell(Operator.NOT, CF.isNull("email"));
+     * Cell notCell = new Cell(Operator.NOT, Filters.isNull("email"));
      *
      * // Create an EXISTS cell for a subquery
-     * SubQuery subQuery = CF.subQuery("SELECT 1 FROM products WHERE price > 100");
+     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM products WHERE price > 100");
      * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
      * }</pre>
      *
@@ -85,7 +85,7 @@ public class Cell extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, CF.eq("status", "active"));
+     * Cell cell = new Cell(Operator.NOT, Filters.eq("status", "active"));
      * Equal eq = cell.getCondition(); // Returns the Equal condition
      * 
      * // For subqueries
@@ -107,8 +107,8 @@ public class Cell extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, CF.eq("status", "active"));
-     * // Not recommended: cell.setCondition(CF.eq("status", "inactive"));
+     * Cell cell = new Cell(Operator.NOT, Filters.eq("status", "active"));
+     * // Not recommended: cell.setCondition(Filters.eq("status", "inactive"));
      * }</pre>
      * 
      * @param condition the new condition to wrap
@@ -125,11 +125,11 @@ public class Cell extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, CF.eq("name", "John"));
+     * Cell cell = new Cell(Operator.NOT, Filters.eq("name", "John"));
      * List<Object> params = cell.getParameters(); // Returns ["John"]
      * 
      * // For complex conditions
-     * Cell notBetween = new Cell(Operator.NOT, CF.between("age", 18, 65));
+     * Cell notBetween = new Cell(Operator.NOT, Filters.between("age", 18, 65));
      * List<Object> params2 = notBetween.getParameters(); // Returns [18, 65]
      * }</pre>
      * 
@@ -142,15 +142,17 @@ public class Cell extends AbstractCondition {
 
     /**
      * Clears all parameter values by setting them to null to free memory.
-     * 
+     * This method delegates to the wrapped condition's clearParameters method.
+     *
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * Cell cell = new Cell(Operator.NOT, Filters.between("age", 18, 65));
+     * List<Object> parameters = cell.getParameters(); // Returns [18, 65]
+     * cell.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = cell.getParameters(); // Returns [null, null]
      * }</pre>
      */
     @Override
@@ -167,7 +169,7 @@ public class Cell extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Cell original = new Cell(Operator.NOT, CF.eq("status", "active"));
+     * Cell original = new Cell(Operator.NOT, Filters.eq("status", "active"));
      * Cell copy = original.copy();
      * // copy is a deep copy of original, including the wrapped condition
      * 
@@ -197,7 +199,7 @@ public class Cell extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, CF.eq("userName", "John"));
+     * Cell cell = new Cell(Operator.NOT, Filters.eq("userName", "John"));
      * String str = cell.toString(NamingPolicy.LOWER_CAMEL_CASE);
      * // Returns: "NOT userName = 'John'"
      * 
@@ -220,8 +222,8 @@ public class Cell extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Cell cell1 = new Cell(Operator.NOT, CF.eq("status", "active"));
-     * Cell cell2 = new Cell(Operator.NOT, CF.eq("status", "active"));
+     * Cell cell1 = new Cell(Operator.NOT, Filters.eq("status", "active"));
+     * Cell cell2 = new Cell(Operator.NOT, Filters.eq("status", "active"));
      * boolean sameHash = cell1.hashCode() == cell2.hashCode(); // true
      * }</pre>
      * 
@@ -240,11 +242,11 @@ public class Cell extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Cell cell1 = new Cell(Operator.NOT, CF.eq("status", "active"));
-     * Cell cell2 = new Cell(Operator.NOT, CF.eq("status", "active"));
+     * Cell cell1 = new Cell(Operator.NOT, Filters.eq("status", "active"));
+     * Cell cell2 = new Cell(Operator.NOT, Filters.eq("status", "active"));
      * boolean isEqual = cell1.equals(cell2); // Returns true
      * 
-     * Cell cell3 = new Cell(Operator.EXISTS, CF.eq("status", "active"));
+     * Cell cell3 = new Cell(Operator.EXISTS, Filters.eq("status", "active"));
      * boolean isNotEqual = cell1.equals(cell3); // Returns false (different operator)
      * }</pre>
      * 

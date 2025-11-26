@@ -6,18 +6,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Minus;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.SubQuery;
-import com.landawn.abacus.query.condition.Filters.CF;
 
 public class MinusTest extends TestBase {
 
     @Test
     public void testConstructorWithSubQuery() {
-        SubQuery subQuery = CF.subQuery("SELECT product_id FROM sales");
-        Minus minus = CF.minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT product_id FROM sales");
+        Minus minus = Filters.minus(subQuery);
 
         Assertions.assertNotNull(minus);
         Assertions.assertEquals(Operator.MINUS, minus.getOperator());
@@ -26,24 +21,25 @@ public class MinusTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = CF.subQuery("SELECT customer_id FROM inactive_customers");
-        Minus minus = CF.minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM inactive_customers");
+        Minus minus = Filters.minus(subQuery);
 
         Assertions.assertEquals(subQuery, minus.getCondition());
     }
 
     @Test
     public void testGetOperator() {
-        SubQuery subQuery = CF.subQuery("SELECT id FROM test");
-        Minus minus = CF.minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM test");
+        Minus minus = Filters.minus(subQuery);
 
         Assertions.assertEquals(Operator.MINUS, minus.getOperator());
     }
 
     @Test
     public void testWithComplexSubQuery() {
-        SubQuery subQuery = CF.subQuery("orders", Arrays.asList("customer_id"), CF.and(CF.eq("status", "cancelled"), CF.gt("date", "2023-01-01")));
-        Minus minus = CF.minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("customer_id"),
+                Filters.and(Filters.eq("status", "cancelled"), Filters.gt("date", "2023-01-01")));
+        Minus minus = Filters.minus(subQuery);
 
         Assertions.assertEquals(subQuery, minus.getCondition());
         Assertions.assertEquals(2, minus.getParameters().size());
@@ -51,8 +47,8 @@ public class MinusTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = CF.subQuery("products", Arrays.asList("id"), CF.eq("discontinued", true));
-        Minus minus = CF.minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("id"), Filters.eq("discontinued", true));
+        Minus minus = Filters.minus(subQuery);
 
         Assertions.assertEquals(subQuery.getParameters(), minus.getParameters());
         Assertions.assertEquals(1, minus.getParameters().size());
@@ -61,16 +57,16 @@ public class MinusTest extends TestBase {
 
     @Test
     public void testGetParametersWithRawSqlSubQuery() {
-        SubQuery subQuery = CF.subQuery("SELECT id FROM archived_records");
-        Minus minus = CF.minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM archived_records");
+        Minus minus = Filters.minus(subQuery);
 
         Assertions.assertTrue(minus.getParameters().isEmpty());
     }
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = CF.subQuery("users", Arrays.asList("id"), CF.in("status", Arrays.asList("deleted", "banned")));
-        Minus minus = CF.minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.in("status", Arrays.asList("deleted", "banned")));
+        Minus minus = Filters.minus(subQuery);
 
         minus.clearParameters();
 
@@ -80,8 +76,8 @@ public class MinusTest extends TestBase {
 
     @Test
     public void testToString() {
-        SubQuery subQuery = CF.subQuery("SELECT id FROM inactive_users");
-        Minus minus = CF.minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
+        Minus minus = Filters.minus(subQuery);
 
         String result = minus.toString();
         Assertions.assertTrue(result.contains("MINUS"));
@@ -90,8 +86,8 @@ public class MinusTest extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = CF.subQuery("orders", Arrays.asList("product_id"), CF.eq("returned", true));
-        Minus original = CF.minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("product_id"), Filters.eq("returned", true));
+        Minus original = Filters.minus(subQuery);
 
         Minus copy = original.copy();
 
@@ -103,13 +99,13 @@ public class MinusTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = CF.subQuery("SELECT id FROM test");
-        SubQuery subQuery2 = CF.subQuery("SELECT id FROM test");
-        SubQuery subQuery3 = CF.subQuery("SELECT id FROM other");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM test");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM test");
+        SubQuery subQuery3 = Filters.subQuery("SELECT id FROM other");
 
-        Minus minus1 = CF.minus(subQuery1);
-        Minus minus2 = CF.minus(subQuery2);
-        Minus minus3 = CF.minus(subQuery3);
+        Minus minus1 = Filters.minus(subQuery1);
+        Minus minus2 = Filters.minus(subQuery2);
+        Minus minus3 = Filters.minus(subQuery3);
 
         Assertions.assertEquals(minus1.hashCode(), minus2.hashCode());
         Assertions.assertNotEquals(minus1.hashCode(), minus3.hashCode());
@@ -117,13 +113,13 @@ public class MinusTest extends TestBase {
 
     @Test
     public void testEquals() {
-        SubQuery subQuery1 = CF.subQuery("SELECT id FROM test");
-        SubQuery subQuery2 = CF.subQuery("SELECT id FROM test");
-        SubQuery subQuery3 = CF.subQuery("SELECT id FROM other");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM test");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM test");
+        SubQuery subQuery3 = Filters.subQuery("SELECT id FROM other");
 
-        Minus minus1 = CF.minus(subQuery1);
-        Minus minus2 = CF.minus(subQuery2);
-        Minus minus3 = CF.minus(subQuery3);
+        Minus minus1 = Filters.minus(subQuery1);
+        Minus minus2 = Filters.minus(subQuery2);
+        Minus minus3 = Filters.minus(subQuery3);
 
         Assertions.assertTrue(minus1.equals(minus1));
         Assertions.assertTrue(minus1.equals(minus2));
@@ -135,8 +131,8 @@ public class MinusTest extends TestBase {
     @Test
     public void testPracticalExample() {
         // Find products that are in inventory but have never been sold
-        SubQuery soldProducts = CF.subQuery("SELECT DISTINCT product_id FROM sales");
-        Minus minus = CF.minus(soldProducts);
+        SubQuery soldProducts = Filters.subQuery("SELECT DISTINCT product_id FROM sales");
+        Minus minus = Filters.minus(soldProducts);
 
         // This would be used with: SELECT product_id FROM inventory MINUS ...
         Assertions.assertEquals(Operator.MINUS, minus.getOperator());
@@ -146,8 +142,8 @@ public class MinusTest extends TestBase {
     @Test
     public void testWithParameterizedSubQuery() {
         // Find customers who haven't ordered in the last year
-        SubQuery recentCustomers = CF.subQuery("orders", Arrays.asList("customer_id"), CF.gt("order_date", "2023-01-01"));
-        Minus minus = CF.minus(recentCustomers);
+        SubQuery recentCustomers = Filters.subQuery("orders", Arrays.asList("customer_id"), Filters.gt("order_date", "2023-01-01"));
+        Minus minus = Filters.minus(recentCustomers);
 
         Assertions.assertEquals(1, minus.getParameters().size());
         Assertions.assertEquals("2023-01-01", minus.getParameters().get(0));

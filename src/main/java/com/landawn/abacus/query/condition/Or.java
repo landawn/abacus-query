@@ -50,15 +50,15 @@ import com.landawn.abacus.util.N;
  * <pre>{@code
  * // Create OR with multiple conditions
  * Or or = new Or(
- *     CF.eq("status", "active"),
- *     CF.eq("status", "pending"),
- *     CF.eq("status", "review")
+ *     Filters.eq("status", "active"),
+ *     Filters.eq("status", "pending"),
+ *     Filters.eq("status", "review")
  * );
  * // Results in: ((status = 'active') OR (status = 'pending') OR (status = 'review'))
  *
  * // Build OR condition fluently
- * Or or2 = new Or(CF.gt("age", 65))
- *     .or(CF.lt("age", 18));
+ * Or or2 = new Or(Filters.gt("age", 65))
+ *     .or(Filters.lt("age", 18));
  * // Results in: ((age > 65) OR (age < 18))
  * }</pre>
  *
@@ -89,23 +89,23 @@ public class Or extends Junction {
      * <pre>{@code
      * // Find users in specific cities
      * Or or = new Or(
-     *     CF.eq("city", "New York"),
-     *     CF.eq("city", "Los Angeles"),
-     *     CF.eq("city", "Chicago")
+     *     Filters.eq("city", "New York"),
+     *     Filters.eq("city", "Los Angeles"),
+     *     Filters.eq("city", "Chicago")
      * );
      * // Results in: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
      *
      * // Complex OR with different condition types
      * Or complexOr = new Or(
-     *     CF.like("email", "%@gmail.com"),
-     *     CF.like("email", "%@yahoo.com"),
-     *     CF.isNull("email")
+     *     Filters.like("email", "%@gmail.com"),
+     *     Filters.like("email", "%@yahoo.com"),
+     *     Filters.isNull("email")
      * );
      * // Results in: ((email LIKE '%@gmail.com') OR (email LIKE '%@yahoo.com') OR (email IS NULL))
      * }</pre>
      *
      * @param conditions the conditions to combine with OR logic
-     * @throws IllegalArgumentException if conditions array is null or contains null elements
+     * @throws IllegalArgumentException if conditions array contains null elements
      */
     public Or(final Condition... conditions) {
         super(Operator.OR, conditions);
@@ -123,21 +123,21 @@ public class Or extends Junction {
      * // Dynamic condition building
      * List<Condition> conditions = new ArrayList<>();
      * for (String name : searchNames) {
-     *     conditions.add(CF.like("name", "%" + name + "%"));
+     *     conditions.add(Filters.like("name", "%" + name + "%"));
      * }
      * Or or = new Or(conditions);
      * // Results in: ((name LIKE '%name1%') OR (name LIKE '%name2%') OR ...)
      *
      * // Combining existing conditions
      * Set<Condition> statusConditions = new HashSet<>();
-     * statusConditions.add(CF.eq("status", "active"));
-     * statusConditions.add(CF.eq("status", "pending"));
+     * statusConditions.add(Filters.eq("status", "active"));
+     * statusConditions.add(Filters.eq("status", "pending"));
      * Or statusOr = new Or(statusConditions);
      * // Results in: ((status = 'active') OR (status = 'pending'))
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with OR logic
-     * @throws IllegalArgumentException if conditions is null or contains null elements
+     * @throws IllegalArgumentException if conditions contains null elements
      */
     public Or(final Collection<? extends Condition> conditions) {
         super(Operator.OR, conditions);
@@ -155,18 +155,18 @@ public class Or extends Junction {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Build condition step by step
-     * Or or = new Or(CF.eq("type", "A"))
-     *     .or(CF.eq("type", "B"))
-     *     .or(CF.eq("type", "C"));
+     * Or or = new Or(Filters.eq("type", "A"))
+     *     .or(Filters.eq("type", "B"))
+     *     .or(Filters.eq("type", "C"));
      * // Results in: ((type = 'A') OR (type = 'B') OR (type = 'C'))
      *
      * // Add conditions conditionally
-     * Or baseOr = new Or(CF.eq("status", "active"));
+     * Or baseOr = new Or(Filters.eq("status", "active"));
      * if (includeInactive) {
-     *     baseOr = baseOr.or(CF.eq("status", "inactive"));
+     *     baseOr = baseOr.or(Filters.eq("status", "inactive"));
      * }
      * if (includePending) {
-     *     baseOr = baseOr.or(CF.eq("status", "pending"));
+     *     baseOr = baseOr.or(Filters.eq("status", "pending"));
      * }
      * // Results vary based on flags
      * }</pre>

@@ -8,15 +8,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.GreaterThan;
-import com.landawn.abacus.query.condition.Not;
-import com.landawn.abacus.query.condition.NotEqual;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Or;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class AndTest extends TestBase {
@@ -37,8 +28,7 @@ public class AndTest extends TestBase {
 
     @Test
     public void testConstructorWithCollection() {
-        List<Condition> conditions = Arrays.asList(Filters.eq("department", "Sales"), Filters.ge("salary", 50000),
-                Filters.lt("age", 65));
+        List<Condition> conditions = Arrays.asList(Filters.eq("department", "Sales"), Filters.ge("salary", 50000), Filters.lt("age", 65));
 
         And and = Filters.and(conditions);
 
@@ -104,8 +94,7 @@ public class AndTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        And and = Filters.and(Filters.eq("status", "active"), Filters.between("age", 18, 65),
-                Filters.like("name", "John%"));
+        And and = Filters.and(Filters.eq("status", "active"), Filters.between("age", 18, 65), Filters.like("name", "John%"));
 
         List<Object> params = and.getParameters();
 

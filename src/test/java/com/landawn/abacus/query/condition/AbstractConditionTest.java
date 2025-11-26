@@ -11,13 +11,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.AbstractCondition;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.Not;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Or;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 

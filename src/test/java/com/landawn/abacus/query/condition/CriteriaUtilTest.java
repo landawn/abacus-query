@@ -9,19 +9,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Criteria;
-import com.landawn.abacus.query.condition.CriteriaUtil;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.GroupBy;
-import com.landawn.abacus.query.condition.Having;
-import com.landawn.abacus.query.condition.Join;
-import com.landawn.abacus.query.condition.Limit;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.OrderBy;
-import com.landawn.abacus.query.condition.Where;
 
 public class CriteriaUtilTest extends TestBase {
 
@@ -149,8 +136,7 @@ public class CriteriaUtilTest extends TestBase {
     @Test
     public void testAddWithCollection() {
         Criteria criteria = Filters.criteria();
-        List<Condition> conditions = Arrays.asList(Filters.join("orders"), Filters.where(Filters.eq("status", "active")),
-                Filters.limit(10));
+        List<Condition> conditions = Arrays.asList(Filters.join("orders"), Filters.where(Filters.eq("status", "active")), Filters.limit(10));
 
         CriteriaUtil.add(criteria, conditions);
 

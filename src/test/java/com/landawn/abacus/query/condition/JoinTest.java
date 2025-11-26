@@ -8,10 +8,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Join;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class JoinTest extends TestBase {
@@ -29,7 +25,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntityAndCondition() {
-        Condition condition = CF.eq("customers.id", "orders.customer_id");
+        Condition condition = Filters.eq("customers.id", "orders.customer_id");
         Join join = new Join("orders o", condition);
 
         Assertions.assertNotNull(join);
@@ -41,7 +37,7 @@ public class JoinTest extends TestBase {
     @Test
     public void testConstructorWithMultipleEntities() {
         List<String> entities = Arrays.asList("orders o", "customers c");
-        Condition condition = CF.eq("o.customer_id", "c.id");
+        Condition condition = Filters.eq("o.customer_id", "c.id");
         Join join = new Join(entities, condition);
 
         Assertions.assertNotNull(join);
@@ -57,7 +53,7 @@ public class JoinTest extends TestBase {
         Assertions.assertEquals(Operator.LEFT_JOIN, join1.getOperator());
         Assertions.assertEquals("table1", join1.getJoinEntities().get(0));
 
-        Condition condition = CF.eq("a", "b");
+        Condition condition = Filters.eq("a", "b");
         TestJoin join2 = new TestJoin(Operator.RIGHT_JOIN, "table2", condition);
         Assertions.assertEquals(Operator.RIGHT_JOIN, join2.getOperator());
         Assertions.assertEquals("table2", join2.getJoinEntities().get(0));
@@ -82,7 +78,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Condition condition = CF.eq("a.id", "b.a_id");
+        Condition condition = Filters.eq("a.id", "b.a_id");
         Join join = new Join("table_b b", condition);
 
         Condition retrieved = join.getCondition();
@@ -91,7 +87,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Condition condition = CF.and(CF.eq("status", "active"), CF.gt("amount", 100));
+        Condition condition = Filters.and(Filters.eq("status", "active"), Filters.gt("amount", 100));
         Join join = new Join("orders", condition);
 
         List<Object> params = join.getParameters();
@@ -113,7 +109,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Condition condition = CF.eq("status", "active");
+        Condition condition = Filters.eq("status", "active");
         Join join = new Join("orders", condition);
 
         join.clearParameters();
@@ -135,7 +131,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Condition condition = CF.eq("a.id", "b.a_id");
+        Condition condition = Filters.eq("a.id", "b.a_id");
         Join original = new Join("table_b b", condition);
         Join copy = original.copy();
 
@@ -170,7 +166,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testToStringWithCondition() {
-        Condition condition = CF.eq("customers.id", "orders.customer_id");
+        Condition condition = Filters.eq("customers.id", "orders.customer_id");
         Join join = new Join("orders o", condition);
         String result = join.toString();
 
@@ -182,7 +178,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Condition condition = CF.eq("customerId", CF.expr("orderId"));
+        Condition condition = Filters.eq("customerId", Filters.expr("orderId"));
         Join join = new Join("orderTable", condition);
         String result = join.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
 
@@ -195,7 +191,7 @@ public class JoinTest extends TestBase {
     @Test
     public void testToStringWithMultipleEntities() {
         List<String> entities = Arrays.asList("t1", "t2", "t3");
-        Condition condition = CF.eq("t1.id", "t2.t1_id");
+        Condition condition = Filters.eq("t1.id", "t2.t1_id");
         Join join = new Join(entities, condition);
 
         String result = join.toString();
@@ -204,7 +200,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        Condition condition = CF.eq("a", "b");
+        Condition condition = Filters.eq("a", "b");
         Join join1 = new Join("table", condition);
         Join join2 = new Join("table", condition);
         Join join3 = new Join("other", condition);
@@ -217,7 +213,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Condition condition = CF.eq("a", "b");
+        Condition condition = Filters.eq("a", "b");
         Join join1 = new Join("table", condition);
         Join join2 = new Join("table", condition);
         Join join3 = new Join("other", condition);

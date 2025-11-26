@@ -112,7 +112,7 @@ public class Not extends Cell {
      * @param condition the condition to be negated. Can be any type of condition
      *                  including simple comparisons, complex logical conditions,
      *                  or subquery conditions. Must not be null.
-     * @throws IllegalArgumentException if condition is null
+     * @throws NullPointerException if condition is null
      */
     public Not(final Condition condition) {
         super(Operator.NOT, condition);

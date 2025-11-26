@@ -51,13 +51,13 @@ import java.util.Collection;
  *
  * // CROSS JOIN with condition (unusual but supported)
  * CrossJoin filtered = new CrossJoin("categories",
- *     new Equal("active", true));
+ *     Filters.eq("active", true));
  * // Generates: CROSS JOIN categories (active = true)
  * // Note: Functionally equivalent to INNER JOIN with the condition
  *
  * // CROSS JOIN with Expression
  * CrossJoin exprJoin = new CrossJoin("inventory",
- *     CF.expr("quantity > 0"));
+ *     Filters.expr("quantity > 0"));
  * // Generates: CROSS JOIN inventory quantity > 0
  * }</pre>
  * 
@@ -113,7 +113,7 @@ public class CrossJoin extends Join {
      * <pre>{@code
      * // Cross join with filter using Expression
      * CrossJoin filtered = new CrossJoin("products p",
-     *     CF.expr("p.category = 'electronics'"));
+     *     Filters.expr("p.category = 'electronics'"));
      * // Generates: CROSS JOIN products p p.category = 'electronics'
      *
      * // Cross join with ON condition (unusual usage)
@@ -126,7 +126,7 @@ public class CrossJoin extends Join {
      * CrossJoin complexCross = new CrossJoin("inventory i",
      *     new And(
      *         new On("i.warehouse_id", "w.id"),
-     *         new Equal("i.active", true)
+     *         Filters.eq("i.active", true)
      *     ));
      * // Generates: CROSS JOIN inventory i (ON i.warehouse_id = w.id) AND (i.active = true)
      * }</pre>
@@ -149,7 +149,7 @@ public class CrossJoin extends Join {
      * // Join multiple tables for all combinations with filter
      * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
      * CrossJoin join = new CrossJoin(tables,
-     *     new Equal("active", true));
+     *     Filters.eq("active", true));
      * // Generates: CROSS JOIN sizes s, colors c, styles st (active = true)
      *
      * // Using ON conditions (makes it similar to INNER JOIN)
@@ -160,7 +160,7 @@ public class CrossJoin extends Join {
      *
      * // Using Expression for complex conditions
      * CrossJoin exprJoin = new CrossJoin(tables,
-     *     CF.expr("active = true AND archived = false"));
+     *     Filters.expr("active = true AND archived = false"));
      * // Generates: CROSS JOIN sizes s, colors c, styles st active = true AND archived = false
      * }</pre>
      *

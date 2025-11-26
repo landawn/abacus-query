@@ -127,11 +127,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testPSCWithHaving() {
-        String sql = SQLBuilder.PSC.select("department", "COUNT(*)")
-                .from("employees")
-                .groupBy("department")
-                .having(Filters.expr("COUNT(*) > 5"))
-                .sql();
+        String sql = SQLBuilder.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("HAVING"));
     }
@@ -202,10 +198,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testWhereWithOr() {
-        String sql = SQLBuilder.PSC.select("*")
-                .from(Account.class)
-                .where(Filters.eq("status", "active").or(Filters.eq("status", "pending")))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).where(Filters.eq("status", "active").or(Filters.eq("status", "pending"))).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("OR"));
     }

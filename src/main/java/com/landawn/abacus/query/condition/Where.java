@@ -35,14 +35,14 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple condition
- * Condition condition = CF.eq("status", "active");
+ * Condition condition = Filters.eq("status", "active");
  * Where where = new Where(condition);
- * // Results in: WHERE status = 'active'
+ * // SQL: WHERE status = 'active'
  *
  * // Complex condition
- * Condition and = CF.and(CF.eq("age", 25), CF.gt("salary", 50000));
+ * Condition and = Filters.and(Filters.eq("age", 25), Filters.gt("salary", 50000));
  * Where where2 = new Where(and);
- * // Results in: WHERE age = 25 AND salary > 50000
+ * // SQL: WHERE age = 25 AND salary > 50000
  * }</pre>
  * 
  * @see Clause
@@ -72,22 +72,22 @@ public class Where extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple WHERE clause
-     * Condition condition = CF.like("name", "%John%");
+     * Condition condition = Filters.like("name", "%John%");
      * Where where = new Where(condition);
-     * // Results in: WHERE name LIKE '%John%'
+     * // SQL: WHERE name LIKE '%John%'
      *
      * // Complex WHERE with multiple conditions
-     * Condition complexCondition = CF.or(
-     *     CF.and(CF.eq("status", "active"), CF.gt("balance", 1000)),
-     *     CF.eq("vip", true)
+     * Condition complexCondition = Filters.or(
+     *     Filters.and(Filters.eq("status", "active"), Filters.gt("balance", 1000)),
+     *     Filters.eq("vip", true)
      * );
      * Where complexWhere = new Where(complexCondition);
-     * // Results in: WHERE ((status = 'active') AND (balance > 1000)) OR (vip = true)
+     * // SQL: WHERE ((status = 'active') AND (balance > 1000)) OR (vip = true)
      *
      * // WHERE with subquery
      * SubQuery activeUsers = new SubQuery("SELECT id FROM users WHERE active = true");
-     * Where whereIn = new Where(CF.in("user_id", activeUsers));
-     * // Results in: WHERE user_id IN (SELECT id FROM users WHERE active = true)
+     * Where whereIn = new Where(Filters.in("user_id", activeUsers));
+     * // SQL: WHERE user_id IN (SELECT id FROM users WHERE active = true)
      * }</pre>
      *
      * @param condition the condition to be used in the WHERE clause. Must not be null.

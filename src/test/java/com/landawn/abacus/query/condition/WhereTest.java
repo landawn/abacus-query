@@ -4,10 +4,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Where;
 
 public class WhereTest extends TestBase {
 

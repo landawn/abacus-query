@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.List;
 
 import com.landawn.abacus.query.SK;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -54,17 +53,17 @@ import com.landawn.abacus.util.Strings;
  * SubQuery subQuery1 = new SubQuery("SELECT id FROM users WHERE status = 'active'");
  *
  * // Structured subquery with entity name
- * Condition activeCondition = CF.eq("status", "active");
+ * Condition activeCondition = Filters.eq("status", "active");
  * SubQuery subQuery2 = new SubQuery("users", Arrays.asList("id"), activeCondition);
  * // Generates: SELECT id FROM users WHERE status = 'active'
  *
  * // Structured subquery with entity class
  * SubQuery subQuery3 = new SubQuery(User.class, Arrays.asList("id", "name"),
- *                                   CF.gt("age", 18));
+ *                                   Filters.gt("age", 18));
  * // Generates: SELECT id, name FROM User WHERE age > 18
  *
  * // Use in IN condition
- * Condition inCondition = CF.in("userId", subQuery1);
+ * Condition inCondition = Filters.in("userId", subQuery1);
  * // Results in: userId IN (SELECT id FROM users WHERE status = 'active')
  * }</pre>
  * 
@@ -173,9 +172,9 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * // Select specific columns with conditions
      * List<String> props = Arrays.asList("id", "email");
-     * Condition condition = CF.and(
-     *     CF.eq("active", true),
-     *     CF.gt("created", "2024-01-01")
+     * Condition condition = Filters.and(
+     *     Filters.eq("active", true),
+     *     Filters.gt("created", "2024-01-01")
      * );
      * SubQuery subQuery = new SubQuery("users", props, condition);
      * // Generates: SELECT id, email FROM users WHERE active = true AND created > '2024-01-01'
@@ -202,7 +201,7 @@ public class SubQuery extends AbstractCondition {
         if (condition == null || CriteriaUtil.isClause(condition) || condition instanceof Expression) {
             this.condition = condition;
         } else {
-            this.condition = CF.where(condition);
+            this.condition = Filters.where(condition);
         }
 
         sql = null;
@@ -220,16 +219,16 @@ public class SubQuery extends AbstractCondition {
      * // Type-safe subquery construction
      * SubQuery subQuery = new SubQuery(Product.class,
      *     Arrays.asList("id", "categoryId"),
-     *     CF.like("name", "%electronics%")
+     *     Filters.like("name", "%electronics%")
      * );
      * // Generates: SELECT id, categoryId FROM Product WHERE name LIKE '%electronics%'
      *
      * // With complex conditions
      * SubQuery activeProducts = new SubQuery(Product.class,
      *     Arrays.asList("id", "name", "price"),
-     *     CF.and(
-     *         CF.eq("active", true),
-     *         CF.between("price", 10, 100)
+     *     Filters.and(
+     *         Filters.eq("active", true),
+     *         Filters.between("price", 10, 100)
      *     )
      * );
      * }</pre>
@@ -255,7 +254,7 @@ public class SubQuery extends AbstractCondition {
         if (condition == null || CriteriaUtil.isClause(condition) || condition instanceof Expression) {
             this.condition = condition;
         } else {
-            this.condition = CF.where(condition);
+            this.condition = Filters.where(condition);
         }
 
         sql = null;
@@ -270,7 +269,7 @@ public class SubQuery extends AbstractCondition {
      * SubQuery rawSubQuery = new SubQuery("SELECT id FROM users WHERE active = true");
      * String sql = rawSubQuery.getSql(); // Returns "SELECT id FROM users WHERE active = true"
      *
-     * SubQuery structuredSubQuery = new SubQuery("users", Arrays.asList("id"), CF.eq("active", true));
+     * SubQuery structuredSubQuery = new SubQuery("users", Arrays.asList("id"), Filters.eq("active", true));
      * String sql2 = structuredSubQuery.getSql(); // Returns null
      * }</pre>
      *
@@ -288,7 +287,7 @@ public class SubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "name"), CF.eq("status", "active"));
+     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "name"), Filters.eq("status", "active"));
      * String entityName = subQuery.getEntityName(); // Returns "users"
      *
      * SubQuery rawSubQuery = new SubQuery("SELECT * FROM products");
@@ -307,10 +306,10 @@ public class SubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery(User.class, Arrays.asList("id", "email"), CF.isNotNull("email"));
+     * SubQuery subQuery = new SubQuery(User.class, Arrays.asList("id", "email"), Filters.isNotNull("email"));
      * Class<?> entityClass = subQuery.getEntityClass(); // Returns User.class
      *
-     * SubQuery stringSubQuery = new SubQuery("users", Arrays.asList("id"), CF.eq("active", true));
+     * SubQuery stringSubQuery = new SubQuery("users", Arrays.asList("id"), Filters.eq("active", true));
      * Class<?> entityClass2 = stringSubQuery.getEntityClass(); // Returns null
      * }</pre>
      *
@@ -328,7 +327,7 @@ public class SubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> props = Arrays.asList("id", "name", "email");
-     * SubQuery subQuery = new SubQuery("users", props, CF.eq("active", true));
+     * SubQuery subQuery = new SubQuery("users", props, Filters.eq("active", true));
      * Collection<String> selectProps = subQuery.getSelectPropNames(); // Returns ["id", "name", "email"]
      *
      * SubQuery rawSubQuery = new SubQuery("SELECT id, name FROM users");
@@ -348,7 +347,7 @@ public class SubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition condition = CF.and(CF.eq("status", "active"), CF.gt("age", 18));
+     * Condition condition = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18));
      * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
      * Condition retrieved = subQuery.getCondition(); // Returns the And condition
      *
@@ -369,7 +368,7 @@ public class SubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition condition = CF.gt("age", 18);
+     * Condition condition = Filters.gt("age", 18);
      * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
      * List<Object> params = subQuery.getParameters(); // Returns [18]
      *

@@ -1,6 +1,14 @@
 package com.landawn.abacus.query.condition;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -10,7 +18,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -60,7 +67,7 @@ public class SubQuery2025Test extends TestBase {
     public void testConstructorWithEntityNamePropertiesCondition() {
         String entityName = "users";
         Collection<String> props = Arrays.asList("id", "email");
-        Condition condition = CF.eq("active", true);
+        Condition condition = Filters.eq("active", true);
 
         SubQuery subQuery = new SubQuery(entityName, props, condition);
 
@@ -74,7 +81,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testConstructorWithEntityClassPropertiesCondition() {
         Collection<String> props = Arrays.asList("id", "name");
-        Condition condition = CF.like("name", "%test%");
+        Condition condition = Filters.like("name", "%test%");
 
         SubQuery subQuery = new SubQuery(TestEntity.class, props, condition);
 
@@ -89,7 +96,7 @@ public class SubQuery2025Test extends TestBase {
     public void testConstructorWrapsNonClauseConditionInWhere() {
         String entityName = "products";
         Collection<String> props = Arrays.asList("id");
-        Condition condition = CF.gt("price", 100);
+        Condition condition = Filters.gt("price", 100);
 
         SubQuery subQuery = new SubQuery(entityName, props, condition);
 
@@ -102,7 +109,7 @@ public class SubQuery2025Test extends TestBase {
     public void testConstructorDoesNotWrapWhereCondition() {
         String entityName = "products";
         Collection<String> props = Arrays.asList("id");
-        Condition condition = CF.where(CF.gt("price", 100));
+        Condition condition = Filters.where(Filters.gt("price", 100));
 
         SubQuery subQuery = new SubQuery(entityName, props, condition);
 
@@ -154,7 +161,7 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Condition condition = CF.eq("status", "active");
+        Condition condition = Filters.eq("status", "active");
         SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
 
         assertNotNull(subQuery.getCondition());
@@ -162,7 +169,7 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testGetParametersFromCondition() {
-        Condition condition = CF.and(CF.eq("status", "active"), CF.between("age", 18, 65));
+        Condition condition = Filters.and(Filters.eq("status", "active"), Filters.between("age", 18, 65));
 
         SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
 
@@ -204,7 +211,7 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testClearParametersWithCondition() {
-        Condition condition = CF.eq("status", "active");
+        Condition condition = Filters.eq("status", "active");
         SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
 
         assertFalse(subQuery.getParameters().isEmpty());
@@ -217,7 +224,7 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        Condition condition = CF.eq("active", true);
+        Condition condition = Filters.eq("active", true);
         SubQuery original = new SubQuery("users", Arrays.asList("id", "name"), condition);
 
         SubQuery copy = original.copy();
@@ -254,7 +261,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testToStringStructuredSubQuery() {
         Collection<String> props = Arrays.asList("id", "name");
-        Condition condition = CF.where(CF.eq("status", "active"));
+        Condition condition = Filters.where(Filters.eq("status", "active"));
 
         SubQuery subQuery = new SubQuery("users", props, condition);
 
@@ -286,7 +293,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Collection<String> props = Arrays.asList("firstName", "lastName");
-        Condition condition = CF.where(CF.eq("isActive", true));
+        Condition condition = Filters.where(Filters.eq("isActive", true));
 
         SubQuery subQuery = new SubQuery("users", props, condition);
 
@@ -306,7 +313,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testHashCodeStructured() {
         Collection<String> props = Arrays.asList("id");
-        Condition condition = CF.eq("active", true);
+        Condition condition = Filters.eq("active", true);
 
         SubQuery sq1 = new SubQuery("users", props, condition);
         SubQuery sq2 = new SubQuery("users", props, condition);
@@ -354,7 +361,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testEqualsStructured() {
         Collection<String> props = Arrays.asList("id");
-        Condition condition = CF.eq("active", true);
+        Condition condition = Filters.eq("active", true);
 
         SubQuery sq1 = new SubQuery("users", props, condition);
         SubQuery sq2 = new SubQuery("users", props, condition);
@@ -375,7 +382,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testComplexSubQueryWithMultipleProperties() {
         Collection<String> props = Arrays.asList("id", "name", "email", "age");
-        Condition condition = CF.and(CF.eq("status", "active"), CF.between("age", 18, 65));
+        Condition condition = Filters.and(Filters.eq("status", "active"), Filters.between("age", 18, 65));
 
         SubQuery subQuery = new SubQuery("users", props, condition);
 
@@ -391,7 +398,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testSubQueryWithExpression() {
         Collection<String> props = Arrays.asList("id");
-        Condition condition = CF.expr("custom_function(column) > 100");
+        Condition condition = Filters.expr("custom_function(column) > 100");
 
         SubQuery subQuery = new SubQuery("table", props, condition);
 

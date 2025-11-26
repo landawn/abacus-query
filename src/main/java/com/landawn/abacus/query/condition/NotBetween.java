@@ -347,7 +347,7 @@ public class NotBetween extends AbstractCondition {
     public int hashCode() {
         int h = 17;
         h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
-        h = (h * 31) + operator.hashCode();
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         h = (h * 31) + ((minValue == null) ? 0 : minValue.hashCode());
         return (h * 31) + ((maxValue == null) ? 0 : maxValue.hashCode());
     }

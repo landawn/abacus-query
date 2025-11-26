@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Expression;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.entity.Account;
 
 @Tag("2025")
@@ -198,11 +198,7 @@ public class SQLBuilder2025Test extends TestBase {
     // HAVING tests
     @Test
     public void testHaving() {
-        String sql = SQLBuilder.PSC.select("department", "COUNT(*)")
-                .from("employees")
-                .groupBy("department")
-                .having(Filters.expr("COUNT(*) > 5"))
-                .sql();
+        String sql = SQLBuilder.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).sql();
         assertTrue(sql.contains("HAVING"));
     }
 
@@ -473,10 +469,7 @@ public class SQLBuilder2025Test extends TestBase {
     // Chaining tests
     @Test
     public void testChainedAndConditions() {
-        String sql = SQLBuilder.PSC.select("*")
-                .from("users")
-                .where(Filters.eq("status", "active").and(Filters.gt("age", 18)).and(Filters.lt("age", 65)))
-                .sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").where(Filters.eq("status", "active").and(Filters.gt("age", 18)).and(Filters.lt("age", 65))).sql();
         assertTrue(sql.contains("AND"));
     }
 
@@ -568,8 +561,7 @@ public class SQLBuilder2025Test extends TestBase {
     public void testWhereWithNestedAndOr() {
         String sql = SQLBuilder.PSC.select("*")
                 .from("users")
-                .where(Filters.and(Filters.eq("status", "active"),
-                        Filters.or(Filters.eq("role", "admin"), Filters.eq("role", "moderator"))))
+                .where(Filters.and(Filters.eq("status", "active"), Filters.or(Filters.eq("role", "admin"), Filters.eq("role", "moderator"))))
                 .sql();
         assertNotNull(sql);
     }

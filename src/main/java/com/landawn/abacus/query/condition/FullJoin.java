@@ -52,7 +52,7 @@ import java.util.Collection;
  * FullJoin complexJoin = new FullJoin("external_data e",
  *     new And(
  *         new On("internal_data.id", "e.id"),
- *         new GreaterThan("e.updated_date", "2024-01-01")
+ *         Filters.gt("e.updated_date", "2024-01-01")
  *     ));
  * // Generates: FULL JOIN external_data e (ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01')
  * }</pre>
@@ -122,14 +122,14 @@ public class FullJoin extends Join {
      * FullJoin reconcileData = new FullJoin("external_inventory ei",
      *     new And(
      *         new On("internal_inventory.product_id", "ei.product_id"),
-     *         new Equal("ei.active", true),
-     *         new GreaterThan("ei.updated_date", "2023-01-01")
+     *         Filters.eq("ei.active", true),
+     *         Filters.gt("ei.updated_date", "2023-01-01")
      *     ));
      * // Generates: FULL JOIN external_inventory ei (ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01')
      *
      * // Using Expression for custom join logic
      * FullJoin exprJoin = new FullJoin("departments d",
-     *     CF.expr("employees.dept_id = d.id AND d.active = true"));
+     *     Filters.expr("employees.dept_id = d.id AND d.active = true"));
      * // Generates: FULL JOIN departments d employees.dept_id = d.id AND d.active = true
      * }</pre>
      *
@@ -159,7 +159,7 @@ public class FullJoin extends Join {
      *
      * // Using Expression for multiple tables
      * FullJoin exprJoin = new FullJoin(tables,
-     *     CF.expr("d.id = e.dept_id AND d.id = c.dept_id"));
+     *     Filters.expr("d.id = e.dept_id AND d.id = c.dept_id"));
      * // Generates: FULL JOIN employees e, contractors c d.id = e.dept_id AND d.id = c.dept_id
      * }</pre>
      *

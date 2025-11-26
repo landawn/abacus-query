@@ -50,7 +50,7 @@ import com.landawn.abacus.util.Strings;
  * Limit limit3 = new Limit("10 OFFSET 20");
  * }</pre>
  * 
- * @see Operator#LIMIT
+ * @see Clause
  * @see AbstractCondition
  */
 public class Limit extends AbstractCondition {
@@ -86,6 +86,7 @@ public class Limit extends AbstractCondition {
      * }</pre>
      *
      * @param count the maximum number of rows to return. Should be non-negative (typically positive).
+     * @throws IllegalArgumentException if count is negative (implementation-dependent)
      */
     public Limit(final int count) {
         this(0, count);
@@ -114,6 +115,7 @@ public class Limit extends AbstractCondition {
      *
      * @param offset the number of rows to skip before returning results. Should be non-negative.
      * @param count the maximum number of rows to return after the offset. Should be non-negative.
+     * @throws IllegalArgumentException if offset or count is negative (implementation-dependent)
      */
     public Limit(final int offset, final int count) {
         super(Operator.LIMIT);
@@ -139,6 +141,7 @@ public class Limit extends AbstractCondition {
      * }</pre>
      *
      * @param expr the custom LIMIT expression as a string. Should not be null or empty.
+     * @throws IllegalArgumentException if expr is null or empty (implementation-dependent)
      */
     public Limit(final String expr) {
         this(0, Integer.MAX_VALUE);

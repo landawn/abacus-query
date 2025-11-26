@@ -41,23 +41,23 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Clauses are typically used through their specific implementations
- * Where where = new Where(CF.eq("status", "active"));
- * Having having = new Having(CF.gt("COUNT(*)", 5));
+ * Where where = new Where(Filters.eq("status", "active"));
+ * Having having = new Having(Filters.gt("COUNT(*)", 5));
  * OrderBy orderBy = new OrderBy("created_date", SortDirection.DESC);
  *
  * // Add them to criteria
  * Criteria criteria = new Criteria()
- *     .where(CF.eq("status", "active"))    // Correct usage
- *     .having(CF.gt("COUNT(*)", 5));
+ *     .where(Filters.eq("status", "active"))    // Correct usage
+ *     .having(Filters.gt("COUNT(*)", 5));
  *
  * // Cannot combine clauses with AND/OR/NOT
  * // where.and(having); // This will throw UnsupportedOperationException
  *
  * // Instead, combine conditions within a clause
  * Where complexWhere = new Where(
- *     CF.and(
- *         CF.eq("status", "active"),
- *         CF.gt("age", 18)
+ *     Filters.and(
+ *         Filters.eq("status", "active"),
+ *         Filters.gt("age", 18)
  *     )
  * );
  * }</pre>
@@ -89,11 +89,15 @@ public abstract class Clause extends Cell {
      *         super(Operator.WHERE, condition);
      *     }
      * }
+     *
+     * // Using clause implementations
+     * Where where = new Where(Filters.eq("status", "active"));
+     * Having having = new Having(Filters.gt("COUNT(*)", 10));
      * }</pre>
      *
      * @param operator the clause operator (e.g., WHERE, HAVING, GROUP_BY). Must not be null.
      * @param condition the condition to be wrapped by this clause. Must not be null.
-     * @throws IllegalArgumentException if operator or condition is null (validated by parent constructor)
+     * @throws NullPointerException if operator or condition is null (validated by parent constructor)
      */
     protected Clause(final Operator operator, final Condition condition) {
         super(operator, condition);
@@ -114,9 +118,9 @@ public abstract class Clause extends Cell {
      *
      * // Correct - AND conditions within a clause
      * Where where = new Where(
-     *     CF.and(
-     *         CF.eq("status", "active"),
-     *         CF.gt("age", 18)
+     *     Filters.and(
+     *         Filters.eq("status", "active"),
+     *         Filters.gt("age", 18)
      *     )
      * );
      * }</pre>
@@ -145,9 +149,9 @@ public abstract class Clause extends Cell {
      *
      * // Correct - OR conditions within a clause
      * Where where = new Where(
-     *     CF.or(
-     *         CF.eq("status", "active"),
-     *         CF.eq("status", "pending")
+     *     Filters.or(
+     *         Filters.eq("status", "active"),
+     *         Filters.eq("status", "pending")
      *     )
      * );
      * }</pre>
@@ -175,11 +179,11 @@ public abstract class Clause extends Cell {
      *
      * // Correct - NOT condition within a clause
      * Where where = new Where(
-     *     CF.not(CF.eq("status", "inactive"))
+     *     Filters.not(Filters.eq("status", "inactive"))
      * );
      *
      * // Or use specific NOT operations
-     * Where where2 = new Where(CF.notIn("id", Arrays.asList(1, 2, 3)));
+     * Where where2 = new Where(Filters.notIn("id", Arrays.asList(1, 2, 3)));
      * }</pre>
      *
      * @return never returns normally

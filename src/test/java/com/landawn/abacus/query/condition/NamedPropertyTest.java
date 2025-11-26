@@ -9,20 +9,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Between;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.GreaterEqual;
-import com.landawn.abacus.query.condition.GreaterThan;
-import com.landawn.abacus.query.condition.In;
-import com.landawn.abacus.query.condition.IsNotNull;
-import com.landawn.abacus.query.condition.IsNull;
-import com.landawn.abacus.query.condition.LessEqual;
-import com.landawn.abacus.query.condition.LessThan;
-import com.landawn.abacus.query.condition.Like;
-import com.landawn.abacus.query.condition.NamedProperty;
-import com.landawn.abacus.query.condition.NotEqual;
-import com.landawn.abacus.query.condition.NotLike;
-import com.landawn.abacus.query.condition.Or;
 
 public class NamedPropertyTest extends TestBase {
 

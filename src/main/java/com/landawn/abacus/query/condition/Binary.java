@@ -49,7 +49,7 @@ import com.landawn.abacus.util.Strings;
  * Binary gt = new GreaterThan("age", 18);
  * 
  * // Binary condition with subquery
- * SubQuery avgSalary = CF.subQuery("SELECT AVG(salary) FROM employees");
+ * SubQuery avgSalary = Filters.subQuery("SELECT AVG(salary) FROM employees");
  * Binary aboveAvg = new GreaterThan("salary", avgSalary);
  * }</pre>
  * 
@@ -81,7 +81,7 @@ public class Binary extends AbstractCondition {
      * Binary condition = new Binary("price", Operator.GREATER_THAN, 100.0);
      * 
      * // With a subquery as value
-     * SubQuery subQuery = CF.subQuery("SELECT MIN(price) FROM products");
+     * SubQuery subQuery = Filters.subQuery("SELECT MIN(price) FROM products");
      * Binary minPrice = new Binary("price", Operator.GREATER_EQUAL, subQuery);
      * }</pre>
      * 

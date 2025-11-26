@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Map;
 
 import com.landawn.abacus.query.SortDirection;
-import com.landawn.abacus.query.condition.Filters.CF;
 
 /**
  * Represents a GROUP BY clause in SQL queries.
@@ -87,11 +86,11 @@ public class GroupBy extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Group by year extracted from date
-     * GroupBy byYear = new GroupBy(CF.expr("YEAR(order_date)"));
+     * GroupBy byYear = new GroupBy(Filters.expr("YEAR(order_date)"));
      * // SQL: GROUP BY YEAR(order_date)
      *
      * // Group by calculated expression
-     * GroupBy byRange = new GroupBy(CF.expr("CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END"));
+     * GroupBy byRange = new GroupBy(Filters.expr("CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END"));
      * // SQL: GROUP BY CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END
      * }</pre>
      *
@@ -126,7 +125,7 @@ public class GroupBy extends Clause {
      * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
      */
     public GroupBy(final String... propNames) {
-        this(CF.expr(OrderBy.createCondition(propNames)));
+        this(Filters.expr(OrderBy.createCondition(propNames)));
     }
 
     /**
@@ -149,7 +148,7 @@ public class GroupBy extends Clause {
      * @throws IllegalArgumentException if propName is null/empty or direction is null
      */
     public GroupBy(final String propName, final SortDirection direction) {
-        this(CF.expr(OrderBy.createCondition(propName, direction)));
+        this(Filters.expr(OrderBy.createCondition(propName, direction)));
     }
 
     /**
@@ -175,7 +174,7 @@ public class GroupBy extends Clause {
      * @throws IllegalArgumentException if propNames is null/empty, direction is null, or propNames contains null/empty elements
      */
     public GroupBy(final Collection<String> propNames, final SortDirection direction) {
-        this(CF.expr(OrderBy.createCondition(propNames, direction)));
+        this(Filters.expr(OrderBy.createCondition(propNames, direction)));
     }
 
     /**
@@ -208,6 +207,6 @@ public class GroupBy extends Clause {
      * @throws IllegalArgumentException if orders is null/empty, or contains null/empty keys or null values
      */
     public GroupBy(final Map<String, SortDirection> orders) {
-        this(CF.expr(OrderBy.createCondition(orders)));
+        this(Filters.expr(OrderBy.createCondition(orders)));
     }
 }

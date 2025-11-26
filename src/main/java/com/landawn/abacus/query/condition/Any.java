@@ -32,14 +32,14 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find products with price greater than ANY product in category 'Electronics'
- * SubQuery electronicsQuery = CF.subQuery(
+ * SubQuery electronicsQuery = Filters.subQuery(
  *     "SELECT price FROM products WHERE category = 'Electronics'"
  * );
  * Any anyPrice = new Any(electronicsQuery);
  * // Use with: WHERE price > ANY (SELECT price FROM products WHERE category = 'Electronics')
  *
  * // Find employees whose salary equals ANY manager salary
- * SubQuery managerSalaries = CF.subQuery(
+ * SubQuery managerSalaries = Filters.subQuery(
  *     "SELECT salary FROM employees WHERE is_manager = true"
  * );
  * Any anyManagerSalary = new Any(managerSalaries);
@@ -84,7 +84,7 @@ public class Any extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a subquery for department budgets
-     * SubQuery budgetQuery = new SubQuery(
+     * SubQuery budgetQuery = Filters.subQuery(
      *     "SELECT budget FROM departments WHERE region = 'West'"
      * );
      * Any anyBudget = new Any(budgetQuery);
@@ -92,20 +92,20 @@ public class Any extends Cell {
      * // This finds expenses greater than at least one department budget in West region
      *
      * // Find students with score higher than any passing score
-     * SubQuery passingScores = new SubQuery(
+     * SubQuery passingScores = Filters.subQuery(
      *     "SELECT passing_score FROM exams WHERE subject = 'Math'"
      * );
      * Any anyPassingScore = new Any(passingScores);
      * // Used with: WHERE student_score > ANY (SELECT passing_score FROM exams WHERE subject = 'Math')
      *
      * // Find products with price equal to any competitor price
-     * SubQuery competitorPrices = new SubQuery("SELECT price FROM competitor_products");
+     * SubQuery competitorPrices = Filters.subQuery("SELECT price FROM competitor_products");
      * Any anyPrice = new Any(competitorPrices);
      * // Used with: WHERE price = ANY (SELECT price FROM competitor_products)
      * }</pre>
      *
      * @param condition the subquery that returns values to compare against. Must not be null.
-     * @throws IllegalArgumentException if condition is null
+     * @throws NullPointerException if condition is null
      */
     public Any(final SubQuery condition) {
         super(Operator.ANY, condition);

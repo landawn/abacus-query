@@ -90,7 +90,7 @@ public class GreaterEqual extends Binary {
      * GreaterEqual dateCondition = new GreaterEqual("expiryDate", LocalDate.now());
      *
      * // Use with subquery - find products priced at or above average
-     * SubQuery avgPrice = CF.subQuery("SELECT AVG(price) FROM products");
+     * SubQuery avgPrice = Filters.subQuery("SELECT AVG(price) FROM products");
      * GreaterEqual atOrAboveAverage = new GreaterEqual("price", avgPrice);
      * }</pre>
      *

@@ -7,19 +7,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.On;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.RightJoin;
-import com.landawn.abacus.query.condition.Filters.CF;
 
 public class RightJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithEntityOnly() {
-        RightJoin join = CF.rightJoin("customers");
+        RightJoin join = Filters.rightJoin("customers");
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.getOperator());
@@ -30,8 +23,8 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithEntityAndCondition() {
-        On onClause = CF.on("order_items.product_id", "products.id");
-        RightJoin join = CF.rightJoin("products", onClause);
+        On onClause = Filters.on("order_items.product_id", "products.id");
+        RightJoin join = Filters.rightJoin("products", onClause);
 
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.getOperator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
@@ -41,8 +34,8 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithComplexCondition() {
-        And complexCondition = CF.and(CF.on("orders.product_id", "products.id"), CF.eq("products.active", true));
-        RightJoin join = CF.rightJoin("products", complexCondition);
+        And complexCondition = Filters.and(Filters.on("orders.product_id", "products.id"), Filters.eq("products.active", true));
+        RightJoin join = Filters.rightJoin("products", complexCondition);
 
         Assertions.assertEquals(complexCondition, join.getCondition());
         Assertions.assertEquals(1, join.getParameters().size());
@@ -51,8 +44,8 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testConstructorWithMultipleEntitiesAndCondition() {
         List<String> tables = Arrays.asList("categories", "subcategories");
-        And joinCondition = CF.and(CF.on("products.category_id", "categories.id"), CF.on("products.subcategory_id", "subcategories.id"));
-        RightJoin join = CF.rightJoin(tables, joinCondition);
+        And joinCondition = Filters.and(Filters.on("products.category_id", "categories.id"), Filters.on("products.subcategory_id", "subcategories.id"));
+        RightJoin join = Filters.rightJoin(tables, joinCondition);
 
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.getOperator());
         Assertions.assertEquals(2, join.getJoinEntities().size());
@@ -62,7 +55,7 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testGetJoinEntities() {
-        RightJoin join = CF.rightJoin("departments");
+        RightJoin join = Filters.rightJoin("departments");
 
         List<String> entities = join.getJoinEntities();
         Assertions.assertNotNull(entities);
@@ -72,16 +65,16 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        On onClause = CF.on("employees.dept_id", "departments.id");
-        RightJoin join = CF.rightJoin("departments", onClause);
+        On onClause = Filters.on("employees.dept_id", "departments.id");
+        RightJoin join = Filters.rightJoin("departments", onClause);
 
         Assertions.assertEquals(onClause, join.getCondition());
     }
 
     @Test
     public void testGetParameters() {
-        Equal activeCondition = CF.eq("active", true);
-        RightJoin join = CF.rightJoin("users", activeCondition);
+        Equal activeCondition = Filters.eq("active", true);
+        RightJoin join = Filters.rightJoin("users", activeCondition);
 
         List<Object> params = join.getParameters();
         Assertions.assertEquals(1, params.size());
@@ -90,7 +83,7 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testGetParametersNoCondition() {
-        RightJoin join = CF.rightJoin("products");
+        RightJoin join = Filters.rightJoin("products");
 
         List<Object> params = join.getParameters();
         Assertions.assertNotNull(params);
@@ -99,8 +92,8 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Equal condition = CF.eq("region", "WEST");
-        RightJoin join = CF.rightJoin("stores", condition);
+        Equal condition = Filters.eq("region", "WEST");
+        RightJoin join = Filters.rightJoin("stores", condition);
 
         join.clearParameters();
 
@@ -110,7 +103,7 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testClearParametersNoCondition() {
-        RightJoin join = CF.rightJoin("customers");
+        RightJoin join = Filters.rightJoin("customers");
 
         // Should not throw exception
         join.clearParameters();
@@ -118,7 +111,7 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testToString() {
-        RightJoin join = CF.rightJoin("suppliers");
+        RightJoin join = Filters.rightJoin("suppliers");
 
         String result = join.toString();
         Assertions.assertTrue(result.contains("RIGHT JOIN"));
@@ -127,8 +120,8 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testToStringWithCondition() {
-        On onClause = CF.on("products.supplier_id", "suppliers.id");
-        RightJoin join = CF.rightJoin("suppliers", onClause);
+        On onClause = Filters.on("products.supplier_id", "suppliers.id");
+        RightJoin join = Filters.rightJoin("suppliers", onClause);
 
         String result = join.toString();
         Assertions.assertTrue(result.contains("RIGHT JOIN"));
@@ -138,8 +131,8 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testCopy() {
-        On condition = CF.on("orders.customer_id", "customers.id");
-        RightJoin original = CF.rightJoin("customers", condition);
+        On condition = Filters.on("orders.customer_id", "customers.id");
+        RightJoin original = Filters.rightJoin("customers", condition);
 
         RightJoin copy = original.copy();
 
@@ -152,7 +145,7 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testCopyWithoutCondition() {
-        RightJoin original = CF.rightJoin("categories");
+        RightJoin original = Filters.rightJoin("categories");
 
         RightJoin copy = original.copy();
 
@@ -163,9 +156,9 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        RightJoin join1 = CF.rightJoin("products");
-        RightJoin join2 = CF.rightJoin("products");
-        RightJoin join3 = CF.rightJoin("categories");
+        RightJoin join1 = Filters.rightJoin("products");
+        RightJoin join2 = Filters.rightJoin("products");
+        RightJoin join3 = Filters.rightJoin("categories");
 
         Assertions.assertEquals(join1.hashCode(), join2.hashCode());
         Assertions.assertNotEquals(join1.hashCode(), join3.hashCode());
@@ -173,12 +166,12 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testEquals() {
-        On condition = CF.on("a.id", "b.a_id");
+        On condition = Filters.on("a.id", "b.a_id");
 
-        RightJoin join1 = CF.rightJoin("tableB");
-        RightJoin join2 = CF.rightJoin("tableB");
-        RightJoin join3 = CF.rightJoin("tableC");
-        RightJoin join4 = CF.rightJoin("tableB", condition);
+        RightJoin join1 = Filters.rightJoin("tableB");
+        RightJoin join2 = Filters.rightJoin("tableB");
+        RightJoin join3 = Filters.rightJoin("tableC");
+        RightJoin join4 = Filters.rightJoin("tableB", condition);
 
         Assertions.assertTrue(join1.equals(join1));
         Assertions.assertTrue(join1.equals(join2));
@@ -191,8 +184,8 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testPracticalExample1() {
         // Get all customers, even those without orders
-        On onClause = CF.on("orders.customer_id", "customers.id");
-        RightJoin join = CF.rightJoin("customers", onClause);
+        On onClause = Filters.on("orders.customer_id", "customers.id");
+        RightJoin join = Filters.rightJoin("customers", onClause);
 
         // Would result in: RIGHT JOIN customers ON orders.customer_id = customers.id
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.getOperator());
@@ -202,8 +195,8 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testPracticalExample2() {
         // Get all products, including those never ordered
-        On onClause = CF.on("order_items.product_id", "products.id");
-        RightJoin join = CF.rightJoin("products", onClause);
+        On onClause = Filters.on("order_items.product_id", "products.id");
+        RightJoin join = Filters.rightJoin("products", onClause);
 
         // Would result in: RIGHT JOIN products ON order_items.product_id = products.id
         String result = join.toString();
@@ -214,8 +207,8 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testPracticalExample3() {
         // Complex right join with additional conditions
-        And complexCondition = CF.and(CF.on("sales.product_id", "products.id"), CF.eq("products.active", true), CF.gt("products.price", 0));
-        RightJoin activeProducts = CF.rightJoin("products", complexCondition);
+        And complexCondition = Filters.and(Filters.on("sales.product_id", "products.id"), Filters.eq("products.active", true), Filters.gt("products.price", 0));
+        RightJoin activeProducts = Filters.rightJoin("products", complexCondition);
 
         // Gets all active products with price > 0, even if they have no sales
         Assertions.assertEquals(2, activeProducts.getParameters().size());
@@ -224,9 +217,9 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testMultipleTablesJoin() {
         List<String> tables = Arrays.asList("departments", "locations");
-        And joinCondition = CF.and(CF.on("employees.dept_id", "departments.id"), CF.on("departments.location_id", "locations.id"));
+        And joinCondition = Filters.and(Filters.on("employees.dept_id", "departments.id"), Filters.on("departments.location_id", "locations.id"));
 
-        RightJoin join = CF.rightJoin(tables, joinCondition);
+        RightJoin join = Filters.rightJoin(tables, joinCondition);
 
         // Gets all departments and locations, even without employees
         Assertions.assertEquals(2, join.getJoinEntities().size());

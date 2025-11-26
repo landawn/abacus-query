@@ -14,8 +14,6 @@
 
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.query.condition.Filters.CF;
-
 /**
  * Represents a condition that checks if a property value is NULL.
  * This class extends {@link Is} to provide a specialized condition for NULL checks,
@@ -74,7 +72,7 @@ public class IsNull extends Is {
      * It's shared across all instances to reduce memory overhead and ensure
      * consistency in SQL generation.
      */
-    static final Expression NULL = CF.expr("NULL");
+    static final Expression NULL = Filters.expr("NULL");
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -124,7 +122,7 @@ public class IsNull extends Is {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
      */
     public IsNull(final String propName) {
         super(propName, NULL);

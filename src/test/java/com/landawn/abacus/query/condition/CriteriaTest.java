@@ -9,24 +9,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.SQLBuilder.NSC;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Cell;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Criteria;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.Expression;
-import com.landawn.abacus.query.condition.GreaterThan;
-import com.landawn.abacus.query.condition.Join;
-import com.landawn.abacus.query.condition.Limit;
-import com.landawn.abacus.query.condition.Not;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Or;
-import com.landawn.abacus.query.condition.SubQuery;
-import com.landawn.abacus.query.condition.Where;
-import com.landawn.abacus.query.condition.Filters.CF;
+import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.NamingPolicy;
 
@@ -370,9 +354,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Criteria criteria = Filters.criteria()
-                .where(Filters.in("id", Arrays.asList(1, 2, 3)))
-                .having(Filters.between("count", 10, 100));
+        Criteria criteria = Filters.criteria().where(Filters.in("id", Arrays.asList(1, 2, 3))).having(Filters.between("count", 10, 100));
 
         criteria.clearParameters();
 
@@ -466,7 +448,7 @@ public class CriteriaTest extends TestBase {
         Assertions.assertTrue(result.contains("first_name = 'John'"));
         Assertions.assertTrue(result.contains("last_name"));
 
-        String sql = NSC.selectFrom(Account.class).where(CF.eq("firstName", "John")).orderBy("lastName").sql();
+        String sql = NSC.selectFrom(Account.class).where(Filters.eq("firstName", "John")).orderBy("lastName").sql();
         Assertions.assertTrue(sql.contains("first_name"));
         Assertions.assertTrue(sql.contains("last_name"));
     }

@@ -70,7 +70,7 @@ import com.landawn.abacus.util.Strings;
  *
  * // Join with Expression for custom conditions
  * Join exprJoin = new Join("orders o",
- *     CF.expr("customers.id = o.customer_id"));
+ *     Filters.expr("customers.id = o.customer_id"));
  * // Generates: JOIN orders o customers.id = o.customer_id
  *
  * // Join multiple tables
@@ -160,14 +160,14 @@ public class Join extends AbstractCondition {
      *
      * // Join with Expression for custom condition
      * Join exprJoin = new Join("orders o",
-     *     CF.expr("customers.id = o.customer_id"));
+     *     Filters.expr("customers.id = o.customer_id"));
      * // Generates: JOIN orders o customers.id = o.customer_id
      *
      * // Join with complex condition using And
      * Join complexJoin = new Join("products p",
      *     new And(
      *         new On("categories.id", "p.category_id"),
-     *         new Equal("p.active", true)
+     *         Filters.eq("p.active", true)
      *     ));
      * // Generates: JOIN products p (ON categories.id = p.category_id) AND (p.active = true)
      * }</pre>
@@ -220,8 +220,8 @@ public class Join extends AbstractCondition {
      * // Join multiple tables with Expression
      * Join exprMultiJoin = new Join(tables,
      *     new And(
-     *         CF.expr("o.customer_id = c.id"),
-     *         CF.expr("o.status = 'active'")
+     *         Filters.expr("o.customer_id = c.id"),
+     *         Filters.expr("o.status = 'active'")
      *     ));
      * // Generates: JOIN orders o, customers c (o.customer_id = c.id) AND (o.status = 'active')
      * }</pre>
@@ -286,7 +286,7 @@ public class Join extends AbstractCondition {
      * Condition retrieved = join.getCondition(); // Returns the On condition
      *
      * // Create join with Expression
-     * Expression exprCondition = CF.expr("a.id = b.a_id");
+     * Condition exprCondition = Filters.expr("a.id = b.a_id");
      * Join exprJoin = new Join("table_b b", exprCondition);
      * Condition exprRetrieved = exprJoin.getCondition(); // Returns the Expression
      * }</pre>
@@ -306,10 +306,10 @@ public class Join extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Join join = new Join("orders o", 
+     * Join join = new Join("orders o",
      *     new And(
-     *         new Equal("o.customer_id", "c.id"),
-     *         new GreaterThan("o.amount", 1000)
+     *         new On("c.id", "o.customer_id"),
+     *         Filters.gt("o.amount", 1000)
      *     ));
      * List<Object> params = join.getParameters(); // Returns [1000]
      * }</pre>
@@ -348,7 +348,7 @@ public class Join extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Join original = new Join("orders o", new Equal("o.customer_id", "c.id"));
+     * Join original = new Join("orders o", new On("c.id", "o.customer_id"));
      * Join copy = original.copy();
      * // copy is independent of original
      * }</pre>
@@ -388,7 +388,7 @@ public class Join extends AbstractCondition {
      * j2.toString(policy); // "JOIN orders o ON c.id = o.customer_id"
      *
      * // Join with Expression condition
-     * Join j3 = new Join("orders o", CF.expr("c.id = o.customer_id"));
+     * Join j3 = new Join("orders o", Filters.expr("c.id = o.customer_id"));
      * j3.toString(policy); // "JOIN orders o c.id = o.customer_id"
      *
      * // Multiple tables
@@ -412,7 +412,7 @@ public class Join extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression expr = CF.expr("c.id = o.customer_id");
+     * Condition expr = Filters.expr("c.id = o.customer_id");
      * Join j1 = new Join("orders o", expr);
      * Join j2 = new Join("orders o", expr);
      * assert j1.hashCode() == j2.hashCode();
@@ -440,11 +440,11 @@ public class Join extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Join j1 = new Join("orders o", new Equal("c.id", "o.customer_id"));
-     * Join j2 = new Join("orders o", new Equal("c.id", "o.customer_id"));
+     * Join j1 = new Join("orders o", new On("c.id", "o.customer_id"));
+     * Join j2 = new Join("orders o", new On("c.id", "o.customer_id"));
      * assert j1.equals(j2); // true
-     * 
-     * Join j3 = new Join("products p", new Equal("c.id", "p.category_id"));
+     *
+     * Join j3 = new Join("products p", new On("c.id", "p.category_id"));
      * assert !j1.equals(j3); // false
      * }</pre>
      *

@@ -35,9 +35,9 @@ import com.landawn.abacus.query.SQLBuilder.NSC;
 import com.landawn.abacus.query.SQLBuilder.PAC;
 import com.landawn.abacus.query.SQLBuilder.PLC;
 import com.landawn.abacus.query.SQLBuilder.PSC;
-import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Expression;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.util.Array;
@@ -662,12 +662,12 @@ public class SQLBuilder10Test extends TestBase {
     //    @Test
     //    public void testAppendIf() {
     //        // With condition - true
-    //        String sql = PSC.select("*").from("users").appendIf(true, CF.gt("age", 18)).sql();
+    //        String sql = PSC.select("*").from("users").appendIf(true, Filters.gt("age", 18)).sql();
     //
     //        assertEquals("SELECT * FROM users WHERE age > ?", sql);
     //
     //        // With condition - false
-    //        sql = PSC.select("*").from("users").appendIf(false, CF.gt("age", 18)).sql();
+    //        sql = PSC.select("*").from("users").appendIf(false, Filters.gt("age", 18)).sql();
     //
     //        assertEquals("SELECT * FROM users", sql);
     //
@@ -677,7 +677,7 @@ public class SQLBuilder10Test extends TestBase {
     //        assertEquals("SELECT * FROM users FOR UPDATE", sql);
     //
     //        // With consumer
-    //        sql = PSC.select("*").from("users").appendIf(true, builder -> builder.where(CF.gt("age", 18)).orderBy("name")).sql();
+    //        sql = PSC.select("*").from("users").appendIf(true, builder -> builder.where(Filters.gt("age", 18)).orderBy("name")).sql();
     //
     //        assertTrue(sql.contains("WHERE age > ?"));
     //        assertTrue(sql.contains("ORDER BY name"));
@@ -686,11 +686,11 @@ public class SQLBuilder10Test extends TestBase {
     //    @Test
     //    public void testAppendIfOrElse() {
     //        // With condition
-    //        String sql = PSC.select("*").from("users").appendIfOrElse(true, CF.eq("status", "active"), CF.eq("status", "inactive")).sql();
+    //        String sql = PSC.select("*").from("users").appendIfOrElse(true, Filters.eq("status", "active"), Filters.eq("status", "inactive")).sql();
     //
     //        assertEquals("SELECT * FROM users WHERE status = ?", sql);
     //
-    //        sql = PSC.select("*").from("users").appendIfOrElse(false, CF.eq("status", "active"), CF.eq("status", "inactive")).sql();
+    //        sql = PSC.select("*").from("users").appendIfOrElse(false, Filters.eq("status", "active"), Filters.eq("status", "inactive")).sql();
     //
     //        assertEquals("SELECT * FROM users WHERE status = ?", sql);
     //
@@ -1012,20 +1012,14 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testConditionsWithAnd() {
-        String sql = PSC.select("*")
-                .from("users")
-                .where(Filters.and(Filters.gt("age", 18), Filters.lt("age", 65), Filters.eq("status", "ACTIVE")))
-                .sql();
+        String sql = PSC.select("*").from("users").where(Filters.and(Filters.gt("age", 18), Filters.lt("age", 65), Filters.eq("status", "ACTIVE"))).sql();
 
         assertTrue(sql.contains("WHERE (age > ?) AND (age < ?) AND (status = ?)"));
     }
 
     @Test
     public void testConditionsWithOr() {
-        String sql = PSC.select("*")
-                .from("users")
-                .where(Filters.or(Filters.eq("status", "ACTIVE"), Filters.eq("status", "PENDING")))
-                .sql();
+        String sql = PSC.select("*").from("users").where(Filters.or(Filters.eq("status", "ACTIVE"), Filters.eq("status", "PENDING"))).sql();
 
         assertTrue(sql.contains("WHERE (status = ?) OR (status = ?)"));
     }
@@ -1088,12 +1082,7 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testCriteriaCondition() {
-        Criteria criteria = Filters.criteria()
-                .where(Filters.gt("age", 18))
-                .groupBy("status")
-                .having(Filters.gt("COUNT(*)", 5))
-                .orderBy("status")
-                .limit(10);
+        Criteria criteria = Filters.criteria().where(Filters.gt("age", 18)).groupBy("status").having(Filters.gt("COUNT(*)", 5)).orderBy("status").limit(10);
 
         String sql = PSC.select("status", "COUNT(*)").from("users").append(criteria).sql();
 
@@ -1332,8 +1321,7 @@ public class SQLBuilder10Test extends TestBase {
 
         String sql = PSC.update("users")
                 .set(updateValues)
-                .where(Filters.and(Filters.lt("lastLoginDate", new Date()),
-                        Filters.or(Filters.eq("status", "PENDING"), Filters.eq("status", "ACTIVE"))))
+                .where(Filters.and(Filters.lt("lastLoginDate", new Date()), Filters.or(Filters.eq("status", "PENDING"), Filters.eq("status", "ACTIVE"))))
                 .sql();
 
         assertTrue(sql.contains("UPDATE users SET"));
@@ -1463,9 +1451,7 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testDeleteFromWithMultipleConditions() {
-        String sql = PSC.deleteFrom("users")
-                .where(Filters.and(Filters.eq("status", "DELETED"), Filters.lt("deletedDate", new Date())))
-                .sql();
+        String sql = PSC.deleteFrom("users").where(Filters.and(Filters.eq("status", "DELETED"), Filters.lt("deletedDate", new Date()))).sql();
 
         assertTrue(sql.contains("DELETE FROM users"));
         assertTrue(sql.contains("WHERE (status = ?) AND (deleted_date < ?)"));

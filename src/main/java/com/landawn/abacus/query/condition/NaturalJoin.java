@@ -51,19 +51,19 @@ import java.util.Collection;
  *
  * // Natural join with additional filter condition
  * NaturalJoin join2 = new NaturalJoin("departments",
- *     new Equal("status", "active"));
+ *     Filters.eq("status", "active"));
  * // Generates: NATURAL JOIN departments (status = 'active')
  * // Natural join on matching columns, then apply status filter
  *
  * // Natural join with Expression condition
  * NaturalJoin join3 = new NaturalJoin("orders",
- *     CF.expr("order_date > '2024-01-01'"));
+ *     Filters.expr("order_date > '2024-01-01'"));
  * // Generates: NATURAL JOIN orders order_date > '2024-01-01'
  *
  * // Multiple tables natural join
  * List<String> tables = Arrays.asList("employees", "departments");
  * NaturalJoin multiJoin = new NaturalJoin(tables,
- *     new Equal("active", true));
+ *     Filters.eq("active", true));
  * // Generates: NATURAL JOIN employees, departments (active = true)
  * }</pre>
  * 
@@ -119,22 +119,22 @@ public class NaturalJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Natural join filtered by date using GreaterThan condition
+     * // Natural join filtered by date using Filters.gt()
      * NaturalJoin join1 = new NaturalJoin("orders",
-     *     new GreaterThan("orderDate", "2024-01-01"));
+     *     Filters.gt("orderDate", "2024-01-01"));
      * // Generates: NATURAL JOIN orders (orderDate > '2024-01-01')
      * // Natural join on matching columns, then filter by order date
      *
      * // Natural join with Expression condition
      * NaturalJoin join2 = new NaturalJoin("products",
-     *     CF.expr("price > 100 AND stock > 0"));
+     *     Filters.expr("price > 100 AND stock > 0"));
      * // Generates: NATURAL JOIN products price > 100 AND stock > 0
      *
      * // Natural join with complex And condition
      * NaturalJoin join3 = new NaturalJoin("employees",
      *     new And(
-     *         new Equal("status", "active"),
-     *         new GreaterThan("hire_date", "2020-01-01")
+     *         Filters.eq("status", "active"),
+     *         Filters.gt("hire_date", "2020-01-01")
      *     ));
      * // Generates: NATURAL JOIN employees (status = 'active') AND (hire_date > '2020-01-01')
      * }</pre>
@@ -161,20 +161,20 @@ public class NaturalJoin extends Join {
      * // Join customers, orders, and products naturally with filter
      * List<String> tables = Arrays.asList("customers", "orders", "products");
      * NaturalJoin join1 = new NaturalJoin(tables,
-     *     new GreaterThan("totalAmount", 1000));
+     *     Filters.gt("totalAmount", 1000));
      * // Generates: NATURAL JOIN customers, orders, products (totalAmount > 1000)
      * // Natural join across all tables on matching columns, filtered by amount
      *
      * // Natural join with Expression condition
      * NaturalJoin join2 = new NaturalJoin(tables,
-     *     CF.expr("status = 'active' AND verified = true"));
+     *     Filters.expr("status = 'active' AND verified = true"));
      * // Generates: NATURAL JOIN customers, orders, products status = 'active' AND verified = true
      *
      * // Natural join with complex conditions
      * NaturalJoin join3 = new NaturalJoin(tables,
      *     new And(
-     *         new Equal("region", "US"),
-     *         new GreaterThan("created_date", "2024-01-01")
+     *         Filters.eq("region", "US"),
+     *         Filters.gt("created_date", "2024-01-01")
      *     ));
      * // Generates: NATURAL JOIN customers, orders, products (region = 'US') AND (created_date > '2024-01-01')
      * }</pre>

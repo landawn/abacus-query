@@ -6,10 +6,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Intersect;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.SubQuery;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class IntersectTest extends TestBase {
@@ -68,7 +64,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = CF.subQuery("SELECT id FROM products WHERE price > ?");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM products WHERE price > ?");
         Intersect original = new Intersect(subQuery);
         Intersect copy = original.copy();
 

@@ -39,7 +39,7 @@ package com.landawn.abacus.query.condition;
  * // Generates: email IS NULL
  * 
  * // Check against a custom expression
- * Expression customExpr = CF.expr("UNKNOWN");
+ * Expression customExpr = Filters.expr("UNKNOWN");
  * Is unknownCheck = new Is("status", customExpr);
  * // Generates: status IS UNKNOWN
  * }</pre>
@@ -71,19 +71,19 @@ public class Is extends Binary {
      * // Generates: phone_number IS NULL
      * 
      * // Check against a special expression
-     * Expression nanExpr = CF.expr("NAN");
+     * Expression nanExpr = Filters.expr("NAN");
      * Is nanCheck = new Is("temperature", nanExpr);
      * // Generates: temperature IS NAN
      * 
      * // Custom database-specific value
-     * Expression unknownExpr = CF.expr("UNKNOWN");
+     * Expression unknownExpr = Filters.expr("UNKNOWN");
      * Is triStateCheck = new Is("verification_status", unknownExpr);
      * // Generates: verification_status IS UNKNOWN
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
      * @param propValue the value to compare against (can be null, literal value, or subquery)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
      */
     public Is(final String propName, final Object propValue) {
         super(propName, Operator.IS, propValue);

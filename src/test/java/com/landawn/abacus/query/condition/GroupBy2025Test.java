@@ -14,7 +14,11 @@
 
 package com.landawn.abacus.query.condition;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -24,9 +28,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Filters.CF;
+import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -37,7 +40,7 @@ public class GroupBy2025Test extends TestBase {
 
     @Test
     public void testConstructorWithCondition() {
-        GroupBy groupBy = new GroupBy(CF.expr("department"));
+        GroupBy groupBy = new GroupBy(Filters.expr("department"));
 
         assertNotNull(groupBy);
         assertEquals(Operator.GROUP_BY, groupBy.getOperator());
@@ -209,7 +212,7 @@ public class GroupBy2025Test extends TestBase {
 
     @Test
     public void testWithExpression() {
-        GroupBy groupBy = new GroupBy(CF.expr("YEAR(order_date)"));
+        GroupBy groupBy = new GroupBy(Filters.expr("YEAR(order_date)"));
         String result = groupBy.toString();
 
         assertNotNull(result);

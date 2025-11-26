@@ -28,19 +28,38 @@ package com.landawn.abacus.query.condition;
  *   <li>NULL values are considered equal when comparing rows</li>
  * </ul>
  *
- * <p>Database support:</p>
- * <ul>
- *   <li>Oracle, DB2: Use MINUS keyword</li>
- *   <li>PostgreSQL, SQL Server, SQLite: Use EXCEPT keyword</li>
- *   <li>MySQL: Does not support MINUS/EXCEPT directly (use NOT IN or LEFT JOIN)</li>
- * </ul>
- *
  * <p>Common use cases:</p>
  * <ul>
  *   <li>Finding records that exist in one table but not another</li>
  *   <li>Identifying missing data or gaps</li>
  *   <li>Data validation and comparison between datasets</li>
  *   <li>Finding customers without orders, products never sold, etc.</li>
+ * </ul>
+ *
+ * <p>When to use MINUS vs other approaches:
+ * <ul>
+ *   <li>Use MINUS for clean, declarative set difference operations</li>
+ *   <li>Use MINUS when comparing entire row structures (multiple columns)</li>
+ *   <li>Consider NOT EXISTS for better performance in some cases</li>
+ *   <li>Consider LEFT JOIN with NULL check for single-table differences</li>
+ *   <li>Use NOT IN for simple single-column exclusions (but beware of NULL values)</li>
+ * </ul>
+ *
+ * <p>Performance considerations:
+ * <ul>
+ *   <li>MINUS requires duplicate elimination, which involves sorting or hashing</li>
+ *   <li>Performance depends on result set sizes and database optimization</li>
+ *   <li>Indexes on columns used in both queries can significantly improve performance</li>
+ *   <li>For large datasets, NOT EXISTS may outperform MINUS in some databases</li>
+ *   <li>Consider the cardinality of both result sets when choosing an approach</li>
+ * </ul>
+ *
+ * <p>Database support:
+ * <ul>
+ *   <li>Oracle, DB2: Use MINUS keyword</li>
+ *   <li>PostgreSQL, SQL Server, SQLite: Use EXCEPT keyword</li>
+ *   <li>MySQL: Does not support MINUS/EXCEPT directly (use NOT IN or LEFT JOIN)</li>
+ *   <li>Part of SQL standard as EXCEPT; MINUS is Oracle-specific but widely recognized</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

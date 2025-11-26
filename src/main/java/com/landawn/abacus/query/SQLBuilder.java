@@ -35,8 +35,8 @@ import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Expression;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.InSubQuery;
@@ -165,8 +165,8 @@ import com.landawn.abacus.util.u.Optional;
  * // Basic SELECT query with parameterized conditions
  * String sql = PSC.select("firstName", "lastName", "email")
  *     .from("users")
- *     .where(CF.eq("department", "Engineering"))
- *     .and(CF.gt("salary", 50000))
+ *     .where(Filters.eq("department", "Engineering"))
+ *     .and(Filters.gt("salary", 50000))
  *     .orderBy("lastName", "firstName")
  *     .sql();
  * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email 
@@ -177,9 +177,9 @@ import com.landawn.abacus.util.u.Optional;
  *     .from("users", "u")
  *     .join("departments", "d").on("u.department_id = d.id")
  *     .leftJoin("projects", "p").on("u.id = p.assigned_user_id")
- *     .where(CF.eq("u.active", true))
+ *     .where(Filters.eq("u.active", true))
  *     .groupBy("u.id", "u.firstName", "u.lastName", "d.name")
- *     .having(CF.gt("COUNT(p.id)", 2))
+ *     .having(Filters.gt("COUNT(p.id)", 2))
  *     .orderBy("u.lastName")
  *     .sql();
  *
@@ -192,14 +192,14 @@ import com.landawn.abacus.util.u.Optional;
  * String sql = PSC.update("users")
  *     .set("last_login", LocalDateTime.now())
  *     .set("login_count", "login_count + 1")
- *     .where(CF.eq("id", userId))
+ *     .where(Filters.eq("id", userId))
  *     .sql();
  *
  * // Named parameter query for Spring/Hibernate integration
  * String sql = NSC.select("*")
  *     .from("orders")
- *     .where(CF.between("order_date", ":startDate", ":endDate"))
- *     .and(CF.in("status", ":statusList"))
+ *     .where(Filters.between("order_date", ":startDate", ":endDate"))
+ *     .and(Filters.in("status", ":statusList"))
  *     .sql();
  * }</pre>
  *
@@ -335,7 +335,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Simple SELECT query
      * String sql = PSC.select("id", "name")
      *                 .from("account")
-     *                 .where(CF.gt("age", 18))
+     *                 .where(Filters.gt("age", 18))
      *                 .sql();
      * // Result: SELECT id, name FROM account WHERE age > ?
      * }</pre> 
@@ -664,7 +664,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SCSB.select("firstName", "lastName").from("account").where(CF.eq("id", 1)).sql();
+     * SCSB.select("firstName", "lastName").from("account").where(Filters.eq("id", 1)).sql();
      * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = 1
      * }</pre>
      *
@@ -1012,7 +1012,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.update("account")
          *                  .set("status", "'ACTIVE'")
-         *                  .where(CF.eq("id", 1))
+         *                  .where(Filters.eq("id", 1))
          *                  .sql();
          * // Output: UPDATE account SET status = 'ACTIVE' WHERE id = 1
          * }</pre>
@@ -1042,7 +1042,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.update("account", Account.class)
          *                  .set("firstName", "'Jane'")
-         *                  .where(CF.eq("id", 1))
+         *                  .where(Filters.eq("id", 1))
          *                  .sql();
          * // Output: UPDATE account SET first_name = 'Jane' WHERE id = 1
          * }</pre>
@@ -1075,7 +1075,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.update(Account.class)
          *                  .set("status", "'INACTIVE'")
-         *                  .where(CF.lt("lastLogin", "2023-01-01"))
+         *                  .where(Filters.lt("lastLogin", "2023-01-01"))
          *                  .sql();
          * // Output: UPDATE account SET status = 'INACTIVE' WHERE last_login < '2023-01-01'
          * }</pre>
@@ -1099,7 +1099,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excluded = N.asSet("email", "createdDate");
          * String sql = SCSB.update(Account.class, excluded)
          *                  .set("status", "'ACTIVE'")
-         *                  .where(CF.eq("id", 1))
+         *                  .where(Filters.eq("id", 1))
          *                  .sql();
          * // Output: UPDATE account SET status = 'ACTIVE' WHERE id = 1
          * }</pre>
@@ -1131,7 +1131,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.deleteFrom("account")
-         *                  .where(CF.eq("status", "'DELETED'"))
+         *                  .where(Filters.eq("status", "'DELETED'"))
          *                  .sql();
          * // Output: DELETE FROM account WHERE status = 'DELETED'
          * }</pre>
@@ -1160,7 +1160,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.deleteFrom("account", Account.class)
-         *                  .where(CF.eq("status", "'INACTIVE'"))
+         *                  .where(Filters.eq("status", "'INACTIVE'"))
          *                  .sql();
          * // Output: DELETE FROM account WHERE status = 'INACTIVE'
          * }</pre>
@@ -1192,9 +1192,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.deleteFrom(Account.class)
-         *                  .where(CF.and(
-         *                      CF.eq("status", "'INACTIVE'"),
-         *                      CF.lt("lastLogin", "2022-01-01")
+         *                  .where(Filters.and(
+         *                      Filters.eq("status", "'INACTIVE'"),
+         *                      Filters.lt("lastLogin", "2022-01-01")
          *                  ))
          *                  .sql();
          * // Output: DELETE FROM account WHERE status = 'INACTIVE' AND last_login < '2022-01-01'
@@ -1226,7 +1226,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.select("COUNT(DISTINCT customer_id)")
          *                  .from("orders")
-         *                  .where(CF.between("order_date", "2023-01-01", "2023-12-31"))
+         *                  .where(Filters.between("order_date", "2023-01-01", "2023-12-31"))
          *                  .sql();
          * // Output: SELECT COUNT(DISTINCT customer_id) FROM orders WHERE order_date BETWEEN '2023-01-01' AND '2023-12-31'
          * }</pre>
@@ -1255,7 +1255,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.select("firstName", "lastName", "email")
          *                  .from("account")
-         *                  .where(CF.eq("status", "'ACTIVE'"))
+         *                  .where(Filters.eq("status", "'ACTIVE'"))
          *                  .sql();
          * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
          * }</pre>
@@ -1286,7 +1286,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = SCSB.select(columns)
          *                  .from("account")
-         *                  .where(CF.eq("status", "'ACTIVE'"))
+         *                  .where(Filters.eq("status", "'ACTIVE'"))
          *                  .sql();
          * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
          * }</pre>
@@ -1448,7 +1448,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.selectFrom(Account.class)
-         *                  .where(CF.eq("status", "'ACTIVE'"))
+         *                  .where(Filters.eq("status", "'ACTIVE'"))
          *                  .sql();
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
          * }</pre>
@@ -1493,7 +1493,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.selectFrom(Order.class, true)
-         *                  .where(CF.gt("totalAmount", 100))
+         *                  .where(Filters.gt("totalAmount", 100))
          *                  .sql();
          * // Output includes automatic joins for sub-entities
          * }</pre>
@@ -1516,7 +1516,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.selectFrom(Order.class, "o", true)
-         *                  .where(CF.eq("o.status", "'COMPLETED'"))
+         *                  .where(Filters.eq("o.status", "'COMPLETED'"))
          *                  .sql();
          * // Output includes aliased columns and joins for sub-entities
          * }</pre>
@@ -1541,7 +1541,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("largeBlob", "metadata");
          * String sql = SCSB.selectFrom(Account.class, excluded)
-         *                  .where(CF.eq("active", true))
+         *                  .where(Filters.eq("active", true))
          *                  .sql();
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE active = true
          * }</pre>
@@ -1590,7 +1590,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("deletedFlag");
          * String sql = SCSB.selectFrom(Order.class, true, excluded)
-         *                  .where(CF.gt("createdDate", "2023-01-01"))
+         *                  .where(Filters.gt("createdDate", "2023-01-01"))
          *                  .sql();
          * // Output includes Order with Customer sub-entity, excluding deletedFlag
          * }</pre>
@@ -1616,7 +1616,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("debugInfo");
          * String sql = SCSB.selectFrom(Order.class, "ord", true, excluded)
-         *                  .where(CF.gt("ord.totalAmount", 1000))
+         *                  .where(Filters.gt("ord.totalAmount", 1000))
          *                  .sql();
          * // Output: Complex SELECT with alias, sub-entities, and exclusions
          * }</pre>
@@ -1757,7 +1757,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.selectFrom(Account.class, "a", "account",
          *                             Order.class, "o", "order")
-         *                  .where(CF.eq("a.status", "'ACTIVE'"))
+         *                  .where(Filters.eq("a.status", "'ACTIVE'"))
          *                  .sql();
          * // Output: SELECT ... FROM account a, orders o WHERE a.status = 'ACTIVE'
          * }</pre>
@@ -1788,7 +1788,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> orderExcluded = N.asSet("debugData");
          * String sql = SCSB.selectFrom(Account.class, "a", "account", accountExcluded,
          *                             Order.class, "o", "order", orderExcluded)
-         *                  .where(CF.eq("o.status", "'COMPLETED'"))
+         *                  .where(Filters.eq("o.status", "'COMPLETED'"))
          *                  .sql();
          * }</pre>
          *
@@ -1828,7 +1828,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Selection(Order.class, "o", "order", null, true, null)
          * );
          * String sql = SCSB.selectFrom(selections)
-         *                  .where(CF.eq("a.verified", true))
+         *                  .where(Filters.eq("a.verified", true))
          *                  .sql();
          * // Output: SELECT ... FROM account a, orders o WHERE a.verified = true
          * }</pre>
@@ -1855,7 +1855,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.count("account")
-         *                  .where(CF.eq("status", "'ACTIVE'"))
+         *                  .where(Filters.eq("status", "'ACTIVE'"))
          *                  .sql();
          * // Output: SELECT count(*) FROM account WHERE status = 'ACTIVE'
          * }</pre>
@@ -1879,7 +1879,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.count(Account.class)
-         *                  .where(CF.between("createdDate", "2023-01-01", "2023-12-31"))
+         *                  .where(Filters.between("createdDate", "2023-01-01", "2023-12-31"))
          *                  .sql();
          * // Output: SELECT count(*) FROM account WHERE created_date BETWEEN '2023-01-01' AND '2023-12-31'
          * }</pre>
@@ -1903,9 +1903,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("status", "'ACTIVE'"),
-         *     CF.gt("balance", 1000)
+         * Condition cond = Filters.and(
+         *     Filters.eq("status", "'ACTIVE'"),
+         *     Filters.gt("balance", 1000)
          * );
          * String sql = SCSB.parse(cond, Account.class).sql();
          * // Output: status = 'ACTIVE' AND balance > 1000
@@ -1945,7 +1945,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * ACSB.select("firstName", "lastName").from("account").where(CF.eq("id", 1)).sql();
+     * ACSB.select("firstName", "lastName").from("account").where(Filters.eq("id", 1)).sql();
      * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = 1
      * }</pre>
      *
@@ -2298,7 +2298,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = ACSB.update("users")
          *                  .set("LAST_NAME", "'Smith'")
-         *                  .where(CF.eq("ID", 123))
+         *                  .where(Filters.eq("ID", 123))
          *                  .sql();
          * // Output: UPDATE USERS SET LAST_NAME = 'Smith' WHERE ID = 123
          * }</pre>
@@ -2328,7 +2328,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = ACSB.update("users", User.class)
          *                  .set("age", 31)  // "age" is mapped to "AGE" column
-         *                  .where(CF.eq("firstName", "'John'"))
+         *                  .where(Filters.eq("firstName", "'John'"))
          *                  .sql();
          * // Output: UPDATE USERS SET AGE = 31 WHERE FIRST_NAME = 'John'
          * }</pre>
@@ -2361,7 +2361,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = ACSB.update(User.class)
          *                  .set("age", 31)
-         *                  .where(CF.eq("firstName", "'John'"))
+         *                  .where(Filters.eq("firstName", "'John'"))
          *                  .sql();
          * // Output: UPDATE USER SET AGE = 31 WHERE FIRST_NAME = 'John'
          * }</pre>
@@ -2385,7 +2385,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
          * String sql = ACSB.update(User.class, excluded)
          *                  .set("age", 31)
-         *                  .where(CF.eq("id", 1))
+         *                  .where(Filters.eq("id", 1))
          *                  .sql();
          * // Output: UPDATE USER SET AGE = 31 WHERE ID = 1
          * }</pre>
@@ -2417,7 +2417,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.deleteFrom("users")
-         *                  .where(CF.lt("AGE", 18))
+         *                  .where(Filters.lt("AGE", 18))
          *                  .sql();
          * // Output: DELETE FROM USERS WHERE AGE < 18
          * }</pre>
@@ -2446,7 +2446,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.deleteFrom("users", User.class)
-         *                  .where(CF.eq("age", 18))  // "age" is mapped to "AGE" column
+         *                  .where(Filters.eq("age", 18))  // "age" is mapped to "AGE" column
          *                  .sql();
          * // Output: DELETE FROM USERS WHERE AGE = 18
          * }</pre>
@@ -2478,7 +2478,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.deleteFrom(User.class)
-         *                  .where(CF.eq("ID", 1))
+         *                  .where(Filters.eq("ID", 1))
          *                  .sql();
          * // Output: DELETE FROM USER WHERE ID = 1
          * }</pre>
@@ -2537,7 +2537,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = ACSB.select("firstName", "lastName", "age")
          *                  .from("users")
-         *                  .where(CF.gte("age", 18))
+         *                  .where(Filters.gte("age", 18))
          *                  .sql();
          * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age" 
          * //         FROM USERS WHERE AGE >= 18
@@ -2729,7 +2729,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.selectFrom(User.class)
-         *                  .where(CF.gte("age", 18))
+         *                  .where(Filters.gte("age", 18))
          *                  .sql();
          * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" 
          * //         FROM USER WHERE AGE >= 18
@@ -2752,7 +2752,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.selectFrom(User.class, "u")
-         *                  .where(CF.gte("u.AGE", 18))
+         *                  .where(Filters.gte("u.AGE", 18))
          *                  .sql();
          * // Output: SELECT u.ID AS "id", u.FIRST_NAME AS "firstName", u.LAST_NAME AS "lastName", u.AGE AS "age", u.EMAIL AS "email" 
          * //         FROM USER u WHERE u.AGE >= 18
@@ -2776,7 +2776,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.selectFrom(Order.class, true)
-         *                  .where(CF.eq("STATUS", "'ACTIVE'"))
+         *                  .where(Filters.eq("STATUS", "'ACTIVE'"))
          *                  .sql();
          * // Output includes JOINs for sub-entities like Customer
          * }</pre>
@@ -2799,7 +2799,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.selectFrom(Order.class, "o", true)
-         *                  .where(CF.eq("o.STATUS", "'ACTIVE'"))
+         *                  .where(Filters.eq("o.STATUS", "'ACTIVE'"))
          *                  .sql();
          * // Output includes aliased columns and JOINs for sub-entities
          * }</pre>
@@ -2824,7 +2824,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("largeBlob", "metadata"));
          * String sql = ACSB.selectFrom(User.class, excluded)
-         *                  .where(CF.eq("ACTIVE", true))
+         *                  .where(Filters.eq("ACTIVE", true))
          *                  .sql();
          * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" 
          * //         FROM USER WHERE ACTIVE = true
@@ -2874,7 +2874,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("deletedFlag"));
          * String sql = ACSB.selectFrom(Order.class, true, excluded)
-         *                  .where(CF.gt("CREATED_DATE", "'2023-01-01'"))
+         *                  .where(Filters.gt("CREATED_DATE", "'2023-01-01'"))
          *                  .sql();
          * // Output includes Order with Customer sub-entity, excluding deletedFlag
          * }</pre>
@@ -2900,7 +2900,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("debugInfo"));
          * String sql = ACSB.selectFrom(Order.class, "ord", true, excluded)
-         *                  .where(CF.gt("ord.TOTAL_AMOUNT", 1000))
+         *                  .where(Filters.gt("ord.TOTAL_AMOUNT", 1000))
          *                  .sql();
          * // Output: Complex SELECT with alias, sub-entities, and exclusions
          * }</pre>
@@ -3039,7 +3039,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.selectFrom(User.class, "u", "user", Order.class, "o", "order")
-         *                  .where(CF.eq("u.ACTIVE", true))
+         *                  .where(Filters.eq("u.ACTIVE", true))
          *                  .sql();
          * // Output: SELECT ... FROM USER u, ORDER o WHERE u.ACTIVE = true
          * }</pre>
@@ -3070,7 +3070,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> orderExcl = new HashSet<>(Arrays.asList("debugData"));
          * String sql = ACSB.selectFrom(User.class, "u", "user", userExcl,
          *                             Order.class, "o", "order", orderExcl)
-         *                  .where(CF.eq("o.STATUS", "'COMPLETED'"))
+         *                  .where(Filters.eq("o.STATUS", "'COMPLETED'"))
          *                  .sql();
          * // Output: SELECT ... FROM USER u, ORDER o WHERE o.STATUS = 'COMPLETED'
          * }</pre>
@@ -3110,7 +3110,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Selection(Order.class, "o", "order", null, true, null)
          * );
          * String sql = ACSB.selectFrom(selections)
-         *                  .where(CF.eq("u.VERIFIED", true))
+         *                  .where(Filters.eq("u.VERIFIED", true))
          *                  .sql();
          * // Output: SELECT ... FROM USER u, ORDER o WHERE u.VERIFIED = true
          * }</pre>
@@ -3137,7 +3137,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.count("users")
-         *                  .where(CF.eq("ACTIVE", true))
+         *                  .where(Filters.eq("ACTIVE", true))
          *                  .sql();
          * // Output: SELECT count(*) FROM USERS WHERE ACTIVE = true
          * }</pre>
@@ -3161,7 +3161,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.count(User.class)
-         *                  .where(CF.gte("AGE", 18))
+         *                  .where(Filters.gte("AGE", 18))
          *                  .sql();
          * // Output: SELECT count(*) FROM USER WHERE AGE >= 18
          * }</pre>
@@ -3184,7 +3184,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(CF.eq("firstName", "'John'"), CF.gt("age", 18));
+         * Condition cond = Filters.and(Filters.eq("firstName", "'John'"), Filters.gt("age", 18));
          * String sql = ACSB.parse(cond, User.class).sql();
          * // Output: FIRST_NAME = 'John' AND AGE > 18
          * }</pre>
@@ -3224,7 +3224,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LCSB.select("firstName", "lastName").from("userAccount").where(CF.eq("userId", 1)).sql();
+     * LCSB.select("firstName", "lastName").from("userAccount").where(Filters.eq("userId", 1)).sql();
      * // Output: SELECT firstName, lastName FROM userAccount WHERE userId = 1
      * }</pre>
      * 
@@ -3586,7 +3586,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = LCSB.update("users")
          *                  .set("lastName", "'Smith'")
-         *                  .where(CF.eq("id", 123))
+         *                  .where(Filters.eq("id", 123))
          *                  .sql();
          * // Output: UPDATE users SET lastName = 'Smith' WHERE id = 123
          * }</pre>
@@ -3616,7 +3616,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = LCSB.update("users", User.class)
          *                  .set("age", 31)
-         *                  .where(CF.eq("firstName", "'John'"))
+         *                  .where(Filters.eq("firstName", "'John'"))
          *                  .sql();
          * // Output: UPDATE users SET age = 31 WHERE firstName = 'John'
          * }</pre>
@@ -3650,7 +3650,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = LCSB.update(User.class)
          *                  .set("age", 31)
-         *                  .where(CF.eq("firstName", "'John'"))
+         *                  .where(Filters.eq("firstName", "'John'"))
          *                  .sql();
          * // Output: UPDATE users SET age = 31 WHERE firstName = 'John'
          * }</pre>
@@ -3678,7 +3678,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
          * String sql = LCSB.update(User.class, excluded)
          *                  .set("firstName", "'John'")
-         *                  .where(CF.eq("id", 123))
+         *                  .where(Filters.eq("id", 123))
          *                  .sql();
          * // Output: UPDATE users SET firstName = 'John' WHERE id = 123
          * }</pre>
@@ -3710,7 +3710,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.deleteFrom("users")
-         *                  .where(CF.eq("status", "'inactive'"))
+         *                  .where(Filters.eq("status", "'inactive'"))
          *                  .sql();
          * // Output: DELETE FROM users WHERE status = 'inactive'
          * }</pre>
@@ -3739,7 +3739,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.deleteFrom("users", User.class)
-         *                  .where(CF.eq("age", 18))
+         *                  .where(Filters.eq("age", 18))
          *                  .sql();
          * // Output: DELETE FROM users WHERE age = 18
          * }</pre>
@@ -3771,7 +3771,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.deleteFrom(User.class)
-         *                  .where(CF.eq("id", 1))
+         *                  .where(Filters.eq("id", 1))
          *                  .sql();
          * // Output: DELETE FROM users WHERE id = 1
          * }</pre>
@@ -3830,7 +3830,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = LCSB.select("firstName", "lastName", "email")
          *                  .from("users")
-         *                  .where(CF.eq("active", true))
+         *                  .where(Filters.eq("active", true))
          *                  .sql();
          * // Output: SELECT firstName, lastName, email FROM users WHERE active = true
          * }</pre>
@@ -4024,7 +4024,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.selectFrom(User.class)
-         *                  .where(CF.eq("active", true))
+         *                  .where(Filters.eq("active", true))
          *                  .sql();
          * // Output: SELECT id, firstName, lastName, email FROM users WHERE active = true
          * }</pre>
@@ -4048,7 +4048,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.selectFrom(User.class, "u")
-         *                  .where(CF.eq("u.active", true))
+         *                  .where(Filters.eq("u.active", true))
          *                  .sql();
          * // Output: SELECT u.id, u.firstName, u.lastName FROM users u WHERE u.active = true
          * }</pre>
@@ -4071,7 +4071,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.selectFrom(Order.class, true)
-         *                  .where(CF.gt("totalAmount", 100))
+         *                  .where(Filters.gt("totalAmount", 100))
          *                  .sql();
          * // Output includes JOINs for sub-entities
          * }</pre>
@@ -4094,7 +4094,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.selectFrom(Order.class, "o", true)
-         *                  .where(CF.eq("o.status", "'ACTIVE'"))
+         *                  .where(Filters.eq("o.status", "'ACTIVE'"))
          *                  .sql();
          * // Output includes aliased columns and JOINs for sub-entities
          * }</pre>
@@ -4118,7 +4118,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("largeBlob", "metadata"));
          * String sql = LCSB.selectFrom(User.class, excluded)
-         *                  .where(CF.eq("active", true))
+         *                  .where(Filters.eq("active", true))
          *                  .sql();
          * // Output: SELECT id, firstName, lastName, email FROM users WHERE active = true
          * }</pre>
@@ -4167,7 +4167,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("deletedFlag"));
          * String sql = LCSB.selectFrom(Order.class, true, excluded)
-         *                  .where(CF.gt("createdDate", "'2023-01-01'"))
+         *                  .where(Filters.gt("createdDate", "'2023-01-01'"))
          *                  .sql();
          * // Output includes Order with Customer sub-entity, excluding deletedFlag
          * }</pre>
@@ -4193,7 +4193,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("debugInfo"));
          * String sql = LCSB.selectFrom(Order.class, "ord", true, excluded)
-         *                  .where(CF.gt("ord.totalAmount", 1000))
+         *                  .where(Filters.gt("ord.totalAmount", 1000))
          *                  .sql();
          * // Output: Complex SELECT with alias, sub-entities, and exclusions
          * }</pre>
@@ -4338,7 +4338,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.selectFrom(User.class, "u", "user", Order.class, "o", "order")
-         *                  .where(CF.eq("u.active", true))
+         *                  .where(Filters.eq("u.active", true))
          *                  .sql();
          * // Output: SELECT ... FROM users u, orders o WHERE u.active = true
          * }</pre>
@@ -4372,7 +4372,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * String sql = LCSB.selectFrom(User.class, "u", "user", userExcl,
          *                             Order.class, "o", "order", orderExcl)
-         *                  .where(CF.eq("o.status", "'COMPLETED'"))
+         *                  .where(Filters.eq("o.status", "'COMPLETED'"))
          *                  .sql();
          * }</pre>
          * 
@@ -4413,7 +4413,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * 
          * String sql = LCSB.selectFrom(selections)
-         *                  .where(CF.eq("u.verified", true))
+         *                  .where(Filters.eq("u.verified", true))
          *                  .sql();
          * // Output: SELECT u.firstName AS "user.firstName", ... 
          * //         FROM users u, orders o 
@@ -4441,7 +4441,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.count("users")
-         *                  .where(CF.eq("active", true))
+         *                  .where(Filters.eq("active", true))
          *                  .sql();
          * // Output: SELECT count(*) FROM users WHERE active = true
          * }</pre>
@@ -4465,7 +4465,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.count(User.class)
-         *                  .where(CF.between("age", 18, 65))
+         *                  .where(Filters.between("age", 18, 65))
          *                  .sql();
          * // Output: SELECT count(*) FROM users WHERE age BETWEEN 18 AND 65
          * }</pre>
@@ -4489,9 +4489,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("active", true),
-         *     CF.gt("age", 18)
+         * Condition cond = Filters.and(
+         *     Filters.eq("active", true),
+         *     Filters.gt("age", 18)
          * );
          * 
          * String sql = LCSB.parse(cond, User.class).sql();
@@ -4531,7 +4531,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Property names are preserved as-is
      * String sql = PSB.select("first_Name", "last_NaMe")
      *                 .from("account")
-     *                 .where(CF.eq("last_NaMe", 1))
+     *                 .where(Filters.eq("last_NaMe", 1))
      *                 .sql();
      * // Output: SELECT first_Name, last_NaMe FROM account WHERE last_NaMe = ?
      * }</pre>
@@ -4862,7 +4862,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * SQLBuilder builder = PSB.update("users")
          *                         .set("name", "email")
-         *                         .where(CF.eq("id", 1));
+         *                         .where(Filters.eq("id", 1));
          * }</pre>
          * 
          * @param tableName the name of the table to update
@@ -4890,7 +4890,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * SQLBuilder builder = PSB.update("users", User.class)
          *                         .set("name", "email")
-         *                         .where(CF.eq("id", 1));
+         *                         .where(Filters.eq("id", 1));
          * }</pre>
          * 
          * @param tableName the name of the table to update
@@ -4921,7 +4921,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SQLBuilder builder = PSB.update(User.class)
-         *                         .where(CF.eq("id", 1));
+         *                         .where(Filters.eq("id", 1));
          * }</pre>
          * 
          * @param entityClass the entity class to generate UPDATE statement for
@@ -4942,7 +4942,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("createdTime", "createdBy");
          * SQLBuilder builder = PSB.update(User.class, excluded)
-         *                         .where(CF.eq("id", 1));
+         *                         .where(Filters.eq("id", 1));
          * }</pre>
          * 
          * @param entityClass the entity class to generate UPDATE statement for
@@ -4972,7 +4972,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SQLBuilder builder = PSB.deleteFrom("users")
-         *                         .where(CF.eq("status", "inactive"));
+         *                         .where(Filters.eq("status", "inactive"));
          * }</pre>
          * 
          * @param tableName the name of the table to delete from
@@ -4999,7 +4999,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SQLBuilder builder = PSB.deleteFrom("users", User.class)
-         *                         .where(CF.eq("lastLogin", null));
+         *                         .where(Filters.eq("lastLogin", null));
          * }</pre>
          * 
          * @param tableName the name of the table to delete from
@@ -5028,7 +5028,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SQLBuilder builder = PSB.deleteFrom(User.class)
-         *                         .where(CF.eq("id", 1));
+         *                         .where(Filters.eq("id", 1));
          * }</pre>
          * 
          * @param entityClass the entity class to generate DELETE FROM statement for
@@ -5083,7 +5083,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * SQLBuilder builder = PSB.select("id", "name", "email")
          *                         .from("users")
-         *                         .where(CF.gt("age", 18));
+         *                         .where(Filters.gt("age", 18));
          * }</pre>
          * 
          * @param propOrColumnNames the property or column names to select
@@ -5168,7 +5168,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * SQLBuilder builder = PSB.select(User.class)
          *                         .from("users")
-         *                         .where(CF.eq("active", true));
+         *                         .where(Filters.eq("active", true));
          * }</pre>
          * 
          * @param entityClass the entity class whose properties to select
@@ -5265,7 +5265,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SQLBuilder builder = PSB.selectFrom(User.class)
-         *                         .where(CF.eq("status", "active"));
+         *                         .where(Filters.eq("status", "active"));
          * // Equivalent to: PSB.select(User.class).from(User.class)
          * }</pre>
          * 
@@ -5308,7 +5308,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SQLBuilder builder = PSB.selectFrom(User.class, true)
-         *                         .where(CF.isNotNull("address.city"));
+         *                         .where(Filters.isNotNull("address.city"));
          * }</pre>
          * 
          * @param entityClass the entity class to generate SELECT FROM statement for
@@ -5328,7 +5328,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SQLBuilder builder = PSB.selectFrom(User.class, "u", true)
-         *                         .where(CF.like("u.name", "John%"));
+         *                         .where(Filters.like("u.name", "John%"));
          * }</pre>
          * 
          * @param entityClass the entity class to generate SELECT FROM statement for
@@ -5418,7 +5418,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("audit.createdBy", "audit.modifiedBy");
          * SQLBuilder builder = PSB.selectFrom(Product.class, "p", true, excluded)
-         *                         .where(CF.gt("p.price", 100))
+         *                         .where(Filters.gt("p.price", 100))
          *                         .orderBy("p.name");
          * }</pre>
          * 
@@ -5554,7 +5554,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * SQLBuilder builder = PSB.selectFrom(User.class, "u", "user",
          *                                    Order.class, "o", "order")
-         *                         .where(CF.eq("u.status", "active"));
+         *                         .where(Filters.eq("u.status", "active"));
          * }</pre>
          * 
          * @param entityClassA the first entity class to select from
@@ -5584,7 +5584,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * SQLBuilder builder = PSB.selectFrom(User.class, "u", "user", excludeUser,
          *                                    Order.class, "o", "order", excludeOrder)
-         *                         .where(CF.between("o.created", startDate, endDate));
+         *                         .where(Filters.between("o.created", startDate, endDate));
          * }</pre>
          * 
          * @param entityClassA the first entity class to select from
@@ -5625,9 +5625,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * 
          * SQLBuilder builder = PSB.selectFrom(selections)
-         *                         .where(CF.and(
-         *                             CF.eq("c.status", "premium"),
-         *                             CF.gt("o.total", 1000)
+         *                         .where(Filters.and(
+         *                             Filters.eq("c.status", "premium"),
+         *                             Filters.gt("o.total", 1000)
          *                         ));
          * }</pre>
          * 
@@ -5653,7 +5653,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SQLBuilder builder = PSB.count("users")
-         *                         .where(CF.eq("status", "active"));
+         *                         .where(Filters.eq("status", "active"));
          * // Generates: SELECT count(*) FROM users WHERE status = ?
          * }</pre>
          * 
@@ -5675,7 +5675,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * long count = PSB.count(User.class)
-         *                 .where(CF.like("email", "%@example.com"))
+         *                 .where(Filters.like("email", "%@example.com"))
          *                 .queryForSingleResult(Long.class);
          * }</pre>
          * 
@@ -5698,9 +5698,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("status", "active"),
-         *     CF.gt("age", 18)
+         * Condition cond = Filters.and(
+         *     Filters.eq("status", "active"),
+         *     Filters.gt("age", 18)
          * );
          * String sql = PSB.parse(cond, User.class).sql();
          * // Result: "status = ? AND age > ?"
@@ -5744,7 +5744,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Simple SELECT
      * String sql = PSC.select("firstName", "lastName")
      *                 .from("account")
-     *                 .where(CF.eq("id", 1))
+     *                 .where(Filters.eq("id", 1))
      *                 .sql();
      * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = ?
      * 
@@ -5759,7 +5759,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * String sql = PSC.update("account")
      *                 .set("firstName", "John")
      *                 .set("lastName", "Smith")
-     *                 .where(CF.eq("id", 1))
+     *                 .where(Filters.eq("id", 1))
      *                 .sql();
      * // Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = ?
      * }</pre>
@@ -5768,7 +5768,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * <pre>{@code
      * // SELECT with entity class
      * String sql = PSC.selectFrom(Account.class)
-     *                 .where(CF.gt("createdDate", new Date()))
+     *                 .where(Filters.gt("createdDate", new Date()))
      *                 .orderBy("lastName ASC")
      *                 .limit(10)
      *                 .sql();
@@ -5784,7 +5784,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      *                 .from("account a")
      *                 .leftJoin("orders o").on("a.id = o.account_id")
      *                 .groupBy("a.id", "a.firstName")
-     *                 .having(CF.gt("COUNT(o.id)", 5))
+     *                 .having(Filters.gt("COUNT(o.id)", 5))
      *                 .sql();
      * }</pre>
      * 
@@ -6143,7 +6143,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PSC.update("account")
          *                 .set("firstName", "John")
          *                 .set("lastName", "Smith")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = ?
          * }</pre>
@@ -6175,7 +6175,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PSC.update("account", Account.class)
          *                 .set("firstName", "John")
          *                 .set("lastModified", new Date())
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET first_name = ?, last_modified = ? WHERE id = ?
          * }</pre>
@@ -6209,7 +6209,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = PSC.update(Account.class)
          *                 .set("status", "active")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET status = ? WHERE id = ?
          * }</pre>
@@ -6234,7 +6234,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excluded = N.asSet("createdDate", "createdBy");
          * String sql = PSC.update(Account.class, excluded)
          *                 .set(account)
-         *                 .where(CF.eq("id", account.getId()))
+         *                 .where(Filters.eq("id", account.getId()))
          *                 .sql();
          * }</pre>
          * 
@@ -6266,7 +6266,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.deleteFrom("account")
-         *                 .where(CF.eq("status", "inactive"))
+         *                 .where(Filters.eq("status", "inactive"))
          *                 .sql();
          * // Output: DELETE FROM account WHERE status = ?
          * }</pre>
@@ -6296,7 +6296,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.deleteFrom("account", Account.class)
-         *                 .where(CF.lt("lastLoginDate", thirtyDaysAgo))
+         *                 .where(Filters.lt("lastLoginDate", thirtyDaysAgo))
          *                 .sql();
          * // Output: DELETE FROM account WHERE last_login_date < ?
          * }</pre>
@@ -6329,7 +6329,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.deleteFrom(Account.class)
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM account WHERE id = ?
          * }</pre>
@@ -6360,7 +6360,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = PSC.select("COUNT(*)")
          *                 .from("account")
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE status = ?
          * 
@@ -6395,7 +6395,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = PSC.select("id", "firstName", "lastName", "email")
          *                 .from("account")
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = ?
          * }</pre>
@@ -6599,7 +6599,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.selectFrom(Account.class)
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = ?
          * }</pre>
@@ -6621,7 +6621,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.selectFrom(Account.class, "a")
-         *                 .where(CF.eq("a.status", "active"))
+         *                 .where(Filters.eq("a.status", "active"))
          *                 .sql();
          * // Output: SELECT a.id, a.first_name AS "firstName", a.last_name AS "lastName", a.email FROM account a WHERE a.status = ?
          * }</pre>
@@ -6645,7 +6645,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.selectFrom(Order.class, true)
-         *                 .where(CF.gt("total", 100))
+         *                 .where(Filters.gt("total", 100))
          *                 .sql();
          * // Includes properties from nested entities like customer, items, etc.
          * }</pre>
@@ -6668,7 +6668,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.selectFrom(Order.class, "o", true)
-         *                 .where(CF.eq("o.status", "pending"))
+         *                 .where(Filters.eq("o.status", "pending"))
          *                 .sql();
          * // Selects from orders with alias 'o' including sub-entity properties
          * }</pre>
@@ -6693,7 +6693,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("password", "secretKey");
          * String sql = PSC.selectFrom(Account.class, excluded)
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * // Selects all properties except password and secretKey
          * }</pre>
@@ -6742,7 +6742,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("internalData");
          * String sql = PSC.selectFrom(Order.class, true, excluded)
-         *                 .where(CF.between("orderDate", startDate, endDate))
+         *                 .where(Filters.between("orderDate", startDate, endDate))
          *                 .sql();
          * // Includes sub-entities but excludes internalData
          * }</pre>
@@ -6769,7 +6769,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excluded = N.asSet("password", "internalNotes");
          * String sql = PSC.selectFrom(Account.class, "a", true, excluded)
          *                 .innerJoin("orders o").on("a.id = o.account_id")
-         *                 .where(CF.gt("o.total", 1000))
+         *                 .where(Filters.gt("o.total", 1000))
          *                 .sql();
          * // Complex query with full control over selection
          * }</pre>
@@ -6986,7 +6986,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * 
          * String sql = PSC.selectFrom(selections)
-         *                 .where(CF.eq("a.status", "active"))
+         *                 .where(Filters.eq("a.status", "active"))
          *                 .sql();
          * }</pre>
          * 
@@ -7012,7 +7012,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.count("account")
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE status = ?
          * }</pre>
@@ -7037,7 +7037,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.count(Account.class)
-         *                 .where(CF.isNotNull("email"))
+         *                 .where(Filters.isNotNull("email"))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE email IS NOT NULL
          * }</pre>
@@ -7060,9 +7060,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("firstName", "John"),
-         *     CF.like("email", "%@example.com")
+         * Condition cond = Filters.and(
+         *     Filters.eq("firstName", "John"),
+         *     Filters.like("email", "%@example.com")
          * );
          * 
          * String sql = PSC.parse(cond, Account.class).sql();
@@ -7106,7 +7106,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Property 'firstName' becomes column 'FIRST_NAME'
      * String sql = PAC.select("firstName", "lastName")
      *                 .from("account")
-     *                 .where(CF.eq("id", 1))
+     *                 .where(Filters.eq("id", 1))
      *                 .sql();
      * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = ?
      * }</pre>
@@ -7440,7 +7440,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = PAC.update("users")
          *                 .set("firstName", "lastName")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
@@ -7470,7 +7470,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = PAC.update("users", User.class)
          *                 .set("firstName", "lastName")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
@@ -7503,7 +7503,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = PAC.update(User.class)
          *                 .set("firstName", "lastName")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
@@ -7527,7 +7527,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> exclude = new HashSet<>(Arrays.asList("version", "modifiedDate"));
          * String sql = PAC.update(User.class, exclude)
          *                 .set("firstName", "lastName")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
@@ -7559,7 +7559,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.deleteFrom("users")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM USERS WHERE ID = ?
          * }</pre>
@@ -7588,7 +7588,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.deleteFrom("users", User.class)
-         *                 .where(CF.eq("email", "john@example.com"))
+         *                 .where(Filters.eq("email", "john@example.com"))
          *                 .sql();
          * // Output: DELETE FROM USERS WHERE EMAIL = ?
          * }</pre>
@@ -7619,7 +7619,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.deleteFrom(User.class)
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM USERS WHERE ID = ?
          * }</pre>
@@ -7860,7 +7860,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = PAC.selectFrom(User.class).where(CF.eq("active", true)).sql();
+         * String sql = PAC.selectFrom(User.class).where(Filters.eq("active", true)).sql();
          * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", ... FROM USERS WHERE ACTIVE = ?
          * }</pre>
          * 
@@ -7881,7 +7881,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.selectFrom(User.class, "u")
-         *                 .where(CF.eq("u.active", true))
+         *                 .where(Filters.eq("u.active", true))
          *                 .sql();
          * // Output: SELECT u.ID AS "id", u.FIRST_NAME AS "firstName", ... FROM USERS u WHERE u.ACTIVE = ?
          * }</pre>
@@ -7904,7 +7904,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.selectFrom(User.class, true)
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * // Output includes joins for sub-entities if present
          * }</pre>
@@ -7926,7 +7926,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.selectFrom(User.class, "u", true)
-         *                 .where(CF.eq("u.active", true))
+         *                 .where(Filters.eq("u.active", true))
          *                 .sql();
          * // Output: SELECT u.ID AS "id", ... FROM USERS u WHERE u.ACTIVE = ?
          * }</pre>
@@ -8244,7 +8244,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = PAC.count("users").where(CF.eq("active", true)).sql();
+         * String sql = PAC.count("users").where(Filters.eq("active", true)).sql();
          * // Output: SELECT count(*) FROM USERS WHERE ACTIVE = ?
          * }</pre>
          * 
@@ -8266,7 +8266,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.count(User.class)
-         *                 .where(CF.gt("age", 18))
+         *                 .where(Filters.gt("age", 18))
          *                 .sql();
          * // Output: SELECT count(*) FROM USERS WHERE AGE > ?
          * }</pre>
@@ -8289,7 +8289,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(CF.eq("firstName", "John"), CF.gt("age", 21));
+         * Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("age", 21));
          * String sql = PAC.parse(cond, User.class).sql();
          * // Output: FIRST_NAME = ? AND AGE > ?
          * }</pre>
@@ -8333,7 +8333,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Simple SELECT
      * String sql = PLC.select("firstName", "lastName")
      *                 .from("account")
-     *                 .where(CF.eq("id", 1))
+     *                 .where(Filters.eq("id", 1))
      *                 .sql();
      * // Output: SELECT firstName, lastName FROM account WHERE id = ?
      * 
@@ -8348,7 +8348,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * String sql = PLC.update("account")
      *                 .set("firstName", "John")
      *                 .set("lastName", "Smith")
-     *                 .where(CF.eq("id", 1))
+     *                 .where(Filters.eq("id", 1))
      *                 .sql();
      * // Output: UPDATE account SET firstName = ?, lastName = ? WHERE id = ?
      * }</pre>
@@ -8360,14 +8360,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      *                 .from("account a")
      *                 .leftJoin("orders o").on("a.id = o.accountId")
      *                 .groupBy("a.id", "a.firstName")
-     *                 .having(CF.gt("COUNT(o.id)", 5))
+     *                 .having(Filters.gt("COUNT(o.id)", 5))
      *                 .sql();
      * 
      * // Using with MongoDB-style collections
      * String sql = PLC.selectFrom(UserProfile.class)
-     *                 .where(CF.and(
-     *                     CF.eq("isActive", true),
-     *                     CF.gte("lastLoginDate", lastWeek)
+     *                 .where(Filters.and(
+     *                     Filters.eq("isActive", true),
+     *                     Filters.gte("lastLoginDate", lastWeek)
      *                 ))
      *                 .orderBy("lastLoginDate DESC")
      *                 .sql();
@@ -8790,7 +8790,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PLC.update("account")
          *                 .set("firstName", "John")
          *                 .set("lastName", "Smith")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET firstName = ?, lastName = ? WHERE id = ?
          * 
@@ -8798,7 +8798,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql2 = PLC.update("account")
          *                  .set("loginCount", "loginCount + 1")
          *                  .set("lastLoginDate", new Date())
-         *                  .where(CF.eq("id", 1))
+         *                  .where(Filters.eq("id", 1))
          *                  .sql();
          * }</pre>
          * 
@@ -8832,7 +8832,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * SP sqlPair = PLC.update("account", Account.class)
          *                 .set(account)
-         *                 .where(CF.eq("id", account.getId()))
+         *                 .where(Filters.eq("id", account.getId()))
          *                 .build();
          * // sqlPair.sql: UPDATE account SET firstName = ?, lastName = ?, modifiedDate = ? WHERE id = ?
          * }</pre>
@@ -8867,7 +8867,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PLC.update(Account.class)
          *                 .set("status", "active")
          *                 .set("activatedDate", new Date())
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET status = ?, activatedDate = ? WHERE id = ?
          * 
@@ -8876,7 +8876,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * account.setStatus("inactive");
          * SP sqlPair = PLC.update(Account.class)
          *                 .set(account)
-         *                 .where(CF.eq("id", account.getId()))
+         *                 .where(Filters.eq("id", account.getId()))
          *                 .build();
          * }</pre>
          * 
@@ -8906,7 +8906,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * SP sqlPair = PLC.update(Account.class, excluded)
          *                 .set(account)
-         *                 .where(CF.eq("id", account.getId()))
+         *                 .where(Filters.eq("id", account.getId()))
          *                 .build();
          * // createdDate excluded even though set in entity
          * 
@@ -8914,7 +8914,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> versionExcluded = N.asSet("version", "previousVersion");
          * String sql = PLC.update(Document.class, versionExcluded)
          *                 .set("content", newContent)
-         *                 .where(CF.eq("id", docId))
+         *                 .where(Filters.eq("id", docId))
          *                 .sql();
          * }</pre>
          * 
@@ -8946,21 +8946,21 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * // Delete specific records
          * String sql = PLC.deleteFrom("account")
-         *                 .where(CF.eq("status", "inactive"))
+         *                 .where(Filters.eq("status", "inactive"))
          *                 .sql();
          * // Output: DELETE FROM account WHERE status = ?
          * 
          * // Delete with multiple conditions
          * String sql2 = PLC.deleteFrom("account")
-         *                  .where(CF.and(
-         *                      CF.eq("status", "inactive"),
-         *                      CF.lt("lastLoginDate", thirtyDaysAgo)
+         *                  .where(Filters.and(
+         *                      Filters.eq("status", "inactive"),
+         *                      Filters.lt("lastLoginDate", thirtyDaysAgo)
          *                  ))
          *                  .sql();
          * 
          * // Delete with limit (database-specific)
          * String sql3 = PLC.deleteFrom("logs")
-         *                  .where(CF.lt("createdDate", oneYearAgo))
+         *                  .where(Filters.lt("createdDate", oneYearAgo))
          *                  .limit(1000)
          *                  .sql();
          * }</pre>
@@ -8989,9 +8989,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * // Delete with entity property names
          * String sql = PLC.deleteFrom("account", Account.class)
-         *                 .where(CF.and(
-         *                     CF.eq("accountType", "trial"),
-         *                     CF.lt("createdDate", expirationDate)
+         *                 .where(Filters.and(
+         *                     Filters.eq("accountType", "trial"),
+         *                     Filters.lt("createdDate", expirationDate)
          *                 ))
          *                 .sql();
          * // Property names are used even though table name is specified
@@ -8999,7 +8999,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Using with entity instance
          * Account account = getAccount();
          * String sql2 = PLC.deleteFrom("account", Account.class)
-         *                  .where(CF.eq("id", account.getId()))
+         *                  .where(Filters.eq("id", account.getId()))
          *                  .sql();
          * }</pre>
          * 
@@ -9031,15 +9031,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * // Delete by ID
          * String sql = PLC.deleteFrom(Account.class)
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM account WHERE id = ?
          * 
          * // Bulk delete with conditions
          * String sql2 = PLC.deleteFrom(Order.class)
-         *                  .where(CF.and(
-         *                      CF.eq("status", "cancelled"),
-         *                      CF.lt("orderDate", oneYearAgo)
+         *                  .where(Filters.and(
+         *                      Filters.eq("status", "cancelled"),
+         *                      Filters.lt("orderDate", oneYearAgo)
          *                  ))
          *                  .sql();
          * 
@@ -9048,7 +9048,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * public class Session { ... }
          * 
          * String sql3 = PLC.deleteFrom(Session.class)
-         *                  .where(CF.lt("expiryTime", now))
+         *                  .where(Filters.lt("expiryTime", now))
          *                  .sql();
          * // Output: DELETE FROM user_sessions WHERE expiryTime < ?
          * }</pre>
@@ -9080,7 +9080,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Count query
          * String sql = PLC.select("COUNT(*)")
          *                 .from("account")
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE status = ?
          * 
@@ -9094,7 +9094,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql3 = PLC.select("departmentId, COUNT(*) AS employeeCount")
          *                  .from("employee")
          *                  .groupBy("departmentId")
-         *                  .having(CF.gt("COUNT(*)", 10))
+         *                  .having(Filters.gt("COUNT(*)", 10))
          *                  .sql();
          * }</pre>
          * 
@@ -9123,7 +9123,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Simple select
          * String sql = PLC.select("id", "firstName", "lastName", "email")
          *                 .from("account")
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, email FROM account WHERE status = ?
          * 
@@ -9262,7 +9262,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // With WHERE clause
          * String sql2 = PLC.select(Account.class)
          *                  .from("account")
-         *                  .where(CF.eq("status", "active"))
+         *                  .where(Filters.eq("status", "active"))
          *                  .sql();
          * 
          * // Entity with @Transient fields
@@ -9406,7 +9406,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * // Simple entity query
          * String sql = PLC.selectFrom(Account.class)
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, email FROM account WHERE status = ?
          * 
@@ -9439,14 +9439,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * // Simple alias usage
          * String sql = PLC.selectFrom(Account.class, "a")
-         *                 .where(CF.eq("a.status", "active"))
+         *                 .where(Filters.eq("a.status", "active"))
          *                 .sql();
          * // Output: SELECT a.id, a.firstName, a.lastName, a.email FROM account a WHERE a.status = ?
          * 
          * // With joins
          * String sql2 = PLC.selectFrom(Order.class, "o")
          *                  .innerJoin("customers c").on("o.customerId = c.id")
-         *                  .where(CF.eq("c.country", "USA"))
+         *                  .where(Filters.eq("c.country", "USA"))
          *                  .sql();
          * 
          * // Self-join
@@ -9511,7 +9511,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PLC.selectFrom(Order.class, "o", true)
          *                 .innerJoin("customers c").on("o.customerId = c.id")
          *                 .innerJoin("addresses a").on("c.addressId = a.id")
-         *                 .where(CF.eq("a.country", "USA"))
+         *                 .where(Filters.eq("a.country", "USA"))
          *                 .sql();
          * // Includes order and related entity properties with proper aliases
          * }</pre>
@@ -9537,7 +9537,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Exclude large or sensitive fields
          * Set<String> excluded = N.asSet("password", "biography", "photo");
          * String sql = PLC.selectFrom(UserProfile.class, excluded)
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * 
          * // Exclude computed fields
@@ -9567,7 +9567,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excluded = N.asSet("internalNotes", "debugInfo");
          * String sql = PLC.selectFrom(Order.class, "o", excluded)
          *                 .innerJoin("customers c").on("o.customerId = c.id")
-         *                 .where(CF.between("o.orderDate", startDate, endDate))
+         *                 .where(Filters.between("o.orderDate", startDate, endDate))
          *                 .sql();
          * 
          * // Multiple table query
@@ -9627,9 +9627,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PLC.selectFrom(Order.class, "o", true, excluded)
          *                 .innerJoin("customers c").on("o.customerId = c.id")
          *                 .leftJoin("shipping_addresses sa").on("o.shippingAddressId = sa.id")
-         *                 .where(CF.and(
-         *                     CF.eq("o.status", "pending"),
-         *                     CF.gt("o.totalAmount", 100)
+         *                 .where(Filters.and(
+         *                     Filters.eq("o.status", "pending"),
+         *                     Filters.gt("o.totalAmount", 100)
          *                 ))
          *                 .orderBy("o.createdDate DESC")
          *                 .sql();
@@ -9637,7 +9637,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Report query with specific field selection
          * Set<String> reportExcluded = N.asSet("id", "createdBy", "modifiedBy", "version");
          * String sql2 = PLC.selectFrom(SalesReport.class, "sr", false, reportExcluded)
-         *                  .where(CF.between("sr.reportDate", startDate, endDate))
+         *                  .where(Filters.between("sr.reportDate", startDate, endDate))
          *                  .sql();
          * }</pre>
          * 
@@ -9771,7 +9771,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PLC.selectFrom(Account.class, "a", "account", Order.class, "o", "order")
-         *                 .where(CF.eq("a.id", "o.accountId"))
+         *                 .where(Filters.eq("a.id", "o.accountId"))
          *                 .sql();
          * // Output: SELECT a.firstName AS "account.firstName", o.totalAmount AS "order.totalAmount" ... FROM account a, orders o WHERE a.id = o.accountId
          * }</pre>
@@ -9801,7 +9801,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> ordExcluded = N.asSet("internalComments");
          * String sql = PLC.selectFrom(Account.class, "a", "account", accExcluded,
          *                            Order.class, "o", "order", ordExcluded)
-         *                 .where(CF.eq("a.id", "o.accountId"))
+         *                 .where(Filters.eq("a.id", "o.accountId"))
          *                 .sql();
          * // Output: SELECT a.firstName AS "account.firstName", a.email AS "account.email", o.totalAmount AS "order.totalAmount" ... FROM account a, orders o WHERE a.id = o.accountId
          * }</pre>
@@ -9841,7 +9841,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Selection(Order.class, "o", "order", N.asSet("totalAmount"))
          * );
          * String sql = PLC.selectFrom(selections)
-         *                 .where(CF.eq("a.id", "o.accountId"))
+         *                 .where(Filters.eq("a.id", "o.accountId"))
          *                 .sql();
          * // Output: SELECT a.firstName AS "account.firstName", a.email AS "account.email", o.totalAmount AS "order.totalAmount" FROM account a, orders o WHERE a.id = o.accountId
          * }</pre>
@@ -9864,7 +9864,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PLC.count("account")
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE status = ?
          * }</pre>
@@ -9887,7 +9887,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PLC.count(Account.class)
-         *                 .where(CF.isNotNull("email"))
+         *                 .where(Filters.isNotNull("email"))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE email IS NOT NULL
          * }</pre>
@@ -9910,9 +9910,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("firstName", "John"),
-         *     CF.like("emailAddress", "%@example.com")
+         * Condition cond = Filters.and(
+         *     Filters.eq("firstName", "John"),
+         *     Filters.like("emailAddress", "%@example.com")
          * );
          * 
          * String sql = PLC.parse(cond, Account.class).sql();
@@ -9947,7 +9947,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      *
      * <p>For example:</p>
      * <pre>{@code
-     * N.println(NSB.select("first_Name", "last_NaMe").from("account").where(CF.eq("last_NaMe", 1)).sql());
+     * N.println(NSB.select("first_Name", "last_NaMe").from("account").where(Filters.eq("last_NaMe", 1)).sql());
      * // SELECT first_Name, last_NaMe FROM account WHERE last_NaMe = :last_NaMe
      * }</pre>
      */
@@ -10297,7 +10297,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSB.update("users")
          *                 .set("last_login", "status")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // UPDATE users SET last_login = :last_login, status = :status WHERE id = :id
          * }</pre>
@@ -10327,7 +10327,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSB.update("user_accounts", User.class)
          *                 .set("lastLogin", "active")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // UPDATE user_accounts SET last_login = :lastLogin, active = :active WHERE id = :id
          * }</pre>
@@ -10360,7 +10360,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSB.update(User.class)
          *                 .set("name", "email")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // UPDATE users SET name = :name, email = :email WHERE id = :id
          * }</pre>
@@ -10384,7 +10384,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> exclude = N.asSet("password", "createdDate");
          * String sql = NSB.update(User.class, exclude)
          *                 .set("name", "email")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // UPDATE users SET name = :name, email = :email WHERE id = :id
          * }</pre>
@@ -10416,7 +10416,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSB.deleteFrom("users")
-         *                 .where(CF.eq("status", "inactive"))
+         *                 .where(Filters.eq("status", "inactive"))
          *                 .sql();
          * // DELETE FROM users WHERE status = :status
          * }</pre>
@@ -10445,7 +10445,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSB.deleteFrom("user_accounts", User.class)
-         *                 .where(CF.lt("lastLogin", someDate))
+         *                 .where(Filters.lt("lastLogin", someDate))
          *                 .sql();
          * // DELETE FROM user_accounts WHERE last_login < :lastLogin
          * }</pre>
@@ -10477,7 +10477,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSB.deleteFrom(User.class)
-         *                 .where(CF.eq("id", 123))
+         *                 .where(Filters.eq("id", 123))
          *                 .sql();
          * // DELETE FROM users WHERE id = :id
          * }</pre>
@@ -10539,7 +10539,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSB.select("id", "name", "email", "created_date")
          *                 .from("users")
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * // SELECT id, name, email, created_date FROM users WHERE active = :active
          * }</pre>
@@ -10570,7 +10570,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * List<String> columns = getRequiredColumns(); // Dynamic column list
          * String sql = NSB.select(columns)
          *                 .from("products")
-         *                 .where(CF.gt("price", 100))
+         *                 .where(Filters.gt("price", 100))
          *                 .sql();
          * // SELECT column1, column2, ... FROM products WHERE price > :price
          * }</pre>
@@ -10739,7 +10739,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = NSB.selectFrom(User.class).where(CF.eq("active", true)).sql();
+         * String sql = NSB.selectFrom(User.class).where(Filters.eq("active", true)).sql();
          * // SELECT id, name, email FROM users WHERE active = :active
          * }</pre>
          *
@@ -10760,7 +10760,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSB.selectFrom(User.class, "u")
          *                 .leftJoin("orders o").on("u.id = o.user_id")
-         *                 .where(CF.isNotNull("o.id"))
+         *                 .where(Filters.isNotNull("o.id"))
          *                 .sql();
          * // SELECT u.id, u.name, u.email FROM users u
          * // LEFT JOIN orders o ON u.id = o.user_id WHERE o.id IS NOT NULL
@@ -10807,7 +10807,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSB.selectFrom(Order.class, "o", true)
-         *                 .where(CF.gt("o.total", 1000))
+         *                 .where(Filters.gt("o.total", 1000))
          *                 .sql();
          * // Generates SELECT with proper aliases for main and sub-entities
          * }</pre>
@@ -10899,7 +10899,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> exclude = N.asSet("audit.details", "customer.internalNotes");
          * String sql = NSB.selectFrom(Order.class, "o", true, exclude)
-         *                 .where(CF.between("o.orderDate", startDate, endDate))
+         *                 .where(Filters.between("o.orderDate", startDate, endDate))
          *                 .orderBy("o.orderDate DESC")
          *                 .sql();
          * // Complex SELECT with multiple tables, aliases, and exclusions
@@ -11041,7 +11041,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSB.selectFrom(User.class, "u", "user_",
          *                            Order.class, "o", "order_")
-         *                 .where(CF.eq("u.id", 123))
+         *                 .where(Filters.eq("u.id", 123))
          *                 .sql();
          * // Automatically generates FROM clause with proper joins
          * }</pre>
@@ -11106,7 +11106,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * List<Selection> selections = createSelectionList();
          * String sql = NSB.selectFrom(selections)
-         *                 .where(CF.gt("o.amount", 100))
+         *                 .where(Filters.gt("o.amount", 100))
          *                 .orderBy("o.date DESC")
          *                 .sql();
          * // Automatically generates complete multi-table query
@@ -11132,7 +11132,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = NSB.count("users").where(CF.eq("active", true)).sql();
+         * String sql = NSB.count("users").where(Filters.eq("active", true)).sql();
          * // SELECT count(*) FROM users WHERE active = :active
          * }</pre>
          *
@@ -11154,7 +11154,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSB.count(User.class)
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // SELECT count(*) FROM users WHERE status = :status
          * }</pre>
@@ -11178,9 +11178,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("status", "active"),
-         *     CF.gt("age", 18)
+         * Condition cond = Filters.and(
+         *     Filters.eq("status", "active"),
+         *     Filters.gt("age", 18)
          * );
          * String sql = NSB.parse(cond, User.class).sql();
          * // status = :status AND age > :age
@@ -11223,7 +11223,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Simple SELECT with named parameters
      * String sql = NSC.select("firstName", "lastName")
      *                 .from("account")
-     *                 .where(CF.eq("id", 1))
+     *                 .where(Filters.eq("id", 1))
      *                 .sql();
      * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = :id
      * 
@@ -11556,7 +11556,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSC.update("users")
          *                 .set("firstName", "John")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE users SET first_name = :firstName WHERE id = :id
          * }</pre>
@@ -11583,7 +11583,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSC.update("users", User.class)
          *                 .set("firstName", "John")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE users SET first_name = :firstName WHERE id = :id
          * }</pre>
@@ -11614,7 +11614,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = NSC.update(User.class)
          *                 .set("firstName", "John")
          *                 .set("lastName", "Doe")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE users SET first_name = :firstName, last_name = :lastName WHERE id = :id
          * }</pre>
@@ -11635,7 +11635,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excluded = Set.of("createdDate", "createdBy");
          * String sql = NSC.update(User.class, excluded)
          *                 .set("firstName", "John")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE users SET first_name = :firstName WHERE id = :id
          * }</pre>
@@ -11664,7 +11664,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSC.deleteFrom("users")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM users WHERE id = :id
          * }</pre>
@@ -11690,7 +11690,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSC.deleteFrom("users", User.class)
-         *                 .where(CF.eq("firstName", "John"))
+         *                 .where(Filters.eq("firstName", "John"))
          *                 .sql();
          * // Output: DELETE FROM users WHERE first_name = :firstName
          * }</pre>
@@ -11719,7 +11719,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSC.deleteFrom(User.class)
-         *                 .where(CF.eq("firstName", "John"))
+         *                 .where(Filters.eq("firstName", "John"))
          *                 .sql();
          * // Output: DELETE FROM users WHERE first_name = :firstName
          * }</pre>
@@ -11745,7 +11745,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = NSC.select("COUNT(*)").from("users").where(CF.eq("active", true)).sql();
+         * String sql = NSC.select("COUNT(*)").from("users").where(Filters.eq("active", true)).sql();
          * // Output: SELECT count(*) FROM users WHERE active = :active
          * }</pre>
          * 
@@ -11770,7 +11770,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSC.select("firstName", "lastName", "email")
          *                 .from("users")
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email FROM users WHERE active = :active
          * }</pre>
@@ -11847,7 +11847,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = NSC.select(User.class).from("users").where(CF.eq("active", true)).sql();
+         * String sql = NSC.select(User.class).from("users").where(Filters.eq("active", true)).sql();
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM users WHERE active = :active
          * }</pre>
          * 
@@ -11904,7 +11904,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excluded = Set.of("password");
          * String sql = NSC.select(User.class, true, excluded)
          *                 .from("users")
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * // Output uses named parameter :active
          * }</pre>
@@ -11934,7 +11934,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = NSC.selectFrom(User.class).where(CF.eq("id", 1)).sql();
+         * String sql = NSC.selectFrom(User.class).where(Filters.eq("id", 1)).sql();
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName" FROM users WHERE id = :id
          * }</pre>
          * 
@@ -11952,7 +11952,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSC.selectFrom(User.class, "u")
-         *                 .where(CF.eq("u.active", true))
+         *                 .where(Filters.eq("u.active", true))
          *                 .sql();
          * // Output uses named parameter :active
          * }</pre>
@@ -12009,7 +12009,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excluded = Set.of("password");
-         * String sql = NSC.selectFrom(User.class, excluded).where(CF.eq("active", true)).sql();
+         * String sql = NSC.selectFrom(User.class, excluded).where(Filters.eq("active", true)).sql();
          * // Selects all properties except password, uses :active parameter
          * }</pre>
          * 
@@ -12071,9 +12071,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = Set.of("password");
          * String sql = NSC.selectFrom(User.class, "u", true, excluded)
-         *                 .where(CF.and(
-         *                     CF.eq("u.active", true),
-         *                     CF.like("u.email", "%@example.com")
+         *                 .where(Filters.and(
+         *                     Filters.eq("u.active", true),
+         *                     Filters.like("u.email", "%@example.com")
          *                 ))
          *                 .sql();
          * // Complex select with alias, sub-entities, exclusions, and named parameters
@@ -12108,7 +12108,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = NSC.select(User.class, "u", "user", Order.class, "o", "order")
          *                 .from("users u")
          *                 .join("orders o").on("u.id = o.user_id")
-         *                 .where(CF.eq("u.active", true))
+         *                 .where(Filters.eq("u.active", true))
          *                 .sql();
          * // Uses named parameter :active
          * }</pre>
@@ -12139,7 +12139,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                        Order.class, "o", "order", orderExclusions)
          *                 .from("users u")
          *                 .join("orders o").on("u.id = o.user_id")
-         *                 .where(CF.eq("u.active", true))
+         *                 .where(Filters.eq("u.active", true))
          *                 .sql();
          * // Uses named parameters for conditions
          * }</pre>
@@ -12177,7 +12177,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * String sql = NSC.select(selections)
          *                 .from("users u")
-         *                 .where(CF.eq("u.status", "ACTIVE"))
+         *                 .where(Filters.eq("u.status", "ACTIVE"))
          *                 .sql();
          * // Uses named parameter :status
          * }</pre>
@@ -12207,7 +12207,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NSC.selectFrom(User.class, "u", "user", Order.class, "o", "order")
          *                 .join("orders o").on("u.id = o.user_id")
-         *                 .where(CF.gt("o.amount", 100))
+         *                 .where(Filters.gt("o.amount", 100))
          *                 .sql();
          * // Uses named parameter :amount
          * }</pre>
@@ -12237,7 +12237,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = NSC.selectFrom(User.class, "u", "user", userExclusions,
          *                            Order.class, "o", "order", orderExclusions)
          *                 .join("orders o").on("u.id = o.user_id")
-         *                 .where(CF.between("o.orderDate", startDate, endDate))
+         *                 .where(Filters.between("o.orderDate", startDate, endDate))
          *                 .sql();
          * // Uses named parameters :startDate and :endDate
          * }</pre>
@@ -12274,7 +12274,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Selection(Order.class, "o", "order", null, false, null)
          * );
          * String sql = NSC.selectFrom(selections)
-         *                 .where(CF.in("u.id", Arrays.asList(1, 2, 3)))
+         *                 .where(Filters.in("u.id", Arrays.asList(1, 2, 3)))
          *                 .sql();
          * // Uses named parameters for the IN clause
          * }</pre>
@@ -12297,7 +12297,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = NSC.count("users").where(CF.eq("active", true)).sql();
+         * String sql = NSC.count("users").where(Filters.eq("active", true)).sql();
          * // Output: SELECT count(*) FROM users WHERE active = :active
          * }</pre>
          * 
@@ -12317,9 +12317,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSC.count(User.class)
-         *                 .where(CF.and(
-         *                     CF.eq("firstName", "John"),
-         *                     CF.gt("age", 18)
+         *                 .where(Filters.and(
+         *                     Filters.eq("firstName", "John"),
+         *                     Filters.gt("age", 18)
          *                 ))
          *                 .sql();
          * // Output: SELECT count(*) FROM users WHERE first_name = :firstName AND age = :age
@@ -12342,10 +12342,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("firstName", "John"),
-         *     CF.gt("age", 18),
-         *     CF.like("email", "%@example.com")
+         * Condition cond = Filters.and(
+         *     Filters.eq("firstName", "John"),
+         *     Filters.gt("age", 18),
+         *     Filters.like("email", "%@example.com")
          * );
          * String sql = NSC.parse(cond, User.class).sql();
          * // Output: first_name = :firstName AND age = :age AND email LIKE :email
@@ -12378,7 +12378,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple SELECT with named parameters
-     * N.println(NAC.select("firstName", "lastName").from("account").where(CF.eq("id", 1)).sql());
+     * N.println(NAC.select("firstName", "lastName").from("account").where(Filters.eq("id", 1)).sql());
      * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = :id
      * 
      * // INSERT with entity
@@ -12704,7 +12704,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NAC.update("ACCOUNT")
          *                 .set("STATUS", "ACTIVE")
-         *                 .where(CF.eq("ID", 1))
+         *                 .where(Filters.eq("ID", 1))
          *                 .sql();
          * // Output: UPDATE ACCOUNT SET STATUS = :STATUS WHERE ID = :id
          * }</pre>
@@ -12732,7 +12732,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NAC.update("ACCOUNT", Account.class)
          *                 .set("status", "lastModified")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE ACCOUNT SET STATUS = :status, LAST_MODIFIED = :lastModified WHERE ID = :id
          * }</pre>
@@ -12764,7 +12764,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NAC.update(Account.class)
          *                 .set("status", "lastModified")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE ACCOUNT SET STATUS = :status, LAST_MODIFIED = :lastModified WHERE ID = :id
          * }</pre>
@@ -12786,7 +12786,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NAC.update(Account.class, Set.of("createdTime"))
          *                 .set("status", "lastModified")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE ACCOUNT SET STATUS = :status, LAST_MODIFIED = :lastModified WHERE ID = :id
          * }</pre>
@@ -12815,7 +12815,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.deleteFrom("ACCOUNT")
-         *                 .where(CF.eq("STATUS", "INACTIVE"))
+         *                 .where(Filters.eq("STATUS", "INACTIVE"))
          *                 .sql();
          * // Output: DELETE FROM ACCOUNT WHERE STATUS = :STATUS
          * }</pre>
@@ -12842,7 +12842,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.deleteFrom("ACCOUNT", Account.class)
-         *                 .where(CF.eq("status", "INACTIVE"))
+         *                 .where(Filters.eq("status", "INACTIVE"))
          *                 .sql();
          * // Output: DELETE FROM ACCOUNT WHERE STATUS = :status
          * }</pre>
@@ -12872,7 +12872,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.deleteFrom(Account.class)
-         *                 .where(CF.and(CF.eq("status", "INACTIVE"), CF.lt("lastLogin", yesterday)))
+         *                 .where(Filters.and(Filters.eq("status", "INACTIVE"), Filters.lt("lastLogin", yesterday)))
          *                 .sql();
          * // Output: DELETE FROM ACCOUNT WHERE STATUS = :status AND LAST_LOGIN < :lastLogin
          * }</pre>
@@ -12902,7 +12902,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = NAC.select("COUNT(*)").from("ACCOUNT").sql();
          * // Output: SELECT count(*) FROM ACCOUNT
          * 
-         * String sql2 = NAC.select("MAX(BALANCE)").from("ACCOUNT").where(CF.eq("STATUS", "ACTIVE")).sql();
+         * String sql2 = NAC.select("MAX(BALANCE)").from("ACCOUNT").where(Filters.eq("STATUS", "ACTIVE")).sql();
          * // Output: SELECT MAX(BALANCE) FROM ACCOUNT WHERE STATUS = :STATUS
          * }</pre>
          * 
@@ -12928,7 +12928,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NAC.select("firstName", "lastName", "email")
          *                 .from("ACCOUNT")
-         *                 .where(CF.eq("STATUS", "ACTIVE"))
+         *                 .where(Filters.eq("STATUS", "ACTIVE"))
          *                 .sql();
          * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" 
          * //         FROM ACCOUNT WHERE STATUS = :STATUS
@@ -13017,7 +13017,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NAC.select(Account.class)
          *                 .from("ACCOUNT")
-         *                 .where(CF.gt("BALANCE", 1000))
+         *                 .where(Filters.gt("BALANCE", 1000))
          *                 .sql();
          * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", 
          * //         EMAIL AS "email", BALANCE AS "balance" FROM ACCOUNT WHERE BALANCE > :BALANCE
@@ -13080,7 +13080,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NAC.select(Order.class, true, Set.of("internalNotes"))
          *                 .from("ORDER o")
-         *                 .join("CUSTOMER c", CF.eq("o.CUSTOMER_ID", "c.ID"))
+         *                 .join("CUSTOMER c", Filters.eq("o.CUSTOMER_ID", "c.ID"))
          *                 .sql();
          * // Selects all Order properties except internalNotes, plus Customer properties
          * }</pre>
@@ -13110,7 +13110,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.selectFrom(Account.class)
-         *                 .where(CF.eq("status", "ACTIVE"))
+         *                 .where(Filters.eq("status", "ACTIVE"))
          *                 .orderBy("lastName")
          *                 .sql();
          * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName" 
@@ -13131,7 +13131,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.selectFrom(Account.class, "a")
-         *                 .where(CF.eq("a.status", "ACTIVE"))
+         *                 .where(Filters.eq("a.status", "ACTIVE"))
          *                 .sql();
          * // Output: SELECT a.ID AS "id", a.FIRST_NAME AS "firstName", a.LAST_NAME AS "lastName" 
          * //         FROM ACCOUNT a WHERE a.STATUS = :status
@@ -13152,7 +13152,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.selectFrom(Order.class, true)
-         *                 .where(CF.gt("orderDate", yesterday))
+         *                 .where(Filters.gt("orderDate", yesterday))
          *                 .sql();
          * // Will select from Order and its related entity tables with automatic joins
          * }</pre>
@@ -13172,7 +13172,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.selectFrom(Order.class, "o", true)
-         *                 .where(CF.eq("o.status", "PENDING"))
+         *                 .where(Filters.eq("o.status", "PENDING"))
          *                 .sql();
          * // Selects from Order with alias 'o' and includes sub-entity properties
          * }</pre>
@@ -13193,7 +13193,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.selectFrom(Account.class, Set.of("password", "securityAnswer"))
-         *                 .where(CF.eq("email", "john@example.com"))
+         *                 .where(Filters.eq("email", "john@example.com"))
          *                 .sql();
          * // Selects all Account properties except password and securityAnswer
          * }</pre>
@@ -13213,7 +13213,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.selectFrom(Account.class, "acc", Set.of("password"))
-         *                 .join("ORDER o", CF.eq("acc.ID", "o.ACCOUNT_ID"))
+         *                 .join("ORDER o", Filters.eq("acc.ID", "o.ACCOUNT_ID"))
          *                 .sql();
          * // Selects Account properties with alias 'acc', excluding password
          * }</pre>
@@ -13234,7 +13234,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.selectFrom(Order.class, true, Set.of("internalNotes", "auditLog"))
-         *                 .where(CF.between("orderDate", startDate, endDate))
+         *                 .where(Filters.between("orderDate", startDate, endDate))
          *                 .sql();
          * // Selects Order and sub-entity properties, excluding internalNotes and auditLog
          * }</pre>
@@ -13255,9 +13255,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.selectFrom(Order.class, "ord", true, Set.of("deletedFlag"))
-         *                 .where(CF.and(
-         *                     CF.eq("ord.status", "SHIPPED"),
-         *                     CF.gt("ord.amount", 100)
+         *                 .where(Filters.and(
+         *                     Filters.eq("ord.status", "SHIPPED"),
+         *                     Filters.gt("ord.amount", 100)
          *                 ))
          *                 .sql();
          * // Comprehensive SELECT with alias, sub-entities, and exclusions
@@ -13291,7 +13291,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NAC.select(Account.class, "a", "account", Order.class, "o", "order")
          *                 .from("ACCOUNT a")
-         *                 .join("ORDER o", CF.eq("a.ID", "o.ACCOUNT_ID"))
+         *                 .join("ORDER o", Filters.eq("a.ID", "o.ACCOUNT_ID"))
          *                 .sql();
          * // Output: SELECT a.ID AS "account.id", a.FIRST_NAME AS "account.firstName",
          * //         o.ID AS "order.id", o.ORDER_DATE AS "order.orderDate" ...
@@ -13321,8 +13321,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                     Order.class, "o", "order", Set.of("internalNotes")
          *                 )
          *                 .from("ACCOUNT a")
-         *                 .join("ORDER o", CF.eq("a.ID", "o.ACCOUNT_ID"))
-         *                 .where(CF.eq("a.STATUS", "ACTIVE"))
+         *                 .join("ORDER o", Filters.eq("a.ID", "o.ACCOUNT_ID"))
+         *                 .where(Filters.eq("a.STATUS", "ACTIVE"))
          *                 .sql();
          * // Selects from both entities with aliases, excluding specified properties
          * }</pre>
@@ -13361,8 +13361,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * String sql = NAC.select(selections)
          *                 .from("ACCOUNT a")
-         *                 .join("ORDER o", CF.eq("a.ID", "o.ACCOUNT_ID"))
-         *                 .join("PRODUCT p", CF.eq("o.PRODUCT_ID", "p.ID"))
+         *                 .join("ORDER o", Filters.eq("a.ID", "o.ACCOUNT_ID"))
+         *                 .join("PRODUCT p", Filters.eq("o.PRODUCT_ID", "p.ID"))
          *                 .sql();
          * }</pre>
          * 
@@ -13389,7 +13389,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.selectFrom(Account.class, "a", "account", Order.class, "o", "order")
-         *                 .where(CF.eq("a.ID", "o.ACCOUNT_ID"))
+         *                 .where(Filters.eq("a.ID", "o.ACCOUNT_ID"))
          *                 .sql();
          * // Automatically handles the FROM clause with proper table names and aliases
          * }</pre>
@@ -13418,9 +13418,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                     Account.class, "acc", "account", Set.of("password"),
          *                     Order.class, "ord", "order", Set.of("notes")
          *                 )
-         *                 .where(CF.and(
-         *                     CF.eq("acc.STATUS", "PREMIUM"),
-         *                     CF.gt("ord.AMOUNT", 1000)
+         *                 .where(Filters.and(
+         *                     Filters.eq("acc.STATUS", "PREMIUM"),
+         *                     Filters.gt("ord.AMOUNT", 1000)
          *                 ))
          *                 .sql();
          * }</pre>
@@ -13459,7 +13459,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Selection(Product.class, "p", "prod", null, false, null)
          * );
          * String sql = NAC.selectFrom(selections)
-         *                 .where(CF.eq("a.ID", "o.ACCOUNT_ID"))
+         *                 .where(Filters.eq("a.ID", "o.ACCOUNT_ID"))
          *                 .sql();
          * // Complex multi-table SELECT with automatic FROM clause generation
          * }</pre>
@@ -13482,10 +13482,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = NAC.count("ACCOUNT").where(CF.eq("STATUS", "ACTIVE")).sql();
+         * String sql = NAC.count("ACCOUNT").where(Filters.eq("STATUS", "ACTIVE")).sql();
          * // Output: SELECT count(*) FROM ACCOUNT WHERE STATUS = :STATUS
          * 
-         * String sql2 = NAC.count("ORDER").where(CF.gt("AMOUNT", 100)).sql();
+         * String sql2 = NAC.count("ORDER").where(Filters.gt("AMOUNT", 100)).sql();
          * // Output: SELECT count(*) FROM ORDER WHERE AMOUNT > :AMOUNT
          * }</pre>
          * 
@@ -13506,9 +13506,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.count(Account.class)
-         *                 .where(CF.and(
-         *                     CF.eq("status", "ACTIVE"),
-         *                     CF.gt("balance", 0)
+         *                 .where(Filters.and(
+         *                     Filters.eq("status", "ACTIVE"),
+         *                     Filters.gt("balance", 0)
          *                 ))
          *                 .sql();
          * // Output: SELECT count(*) FROM ACCOUNT WHERE STATUS = :status AND BALANCE > :balance
@@ -13530,10 +13530,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("status", "ACTIVE"),
-         *     CF.gt("balance", 1000),
-         *     CF.like("lastName", "Smith%")
+         * Condition cond = Filters.and(
+         *     Filters.eq("status", "ACTIVE"),
+         *     Filters.gt("balance", 1000),
+         *     Filters.like("lastName", "Smith%")
          * );
          * String sql = NAC.parse(cond, Account.class).sql();
          * // Output: STATUS = :status AND BALANCE > :balance AND LAST_NAME LIKE :lastName
@@ -13578,7 +13578,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     * <p><b>Usage Examples:</b></p>
     * <pre>{@code
     * // Simple SELECT with named parameters
-    * N.println(NLC.select("firstName", "lastName").from("account").where(CF.eq("id", 1)).sql());
+    * N.println(NLC.select("firstName", "lastName").from("account").where(Filters.eq("id", 1)).sql());
     * // Output: SELECT firstName, lastName FROM account WHERE id = :id
     * 
     * // INSERT with entity
@@ -13924,7 +13924,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NLC.update("account")
          *                 .set("status", "active")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET status = :status WHERE id = :id
          * }</pre>
@@ -13954,7 +13954,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = NLC.update("account", Account.class)
          *                 .set("firstName", "John")
          *                 .set("lastName", "Doe")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET firstName = :firstName, lastName = :lastName WHERE id = :id
          * }</pre>
@@ -13987,7 +13987,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = NLC.update(Account.class)
          *                 .set("status", "active")
          *                 .set("lastLoginTime", new Date())
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET status = :status, lastLoginTime = :lastLoginTime WHERE id = :id
          * }</pre>
@@ -14010,7 +14010,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = NLC.update(Account.class, Set.of("createdTime", "createdBy"))
          *                 .set("status", "active")
          *                 .set("modifiedTime", new Date())
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET status = :status, modifiedTime = :modifiedTime WHERE id = :id
          * }</pre>
@@ -14040,7 +14040,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.deleteFrom("account")
-         *                 .where(CF.eq("status", "inactive"))
+         *                 .where(Filters.eq("status", "inactive"))
          *                 .sql();
          * // Output: DELETE FROM account WHERE status = :status
          * }</pre>
@@ -14068,9 +14068,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.deleteFrom("account", Account.class)
-         *                 .where(CF.and(
-         *                     CF.eq("status", "inactive"),
-         *                     CF.lt("lastLoginTime", oneYearAgo)
+         *                 .where(Filters.and(
+         *                     Filters.eq("status", "inactive"),
+         *                     Filters.lt("lastLoginTime", oneYearAgo)
          *                 ))
          *                 .sql();
          * // Output: DELETE FROM account WHERE status = :status AND lastLoginTime < :lastLoginTime
@@ -14101,7 +14101,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.deleteFrom(Account.class)
-         *                 .where(CF.eq("status", "inactive"))
+         *                 .where(Filters.eq("status", "inactive"))
          *                 .sql();
          * // Output: DELETE FROM account WHERE status = :status
          * }</pre>
@@ -14132,7 +14132,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = NLC.select("COUNT(*)").from("account").sql();
          * // Output: SELECT count(*) FROM account
          * 
-         * String sql2 = NLC.select("MAX(balance)").from("account").where(CF.eq("status", "active")).sql();
+         * String sql2 = NLC.select("MAX(balance)").from("account").where(Filters.eq("status", "active")).sql();
          * // Output: SELECT MAX(balance) FROM account WHERE status = :status
          * }</pre>
          * 
@@ -14159,7 +14159,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NLC.select("firstName", "lastName", "email")
          *                 .from("account")
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT firstName, lastName, email FROM account WHERE status = :status
          * }</pre>
@@ -14250,7 +14250,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NLC.select(Account.class)
          *                 .from("account")
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, email, status, balance FROM account WHERE status = :status
          * }</pre>
@@ -14350,7 +14350,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.selectFrom(Account.class)
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .orderBy("lastName")
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, email, status, balance FROM account WHERE status = :status ORDER BY lastName
@@ -14371,8 +14371,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.selectFrom(Account.class, "a")
-         *                 .innerJoin("orders o", CF.eq("a.id", "o.accountId"))
-         *                 .where(CF.eq("a.status", "active"))
+         *                 .innerJoin("orders o", Filters.eq("a.id", "o.accountId"))
+         *                 .where(Filters.eq("a.status", "active"))
          *                 .sql();
          * // Output: SELECT a.id, a.firstName, a.lastName, a.email, a.status, a.balance 
          * //         FROM account a 
@@ -14397,7 +14397,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * // Assuming Order has an Account sub-entity
          * String sql = NLC.selectFrom(Order.class, true)
-         *                 .where(CF.gt("amount", 100))
+         *                 .where(Filters.gt("amount", 100))
          *                 .sql();
          * // Output: SELECT o.id, o.orderNumber, o.amount, o.status, 
          * //                a.id AS "account.id", a.firstName AS "account.firstName", a.lastName AS "account.lastName"
@@ -14422,7 +14422,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.selectFrom(Order.class, "ord", true)
-         *                 .where(CF.between("orderDate", startDate, endDate))
+         *                 .where(Filters.between("orderDate", startDate, endDate))
          *                 .sql();
          * // Output: SELECT ord.id, ord.orderNumber, ord.amount, ord.status,
          * //                acc.id AS "account.id", acc.firstName AS "account.firstName"
@@ -14449,7 +14449,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> sensitiveFields = Set.of("password", "ssn", "creditCardNumber");
          * String sql = NLC.selectFrom(Account.class, sensitiveFields)
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, email, status, balance FROM account WHERE id = :id
          * }</pre>
@@ -14471,8 +14471,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = Set.of("password", "securityAnswer");
          * String sql = NLC.selectFrom(Account.class, "acc", excluded)
-         *                 .innerJoin("orders o", CF.eq("acc.id", "o.accountId"))
-         *                 .where(CF.gt("o.amount", 1000))
+         *                 .innerJoin("orders o", Filters.eq("acc.id", "o.accountId"))
+         *                 .where(Filters.gt("o.amount", 1000))
          *                 .sql();
          * // Output: SELECT acc.id, acc.firstName, acc.lastName, acc.email, acc.status, acc.balance
          * //         FROM account acc
@@ -14498,7 +14498,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = Set.of("account.password", "internalNotes");
          * String sql = NLC.selectFrom(Order.class, true, excluded)
-         *                 .where(CF.eq("status", "COMPLETED"))
+         *                 .where(Filters.eq("status", "COMPLETED"))
          *                 .sql();
          * // Output: SELECT o.id, o.orderNumber, o.amount, o.status,
          * //                a.id AS "account.id", a.firstName AS "account.firstName", a.lastName AS "account.lastName"
@@ -14526,9 +14526,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = Set.of("password", "account.internalId");
          * String sql = NLC.selectFrom(Order.class, "o", true, excluded)
-         *                 .where(CF.and(
-         *                     CF.eq("o.status", "PENDING"),
-         *                     CF.gt("o.amount", 500)
+         *                 .where(Filters.and(
+         *                     Filters.eq("o.status", "PENDING"),
+         *                     Filters.gt("o.amount", 500)
          *                 ))
          *                 .orderBy("o.orderDate DESC")
          *                 .sql();
@@ -14568,8 +14568,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = NLC.select(Account.class, "a", "account", Order.class, "o", "order")
          *                 .from("account a")
-         *                 .innerJoin("orders o", CF.eq("a.id", "o.accountId"))
-         *                 .where(CF.eq("a.status", "active"))
+         *                 .innerJoin("orders o", Filters.eq("a.id", "o.accountId"))
+         *                 .where(Filters.eq("a.status", "active"))
          *                 .sql();
          * // Output: SELECT a.id AS "account.id", a.firstName AS "account.firstName", a.lastName AS "account.lastName",
          * //                o.id AS "order.id", o.orderNumber AS "order.orderNumber", o.amount AS "order.amount"
@@ -14605,10 +14605,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = NLC.select(Account.class, "a", "account", accountExclusions,
          *                        Order.class, "o", "order", orderExclusions)
          *                 .from("account a")
-         *                 .innerJoin("orders o", CF.eq("a.id", "o.accountId"))
-         *                 .where(CF.and(
-         *                     CF.eq("a.status", "active"),
-         *                     CF.gt("o.amount", 1000)
+         *                 .innerJoin("orders o", Filters.eq("a.id", "o.accountId"))
+         *                 .where(Filters.and(
+         *                     Filters.eq("a.status", "active"),
+         *                     Filters.gt("o.amount", 1000)
          *                 ))
          *                 .sql();
          * // Output: SELECT a.id AS "account.id", a.firstName AS "account.firstName", a.lastName AS "account.lastName",
@@ -14655,10 +14655,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * String sql = NLC.select(selections)
          *                 .from("account a")
-         *                 .innerJoin("orders o", CF.eq("a.id", "o.accountId"))
-         *                 .innerJoin("order_items oi", CF.eq("o.id", "oi.orderId"))
-         *                 .innerJoin("products p", CF.eq("oi.productId", "p.id"))
-         *                 .where(CF.eq("a.status", "active"))
+         *                 .innerJoin("orders o", Filters.eq("a.id", "o.accountId"))
+         *                 .innerJoin("order_items oi", Filters.eq("o.id", "oi.orderId"))
+         *                 .innerJoin("products p", Filters.eq("oi.productId", "p.id"))
+         *                 .where(Filters.eq("a.status", "active"))
          *                 .sql();
          * // Output: Complex SELECT with columns from all three entities, properly aliased
          * }</pre>
@@ -14687,7 +14687,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.selectFrom(Account.class, "a", "account", Order.class, "o", "order")
-         *                 .where(CF.eq("a.id", "o.accountId"))
+         *                 .where(Filters.eq("a.id", "o.accountId"))
          *                 .sql();
          * // Output: SELECT a.id AS "account.id", a.firstName AS "account.firstName", a.lastName AS "account.lastName",
          * //                o.id AS "order.id", o.orderNumber AS "order.orderNumber", o.amount AS "order.amount"
@@ -14721,9 +14721,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * String sql = NLC.selectFrom(Account.class, "acc", "account", accountExclusions,
          *                            Order.class, "ord", "order", orderExclusions)
-         *                 .where(CF.and(
-         *                     CF.eq("acc.status", "PREMIUM"),
-         *                     CF.between("orderDate", startDate, endDate)
+         *                 .where(Filters.and(
+         *                     Filters.eq("acc.status", "PREMIUM"),
+         *                     Filters.between("orderDate", startDate, endDate)
          *                 ))
          *                 .orderBy("ord.amount DESC")
          *                 .sql();
@@ -14773,13 +14773,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * 
          * String sql = NLC.selectFrom(selections)
-         *                 .where(CF.and(
-         *                     CF.eq("a.status", "active"),
-         *                     CF.eq("o.status", "completed"),
-         *                     CF.gt("p.price", 100)
+         *                 .where(Filters.and(
+         *                     Filters.eq("a.status", "active"),
+         *                     Filters.eq("o.status", "completed"),
+         *                     Filters.gt("p.price", 100)
          *                 ))
          *                 .groupBy("a.id", "o.id")
-         *                 .having(CF.gt("SUM(oi.quantity * p.price)", 1000))
+         *                 .having(Filters.gt("SUM(oi.quantity * p.price)", 1000))
          *                 .sql();
          * // Output: Complex SELECT with proper FROM clause, column aliasing, WHERE, GROUP BY, and HAVING
          * }</pre>
@@ -14804,14 +14804,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.count("account")
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE status = :status
          * 
          * // Can also be used with joins
          * String sql2 = NLC.count("account a")
-         *                  .innerJoin("orders o", CF.eq("a.id", "o.accountId"))
-         *                  .where(CF.gt("o.amount", 1000))
+         *                  .innerJoin("orders o", Filters.eq("a.id", "o.accountId"))
+         *                  .where(Filters.gt("o.amount", 1000))
          *                  .sql();
          * // Output: SELECT count(*) FROM account a INNER JOIN orders o ON a.id = o.accountId WHERE o.amount > :amount
          * }</pre>
@@ -14834,15 +14834,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.count(Account.class)
-         *                 .where(CF.eq("status", "active"))
+         *                 .where(Filters.eq("status", "active"))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE status = :status
          * 
          * // Can use entity properties in WHERE clause
          * String sql2 = NLC.count(Order.class)
-         *                  .where(CF.and(
-         *                      CF.gt("amount", 100),
-         *                      CF.between("orderDate", startDate, endDate)
+         *                  .where(Filters.and(
+         *                      Filters.gt("amount", 100),
+         *                      Filters.between("orderDate", startDate, endDate)
          *                  ))
          *                  .sql();
          * // Output: SELECT count(*) FROM orders WHERE amount > :amount AND orderDate BETWEEN :minOrderDate AND :maxOrderDate
@@ -14863,10 +14863,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("status", "ACTIVE"),
-         *     CF.gt("balance", 1000),
-         *     CF.like("lastName", "Smith%")
+         * Condition cond = Filters.and(
+         *     Filters.eq("status", "ACTIVE"),
+         *     Filters.gt("balance", 1000),
+         *     Filters.like("lastName", "Smith%")
          * );
          * String sql = NLC.parse(cond, Account.class).sql();
          * // Output: status = :status AND balance > :balance AND lastName LIKE :lastName
@@ -14904,7 +14904,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Column names are preserved exactly as written
      * String sql = MSB.select("first_Name", "last_NaMe")
      *                 .from("account")
-     *                 .where(CF.eq("last_NaMe", 1))
+     *                 .where(Filters.eq("last_NaMe", 1))
      *                 .sql();
      * // Output: SELECT first_Name, last_NaMe FROM account WHERE last_NaMe = #{last_NaMe}
      * }</pre>
@@ -15251,7 +15251,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = MSB.update("users")
          *                 .set("status", "lastModified")
-         *                 .where(CF.eq("id", 123))
+         *                 .where(Filters.eq("id", 123))
          *                 .sql();
          * // Output: UPDATE users SET status = #{status}, lastModified = #{lastModified} 
          * //         WHERE id = #{id}
@@ -15282,7 +15282,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = MSB.update("user_archive", User.class)
          *                 .set("status")
-         *                 .where(CF.eq("userId", 123))
+         *                 .where(Filters.eq("userId", 123))
          *                 .sql();
          * }</pre>
          * 
@@ -15314,7 +15314,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.update(User.class)
-         *                 .where(CF.eq("id", 123))
+         *                 .where(Filters.eq("id", 123))
          *                 .sql();
          * // Output: UPDATE users SET firstName = #{firstName}, lastName = #{lastName}, 
          * //         email = #{email} WHERE id = #{id}
@@ -15338,7 +15338,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("createdDate", "createdBy"));
          * String sql = MSB.update(User.class, exclude)
-         *                 .where(CF.eq("id", 123))
+         *                 .where(Filters.eq("id", 123))
          *                 .sql();
          * }</pre>
          * 
@@ -15369,7 +15369,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.deleteFrom("users")
-         *                 .where(CF.eq("status", "INACTIVE"))
+         *                 .where(Filters.eq("status", "INACTIVE"))
          *                 .sql();
          * // Output: DELETE FROM users WHERE status = #{status}
          * }</pre>
@@ -15398,7 +15398,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.deleteFrom("ACCOUNT_ARCHIVE", Account.class)
-         *                 .where(CF.lt("lastLogin", "2020-01-01"))
+         *                 .where(Filters.lt("lastLogin", "2020-01-01"))
          *                 .sql();
          * // Output: DELETE FROM ACCOUNT_ARCHIVE WHERE LAST_LOGIN < ?
          * }</pre>
@@ -15430,7 +15430,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.deleteFrom(User.class)
-         *                 .where(CF.lt("lastLoginDate", someDate))
+         *                 .where(Filters.lt("lastLoginDate", someDate))
          *                 .sql();
          * // Output: DELETE FROM users WHERE lastLoginDate < #{lastLoginDate}
          * }</pre>
@@ -15488,7 +15488,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = MSB.select("firstName", "lastName", "email")
          *                 .from("users")
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * // Output: SELECT firstName, lastName, email FROM users WHERE active = #{active}
          * }</pre>
@@ -15672,7 +15672,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.selectFrom(User.class)
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, email FROM users WHERE active = #{active}
          * }</pre>
@@ -15694,7 +15694,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.selectFrom(User.class, "u")
-         *                 .where(CF.eq("u.active", true))
+         *                 .where(Filters.eq("u.active", true))
          *                 .sql();
          * // Output: SELECT u.id, u.firstName, u.lastName FROM users u WHERE u.active = #{active}
          * }</pre>
@@ -15717,7 +15717,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.selectFrom(Order.class, true)
-         *                 .where(CF.gt("totalAmount", 100))
+         *                 .where(Filters.gt("totalAmount", 100))
          *                 .sql();
          * // Output: SELECT o.ID, o.TOTAL_AMOUNT, c.NAME ... FROM ORDERS o LEFT JOIN CUSTOMERS c ON ... WHERE o.TOTAL_AMOUNT > ?
          * }</pre>
@@ -15739,7 +15739,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.selectFrom(Order.class, "ord", true)
-         *                 .where(CF.eq("ord.status", "'PENDING'"))
+         *                 .where(Filters.eq("ord.status", "'PENDING'"))
          *                 .sql();
          * // Output: SELECT ord.ID, ord.TOTAL_AMOUNT, c.NAME ... FROM ORDERS ord LEFT JOIN CUSTOMERS c ON ... WHERE ord.status = ?
          * }</pre>
@@ -15764,7 +15764,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("password", "internalNotes");
          * String sql = MSC.selectFrom(Account.class, excluded)
-         *                 .where(CF.eq("status", "'ACTIVE'"))
+         *                 .where(Filters.eq("status", "'ACTIVE'"))
          *                 .sql();
          * // Output: SELECT ID, FIRST_NAME, EMAIL FROM ACCOUNT WHERE STATUS = ?
          * }</pre>
@@ -15787,7 +15787,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("largeBlob");
          * String sql = MSC.selectFrom(Document.class, "doc", excluded)
-         *                 .where(CF.like("doc.title", "'%report%'"))
+         *                 .where(Filters.like("doc.title", "'%report%'"))
          *                 .sql();
          * // Output: SELECT doc.ID, doc.TITLE, doc.AUTHOR FROM DOCUMENTS doc WHERE doc.TITLE LIKE ?
          * }</pre>
@@ -15812,7 +15812,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("internalData");
          * String sql = MSC.selectFrom(Order.class, true, excluded)
-         *                 .where(CF.gt("totalAmount", 500))
+         *                 .where(Filters.gt("totalAmount", 500))
          *                 .sql();
          * // Output: SELECT o.ID, o.TOTAL_AMOUNT, c.NAME ... FROM ORDERS o LEFT JOIN CUSTOMERS c ON ... WHERE o.TOTAL_AMOUNT > ?
          * }</pre>
@@ -15837,7 +15837,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("password"));
          * String sql = MSB.selectFrom(User.class, "u", true, exclude)
-         *                 .where(CF.eq("u.active", true))
+         *                 .where(Filters.eq("u.active", true))
          *                 .sql();
          * // May generate complex query with JOINs for sub-entities
          * }</pre>
@@ -15974,7 +15974,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.selectFrom(User.class, "u", "user", Order.class, "o", "order")
-         *                 .where(CF.eq("u.ID", "o.USER_ID"))
+         *                 .where(Filters.eq("u.ID", "o.USER_ID"))
          *                 .sql();
          * // Output: SELECT u.ID AS "user.ID", u.NAME AS "user.NAME", o.ID AS "order.ID" FROM USERS u, ORDERS o WHERE u.ID = o.USER_ID
          * }</pre>
@@ -16005,7 +16005,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> orderExcluded = N.asSet("NOTES");
          * String sql = MSC.selectFrom(User.class, "u", "user", userExcluded,
          *                            Order.class, "o", "order", orderExcluded)
-         *                 .where(CF.eq("u.ID", "o.USER_ID"))
+         *                 .where(Filters.eq("u.ID", "o.USER_ID"))
          *                 .sql();
          * // Output: SELECT u.ID AS "user.ID", u.NAME AS "user.NAME", o.ID AS "order.ID" FROM USERS u, ORDERS o WHERE u.ID = o.USER_ID
          * }</pre>
@@ -16046,7 +16046,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Selection(Product.class, "p", "product")
          * );
          * String sql = MSC.selectFrom(selections)
-         *                 .where(CF.and(CF.eq("u.ID", "o.USER_ID"), CF.eq("o.PRODUCT_ID", "p.ID")))
+         *                 .where(Filters.and(Filters.eq("u.ID", "o.USER_ID"), Filters.eq("o.PRODUCT_ID", "p.ID")))
          *                 .sql();
          * // Output: SELECT u.ID AS "user.ID", o.ID AS "order.ID", p.NAME AS "product.NAME" FROM USERS u, ORDERS o, PRODUCTS p WHERE ...
          * }</pre>
@@ -16072,7 +16072,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.count("users")
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * // Output: SELECT count(*) FROM users WHERE active = #{active}
          * }</pre>
@@ -16095,7 +16095,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.count(User.class)
-         *                 .where(CF.between("age", 18, 65))
+         *                 .where(Filters.between("age", 18, 65))
          *                 .sql();
          * // Output: SELECT count(*) FROM users WHERE age BETWEEN #{minAge} AND #{maxAge}
          * }</pre>
@@ -16119,9 +16119,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("active", true),
-         *     CF.gt("age", 18)
+         * Condition cond = Filters.and(
+         *     Filters.eq("active", true),
+         *     Filters.gt("age", 18)
          * );
          * String sql = MSB.parse(cond, User.class).sql();
          * // Output: active = #{active} AND age > #{age}
@@ -16158,7 +16158,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     * // Property names are automatically converted to snake_case
     * String sql = MSC.select("firstName", "lastName")
     *                 .from("account")
-    *                 .where(CF.eq("userId", 1))
+    *                 .where(Filters.eq("userId", 1))
     *                 .sql();
     * // Output: SELECT first_name AS "firstName", last_name AS "lastName" 
     * //         FROM account WHERE user_id = #{userId}
@@ -16506,7 +16506,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MSC.update("users")
          *                 .set("firstName", "John")
          *                 .set("lastName", "Doe")
-         *                 .where(CF.eq("userId", 123))
+         *                 .where(Filters.eq("userId", 123))
          *                 .sql();
          * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName} 
          * //         WHERE user_id = #{userId}
@@ -16537,7 +16537,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MSC.update("users", User.class)
          *                 .set("firstName", "John")
          *                 .set("lastName", "Doe")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName} WHERE id = #{id}
          * }</pre>
@@ -16571,7 +16571,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MSC.update(User.class)
          *                 .set("firstName", "John")
          *                 .set("lastName", "Doe")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName} WHERE id = #{id}
          * }</pre>
@@ -16594,7 +16594,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> exclude = Set.of("id", "createdDate");
          * String sql = MSC.update(User.class, exclude)
          *                 .set("firstName", "John")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName} WHERE id = #{id}
          * }</pre>
@@ -16625,7 +16625,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.deleteFrom("users")
-         *                 .where(CF.eq("userId", 123))
+         *                 .where(Filters.eq("userId", 123))
          *                 .sql();
          * // Output: DELETE FROM users WHERE user_id = #{userId}
          * }</pre>
@@ -16653,7 +16653,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.deleteFrom("users", User.class)
-         *                 .where(CF.eq("userId", 123))
+         *                 .where(Filters.eq("userId", 123))
          *                 .sql();
          * // Output: DELETE FROM users WHERE user_id = #{userId}
          * }</pre>
@@ -16684,7 +16684,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.deleteFrom(User.class)
-         *                 .where(CF.eq("id", 123))
+         *                 .where(Filters.eq("id", 123))
          *                 .sql();
          * // Output: DELETE FROM users WHERE id = #{id}
          * }</pre>
@@ -16937,7 +16937,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.selectFrom(User.class, "u")
-         *                 .where(CF.eq("u.active", true))
+         *                 .where(Filters.eq("u.active", true))
          *                 .sql();
          * // Output: SELECT u.first_name AS "firstName", u.last_name AS "lastName" 
          * //         FROM users u WHERE u.active = #{u.active}
@@ -16959,7 +16959,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.selectFrom(User.class, true)
-         *                 .where(CF.eq("active", true))
+         *                 .where(Filters.eq("active", true))
          *                 .sql();
          * // Includes sub-entity properties with automatic joins
          * }</pre>
@@ -16980,7 +16980,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.selectFrom(User.class, "u", true)
-         *                 .where(CF.like("u.email", "%@example.com"))
+         *                 .where(Filters.like("u.email", "%@example.com"))
          *                 .sql();
          * // Uses alias 'u' and includes sub-entity properties
          * }</pre>
@@ -17003,7 +17003,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> exclude = Set.of("largeBlob", "tempData");
          * String sql = MSC.selectFrom(User.class, exclude)
-         *                 .where(CF.gt("createdDate", someDate))
+         *                 .where(Filters.gt("createdDate", someDate))
          *                 .sql();
          * // Selects all properties except excluded ones
          * }</pre>
@@ -17073,7 +17073,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> exclude = Set.of("internal");
          * String sql = MSC.selectFrom(User.class, "u", true, exclude)
          *                 .leftJoin("address a").on("u.address_id = a.id")
-         *                 .where(CF.isNotNull("a.city"))
+         *                 .where(Filters.isNotNull("a.city"))
          *                 .sql();
          * // Full control over alias, sub-entities, and excluded properties
          * }</pre>
@@ -17214,7 +17214,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MSC.selectFrom(User.class, "u", "user",
          *                           Order.class, "o", "order")
          *                 .on("u.id = o.user_id")
-         *                 .where(CF.gt("o.total", 100))
+         *                 .where(Filters.gt("o.total", 100))
          *                 .sql();
          * // Automatic FROM clause with proper table names
          * }</pre>
@@ -17308,7 +17308,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT count(*) FROM users
          * 
          * String sql2 = MSC.count("users")
-         *                  .where(CF.eq("active", true))
+         *                  .where(Filters.eq("active", true))
          *                  .sql();
          * // Output: SELECT count(*) FROM users WHERE active = #{active}
          * }</pre>
@@ -17331,7 +17331,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.count(User.class)
-         *                 .where(CF.gt("age", 18))
+         *                 .where(Filters.gt("age", 18))
          *                 .sql();
          * // Output: SELECT count(*) FROM users WHERE age > #{age}
          * }</pre>
@@ -17354,9 +17354,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("firstName", "John"),
-         *     CF.gt("age", 18)
+         * Condition cond = Filters.and(
+         *     Filters.eq("firstName", "John"),
+         *     Filters.gt("age", 18)
          * );
          * String sql = MSC.parse(cond, User.class).sql();
          * // Output: first_name = #{firstName} AND age > #{age}
@@ -17392,7 +17392,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Generate SELECT with column aliasing
      * String sql = MAC.select("firstName", "lastName")
      *                 .from("account")
-     *                 .where(CF.eq("id", 1))
+     *                 .where(Filters.eq("id", 1))
      *                 .sql();
      * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = #{id}
      * 
@@ -17713,7 +17713,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .set("firstName", "John")
          *                 .set("lastName", "Doe")
          *                 .set("modifiedDate", new Date())
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET firstName = #{firstName}, lastName = #{lastName}, modifiedDate = #{modifiedDate} WHERE id = #{id}
          * }</pre>
@@ -17742,7 +17742,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MLC.update("account", Account.class)
          *                 .set("isActive", false)
          *                 .set("deactivatedDate", new Date())
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET isActive = #{isActive}, deactivatedDate = #{deactivatedDate} WHERE id = #{id}
          * }</pre>
@@ -17774,7 +17774,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MLC.update(Account.class)
          *                 .set("status", "ACTIVE")
          *                 .set("lastLoginDate", new Date())
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET status = #{status}, lastLoginDate = #{lastLoginDate} WHERE id = #{id}
          * }</pre>
@@ -17796,7 +17796,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MLC.update(Account.class, excludes)
          *                 .set("firstName", "John")
          *                 .set("modifiedDate", new Date())
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET firstName = #{firstName}, modifiedDate = #{modifiedDate} WHERE id = #{id}
          * }</pre>
@@ -17825,7 +17825,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.deleteFrom("account")
-         *                 .where(CF.eq("status", "INACTIVE"))
+         *                 .where(Filters.eq("status", "INACTIVE"))
          *                 .sql();
          * // Output: DELETE FROM account WHERE status = #{status}
          * }</pre>
@@ -17851,9 +17851,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.deleteFrom("account", Account.class)
-         *                 .where(CF.and(
-         *                     CF.eq("isActive", false),
-         *                     CF.lt("lastLoginDate", lastYear)
+         *                 .where(Filters.and(
+         *                     Filters.eq("isActive", false),
+         *                     Filters.lt("lastLoginDate", lastYear)
          *                 ))
          *                 .sql();
          * // Output: DELETE FROM account WHERE isActive = #{isActive} AND lastLoginDate < #{lastLoginDate}
@@ -17883,7 +17883,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.deleteFrom(Account.class)
-         *                 .where(CF.in("id", Arrays.asList(1, 2, 3)))
+         *                 .where(Filters.in("id", Arrays.asList(1, 2, 3)))
          *                 .sql();
          * // Output: DELETE FROM account WHERE id IN (#{id_0}, #{id_1}, #{id_2})
          * }</pre>
@@ -18095,7 +18095,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.selectFrom(Account.class).where(CF.eq("isActive", true)).sql();
+         * String sql = MLC.selectFrom(Account.class).where(Filters.eq("isActive", true)).sql();
          * // Output: SELECT id, firstName, lastName, emailAddress FROM account WHERE isActive = #{isActive}
          * }</pre>
          *
@@ -18112,7 +18112,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.selectFrom(Account.class, "a")
-         *                 .where(CF.like("a.emailAddress", "%@example.com"))
+         *                 .where(Filters.like("a.emailAddress", "%@example.com"))
          *                 .sql();
          * // Output: SELECT a.id, a.firstName, a.lastName, a.emailAddress FROM account a WHERE a.emailAddress LIKE #{emailAddress}
          * }</pre>
@@ -18131,7 +18131,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.selectFrom(Order.class, true)
-         *                 .where(CF.between("orderDate", startDate, endDate))
+         *                 .where(Filters.between("orderDate", startDate, endDate))
          *                 .sql();
          * // Includes Order properties and related sub-entity properties
          * }</pre>
@@ -18151,7 +18151,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = MLC.selectFrom(Product.class, "p", true)
          *                 .innerJoin("category", "c").on("p.categoryId = c.id")
-         *                 .where(CF.eq("c.isActive", true))
+         *                 .where(Filters.eq("c.isActive", true))
          *                 .sql();
          * }</pre>
          *
@@ -18171,7 +18171,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("largeJsonData", "binaryContent"));
          * String sql = MLC.selectFrom(Document.class, excludes)
-         *                 .where(CF.eq("documentType", "PDF"))
+         *                 .where(Filters.eq("documentType", "PDF"))
          *                 .sql();
          * }</pre>
          *
@@ -18210,7 +18210,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("auditLog"));
          * String sql = MLC.selectFrom(Invoice.class, true, excludes)
-         *                 .where(CF.eq("isPaid", false))
+         *                 .where(Filters.eq("isPaid", false))
          *                 .orderBy("dueDate")
          *                 .sql();
          * }</pre>
@@ -18232,9 +18232,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excludes = new HashSet<>(Arrays.asList("tempData"));
          * String sql = MLC.selectFrom(Transaction.class, "t", true, excludes)
          *                 .innerJoin("account", "a").on("t.accountId = a.id")
-         *                 .where(CF.and(
-         *                     CF.eq("a.isActive", true),
-         *                     CF.gt("t.amount", 1000)
+         *                 .where(Filters.and(
+         *                     Filters.eq("a.isActive", true),
+         *                     Filters.gt("t.amount", 1000)
          *                 ))
          *                 .sql();
          * }</pre>
@@ -18295,7 +18295,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                        Customer.class, "c", "customer", customerExcludes)
          *                 .from("orders o")
          *                 .innerJoin("customers c").on("o.customerId = c.id")
-         *                 .where(CF.gt("o.totalAmount", 500))
+         *                 .where(Filters.gt("o.totalAmount", 500))
          *                 .sql();
          * }</pre>
          *
@@ -18361,7 +18361,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MLC.selectFrom(Order.class, "o", "order",
          *                            Customer.class, "c", "customer")
          *                 .on("o.customerId = c.id")
-         *                 .where(CF.eq("c.country", "USA"))
+         *                 .where(Filters.eq("c.country", "USA"))
          *                 .sql();
          * }</pre>
          *
@@ -18448,7 +18448,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.count("account").where(CF.eq("isActive", true)).sql();
+         * String sql = MLC.count("account").where(Filters.eq("isActive", true)).sql();
          * // Output: SELECT count(*) FROM account WHERE isActive = #{isActive}
          * }</pre>
          *
@@ -18468,9 +18468,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.count(Account.class)
-         *                 .where(CF.or(
-         *                     CF.isNull("emailAddress"),
-         *                     CF.eq("emailVerified", false)
+         *                 .where(Filters.or(
+         *                     Filters.isNull("emailAddress"),
+         *                     Filters.eq("emailVerified", false)
          *                 ))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE emailAddress IS NULL OR emailVerified = #{emailVerified}
@@ -18491,10 +18491,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("isActive", true),
-         *     CF.like("emailAddress", "%@company.com"),
-         *     CF.gt("accountBalance", 0)
+         * Condition cond = Filters.and(
+         *     Filters.eq("isActive", true),
+         *     Filters.like("emailAddress", "%@company.com"),
+         *     Filters.gt("accountBalance", 0)
          * );
          * String sql = MLC.parse(cond, Account.class).sql();
          * // Output: isActive = #{isActive} AND emailAddress LIKE #{emailAddress} AND accountBalance > #{accountBalance}
@@ -18530,7 +18530,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Property names remain in camelCase
      * String sql = MLC.select("firstName", "lastName")
      *                 .from("account")
-     *                 .where(CF.eq("id", 1))
+     *                 .where(Filters.eq("id", 1))
      *                 .sql();
      * // Output: SELECT firstName, lastName FROM account WHERE id = #{id}
      * 
@@ -18855,7 +18855,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MLC.update("account")
          *                 .set("firstName", "updatedName")
          *                 .set("modifiedDate", new Date())
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET firstName = #{firstName}, modifiedDate = #{modifiedDate} WHERE id = #{id}
          * }</pre>
@@ -18884,7 +18884,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MLC.update("account", Account.class)
          *                 .set("firstName", "John")
          *                 .set("lastName", "Doe")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET firstName = #{firstName}, lastName = #{lastName} WHERE id = #{id}
          * }</pre>
@@ -18916,7 +18916,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = MLC.update(Account.class)
          *                 .set("firstName", "John")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET firstName = #{firstName} WHERE id = #{id}
          * }</pre>
@@ -18939,7 +18939,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Set<String> excludes = new HashSet<>(Arrays.asList("createdDate", "createdBy"));
          * String sql = MLC.update(Account.class, excludes)
          *                 .set("firstName", "John")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: UPDATE account SET firstName = #{firstName} WHERE id = #{id}
          * }</pre>
@@ -18968,7 +18968,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.deleteFrom("account")
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM account WHERE id = #{id}
          * }</pre>
@@ -18995,7 +18995,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.deleteFrom("account", Account.class)
-         *                 .where(CF.eq("emailAddress", "john@example.com"))
+         *                 .where(Filters.eq("emailAddress", "john@example.com"))
          *                 .sql();
          * // Output: DELETE FROM account WHERE emailAddress = #{emailAddress}
          * }</pre>
@@ -19025,7 +19025,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.deleteFrom(Account.class)
-         *                 .where(CF.eq("id", 1))
+         *                 .where(Filters.eq("id", 1))
          *                 .sql();
          * // Output: DELETE FROM account WHERE id = #{id}
          * }</pre>
@@ -19080,7 +19080,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = MLC.select("firstName", "lastName", "emailAddress")
          *                 .from("account")
-         *                 .where(CF.gt("createdDate", someDate))
+         *                 .where(Filters.gt("createdDate", someDate))
          *                 .sql();
          * // Output: SELECT firstName, lastName, emailAddress FROM account WHERE createdDate > #{createdDate}
          * }</pre>
@@ -19167,7 +19167,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = MLC.select(Account.class)
          *                 .from("account")
-         *                 .where(CF.eq("isActive", true))
+         *                 .where(Filters.eq("isActive", true))
          *                 .sql();
          * // Output: SELECT id, firstName, lastName, emailAddress, isActive FROM account WHERE isActive = #{isActive}
          * }</pre>
@@ -19262,7 +19262,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.selectFrom(Account.class)
-         *                 .where(CF.eq("isActive", true))
+         *                 .where(Filters.eq("isActive", true))
          *                 .orderBy("createdDate DESC")
          *                 .sql();
          * // Output: SELECT * FROM account WHERE isActive = #{isActive} ORDER BY createdDate DESC
@@ -19283,7 +19283,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = MLC.selectFrom(Account.class, "a")
          *                 .innerJoin("profile p").on("a.profileId = p.id")
-         *                 .where(CF.eq("a.isActive", true))
+         *                 .where(Filters.eq("a.isActive", true))
          *                 .sql();
          * // Output: SELECT a.* FROM account a INNER JOIN profile p ON a.profileId = p.id WHERE a.isActive = #{isActive}
          * }</pre>
@@ -19345,7 +19345,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("largeBlob", "internalData"));
          * String sql = MLC.selectFrom(Account.class, excludes)
-         *                 .where(CF.eq("status", "ACTIVE"))
+         *                 .where(Filters.eq("status", "ACTIVE"))
          *                 .sql();
          * // Output: SELECT columns except largeBlob, internalData FROM account WHERE status = #{status}
          * }</pre>
@@ -19366,7 +19366,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("password"));
          * String sql = MLC.selectFrom(Account.class, "a", excludes)
-         *                 .where(CF.like("a.emailAddress", "%@example.com"))
+         *                 .where(Filters.like("a.emailAddress", "%@example.com"))
          *                 .sql();
          * // Output: SELECT a.columns except password FROM account a WHERE a.emailAddress LIKE #{emailAddress}
          * }</pre>
@@ -19413,7 +19413,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MLC.selectFrom(Account.class, "acc", true, excludes)
          *                 .innerJoin("orders o").on("acc.id = o.accountId")
          *                 .innerJoin("items i").on("o.id = i.orderId")
-         *                 .where(CF.gt("o.total", 100))
+         *                 .where(Filters.gt("o.total", 100))
          *                 .sql();
          * // Output: Complex SELECT with multiple joins
          * }</pre>
@@ -19545,7 +19545,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = MLC.selectFrom(Account.class, "a", "account", Order.class, "o", "order")
          *                 .innerJoin("a.id = o.accountId")
-         *                 .where(CF.gt("o.createdDate", someDate))
+         *                 .where(Filters.gt("o.createdDate", someDate))
          *                 .sql();
          * // Output: SELECT with automatic FROM clause generation
          * }</pre>
@@ -19610,7 +19610,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MLC.selectFrom(selections)
          *                 .where(complexConditions)
          *                 .groupBy("account.type")
-         *                 .having(CF.gt("COUNT(*)", 5))
+         *                 .having(Filters.gt("COUNT(*)", 5))
          *                 .sql();
          * // Output: Complex SELECT with automatic FROM clause generation
          * }</pre>
@@ -19634,7 +19634,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.count("account")
-         *                 .where(CF.eq("isActive", true))
+         *                 .where(Filters.eq("isActive", true))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE isActive = #{isActive}
          * }</pre>
@@ -19656,7 +19656,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.count(Account.class)
-         *                 .where(CF.between("createdDate", startDate, endDate))
+         *                 .where(Filters.between("createdDate", startDate, endDate))
          *                 .sql();
          * // Output: SELECT count(*) FROM account WHERE createdDate BETWEEN #{minCreatedDate} AND #{maxCreatedDate}
          * }</pre>
@@ -19677,9 +19677,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = CF.and(
-         *     CF.eq("status", "ACTIVE"),
-         *     CF.gt("balance", 1000)
+         * Condition cond = Filters.and(
+         *     Filters.eq("status", "ACTIVE"),
+         *     Filters.gt("balance", 1000)
          * );
          * String sql = MLC.parse(cond, Account.class).sql();
          * // Output: status = #{status} AND balance > #{balance}

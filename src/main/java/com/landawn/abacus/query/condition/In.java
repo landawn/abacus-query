@@ -208,6 +208,22 @@ public class In extends AbstractCondition {
      * The returned list contains all the values that the property is being checked against.
      * These values will be bound to the prepared statement placeholders when the query is executed.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = new In("status", Arrays.asList("active", "pending", "approved"));
+     * List<Object> params = condition.getParameters(); // Returns ["active", "pending", "approved"]
+     *
+     * // Check number of parameters
+     * int paramCount = condition.getParameters().size(); // Returns 3
+     *
+     * // Use in query preparation
+     * PreparedStatement stmt = connection.prepareStatement(sql);
+     * List<Object> params = condition.getParameters();
+     * for (int i = 0; i < params.size(); i++) {
+     *     stmt.setObject(i + 1, params.get(i));
+     * }
+     * }</pre>
+     *
      * @return an immutable list of values as parameters, or an empty list if no values are set
      */
     @Override
@@ -242,6 +258,17 @@ public class In extends AbstractCondition {
      * The copy includes a new list containing the same values, ensuring complete
      * independence from the original condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In original = new In("status", Arrays.asList("active", "pending", "approved"));
+     * In copy = original.copy();
+     * // copy is independent of original
+     *
+     * // Modifying copy doesn't affect original
+     * copy.clearParameters();
+     * System.out.println(original.getParameters()); // Still returns ["active", "pending", "approved"]
+     * }</pre>
+     *
      * @param <T> the type of the condition
      * @return a new IN instance with a copy of all values
      */
@@ -259,6 +286,17 @@ public class In extends AbstractCondition {
      * Converts this IN condition to its string representation according to the specified naming policy.
      * The naming policy is applied to the property name to handle different naming conventions.
      * Values are formatted appropriately based on their types.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = new In("status", Arrays.asList("active", "pending", "approved"));
+     * String sql = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+     * // Returns: "status IN ('active', 'pending', 'approved')"
+     *
+     * In numericCondition = new In("userId", Arrays.asList(1, 2, 3));
+     * String sql2 = numericCondition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+     * // Returns: "user_id IN (1, 2, 3)"
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to the property name
      * @return the string representation, e.g., "status IN ('active', 'pending')"
@@ -281,6 +319,20 @@ public class In extends AbstractCondition {
 
     /**
      * Computes the hash code for this IN condition.
+     * The hash code is computed based on the property name, operator, and values list,
+     * ensuring consistent hashing for equivalent conditions.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In c1 = new In("status", Arrays.asList("active", "pending"));
+     * In c2 = new In("status", Arrays.asList("active", "pending"));
+     * assert c1.hashCode() == c2.hashCode(); // true - same property and values
+     *
+     * // Useful in collections
+     * Set<In> conditions = new HashSet<>();
+     * conditions.add(c1);
+     * assert conditions.contains(c2); // true
+     * }</pre>
      *
      * @return the hash code based on property name, operator, and values
      */
@@ -294,6 +346,21 @@ public class In extends AbstractCondition {
 
     /**
      * Checks if this IN condition is equal to another object.
+     * Two IN conditions are equal if they have the same property name,
+     * operator, and values list.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In c1 = new In("status", Arrays.asList("active", "pending"));
+     * In c2 = new In("status", Arrays.asList("active", "pending"));
+     * assert c1.equals(c2); // true
+     *
+     * In c3 = new In("type", Arrays.asList("active", "pending"));
+     * assert !c1.equals(c3); // false - different property name
+     *
+     * In c4 = new In("status", Arrays.asList("active", "approved"));
+     * assert !c1.equals(c4); // false - different values
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the object is an IN condition with the same property name, operator, and values

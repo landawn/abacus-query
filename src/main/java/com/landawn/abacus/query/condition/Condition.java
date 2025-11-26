@@ -28,7 +28,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * representation. Conditions are designed to be composable, allowing complex queries
  * to be built from simple building blocks.</p>
  * 
- * <p>Conditions should be immutable except when using {@code clearParameter()} to release resources.
+ * <p>Conditions should be immutable except when using {@code clearParameters()} to release resources.
  * This design ensures thread-safety and prevents unexpected side effects when conditions
  * are reused or shared.</p>
  * 
@@ -48,8 +48,8 @@ import com.landawn.abacus.util.NamingPolicy;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create simple conditions
- * Condition ageCondition = CF.gt("age", 18);
- * Condition statusCondition = CF.eq("status", "active");
+ * Condition ageCondition = Filters.gt("age", 18);
+ * Condition statusCondition = Filters.eq("status", "active");
  * 
  * // Combine conditions using logical operations
  * Condition combined = ageCondition.and(statusCondition);
@@ -79,10 +79,10 @@ public interface Condition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition eq = CF.eq("name", "John");
+     * Condition eq = Filters.eq("name", "John");
      * Operator op1 = eq.getOperator(); // Returns Operator.EQUAL
      * 
-     * Condition gt = CF.gt("age", 18);
+     * Condition gt = Filters.gt("age", 18);
      * Operator op2 = gt.getOperator(); // Returns Operator.GREATER_THAN
      * 
      * Condition and = eq.and(gt);
@@ -107,13 +107,13 @@ public interface Condition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition age = CF.gt("age", 18);
-     * Condition status = CF.eq("status", "active");
+     * Condition age = Filters.gt("age", 18);
+     * Condition status = Filters.eq("status", "active");
      * And combined = age.and(status);
      * // Equivalent to: age > 18 AND status = 'active'
      * 
      * // Can be chained
-     * Condition verified = CF.eq("verified", true);
+     * Condition verified = Filters.eq("verified", true);
      * And all = age.and(status).and(verified);
      * // Equivalent to: age > 18 AND status = 'active' AND verified = true
      * }</pre>
@@ -137,13 +137,13 @@ public interface Condition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition premium = CF.eq("memberType", "premium");
-     * Condition vip = CF.eq("memberType", "vip");
+     * Condition premium = Filters.eq("memberType", "premium");
+     * Condition vip = Filters.eq("memberType", "vip");
      * Or combined = premium.or(vip);
      * // Equivalent to: memberType = 'premium' OR memberType = 'vip'
      * 
      * // Can be chained
-     * Condition gold = CF.eq("memberType", "gold");
+     * Condition gold = Filters.eq("memberType", "gold");
      * Or any = premium.or(vip).or(gold);
      * // Equivalent to: memberType = 'premium' OR memberType = 'vip' OR memberType = 'gold'
      * }</pre>
@@ -165,14 +165,14 @@ public interface Condition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition isNull = CF.isNull("email");
+     * Condition isNull = Filters.isNull("email");
      * Not isNotNull = isNull.not();
      * // Equivalent to: NOT (email IS NULL)
      * 
      * // Complex negation
-     * Condition complex = CF.and(
-     *     CF.eq("status", "active"),
-     *     CF.gt("age", 18)
+     * Condition complex = Filters.and(
+     *     Filters.eq("status", "active"),
+     *     Filters.gt("age", 18)
      * );
      * Not negated = complex.not();
      * // Equivalent to: NOT (status = 'active' AND age > 18)
@@ -188,7 +188,7 @@ public interface Condition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition original = CF.eq("status", "active");
+     * Condition original = Filters.eq("status", "active");
      * Condition copy = original.copy();
      * // copy is a new instance with the same values
      * }</pre>
@@ -204,7 +204,7 @@ public interface Condition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition condition = CF.between("age", 18, 65);
+     * Condition condition = Filters.between("age", 18, 65);
      * List<Object> params = condition.getParameters();
      * // Returns [18, 65]
      * }</pre>
@@ -215,15 +215,17 @@ public interface Condition {
 
     /**
      * Clears all parameter values by setting them to null to free memory.
-     * 
+     *
      * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     * Use this method to release large objects when the condition is no longer needed.
+     * This is the only mutating operation allowed on otherwise immutable conditions.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
+     * Condition condition = Filters.between("age", 18, 65);
+     * List<Object> parameters = condition.getParameters(); // Returns [18, 65]
      * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null]
      * }</pre>
      */
     void clearParameters();
@@ -234,7 +236,7 @@ public interface Condition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition condition = CF.eq("firstName", "John");
+     * Condition condition = Filters.eq("firstName", "John");
      * String sql = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
      * // Returns: "first_name = 'John'"
      * }</pre>

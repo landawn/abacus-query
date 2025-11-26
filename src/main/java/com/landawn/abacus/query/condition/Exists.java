@@ -34,19 +34,19 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who have placed at least one order
- * SubQuery orderExists = CF.subQuery(
+ * SubQuery orderExists = Filters.subQuery(
  *     "SELECT 1 FROM orders WHERE orders.customer_id = customers.id"
  * );
  * Exists hasOrders = new Exists(orderExists);
  * 
  * // Find products that have been reviewed
- * SubQuery reviewExists = CF.subQuery(
+ * SubQuery reviewExists = Filters.subQuery(
  *     "SELECT 1 FROM reviews WHERE reviews.product_id = products.id"
  * );
  * Exists hasReviews = new Exists(reviewExists);
  * 
  * // Find departments with employees
- * SubQuery employeeExists = CF.subQuery(
+ * SubQuery employeeExists = Filters.subQuery(
  *     "SELECT 1 FROM employees WHERE employees.dept_id = departments.id"
  * );
  * Exists hasEmployees = new Exists(employeeExists);
@@ -110,6 +110,7 @@ public class Exists extends Cell {
      * }</pre>
      *
      * @param condition the subquery to check for existence of rows (must not be null)
+     * @throws IllegalArgumentException if condition is null
      */
     public Exists(final SubQuery condition) {
         super(Operator.EXISTS, condition);

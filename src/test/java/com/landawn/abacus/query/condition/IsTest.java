@@ -6,9 +6,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Is;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class IsTest extends TestBase {
@@ -24,7 +21,7 @@ public class IsTest extends TestBase {
 
     @Test
     public void testConstructorWithExpression() {
-        Is condition = new Is("status", CF.expr("ACTIVE"));
+        Is condition = new Is("status", Filters.expr("ACTIVE"));
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("status", condition.getPropName());
         Assertions.assertEquals(Operator.IS, condition.getOperator());

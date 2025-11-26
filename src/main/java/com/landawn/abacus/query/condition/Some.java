@@ -32,12 +32,12 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find employees earning more than SOME managers
- * SubQuery managerSalaries = new SubQuery("SELECT salary FROM employees WHERE role = 'manager'");
+ * SubQuery managerSalaries = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
  * Some someCondition = new Some(managerSalaries);
  * // Used with: salary > SOME (SELECT salary FROM employees WHERE role = 'manager')
  *
  * // Find products cheaper than SOME competitor products
- * SubQuery competitorPrices = new SubQuery("SELECT price FROM competitor_products");
+ * SubQuery competitorPrices = Filters.subQuery("SELECT price FROM competitor_products");
  * Some somePrice = new Some(competitorPrices);
  * // Used with: price < SOME (SELECT price FROM competitor_products)
  * }</pre>
@@ -76,26 +76,26 @@ public class Some extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Subquery to get department budgets
-     * SubQuery deptBudgets = new SubQuery("SELECT budget FROM departments");
+     * SubQuery deptBudgets = Filters.subQuery("SELECT budget FROM departments");
      * Some someCondition = new Some(deptBudgets);
      * // Used with: WHERE project_cost < SOME (SELECT budget FROM departments)
      * // Returns projects that cost less than at least one department's budget
      *
      * // Find employees earning more than some manager salaries
-     * SubQuery managerSalaries = new SubQuery("SELECT salary FROM employees WHERE is_manager = true");
+     * SubQuery managerSalaries = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
      * Some someManagerSalary = new Some(managerSalaries);
      * // Used with: WHERE salary > SOME (SELECT salary FROM employees WHERE is_manager = true)
      * // Returns employees earning more than at least one manager
      *
      * // Find orders with amount equal to some threshold
-     * SubQuery thresholds = new SubQuery("SELECT threshold FROM order_levels");
+     * SubQuery thresholds = Filters.subQuery("SELECT threshold FROM order_levels");
      * Some someThreshold = new Some(thresholds);
      * // Used with: WHERE order_amount = SOME (SELECT threshold FROM order_levels)
      * // Returns orders matching at least one threshold value
      * }</pre>
      *
      * @param condition the subquery that returns values to compare against. Must not be null.
-     * @throws IllegalArgumentException if condition is null
+     * @throws NullPointerException if condition is null
      */
     public Some(final SubQuery condition) {
         super(Operator.SOME, condition);

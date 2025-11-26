@@ -54,21 +54,21 @@ import java.util.Collection;
  *
  * // Find customers without orders using LEFT JOIN
  * LeftJoin noOrders = new LeftJoin("orders o",
- *     new On("c.customer_id", "o.customer_id"));
+ *     new On("c.id", "o.customer_id"));
  * // Use with WHERE o.customer_id IS NULL to find customers without orders
  *
  * // Complex left join with multiple ON conditions and filters
  * LeftJoin complexJoin = new LeftJoin("order_items oi",
  *     new And(
  *         new On("o.id", "oi.order_id"),
- *         new Equal("oi.status", "active"),
- *         new GreaterThan("oi.quantity", 0)
+ *         Filters.eq("oi.status", "active"),
+ *         Filters.gt("oi.quantity", 0)
  *     ));
  * // Generates: LEFT JOIN order_items oi (ON o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0)
  *
  * // Using Expression for custom join logic
  * LeftJoin exprJoin = new LeftJoin("orders o",
- *     CF.expr("customers.id = o.customer_id"));
+ *     Filters.expr("customers.id = o.customer_id"));
  * // Generates: LEFT JOIN orders o customers.id = o.customer_id
  * }</pre>
  * 
@@ -137,14 +137,14 @@ public class LeftJoin extends Join {
      * LeftJoin activeItems = new LeftJoin("order_items oi",
      *     new And(
      *         new On("orders.id", "oi.order_id"),
-     *         new Equal("oi.status", "active"),
-     *         new GreaterThan("oi.created_date", "2023-01-01")
+     *         Filters.eq("oi.status", "active"),
+     *         Filters.gt("oi.created_date", "2023-01-01")
      *     ));
      * // Generates: LEFT JOIN order_items oi (ON orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01')
      *
      * // Using Expression for custom join logic
      * LeftJoin exprJoin = new LeftJoin("orders o",
-     *     CF.expr("customers.id = o.customer_id AND o.amount > 100"));
+     *     Filters.expr("customers.id = o.customer_id AND o.amount > 100"));
      * // Generates: LEFT JOIN orders o customers.id = o.customer_id AND o.amount > 100
      * }</pre>
      *
@@ -174,7 +174,7 @@ public class LeftJoin extends Join {
      *
      * // Using Expression for multiple tables
      * LeftJoin exprJoin = new LeftJoin(tables,
-     *     CF.expr("c.id = o.customer_id AND o.id = oi.order_id"));
+     *     Filters.expr("c.id = o.customer_id AND o.id = oi.order_id"));
      * // Generates: LEFT JOIN orders o, order_items oi c.id = o.customer_id AND o.id = oi.order_id
      * }</pre>
      *

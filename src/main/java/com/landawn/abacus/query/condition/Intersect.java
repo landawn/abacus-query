@@ -37,6 +37,32 @@ package com.landawn.abacus.query.condition;
  *   <li>Set-based analysis and reporting</li>
  * </ul>
  *
+ * <p>When to use INTERSECT vs other approaches:
+ * <ul>
+ *   <li>Use INTERSECT when you need rows that satisfy multiple independent conditions</li>
+ *   <li>Use INTERSECT for readable, declarative set-based logic</li>
+ *   <li>Consider INNER JOIN when you need columns from both tables</li>
+ *   <li>Consider EXISTS when you only need to check presence without column matching</li>
+ *   <li>Use IN clause for simple single-column membership tests</li>
+ * </ul>
+ *
+ * <p>Performance considerations:
+ * <ul>
+ *   <li>INTERSECT requires duplicate elimination, similar to UNION</li>
+ *   <li>Performance depends on result set size and database optimization</li>
+ *   <li>May use sorting or hashing for duplicate removal</li>
+ *   <li>Indexes on columns used in both queries can improve performance</li>
+ *   <li>For large datasets, consider alternative approaches like INNER JOIN with EXISTS</li>
+ * </ul>
+ *
+ * <p>Database support:
+ * <ul>
+ *   <li>Supported by: PostgreSQL, Oracle, SQL Server, SQLite, DB2</li>
+ *   <li>NOT supported by MySQL (use IN with subquery or INNER JOIN instead)</li>
+ *   <li>Part of SQL standard but not universally implemented</li>
+ *   <li>Performance and optimization strategies vary by database</li>
+ * </ul>
+ *
  * <p>Relationship to other set operations:</p>
  * <ul>
  *   <li>INTERSECT returns only rows that appear in both queries</li>

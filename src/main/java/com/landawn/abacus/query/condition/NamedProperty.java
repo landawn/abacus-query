@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Strings;
 
@@ -165,7 +164,7 @@ public final class NamedProperty {
      * @see Filters.CF#eq(String, Object)
      */
     public Equal eq(final Object values) {
-        return CF.eq(propName, values);
+        return Filters.eq(propName, values);
     }
 
     /**
@@ -188,10 +187,10 @@ public final class NamedProperty {
      * @see Equal
      */
     public Or eqOr(final Object... values) {
-        final Or or = CF.or();
+        final Or or = Filters.or();
 
         for (final Object propValue : values) {
-            or.add(CF.eq(propName, propValue));
+            or.add(Filters.eq(propName, propValue));
         }
 
         return or;
@@ -219,10 +218,10 @@ public final class NamedProperty {
      * @see Equal
      */
     public Or eqOr(final Collection<?> values) {
-        final Or or = CF.or();
+        final Or or = Filters.or();
 
         for (final Object propValue : values) {
-            or.add(CF.eq(propName, propValue));
+            or.add(Filters.eq(propName, propValue));
         }
 
         return or;
@@ -244,7 +243,7 @@ public final class NamedProperty {
      * @see Filters.CF#ne(String, Object)
      */
     public NotEqual ne(final Object values) {
-        return CF.ne(propName, values);
+        return Filters.ne(propName, values);
     }
 
     /**
@@ -263,7 +262,7 @@ public final class NamedProperty {
      * @see Filters.CF#gt(String, Object)
      */
     public GreaterThan gt(final Object value) {
-        return CF.gt(propName, value);
+        return Filters.gt(propName, value);
     }
 
     /**
@@ -282,7 +281,7 @@ public final class NamedProperty {
      * @see Filters.CF#ge(String, Object)
      */
     public GreaterEqual ge(final Object value) {
-        return CF.ge(propName, value);
+        return Filters.ge(propName, value);
     }
 
     /**
@@ -301,7 +300,7 @@ public final class NamedProperty {
      * @see Filters.CF#lt(String, Object)
      */
     public LessThan lt(final Object value) {
-        return CF.lt(propName, value);
+        return Filters.lt(propName, value);
     }
 
     /**
@@ -320,7 +319,7 @@ public final class NamedProperty {
      * @see Filters.CF#le(String, Object)
      */
     public LessEqual le(final Object value) {
-        return CF.le(propName, value);
+        return Filters.le(propName, value);
     }
 
     /**
@@ -338,7 +337,7 @@ public final class NamedProperty {
      * @see Filters.CF#isNull(String)
      */
     public IsNull isNull() {
-        return CF.isNull(propName);
+        return Filters.isNull(propName);
     }
 
     /**
@@ -356,7 +355,7 @@ public final class NamedProperty {
      * @see Filters.CF#isNotNull(String)
      */
     public IsNotNull isNotNull() {
-        return CF.isNotNull(propName);
+        return Filters.isNotNull(propName);
     }
 
     /**
@@ -376,7 +375,7 @@ public final class NamedProperty {
      * @see Filters.CF#between(String, Object, Object)
      */
     public Between between(final Object minValue, final Object maxValue) {
-        return CF.between(propName, minValue, maxValue);
+        return Filters.between(propName, minValue, maxValue);
     }
 
     /**
@@ -389,7 +388,7 @@ public final class NamedProperty {
      */
     @Deprecated
     public Between bt(final Object minValue, final Object maxValue) {
-        return CF.between(propName, minValue, maxValue);
+        return Filters.between(propName, minValue, maxValue);
     }
 
     /**
@@ -408,7 +407,7 @@ public final class NamedProperty {
      * @see Filters.CF#like(String, Object)
      */
     public Like like(final Object value) {
-        return CF.like(propName, value);
+        return Filters.like(propName, value);
     }
 
     /**
@@ -427,7 +426,7 @@ public final class NamedProperty {
      * @see Filters.CF#notLike(String, Object)
      */
     public NotLike notLike(final Object value) {
-        return CF.notLike(propName, value);
+        return Filters.notLike(propName, value);
     }
 
     /**
@@ -446,7 +445,7 @@ public final class NamedProperty {
      * @see Filters.CF#startsWith(String, Object)
      */
     public Like startsWith(final Object value) {
-        return CF.startsWith(propName, value);
+        return Filters.startsWith(propName, value);
     }
 
     /**
@@ -465,7 +464,7 @@ public final class NamedProperty {
      * @see Filters.CF#endsWith(String, Object)
      */
     public Like endsWith(final Object value) {
-        return CF.endsWith(propName, value);
+        return Filters.endsWith(propName, value);
     }
 
     /**
@@ -484,7 +483,7 @@ public final class NamedProperty {
      * @see Filters.CF#contains(String, Object)
      */
     public Like contains(final Object value) {
-        return CF.contains(propName, value);
+        return Filters.contains(propName, value);
     }
 
     /**
@@ -506,7 +505,7 @@ public final class NamedProperty {
      * @see Filters.CF#in(String, Object[])
      */
     public In in(final Object... values) {
-        return CF.in(propName, values);
+        return Filters.in(propName, values);
     }
 
     /**
@@ -531,7 +530,7 @@ public final class NamedProperty {
      * @see Filters.CF#in(String, Collection)
      */
     public In in(final Collection<?> values) {
-        return CF.in(propName, values);
+        return Filters.in(propName, values);
     }
 
     /**

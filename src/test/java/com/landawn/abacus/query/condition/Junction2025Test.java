@@ -1,8 +1,12 @@
 package com.landawn.abacus.query.condition;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,7 +14,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -22,8 +25,8 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testConstructorWithOperatorAndConditions() {
-        Equal cond1 = CF.eq("status", "active");
-        GreaterThan cond2 = CF.gt("age", 18);
+        Equal cond1 = Filters.eq("status", "active");
+        GreaterThan cond2 = Filters.gt("age", 18);
 
         Junction junction = new Junction(Operator.AND, cond1, cond2);
 
@@ -34,7 +37,7 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testConstructorWithOperatorAndCollection() {
-        List<Condition> conditions = Arrays.asList(CF.eq("status", "active"), CF.gt("age", 18), CF.isNotNull("email"));
+        List<Condition> conditions = Arrays.asList(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.isNotNull("email"));
 
         Junction junction = new Junction(Operator.OR, conditions);
 
@@ -54,8 +57,8 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testGetConditions() {
-        Equal cond1 = CF.eq("name", "John");
-        LessThan cond2 = CF.lt("price", 100);
+        Equal cond1 = Filters.eq("name", "John");
+        LessThan cond2 = Filters.lt("price", 100);
 
         Junction junction = new Junction(Operator.AND, cond1, cond2);
         List<Condition> conditions = junction.getConditions();
@@ -70,8 +73,8 @@ public class Junction2025Test extends TestBase {
     public void testSetConditionsArray() {
         Junction junction = new Junction(Operator.AND);
 
-        Equal newCond1 = CF.eq("status", "pending");
-        Equal newCond2 = CF.eq("verified", true);
+        Equal newCond1 = Filters.eq("status", "pending");
+        Equal newCond2 = Filters.eq("verified", true);
 
         junction.set(newCond1, newCond2);
 
@@ -83,9 +86,9 @@ public class Junction2025Test extends TestBase {
     @Test
     public void testSetConditionsArrayReplaces() {
         Junction junction = new Junction(Operator.OR);
-        junction.add(CF.eq("old", "value"));
+        junction.add(Filters.eq("old", "value"));
 
-        Equal newCond = CF.eq("new", "value");
+        Equal newCond = Filters.eq("new", "value");
         junction.set(newCond);
 
         assertEquals(1, junction.getConditions().size());
@@ -96,7 +99,7 @@ public class Junction2025Test extends TestBase {
     public void testSetConditionsCollection() {
         Junction junction = new Junction(Operator.AND);
 
-        List<Condition> newConditions = Arrays.asList(CF.eq("type", "A"), CF.eq("type", "B"));
+        List<Condition> newConditions = Arrays.asList(Filters.eq("type", "A"), Filters.eq("type", "B"));
 
         junction.set(newConditions);
 
@@ -107,8 +110,8 @@ public class Junction2025Test extends TestBase {
     public void testAddConditionsArray() {
         Junction junction = new Junction(Operator.AND);
 
-        Equal cond1 = CF.eq("status", "active");
-        GreaterThan cond2 = CF.gt("score", 0);
+        Equal cond1 = Filters.eq("status", "active");
+        GreaterThan cond2 = Filters.gt("score", 0);
 
         junction.add(cond1, cond2);
 
@@ -121,10 +124,10 @@ public class Junction2025Test extends TestBase {
     public void testAddConditionsMultipleCalls() {
         Junction junction = new Junction(Operator.OR);
 
-        Equal cond1 = CF.eq("status", "active");
+        Equal cond1 = Filters.eq("status", "active");
         junction.add(cond1);
 
-        LessThan cond2 = CF.lt("price", 100);
+        LessThan cond2 = Filters.lt("price", 100);
         junction.add(cond2);
 
         assertEquals(2, junction.getConditions().size());
@@ -134,7 +137,7 @@ public class Junction2025Test extends TestBase {
     public void testAddConditionsCollection() {
         Junction junction = new Junction(Operator.OR);
 
-        List<Condition> conditions = Arrays.asList(CF.eq("category", "books"), CF.eq("category", "electronics"));
+        List<Condition> conditions = Arrays.asList(Filters.eq("category", "books"), Filters.eq("category", "electronics"));
 
         junction.add(conditions);
 
@@ -143,8 +146,8 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testRemoveConditionsArray() {
-        Equal cond1 = CF.eq("status", "active");
-        Equal cond2 = CF.eq("type", "premium");
+        Equal cond1 = Filters.eq("status", "active");
+        Equal cond2 = Filters.eq("type", "premium");
 
         Junction junction = new Junction(Operator.AND, cond1, cond2);
 
@@ -157,9 +160,9 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testRemoveConditionsCollection() {
-        Equal cond1 = CF.eq("a", 1);
-        Equal cond2 = CF.eq("b", 2);
-        Equal cond3 = CF.eq("c", 3);
+        Equal cond1 = Filters.eq("a", 1);
+        Equal cond2 = Filters.eq("b", 2);
+        Equal cond3 = Filters.eq("c", 3);
 
         Junction junction = new Junction(Operator.OR, cond1, cond2, cond3);
 
@@ -173,7 +176,7 @@ public class Junction2025Test extends TestBase {
     @Test
     public void testClear() {
         Junction junction = new Junction(Operator.AND);
-        junction.add(CF.eq("status", "active"), CF.gt("age", 18));
+        junction.add(Filters.eq("status", "active"), Filters.gt("age", 18));
 
         assertEquals(2, junction.getConditions().size());
 
@@ -184,7 +187,8 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Junction junction = new Junction(Operator.AND, CF.eq("status", "active"), CF.between("age", 18, 65), CF.in("city", new String[] { "NYC", "LA" }));
+        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.between("age", 18, 65),
+                Filters.in("city", new String[] { "NYC", "LA" }));
 
         List<Object> params = junction.getParameters();
 
@@ -209,9 +213,9 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testGetParametersNested() {
-        Junction innerJunction = new Junction(Operator.OR, CF.eq("city", "NYC"), CF.eq("city", "LA"));
+        Junction innerJunction = new Junction(Operator.OR, Filters.eq("city", "NYC"), Filters.eq("city", "LA"));
 
-        Junction outerJunction = new Junction(Operator.AND, CF.eq("status", "active"), innerJunction);
+        Junction outerJunction = new Junction(Operator.AND, Filters.eq("status", "active"), innerJunction);
 
         List<Object> params = outerJunction.getParameters();
 
@@ -223,7 +227,7 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Junction junction = new Junction(Operator.AND, CF.eq("status", "active"), CF.in("type", new String[] { "A", "B", "C" }));
+        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.in("type", new String[] { "A", "B", "C" }));
 
         assertFalse(junction.getParameters().isEmpty());
 
@@ -235,8 +239,8 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        Equal cond1 = CF.eq("status", "active");
-        GreaterThan cond2 = CF.gt("age", 18);
+        Equal cond1 = Filters.eq("status", "active");
+        GreaterThan cond2 = Filters.gt("age", 18);
 
         Junction original = new Junction(Operator.AND, cond1, cond2);
         Junction copy = original.copy();
@@ -253,12 +257,12 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testCopyPreservesConditions() {
-        Junction original = new Junction(Operator.OR, CF.eq("status", "active"), CF.gt("age", 18));
+        Junction original = new Junction(Operator.OR, Filters.eq("status", "active"), Filters.gt("age", 18));
 
         Junction copy = original.copy();
 
         // Modify copy
-        copy.add(CF.eq("verified", true));
+        copy.add(Filters.eq("verified", true));
 
         // Original should be unchanged
         assertEquals(2, original.getConditions().size());
@@ -267,7 +271,7 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Junction junction = new Junction(Operator.AND, CF.eq("status", "active"), CF.gt("age", 18));
+        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
 
         String sql = junction.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
@@ -288,7 +292,7 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testToStringWithParentheses() {
-        Junction junction = new Junction(Operator.OR, CF.eq("status", "active"), CF.eq("status", "pending"));
+        Junction junction = new Junction(Operator.OR, Filters.eq("status", "active"), Filters.eq("status", "pending"));
 
         String sql = junction.toString(NamingPolicy.NO_CHANGE);
 
@@ -299,9 +303,9 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testToStringNested() {
-        Junction inner = new Junction(Operator.OR, CF.eq("priority", 1), CF.eq("priority", 2));
+        Junction inner = new Junction(Operator.OR, Filters.eq("priority", 1), Filters.eq("priority", 2));
 
-        Junction outer = new Junction(Operator.AND, CF.eq("status", "active"), inner);
+        Junction outer = new Junction(Operator.AND, Filters.eq("status", "active"), inner);
 
         String sql = outer.toString(NamingPolicy.NO_CHANGE);
 
@@ -311,46 +315,46 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        Junction j1 = new Junction(Operator.AND, CF.eq("a", 1));
-        Junction j2 = new Junction(Operator.AND, CF.eq("a", 1));
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+        Junction j2 = new Junction(Operator.AND, Filters.eq("a", 1));
 
         assertEquals(j1.hashCode(), j2.hashCode());
     }
 
     @Test
     public void testHashCodeDifferent() {
-        Junction j1 = new Junction(Operator.AND, CF.eq("a", 1));
-        Junction j2 = new Junction(Operator.OR, CF.eq("a", 1));
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+        Junction j2 = new Junction(Operator.OR, Filters.eq("a", 1));
 
         assertNotEquals(j1.hashCode(), j2.hashCode());
     }
 
     @Test
     public void testEquals() {
-        Junction j1 = new Junction(Operator.AND, CF.eq("status", "active"), CF.gt("age", 18));
+        Junction j1 = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
 
-        Junction j2 = new Junction(Operator.AND, CF.eq("status", "active"), CF.gt("age", 18));
+        Junction j2 = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
 
         assertEquals(j1, j2);
     }
 
     @Test
     public void testEqualsSameInstance() {
-        Junction j1 = new Junction(Operator.AND, CF.eq("a", 1));
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
 
         assertEquals(j1, j1);
     }
 
     @Test
     public void testEqualsNull() {
-        Junction j1 = new Junction(Operator.AND, CF.eq("a", 1));
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
 
         assertNotEquals(j1, null);
     }
 
     @Test
     public void testEqualsDifferentType() {
-        Junction j1 = new Junction(Operator.AND, CF.eq("a", 1));
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
         String other = "not a junction";
 
         assertNotEquals(j1, other);
@@ -358,23 +362,24 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testEqualsDifferentOperator() {
-        Junction j1 = new Junction(Operator.AND, CF.eq("a", 1));
-        Junction j2 = new Junction(Operator.OR, CF.eq("a", 1));
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+        Junction j2 = new Junction(Operator.OR, Filters.eq("a", 1));
 
         assertNotEquals(j1, j2);
     }
 
     @Test
     public void testEqualsDifferentConditions() {
-        Junction j1 = new Junction(Operator.AND, CF.eq("a", 1));
-        Junction j2 = new Junction(Operator.AND, CF.eq("b", 2));
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+        Junction j2 = new Junction(Operator.AND, Filters.eq("b", 2));
 
         assertNotEquals(j1, j2);
     }
 
     @Test
     public void testComplexJunctionAndOperation() {
-        Junction junction = new Junction(Operator.AND, CF.eq("status", "active"), CF.between("age", 18, 65), CF.isNotNull("email"), CF.like("name", "John%"));
+        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.between("age", 18, 65), Filters.isNotNull("email"),
+                Filters.like("name", "John%"));
 
         assertEquals(4, junction.getConditions().size());
         String sql = junction.toString(NamingPolicy.NO_CHANGE);
@@ -383,7 +388,7 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testComplexJunctionOrOperation() {
-        Junction junction = new Junction(Operator.OR, CF.eq("priority", 1), CF.eq("urgent", true), CF.lt("deadline", "2025-01-01"));
+        Junction junction = new Junction(Operator.OR, Filters.eq("priority", 1), Filters.eq("urgent", true), Filters.lt("deadline", "2025-01-01"));
 
         assertEquals(3, junction.getConditions().size());
         String sql = junction.toString(NamingPolicy.NO_CHANGE);
@@ -392,7 +397,7 @@ public class Junction2025Test extends TestBase {
 
     @Test
     public void testJunctionWithSingleCondition() {
-        Junction junction = new Junction(Operator.AND, CF.eq("status", "active"));
+        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"));
 
         assertEquals(1, junction.getConditions().size());
         assertFalse(junction.toString(NamingPolicy.NO_CHANGE).isEmpty());
@@ -403,7 +408,7 @@ public class Junction2025Test extends TestBase {
         Junction junction = new Junction(Operator.AND);
         List<Condition> conditions = junction.getConditions();
 
-        conditions.add(CF.eq("test", "value"));
+        conditions.add(Filters.eq("test", "value"));
 
         assertEquals(1, junction.getConditions().size());
     }

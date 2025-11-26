@@ -48,20 +48,20 @@ import com.landawn.abacus.util.N;
  * <pre>{@code
  * // Create an AND condition with multiple sub-conditions
  * And and = new And(
- *     CF.eq("status", "active"),
- *     CF.gt("age", 18),
- *     CF.lt("age", 65)
+ *     Filters.eq("status", "active"),
+ *     Filters.gt("age", 18),
+ *     Filters.lt("age", 65)
  * );
  * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
  *
  * // Chain additional conditions
- * And extended = and.and(CF.eq("country", "USA"));
+ * And extended = and.and(Filters.eq("country", "USA"));
  * // Results in: ((status = 'active') AND (age > 18) AND (age < 65) AND (country = 'USA'))
- * 
+ *
  * // Create from a collection
  * List<Condition> conditions = Arrays.asList(
- *     CF.isNotNull("email"),
- *     CF.eq("verified", true)
+ *     Filters.isNotNull("email"),
+ *     Filters.eq("verified", true)
  * );
  * And fromList = new And(conditions);
  * }</pre>
@@ -89,22 +89,22 @@ public class And extends Junction {
      * <pre>{@code
      * // Simple AND with two conditions
      * And and = new And(
-     *     CF.eq("department", "Sales"),
-     *     CF.ge("salary", 50000)
+     *     Filters.eq("department", "Sales"),
+     *     Filters.ge("salary", 50000)
      * );
      * // Results in: ((department = 'Sales') AND (salary >= 50000))
-     * 
+     *
      * // Complex AND with multiple conditions
      * And complex = new And(
-     *     CF.eq("status", "active"),
-     *     CF.between("age", 25, 65),
-     *     CF.in("role", Arrays.asList("Manager", "Director")),
-     *     CF.isNotNull("email")
+     *     Filters.eq("status", "active"),
+     *     Filters.between("age", 25, 65),
+     *     Filters.in("role", Arrays.asList("Manager", "Director")),
+     *     Filters.isNotNull("email")
      * );
      * }</pre>
      *
      * @param conditions the conditions to combine with AND logic
-     * @throws IllegalArgumentException if conditions array is null or contains null elements
+     * @throws IllegalArgumentException if conditions array contains null elements
      */
     public And(final Condition... conditions) {
         super(Operator.AND, conditions);
@@ -118,18 +118,18 @@ public class And extends Junction {
      * <pre>{@code
      * // Build conditions dynamically
      * List<Condition> conditions = new ArrayList<>();
-     * conditions.add(CF.eq("status", "active"));
-     * conditions.add(CF.isNotNull("email"));
+     * conditions.add(Filters.eq("status", "active"));
+     * conditions.add(Filters.isNotNull("email"));
      * if (includeAgeFilter) {
-     *     conditions.add(CF.gt("age", 21));
+     *     conditions.add(Filters.gt("age", 21));
      * }
-     * 
+     *
      * And and = new And(conditions);
      * // Results in dynamic AND condition based on the list
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with AND logic
-     * @throws IllegalArgumentException if conditions is null or contains null elements
+     * @throws IllegalArgumentException if conditions contains null elements
      */
     public And(final Collection<? extends Condition> conditions) {
         super(Operator.AND, conditions);
@@ -143,13 +143,13 @@ public class And extends Junction {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Start with a basic AND
-     * And and = new And(CF.eq("status", "active"));
+     * And and = new And(Filters.eq("status", "active"));
      *
      * // Add more conditions through chaining
      * And extended = and
-     *     .and(CF.gt("score", 80))
-     *     .and(CF.lt("attempts", 3))
-     *     .and(CF.eq("verified", true));
+     *     .and(Filters.gt("score", 80))
+     *     .and(Filters.lt("attempts", 3))
+     *     .and(Filters.eq("verified", true));
      * // Results in: ((status = 'active') AND (score > 80) AND (attempts < 3) AND (verified = true))
      *
      * // Original 'and' is unchanged

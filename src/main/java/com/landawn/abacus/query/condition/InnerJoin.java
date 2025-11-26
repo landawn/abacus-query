@@ -56,7 +56,7 @@ import java.util.Collection;
  * InnerJoin customerOrders = new InnerJoin("orders o",
  *     new And(
  *         new On("c.id", "o.customer_id"),
- *         new Equal("o.status", "completed")
+ *         Filters.eq("o.status", "completed")
  *     ));
  * // Generates: INNER JOIN orders o (ON c.id = o.customer_id) AND (o.status = 'completed')
  *
@@ -65,13 +65,13 @@ import java.util.Collection;
  *     new And(
  *         new On("p.product_id", "i.product_id"),
  *         new On("p.warehouse_id", "i.warehouse_id"),
- *         new GreaterThan("i.quantity", 0)
+ *         Filters.gt("i.quantity", 0)
  *     ));
  * // Generates: INNER JOIN inventory i (ON p.product_id = i.product_id) AND (ON p.warehouse_id = i.warehouse_id) AND (i.quantity > 0)
  *
  * // Using Expression for custom join logic
  * InnerJoin exprJoin = new InnerJoin("customers c",
- *     CF.expr("orders.customer_id = c.id"));
+ *     Filters.expr("orders.customer_id = c.id"));
  * // Generates: INNER JOIN customers c orders.customer_id = c.id
  * }</pre>
  * 
@@ -143,14 +143,14 @@ public class InnerJoin extends Join {
      * InnerJoin filteredJoin = new InnerJoin("products p",
      *     new And(
      *         new On("order_items.product_id", "p.id"),
-     *         new Equal("p.active", true),
-     *         new GreaterThan("p.stock", 0)
+     *         Filters.eq("p.active", true),
+     *         Filters.gt("p.stock", 0)
      *     ));
      * // Generates: INNER JOIN products p (ON order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0)
      *
      * // Using Expression for custom join logic
      * InnerJoin exprJoin = new InnerJoin("customers c",
-     *     CF.expr("orders.customer_id = c.id"));
+     *     Filters.expr("orders.customer_id = c.id"));
      * // Generates: INNER JOIN customers c orders.customer_id = c.id
      * }</pre>
      *
@@ -187,7 +187,7 @@ public class InnerJoin extends Join {
      *
      * // Using Expression for multiple tables
      * InnerJoin exprMulti = new InnerJoin(tables,
-     *     CF.expr("o.customer_id = c.id AND o.status = 'active'"));
+     *     Filters.expr("o.customer_id = c.id AND o.status = 'active'"));
      * // Generates: INNER JOIN orders o, customers c o.customer_id = c.id AND o.status = 'active'
      * }</pre>
      *

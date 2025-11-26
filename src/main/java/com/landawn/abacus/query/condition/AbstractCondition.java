@@ -104,10 +104,10 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition condition = CF.eq("status", "active");
+     * Condition condition = Filters.eq("status", "active");
      * Operator op = condition.getOperator(); // Returns Operator.EQUAL
      *
-     * Condition andCondition = CF.and(c1, c2);
+     * Condition andCondition = Filters.and(c1, c2);
      * Operator andOp = andCondition.getOperator(); // Returns Operator.AND
      * }</pre>
      *
@@ -124,13 +124,13 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition c1 = CF.eq("status", "active");
-     * Condition c2 = CF.gt("age", 18);
+     * Condition c1 = Filters.eq("status", "active");
+     * Condition c2 = Filters.gt("age", 18);
      * And combined = c1.and(c2);
      * // Results in: ((status = 'active') AND (age > 18))
      *
      * // Can be chained
-     * Condition c3 = CF.lt("age", 65);
+     * Condition c3 = Filters.lt("age", 65);
      * And allConditions = c1.and(c2).and(c3);
      * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
      * }</pre>
@@ -151,13 +151,13 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition c1 = CF.eq("status", "premium");
-     * Condition c2 = CF.eq("status", "vip");
+     * Condition c1 = Filters.eq("status", "premium");
+     * Condition c2 = Filters.eq("status", "vip");
      * Or combined = c1.or(c2);
      * // Results in: ((status = 'premium') OR (status = 'vip'))
      *
      * // Can be chained
-     * Condition c3 = CF.eq("status", "gold");
+     * Condition c3 = Filters.eq("status", "gold");
      * Or anyStatus = c1.or(c2).or(c3);
      * // Results in: ((status = 'premium') OR (status = 'vip') OR (status = 'gold'))
      * }</pre>
@@ -178,7 +178,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition c = CF.eq("status", "inactive");
+     * Condition c = Filters.eq("status", "inactive");
      * Not negated = c.not();
      * // Results in: NOT status = 'inactive'
      *
@@ -187,9 +187,9 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * // Results in: NOT NOT status = 'inactive'
      *
      * // Complex negation
-     * Condition complex = CF.and(
-     *     CF.eq("type", "guest"),
-     *     CF.lt("visits", 3)
+     * Condition complex = Filters.and(
+     *     Filters.eq("type", "guest"),
+     *     Filters.lt("visits", 3)
      * );
      * Not negatedComplex = complex.not();
      * // Results in: NOT (type = 'guest' AND visits < 3)
@@ -209,6 +209,11 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Using copy() on a condition
+     * Condition original = Filters.eq("status", "active");
+     * Condition copy = original.copy();
+     * copy.clearParameters(); // Doesn't affect original
+     *
      * // Example implementation in a subclass:
      * @Override
      * public <T extends Condition> T copy() {
@@ -244,7 +249,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition condition = CF.eq("userName", "John");
+     * Condition condition = Filters.eq("userName", "John");
      * String str = condition.toString();
      * // Returns: "userName = 'John'"
      * }</pre>
@@ -264,17 +269,26 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p>This utility method is used internally by condition implementations to format
      * parameter values consistently across the framework.</p>
      *
+     * <p>Formatting rules:</p>
+     * <ul>
+     *   <li>Strings are wrapped in single quotes: 'value'</li>
+     *   <li>Numbers are returned as-is: 123</li>
+     *   <li>null returns null</li>
+     *   <li>Conditions use recursive toString with naming policy</li>
+     *   <li>Other objects use their toString() method</li>
+     * </ul>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * parameter2String("John", policy);     // Returns: 'John'
-     * parameter2String(123, policy);        // Returns: 123
-     * parameter2String(null, policy);       // Returns: null
-     * parameter2String(subCondition, policy); // Returns: subCondition.toString(policy)
+     * parameter2String("John", NamingPolicy.NO_CHANGE);     // Returns: 'John'
+     * parameter2String(123, NamingPolicy.NO_CHANGE);        // Returns: 123
+     * parameter2String(null, NamingPolicy.NO_CHANGE);       // Returns: null
+     * parameter2String(subCondition, NamingPolicy.NO_CHANGE); // Returns: subCondition.toString(policy)
      * }</pre>
      *
      * @param parameter the parameter value to convert
-     * @param namingPolicy the naming policy to apply
-     * @return the string representation of the parameter
+     * @param namingPolicy the naming policy to apply to property names within conditions
+     * @return the string representation of the parameter, or null if parameter is null
      */
     protected static String parameter2String(final Object parameter, final NamingPolicy namingPolicy) {
         if (parameter == null) {
@@ -303,15 +317,23 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p>This utility method is used internally for formatting multiple property names
      * in conditions like GROUP BY or ORDER BY.</p>
      *
+     * <p>Formatting rules:</p>
+     * <ul>
+     *   <li>Single name: returned as-is without parentheses</li>
+     *   <li>Multiple names: enclosed in parentheses and comma-separated</li>
+     *   <li>Empty array: returns empty string</li>
+     * </ul>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * concatPropNames("name");              // Returns: name
      * concatPropNames("city", "state");     // Returns: (city, state)
      * concatPropNames("a", "b", "c");       // Returns: (a, b, c)
+     * concatPropNames();                    // Returns: ""
      * }</pre>
      *
-     * @param propNames the property names to concatenate
-     * @return a formatted string of property names
+     * @param propNames the property names to concatenate (varargs, can be empty)
+     * @return a formatted string of property names, empty string if no names provided
      */
     protected static String concatPropNames(final String... propNames) {
         if (N.isEmpty(propNames)) {
@@ -361,6 +383,13 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p>This utility method is used internally for formatting multiple property names
      * from collections in conditions like IN or GROUP BY.</p>
      *
+     * <p>Formatting rules:</p>
+     * <ul>
+     *   <li>Single name: returned as-is without parentheses</li>
+     *   <li>Multiple names: enclosed in parentheses and comma-separated</li>
+     *   <li>Empty collection: returns empty string</li>
+     * </ul>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> names = Arrays.asList("city", "state", "zip");
@@ -368,10 +397,13 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * Set<String> single = Collections.singleton("id");
      * concatPropNames(single); // Returns: id
+     *
+     * List<String> empty = Collections.emptyList();
+     * concatPropNames(empty); // Returns: ""
      * }</pre>
      *
-     * @param propNames the collection of property names to concatenate
-     * @return a formatted string of property names
+     * @param propNames the collection of property names to concatenate (can be empty)
+     * @return a formatted string of property names, empty string if collection is empty
      */
     protected static String concatPropNames(final Collection<String> propNames) {
         if (N.isEmpty(propNames)) {

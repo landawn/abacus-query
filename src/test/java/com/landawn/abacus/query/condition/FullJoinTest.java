@@ -7,19 +7,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Between;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.FullJoin;
-import com.landawn.abacus.query.condition.GreaterThan;
-import com.landawn.abacus.query.condition.In;
-import com.landawn.abacus.query.condition.Like;
-import com.landawn.abacus.query.condition.NotEqual;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Or;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class FullJoinTest extends TestBase {
@@ -173,7 +160,7 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Equal eq = Filters.eq("departmentId", CF.expr("employeeDeptId"));
+        Equal eq = Filters.eq("departmentId", Filters.expr("employeeDeptId"));
         FullJoin join = Filters.fullJoin("employees", eq);
 
         String result = join.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
@@ -186,8 +173,7 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        Or complexCondition = Filters.or(Filters.and(Filters.eq("dept.active", true), Filters.isNotNull("emp.id")),
-                Filters.isNull("dept.closed_date"));
+        Or complexCondition = Filters.or(Filters.and(Filters.eq("dept.active", true), Filters.isNotNull("emp.id")), Filters.isNull("dept.closed_date"));
 
         FullJoin join = Filters.fullJoin("employees emp", complexCondition);
 

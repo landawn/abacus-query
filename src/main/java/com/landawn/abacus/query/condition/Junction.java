@@ -103,7 +103,7 @@ public class Junction extends AbstractCondition {
      * Creates a new Junction with the specified operator and conditions.
      * This constructor initializes the junction with a set of conditions that will
      * be combined using the specified logical operator.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create an AND junction with multiple conditions
@@ -112,7 +112,7 @@ public class Junction extends AbstractCondition {
      *     new GreaterEqual("age", 18),
      *     new IsNotNull("email")
      * );
-     * 
+     *
      * // Create an OR junction for status checks
      * Junction validStatus = new Junction(Operator.OR,
      *     new Equal("status", "approved"),
@@ -123,7 +123,7 @@ public class Junction extends AbstractCondition {
      *
      * @param operator the logical operator to use (AND, OR, etc.). Must not be null.
      * @param conditions the conditions to combine. Can be empty but not null.
-     * @throws IllegalArgumentException if operator is null
+     * @throws IllegalArgumentException if any condition in the array is null
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
@@ -134,7 +134,7 @@ public class Junction extends AbstractCondition {
     /**
      * Creates a new Junction with the specified operator and collection of conditions.
      * This constructor is useful when conditions are already collected in a list or set.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create conditions dynamically
@@ -144,13 +144,13 @@ public class Junction extends AbstractCondition {
      * if (includeDateCheck) {
      *     conditions.add(new LessEqual("date", today));
      * }
-     * 
+     *
      * Junction junction = new Junction(Operator.AND, conditions);
      * }</pre>
      *
      * @param operator the logical operator to use (AND, OR, etc.). Must not be null.
      * @param conditions the collection of conditions to combine. Can be empty but not null.
-     * @throws IllegalArgumentException if operator is null or conditions is null
+     * @throws IllegalArgumentException if any condition in the collection is null
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
@@ -181,12 +181,12 @@ public class Junction extends AbstractCondition {
     /**
      * Replaces all conditions in this junction with the specified conditions.
      * This method clears existing conditions before adding the new ones.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
      * junction.add(new Equal("old", true));
-     * 
+     *
      * // Replace with new conditions
      * junction.set(
      *     new Equal("status", "active"),
@@ -196,6 +196,7 @@ public class Junction extends AbstractCondition {
      * }</pre>
      *
      * @param conditions the new conditions to set. Existing conditions will be cleared.
+     * @throws IllegalArgumentException if conditions array contains null elements
      */
     public final void set(final Condition... conditions) {
         conditionList.clear();
@@ -205,7 +206,7 @@ public class Junction extends AbstractCondition {
     /**
      * Replaces all conditions in this junction with the specified collection of conditions.
      * This method clears existing conditions before adding the new ones.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.OR);
@@ -217,6 +218,7 @@ public class Junction extends AbstractCondition {
      * }</pre>
      *
      * @param conditions the new collection of conditions to set. Existing conditions will be cleared.
+     * @throws IllegalArgumentException if conditions collection contains null elements
      */
     public void set(final Collection<? extends Condition> conditions) {
         conditionList.clear();
@@ -245,7 +247,7 @@ public class Junction extends AbstractCondition {
      * }</pre>
      *
      * @param conditions the conditions to add
-     * @throws IllegalArgumentException if conditions array is null or contains null elements
+     * @throws IllegalArgumentException if conditions array contains null elements
      */
     public final void add(final Condition... conditions) {
         if (conditions != null) {

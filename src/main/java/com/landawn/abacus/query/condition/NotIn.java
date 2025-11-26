@@ -182,7 +182,8 @@ public class NotIn extends AbstractCondition {
      * NotIn newCondition = new NotIn("status", Arrays.asList("deleted", "archived", "suspended"));
      * }</pre>
      *
-     * @param values the new collection of values to exclude
+     * @param values the new collection of values to exclude. Must not be null or empty.
+     * @throws IllegalArgumentException if values is null or empty
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      *             Create a new NotIn instance instead of modifying existing conditions.
      */
@@ -195,6 +196,22 @@ public class NotIn extends AbstractCondition {
      * Gets the parameter values for this condition.
      * Returns the values that should be excluded when the query is executed.
      * These values will be bound to the prepared statement placeholders.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived", "suspended"));
+     * List<Object> params = condition.getParameters(); // Returns ["deleted", "archived", "suspended"]
+     *
+     * // Check number of parameters
+     * int paramCount = condition.getParameters().size(); // Returns 3
+     *
+     * // Use in query preparation
+     * PreparedStatement stmt = connection.prepareStatement(sql);
+     * List<Object> params = condition.getParameters();
+     * for (int i = 0; i < params.size(); i++) {
+     *     stmt.setObject(i + 1, params.get(i));
+     * }
+     * }</pre>
      *
      * @return an immutable list of parameter values, or empty list if values is null
      */

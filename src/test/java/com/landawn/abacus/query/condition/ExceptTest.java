@@ -7,14 +7,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Cell;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Criteria;
-import com.landawn.abacus.query.condition.Except;
-import com.landawn.abacus.query.condition.Minus;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class ExceptTest extends TestBase {
@@ -71,8 +63,7 @@ public class ExceptTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("id"),
-                Filters.in("category", Arrays.asList("obsolete", "discontinued")));
+        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("id"), Filters.in("category", Arrays.asList("obsolete", "discontinued")));
         Except except = Filters.except(subQuery);
 
         Assertions.assertEquals(2, except.getParameters().size());
@@ -157,8 +148,7 @@ public class ExceptTest extends TestBase {
     @Test
     public void testComplexExceptScenarios() {
         // Find active customers who haven't placed orders
-        SubQuery customersWithOrders = Filters.subQuery("orders", Arrays.asList("DISTINCT customer_id"),
-                Filters.ge("order_date", "2023-01-01"));
+        SubQuery customersWithOrders = Filters.subQuery("orders", Arrays.asList("DISTINCT customer_id"), Filters.ge("order_date", "2023-01-01"));
         Except activeWithoutOrders = Filters.except(customersWithOrders);
 
         Assertions.assertNotNull(activeWithoutOrders);
@@ -173,8 +163,8 @@ public class ExceptTest extends TestBase {
         Assertions.assertNotNull(notRecentlySold);
 
         // Find employees not in management
-        SubQuery managers = Filters.subQuery("employees", Arrays.asList("employee_id"), Filters.or(Filters.eq("is_manager", true),
-                Filters.like("title", "%Manager%"), Filters.like("title", "%Director%")));
+        SubQuery managers = Filters.subQuery("employees", Arrays.asList("employee_id"),
+                Filters.or(Filters.eq("is_manager", true), Filters.like("title", "%Manager%"), Filters.like("title", "%Director%")));
         Except nonManagement = Filters.except(managers);
 
         Assertions.assertNotNull(nonManagement);
@@ -214,8 +204,7 @@ public class ExceptTest extends TestBase {
     public void testExceptWithComplexSubQuery() {
         // Complex subquery with multiple conditions and joins
         SubQuery complexSubQuery = Filters.subQuery("users u JOIN departments d ON u.dept_id = d.id", Arrays.asList("u.id"),
-                Filters.and(Filters.eq("d.location", "Remote"),
-                        Filters.or(Filters.eq("u.type", "contractor"), Filters.lt("u.hire_date", "2020-01-01")),
+                Filters.and(Filters.eq("d.location", "Remote"), Filters.or(Filters.eq("u.type", "contractor"), Filters.lt("u.hire_date", "2020-01-01")),
                         Filters.ne("u.status", "active")));
 
         Except except = Filters.except(complexSubQuery);

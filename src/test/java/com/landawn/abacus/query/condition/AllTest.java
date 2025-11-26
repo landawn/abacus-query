@@ -6,17 +6,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.All;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.Expression;
-import com.landawn.abacus.query.condition.GreaterThan;
-import com.landawn.abacus.query.condition.Not;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Or;
-import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class AllTest extends TestBase {
@@ -61,8 +50,7 @@ public class AllTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"),
-                Filters.and(Filters.eq("category", "Premium"), Filters.eq("active", true)));
+        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), Filters.and(Filters.eq("category", "Premium"), Filters.eq("active", true)));
         All all = Filters.all(subQuery);
 
         var params = all.getParameters();
@@ -203,8 +191,8 @@ public class AllTest extends TestBase {
     @Test
     public void testComplexAllScenarios() {
         // Find products more expensive than all competitor products in a region
-        SubQuery competitorPrices = Filters.subQuery("competitors", Arrays.asList("price"), Filters
-                .and(Filters.eq("region", "Europe"), Filters.eq("product_type", "Premium"), Filters.eq("active", true)));
+        SubQuery competitorPrices = Filters.subQuery("competitors", Arrays.asList("price"),
+                Filters.and(Filters.eq("region", "Europe"), Filters.eq("product_type", "Premium"), Filters.eq("active", true)));
         All allCompetitorPrices = Filters.all(competitorPrices);
 
         var params = allCompetitorPrices.getParameters();

@@ -7,20 +7,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.Expression;
-import com.landawn.abacus.query.condition.On;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Filters.CF;
 
 public class OnTest extends TestBase {
 
     @Test
     public void testConstructorWithCondition() {
-        Condition joinCondition = CF.eq("t1.id", CF.expr("t2.user_id"));
-        On on = CF.on(joinCondition);
+        Condition joinCondition = Filters.eq("t1.id", Filters.expr("t2.user_id"));
+        On on = Filters.on(joinCondition);
 
         Assertions.assertNotNull(on);
         Assertions.assertEquals(Operator.ON, on.getOperator());
@@ -29,15 +22,15 @@ public class OnTest extends TestBase {
 
     @Test
     public void testConstructorWithComplexCondition() {
-        And complexCondition = CF.and(CF.eq("a.id", CF.expr("b.a_id")), CF.gt("b.created", "2024-01-01"));
-        On on = CF.on(complexCondition);
+        And complexCondition = Filters.and(Filters.eq("a.id", Filters.expr("b.a_id")), Filters.gt("b.created", "2024-01-01"));
+        On on = Filters.on(complexCondition);
 
         Assertions.assertEquals(complexCondition, on.getCondition());
     }
 
     @Test
     public void testConstructorWithTwoProperties() {
-        On on = CF.on("users.id", "posts.user_id");
+        On on = Filters.on("users.id", "posts.user_id");
 
         Assertions.assertEquals(Operator.ON, on.getOperator());
         Assertions.assertNotNull(on.getCondition());
@@ -46,7 +39,7 @@ public class OnTest extends TestBase {
 
     @Test
     public void testConstructorWithTableAliases() {
-        On on = CF.on("u.department_id", "d.id");
+        On on = Filters.on("u.department_id", "d.id");
 
         Equal condition = (Equal) on.getCondition();
         Assertions.assertEquals("u.department_id", condition.getPropName());
@@ -60,7 +53,7 @@ public class OnTest extends TestBase {
         joinConditions.put("orders.customer_id", "customers.id");
         joinConditions.put("orders.store_id", "customers.preferred_store_id");
 
-        On on = CF.on(joinConditions);
+        On on = Filters.on(joinConditions);
 
         Assertions.assertEquals(Operator.ON, on.getOperator());
         Assertions.assertNotNull(on.getCondition());
@@ -71,7 +64,7 @@ public class OnTest extends TestBase {
         Map<String, String> joinCondition = new LinkedHashMap<>();
         joinCondition.put("products.category_id", "categories.id");
 
-        On on = CF.on(joinCondition);
+        On on = Filters.on(joinCondition);
 
         // Should create a single Equal condition
         Assertions.assertTrue(on.getCondition() instanceof Equal);
@@ -81,7 +74,7 @@ public class OnTest extends TestBase {
     public void testConstructorWithEmptyMap() {
         Map<String, String> emptyMap = new LinkedHashMap<>();
 
-        On on = CF.on(emptyMap);
+        On on = Filters.on(emptyMap);
 
         // Empty map should still create an On with an And condition
         Assertions.assertNotNull(on.getCondition());
@@ -122,22 +115,22 @@ public class OnTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Equal joinCondition = CF.eq("t1.id", CF.expr("t2.id"));
-        On on = CF.on(joinCondition);
+        Equal joinCondition = Filters.eq("t1.id", Filters.expr("t2.id"));
+        On on = Filters.on(joinCondition);
 
         Assertions.assertEquals(joinCondition, on.getCondition());
     }
 
     @Test
     public void testGetOperator() {
-        On on = CF.on("a.id", "b.a_id");
+        On on = Filters.on("a.id", "b.a_id");
 
         Assertions.assertEquals(Operator.ON, on.getOperator());
     }
 
     @Test
     public void testToString() {
-        On on = CF.on("employees.dept_id", "departments.id");
+        On on = Filters.on("employees.dept_id", "departments.id");
 
         String result = on.toString();
         Assertions.assertTrue(result.contains("ON"));
@@ -147,7 +140,7 @@ public class OnTest extends TestBase {
 
     @Test
     public void testCopy() {
-        On original = CF.on("t1.id", "t2.foreign_id");
+        On original = Filters.on("t1.id", "t2.foreign_id");
 
         On copy = original.copy();
 
@@ -159,9 +152,9 @@ public class OnTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        On on1 = CF.on("a.id", "b.a_id");
-        On on2 = CF.on("a.id", "b.a_id");
-        On on3 = CF.on("x.id", "y.x_id");
+        On on1 = Filters.on("a.id", "b.a_id");
+        On on2 = Filters.on("a.id", "b.a_id");
+        On on3 = Filters.on("x.id", "y.x_id");
 
         Assertions.assertEquals(on1.hashCode(), on2.hashCode());
         Assertions.assertNotEquals(on1.hashCode(), on3.hashCode());
@@ -169,13 +162,13 @@ public class OnTest extends TestBase {
 
     @Test
     public void testEquals() {
-        On on1 = CF.on("a.id", "b.a_id");
-        On on2 = CF.on("a.id", "b.a_id");
-        On on3 = CF.on("x.id", "y.x_id");
+        On on1 = Filters.on("a.id", "b.a_id");
+        On on2 = Filters.on("a.id", "b.a_id");
+        On on3 = Filters.on("x.id", "y.x_id");
 
         Map<String, String> map = new LinkedHashMap<>();
         map.put("a.id", "b.a_id");
-        On on4 = CF.on(map);
+        On on4 = Filters.on(map);
 
         Assertions.assertTrue(on1.equals(on1));
         Assertions.assertTrue(on1.equals(on2));
@@ -188,7 +181,7 @@ public class OnTest extends TestBase {
     @Test
     public void testPracticalExample1() {
         // Simple column equality
-        On on = CF.on("employees.department_id", "departments.id");
+        On on = Filters.on("employees.department_id", "departments.id");
 
         // Would be used like: JOIN departments ON employees.department_id = departments.id
         String result = on.toString();
@@ -202,7 +195,7 @@ public class OnTest extends TestBase {
         joinMap.put("orders.customer_id", "customers.id");
         joinMap.put("orders.region", "customers.region");
 
-        On on = CF.on(joinMap);
+        On on = Filters.on(joinMap);
 
         // Would create: ON orders.customer_id = customers.id AND orders.region = customers.region
         Assertions.assertTrue(on.getCondition() instanceof And);
@@ -211,9 +204,10 @@ public class OnTest extends TestBase {
     @Test
     public void testPracticalExample3() {
         // Complex join with additional conditions
-        And complexJoin = CF.and(CF.eq("products.category_id", CF.expr("categories.id")), CF.eq("products.active", true), CF.gt("products.stock", 0));
+        And complexJoin = Filters.and(Filters.eq("products.category_id", Filters.expr("categories.id")), Filters.eq("products.active", true),
+                Filters.gt("products.stock", 0));
 
-        On on = CF.on(complexJoin);
+        On on = Filters.on(complexJoin);
 
         Assertions.assertEquals(complexJoin, on.getCondition());
         Assertions.assertEquals(2, on.getCondition().getParameters().size());

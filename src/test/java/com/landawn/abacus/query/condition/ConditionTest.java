@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -32,8 +31,8 @@ public class ConditionTest extends TestBase {
 
     @BeforeEach
     void setUp() {
-        simpleCondition = CF.eq("name", "John");
-        complexCondition = CF.and(CF.gt("age", 18), CF.eq("status", "active"));
+        simpleCondition = Filters.eq("name", "John");
+        complexCondition = Filters.and(Filters.gt("age", 18), Filters.eq("status", "active"));
     }
 
     // Tests for getOperator() method
@@ -50,21 +49,21 @@ public class ConditionTest extends TestBase {
         assertNotNull(complexCondition.getOperator());
 
         // Test with various condition types
-        assertNotNull(CF.gt("age", 25).getOperator());
-        assertNotNull(CF.like("name", "%john%").getOperator());
-        assertNotNull(CF.isNull("description").getOperator());
-        assertNotNull(CF.in("status", Arrays.asList("active", "pending")).getOperator());
+        assertNotNull(Filters.gt("age", 25).getOperator());
+        assertNotNull(Filters.like("name", "%john%").getOperator());
+        assertNotNull(Filters.isNull("description").getOperator());
+        assertNotNull(Filters.in("status", Arrays.asList("active", "pending")).getOperator());
     }
 
     @Test
     void testGetOperatorConsistency() {
         // Same condition type should always return same operator
-        Condition eq1 = CF.eq("field1", "value1");
-        Condition eq2 = CF.eq("field2", "value2");
+        Condition eq1 = Filters.eq("field1", "value1");
+        Condition eq2 = Filters.eq("field2", "value2");
         assertEquals(eq1.getOperator(), eq2.getOperator());
 
-        Condition gt1 = CF.gt("field1", 10);
-        Condition gt2 = CF.gt("field2", 20);
+        Condition gt1 = Filters.gt("field1", 10);
+        Condition gt2 = Filters.gt("field2", 20);
         assertEquals(gt1.getOperator(), gt2.getOperator());
     }
 
@@ -72,7 +71,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testAndCreatesAndCondition() {
-        Condition other = CF.lt("age", 65);
+        Condition other = Filters.lt("age", 65);
         Condition result = simpleCondition.and(other);
 
         assertNotNull(result);
@@ -82,7 +81,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testAndReturnsNewInstance() {
-        Condition other = CF.ne("status", "inactive");
+        Condition other = Filters.ne("status", "inactive");
         Condition result = simpleCondition.and(other);
 
         assertNotSame(simpleCondition, result);
@@ -100,9 +99,9 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testAndChaining() {
-        Condition condition1 = CF.eq("field1", "value1");
-        Condition condition2 = CF.eq("field2", "value2");
-        Condition condition3 = CF.eq("field3", "value3");
+        Condition condition1 = Filters.eq("field1", "value1");
+        Condition condition2 = Filters.eq("field2", "value2");
+        Condition condition3 = Filters.eq("field3", "value3");
 
         Condition result = condition1.and(condition2).and(condition3);
 
@@ -114,7 +113,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testOrCreatesOrCondition() {
-        Condition other = CF.eq("type", "admin");
+        Condition other = Filters.eq("type", "admin");
         Condition result = simpleCondition.or(other);
 
         assertNotNull(result);
@@ -124,7 +123,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testOrReturnsNewInstance() {
-        Condition other = CF.isNull("deleted_at");
+        Condition other = Filters.isNull("deleted_at");
         Condition result = simpleCondition.or(other);
 
         assertNotSame(simpleCondition, result);
@@ -142,9 +141,9 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testOrChaining() {
-        Condition condition1 = CF.eq("status", "active");
-        Condition condition2 = CF.eq("status", "pending");
-        Condition condition3 = CF.eq("status", "processing");
+        Condition condition1 = Filters.eq("status", "active");
+        Condition condition2 = Filters.eq("status", "pending");
+        Condition condition3 = Filters.eq("status", "processing");
 
         Condition result = condition1.or(condition2).or(condition3);
 
@@ -238,7 +237,7 @@ public class ConditionTest extends TestBase {
     @Test
     void testCopyWithComplexConditions() {
         // Test copying conditions with nested structures
-        Condition complex = CF.and(CF.or(CF.eq("status", "active"), CF.eq("status", "pending")), CF.gt("created_date", "2023-01-01"));
+        Condition complex = Filters.and(Filters.or(Filters.eq("status", "active"), Filters.eq("status", "pending")), Filters.gt("created_date", "2023-01-01"));
 
         Condition copy = complex.copy();
 
@@ -255,7 +254,7 @@ public class ConditionTest extends TestBase {
         assertNotNull(complexCondition.getParameters());
 
         // Test with condition that has no parameters
-        Condition noParamCondition = CF.isNull("field");
+        Condition noParamCondition = Filters.isNull("field");
         assertNotNull(noParamCondition.getParameters());
     }
 
@@ -265,7 +264,7 @@ public class ConditionTest extends TestBase {
         assertTrue(params.contains("John"));
 
         // Test with multiple parameters
-        Condition betweenCondition = CF.between("age", 18, 65);
+        Condition betweenCondition = Filters.between("age", 18, 65);
         List<Object> betweenParams = betweenCondition.getParameters();
         assertEquals(2, betweenParams.size());
         assertTrue(betweenParams.contains(18));
@@ -275,7 +274,7 @@ public class ConditionTest extends TestBase {
     @Test
     void testGetParametersWithInCondition() {
         List<String> values = Arrays.asList("active", "pending", "processing");
-        Condition inCondition = CF.in("status", values);
+        Condition inCondition = Filters.in("status", values);
         List<Object> params = inCondition.getParameters();
 
         assertEquals(values.size(), params.size());
@@ -305,7 +304,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testClearParametersWithNoParameters() {
-        Condition noParamCondition = CF.isNull("field");
+        Condition noParamCondition = Filters.isNull("field");
 
         // Should not throw exception even if no parameters to clear
         noParamCondition.clearParameters();
@@ -325,7 +324,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testToStringWithDifferentNamingPolicies() {
-        Condition camelCaseCondition = CF.eq("firstName", "John");
+        Condition camelCaseCondition = Filters.eq("firstName", "John");
 
         String snakeCase = camelCaseCondition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
         String upperCase = camelCaseCondition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
@@ -361,9 +360,9 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testLogicalOperationsCombination() {
-        Condition condition1 = CF.eq("status", "active");
-        Condition condition2 = CF.gt("age", 18);
-        Condition condition3 = CF.lt("age", 65);
+        Condition condition1 = Filters.eq("status", "active");
+        Condition condition2 = Filters.gt("age", 18);
+        Condition condition3 = Filters.lt("age", 65);
 
         // Test complex logical combination
         Condition result = condition1.and(condition2.or(condition3)).not();
@@ -375,7 +374,7 @@ public class ConditionTest extends TestBase {
     @Test
     void testCopyAndLogicalOperations() {
         Condition copy = simpleCondition.copy();
-        Condition combined = copy.and(CF.gt("age", 21));
+        Condition combined = copy.and(Filters.gt("age", 21));
 
         assertNotNull(combined);
         assertEquals(Operator.AND, combined.getOperator());
@@ -387,8 +386,8 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testParameterManagementWithLogicalOperations() {
-        Condition condition1 = CF.eq("name", "John");
-        Condition condition2 = CF.gt("age", 25);
+        Condition condition1 = Filters.eq("name", "John");
+        Condition condition2 = Filters.gt("age", 25);
         Condition combined = condition1.and(condition2);
 
         List<Object> params = combined.getParameters();
@@ -405,7 +404,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testConditionWithNullParameters() {
-        Condition nullCondition = CF.eq("field", null);
+        Condition nullCondition = Filters.eq("field", null);
 
         assertNotNull(nullCondition);
         assertEquals(Operator.EQUAL, nullCondition.getOperator());
@@ -417,7 +416,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testConditionWithEmptyStringParameters() {
-        Condition emptyCondition = CF.eq("field", "");
+        Condition emptyCondition = Filters.eq("field", "");
 
         assertNotNull(emptyCondition);
         List<Object> params = emptyCondition.getParameters();
@@ -429,7 +428,7 @@ public class ConditionTest extends TestBase {
     void testConditionWithLargeParameterList() {
         // Create condition with many parameters
         List<Integer> largeList = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        Condition inCondition = CF.in("id", largeList);
+        Condition inCondition = Filters.in("id", largeList);
 
         List<Object> params = inCondition.getParameters();
         assertEquals(largeList.size(), params.size());
@@ -442,10 +441,10 @@ public class ConditionTest extends TestBase {
     @Test
     void testConditionChainPerformance() {
         // Test performance with long condition chains
-        Condition chain = CF.eq("field1", "value1");
+        Condition chain = Filters.eq("field1", "value1");
 
         for (int i = 2; i <= 100; i++) {
-            chain = chain.and(CF.eq("field" + i, "value" + i));
+            chain = chain.and(Filters.eq("field" + i, "value" + i));
         }
 
         assertNotNull(chain);
@@ -468,8 +467,8 @@ public class ConditionTest extends TestBase {
         Operator originalOperator = simpleCondition.getOperator();
 
         // Logical operations should not modify original
-        simpleCondition.and(CF.eq("other", "value"));
-        simpleCondition.or(CF.eq("another", "value"));
+        simpleCondition.and(Filters.eq("other", "value"));
+        simpleCondition.or(Filters.eq("another", "value"));
         simpleCondition.not();
 
         // Original should remain unchanged
@@ -480,17 +479,17 @@ public class ConditionTest extends TestBase {
     @Test
     void testThreadSafetyContract() {
         // Basic thread safety test - conditions should be immutable and thread-safe
-        final Condition condition = CF.eq("field", "value");
+        final Condition condition = Filters.eq("field", "value");
 
         Thread thread1 = new Thread(() -> {
             for (int i = 0; i < 100; i++) {
-                condition.and(CF.gt("age", i));
+                condition.and(Filters.gt("age", i));
             }
         });
 
         Thread thread2 = new Thread(() -> {
             for (int i = 0; i < 100; i++) {
-                condition.or(CF.lt("score", i));
+                condition.or(Filters.lt("score", i));
             }
         });
 

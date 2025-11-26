@@ -50,7 +50,7 @@ package com.landawn.abacus.query.condition;
  * // SQL: deletedDate = NULL
  *
  * // Subquery comparison
- * SubQuery maxSalary = CF.subQuery("SELECT MAX(salary) FROM employees");
+ * SubQuery maxSalary = Filters.subQuery("SELECT MAX(salary) FROM employees");
  * Equal maxSalaryCheck = new Equal("salary", maxSalary);
  * // SQL: salary = (SELECT MAX(salary) FROM employees)
  * }</pre>
@@ -88,7 +88,7 @@ public class Equal extends Binary {
      * Equal dateCheck = new Equal("birthDate", LocalDate.of(1990, 1, 1));
      * 
      * // Subquery equality - find employees with average salary
-     * SubQuery avgSalary = CF.subQuery("SELECT AVG(salary) FROM employees");
+     * SubQuery avgSalary = Filters.subQuery("SELECT AVG(salary) FROM employees");
      * Equal avgCheck = new Equal("salary", avgSalary);
      * }</pre>
      * 

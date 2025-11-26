@@ -393,20 +393,20 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a NOT LIKE condition
-     * Like likeCondition = CF.like("name", "%test%");
-     * Not notLike = CF.not(likeCondition);
+     * Like likeCondition = Filters.like("name", "%test%");
+     * Not notLike = Filters.not(likeCondition);
      * 
      * // Create a NOT IN condition
-     * Not notIn = CF.not(CF.in("status", Arrays.asList("inactive", "deleted")));
+     * Not notIn = Filters.not(Filters.in("status", Arrays.asList("inactive", "deleted")));
      * 
      * // Create a NOT BETWEEN condition
-     * Not notBetween = CF.not(CF.between("age", 18, 65));
+     * Not notBetween = Filters.not(Filters.between("age", 18, 65));
      * 
      * // Create a complex negated condition
-     * Not complexNot = CF.not(CF.and(
-     *     CF.eq("status", "active"),
-     *     CF.gt("age", 18),
-     *     CF.like("email", "%@company.com")
+     * Not complexNot = Filters.not(Filters.and(
+     *     Filters.eq("status", "active"),
+     *     Filters.gt("age", 18),
+     *     Filters.like("email", "%@company.com")
      * ));
      * }</pre>
      * 
@@ -560,7 +560,7 @@ public class Filters {
     //    public static Or eqOr(final String propName, final Object... propValues) {
     //        N.checkArgNotEmpty(propValues, "propValues");
     //
-    //        final Or or = CF.or();
+    //        final Or or = Filters.or();
     //
     //        for (final Object propValue : propValues) {
     //            or.add(eq(propName, propValue));
@@ -590,7 +590,7 @@ public class Filters {
     public static Or eqOr(final String propName, final Collection<?> propValues) {
         N.checkArgNotEmpty(propValues, "propValues");
 
-        final Or or = CF.or();
+        final Or or = Filters.or();
 
         for (final Object propValue : propValues) {
             or.add(eq(propName, propValue));
@@ -633,7 +633,7 @@ public class Filters {
 
             for (int i = 0, size = props.size(); i < size; i++) {
                 prop = propIter.next();
-                conds[i] = CF.eq(prop.getKey(), prop.getValue());
+                conds[i] = Filters.eq(prop.getKey(), prop.getValue());
             }
 
             return or(conds);
@@ -693,7 +693,7 @@ public class Filters {
 
             for (int i = 0, size = selectPropNames.size(); i < size; i++) {
                 propName = iter.next();
-                conds[i] = CF.eq(propName, entityInfo.getPropValue(entity, propName));
+                conds[i] = Filters.eq(propName, entityInfo.getPropValue(entity, propName));
             }
 
             return or(conds);
@@ -774,7 +774,7 @@ public class Filters {
 
             for (int i = 0, size = props.size(); i < size; i++) {
                 prop = propIter.next();
-                conds[i] = CF.eq(prop.getKey(), prop.getValue());
+                conds[i] = Filters.eq(prop.getKey(), prop.getValue());
             }
 
             return and(conds);
@@ -835,7 +835,7 @@ public class Filters {
 
             for (int i = 0, size = selectPropNames.size(); i < size; i++) {
                 propName = iter.next();
-                conds[i] = CF.eq(propName, entityInfo.getPropValue(entity, propName));
+                conds[i] = Filters.eq(propName, entityInfo.getPropValue(entity, propName));
             }
 
             return and(conds);
@@ -1147,7 +1147,7 @@ public class Filters {
 
             for (int i = 0, size = selectPropNames.size(); i < size; i++) {
                 propName = iter.next();
-                conds[i] = CF.eq(propName, entityId.get(propName));
+                conds[i] = Filters.eq(propName, entityId.get(propName));
             }
 
             return and(conds);
@@ -1179,10 +1179,10 @@ public class Filters {
         final Condition[] conds = new Condition[entityIds.size()];
 
         for (int i = 0, size = entityIds.size(); i < size; i++) {
-            conds[i] = CF.id2Cond(iter.next());
+            conds[i] = Filters.id2Cond(iter.next());
         }
 
-        return CF.or(conds);
+        return Filters.or(conds);
     }
 
     /**
@@ -1563,7 +1563,7 @@ public class Filters {
      * @return a Between condition with parameter placeholders
      */
     public static Between between(final String propName) {
-        return new Between(propName, CF.QME, CF.QME);
+        return new Between(propName, Filters.QME, Filters.QME);
     }
 
     /**
@@ -1593,7 +1593,7 @@ public class Filters {
      */
     @Deprecated
     public static Between bt(final String propName) {
-        return new Between(propName, CF.QME, CF.QME);
+        return new Between(propName, Filters.QME, Filters.QME);
     }
 
     /**
@@ -1628,7 +1628,7 @@ public class Filters {
      * @return a NotBetween condition with parameter placeholders
      */
     public static NotBetween notBetween(final String propName) {
-        return new NotBetween(propName, CF.QME, CF.QME);
+        return new NotBetween(propName, Filters.QME, Filters.QME);
     }
 
     /**
@@ -1696,7 +1696,7 @@ public class Filters {
      * @return a NotLike condition with a parameter placeholder
      */
     public static NotLike notLike(final String propName) {
-        return new NotLike(propName, CF.QME);
+        return new NotLike(propName, Filters.QME);
     }
 
     /**
@@ -3566,10 +3566,10 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Instead of Filters.eq("name", "John")
-     * Condition c = CF.eq("name", "John");
+     * Condition c = Filters.eq("name", "John");
      * }</pre>
      * 
-     * <p>All methods in Filters are available through CF.</p>
+     * <p>All methods in Filters are available through Filters.</p>
      */
     @Beta
     public static final class CF extends Filters {
@@ -3590,7 +3590,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Instead of: Filters.criteria().where(condition)
-     * Criteria c = CB.where(CF.eq("status", "active"));
+     * Criteria c = CB.where(Filters.eq("status", "active"));
      * 
      * // Chain multiple operations
      * Criteria c = CB.where("age > 18")
@@ -3611,14 +3611,14 @@ public class Filters {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.where(CF.eq("active", true));
+         * Criteria criteria = CB.where(Filters.eq("active", true));
          * }</pre>
          *
          * @param condition the condition for the WHERE clause
          * @return a new Criteria with the WHERE condition
          */
         public static Criteria where(final Condition condition) {
-            return CF.criteria().where(condition);
+            return Filters.criteria().where(condition);
         }
 
         /**
@@ -3634,7 +3634,7 @@ public class Filters {
          * @return a new Criteria with the WHERE condition
          */
         public static Criteria where(final String condition) {
-            return CF.criteria().where(condition);
+            return Filters.criteria().where(condition);
         }
 
         /**
@@ -3642,14 +3642,14 @@ public class Filters {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.groupBy(CF.expr("YEAR(date), MONTH(date)"));
+         * Criteria criteria = CB.groupBy(Filters.expr("YEAR(date), MONTH(date)"));
          * }</pre>
          *
          * @param condition the grouping condition
          * @return a new Criteria with the GROUP BY condition
          */
         public static Criteria groupBy(final Condition condition) {
-            return CF.criteria().groupBy(condition);
+            return Filters.criteria().groupBy(condition);
         }
 
         /**
@@ -3664,7 +3664,7 @@ public class Filters {
          * @return a new Criteria with the GROUP BY clause
          */
         public static Criteria groupBy(final String... propNames) {
-            return CF.criteria().groupBy(propNames);
+            return Filters.criteria().groupBy(propNames);
         }
 
         /**
@@ -3680,7 +3680,7 @@ public class Filters {
          * @return a new Criteria with the GROUP BY clause
          */
         public static Criteria groupBy(final String propName, final SortDirection direction) {
-            return CF.criteria().groupBy(propName, direction);
+            return Filters.criteria().groupBy(propName, direction);
         }
 
         /**
@@ -3696,7 +3696,7 @@ public class Filters {
          * @return a new Criteria with the GROUP BY clause
          */
         public static Criteria groupBy(final Collection<String> propNames) {
-            return CF.criteria().groupBy(propNames);
+            return Filters.criteria().groupBy(propNames);
         }
 
         /**
@@ -3712,7 +3712,7 @@ public class Filters {
          * @return a new Criteria with the GROUP BY clause
          */
         public static Criteria groupBy(final Collection<String> propNames, final SortDirection direction) {
-            return CF.criteria().groupBy(propNames, direction);
+            return Filters.criteria().groupBy(propNames, direction);
         }
 
         /**
@@ -3730,7 +3730,7 @@ public class Filters {
          * @return a new Criteria with the GROUP BY clause
          */
         public static Criteria groupBy(final Map<String, SortDirection> orders) {
-            return CF.criteria().groupBy(orders);
+            return Filters.criteria().groupBy(orders);
         }
 
         /**
@@ -3739,14 +3739,14 @@ public class Filters {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.having(CF.gt("COUNT(*)", 5));
+         * Criteria criteria = CB.having(Filters.gt("COUNT(*)", 5));
          * }</pre>
          *
          * @param condition the condition for the HAVING clause
          * @return a new Criteria with the HAVING condition
          */
         public static Criteria having(final Condition condition) {
-            return CF.criteria().having(condition);
+            return Filters.criteria().having(condition);
         }
 
         /**
@@ -3761,7 +3761,7 @@ public class Filters {
          * @return a new Criteria with the HAVING condition
          */
         public static Criteria having(final String condition) {
-            return CF.criteria().having(condition);
+            return Filters.criteria().having(condition);
         }
 
         /**
@@ -3776,7 +3776,7 @@ public class Filters {
          * @return a new Criteria with the ORDER BY clause
          */
         public static Criteria orderByAsc(final String... propNames) {
-            return CF.criteria().orderByAsc(propNames);
+            return Filters.criteria().orderByAsc(propNames);
         }
 
         /**
@@ -3791,7 +3791,7 @@ public class Filters {
          * @return a new Criteria with the ORDER BY clause
          */
         public static Criteria orderByAsc(final Collection<String> propNames) {
-            return CF.criteria().orderByAsc(propNames);
+            return Filters.criteria().orderByAsc(propNames);
         }
 
         /**
@@ -3806,7 +3806,7 @@ public class Filters {
          * @return a new Criteria with the ORDER BY clause
          */
         public static Criteria orderByDesc(final String... propNames) {
-            return CF.criteria().orderByDesc(propNames);
+            return Filters.criteria().orderByDesc(propNames);
         }
 
         /**
@@ -3821,7 +3821,7 @@ public class Filters {
          * @return a new Criteria with the ORDER BY clause
          */
         public static Criteria orderByDesc(final Collection<String> propNames) {
-            return CF.criteria().orderByDesc(propNames);
+            return Filters.criteria().orderByDesc(propNames);
         }
 
         /**
@@ -3829,14 +3829,14 @@ public class Filters {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.orderBy(CF.expr("FIELD(status, 'new', 'pending', 'complete')"));
+         * Criteria criteria = CB.orderBy(Filters.expr("FIELD(status, 'new', 'pending', 'complete')"));
          * }</pre>
          *
          * @param condition the ordering condition
          * @return a new Criteria with the ORDER BY condition
          */
         public static Criteria orderBy(final Condition condition) {
-            return CF.criteria().orderBy(condition);
+            return Filters.criteria().orderBy(condition);
         }
 
         /**
@@ -3852,7 +3852,7 @@ public class Filters {
          * @return a new Criteria with the ORDER BY clause
          */
         public static Criteria orderBy(final String... propNames) {
-            return CF.criteria().orderBy(propNames);
+            return Filters.criteria().orderBy(propNames);
         }
 
         /**
@@ -3868,7 +3868,7 @@ public class Filters {
          * @return a new Criteria with the ORDER BY clause
          */
         public static Criteria orderBy(final String propName, final SortDirection direction) {
-            return CF.criteria().orderBy(propName, direction);
+            return Filters.criteria().orderBy(propName, direction);
         }
 
         /**
@@ -3883,7 +3883,7 @@ public class Filters {
          * @return a new Criteria with the ORDER BY clause
          */
         public static Criteria orderBy(final Collection<String> propNames) {
-            return CF.criteria().orderBy(propNames);
+            return Filters.criteria().orderBy(propNames);
         }
 
         /**
@@ -3899,7 +3899,7 @@ public class Filters {
          * @return a new Criteria with the ORDER BY clause
          */
         public static Criteria orderBy(final Collection<String> propNames, final SortDirection direction) {
-            return CF.criteria().orderBy(propNames, direction);
+            return Filters.criteria().orderBy(propNames, direction);
         }
 
         /**
@@ -3917,7 +3917,7 @@ public class Filters {
          * @return a new Criteria with the ORDER BY clause
          */
         public static Criteria orderBy(final Map<String, SortDirection> orders) {
-            return CF.criteria().orderBy(orders);
+            return Filters.criteria().orderBy(orders);
         }
 
         /**
@@ -3925,14 +3925,14 @@ public class Filters {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.limit(CF.limit(10, 20));
+         * Criteria criteria = CB.limit(Filters.limit(10, 20));
          * }</pre>
          *
          * @param condition the Limit condition
          * @return a new Criteria with the LIMIT clause
          */
         public static Criteria limit(final Limit condition) {
-            return CF.criteria().limit(condition);
+            return Filters.criteria().limit(condition);
         }
 
         /**
@@ -3948,7 +3948,7 @@ public class Filters {
          * @return a new Criteria with the LIMIT clause
          */
         public static Criteria limit(final int count) {
-            return CF.criteria().limit(count);
+            return Filters.criteria().limit(count);
         }
 
         /**
@@ -3965,7 +3965,7 @@ public class Filters {
          * @return a new Criteria with the LIMIT clause
          */
         public static Criteria limit(final int offset, final int count) {
-            return CF.criteria().limit(offset, count);
+            return Filters.criteria().limit(offset, count);
         }
 
         /**
@@ -3980,7 +3980,7 @@ public class Filters {
          * @return a new Criteria with the LIMIT clause
          */
         public static Criteria limit(final String expr) {
-            return CF.criteria().limit(expr);
+            return Filters.criteria().limit(expr);
         }
     }
 }

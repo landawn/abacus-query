@@ -14,7 +14,11 @@
 
 package com.landawn.abacus.query.condition;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -24,9 +28,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Filters.CF;
+import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -37,7 +40,7 @@ public class OrderBy2025Test extends TestBase {
 
     @Test
     public void testConstructorWithCondition() {
-        OrderBy orderBy = new OrderBy(CF.expr("name ASC"));
+        OrderBy orderBy = new OrderBy(Filters.expr("name ASC"));
 
         assertNotNull(orderBy);
         assertEquals(Operator.ORDER_BY, orderBy.getOperator());
@@ -235,7 +238,7 @@ public class OrderBy2025Test extends TestBase {
 
     @Test
     public void testWithExpression() {
-        OrderBy orderBy = new OrderBy(CF.expr("CASE WHEN status='urgent' THEN 1 ELSE 2 END"));
+        OrderBy orderBy = new OrderBy(Filters.expr("CASE WHEN status='urgent' THEN 1 ELSE 2 END"));
         String result = orderBy.toString();
 
         assertNotNull(result);
@@ -296,7 +299,7 @@ public class OrderBy2025Test extends TestBase {
 
     @Test
     public void testWithCaseExpression() {
-        Expression expr = CF.expr("CASE WHEN priority=1 THEN 0 ELSE 1 END");
+        Expression expr = Filters.expr("CASE WHEN priority=1 THEN 0 ELSE 1 END");
         OrderBy orderBy = new OrderBy(expr);
 
         assertNotNull(orderBy);

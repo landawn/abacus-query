@@ -7,10 +7,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.LeftJoin;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class LeftJoinTest extends TestBase {
@@ -36,7 +32,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntityAndCondition() {
-        Condition condition = CF.eq("customers.id", "orders.customer_id");
+        Condition condition = Filters.eq("customers.id", "orders.customer_id");
         LeftJoin join = new LeftJoin("orders", condition);
 
         Assertions.assertNotNull(join);
@@ -47,7 +43,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithComplexCondition() {
-        Condition condition = CF.and(CF.eq("c.customer_id", "o.customer_id"), CF.eq("o.status", "active"));
+        Condition condition = Filters.and(Filters.eq("c.customer_id", "o.customer_id"), Filters.eq("o.status", "active"));
         LeftJoin join = new LeftJoin("orders o", condition);
 
         Assertions.assertNotNull(join);
@@ -58,7 +54,7 @@ public class LeftJoinTest extends TestBase {
     @Test
     public void testConstructorWithMultipleEntities() {
         List<String> entities = Arrays.asList("orders o", "order_items oi");
-        Condition condition = CF.and(CF.eq("c.id", "o.customer_id"), CF.eq("o.id", "oi.order_id"));
+        Condition condition = Filters.and(Filters.eq("c.id", "o.customer_id"), Filters.eq("o.id", "oi.order_id"));
         LeftJoin join = new LeftJoin(entities, condition);
 
         Assertions.assertNotNull(join);
@@ -79,7 +75,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Condition condition = CF.eq("a.id", "b.a_id");
+        Condition condition = Filters.eq("a.id", "b.a_id");
         LeftJoin join = new LeftJoin("table_b b", condition);
 
         Condition retrieved = join.getCondition();
@@ -88,7 +84,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Condition condition = CF.and(CF.eq("o.customer_id", CF.expr("c.id")), CF.eq("o.status", "completed"));
+        Condition condition = Filters.and(Filters.eq("o.customer_id", Filters.expr("c.id")), Filters.eq("o.status", "completed"));
         LeftJoin join = new LeftJoin("orders o", condition);
 
         List<Object> params = join.getParameters();
@@ -109,7 +105,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Condition condition = CF.eq("status", "active");
+        Condition condition = Filters.eq("status", "active");
         LeftJoin join = new LeftJoin("orders", condition);
 
         join.clearParameters();
@@ -120,7 +116,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Condition condition = CF.eq("a.id", "b.a_id");
+        Condition condition = Filters.eq("a.id", "b.a_id");
         LeftJoin original = new LeftJoin("table_b b", condition);
         LeftJoin copy = original.copy();
 
@@ -143,7 +139,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testToStringWithCondition() {
-        Condition condition = CF.eq("customers.id", "orders.customer_id");
+        Condition condition = Filters.eq("customers.id", "orders.customer_id");
         LeftJoin join = new LeftJoin("orders o", condition);
         String result = join.toString();
 
@@ -155,7 +151,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Condition condition = CF.eq("customerId", CF.expr("orderId"));
+        Condition condition = Filters.eq("customerId", Filters.expr("orderId"));
         LeftJoin join = new LeftJoin("orderTable", condition);
         String result = join.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
 
@@ -167,7 +163,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        Condition condition = CF.eq("a", "b");
+        Condition condition = Filters.eq("a", "b");
         LeftJoin join1 = new LeftJoin("table", condition);
         LeftJoin join2 = new LeftJoin("table", condition);
         LeftJoin join3 = new LeftJoin("other", condition);
@@ -178,7 +174,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Condition condition = CF.eq("a", "b");
+        Condition condition = Filters.eq("a", "b");
         LeftJoin join1 = new LeftJoin("table", condition);
         LeftJoin join2 = new LeftJoin("table", condition);
         LeftJoin join3 = new LeftJoin("other", condition);
@@ -195,14 +191,14 @@ public class LeftJoinTest extends TestBase {
     @Test
     public void testTypicalUseCases() {
         // Find all customers, including those without orders
-        LeftJoin customerOrders = new LeftJoin("orders o", CF.eq("c.customer_id", CF.expr("o.customer_id")));
+        LeftJoin customerOrders = new LeftJoin("orders o", Filters.eq("c.customer_id", Filters.expr("o.customer_id")));
 
         String result = customerOrders.toString();
         Assertions.assertTrue(result.contains("LEFT JOIN orders o"));
         Assertions.assertTrue(result.contains("c.customer_id = o.customer_id"));
 
         // Include optional data
-        LeftJoin optionalData = new LeftJoin("customer_preferences cp", CF.eq("c.id", "cp.customer_id"));
+        LeftJoin optionalData = new LeftJoin("customer_preferences cp", Filters.eq("c.id", "cp.customer_id"));
 
         result = optionalData.toString();
         Assertions.assertTrue(result.contains("LEFT JOIN customer_preferences cp"));

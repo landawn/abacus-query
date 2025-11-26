@@ -1,6 +1,14 @@
 package com.landawn.abacus.query.condition;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -8,7 +16,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -20,7 +27,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testConstructorWithOperatorAndCondition() {
-        Condition condition = CF.eq("status", "active");
+        Condition condition = Filters.eq("status", "active");
         Cell cell = new Cell(Operator.NOT, condition);
 
         assertNotNull(cell);
@@ -37,7 +44,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Equal equal = CF.eq("name", "John");
+        Equal equal = Filters.eq("name", "John");
         Cell cell = new Cell(Operator.NOT, equal);
 
         Equal retrieved = cell.getCondition();
@@ -47,7 +54,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testGetConditionWithSubQuery() {
-        SubQuery subQuery = CF.subQuery("SELECT 1 FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM users");
         Cell cell = new Cell(Operator.EXISTS, subQuery);
 
         SubQuery retrieved = cell.getCondition();
@@ -57,9 +64,9 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testSetCondition() {
-        Cell cell = new Cell(Operator.NOT, CF.eq("old", "value"));
+        Cell cell = new Cell(Operator.NOT, Filters.eq("old", "value"));
 
-        Condition newCondition = CF.eq("new", "value");
+        Condition newCondition = Filters.eq("new", "value");
         cell.setCondition(newCondition);
 
         assertEquals(newCondition, cell.getCondition());
@@ -67,7 +74,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Condition condition = CF.eq("name", "John");
+        Condition condition = Filters.eq("name", "John");
         Cell cell = new Cell(Operator.NOT, condition);
 
         List<Object> params = cell.getParameters();
@@ -79,7 +86,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testGetParametersWithMultipleParams() {
-        Condition condition = CF.between("age", 18, 65);
+        Condition condition = Filters.between("age", 18, 65);
         Cell cell = new Cell(Operator.NOT, condition);
 
         List<Object> params = cell.getParameters();
@@ -91,7 +98,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testGetParametersEmpty() {
-        Condition condition = CF.isNull("email");
+        Condition condition = Filters.isNull("email");
         Cell cell = new Cell(Operator.NOT, condition);
 
         List<Object> params = cell.getParameters();
@@ -102,7 +109,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testGetParametersNullCondition() {
-        Cell cell = new Cell(Operator.NOT, CF.isNull("test"));
+        Cell cell = new Cell(Operator.NOT, Filters.isNull("test"));
         // Set condition to null via deprecated method
         cell.setCondition(null);
 
@@ -114,7 +121,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Condition condition = CF.eq("status", "active");
+        Condition condition = Filters.eq("status", "active");
         Cell cell = new Cell(Operator.NOT, condition);
 
         assertFalse(cell.getParameters().isEmpty());
@@ -127,7 +134,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testClearParametersWithNullCondition() {
-        Cell cell = new Cell(Operator.NOT, CF.isNull("test"));
+        Cell cell = new Cell(Operator.NOT, Filters.isNull("test"));
         cell.setCondition(null);
 
         // Should not throw exception
@@ -136,7 +143,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        Condition condition = CF.eq("status", "active");
+        Condition condition = Filters.eq("status", "active");
         Cell original = new Cell(Operator.NOT, condition);
 
         Cell copy = original.copy();
@@ -149,7 +156,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testCopyWithNullCondition() {
-        Cell original = new Cell(Operator.NOT, CF.isNull("test"));
+        Cell original = new Cell(Operator.NOT, Filters.isNull("test"));
         original.setCondition(null);
 
         Cell copy = original.copy();
@@ -161,7 +168,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testToString() {
-        Condition condition = CF.eq("status", "active");
+        Condition condition = Filters.eq("status", "active");
         Cell cell = new Cell(Operator.NOT, condition);
 
         String result = cell.toString(NamingPolicy.NO_CHANGE);
@@ -173,7 +180,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testToStringWithExistsOperator() {
-        SubQuery subQuery = CF.subQuery("SELECT 1 FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM users");
         Cell cell = new Cell(Operator.EXISTS, subQuery);
 
         String result = cell.toString(NamingPolicy.NO_CHANGE);
@@ -184,7 +191,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testToStringWithNullCondition() {
-        Cell cell = new Cell(Operator.NOT, CF.isNull("test"));
+        Cell cell = new Cell(Operator.NOT, Filters.isNull("test"));
         cell.setCondition(null);
 
         String result = cell.toString(NamingPolicy.NO_CHANGE);
@@ -194,7 +201,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Condition condition = CF.eq("userName", "John");
+        Condition condition = Filters.eq("userName", "John");
         Cell cell = new Cell(Operator.NOT, condition);
 
         String result = cell.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
@@ -204,68 +211,68 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        Cell cell1 = new Cell(Operator.NOT, CF.eq("status", "active"));
-        Cell cell2 = new Cell(Operator.NOT, CF.eq("status", "active"));
+        Cell cell1 = new Cell(Operator.NOT, Filters.eq("status", "active"));
+        Cell cell2 = new Cell(Operator.NOT, Filters.eq("status", "active"));
 
         assertEquals(cell1.hashCode(), cell2.hashCode());
     }
 
     @Test
     public void testHashCodeDifferent() {
-        Cell cell1 = new Cell(Operator.NOT, CF.eq("status", "active"));
-        Cell cell2 = new Cell(Operator.EXISTS, CF.eq("status", "active"));
+        Cell cell1 = new Cell(Operator.NOT, Filters.eq("status", "active"));
+        Cell cell2 = new Cell(Operator.EXISTS, Filters.eq("status", "active"));
 
         assertNotEquals(cell1.hashCode(), cell2.hashCode());
     }
 
     @Test
     public void testEquals() {
-        Cell cell1 = new Cell(Operator.NOT, CF.eq("status", "active"));
-        Cell cell2 = new Cell(Operator.NOT, CF.eq("status", "active"));
+        Cell cell1 = new Cell(Operator.NOT, Filters.eq("status", "active"));
+        Cell cell2 = new Cell(Operator.NOT, Filters.eq("status", "active"));
 
         assertEquals(cell1, cell2);
     }
 
     @Test
     public void testEqualsSameInstance() {
-        Cell cell = new Cell(Operator.NOT, CF.eq("a", 1));
+        Cell cell = new Cell(Operator.NOT, Filters.eq("a", 1));
 
         assertEquals(cell, cell);
     }
 
     @Test
     public void testEqualsNull() {
-        Cell cell = new Cell(Operator.NOT, CF.eq("a", 1));
+        Cell cell = new Cell(Operator.NOT, Filters.eq("a", 1));
 
         assertNotEquals(cell, null);
     }
 
     @Test
     public void testEqualsDifferentType() {
-        Cell cell = new Cell(Operator.NOT, CF.eq("a", 1));
+        Cell cell = new Cell(Operator.NOT, Filters.eq("a", 1));
 
         assertNotEquals(cell, "not a cell");
     }
 
     @Test
     public void testEqualsDifferentOperator() {
-        Cell cell1 = new Cell(Operator.NOT, CF.eq("a", 1));
-        Cell cell2 = new Cell(Operator.EXISTS, CF.eq("a", 1));
+        Cell cell1 = new Cell(Operator.NOT, Filters.eq("a", 1));
+        Cell cell2 = new Cell(Operator.EXISTS, Filters.eq("a", 1));
 
         assertNotEquals(cell1, cell2);
     }
 
     @Test
     public void testEqualsDifferentCondition() {
-        Cell cell1 = new Cell(Operator.NOT, CF.eq("a", 1));
-        Cell cell2 = new Cell(Operator.NOT, CF.eq("b", 2));
+        Cell cell1 = new Cell(Operator.NOT, Filters.eq("a", 1));
+        Cell cell2 = new Cell(Operator.NOT, Filters.eq("b", 2));
 
         assertNotEquals(cell1, cell2);
     }
 
     @Test
     public void testNotCellWithIsNull() {
-        Cell cell = new Cell(Operator.NOT, CF.isNull("email"));
+        Cell cell = new Cell(Operator.NOT, Filters.isNull("email"));
 
         String sql = cell.toString(NamingPolicy.NO_CHANGE);
 
@@ -276,7 +283,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testExistsCellWithSubQuery() {
-        SubQuery subQuery = CF.subQuery("SELECT 1 FROM orders WHERE user_id = users.id");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE user_id = users.id");
         Cell cell = new Cell(Operator.EXISTS, subQuery);
 
         String sql = cell.toString(NamingPolicy.NO_CHANGE);
@@ -287,7 +294,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testNotExistsCellWithSubQuery() {
-        SubQuery subQuery = CF.subQuery("SELECT 1 FROM blacklist WHERE user_id = users.id");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM blacklist WHERE user_id = users.id");
         Cell notExistsCell = new Cell(Operator.NOT_EXISTS, subQuery);
 
         String sql = notExistsCell.toString(NamingPolicy.NO_CHANGE);
@@ -297,7 +304,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testCellWithComplexCondition() {
-        Condition complex = CF.and(CF.eq("status", "active"), CF.gt("age", 18), CF.isNotNull("email"));
+        Condition complex = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.isNotNull("email"));
 
         Cell cell = new Cell(Operator.NOT, complex);
 
@@ -307,7 +314,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testCellCopyPreservesValues() {
-        Cell original = new Cell(Operator.NOT, CF.eq("test", "value"));
+        Cell original = new Cell(Operator.NOT, Filters.eq("test", "value"));
 
         Cell copy = original.copy();
         copy.clearParameters();

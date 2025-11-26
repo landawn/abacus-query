@@ -6,17 +6,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Having;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class HavingTest extends TestBase {
 
     @Test
     public void testConstructorWithCondition() {
-        Condition innerCondition = CF.gt("COUNT(*)", 5);
+        Condition innerCondition = Filters.gt("COUNT(*)", 5);
         Having having = new Having(innerCondition);
 
         Assertions.assertNotNull(having);
@@ -26,7 +22,7 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testConstructorWithComplexCondition() {
-        Condition innerCondition = CF.and(CF.gt("AVG(salary)", 50000), CF.lt("COUNT(*)", 100));
+        Condition innerCondition = Filters.and(Filters.gt("AVG(salary)", 50000), Filters.lt("COUNT(*)", 100));
         Having having = new Having(innerCondition);
 
         Assertions.assertNotNull(having);
@@ -36,7 +32,7 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Condition innerCondition = CF.gt("SUM(sales)", 10000);
+        Condition innerCondition = Filters.gt("SUM(sales)", 10000);
         Having having = new Having(innerCondition);
 
         List<Object> params = having.getParameters();
@@ -47,7 +43,7 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testGetParametersWithMultipleValues() {
-        Condition innerCondition = CF.between("AVG(price)", 100, 500);
+        Condition innerCondition = Filters.between("AVG(price)", 100, 500);
         Having having = new Having(innerCondition);
 
         List<Object> params = having.getParameters();
@@ -59,7 +55,7 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Condition innerCondition = CF.eq("COUNT(*)", 10);
+        Condition innerCondition = Filters.eq("COUNT(*)", 10);
         Having having = new Having(innerCondition);
 
         having.clearParameters();
@@ -71,7 +67,7 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Condition innerCondition = CF.gt("AVG(rating)", 4.5);
+        Condition innerCondition = Filters.gt("AVG(rating)", 4.5);
         Having original = new Having(innerCondition);
         Having copy = original.copy();
 
@@ -83,7 +79,7 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testToString() {
-        Condition innerCondition = CF.gt("COUNT(*)", 5);
+        Condition innerCondition = Filters.gt("COUNT(*)", 5);
         Having having = new Having(innerCondition);
 
         String result = having.toString();
@@ -95,7 +91,7 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Condition innerCondition = CF.eq("totalAmount", 1000);
+        Condition innerCondition = Filters.eq("totalAmount", 1000);
         Having having = new Having(innerCondition);
 
         String result = having.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
@@ -105,9 +101,9 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        Condition condition1 = CF.gt("COUNT(*)", 5);
-        Condition condition2 = CF.gt("COUNT(*)", 5);
-        Condition condition3 = CF.lt("SUM(price)", 100);
+        Condition condition1 = Filters.gt("COUNT(*)", 5);
+        Condition condition2 = Filters.gt("COUNT(*)", 5);
+        Condition condition3 = Filters.lt("SUM(price)", 100);
 
         Having having1 = new Having(condition1);
         Having having2 = new Having(condition2);
@@ -119,9 +115,9 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Condition condition1 = CF.gt("COUNT(*)", 5);
-        Condition condition2 = CF.gt("COUNT(*)", 5);
-        Condition condition3 = CF.lt("SUM(price)", 100);
+        Condition condition1 = Filters.gt("COUNT(*)", 5);
+        Condition condition2 = Filters.gt("COUNT(*)", 5);
+        Condition condition3 = Filters.lt("SUM(price)", 100);
 
         Having having1 = new Having(condition1);
         Having having2 = new Having(condition2);

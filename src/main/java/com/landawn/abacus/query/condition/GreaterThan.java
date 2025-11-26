@@ -90,7 +90,7 @@ public class GreaterThan extends Binary {
      * GreaterThan dateCondition = new GreaterThan("expiryDate", LocalDate.of(2024, 12, 31));
      * 
      * // Use with subquery - find products priced above average
-     * SubQuery avgPrice = CF.subQuery("SELECT AVG(price) FROM products");
+     * SubQuery avgPrice = Filters.subQuery("SELECT AVG(price) FROM products");
      * GreaterThan aboveAverage = new GreaterThan("price", avgPrice);
      * }</pre>
      * 

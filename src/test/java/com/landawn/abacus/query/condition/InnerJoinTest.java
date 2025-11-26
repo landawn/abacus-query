@@ -7,10 +7,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.InnerJoin;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class InnerJoinTest extends TestBase {
@@ -36,7 +32,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntityAndCondition() {
-        Condition condition = CF.eq("orders.customer_id", "c.id");
+        Condition condition = Filters.eq("orders.customer_id", "c.id");
         InnerJoin join = new InnerJoin("customers c", condition);
 
         Assertions.assertNotNull(join);
@@ -47,7 +43,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithComplexCondition() {
-        Condition condition = CF.and(CF.eq("orders.id", "oi.order_id"), CF.gt("oi.quantity", 0), CF.eq("oi.status", "active"));
+        Condition condition = Filters.and(Filters.eq("orders.id", "oi.order_id"), Filters.gt("oi.quantity", 0), Filters.eq("oi.status", "active"));
         InnerJoin join = new InnerJoin("order_items oi", condition);
 
         Assertions.assertNotNull(join);
@@ -58,7 +54,7 @@ public class InnerJoinTest extends TestBase {
     @Test
     public void testConstructorWithMultipleEntities() {
         List<String> entities = Arrays.asList("orders o", "customers c");
-        Condition condition = CF.eq("o.customer_id", "c.id");
+        Condition condition = Filters.eq("o.customer_id", "c.id");
         InnerJoin join = new InnerJoin(entities, condition);
 
         Assertions.assertNotNull(join);
@@ -79,7 +75,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Condition condition = CF.eq("p.category_id", "c.id");
+        Condition condition = Filters.eq("p.category_id", "c.id");
         InnerJoin join = new InnerJoin("categories c", condition);
 
         Condition retrieved = join.getCondition();
@@ -88,7 +84,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Condition condition = CF.and(CF.eq("o.customer_id", CF.expr("c.id")), CF.eq("o.status", "completed"), CF.gt("o.total", 100));
+        Condition condition = Filters.and(Filters.eq("o.customer_id", Filters.expr("c.id")), Filters.eq("o.status", "completed"), Filters.gt("o.total", 100));
         InnerJoin join = new InnerJoin("orders o", condition);
 
         List<Object> params = join.getParameters();
@@ -110,7 +106,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Condition condition = CF.between("price", 10, 100);
+        Condition condition = Filters.between("price", 10, 100);
         InnerJoin join = new InnerJoin("products", condition);
 
         join.clearParameters();
@@ -121,7 +117,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Condition condition = CF.eq("a.id", "b.a_id");
+        Condition condition = Filters.eq("a.id", "b.a_id");
         InnerJoin original = new InnerJoin("table_b b", condition);
         InnerJoin copy = original.copy();
 
@@ -144,7 +140,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testToStringWithCondition() {
-        Condition condition = CF.eq("orders.customer_id", "customers.id");
+        Condition condition = Filters.eq("orders.customer_id", "customers.id");
         InnerJoin join = new InnerJoin("customers", condition);
         String result = join.toString();
 
@@ -156,7 +152,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Condition condition = CF.eq("productId", CF.expr("categoryId"));
+        Condition condition = Filters.eq("productId", Filters.expr("categoryId"));
         InnerJoin join = new InnerJoin("productCategory", condition);
         String result = join.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
 
@@ -168,7 +164,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        Condition condition = CF.eq("a", "b");
+        Condition condition = Filters.eq("a", "b");
         InnerJoin join1 = new InnerJoin("table", condition);
         InnerJoin join2 = new InnerJoin("table", condition);
         InnerJoin join3 = new InnerJoin("other", condition);
@@ -179,7 +175,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Condition condition = CF.eq("a", "b");
+        Condition condition = Filters.eq("a", "b");
         InnerJoin join1 = new InnerJoin("table", condition);
         InnerJoin join2 = new InnerJoin("table", condition);
         InnerJoin join3 = new InnerJoin("other", condition);
@@ -196,7 +192,7 @@ public class InnerJoinTest extends TestBase {
     @Test
     public void testTypicalUseCases() {
         // Join orders with customers (only matching records)
-        InnerJoin customerOrders = new InnerJoin("customers c", CF.eq("orders.customer_id", CF.expr("c.id")));
+        InnerJoin customerOrders = new InnerJoin("customers c", Filters.eq("orders.customer_id", Filters.expr("c.id")));
 
         String result = customerOrders.toString();
         Assertions.assertTrue(result.contains("INNER JOIN customers c"));
@@ -204,7 +200,7 @@ public class InnerJoinTest extends TestBase {
 
         // Complex join with multiple conditions
         InnerJoin complexJoin = new InnerJoin("order_items oi",
-                CF.and(CF.eq("orders.id", "oi.order_id"), CF.eq("oi.status", "active"), CF.gt("oi.quantity", 0)));
+                Filters.and(Filters.eq("orders.id", "oi.order_id"), Filters.eq("oi.status", "active"), Filters.gt("oi.quantity", 0)));
 
         result = complexJoin.toString();
         Assertions.assertTrue(result.contains("INNER JOIN order_items oi"));
@@ -215,7 +211,7 @@ public class InnerJoinTest extends TestBase {
     public void testMultipleTableJoin() {
         // Test joining multiple tables
         List<String> tables = Arrays.asList("products p", "categories c", "suppliers s");
-        Condition condition = CF.and(CF.eq("p.category_id", "c.id"), CF.eq("p.supplier_id", "s.id"));
+        Condition condition = Filters.and(Filters.eq("p.category_id", "c.id"), Filters.eq("p.supplier_id", "s.id"));
 
         InnerJoin multiJoin = new InnerJoin(tables, condition);
 

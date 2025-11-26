@@ -8,16 +8,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Between;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.CrossJoin;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.GreaterThan;
-import com.landawn.abacus.query.condition.In;
-import com.landawn.abacus.query.condition.Like;
-import com.landawn.abacus.query.condition.NotEqual;
-import com.landawn.abacus.query.condition.Operator;
 
 public class CrossJoinTest extends TestBase {
 

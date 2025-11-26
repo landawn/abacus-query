@@ -6,8 +6,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.IsNull;
-import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class IsNullTest extends TestBase {

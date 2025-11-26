@@ -51,8 +51,8 @@ import com.landawn.abacus.util.Strings;
  * // SQL: orderDate BETWEEN '2024-01-01' AND '2024-12-31'
  *
  * // Price range with subqueries
- * SubQuery minPrice = CF.subQuery("SELECT MIN(price) FROM products");
- * SubQuery maxPrice = CF.subQuery("SELECT MAX(price) FROM products");
+ * SubQuery minPrice = Filters.subQuery("SELECT MIN(price) FROM products");
+ * SubQuery maxPrice = Filters.subQuery("SELECT MAX(price) FROM products");
  * Between priceRange = new Between("price", minPrice, maxPrice);
  * // SQL: price BETWEEN (SELECT MIN(price)...) AND (SELECT MAX(price)...)
  *
@@ -104,8 +104,8 @@ public class Between extends AbstractCondition {
      *     LocalDate.of(2024, 12, 31));
      *
      * // Use with subqueries for dynamic ranges
-     * SubQuery avgMinus10 = CF.subQuery("SELECT AVG(score) - 10 FROM scores");
-     * SubQuery avgPlus10 = CF.subQuery("SELECT AVG(score) + 10 FROM scores");
+     * SubQuery avgMinus10 = Filters.subQuery("SELECT AVG(score) - 10 FROM scores");
+     * SubQuery avgPlus10 = Filters.subQuery("SELECT AVG(score) + 10 FROM scores");
      * Between nearAverage = new Between("score", avgMinus10, avgPlus10);
      * }</pre>
      *
@@ -272,8 +272,8 @@ public class Between extends AbstractCondition {
      * List<Object> parameters = between.getParameters(); // Returns [null, null]
      *
      * // With nested condition
-     * SubQuery minSubQuery = CF.subQuery("SELECT MIN(id) FROM table");
-     * SubQuery maxSubQuery = CF.subQuery("SELECT MAX(id) FROM table");
+     * SubQuery minSubQuery = Filters.subQuery("SELECT MIN(id) FROM table");
+     * SubQuery maxSubQuery = Filters.subQuery("SELECT MAX(id) FROM table");
      * Between withSubquery = new Between("id", minSubQuery, maxSubQuery);
      * withSubquery.clearParameters(); // Delegates to both SubQuery.clearParameters()
      * }</pre>

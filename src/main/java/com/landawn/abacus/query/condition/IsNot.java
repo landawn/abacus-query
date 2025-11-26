@@ -37,7 +37,7 @@ package com.landawn.abacus.query.condition;
  * // Generates: email IS NOT NULL
  * 
  * // Check if not a specific expression value
- * Expression unknownExpr = CF.expr("UNKNOWN");
+ * Expression unknownExpr = Filters.expr("UNKNOWN");
  * IsNot notUnknown = new IsNot("status", unknownExpr);
  * // Generates: status IS NOT UNKNOWN
  * }</pre>
@@ -69,19 +69,19 @@ public class IsNot extends Binary {
      * // Generates: phone_number IS NOT NULL
      * 
      * // Check if not NaN
-     * Expression nanExpr = CF.expr("NAN");
+     * Expression nanExpr = Filters.expr("NAN");
      * IsNot notNaN = new IsNot("temperature", nanExpr);
      * // Generates: temperature IS NOT NAN
      * 
      * // Check if not a custom value
-     * Expression pendingExpr = CF.expr("PENDING");
+     * Expression pendingExpr = Filters.expr("PENDING");
      * IsNot notPending = new IsNot("order_status", pendingExpr);
      * // Generates: order_status IS NOT PENDING
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
      * @param propValue the value to compare against (can be null, literal value, or subquery)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
      */
     public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);

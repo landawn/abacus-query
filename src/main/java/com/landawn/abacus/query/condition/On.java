@@ -16,8 +16,6 @@ package com.landawn.abacus.query.condition;
 
 import java.util.Map;
 
-import com.landawn.abacus.query.condition.Filters.CF;
-
 /**
  * Represents an ON clause used in SQL JOIN operations.
  * The ON clause specifies the join condition between tables, providing maximum flexibility
@@ -51,9 +49,9 @@ import com.landawn.abacus.query.condition.Filters.CF;
  * // Generates: INNER JOIN customers ON orders.customer_id = customers.id
  *
  * // Complex condition with custom logic using Expression
- * Condition complexJoin = CF.and(
+ * Condition complexJoin = Filters.and(
  *     new On("o.customer_id", "c.id"),
- *     CF.expr("o.order_date > c.registration_date")
+ *     Filters.expr("o.order_date > c.registration_date")
  * );
  * LeftJoin leftJoin = new LeftJoin("customers c", complexJoin);
  * // Generates: LEFT JOIN customers c (ON o.customer_id = c.id) AND (o.order_date > c.registration_date)
@@ -66,9 +64,9 @@ import com.landawn.abacus.query.condition.Filters.CF;
  * // Generates: ON emp.department_id = dept.id AND emp.location_id = dept.location_id
  *
  * // Join with ON condition and additional filter
- * Condition filteredJoin = CF.and(
+ * Condition filteredJoin = Filters.and(
  *     new On("products.category_id", "categories.id"),
- *     CF.eq("categories.active", true)
+ *     Filters.eq("categories.active", true)
  * );
  * RightJoin rightJoin = new RightJoin("categories", filteredJoin);
  * // Generates: RIGHT JOIN categories (ON products.category_id = categories.id) AND (categories.active = true)
@@ -82,6 +80,7 @@ import com.landawn.abacus.query.condition.Filters.CF;
  * @see FullJoin
  * @see CrossJoin
  * @see NaturalJoin
+ * @see Cell
  */
 public class On extends Cell {
 
@@ -102,24 +101,24 @@ public class On extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple equality using Expression
-     * On on1 = new On(CF.expr("a.id = b.a_id"));
+     * On on1 = new On(Filters.expr("a.id = b.a_id"));
      * InnerJoin join1 = new InnerJoin("table_b b", on1);
      * // Generates: INNER JOIN table_b b a.id = b.a_id
      *
      * // Complex multi-condition join
-     * Condition complexCondition = CF.and(
-     *     CF.expr("orders.customer_id = customers.id"),
-     *     CF.between("orders.order_date", "2024-01-01", "2024-12-31"),
-     *     CF.ne("customers.status", "DELETED")
+     * Condition complexCondition = Filters.and(
+     *     Filters.expr("orders.customer_id = customers.id"),
+     *     Filters.between("orders.order_date", "2024-01-01", "2024-12-31"),
+     *     Filters.ne("customers.status", "DELETED")
      * );
      * On on2 = new On(complexCondition);
      * LeftJoin join2 = new LeftJoin("customers", on2);
      * // Generates: LEFT JOIN customers (orders.customer_id = customers.id) AND (orders.order_date BETWEEN '2024-01-01' AND '2024-12-31') AND (customers.status != 'DELETED')
      *
      * // Range join for salary bands
-     * Condition rangeJoin = CF.and(
-     *     CF.expr("emp.salary >= salary_grades.min_salary"),
-     *     CF.expr("emp.salary <= salary_grades.max_salary")
+     * Condition rangeJoin = Filters.and(
+     *     Filters.expr("emp.salary >= salary_grades.min_salary"),
+     *     Filters.expr("emp.salary <= salary_grades.max_salary")
      * );
      * On on3 = new On(rangeJoin);
      * InnerJoin join3 = new InnerJoin("salary_grades", on3);
@@ -220,7 +219,7 @@ public class On extends Cell {
      * @return an Equal condition comparing the two columns
      */
     static Condition createOnCondition(final String propName, final String anoPropName) {
-        return new Equal(propName, CF.expr(anoPropName));
+        return new Equal(propName, Filters.expr(anoPropName));
     }
 
     /**
@@ -247,7 +246,7 @@ public class On extends Cell {
 
             return createOnCondition(entry.getKey(), entry.getValue());
         } else {
-            final And and = CF.and();
+            final And and = Filters.and();
 
             for (final Map.Entry<String, String> entry : propNamePair.entrySet()) {
                 and.add(createOnCondition(entry.getKey(), entry.getValue()));

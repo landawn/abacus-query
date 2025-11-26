@@ -17,9 +17,7 @@
 package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -413,11 +411,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testChainedOperations() {
         Criteria criteria = new Criteria();
-        Criteria result = criteria.where(Filters.equal("status", "active"))
-                .groupBy("department")
-                .having("COUNT(*) > 5")
-                .orderByDesc("created_date")
-                .limit(10);
+        Criteria result = criteria.where(Filters.equal("status", "active")).groupBy("department").having("COUNT(*) > 5").orderByDesc("created_date").limit(10);
         assertNotNull(result);
         assertNotNull(criteria.getWhere());
         assertNotNull(criteria.getGroupBy());

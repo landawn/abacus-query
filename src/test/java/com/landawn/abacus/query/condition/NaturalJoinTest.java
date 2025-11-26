@@ -7,18 +7,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.GreaterThan;
-import com.landawn.abacus.query.condition.NaturalJoin;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Filters.CF;
 
 public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithEntityOnly() {
-        NaturalJoin join = CF.naturalJoin("employees");
+        NaturalJoin join = Filters.naturalJoin("employees");
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.NATURAL_JOIN, join.getOperator());
@@ -29,8 +23,8 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithEntityAndCondition() {
-        Condition activeOnly = CF.eq("status", "active");
-        NaturalJoin join = CF.naturalJoin("departments", activeOnly);
+        Condition activeOnly = Filters.eq("status", "active");
+        NaturalJoin join = Filters.naturalJoin("departments", activeOnly);
 
         Assertions.assertEquals(Operator.NATURAL_JOIN, join.getOperator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
@@ -41,8 +35,8 @@ public class NaturalJoinTest extends TestBase {
     @Test
     public void testConstructorWithMultipleEntitiesAndCondition() {
         List<String> tables = Arrays.asList("employees", "departments");
-        Condition condition = CF.gt("salary", 50000);
-        NaturalJoin join = CF.naturalJoin(tables, condition);
+        Condition condition = Filters.gt("salary", 50000);
+        NaturalJoin join = Filters.naturalJoin(tables, condition);
 
         Assertions.assertEquals(Operator.NATURAL_JOIN, join.getOperator());
         Assertions.assertEquals(2, join.getJoinEntities().size());
@@ -52,7 +46,7 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testGetJoinEntities() {
-        NaturalJoin join = CF.naturalJoin("orders");
+        NaturalJoin join = Filters.naturalJoin("orders");
 
         List<String> entities = join.getJoinEntities();
         Assertions.assertNotNull(entities);
@@ -62,16 +56,16 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        GreaterThan recentOnly = CF.gt("orderDate", "2023-01-01");
-        NaturalJoin join = CF.naturalJoin("orders", recentOnly);
+        GreaterThan recentOnly = Filters.gt("orderDate", "2023-01-01");
+        NaturalJoin join = Filters.naturalJoin("orders", recentOnly);
 
         Assertions.assertEquals(recentOnly, join.getCondition());
     }
 
     @Test
     public void testGetParameters() {
-        Equal condition = CF.eq("active", true);
-        NaturalJoin join = CF.naturalJoin("users", condition);
+        Equal condition = Filters.eq("active", true);
+        NaturalJoin join = Filters.naturalJoin("users", condition);
 
         List<Object> params = join.getParameters();
         Assertions.assertEquals(1, params.size());
@@ -80,7 +74,7 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testGetParametersNoCondition() {
-        NaturalJoin join = CF.naturalJoin("employees");
+        NaturalJoin join = Filters.naturalJoin("employees");
 
         List<Object> params = join.getParameters();
         Assertions.assertNotNull(params);
@@ -89,8 +83,8 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Equal condition = CF.eq("department", "IT");
-        NaturalJoin join = CF.naturalJoin("employees", condition);
+        Equal condition = Filters.eq("department", "IT");
+        NaturalJoin join = Filters.naturalJoin("employees", condition);
 
         join.clearParameters();
 
@@ -100,7 +94,7 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testClearParametersNoCondition() {
-        NaturalJoin join = CF.naturalJoin("employees");
+        NaturalJoin join = Filters.naturalJoin("employees");
 
         // Should not throw exception
         join.clearParameters();
@@ -108,7 +102,7 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testToString() {
-        NaturalJoin join = CF.naturalJoin("departments");
+        NaturalJoin join = Filters.naturalJoin("departments");
 
         String result = join.toString();
         Assertions.assertTrue(result.contains("NATURAL JOIN"));
@@ -117,8 +111,8 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testToStringWithCondition() {
-        Equal condition = CF.eq("active", true);
-        NaturalJoin join = CF.naturalJoin("users", condition);
+        Equal condition = Filters.eq("active", true);
+        NaturalJoin join = Filters.naturalJoin("users", condition);
 
         String result = join.toString();
         Assertions.assertTrue(result.contains("NATURAL JOIN"));
@@ -128,8 +122,8 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Equal condition = CF.eq("status", "active");
-        NaturalJoin original = CF.naturalJoin("departments", condition);
+        Equal condition = Filters.eq("status", "active");
+        NaturalJoin original = Filters.naturalJoin("departments", condition);
 
         NaturalJoin copy = original.copy();
 
@@ -142,7 +136,7 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testCopyWithoutCondition() {
-        NaturalJoin original = CF.naturalJoin("employees");
+        NaturalJoin original = Filters.naturalJoin("employees");
 
         NaturalJoin copy = original.copy();
 
@@ -153,9 +147,9 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        NaturalJoin join1 = CF.naturalJoin("employees");
-        NaturalJoin join2 = CF.naturalJoin("employees");
-        NaturalJoin join3 = CF.naturalJoin("departments");
+        NaturalJoin join1 = Filters.naturalJoin("employees");
+        NaturalJoin join2 = Filters.naturalJoin("employees");
+        NaturalJoin join3 = Filters.naturalJoin("departments");
 
         Assertions.assertEquals(join1.hashCode(), join2.hashCode());
         Assertions.assertNotEquals(join1.hashCode(), join3.hashCode());
@@ -163,12 +157,12 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Equal condition = CF.eq("active", true);
+        Equal condition = Filters.eq("active", true);
 
-        NaturalJoin join1 = CF.naturalJoin("employees");
-        NaturalJoin join2 = CF.naturalJoin("employees");
-        NaturalJoin join3 = CF.naturalJoin("departments");
-        NaturalJoin join4 = CF.naturalJoin("employees", condition);
+        NaturalJoin join1 = Filters.naturalJoin("employees");
+        NaturalJoin join2 = Filters.naturalJoin("employees");
+        NaturalJoin join3 = Filters.naturalJoin("departments");
+        NaturalJoin join4 = Filters.naturalJoin("employees", condition);
 
         Assertions.assertTrue(join1.equals(join1));
         Assertions.assertTrue(join1.equals(join2));
@@ -180,9 +174,9 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        Condition complexCondition = CF.and(CF.eq("department", "Sales"), CF.gt("experience", 5), CF.like("skills", "%leadership%"));
+        Condition complexCondition = Filters.and(Filters.eq("department", "Sales"), Filters.gt("experience", 5), Filters.like("skills", "%leadership%"));
 
-        NaturalJoin join = CF.naturalJoin("employees", complexCondition);
+        NaturalJoin join = Filters.naturalJoin("employees", complexCondition);
 
         Assertions.assertEquals(complexCondition, join.getCondition());
         Assertions.assertEquals(3, join.getParameters().size());
@@ -191,9 +185,9 @@ public class NaturalJoinTest extends TestBase {
     @Test
     public void testMultipleTablesComplexJoin() {
         List<String> tables = Arrays.asList("customers", "orders", "products");
-        Condition highValue = CF.gt("totalAmount", 1000);
+        Condition highValue = Filters.gt("totalAmount", 1000);
 
-        NaturalJoin join = CF.naturalJoin(tables, highValue);
+        NaturalJoin join = Filters.naturalJoin(tables, highValue);
 
         Assertions.assertEquals(3, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().containsAll(tables));

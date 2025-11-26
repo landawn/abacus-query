@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Filters.CF;
 
 /**
  * Simple unit tests for the NotExists condition.
@@ -68,7 +67,7 @@ public class SimpleNotExistsTest extends TestBase {
     @Test
     void testLogicalOperations() {
         // Test that logical operations work (inherited from Condition)
-        Condition other = CF.eq("status", "active");
+        Condition other = Filters.eq("status", "active");
 
         Condition and = notExistsCondition.and(other);
         assertNotNull(and);

@@ -63,7 +63,7 @@ public class NotEqual extends Binary {
     }
 
     /**
-     * Constructs a NOT EQUAL condition for the specified property and value.
+     * Creates a new NotEqual condition.
      * This condition will evaluate to true when the property value is not equal to the specified value.
      *
      * <p>The NOT EQUAL operator is commonly used to exclude specific values from query results.

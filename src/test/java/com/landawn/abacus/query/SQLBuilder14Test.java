@@ -1060,11 +1060,7 @@ public class SQLBuilder14Test extends TestBase {
         @Test
         public void testUpdateEntityClassWithExclusions() {
             Set<String> excludes = new HashSet<>(Arrays.asList("id", "createdDate", "createdBy"));
-            String sql = MAC.update(Account.class, excludes)
-                    .set("firstName", "John")
-                    .set(Map.of("modifiedDate", new Date()))
-                    .where(Filters.eq("id", 1))
-                    .sql();
+            String sql = MAC.update(Account.class, excludes).set("firstName", "John").set(Map.of("modifiedDate", new Date())).where(Filters.eq("id", 1)).sql();
             Assertions.assertTrue(sql.contains("UPDATE ACCOUNT"));
             Assertions.assertTrue(sql.contains("FIRST_NAME = #{firstName}"));
             Assertions.assertTrue(sql.contains("MODIFIED_DATE = #{modifiedDate}"));
@@ -1186,11 +1182,7 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testSelectFromEntityClassWithAlias() {
-            String sql = MAC.selectFrom(Account.class, "a")
-                    .innerJoin("PROFILE p")
-                    .on("a.PROFILE_ID = p.ID")
-                    .where(Filters.eq("a.isActive", true))
-                    .sql();
+            String sql = MAC.selectFrom(Account.class, "a").innerJoin("PROFILE p").on("a.PROFILE_ID = p.ID").where(Filters.eq("a.isActive", true)).sql();
             Assertions.assertTrue(sql.contains("FROM ACCOUNT a"));
             Assertions.assertTrue(sql.contains("INNER JOIN PROFILE p"));
             Assertions.assertTrue(sql.contains("a.IS_ACTIVE = #{a.isActive}"));
@@ -1270,8 +1262,7 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testParseCondition() {
-            com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("status", "ACTIVE"),
-                    Filters.gt("balance", 1000));
+            com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("balance", 1000));
             String sql = MAC.parse(cond, Account.class).sql();
             Assertions.assertTrue(sql.contains("STATUS = #{status}"));
             Assertions.assertTrue(sql.contains("AND"));
@@ -1496,11 +1487,7 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testUpdateTable() {
-            String sql = MLC.update("account")
-                    .set("firstName", "updatedName")
-                    .set(Map.of("modifiedDate", new Date()))
-                    .where(Filters.eq("id", 1))
-                    .sql();
+            String sql = MLC.update("account").set("firstName", "updatedName").set(Map.of("modifiedDate", new Date())).where(Filters.eq("id", 1)).sql();
             Assertions.assertTrue(sql.contains("UPDATE account"));
             Assertions.assertTrue(sql.contains("SET"));
             Assertions.assertTrue(sql.contains("firstName = #{firstName}"));
@@ -1812,8 +1799,7 @@ public class SQLBuilder14Test extends TestBase {
 
         @Test
         public void testParseCondition() {
-            com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("status", "ACTIVE"),
-                    Filters.gt("balance", 1000));
+            com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("balance", 1000));
             String sql = MLC.parse(cond, Account.class).sql();
             Assertions.assertTrue(sql.contains("status = #{status}"));
             Assertions.assertTrue(sql.contains("AND"));

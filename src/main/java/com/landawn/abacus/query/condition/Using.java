@@ -16,7 +16,6 @@ package com.landawn.abacus.query.condition;
 
 import java.util.Collection;
 
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.N;
 
 /**
@@ -76,6 +75,7 @@ import com.landawn.abacus.util.N;
  * @see FullJoin
  * @see CrossJoin
  * @see NaturalJoin
+ * @see Cell
  */
 public class Using extends Cell {
 
@@ -176,7 +176,7 @@ public class Using extends Cell {
             throw new IllegalArgumentException("To create the using condition, columnNames can't be null or empty");
         }
 
-        return CF.expr(concatPropNames(columnNames));
+        return Filters.expr(concatPropNames(columnNames));
     }
 
     /**
@@ -200,6 +200,6 @@ public class Using extends Cell {
             throw new IllegalArgumentException("To create the using condition, columnNames can't be null or empty");
         }
 
-        return CF.expr(concatPropNames(columnNames));
+        return Filters.expr(concatPropNames(columnNames));
     }
 }

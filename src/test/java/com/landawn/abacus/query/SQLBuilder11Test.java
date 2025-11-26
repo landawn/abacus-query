@@ -1781,8 +1781,7 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testParseCondition() {
-            Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"),
-                    Filters.between("registrationDate", "2020-01-01", "2023-12-31"));
+            Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.between("registrationDate", "2020-01-01", "2023-12-31"));
 
             SQLBuilder sb = LCSB.parse(cond, Customer.class);
             Assertions.assertNotNull(sb);

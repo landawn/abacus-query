@@ -22,7 +22,6 @@ import java.util.Set;
 
 import com.landawn.abacus.query.SK;
 import com.landawn.abacus.query.SortDirection;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -56,19 +55,19 @@ import com.landawn.abacus.util.Strings;
  * // Build a complex query with multiple clauses
  * Criteria criteria = new Criteria()
  *     .join("orders", new On("users.id", "orders.user_id"))
- *     .where(CF.and(
- *         CF.eq("users.status", "active"),
- *         CF.gt("orders.amount", 100)
+ *     .where(Filters.and(
+ *         Filters.eq("users.status", "active"),
+ *         Filters.gt("orders.amount", 100)
  *     ))
  *     .groupBy("users.department")
- *     .having(CF.gt("COUNT(*)", 5))
+ *     .having(Filters.gt("COUNT(*)", 5))
  *     .orderBy("COUNT(*)", SortDirection.DESC)
  *     .limit(10);
  * 
  * // Using distinct
  * Criteria distinctUsers = new Criteria()
  *     .distinct()
- *     .where(CF.eq("active", true))
+ *     .where(Filters.eq("active", true))
  *     .orderBy("name");
  * }</pre>
  * 
@@ -99,7 +98,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria();
-     * criteria.where(CF.eq("status", "active"))
+     * criteria.where(Filters.eq("status", "active"))
      *         .orderBy("created_date", SortDirection.DESC)
      *         .limit(10);
      * }</pre>
@@ -128,16 +127,21 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets all JOIN clauses in this criteria.
      * Returns all types of joins (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) in the order they were added.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .join("orders", CF.eq("users.id", "orders.user_id"))
-     *     .leftJoin("payments", CF.eq("orders.id", "payments.order_id"));
+     *     .join("orders", new On("users.id", "orders.user_id"))
+     *     .join(new LeftJoin("payments", new On("orders.id", "payments.order_id")));
      * List<Join> joins = criteria.getJoins(); // Returns 2 joins
+     *
+     * // Iterate through joins
+     * for (Join join : criteria.getJoins()) {
+     *     System.out.println(join.getOperator()); // JOIN, LEFT_JOIN, etc.
+     * }
      * }</pre>
-     * 
-     * @return a list of Join conditions, empty if none exist
+     *
+     * @return a list of Join conditions, empty list if none exist
      */
     public List<Join> getJoins() {
         final List<Join> joins = new ArrayList<>();
@@ -157,7 +161,7 @@ public class Criteria extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria().where(CF.eq("status", "active"));
+     * Criteria criteria = new Criteria().where(Filters.eq("status", "active"));
      * Cell where = criteria.getWhere(); // Returns the WHERE clause
      * Condition condition = where.getCondition(); // Gets the wrapped condition
      * }</pre>
@@ -192,7 +196,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy("department")
-     *     .having(CF.gt("COUNT(*)", 10));
+     *     .having(Filters.gt("COUNT(*)", 10));
      * Cell having = criteria.getHaving(); // Returns the HAVING clause
      * }</pre>
      * 
@@ -208,9 +212,9 @@ public class Criteria extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = CF.subQuery("SELECT id FROM archived_users");
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM archived_users");
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("active", true))
+     *     .where(Filters.eq("active", true))
      *     .union(subQuery);
      * List<Cell> aggregations = criteria.getAggregation(); // Returns the UNION
      * }</pre>
@@ -277,7 +281,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("active", true))
+     *     .where(Filters.eq("active", true))
      *     .orderBy("name");
      * List<Condition> conditions = criteria.getConditions(); // Returns all conditions
      * }</pre>
@@ -291,7 +295,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets all conditions with the specified operator.
      * Useful for retrieving all conditions of a specific type.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
@@ -300,9 +304,9 @@ public class Criteria extends AbstractCondition {
      * List<Condition> allJoins = criteria.get(Operator.JOIN);
      * List<Condition> leftJoins = criteria.get(Operator.LEFT_JOIN);
      * }</pre>
-     * 
-     * @param operator the operator to filter by
-     * @return a list of conditions with the specified operator
+     *
+     * @param operator the operator to filter by (must not be null)
+     * @return a list of conditions with the specified operator, empty list if none found
      */
     public List<Condition> get(final Operator operator) {
         final List<Condition> conditions = new ArrayList<>();
@@ -376,7 +380,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("active", true))
+     *     .where(Filters.eq("active", true))
      *     .orderBy("name");
      * criteria.clear();
      * // All conditions are removed
@@ -394,8 +398,8 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("status", "active"))
-     *     .having(CF.gt("COUNT(*)", 5));
+     *     .where(Filters.eq("status", "active"))
+     *     .having(Filters.gt("COUNT(*)", 5));
      * List<Object> params = criteria.getParameters(); // Returns ["active", 5]
      * }</pre>
      * 
@@ -456,15 +460,19 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Clears all parameter values by setting them to null to free memory.
-     * 
+     * This clears parameters from all conditions in this criteria (JOIN, WHERE, HAVING, aggregations).
+     *
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * Criteria criteria = new Criteria()
+     *     .where(Filters.eq("status", "active"))
+     *     .having(Filters.gt("COUNT(*)", 5));
+     * List<Object> parameters = criteria.getParameters(); // Returns ["active", 5]
+     * criteria.clearParameters(); // All parameters become null
+     * List<Object> updatedParameters = criteria.getParameters(); // Returns [null, null]
      * }</pre>
      */
     @Override
@@ -482,7 +490,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .distinct()
-     *     .where(CF.eq("status", "active"));
+     *     .where(Filters.eq("status", "active"));
      * // Results in: SELECT DISTINCT ... WHERE status = 'active'
      * }</pre>
      * 
@@ -526,7 +534,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .distinctRow()
-     *     .where(CF.eq("active", true));
+     *     .where(Filters.eq("active", true));
      * // Results in: SELECT DISTINCTROW ... WHERE active = true
      * }</pre>
      * 
@@ -560,15 +568,18 @@ public class Criteria extends AbstractCondition {
     /**
      * Sets a custom preselect modifier.
      * This allows for database-specific modifiers not covered by other methods.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .preselect("SQL_CALC_FOUND_ROWS")
-     *     .where(CF.eq("active", true));
+     *     .where(Filters.eq("active", true));
      * // Results in: SELECT SQL_CALC_FOUND_ROWS ... WHERE active = true
+     *
+     * // MySQL-specific modifier
+     * criteria.preselect("SQL_NO_CACHE");
      * }</pre>
-     * 
+     *
      * @param preselect the custom preselect modifier
      * @return this Criteria instance for method chaining
      */
@@ -586,8 +597,8 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .join(
-     *         new LeftJoin("orders", CF.eq("users.id", "orders.user_id")),
-     *         new InnerJoin("products", CF.eq("orders.product_id", "products.id"))
+     *         new LeftJoin("orders", new On("users.id", "orders.user_id")),
+     *         new InnerJoin("products", new On("orders.product_id", "products.id"))
      *     );
      * }</pre>
      * 
@@ -629,7 +640,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .join("orders")
-     *     .where(CF.eq("users.id", "orders.user_id"));
+     *     .where(Filters.eq("users.id", "orders.user_id"));
      * // Results in: JOIN orders WHERE users.id = orders.user_id
      * }</pre>
      * 
@@ -650,7 +661,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .join("orders", new On("users.id", "orders.user_id"))
-     *     .where(CF.eq("users.status", "active"));
+     *     .where(Filters.eq("users.status", "active"));
      * // Results in: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
      * }</pre>
      * 
@@ -671,7 +682,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Collection<String> tables = Arrays.asList("orders", "order_items");
      * Criteria criteria = new Criteria()
-     *     .join(tables, CF.eq("id", "order_id"));
+     *     .join(tables, new On("id", "order_id"));
      * }</pre>
      * 
      * @param joinEntities the collection of tables/entities to join
@@ -691,10 +702,10 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .where(CF.and(
-     *         CF.eq("status", "active"),
-     *         CF.gt("age", 18),
-     *         CF.like("email", "%@company.com")
+     *     .where(Filters.and(
+     *         Filters.eq("status", "active"),
+     *         Filters.gt("age", 18),
+     *         Filters.like("email", "%@company.com")
      *     ));
      * }</pre>
      * 
@@ -728,7 +739,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria where(final String condition) {
-        add(new Where(CF.expr(condition)));
+        add(new Where(Filters.expr(condition)));
 
         return this;
     }
@@ -740,7 +751,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .groupBy(CF.expr("YEAR(order_date), MONTH(order_date)"));
+     *     .groupBy(Filters.expr("YEAR(order_date), MONTH(order_date)"));
      * }</pre>
      * 
      * @param condition the GROUP BY condition
@@ -916,9 +927,9 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .groupBy("department")
-     *     .having(CF.and(
-     *         CF.gt("COUNT(*)", 10),
-     *         CF.lt("AVG(salary)", 100000)
+     *     .having(Filters.and(
+     *         Filters.gt("COUNT(*)", 10),
+     *         Filters.lt("AVG(salary)", 100000)
      *     ));
      * }</pre>
      * 
@@ -950,7 +961,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria having(final String condition) {
-        add(new Having(CF.expr(condition)));
+        add(new Having(Filters.expr(condition)));
 
         return this;
     }
@@ -970,7 +981,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria orderByAsc(final String... propNames) {
-        add(CF.orderByAsc(propNames));
+        add(Filters.orderByAsc(propNames));
 
         return this;
     }
@@ -989,7 +1000,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria orderByAsc(final Collection<String> propNames) {
-        add(CF.orderByAsc(propNames));
+        add(Filters.orderByAsc(propNames));
 
         return this;
     }
@@ -1009,7 +1020,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria orderByDesc(final String... propNames) {
-        add(CF.orderByDesc(propNames));
+        add(Filters.orderByDesc(propNames));
 
         return this;
     }
@@ -1028,7 +1039,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria orderByDesc(final Collection<String> propNames) {
-        add(CF.orderByDesc(propNames));
+        add(Filters.orderByDesc(propNames));
 
         return this;
     }
@@ -1041,7 +1052,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * // Complex ordering expression
      * Criteria criteria = new Criteria()
-     *     .orderBy(CF.expr("CASE WHEN priority = 'HIGH' THEN 1 ELSE 2 END, created_date DESC"));
+     *     .orderBy(Filters.expr("CASE WHEN priority = 'HIGH' THEN 1 ELSE 2 END, created_date DESC"));
      * }</pre>
      * 
      * @param condition the ORDER BY condition
@@ -1214,7 +1225,7 @@ public class Criteria extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Limit customLimit = CF.limit(100);
+     * Limit customLimit = Filters.limit(100);
      * Criteria criteria = new Criteria()
      *     .limit(customLimit);
      * }</pre>
@@ -1235,7 +1246,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("status", "active"))
+     *     .where(Filters.eq("status", "active"))
      *     .limit(10);
      * // Results in: WHERE status = 'active' LIMIT 10
      * }</pre>
@@ -1244,7 +1255,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria limit(final int count) {
-        add(CF.limit(count));
+        add(Filters.limit(count));
 
         return this;
     }
@@ -1267,7 +1278,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria limit(final int offset, final int count) {
-        add(CF.limit(offset, count));
+        add(Filters.limit(offset, count));
 
         return this;
     }
@@ -1289,7 +1300,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria limit(final String expr) {
-        add(CF.limit(expr));
+        add(Filters.limit(expr));
 
         return this;
     }
@@ -1300,9 +1311,9 @@ public class Criteria extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery archivedUsers = CF.subQuery("SELECT * FROM archived_users WHERE active = true");
+     * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users WHERE active = true");
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("status", "active"))
+     *     .where(Filters.eq("status", "active"))
      *     .union(archivedUsers);
      * // Returns active users from both current and archived tables
      * }</pre>
@@ -1322,9 +1333,9 @@ public class Criteria extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery pendingOrders = CF.subQuery("SELECT * FROM pending_orders");
+     * SubQuery pendingOrders = Filters.subQuery("SELECT * FROM pending_orders");
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("status", "completed"))
+     *     .where(Filters.eq("status", "completed"))
      *     .unionAll(pendingOrders);
      * // Returns all orders, including duplicates if any exist
      * }</pre>
@@ -1344,9 +1355,9 @@ public class Criteria extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery premiumUsers = CF.subQuery("SELECT user_id FROM premium_members");
+     * SubQuery premiumUsers = Filters.subQuery("SELECT user_id FROM premium_members");
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("active", true))
+     *     .where(Filters.eq("active", true))
      *     .intersect(premiumUsers);
      * // Returns only active users who are also premium members
      * }</pre>
@@ -1366,9 +1377,9 @@ public class Criteria extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery excludedUsers = CF.subQuery("SELECT user_id FROM blacklist");
+     * SubQuery excludedUsers = Filters.subQuery("SELECT user_id FROM blacklist");
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("status", "active"))
+     *     .where(Filters.eq("status", "active"))
      *     .except(excludedUsers);
      * // Returns active users who are not in the blacklist
      * }</pre>
@@ -1388,9 +1399,9 @@ public class Criteria extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery inactiveUsers = CF.subQuery("SELECT user_id FROM inactive_users");
+     * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id FROM inactive_users");
      * Criteria criteria = new Criteria()
-     *     .where(CF.eq("registered", true))
+     *     .where(Filters.eq("registered", true))
      *     .minus(inactiveUsers);
      * // Returns registered users minus inactive ones
      * }</pre>
@@ -1412,7 +1423,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria original = new Criteria()
-     *     .where(CF.eq("status", "active"))
+     *     .where(Filters.eq("status", "active"))
      *     .orderBy("name");
      * Criteria copy = original.copy();
      * // copy is independent of original
@@ -1444,7 +1455,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .distinct()
-     *     .where(CF.eq("isActive", true))
+     *     .where(Filters.eq("isActive", true))
      *     .orderBy("createdDate", SortDirection.DESC);
      * String sql = criteria.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
      * // Returns: " DISTINCT WHERE is_active = true ORDER BY created_date DESC"
@@ -1493,8 +1504,8 @@ public class Criteria extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria c1 = new Criteria().where(CF.eq("status", "active"));
-     * Criteria c2 = new Criteria().where(CF.eq("status", "active"));
+     * Criteria c1 = new Criteria().where(Filters.eq("status", "active"));
+     * Criteria c2 = new Criteria().where(Filters.eq("status", "active"));
      * boolean sameHash = c1.hashCode() == c2.hashCode(); // true
      * }</pre>
      * 
@@ -1514,10 +1525,10 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria c1 = new Criteria()
      *     .distinct()
-     *     .where(CF.eq("status", "active"));
+     *     .where(Filters.eq("status", "active"));
      * Criteria c2 = new Criteria()
      *     .distinct()
-     *     .where(CF.eq("status", "active"));
+     *     .where(Filters.eq("status", "active"));
      * boolean isEqual = c1.equals(c2); // Returns true
      * }</pre>
      * 

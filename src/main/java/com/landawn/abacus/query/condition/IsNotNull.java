@@ -98,7 +98,7 @@ public class IsNotNull extends IsNot {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
      */
     public IsNotNull(final String propName) {
         super(propName, IsNull.NULL);

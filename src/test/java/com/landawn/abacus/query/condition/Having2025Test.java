@@ -14,13 +14,16 @@
 
 package com.landawn.abacus.query.condition;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -32,7 +35,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testConstructorWithCondition() {
-        Equal condition = CF.eq("COUNT(*)", 5);
+        Equal condition = Filters.eq("COUNT(*)", 5);
         Having having = new Having(condition);
 
         assertNotNull(having);
@@ -41,7 +44,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testToString() {
-        Having having = new Having(CF.gt("COUNT(*)", 10));
+        Having having = new Having(Filters.gt("COUNT(*)", 10));
         String result = having.toString();
 
         assertTrue(result.contains("HAVING"));
@@ -50,7 +53,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Having having = new Having(CF.gt("COUNT(*)", 5));
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
         String result = having.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
         assertNotNull(result);
@@ -59,7 +62,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Having having = new Having(CF.gt("SUM(amount)", 1000));
+        Having having = new Having(Filters.gt("SUM(amount)", 1000));
 
         assertNotNull(having.getParameters());
         assertEquals(1, having.getParameters().size());
@@ -68,7 +71,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testGetParametersWithMultipleConditions() {
-        Condition condition = CF.and(CF.gt("COUNT(*)", 5), CF.lt("AVG(price)", 100));
+        Condition condition = Filters.and(Filters.gt("COUNT(*)", 5), Filters.lt("AVG(price)", 100));
         Having having = new Having(condition);
 
         assertEquals(2, having.getParameters().size());
@@ -76,7 +79,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Having having = new Having(CF.gt("COUNT(*)", 10));
+        Having having = new Having(Filters.gt("COUNT(*)", 10));
         assertEquals(1, having.getParameters().size());
 
         having.clearParameters();
@@ -86,9 +89,9 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testEquals() {
-        Having having1 = new Having(CF.gt("COUNT(*)", 5));
-        Having having2 = new Having(CF.gt("COUNT(*)", 5));
-        Having having3 = new Having(CF.gt("COUNT(*)", 10));
+        Having having1 = new Having(Filters.gt("COUNT(*)", 5));
+        Having having2 = new Having(Filters.gt("COUNT(*)", 5));
+        Having having3 = new Having(Filters.gt("COUNT(*)", 10));
 
         assertEquals(having1, having2);
         assertNotEquals(having1, having3);
@@ -97,30 +100,30 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testEqualsWithNull() {
-        Having having = new Having(CF.gt("COUNT(*)", 5));
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
 
         assertNotEquals(having, null);
     }
 
     @Test
     public void testEqualsWithDifferentClass() {
-        Having having = new Having(CF.gt("COUNT(*)", 5));
-        Where where = new Where(CF.gt("COUNT(*)", 5));
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
+        Where where = new Where(Filters.gt("COUNT(*)", 5));
 
         assertNotEquals(having, (Object) where);
     }
 
     @Test
     public void testHashCode() {
-        Having having1 = new Having(CF.gt("COUNT(*)", 5));
-        Having having2 = new Having(CF.gt("COUNT(*)", 5));
+        Having having1 = new Having(Filters.gt("COUNT(*)", 5));
+        Having having2 = new Having(Filters.gt("COUNT(*)", 5));
 
         assertEquals(having1.hashCode(), having2.hashCode());
     }
 
     @Test
     public void testHashCodeConsistency() {
-        Having having = new Having(CF.gt("SUM(total)", 1000));
+        Having having = new Having(Filters.gt("SUM(total)", 1000));
         int hash1 = having.hashCode();
         int hash2 = having.hashCode();
 
@@ -129,7 +132,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        Having original = new Having(CF.gt("AVG(score)", 75));
+        Having original = new Having(Filters.gt("AVG(score)", 75));
         Having copy = original.copy();
 
         assertNotSame(original, copy);
@@ -139,7 +142,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testWithAggregateFunction() {
-        Having having = new Having(CF.gt("MAX(salary)", 100000));
+        Having having = new Having(Filters.gt("MAX(salary)", 100000));
         String result = having.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
         assertTrue(result.contains("HAVING"));
@@ -148,7 +151,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testWithMinFunction() {
-        Having having = new Having(CF.lt("MIN(age)", 18));
+        Having having = new Having(Filters.lt("MIN(age)", 18));
 
         assertNotNull(having);
         assertEquals(1, having.getParameters().size());
@@ -157,7 +160,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testWithComplexCondition() {
-        Condition complex = CF.and(CF.gt("COUNT(*)", 10), CF.between("AVG(salary)", 50000, 100000));
+        Condition complex = Filters.and(Filters.gt("COUNT(*)", 10), Filters.between("AVG(salary)", 50000, 100000));
         Having having = new Having(complex);
 
         assertNotNull(having);
@@ -166,7 +169,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testWithOrCondition() {
-        Condition orCondition = CF.or(CF.gt("SUM(revenue)", 1000000), CF.eq("COUNT(*)", 0));
+        Condition orCondition = Filters.or(Filters.gt("SUM(revenue)", 1000000), Filters.eq("COUNT(*)", 0));
         Having having = new Having(orCondition);
 
         String result = having.toString();
@@ -175,7 +178,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testWithExpression() {
-        Having having = new Having(CF.expr("COUNT(DISTINCT customer_id) > 100"));
+        Having having = new Having(Filters.expr("COUNT(DISTINCT customer_id) > 100"));
 
         assertNotNull(having);
         String result = having.toString();
@@ -184,7 +187,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testInheritedGetConditionMethod() {
-        Equal condition = CF.eq("COUNT(*)", 5);
+        Equal condition = Filters.eq("COUNT(*)", 5);
         Having having = new Having(condition);
 
         Condition retrievedCondition = having.getCondition();
@@ -193,7 +196,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testOperatorType() {
-        Having having = new Having(CF.gt("COUNT(*)", 0));
+        Having having = new Having(Filters.gt("COUNT(*)", 0));
 
         assertEquals(Operator.HAVING, having.getOperator());
         assertNotEquals(Operator.WHERE, having.getOperator());
@@ -202,7 +205,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testWithBetweenCondition() {
-        Having having = new Having(CF.between("AVG(age)", 25, 40));
+        Having having = new Having(Filters.between("AVG(age)", 25, 40));
 
         assertEquals(2, having.getParameters().size());
         assertEquals(25, having.getParameters().get(0));
@@ -211,7 +214,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testMultipleAggregatesWithAnd() {
-        Condition condition = CF.and(CF.gt("COUNT(*)", 5), CF.gt("SUM(amount)", 10000), CF.lt("AVG(price)", 500));
+        Condition condition = Filters.and(Filters.gt("COUNT(*)", 5), Filters.gt("SUM(amount)", 10000), Filters.lt("AVG(price)", 500));
         Having having = new Having(condition);
 
         assertEquals(3, having.getParameters().size());
@@ -223,7 +226,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testWithNullSafeCondition() {
-        Having having = new Having(CF.isNotNull("COUNT(*)"));
+        Having having = new Having(Filters.isNotNull("COUNT(*)"));
 
         assertNotNull(having);
         assertEquals(0, having.getParameters().size());
@@ -231,7 +234,7 @@ public class Having2025Test extends TestBase {
 
     @Test
     public void testStringRepresentationFormat() {
-        Having having = new Having(CF.ge("COUNT(*)", 1));
+        Having having = new Having(Filters.ge("COUNT(*)", 1));
         String result = having.toString(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.startsWith("HAVING"));

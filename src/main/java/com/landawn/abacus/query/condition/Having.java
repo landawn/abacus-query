@@ -40,23 +40,23 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find departments with more than 5 employees
- * Having moreThan5 = new Having(CF.gt("COUNT(*)", 5));
+ * Having moreThan5 = new Having(Filters.gt("COUNT(*)", 5));
  * // SQL: HAVING COUNT(*) > 5
  *
  * // Find categories with average price above 100
- * Having avgPriceHigh = new Having(CF.gt("AVG(price)", 100));
+ * Having avgPriceHigh = new Having(Filters.gt("AVG(price)", 100));
  * // SQL: HAVING AVG(price) > 100
  *
  * // Find customers with total orders over 10000
- * Having bigSpenders = new Having(CF.gt("SUM(order_total)", 10000));
+ * Having bigSpenders = new Having(Filters.gt("SUM(order_total)", 10000));
  * // SQL: HAVING SUM(order_total) > 10000
  *
  * // Complex HAVING with multiple conditions
  * Having complex = new Having(
- *     CF.and(
- *         CF.gt("COUNT(*)", 10),
- *         CF.lt("AVG(age)", 40),
- *         CF.ge("SUM(revenue)", 50000)
+ *     Filters.and(
+ *         Filters.gt("COUNT(*)", 10),
+ *         Filters.lt("AVG(age)", 40),
+ *         Filters.ge("SUM(revenue)", 50000)
  *     )
  * );
  * // SQL: HAVING COUNT(*) > 10 AND AVG(age) < 40 AND SUM(revenue) >= 50000
@@ -65,9 +65,9 @@ package com.landawn.abacus.query.condition;
  * query.select("department", "COUNT(*) as emp_count", "AVG(salary) as avg_salary")
  *      .from("employees")
  *      .groupBy("department")
- *      .having(new Having(CF.and(
- *          CF.gt("COUNT(*)", 5),
- *          CF.gt("AVG(salary)", 50000)
+ *      .having(new Having(Filters.and(
+ *          Filters.gt("COUNT(*)", 5),
+ *          Filters.gt("AVG(salary)", 50000)
  *      )));
  * // SQL: SELECT department, COUNT(*) as emp_count, AVG(salary) as avg_salary
  * //      FROM employees
@@ -101,32 +101,32 @@ public class Having extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Filter groups where the sum of sales exceeds 10000
-     * Having highSales = new Having(CF.gt("SUM(sales)", 10000));
+     * Having highSales = new Having(Filters.gt("SUM(sales)", 10000));
      * // SQL: HAVING SUM(sales) > 10000
      *
      * // Filter groups with at least 3 members
-     * Having minCount = new Having(CF.ge("COUNT(*)", 3));
+     * Having minCount = new Having(Filters.ge("COUNT(*)", 3));
      * // SQL: HAVING COUNT(*) >= 3
      *
      * // Filter groups with average value in range
      * Having avgRange = new Having(
-     *     CF.and(
-     *         CF.ge("AVG(score)", 60),
-     *         CF.le("AVG(score)", 90)
+     *     Filters.and(
+     *         Filters.ge("AVG(score)", 60),
+     *         Filters.le("AVG(score)", 90)
      *     )
      * );
      * // SQL: HAVING AVG(score) >= 60 AND AVG(score) <= 90
      *
      * // Filter groups with maximum value check
-     * Having maxCheck = new Having(CF.lt("MAX(temperature)", 100));
+     * Having maxCheck = new Having(Filters.lt("MAX(temperature)", 100));
      * // SQL: HAVING MAX(temperature) < 100
      *
      * // Multiple aggregate conditions
      * Having multipleAggs = new Having(
-     *     CF.and(
-     *         CF.gt("COUNT(DISTINCT customer_id)", 10),
-     *         CF.ge("SUM(amount)", 5000),
-     *         CF.between("AVG(rating)", 3.0, 5.0)
+     *     Filters.and(
+     *         Filters.gt("COUNT(DISTINCT customer_id)", 10),
+     *         Filters.ge("SUM(amount)", 5000),
+     *         Filters.between("AVG(rating)", 3.0, 5.0)
      *     )
      * );
      * // SQL: HAVING COUNT(DISTINCT customer_id) > 10

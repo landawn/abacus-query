@@ -32,14 +32,14 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find products more expensive than ALL products in 'Electronics' category
- * SubQuery electronicsQuery = CF.subQuery(
+ * SubQuery electronicsQuery = Filters.subQuery(
  *     "SELECT price FROM products WHERE category = 'Electronics'"
  * );
  * All allElectronics = new All(electronicsQuery);
  * // Use with: WHERE price > ALL (SELECT price FROM products WHERE category = 'Electronics')
  *
  * // Find employees earning more than ALL managers
- * SubQuery managerSalaries = CF.subQuery(
+ * SubQuery managerSalaries = Filters.subQuery(
  *     "SELECT salary FROM employees WHERE is_manager = true"
  * );
  * All allManagers = new All(managerSalaries);
@@ -85,27 +85,27 @@ public class All extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a subquery for competitor prices
-     * SubQuery competitorPrices = new SubQuery(
+     * SubQuery competitorPrices = Filters.subQuery(
      *     "SELECT price FROM competitor_products WHERE product_type = 'Premium'"
      * );
      * All allCompetitors = new All(competitorPrices);
      * // Used with: WHERE our_price > ALL (SELECT price FROM competitor_products WHERE product_type = 'Premium')
      *
      * // Find students who scored higher than all class averages
-     * SubQuery classAverages = new SubQuery(
+     * SubQuery classAverages = Filters.subQuery(
      *     "SELECT avg_score FROM class_statistics WHERE year = 2024"
      * );
      * All allAverages = new All(classAverages);
      * // Used with: WHERE student_score > ALL (SELECT avg_score FROM class_statistics WHERE year = 2024)
      *
      * // Find products cheaper than all premium items
-     * SubQuery premiumPrices = new SubQuery("SELECT price FROM products WHERE category = 'premium'");
+     * SubQuery premiumPrices = Filters.subQuery("SELECT price FROM products WHERE category = 'premium'");
      * All allPremium = new All(premiumPrices);
      * // Used with: WHERE price < ALL (SELECT price FROM products WHERE category = 'premium')
      * }</pre>
      *
      * @param condition the subquery that returns values to compare against. Must not be null.
-     * @throws IllegalArgumentException if condition is null
+     * @throws NullPointerException if condition is null
      */
     public All(final SubQuery condition) {
         super(Operator.ALL, condition);

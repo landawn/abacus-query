@@ -56,13 +56,13 @@ import java.util.Collection;
  * RightJoin complexJoin = new RightJoin("products p",
  *     new And(
  *         new On("order_items.product_id", "p.id"),
- *         new Equal("p.active", true)
+ *         Filters.eq("p.active", true)
  *     ));
  * // Generates: RIGHT JOIN products p (ON order_items.product_id = p.id) AND (p.active = true)
  *
  * // Using Expression for custom join logic
  * RightJoin exprJoin = new RightJoin("departments",
- *     CF.expr("employees.dept_id = departments.id"));
+ *     Filters.expr("employees.dept_id = departments.id"));
  * // Generates: RIGHT JOIN departments employees.dept_id = departments.id
  * }</pre>
  * 
@@ -131,14 +131,14 @@ public class RightJoin extends Join {
      * RightJoin activeCategories = new RightJoin("categories c",
      *     new And(
      *         new On("products.category_id", "c.id"),
-     *         new Equal("c.active", true),
-     *         new GreaterThan("c.created_date", "2023-01-01")
+     *         Filters.eq("c.active", true),
+     *         Filters.gt("c.created_date", "2023-01-01")
      *     ));
      * // Generates: RIGHT JOIN categories c (ON products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01')
      *
      * // Using Expression for custom join logic
      * RightJoin exprJoin = new RightJoin("products p",
-     *     CF.expr("order_items.product_id = p.id AND p.stock > 0"));
+     *     Filters.expr("order_items.product_id = p.id AND p.stock > 0"));
      * // Generates: RIGHT JOIN products p order_items.product_id = p.id AND p.stock > 0
      * }</pre>
      *
@@ -168,7 +168,7 @@ public class RightJoin extends Join {
      *
      * // Using Expression for multiple tables
      * RightJoin exprJoin = new RightJoin(tables,
-     *     CF.expr("p.category_id = c.id AND p.subcategory_id = sc.id"));
+     *     Filters.expr("p.category_id = c.id AND p.subcategory_id = sc.id"));
      * // Generates: RIGHT JOIN categories c, subcategories sc p.category_id = c.id AND p.subcategory_id = sc.id
      * }</pre>
      *

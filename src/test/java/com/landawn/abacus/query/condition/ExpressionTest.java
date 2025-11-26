@@ -6,9 +6,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Expression;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class ExpressionTest extends TestBase {
@@ -158,61 +155,61 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testPlus() {
-        String result = Expression.plus(CF.expr("price"), CF.expr("tax"), CF.expr("shipping"));
+        String result = Expression.plus(Filters.expr("price"), Filters.expr("tax"), Filters.expr("shipping"));
         Assertions.assertEquals("price + tax + shipping", result);
     }
 
     @Test
     public void testMinus() {
-        String result = Expression.minus(CF.expr("total"), CF.expr("discount"));
+        String result = Expression.minus(Filters.expr("total"), Filters.expr("discount"));
         Assertions.assertEquals("total - discount", result);
     }
 
     @Test
     public void testMulti() {
-        String result = Expression.multi(CF.expr("quantity"), CF.expr("price"));
+        String result = Expression.multi(Filters.expr("quantity"), Filters.expr("price"));
         Assertions.assertEquals("quantity * price", result);
     }
 
     @Test
     public void testDivision() {
-        String result = Expression.division(CF.expr("total"), CF.expr("count"));
+        String result = Expression.division(Filters.expr("total"), Filters.expr("count"));
         Assertions.assertEquals("total / count", result);
     }
 
     @Test
     public void testModulus() {
-        String result = Expression.modulus(CF.expr("value"), 10);
+        String result = Expression.modulus(Filters.expr("value"), 10);
         Assertions.assertEquals("value % 10", result);
     }
 
     @Test
     public void testLShift() {
-        String result = Expression.lShift(CF.expr("value"), 2);
+        String result = Expression.lShift(Filters.expr("value"), 2);
         Assertions.assertEquals("value << 2", result);
     }
 
     @Test
     public void testRShift() {
-        String result = Expression.rShift(CF.expr("value"), 2);
+        String result = Expression.rShift(Filters.expr("value"), 2);
         Assertions.assertEquals("value >> 2", result);
     }
 
     @Test
     public void testBitwiseAnd() {
-        String result = Expression.bitwiseAnd(CF.expr("flags"), 0xFF);
+        String result = Expression.bitwiseAnd(Filters.expr("flags"), 0xFF);
         Assertions.assertEquals("flags & 255", result);
     }
 
     @Test
     public void testBitwiseOr() {
-        String result = Expression.bitwiseOr(CF.expr("flags"), 0x01);
+        String result = Expression.bitwiseOr(Filters.expr("flags"), 0x01);
         Assertions.assertEquals("flags | 1", result);
     }
 
     @Test
     public void testBitwiseXOr() {
-        String result = Expression.bitwiseXOr(CF.expr("value"), CF.expr("mask"));
+        String result = Expression.bitwiseXOr(Filters.expr("value"), Filters.expr("mask"));
         Assertions.assertEquals("value ^ mask", result);
     }
 

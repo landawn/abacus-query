@@ -6,16 +6,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Any;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
-import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.GreaterThan;
-import com.landawn.abacus.query.condition.Not;
-import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.Or;
-import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class AnyTest extends TestBase {
@@ -175,8 +165,8 @@ public class AnyTest extends TestBase {
     @Test
     public void testComplexSubQuery() {
         // Test with a complex subquery
-        SubQuery complexSubQuery = Filters.subQuery("departments", Arrays.asList("budget"), Filters.and(Filters.eq("region", "West"),
-                Filters.gt("employee_count", 50), Filters.ne("status", "inactive")));
+        SubQuery complexSubQuery = Filters.subQuery("departments", Arrays.asList("budget"),
+                Filters.and(Filters.eq("region", "West"), Filters.gt("employee_count", 50), Filters.ne("status", "inactive")));
 
         Any any = Filters.any(complexSubQuery);
 

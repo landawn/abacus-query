@@ -64,7 +64,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.query.SK;
 import com.landawn.abacus.query.SQLParser;
-import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
@@ -90,7 +89,7 @@ import com.landawn.abacus.util.Strings;
  * Expression expr = Expression.of("price * 0.9");
  * 
  * // Using in a condition
- * Condition discountPrice = CF.lt(expr, 100);
+ * Condition discountPrice = Filters.lt(expr, 100);
  * 
  * // SQL functions
  * String upperName = Expression.upper("name");
@@ -1636,7 +1635,7 @@ public class Expression extends AbstractCondition {
             return Strings.EMPTY;
         }
 
-        if (literal.length() < 16 && CF.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).find()) {
+        if (literal.length() < 16 && Filters.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).find()) {
             return namingPolicy.convert(literal);
         }
 

@@ -75,7 +75,7 @@ public class LessEqual extends Binary {
     }
 
     /**
-     * Creates a new less-than-or-equal-to condition with the specified property name and value.
+     * Creates a new LessEqual condition.
      * This condition checks if the property value is less than or equal to the specified value,
      * providing an inclusive upper bound check.
      *
@@ -98,7 +98,7 @@ public class LessEqual extends Binary {
      * // SQL: temperature <= 25.5
      *
      * // Use with subquery - find products priced at or below average
-     * SubQuery avgPrice = CF.subQuery("SELECT AVG(price) FROM products");
+     * SubQuery avgPrice = Filters.subQuery("SELECT AVG(price) FROM products");
      * LessEqual atOrBelowAverage = new LessEqual("price", avgPrice);
      * }</pre>
      *

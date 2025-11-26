@@ -22,14 +22,23 @@ import com.landawn.abacus.annotation.Internal;
  * including special characters, operators, SQL keywords, and mathematical functions.
  * This class serves as a centralized repository for string constants to avoid hardcoding
  * and improve code maintainability.
- * 
+ *
  * <p>All fields in this class are public static final constants representing either
  * single characters (prefixed with underscore) or their string equivalents.</p>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
+ * // Building SQL queries
  * String query = SK.SELECT + SK.SPACE + "*" + SK.SPACE + SK.FROM + SK.SPACE + "users";
+ * // Result: "SELECT * FROM users"
+ *
+ * // Building CSV strings
  * String csv = "John" + SK.COMMA_SPACE + "Doe" + SK.COMMA_SPACE + "30";
+ * // Result: "John, Doe, 30"
+ *
+ * // Using SQL operators
+ * String condition = "age" + SK.SPACE + SK.GREATER_EQUAL + SK.SPACE + "18";
+ * // Result: "age >= 18"
  * }</pre>
  *
  */

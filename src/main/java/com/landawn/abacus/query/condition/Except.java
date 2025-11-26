@@ -32,25 +32,51 @@ package com.landawn.abacus.query.condition;
  *   <li>Order of rows is not guaranteed unless ORDER BY is used</li>
  * </ul>
  *
+ * <p>When to use EXCEPT vs other approaches:
+ * <ul>
+ *   <li>Use EXCEPT for clean, declarative set difference operations</li>
+ *   <li>Use EXCEPT when comparing entire row structures (multiple columns)</li>
+ *   <li>Consider NOT EXISTS for better performance in some cases</li>
+ *   <li>Consider LEFT JOIN with NULL check for single-table differences</li>
+ *   <li>Use NOT IN for simple single-column exclusions (but beware of NULL values)</li>
+ * </ul>
+ *
+ * <p>Performance considerations:
+ * <ul>
+ *   <li>EXCEPT requires duplicate elimination, which involves sorting or hashing</li>
+ *   <li>Performance depends on result set sizes and database optimization</li>
+ *   <li>Indexes on columns used in both queries can significantly improve performance</li>
+ *   <li>For large datasets, NOT EXISTS may outperform EXCEPT in some databases</li>
+ *   <li>Consider the cardinality of both result sets when choosing an approach</li>
+ * </ul>
+ *
+ * <p>Database support:
+ * <ul>
+ *   <li>Supported by: PostgreSQL, SQL Server, SQLite, DB2</li>
+ *   <li>NOT supported by MySQL or Oracle (Oracle uses MINUS instead)</li>
+ *   <li>Part of SQL standard but not universally implemented</li>
+ *   <li>Functionally equivalent to Oracle's MINUS operator</li>
+ * </ul>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Find customers who haven't placed any orders
- * SubQuery customersWithOrders = CF.subQuery(
- *     "SELECT DISTINCT customer_id FROM orders"
- * );
- *
- * // Main query returns all customers
- * Criteria criteria = CF.criteria()
- *     .where(CF.eq("status", "active"))
- *     .except(customersWithOrders);
+ * // Find all customers except those who have placed orders
+ * SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+ * Except customersWithoutOrders = new Except(customersWithOrders);
+ * // When combined with all customers query:
+ * // SELECT customer_id FROM customers WHERE status = 'active'
+ * // EXCEPT
+ * // SELECT DISTINCT customer_id FROM orders
  * // Results: active customers who have no orders
  *
  * // Find products not sold in the last month
- * SubQuery recentlySold = CF.subQuery(
+ * SubQuery recentlySold = new SubQuery(
  *     "SELECT product_id FROM order_items WHERE order_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)"
  * );
- * Criteria allProducts = CF.criteria();
- * allProducts.except(recentlySold);
+ * Except unsoldProducts = new Except(recentlySold);
+ * // SELECT product_id FROM products
+ * // EXCEPT
+ * // SELECT product_id FROM order_items WHERE order_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)
  * // Results: all products except those sold recently
  * }</pre>
  *
