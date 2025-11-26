@@ -85,7 +85,7 @@ public class Limit extends AbstractCondition {
      * // SQL: SELECT * FROM products WHERE name LIKE '%phone%' LIMIT 100
      * }</pre>
      *
-     * @param count the maximum number of rows to return. Should be non-negative.
+     * @param count the maximum number of rows to return. Should be non-negative (typically positive).
      */
     public Limit(final int count) {
         this(0, count);
@@ -131,14 +131,14 @@ public class Limit extends AbstractCondition {
      * // Standard LIMIT with OFFSET
      * Limit standard = new Limit("10 OFFSET 20");
      *
-     * // MySQL-style limit
+     * // MySQL-style limit (offset, count)
      * Limit mysql = new Limit("20, 10");
      *
-     * // Database-specific syntax
+     * // Database-specific syntax (e.g., Firebird)
      * Limit custom = new Limit("FIRST 10 SKIP 20");
      * }</pre>
      *
-     * @param expr the custom LIMIT expression as a string. Should not be null.
+     * @param expr the custom LIMIT expression as a string. Should not be null or empty.
      */
     public Limit(final String expr) {
         this(0, Integer.MAX_VALUE);

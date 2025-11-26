@@ -209,9 +209,11 @@ public class DynamicSQLBuilder {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * builder.limit("LIMIT 10 OFFSET 20");
+     * // Or for custom database syntax
+     * builder.limit("TOP 10");
      * }</pre>
      *
-     * @param limitCond the complete limit condition including the LIMIT keyword
+     * @param limitCond the complete limit condition including the LIMIT keyword (must not be null)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder limit(final String limitCond) {
@@ -233,7 +235,7 @@ public class DynamicSQLBuilder {
      * // Generates: LIMIT 10
      * }</pre>
      *
-     * @param count the maximum number of rows to return
+     * @param count the maximum number of rows to return (must not be negative)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder limit(final int count) {
@@ -258,8 +260,8 @@ public class DynamicSQLBuilder {
      * // Generates: LIMIT 20, 10 (skip 20 rows, return next 10)
      * }</pre>
      *
-     * @param offset the number of rows to skip
-     * @param count the maximum number of rows to return
+     * @param offset the number of rows to skip (must not be negative)
+     * @param count the maximum number of rows to return (must not be negative)
      * @return this builder instance for method chaining
      * @see #offsetRows(int)
      * @see #fetchNextNRowsOnly(int)
@@ -281,7 +283,7 @@ public class DynamicSQLBuilder {
      * // Generates: ROWNUM <= 10
      * }</pre>
      *
-     * @param count the maximum number of rows to return
+     * @param count the maximum number of rows to return (must not be negative)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder limitByRowNum(final int count) {
@@ -300,7 +302,7 @@ public class DynamicSQLBuilder {
      * // Generates: OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
      *
-     * @param offset the number of rows to skip
+     * @param offset the number of rows to skip (must not be negative)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder offsetRows(final int offset) {
@@ -319,7 +321,7 @@ public class DynamicSQLBuilder {
      * // Generates: OFFSET 100 ROWS FETCH NEXT 25 ROWS ONLY
      * }</pre>
      *
-     * @param n the number of rows to fetch
+     * @param n the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder fetchNextNRowsOnly(final int n) {
@@ -338,7 +340,7 @@ public class DynamicSQLBuilder {
      * // Generates: FETCH FIRST 10 ROWS ONLY
      * }</pre>
      *
-     * @param n the number of rows to fetch
+     * @param n the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder fetchFirstNRowsOnly(final int n) {
@@ -364,7 +366,7 @@ public class DynamicSQLBuilder {
      * builder.union("SELECT id, name FROM archived_users");
      * }</pre>
      *
-     * @param query the complete SQL query to union with
+     * @param query the complete SQL query to union with (must not be null)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder union(final String query) {
@@ -382,7 +384,7 @@ public class DynamicSQLBuilder {
      * builder.unionAll("SELECT id, name FROM temp_users");
      * }</pre>
      *
-     * @param query the complete SQL query to union with
+     * @param query the complete SQL query to union with (must not be null)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder unionAll(final String query) {
@@ -400,7 +402,7 @@ public class DynamicSQLBuilder {
      * builder.intersect("SELECT user_id FROM premium_users");
      * }</pre>
      *
-     * @param query the complete SQL query to intersect with
+     * @param query the complete SQL query to intersect with (must not be null)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder intersect(final String query) {
@@ -418,7 +420,7 @@ public class DynamicSQLBuilder {
      * builder.except("SELECT user_id FROM blocked_users");
      * }</pre>
      *
-     * @param query the complete SQL query to exclude results from
+     * @param query the complete SQL query to exclude results from (must not be null)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder except(final String query) {
@@ -436,7 +438,7 @@ public class DynamicSQLBuilder {
      * builder.minus("SELECT user_id FROM inactive_users");
      * }</pre>
      *
-     * @param query the complete SQL query to exclude results from
+     * @param query the complete SQL query to exclude results from (must not be null)
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder minus(final String query) {
@@ -543,7 +545,7 @@ public class DynamicSQLBuilder {
          * // Generates: SELECT user_id, username
          * }</pre>
          *
-         * @param column the column name to select
+         * @param column the column name to select (must not be null)
          * @return this Select instance for method chaining
          */
         public Select append(final String column) {
@@ -568,8 +570,8 @@ public class DynamicSQLBuilder {
          * // Generates: SELECT first_name AS fname, last_name AS lname
          * }</pre>
          *
-         * @param column the column name to select
-         * @param alias the alias for the column
+         * @param column the column name to select (must not be null)
+         * @param alias the alias for the column (must not be null)
          * @return this Select instance for method chaining
          */
         public Select append(final String column, final String alias) {
@@ -594,7 +596,7 @@ public class DynamicSQLBuilder {
          * // Generates: SELECT id, name, email
          * }</pre>
          *
-         * @param columns collection of column names to select
+         * @param columns collection of column names to select (must not be null)
          * @return this Select instance for method chaining
          */
         public Select append(final Collection<String> columns) {
@@ -622,7 +624,7 @@ public class DynamicSQLBuilder {
          * // Generates: SELECT first_name AS fname, last_name AS lname
          * }</pre>
          *
-         * @param columnsAndAliasMap map where keys are column names and values are aliases
+         * @param columnsAndAliasMap map where keys are column names and values are aliases (must not be null)
          * @return this Select instance for method chaining
          */
         public Select append(final Map<String, String> columnsAndAliasMap) {
@@ -731,7 +733,7 @@ public class DynamicSQLBuilder {
          * // Generates: FROM users, departments
          * }</pre>
          *
-         * @param table the table name to add
+         * @param table the table name to add (must not be null)
          * @return this From instance for method chaining
          */
         public From append(final String table) {
@@ -756,8 +758,8 @@ public class DynamicSQLBuilder {
          * // Generates: FROM users u, orders o
          * }</pre>
          *
-         * @param table the table name to add
-         * @param alias the alias for the table
+         * @param table the table name to add (must not be null)
+         * @param alias the alias for the table (must not be null)
          * @return this From instance for method chaining
          */
         public From append(final String table, final String alias) {
@@ -781,8 +783,8 @@ public class DynamicSQLBuilder {
          * // Generates: FROM users u JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param table the table to join (can include alias)
-         * @param on the join condition
+         * @param table the table to join (can include alias; must not be null)
+         * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
         public From join(final String table, final String on) {
@@ -801,8 +803,8 @@ public class DynamicSQLBuilder {
          * // Generates: FROM users u INNER JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param table the table to join (can include alias)
-         * @param on the join condition
+         * @param table the table to join (can include alias; must not be null)
+         * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
         public From innerJoin(final String table, final String on) {
@@ -821,8 +823,8 @@ public class DynamicSQLBuilder {
          * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param table the table to join (can include alias)
-         * @param on the join condition
+         * @param table the table to join (can include alias; must not be null)
+         * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
         public From leftJoin(final String table, final String on) {
@@ -841,8 +843,8 @@ public class DynamicSQLBuilder {
          * // Generates: FROM orders o RIGHT JOIN users u ON o.user_id = u.id
          * }</pre>
          *
-         * @param table the table to join (can include alias)
-         * @param on the join condition
+         * @param table the table to join (can include alias; must not be null)
+         * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
         public From rightJoin(final String table, final String on) {
@@ -861,8 +863,8 @@ public class DynamicSQLBuilder {
          * // Generates: FROM employees e FULL JOIN departments d ON e.dept_id = d.id
          * }</pre>
          *
-         * @param table the table to join (can include alias)
-         * @param on the join condition
+         * @param table the table to join (can include alias; must not be null)
+         * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
         public From fullJoin(final String table, final String on) {
@@ -970,7 +972,7 @@ public class DynamicSQLBuilder {
          * // Generates: WHERE active = true AND deleted = false
          * }</pre>
          *
-         * @param cond the condition to append
+         * @param cond the condition to append (must not be null)
          * @return this Where instance for method chaining
          */
         public Where append(final String cond) {
@@ -1056,7 +1058,7 @@ public class DynamicSQLBuilder {
          * // Generates: WHERE active = true AND age >= 18 AND country = ?
          * }</pre>
          *
-         * @param cond the condition to add with AND
+         * @param cond the condition to add with AND (must not be null)
          * @return this Where instance for method chaining
          */
         public Where and(final String cond) {
@@ -1074,7 +1076,7 @@ public class DynamicSQLBuilder {
          * // Generates: WHERE role = 'admin' OR role = 'moderator'
          * }</pre>
          *
-         * @param cond the condition to add with OR
+         * @param cond the condition to add with OR (must not be null)
          * @return this Where instance for method chaining
          */
         public Where or(final String cond) {
@@ -1184,7 +1186,7 @@ public class DynamicSQLBuilder {
          * // Generates: GROUP BY category, subcategory
          * }</pre>
          *
-         * @param column the column name to group by
+         * @param column the column name to group by (must not be null)
          * @return this GroupBy instance for method chaining
          */
         public GroupBy append(final String column) {
@@ -1209,7 +1211,7 @@ public class DynamicSQLBuilder {
          * // Generates: GROUP BY year, quarter, region
          * }</pre>
          *
-         * @param columns collection of column names to group by
+         * @param columns collection of column names to group by (must not be null)
          * @return this GroupBy instance for method chaining
          */
         public GroupBy append(final Collection<String> columns) {
@@ -1324,7 +1326,7 @@ public class DynamicSQLBuilder {
          * // Generates: HAVING SUM(amount) > 1000
          * }</pre>
          *
-         * @param cond the condition to append
+         * @param cond the condition to append (must not be null)
          * @return this Having instance for method chaining
          */
         public Having append(final String cond) {
@@ -1348,7 +1350,7 @@ public class DynamicSQLBuilder {
          * // Generates: HAVING COUNT(*) > 5 AND MAX(price) < 1000
          * }</pre>
          *
-         * @param cond the condition to add with AND
+         * @param cond the condition to add with AND (must not be null)
          * @return this Having instance for method chaining
          */
         public Having and(final String cond) {
@@ -1366,7 +1368,7 @@ public class DynamicSQLBuilder {
          * // Generates: HAVING MIN(score) > 80 OR AVG(score) > 90
          * }</pre>
          *
-         * @param cond the condition to add with OR
+         * @param cond the condition to add with OR (must not be null)
          * @return this Having instance for method chaining
          */
         public Having or(final String cond) {
@@ -1476,7 +1478,7 @@ public class DynamicSQLBuilder {
          * // Generates: ORDER BY created_date DESC, name ASC
          * }</pre>
          *
-         * @param column the column name with optional ASC/DESC
+         * @param column the column name with optional ASC/DESC (must not be null)
          * @return this OrderBy instance for method chaining
          */
         public OrderBy append(final String column) {
@@ -1501,7 +1503,7 @@ public class DynamicSQLBuilder {
          * // Generates: ORDER BY year DESC, month DESC, day DESC
          * }</pre>
          *
-         * @param columns collection of column names with optional sort directions
+         * @param columns collection of column names with optional sort directions (must not be null)
          * @return this OrderBy instance for method chaining
          */
         public OrderBy append(final Collection<String> columns) {

@@ -38,8 +38,9 @@ import com.landawn.abacus.util.NamingPolicy;
  * 
  * <p>Important considerations:
  * <ul>
- *   <li>NULL handling: If the list contains NULL or the column has NULL values, 
- *       the behavior may be unexpected (typically returns no rows)</li>
+ *   <li>NULL handling: If the list contains NULL or the column has NULL values,
+ *       NOT IN may return unexpected results. In SQL, comparing any value with NULL using NOT IN
+ *       evaluates to UNKNOWN, which behaves as false in WHERE clauses</li>
  *   <li>Performance: For large lists, consider using NOT EXISTS or LEFT JOIN instead</li>
  *   <li>The values list is copied during construction to ensure immutability</li>
  * </ul>
@@ -134,17 +135,23 @@ public class NotIn extends AbstractCondition {
 
     /**
      * Gets the collection of values that the property should NOT match.
-     * Returns the internal list of values. Modifications to this list are discouraged
-     * as conditions should be immutable.
+     * Returns the internal list of values used in the NOT IN condition. These are the
+     * values that will be excluded when the query is executed.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> statuses = Arrays.asList("deleted", "archived", "suspended");
      * NotIn condition = new NotIn("status", statuses);
      * List<?> values = condition.getValues(); // Returns ["deleted", "archived", "suspended"]
+     *
+     * // Check how many values are being excluded
+     * int count = condition.getValues().size(); // Returns 3
+     *
+     * // Inspect the values (useful for debugging)
+     * System.out.println("Excluding values: " + condition.getValues());
      * }</pre>
      *
-     * @return list of values to exclude
+     * @return list of values to exclude (may be null if cleared)
      */
     public List<?> getValues() { //NOSONAR
         return values;
@@ -162,7 +169,6 @@ public class NotIn extends AbstractCondition {
      *   <li>Using this method breaks the immutability contract of conditions</li>
      *   <li>Instead of modifying, create a new NotIn instance with the desired values</li>
      *   <li>Shared conditions modified this way can cause race conditions</li>
-     *   <li>Unlike setValues in In, this method doesn't validate for empty collections</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>

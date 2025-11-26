@@ -75,10 +75,14 @@ import java.util.Collection;
  * // Generates: INNER JOIN customers c orders.customer_id = c.id
  * }</pre>
  * 
+ * @see Join
  * @see LeftJoin
  * @see RightJoin
  * @see FullJoin
- * @see Join
+ * @see CrossJoin
+ * @see NaturalJoin
+ * @see On
+ * @see Using
  */
 public class InnerJoin extends Join {
 

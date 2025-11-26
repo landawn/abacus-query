@@ -337,18 +337,6 @@ public class ConditionFactory {
     public static final Expression QME = Expr.of(SK.QUESTION_MARK);
 
     /**
-     * Constant representing ascending sort direction.
-     * Used when creating ORDER BY or GROUP BY clauses.
-     */
-    public static final SortDirection ASC = SortDirection.ASC;
-
-    /**
-     * Constant representing descending sort direction.
-     * Used when creating ORDER BY or GROUP BY clauses.
-     */
-    public static final SortDirection DESC = SortDirection.DESC;
-
-    /**
      * Regular expression pattern for validating alphanumeric column names.
      * Column names must consist of letters, digits, underscores, or hyphens.
      * 
@@ -2198,10 +2186,10 @@ public class ConditionFactory {
 
     /**
      * Creates a GROUP BY clause with properties and specified sort direction.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy(Arrays.asList("sales", "region"), DESC);
+     * GroupBy groupBy = ConditionFactory.groupBy(Arrays.asList("sales", "region"), SortDirection.DESC);
      * // Results in SQL like: GROUP BY sales DESC, region DESC
      * }</pre>
      *
@@ -2215,10 +2203,10 @@ public class ConditionFactory {
 
     /**
      * Creates a GROUP BY clause with a single property and sort direction.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy("category", DESC);
+     * GroupBy groupBy = ConditionFactory.groupBy("category", SortDirection.DESC);
      * // Results in SQL like: GROUP BY category DESC
      * }</pre>
      *
@@ -2232,10 +2220,10 @@ public class ConditionFactory {
 
     /**
      * Creates a GROUP BY clause with two properties and their respective sort directions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy("year", DESC, "month", ASC);
+     * GroupBy groupBy = ConditionFactory.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
      * // Results in SQL like: GROUP BY year DESC, month ASC
      * }</pre>
      *
@@ -2251,10 +2239,10 @@ public class ConditionFactory {
 
     /**
      * Creates a GROUP BY clause with three properties and their respective sort directions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy("country", ASC, "state", ASC, "city", DESC);
+     * GroupBy groupBy = ConditionFactory.groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
      * }</pre>
      *
      * @param propNameA first property name
@@ -2273,12 +2261,12 @@ public class ConditionFactory {
     /**
      * Creates a GROUP BY clause from a map of property names to sort directions.
      * The map should be a LinkedHashMap to preserve order.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
-     * orders.put("department", ASC);
-     * orders.put("salary", DESC);
+     * orders.put("department", SortDirection.ASC);
+     * orders.put("salary", SortDirection.DESC);
      * GroupBy groupBy = ConditionFactory.groupBy(orders);
      * }</pre>
      *
@@ -2439,10 +2427,10 @@ public class ConditionFactory {
 
     /**
      * Creates an ORDER BY clause with properties and specified sort direction.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = ConditionFactory.orderBy(Arrays.asList("price", "rating"), DESC);
+     * OrderBy orderBy = ConditionFactory.orderBy(Arrays.asList("price", "rating"), SortDirection.DESC);
      * // Results in SQL like: ORDER BY price DESC, rating DESC
      * }</pre>
      *

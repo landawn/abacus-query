@@ -147,11 +147,6 @@ public class In extends AbstractCondition {
      * Returns the internal list of values used in the IN condition. These are the
      * values that the property will be compared against when the query is executed.
      *
-     * <p>Note: The returned list is the internal mutable list. While modifications are
-     * not recommended (conditions should be immutable), this allows for backward compatibility
-     * with existing code. Consider using {@link #copy()} to create an independent instance
-     * if immutability is required.</p>
-     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> statuses = Arrays.asList("active", "pending", "approved");

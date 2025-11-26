@@ -33,7 +33,15 @@ package com.landawn.abacus.query.condition;
  *   <li>NOT FALSE = TRUE</li>
  *   <li>NOT NULL = NULL (in SQL three-valued logic)</li>
  * </ul>
- * 
+ *
+ * <p>Relationship to other logical operators:</p>
+ * <ul>
+ *   <li>NOT negates a condition (reverses its boolean value)</li>
+ *   <li>AND requires all conditions to be true</li>
+ *   <li>OR requires at least one condition to be true</li>
+ *   <li>XOR requires exactly one of two conditions to be true</li>
+ * </ul>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // NOT with LIKE - find names that don't contain "test"
@@ -76,7 +84,7 @@ public class Not extends Cell {
     }
 
     /**
-     * Constructs a NOT condition that negates the specified condition.
+     * Creates a new NOT condition that negates the specified condition.
      * The resulting condition will be true when the input condition is false,
      * and false when the input condition is true.
      *

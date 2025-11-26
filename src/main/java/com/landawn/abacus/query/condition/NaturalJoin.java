@@ -67,11 +67,14 @@ import java.util.Collection;
  * // Generates: NATURAL JOIN employees, departments (active = true)
  * }</pre>
  * 
+ * @see Join
  * @see InnerJoin
  * @see LeftJoin
  * @see RightJoin
  * @see FullJoin
- * @see Join
+ * @see CrossJoin
+ * @see On
+ * @see Using
  */
 public class NaturalJoin extends Join {
 

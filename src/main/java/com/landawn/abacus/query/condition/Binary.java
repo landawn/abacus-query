@@ -25,15 +25,15 @@ import com.landawn.abacus.util.Strings;
 /**
  * Abstract base class for binary conditions that compare a property with a value.
  * Binary conditions represent operations with two operands: a property name and a value.
- * 
+ *
  * <p>This class serves as the foundation for all comparison operations in queries,
  * providing common functionality for storing the property name, operator, and value.
  * The value can be a literal (String, Number, Date, etc.) or another Condition (for subqueries).</p>
- * 
+ *
  * <p>Common subclasses include:</p>
  * <ul>
  *   <li>{@link Equal} - property = value</li>
- *   <li>{@link NotEqual} - property != value</li>
+ *   <li>{@link NotEqual} - property != or &lt;&gt; value</li>
  *   <li>{@link GreaterThan} - property &gt; value</li>
  *   <li>{@link GreaterEqual} - property &gt;= value</li>
  *   <li>{@link LessThan} - property &lt; value</li>

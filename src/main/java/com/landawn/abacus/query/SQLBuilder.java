@@ -4538,10 +4538,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      */
     public static class PSB extends SQLBuilder {
 
+        /**
+         * Constructs a new PSB instance with NO_CHANGE naming policy and parameterized SQL policy.
+         *
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
+         */
         PSB() {
             super(NamingPolicy.NO_CHANGE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
+        /**
+         * Creates a new instance of PSB for internal use by the builder pattern.
+         *
+         * <p>This factory method is used internally to create new builder instances
+         * when starting a new SQL construction chain.</p>
+         *
+         * @return a new PSB instance
+         */
         protected static PSB createInstance() {
             return new PSB();
         }
@@ -5779,10 +5793,24 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      */
     public static class PSC extends SQLBuilder {
 
+        /**
+         * Constructs a new PSC instance with snake_case naming policy and parameterized SQL policy.
+         *
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
+         */
         PSC() {
             super(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
+        /**
+         * Creates a new instance of PSC for internal use by the builder pattern.
+         *
+         * <p>This factory method is used internally to create new builder instances
+         * when starting a new SQL construction chain.</p>
+         *
+         * @return a new PSC instance
+         */
         protected static PSC createInstance() {
             return new PSC();
         }
@@ -13564,8 +13592,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class NLC extends SQLBuilder {
 
         /**
-         * Constructs a new NLC instance with LOWER_CAMEL_CASE naming policy
-         * and named SQL parameter style.
+         * Constructs a new NLC instance with lowerCamelCase naming policy and named SQL policy.
+         *
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         NLC() {
             super(NamingPolicy.LOWER_CAMEL_CASE, SQLPolicy.NAMED_SQL);

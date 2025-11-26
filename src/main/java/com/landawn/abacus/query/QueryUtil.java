@@ -631,6 +631,8 @@ public final class QueryUtil {
      * This is commonly used for building parameterized SQL queries with multiple placeholders.
      * Common values are pre-cached for performance optimization.
      *
+     * <p>Cached values include: 0-30, 100, 200, 300, 500, 1000</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String placeholders = QueryUtil.repeatQM(3);
@@ -639,8 +641,8 @@ public final class QueryUtil {
      * // Result: "INSERT INTO users (name, email, age) VALUES (?, ?, ?)"
      * }</pre>
      *
-     * @param n the number of question marks to generate
-     * @return a string containing n question marks separated by ", "
+     * @param n the number of question marks to generate (must not be negative)
+     * @return a string containing n question marks separated by ", ", or empty string if n is 0
      * @throws IllegalArgumentException if n is negative
      */
     public static String repeatQM(final int n) {

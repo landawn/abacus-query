@@ -221,7 +221,7 @@ public class OrderBy extends Clause {
      *
      * @param propNames array of property names. Must not be null or empty.
      * @return formatted string for ORDER BY clause
-     * @throws IllegalArgumentException if propNames contains null or empty elements
+     * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
      */
     static String createCondition(final String... propNames) {
         final StringBuilder sb = Objectory.createStringBuilder();

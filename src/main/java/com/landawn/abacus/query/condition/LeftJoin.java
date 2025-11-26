@@ -72,10 +72,14 @@ import java.util.Collection;
  * // Generates: LEFT JOIN orders o customers.id = o.customer_id
  * }</pre>
  * 
+ * @see Join
  * @see InnerJoin
  * @see RightJoin
  * @see FullJoin
- * @see Join
+ * @see CrossJoin
+ * @see NaturalJoin
+ * @see On
+ * @see Using
  */
 public class LeftJoin extends Join {
 

@@ -58,9 +58,13 @@ import java.util.Collection;
  * }</pre>
  * 
  * @see Join
+ * @see InnerJoin
  * @see LeftJoin
  * @see RightJoin
- * @see InnerJoin
+ * @see CrossJoin
+ * @see NaturalJoin
+ * @see On
+ * @see Using
  */
 public class FullJoin extends Join {
 

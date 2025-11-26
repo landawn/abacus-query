@@ -15,21 +15,21 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents a less-than-or-equal-to (≤) comparison condition in SQL-like queries.
+ * Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL-like queries.
  * This class is used to create conditions that check if a property value is less than
  * or equal to a specified value. The less-than-or-equal operator is fundamental for
- * implementing upper bounds, inclusive ranges, and various filtering scenarios.
- * 
- * <p>This condition is commonly used for:
+ * implementing inclusive upper bounds, inclusive ranges, and various filtering scenarios.
+ *
+ * <p>Common use cases include:
  * <ul>
- *   <li>Setting upper bounds on numeric values (maximum limits)</li>
+ *   <li>Setting inclusive upper bounds on numeric values (maximum limits)</li>
  *   <li>Date comparisons (on or before a certain date)</li>
  *   <li>String comparisons using lexicographical ordering</li>
- *   <li>Implementing inclusive range queries with GreaterEqual</li>
+ *   <li>Implementing inclusive range queries when combined with GreaterEqual</li>
  *   <li>Price caps, age limits, and deadline checks</li>
  * </ul>
- * 
- * <p>The LessEqual operator works with various data types:
+ *
+ * <p>The operator works with various data types:
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
  *   <li>Dates/Times: Chronological comparison</li>
@@ -87,7 +87,7 @@ public class LessEqual extends Binary {
      *
      * // Find all orders on or before today
      * LessEqual todayOrEarlier = new LessEqual("order_date", LocalDate.now());
-     * // Generates: order_date <= '2023-10-15' (assuming today's date)
+     * // SQL: order_date <= '2023-10-15' (assuming today's date)
      *
      * // Set maximum allowed discount
      * LessEqual maxDiscount = new LessEqual("discount_percent", 50);

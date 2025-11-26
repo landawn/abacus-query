@@ -17,18 +17,18 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents the SQL ALL operator for use with subqueries.
  * The ALL operator returns {@code true} if the comparison is true for ALL values returned by the subquery.
- * 
+ *
  * <p>ALL is used with comparison operators (=, !=, &gt;, &lt;, &gt;=, &lt;=) and a subquery.
  * The condition is satisfied only if the comparison is true for every value from the subquery.
  * This provides a way to ensure a value meets a criteria compared to an entire set of values.</p>
- * 
+ *
  * <p>Common usage patterns:</p>
  * <ul>
  *   <li>salary > ALL (subquery) - true if salary is greater than every value (greater than maximum)</li>
  *   <li>price &lt; ALL (subquery) - true if price is less than every value (less than minimum)</li>
  *   <li>score >= ALL (subquery) - true if score is greater than or equal to all values</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find products more expensive than ALL products in 'Electronics' category
@@ -37,7 +37,7 @@ package com.landawn.abacus.query.condition;
  * );
  * All allElectronics = new All(electronicsQuery);
  * // Use with: WHERE price > ALL (SELECT price FROM products WHERE category = 'Electronics')
- * 
+ *
  * // Find employees earning more than ALL managers
  * SubQuery managerSalaries = CF.subQuery(
  *     "SELECT salary FROM employees WHERE is_manager = true"
@@ -45,7 +45,7 @@ package com.landawn.abacus.query.condition;
  * All allManagers = new All(managerSalaries);
  * // Use with: WHERE salary > ALL (SELECT salary FROM employees WHERE is_manager = true)
  * }</pre>
- * 
+ *
  * <p>Behavior with different operators:</p>
  * <ul>
  *   <li>> ALL: true if greater than the maximum value in subquery</li>
@@ -53,9 +53,16 @@ package com.landawn.abacus.query.condition;
  *   <li>= ALL: true if equal to all values (only possible if all values are the same)</li>
  *   <li>!= ALL: true if different from all values (equivalent to NOT IN)</li>
  *   <li>>= ALL: true if greater than or equal to the maximum value</li>
- *   <li>&lt;= ALL: true if less than or equal to the minimum value
+ *   <li>&lt;= ALL: true if less than or equal to the minimum value</li>
  * </ul>
- * 
+ *
+ * <p>Relationship to ANY and SOME:</p>
+ * <ul>
+ *   <li>ALL requires the condition to be true for every value in the subquery</li>
+ *   <li>ANY and SOME require the condition to be true for at least one value (they are synonyms)</li>
+ *   <li>ALL is more restrictive than ANY/SOME</li>
+ * </ul>
+ *
  * @see Any
  * @see Some
  * @see SubQuery

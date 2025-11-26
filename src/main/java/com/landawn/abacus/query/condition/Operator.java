@@ -22,11 +22,12 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * Enumeration of SQL operators supported by the condition framework.
- * 
+ *
  * <p>This enum defines all the operators that can be used in SQL conditions,
  * including comparison operators, logical operators, join types, and SQL clauses.
- * Each operator has a string representation that corresponds to its SQL syntax.</p>
- * 
+ * Each operator has a string representation that corresponds to its SQL syntax.
+ * The {@link #getOperator(String)} method provides case-insensitive lookup with caching.</p>
+ *
  * <p>Categories of operators:</p>
  * <ul>
  *   <li><b>Comparison:</b> EQUAL, NOT_EQUAL, GREATER_THAN, LESS_THAN, etc.</li>
@@ -38,17 +39,17 @@ import com.landawn.abacus.util.Strings;
  *   <li><b>Clauses:</b> WHERE, HAVING, GROUP_BY, ORDER_BY, etc.</li>
  *   <li><b>Set operations:</b> UNION, UNION_ALL, INTERSECT, EXCEPT</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Direct operator usage
  * Operator op = Operator.EQUAL;
  * String sql = propertyName + " " + op.toString() + " ?";
- * 
+ *
  * // Get operator by name
  * Operator gtOp = Operator.getOperator(">");
  * Operator andOp = Operator.getOperator("AND");
- * 
+ *
  * // Check operator type
  * if (operator == Operator.BETWEEN) {
  *     // Handle between logic
@@ -417,6 +418,15 @@ public enum Operator {
     /**
      * Gets the SQL string representation of this operator.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Operator eq = Operator.EQUAL;
+     * String opStr = eq.getName(); // Returns "="
+     *
+     * Operator and = Operator.AND;
+     * String andStr = and.getName(); // Returns "AND"
+     * }</pre>
+     *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */
     public String getName() {
@@ -426,6 +436,14 @@ public enum Operator {
     /**
      * Returns the SQL string representation of this operator.
      * This is equivalent to calling {@link #getName()}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Operator like = Operator.LIKE;
+     * System.out.println(like); // Prints: LIKE
+     *
+     * String sql = "column " + Operator.EQUAL + " ?"; // "column = ?"
+     * }</pre>
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */

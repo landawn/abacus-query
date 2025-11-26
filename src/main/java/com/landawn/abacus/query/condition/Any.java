@@ -17,18 +17,18 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents the SQL ANY operator for use with subqueries.
  * The ANY operator returns {@code true} if the comparison is true for ANY of the values returned by the subquery.
- * 
+ *
  * <p>ANY is typically used with comparison operators (=, !=, &gt;, &lt;, &gt;=, &lt;=) and a subquery.
  * The condition is satisfied if the comparison is true for at least one value from the subquery.
  * This provides a powerful way to compare a value against a set of values returned by a subquery.</p>
- * 
+ *
  * <p>Common usage patterns:</p>
  * <ul>
  *   <li>salary > ANY (subquery) - true if salary is greater than at least one value from subquery</li>
- *   <li>price &lt;= ANY (subquery) - true if price is less than or equal to at least one value
+ *   <li>price &lt;= ANY (subquery) - true if price is less than or equal to at least one value</li>
  *   <li>id = ANY (subquery) - equivalent to id IN (subquery)</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find products with price greater than ANY product in category 'Electronics'
@@ -37,7 +37,7 @@ package com.landawn.abacus.query.condition;
  * );
  * Any anyPrice = new Any(electronicsQuery);
  * // Use with: WHERE price > ANY (SELECT price FROM products WHERE category = 'Electronics')
- * 
+ *
  * // Find employees whose salary equals ANY manager salary
  * SubQuery managerSalaries = CF.subQuery(
  *     "SELECT salary FROM employees WHERE is_manager = true"
@@ -45,15 +45,22 @@ package com.landawn.abacus.query.condition;
  * Any anyManagerSalary = new Any(managerSalaries);
  * // Use with: WHERE salary = ANY (SELECT salary FROM employees WHERE is_manager = true)
  * }</pre>
- * 
- * <p>Note: ANY is equivalent to SOME in SQL. The behavior with different operators:</p>
+ *
+ * <p>Behavior with different operators:</p>
  * <ul>
  *   <li>= ANY: true if equal to any value in the subquery (equivalent to IN)</li>
  *   <li>> ANY: true if greater than at least one value (greater than the minimum)</li>
- *   <li>&lt; ANY: true if less than at least one value (less than the maximum)
+ *   <li>&lt; ANY: true if less than at least one value (less than the maximum)</li>
  *   <li>!= ANY: true if different from at least one value</li>
  * </ul>
- * 
+ *
+ * <p>Relationship to ALL and SOME:</p>
+ * <ul>
+ *   <li>ANY and SOME are functionally equivalent - both return true if condition matches at least one value</li>
+ *   <li>ALL requires the condition to be true for all values (more restrictive)</li>
+ *   <li>ANY/SOME are less restrictive than ALL</li>
+ * </ul>
+ *
  * @see All
  * @see Some
  * @see SubQuery

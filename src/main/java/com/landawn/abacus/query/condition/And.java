@@ -35,7 +35,15 @@ import com.landawn.abacus.util.N;
  *   <li>Supports chaining for readability</li>
  *   <li>Maintains order of conditions for predictable SQL generation</li>
  * </ul>
- * 
+ *
+ * <p>Relationship to other logical operators:</p>
+ * <ul>
+ *   <li>AND requires all conditions to be true</li>
+ *   <li>OR requires at least one condition to be true</li>
+ *   <li>NOT negates a condition</li>
+ *   <li>XOR requires exactly one of two conditions to be true</li>
+ * </ul>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create an AND condition with multiple sub-conditions

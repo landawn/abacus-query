@@ -98,6 +98,7 @@ public final class NamedProperty {
      * }</pre>
      *
      * @param propName the property name. Must not be null.
+     * @throws NullPointerException if propName is null
      */
     public NamedProperty(final String propName) {
         this.propName = N.requireNonNull(propName);

@@ -152,6 +152,16 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Gets the property name for single-column IN conditions.
+     * Returns null if this is a multi-column condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * InSubQuery condition = new InSubQuery("userId", subQuery);
+     * String propName = condition.getPropName(); // Returns "userId"
+     *
+     * InSubQuery multiProp = new InSubQuery(Arrays.asList("a", "b"), subQuery);
+     * String name = multiProp.getPropName(); // Returns null
+     * }</pre>
      *
      * @return the property name, or null if this is a multi-column condition
      */
@@ -161,8 +171,19 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Gets the property names for multi-column IN conditions.
+     * Returns null if this is a single-column condition.
      *
-     * @return the collection of property names, or null if this is a single-column condition
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> props = Arrays.asList("country", "city");
+     * InSubQuery condition = new InSubQuery(props, subQuery);
+     * Collection<String> propNames = condition.getPropNames(); // Returns ["country", "city"]
+     *
+     * InSubQuery singleProp = new InSubQuery("userId", subQuery);
+     * Collection<String> names = singleProp.getPropNames(); // Returns null
+     * }</pre>
+     *
+     * @return collection of property names, or null if this is a single-column condition
      */
     public Collection<String> getPropNames() {
         return propNames;
@@ -170,6 +191,14 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Gets the subquery used in this IN condition.
+     * The subquery defines the set of values to check against in the IN clause.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM active_users");
+     * InSubQuery condition = new InSubQuery("userId", subQuery);
+     * SubQuery retrieved = condition.getSubQuery(); // Returns the subquery
+     * }</pre>
      *
      * @return the subquery
      */
@@ -214,11 +243,18 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * Gets all parameters from the subquery.
+     * Gets the list of parameters from the subquery.
      * These are the parameter values that will be bound to the prepared statement placeholders
      * when the query is executed.
      *
-     * @return the list of parameters from the subquery
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM users WHERE age > ?", 18);
+     * InSubQuery condition = new InSubQuery("userId", subQuery);
+     * List<Object> params = condition.getParameters(); // Returns [18]
+     * }</pre>
+     *
+     * @return list of parameter values from the subquery
      */
     @Override
     public List<Object> getParameters() {
@@ -248,6 +284,14 @@ public class InSubQuery extends AbstractCondition {
      * The copy includes a deep copy of the subquery, ensuring complete independence
      * from the original condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM active_users");
+     * InSubQuery original = new InSubQuery("userId", subQuery);
+     * InSubQuery copy = original.copy();
+     * // copy is independent of original
+     * }</pre>
+     *
      * @param <T> the type of the condition
      * @return a new InSubQuery instance with a copy of the subquery
      */
@@ -262,10 +306,19 @@ public class InSubQuery extends AbstractCondition {
     }
 
     /**
-     * Computes the hash code for this InSubQuery condition.
-     * The hash code is based on the property name(s), operator, and subquery.
+     * Generates the hash code for this InSubQuery condition.
+     * The hash code is based on the property name(s), operator, and subquery,
+     * ensuring consistent hashing for equivalent conditions.
      *
-     * @return the hash code
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM active_users");
+     * InSubQuery c1 = new InSubQuery("userId", subQuery);
+     * InSubQuery c2 = new InSubQuery("userId", subQuery);
+     * assert c1.hashCode() == c2.hashCode();
+     * }</pre>
+     *
+     * @return hash code based on property name(s), operator, and subquery
      */
     @Override
     public int hashCode() {
@@ -279,6 +332,17 @@ public class InSubQuery extends AbstractCondition {
      * Checks if this InSubQuery condition is equal to another object.
      * Two InSubQuery conditions are equal if they have the same property name(s),
      * operator, and subquery.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM active_users");
+     * InSubQuery c1 = new InSubQuery("userId", subQuery);
+     * InSubQuery c2 = new InSubQuery("userId", subQuery);
+     * assert c1.equals(c2); // true
+     *
+     * InSubQuery c3 = new InSubQuery("otherId", subQuery);
+     * assert !c1.equals(c3); // false - different property
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

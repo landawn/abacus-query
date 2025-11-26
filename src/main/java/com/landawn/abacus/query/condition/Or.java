@@ -37,7 +37,15 @@ import com.landawn.abacus.util.N;
  *   <li>Can be nested with other logical operators (AND, NOT)</li>
  *   <li>Evaluation may short-circuit for performance</li>
  * </ul>
- * 
+ *
+ * <p>Relationship to other logical operators:</p>
+ * <ul>
+ *   <li>OR requires at least one condition to be true</li>
+ *   <li>AND requires all conditions to be true</li>
+ *   <li>NOT negates a condition</li>
+ *   <li>XOR requires exactly one of two conditions to be true</li>
+ * </ul>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create OR with multiple conditions

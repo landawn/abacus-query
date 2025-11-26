@@ -4903,6 +4903,30 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Represents a SQL string and its associated parameters.
      * This class is used to encapsulate the generated SQL and the parameters required for execution.
      * It is immutable, meaning once created, the SQL and parameters cannot be changed.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Build a query and get SQL with parameters
+     * SP sqlPair = PSC.select("firstName", "lastName")
+     *                 .from("users")
+     *                 .where(CF.eq("id", 123))
+     *                 .pair();
+     *
+     * // Access SQL and parameters
+     * String sql = sqlPair.query;
+     * // "SELECT first_name AS \"firstName\", last_name AS \"lastName\" FROM users WHERE id = ?"
+     *
+     * List<Object> params = sqlPair.parameters;
+     * // [123]
+     *
+     * // Use with JDBC PreparedStatement
+     * try (PreparedStatement stmt = conn.prepareStatement(sqlPair.query)) {
+     *     for (int i = 0; i < sqlPair.parameters.size(); i++) {
+     *         stmt.setObject(i + 1, sqlPair.parameters.get(i));
+     *     }
+     *     ResultSet rs = stmt.executeQuery();
+     * }
+     * }</pre>
      */
     public static final class SP {
         /**

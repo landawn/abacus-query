@@ -83,6 +83,10 @@ import com.landawn.abacus.util.Strings;
  * @see LeftJoin
  * @see RightJoin
  * @see FullJoin
+ * @see CrossJoin
+ * @see NaturalJoin
+ * @see On
+ * @see Using
  * @see AbstractCondition
  */
 public class Join extends AbstractCondition {

@@ -15,18 +15,17 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents a NOT LIKE condition in SQL queries.
+ * Represents a NOT LIKE condition in SQL queries for pattern exclusion.
  * This condition is used to search for values that do NOT match a specified pattern.
- * 
+ *
  * <p>The NOT LIKE operator is the opposite of the LIKE operator. It returns {@code true} when
  * the value does not match the specified pattern. This is particularly useful for
  * excluding records based on pattern matching.</p>
- * 
- * <p>Pattern matching wildcards:</p>
+ *
+ * <p>The NOT LIKE operator supports two standard SQL wildcards:
  * <ul>
- *   <li>% - Represents zero, one, or multiple characters</li>
- *   <li>_ - Represents a single character</li>
- *   <li>Use escape characters for literal % or _ (database-specific)</li>
+ *   <li>% (percent sign): Matches any sequence of zero or more characters</li>
+ *   <li>_ (underscore): Matches any single character</li>
  * </ul>
  * 
  * <p>Common use cases:</p>
@@ -50,11 +49,11 @@ package com.landawn.abacus.query.condition;
  * // Exclude names starting with 'John'
  * NotLike condition1 = new NotLike("name", "John%");
  * // SQL: name NOT LIKE 'John%'
- * 
+ *
  * // Exclude emails from gmail domain
  * NotLike condition2 = new NotLike("email", "%@gmail.com");
  * // SQL: email NOT LIKE '%@gmail.com'
- * 
+ *
  * // Exclude 3-letter codes
  * NotLike condition3 = new NotLike("code", "___");
  * // SQL: code NOT LIKE '___'

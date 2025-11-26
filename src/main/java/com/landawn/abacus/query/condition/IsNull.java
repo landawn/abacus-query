@@ -26,7 +26,7 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * <p>NULL represents the absence of a value and is different from empty string or zero.
  * In SQL, NULL has special properties:
  * <ul>
- *   <li>NULL is not equal to anything, including itself (NULL = NULL is unknown)</li>
+ *   <li>NULL is not equal to anything, including itself (NULL = NULL evaluates to UNKNOWN, not true or false)</li>
  *   <li>Any arithmetic operation with NULL results in NULL</li>
  *   <li>NULL values are excluded from aggregate functions (except COUNT(*))</li>
  *   <li>NULL values require special IS NULL/IS NOT NULL operators for comparison</li>
@@ -91,8 +91,8 @@ public class IsNull extends Is {
      * from empty strings, zero values, or false boolean values.
      *
      * <p>The generated SQL uses the IS NULL operator (not = NULL) because NULL comparisons
-     * have special semantics in SQL where NULL = NULL evaluates to unknown/false, but
-     * NULL IS NULL evaluates to true.
+     * have special semantics in SQL where NULL = NULL evaluates to UNKNOWN (which behaves as false
+     * in WHERE clauses), but NULL IS NULL evaluates to true.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

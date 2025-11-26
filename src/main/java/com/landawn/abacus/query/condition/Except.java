@@ -18,11 +18,11 @@ package com.landawn.abacus.query.condition;
  * Represents an EXCEPT set operation in SQL queries.
  * The EXCEPT operator returns all distinct rows from the first query that are not
  * present in the second query (set difference).
- * 
+ *
  * <p>EXCEPT is a powerful set operation that allows you to find records that exist
  * in one result set but not in another. It automatically removes duplicates from the
  * result, similar to using DISTINCT.</p>
- * 
+ *
  * <p>Key characteristics:</p>
  * <ul>
  *   <li>Returns only distinct rows (duplicates are removed)</li>
@@ -31,20 +31,20 @@ package com.landawn.abacus.query.condition;
  *   <li>Column names from the first query are used in the result</li>
  *   <li>Order of rows is not guaranteed unless ORDER BY is used</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who haven't placed any orders
  * SubQuery customersWithOrders = CF.subQuery(
  *     "SELECT DISTINCT customer_id FROM orders"
  * );
- * 
+ *
  * // Main query returns all customers
  * Criteria criteria = CF.criteria()
  *     .where(CF.eq("status", "active"))
  *     .except(customersWithOrders);
  * // Results: active customers who have no orders
- * 
+ *
  * // Find products not sold in the last month
  * SubQuery recentlySold = CF.subQuery(
  *     "SELECT product_id FROM order_items WHERE order_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)"
@@ -53,15 +53,20 @@ package com.landawn.abacus.query.condition;
  * allProducts.except(recentlySold);
  * // Results: all products except those sold recently
  * }</pre>
- * 
- * <p>Note: EXCEPT is equivalent to MINUS in some databases (e.g., Oracle).
- * The functionality is the same - returning rows from the first query
- * that don't appear in the second query.</p>
- * 
+ *
+ * <p>Relationship to other set operations:</p>
+ * <ul>
+ *   <li>EXCEPT and MINUS are functionally equivalent (EXCEPT in PostgreSQL/SQL Server, MINUS in Oracle)</li>
+ *   <li>UNION combines rows from both queries, removing duplicates</li>
+ *   <li>UNION ALL combines rows from both queries, keeping duplicates</li>
+ *   <li>INTERSECT returns only rows that appear in both queries</li>
+ *   <li>EXCEPT returns rows from first query that don't appear in second query</li>
+ * </ul>
+ *
+ * @see Minus
  * @see Union
  * @see UnionAll
  * @see Intersect
- * @see Minus
  * @see SubQuery
  * @see Clause
  */

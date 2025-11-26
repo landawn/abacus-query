@@ -66,10 +66,14 @@ import java.util.Collection;
  * // Generates: RIGHT JOIN departments employees.dept_id = departments.id
  * }</pre>
  * 
+ * @see Join
  * @see InnerJoin
  * @see LeftJoin
  * @see FullJoin
- * @see Join
+ * @see CrossJoin
+ * @see NaturalJoin
+ * @see On
+ * @see Using
  */
 public class RightJoin extends Join {
 

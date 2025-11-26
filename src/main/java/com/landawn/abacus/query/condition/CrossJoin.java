@@ -66,6 +66,9 @@ import java.util.Collection;
  * @see LeftJoin
  * @see RightJoin
  * @see FullJoin
+ * @see NaturalJoin
+ * @see On
+ * @see Using
  */
 public class CrossJoin extends Join {
 

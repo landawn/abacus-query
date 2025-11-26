@@ -15,41 +15,40 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents a SOME comparison operator used with subqueries in SQL.
- * 
- * <p>The SOME operator returns {@code true} if the comparison is true for at least one
+ * Represents the SQL SOME operator for use with subqueries.
+ * The SOME operator returns {@code true} if the comparison is true for at least one
  * value returned by the subquery. It's functionally equivalent to the ANY operator
  * in SQL. The operator is used with a comparison operator (=, !=, &gt;, &lt;, &gt;=, &lt;=)
- * to compare a value against a set of values from a subquery.</p>
- * 
+ * to compare a value against a set of values from a subquery.
+ *
  * <p>Comparison behavior:</p>
  * <ul>
  *   <li>column = SOME (subquery) - true if column equals any value from subquery</li>
  *   <li>column &gt; SOME (subquery) - true if column is greater than at least one value</li>
- *   <li>column &lt; SOME (subquery) - true if column is less than at least one value
+ *   <li>column &lt; SOME (subquery) - true if column is less than at least one value</li>
  *   <li>column != SOME (subquery) - true if column differs from at least one value</li>
  * </ul>
- * 
- * <p>SOME vs ALL vs ANY:</p>
- * <ul>
- *   <li>SOME and ANY are equivalent - both return true if condition matches any value</li>
- *   <li>ALL returns {@code true} only if condition matches all values</li>
- *   <li>SOME/ANY are more permissive than ALL</li>
- * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find employees earning more than SOME managers
  * SubQuery managerSalaries = new SubQuery("SELECT salary FROM employees WHERE role = 'manager'");
  * Some someCondition = new Some(managerSalaries);
  * // Used with: salary > SOME (SELECT salary FROM employees WHERE role = 'manager')
- * 
+ *
  * // Find products cheaper than SOME competitor products
  * SubQuery competitorPrices = new SubQuery("SELECT price FROM competitor_products");
  * Some somePrice = new Some(competitorPrices);
  * // Used with: price < SOME (SELECT price FROM competitor_products)
  * }</pre>
- * 
+ *
+ * <p>Relationship to ANY and ALL:</p>
+ * <ul>
+ *   <li>SOME and ANY are functionally equivalent - both return true if condition matches at least one value</li>
+ *   <li>ALL requires the condition to be true for all values (more restrictive)</li>
+ *   <li>SOME/ANY are less restrictive than ALL</li>
+ * </ul>
+ *
  * @see Any
  * @see All
  * @see SubQuery
@@ -66,7 +65,7 @@ public class Some extends Cell {
     }
 
     /**
-     * Constructs a SOME condition with the specified subquery.
+     * Creates a new SOME condition with the specified subquery.
      * The SOME operator must be used with a comparison operator in the containing condition.
      *
      * <p>The SOME operator is typically used in scenarios where you want to find records

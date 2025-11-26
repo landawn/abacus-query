@@ -20,7 +20,7 @@ package com.landawn.abacus.query.condition;
  * using SQL LIKE syntax with wildcards. The LIKE operator provides flexible string matching
  * capabilities that go beyond simple equality checks, making it essential for search
  * functionality and text filtering.
- * 
+ *
  * <p>The LIKE operator supports two standard SQL wildcards:
  * <ul>
  *   <li>% (percent sign): Matches any sequence of zero or more characters</li>
@@ -50,25 +50,25 @@ package com.landawn.abacus.query.condition;
  * Like startsWithJohn = new Like("name", "John%");
  * // SQL: name LIKE 'John%'
  * // Matches: "John", "Johnson", "Johnny", etc.
- * 
+ *
  * // Find all emails ending with "@example.com"
  * Like exampleEmails = new Like("email", "%@example.com");
- * // Generates: email LIKE '%@example.com'
+ * // SQL: email LIKE '%@example.com'
  * // Matches: "user@example.com", "admin@example.com", etc.
- * 
+ *
  * // Find all products containing "phone" anywhere in the name
  * Like phoneProducts = new Like("product_name", "%phone%");
- * // Generates: product_name LIKE '%phone%'
+ * // SQL: product_name LIKE '%phone%'
  * // Matches: "iPhone", "Smartphone", "Headphones", etc.
- * 
+ *
  * // Find all 5-letter words starting with 'A' and ending with 'E'
  * Like pattern = new Like("word", "A___E");
- * // Generates: word LIKE 'A___E'
+ * // SQL: word LIKE 'A___E'
  * // Matches: "APPLE", "ANKLE", "ANGLE", etc.
- * 
+ *
  * // Complex pattern matching
  * Like complexPattern = new Like("code", "PRD-20__-___");
- * // Generates: code LIKE 'PRD-20__-___'
+ * // SQL: code LIKE 'PRD-20__-___'
  * // Matches: "PRD-2023-001", "PRD-2024-ABC", etc.
  * }</pre>
  * 

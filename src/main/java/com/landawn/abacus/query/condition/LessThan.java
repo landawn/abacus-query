@@ -16,21 +16,20 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents a less-than (&lt;) comparison condition in SQL-like queries.
- * This class is used to create conditions that check if a property value is less than 
- * a specified value. The less-than operator is fundamental for implementing upper bounds,
- * range queries, and various filtering scenarios where you need to exclude values at or
- * above a certain threshold.
- * 
- * <p>This condition is commonly used for:
+ * This class is used to create conditions that check if a property value is less than
+ * a specified value. The less-than operator is fundamental for implementing exclusive
+ * upper bounds, range queries, and various filtering scenarios.
+ *
+ * <p>Common use cases include:
  * <ul>
  *   <li>Setting exclusive upper bounds on numeric values</li>
  *   <li>Date comparisons (before a certain date)</li>
  *   <li>String comparisons using lexicographical ordering</li>
- *   <li>Implementing exclusive range queries with GreaterThan</li>
+ *   <li>Implementing exclusive range queries when combined with GreaterThan</li>
  *   <li>Age restrictions, expiration checks, and limit validations</li>
  * </ul>
- * 
- * <p>The LessThan operator works with various data types:
+ *
+ * <p>The operator works with various data types:
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
  *   <li>Dates/Times: Chronological comparison</li>
@@ -92,7 +91,7 @@ public class LessThan extends Binary {
      *
      * // Find items expiring before tomorrow
      * LessThan expiringItems = new LessThan("expiry_date", LocalDate.now().plusDays(1));
-     * // Generates: expiry_date < '2023-10-16' (assuming tomorrow's date)
+     * // SQL: expiry_date < '2023-10-16' (assuming tomorrow's date)
      *
      * // Temperature below freezing
      * LessThan freezing = new LessThan("temperature", 0);

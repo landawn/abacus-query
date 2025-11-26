@@ -15,9 +15,9 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents a NOT EQUAL (!=) condition in SQL queries.
+ * Represents a NOT EQUAL (!= or &lt;&gt;) condition in SQL queries.
  * This condition checks if a property value is not equal to a specified value.
- * 
+ *
  * <p>The NOT EQUAL operator can be represented as != or &lt;&gt; in SQL, depending on the database.
  * This implementation uses the standard != operator. The condition evaluates to true when
  * the property value differs from the specified value.</p>
@@ -33,19 +33,19 @@ package com.landawn.abacus.query.condition;
  * <pre>{@code
  * // Simple not equal comparison
  * NotEqual condition1 = new NotEqual("status", "deleted");
- * // Results in: status != 'deleted'
- * 
+ * // SQL: status != 'deleted'
+ *
  * // Numeric comparison
  * NotEqual condition2 = new NotEqual("quantity", 0);
- * // Results in: quantity != 0
- * 
+ * // SQL: quantity != 0
+ *
  * // With null values (note: use IsNotNull for null checks)
  * NotEqual condition3 = new NotEqual("assignee", "admin");
- * // Results in: assignee != 'admin'
- * 
+ * // SQL: assignee != 'admin'
+ *
  * // Date comparison
  * NotEqual condition4 = new NotEqual("created", "2024-01-01");
- * // Results in: created != '2024-01-01'
+ * // SQL: created != '2024-01-01'
  * }</pre>
  * 
  * @see Binary
@@ -74,15 +74,15 @@ public class NotEqual extends Binary {
      * <pre>{@code
      * // Exclude specific user
      * NotEqual notAdmin = new NotEqual("username", "admin");
-     * // Generates: username != 'admin'
+     * // SQL: username != 'admin'
      *
      * // Exclude default values
      * NotEqual notDefault = new NotEqual("configuration", "default");
-     * // Generates: configuration != 'default'
+     * // SQL: configuration != 'default'
      *
      * // Filter out zero values
      * NotEqual notZero = new NotEqual("balance", 0);
-     * // Generates: balance != 0
+     * // SQL: balance != 0
      * }</pre>
      *
      * <p>Note: For null comparisons, consider using {@link IsNull} or {@link IsNotNull}

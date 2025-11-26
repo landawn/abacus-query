@@ -76,9 +76,12 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * 
  * @see Using
  * @see Join
+ * @see InnerJoin
  * @see LeftJoin
  * @see RightJoin
- * @see InnerJoin
+ * @see FullJoin
+ * @see CrossJoin
+ * @see NaturalJoin
  */
 public class On extends Cell {
 

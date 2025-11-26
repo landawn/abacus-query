@@ -364,7 +364,18 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Gets the list of parameter values from the condition.
-     * These parameters will be bound to the prepared statement when executing the query.
+     * These are the parameter values that will be bound to the prepared statement placeholders
+     * when the query is executed. For raw SQL subqueries, this returns an empty list.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition condition = CF.gt("age", 18);
+     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
+     * List<Object> params = subQuery.getParameters(); // Returns [18]
+     *
+     * SubQuery rawSubQuery = new SubQuery("SELECT * FROM users");
+     * List<Object> params2 = rawSubQuery.getParameters(); // Returns empty list
+     * }</pre>
      *
      * @return list of parameter values, or an empty list if no condition or raw SQL subquery
      */
@@ -482,7 +493,15 @@ public class SubQuery extends AbstractCondition {
     /**
      * Generates the hash code for this subquery.
      * The hash code is based on the SQL string (for raw queries) or the combination
-     * of entity name, properties, and condition (for structured queries).
+     * of entity name, properties, and condition (for structured queries),
+     * ensuring consistent hashing for equivalent subqueries.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery sq1 = new SubQuery("SELECT id FROM users WHERE active = true");
+     * SubQuery sq2 = new SubQuery("SELECT id FROM users WHERE active = true");
+     * assert sq1.hashCode() == sq2.hashCode();
+     * }</pre>
      *
      * @return hash code based on sql, entity name, properties, and condition
      */
@@ -499,6 +518,16 @@ public class SubQuery extends AbstractCondition {
      * Checks if this subquery is equal to another object.
      * Two subqueries are equal if they have the same SQL (for raw queries) or the same
      * entity name, properties, and condition (for structured queries).
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery sq1 = new SubQuery("SELECT id FROM users WHERE active = true");
+     * SubQuery sq2 = new SubQuery("SELECT id FROM users WHERE active = true");
+     * assert sq1.equals(sq2); // true
+     *
+     * SubQuery sq3 = new SubQuery("SELECT id FROM users WHERE active = false");
+     * assert !sq1.equals(sq3); // false - different SQL
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

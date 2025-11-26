@@ -520,11 +520,11 @@ public class ConditionFactory2025Test extends TestBase {
 
     @Test
     public void testConstants() {
-        assertNotNull(ConditionFactory.ASC);
-        assertEquals(SortDirection.ASC, ConditionFactory.ASC);
+        assertNotNull(SortDirection.ASC);
+        assertEquals(SortDirection.ASC, SortDirection.ASC);
 
-        assertNotNull(ConditionFactory.DESC);
-        assertEquals(SortDirection.DESC, ConditionFactory.DESC);
+        assertNotNull(SortDirection.DESC);
+        assertEquals(SortDirection.DESC, SortDirection.DESC);
 
         assertNotNull(ConditionFactory.QME);
     }

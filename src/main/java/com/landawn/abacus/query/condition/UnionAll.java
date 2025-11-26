@@ -37,7 +37,15 @@ package com.landawn.abacus.query.condition;
  *   <li>Use UNION ALL when combining data from different sources that won't overlap</li>
  *   <li>Use UNION when you need distinct results</li>
  * </ul>
- * 
+ *
+ * <p>Relationship to other set operations:</p>
+ * <ul>
+ *   <li>UNION ALL combines rows from both queries, keeping duplicates (faster)</li>
+ *   <li>UNION combines rows from both queries, removing duplicates</li>
+ *   <li>INTERSECT returns only rows that appear in both queries</li>
+ *   <li>EXCEPT/MINUS returns rows from first query that don't appear in second query</li>
+ * </ul>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Get all transactions from both tables, including duplicates

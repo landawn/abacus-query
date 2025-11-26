@@ -70,6 +70,12 @@ import com.landawn.abacus.util.N;
  * 
  * @see On
  * @see Join
+ * @see InnerJoin
+ * @see LeftJoin
+ * @see RightJoin
+ * @see FullJoin
+ * @see CrossJoin
+ * @see NaturalJoin
  */
 public class Using extends Cell {
 
@@ -191,7 +197,7 @@ public class Using extends Cell {
      */
     static Condition createUsingCondition(final Collection<String> columnNames) {
         if (N.isEmpty(columnNames)) {
-            throw new IllegalArgumentException("To create the using condition, columnNames " + columnNames + " must have one or more column names. ");
+            throw new IllegalArgumentException("To create the using condition, columnNames can't be null or empty");
         }
 
         return CF.expr(concatPropNames(columnNames));

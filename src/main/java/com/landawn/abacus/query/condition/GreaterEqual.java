@@ -15,21 +15,21 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents a greater-than-or-equal-to (>=) comparison condition in SQL-like queries.
+ * Represents a greater-than-or-equal-to (&gt;=) comparison condition in SQL-like queries.
  * This class is used to create conditions that check if a property value is greater than
  * or equal to a specified value. The greater-than-or-equal operator is fundamental for
- * implementing lower bounds, inclusive ranges, and various filtering scenarios.
+ * implementing inclusive lower bounds, inclusive ranges, and various filtering scenarios.
  *
- * <p>This condition is commonly used for:
+ * <p>Common use cases include:
  * <ul>
- *   <li>Setting lower bounds on numeric values (minimum thresholds)</li>
+ *   <li>Setting inclusive lower bounds on numeric values (minimum thresholds)</li>
  *   <li>Date comparisons (on or after a certain date)</li>
  *   <li>String comparisons using lexicographical ordering</li>
- *   <li>Implementing inclusive range queries with LessEqual</li>
+ *   <li>Implementing inclusive range queries when combined with LessEqual</li>
  *   <li>Minimum requirements, start dates, and eligibility checks</li>
  * </ul>
  *
- * <p>The GreaterEqual operator works with various data types:
+ * <p>The operator works with various data types:
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
  *   <li>Dates/Times: Chronological comparison</li>

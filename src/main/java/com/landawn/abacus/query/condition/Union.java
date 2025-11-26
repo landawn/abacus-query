@@ -57,6 +57,14 @@ package com.landawn.abacus.query.condition;
  *   <li>Consider adding indexes on columns used in UNION queries</li>
  * </ul>
  *
+ * <p>Relationship to other set operations:</p>
+ * <ul>
+ *   <li>UNION combines rows from both queries, removing duplicates</li>
+ *   <li>UNION ALL combines rows from both queries, keeping duplicates (faster)</li>
+ *   <li>INTERSECT returns only rows that appear in both queries</li>
+ *   <li>EXCEPT/MINUS returns rows from first query that don't appear in second query</li>
+ * </ul>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Combine customers from different cities, removing duplicates

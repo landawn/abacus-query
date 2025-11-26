@@ -72,6 +72,14 @@ package com.landawn.abacus.query.condition;
  *   <li>SQL Server: May require expansion to equivalent AND/OR/NOT expression</li>
  * </ul>
  *
+ * <p>Relationship to other logical operators:</p>
+ * <ul>
+ *   <li>XOR requires exactly one of two conditions to be true (exclusive or)</li>
+ *   <li>OR requires at least one condition to be true (inclusive or)</li>
+ *   <li>AND requires all conditions to be true</li>
+ *   <li>NOT negates a condition</li>
+ * </ul>
+ *
  * @see And
  * @see Or
  * @see Not
@@ -88,9 +96,8 @@ public class XOR extends Binary {
     }
 
     /**
-     * Creates a new XOR condition.
-     * The condition evaluates to true when exactly one of the operands is true,
-     * providing exclusive-or logic for mutually exclusive conditions.
+     * Creates a new XOR condition that evaluates to true when exactly one of the operands is true.
+     * The condition provides exclusive-or logic for mutually exclusive conditions.
      *
      * <p>The XOR condition is true when the property value and the provided value
      * differ in their boolean evaluation (one true, one false). This is useful for

@@ -18,8 +18,8 @@ package com.landawn.abacus.query.condition;
  * Represents a MINUS clause in SQL queries (also known as EXCEPT in some databases).
  * This class implements the set difference operation, returning rows from the first query
  * that are not present in the second query (subquery).
- * 
- * <p>Key characteristics of MINUS/EXCEPT:
+ *
+ * <p>Key characteristics of MINUS/EXCEPT:</p>
  * <ul>
  *   <li>Removes duplicate rows automatically (returns DISTINCT results)</li>
  *   <li>Both queries must have the same number of columns</li>
@@ -27,22 +27,22 @@ package com.landawn.abacus.query.condition;
  *   <li>Column names don't need to match, but order matters</li>
  *   <li>NULL values are considered equal when comparing rows</li>
  * </ul>
- * 
- * <p>Database support:
+ *
+ * <p>Database support:</p>
  * <ul>
  *   <li>Oracle, DB2: Use MINUS keyword</li>
  *   <li>PostgreSQL, SQL Server, SQLite: Use EXCEPT keyword</li>
  *   <li>MySQL: Does not support MINUS/EXCEPT directly (use NOT IN or LEFT JOIN)</li>
  * </ul>
- * 
- * <p>Common use cases:
+ *
+ * <p>Common use cases:</p>
  * <ul>
  *   <li>Finding records that exist in one table but not another</li>
  *   <li>Identifying missing data or gaps</li>
  *   <li>Data validation and comparison between datasets</li>
  *   <li>Finding customers without orders, products never sold, etc.</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who have never placed an order
@@ -53,20 +53,29 @@ package com.landawn.abacus.query.condition;
  * // SELECT customer_id FROM customers
  * // MINUS
  * // SELECT DISTINCT customer_id FROM orders
- * 
+ *
  * // Find products not sold in the last month
  * SubQuery allProducts = new SubQuery("SELECT product_id FROM products WHERE active = 'Y'");
  * SubQuery soldProducts = new SubQuery(
  *     "SELECT DISTINCT product_id FROM order_items WHERE order_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)"
  * );
  * Minus unsoldProducts = new Minus(soldProducts);
- * 
+ *
  * // Find employees not assigned to any project
  * SubQuery allEmployees = new SubQuery("SELECT employee_id FROM employees WHERE status = 'ACTIVE'");
  * SubQuery assignedEmployees = new SubQuery("SELECT DISTINCT employee_id FROM project_assignments");
  * Minus unassignedEmployees = new Minus(assignedEmployees);
  * }</pre>
- * 
+ *
+ * <p>Relationship to other set operations:</p>
+ * <ul>
+ *   <li>MINUS and EXCEPT are functionally equivalent (MINUS in Oracle, EXCEPT in PostgreSQL/SQL Server)</li>
+ *   <li>UNION combines rows from both queries, removing duplicates</li>
+ *   <li>UNION ALL combines rows from both queries, keeping duplicates</li>
+ *   <li>INTERSECT returns only rows that appear in both queries</li>
+ *   <li>MINUS/EXCEPT returns rows from first query that don't appear in second query</li>
+ * </ul>
+ *
  * @see Except
  * @see Union
  * @see UnionAll

@@ -26,35 +26,39 @@ import com.landawn.abacus.util.Strings;
 /**
  * Represents a BETWEEN condition in SQL queries.
  * The BETWEEN operator selects values within a given range, inclusive of both endpoints.
- * 
+ *
  * <p>The BETWEEN condition is a convenient way to filter data within a range.
  * It's equivalent to: property &gt;= minValue AND property &lt;= maxValue.
  * The condition evaluates to true if: minValue &lt;= propertyValue &lt;= maxValue.</p>
- * 
+ *
  * <p>BETWEEN can be used with various data types:</p>
  * <ul>
- *   <li>Numbers: {@code BETWEEN 1 AND 100}</li>
- *   <li>Dates: {@code BETWEEN '2023-01-01' AND '2023-12-31'}</li>
- *   <li>Strings: {@code BETWEEN 'A' AND 'M'} (alphabetical range)</li>
+ *   <li>Numbers: BETWEEN 1 AND 100</li>
+ *   <li>Dates: BETWEEN '2023-01-01' AND '2023-12-31'</li>
+ *   <li>Strings: BETWEEN 'A' AND 'M' (alphabetical range)</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Numeric range
  * Between ageRange = new Between("age", 18, 65);
- * 
+ * // SQL: age BETWEEN 18 AND 65
+ *
  * // Date range for current year
- * Between yearRange = new Between("orderDate", 
- *     LocalDate.of(2024, 1, 1), 
+ * Between yearRange = new Between("orderDate",
+ *     LocalDate.of(2024, 1, 1),
  *     LocalDate.of(2024, 12, 31));
- * 
+ * // SQL: orderDate BETWEEN '2024-01-01' AND '2024-12-31'
+ *
  * // Price range with subqueries
  * SubQuery minPrice = CF.subQuery("SELECT MIN(price) FROM products");
  * SubQuery maxPrice = CF.subQuery("SELECT MAX(price) FROM products");
  * Between priceRange = new Between("price", minPrice, maxPrice);
- * 
+ * // SQL: price BETWEEN (SELECT MIN(price)...) AND (SELECT MAX(price)...)
+ *
  * // String range (alphabetical)
  * Between nameRange = new Between("lastName", "A", "M");
+ * // SQL: lastName BETWEEN 'A' AND 'M'
  * }</pre>
  * 
  * @see AbstractCondition

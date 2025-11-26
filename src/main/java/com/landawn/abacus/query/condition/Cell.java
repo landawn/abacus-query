@@ -59,12 +59,12 @@ public class Cell extends AbstractCondition {
     /**
      * Creates a new Cell with the specified operator and condition.
      * The Cell wraps the given condition and applies the specified operator to it.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a NOT cell that negates a condition
      * Cell notCell = new Cell(Operator.NOT, CF.isNull("email"));
-     * 
+     *
      * // Create an EXISTS cell for a subquery
      * SubQuery subQuery = CF.subQuery("SELECT 1 FROM products WHERE price > 100");
      * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
@@ -72,6 +72,7 @@ public class Cell extends AbstractCondition {
      *
      * @param operator the operator to apply to the condition
      * @param condition the condition to wrap (must not be null)
+     * @throws NullPointerException if condition is null
      */
     public Cell(final Operator operator, final Condition condition) {
         super(operator);

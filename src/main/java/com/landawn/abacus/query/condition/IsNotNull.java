@@ -70,8 +70,8 @@ public class IsNotNull extends IsNot {
      * This is essential for data validation and ensuring required fields are populated.
      *
      * <p>The generated SQL uses the IS NOT NULL operator (not != NULL) because NULL comparisons
-     * have special semantics in SQL where NULL != NULL evaluates to unknown/false, but
-     * NULL IS NOT NULL evaluates to false (correctly identifying non-NULL values).
+     * have special semantics in SQL where NULL != NULL evaluates to UNKNOWN (which behaves as false
+     * in WHERE clauses), but NULL IS NOT NULL evaluates to false (correctly identifying non-NULL values).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

@@ -240,13 +240,13 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets the ORDER BY clause from this criteria.
      * Returns null if no ORDER BY clause has been set.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria().orderBy("name", DESC);
+     * Criteria criteria = new Criteria().orderBy("name", SortDirection.DESC);
      * Cell orderBy = criteria.getOrderBy(); // Returns the ORDER BY clause
      * }</pre>
-     * 
+     *
      * @return the OrderBy condition, or null if not set
      */
     public Cell getOrderBy() {
@@ -1439,17 +1439,17 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns a string representation of this Criteria using the specified naming policy.
      * The output follows SQL clause ordering conventions and includes all conditions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
      *     .distinct()
      *     .where(CF.eq("isActive", true))
-     *     .orderBy("createdDate", DESC);
+     *     .orderBy("createdDate", SortDirection.DESC);
      * String sql = criteria.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
      * // Returns: " DISTINCT WHERE is_active = true ORDER BY created_date DESC"
      * }</pre>
-     * 
+     *
      * @param namingPolicy the naming policy to apply to property names
      * @return a string representation of this Criteria
      */

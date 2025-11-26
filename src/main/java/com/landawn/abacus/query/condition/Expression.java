@@ -144,6 +144,9 @@ public class Expression extends AbstractCondition {
      * The literal can contain any valid SQL expression, including functions, operators,
      * column references, and complex expressions.
      *
+     * <p>Note: For frequently used expressions, consider using {@link #of(String)} instead,
+     * which provides caching for better performance and memory efficiency.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr1 = new Expression("CURRENT_TIMESTAMP");
@@ -917,16 +920,26 @@ public class Expression extends AbstractCondition {
 
     /**
      * Converts a value to its SQL representation.
-     * Strings are quoted, nulls become "null", numbers are converted to strings,
-     * and expressions keep their literal form.
+     * This method performs SQL escaping and formatting:
+     * <ul>
+     *   <li>Strings are quoted with single quotes and special characters are escaped</li>
+     *   <li>null values become the string "null"</li>
+     *   <li>Numbers and booleans are converted to their string representation</li>
+     *   <li>Expression objects return their literal SQL text</li>
+     *   <li>Other objects are converted to strings, quoted, and escaped</li>
+     * </ul>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression.formalize("text");     // Returns: "'text'"
+     * Expression.formalize("O'Brien");  // Returns: "'O\'Brien'" (escaped quote)
      * Expression.formalize(123);        // Returns: "123"
+     * Expression.formalize(45.67);      // Returns: "45.67"
      * Expression.formalize(null);       // Returns: "null"
      * Expression.formalize(true);       // Returns: "true"
-     * Expression.formalize(expr);       // Returns: the expression's literal
+     * Expression.formalize(false);      // Returns: "false"
+     * Expression expr = new Expression("COUNT(*)");
+     * Expression.formalize(expr);       // Returns: "COUNT(*)" (the expression's literal)
      * }</pre>
      *
      * @param value the value to formalize

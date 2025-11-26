@@ -36,7 +36,15 @@ package com.landawn.abacus.query.condition;
  *   <li>Data validation and quality checks</li>
  *   <li>Set-based analysis and reporting</li>
  * </ul>
- * 
+ *
+ * <p>Relationship to other set operations:</p>
+ * <ul>
+ *   <li>INTERSECT returns only rows that appear in both queries</li>
+ *   <li>UNION combines rows from both queries, removing duplicates</li>
+ *   <li>UNION ALL combines rows from both queries, keeping duplicates</li>
+ *   <li>EXCEPT/MINUS returns rows from first query that don't appear in second query</li>
+ * </ul>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who are both active AND have recent orders

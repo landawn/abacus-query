@@ -21,12 +21,12 @@ package com.landawn.abacus.query.condition;
  * <p>The Equal condition is one of the most fundamental and commonly used conditions
  * in database queries. It performs exact matching between a column value and a
  * specified value, supporting various data types including strings, numbers, dates,
- * booleans, and even subqueries.</p>
+ * booleans, and subqueries.</p>
  *
  * <p>Key features:</p>
  * <ul>
  *   <li>Exact value matching</li>
- *   <li>Null-safe comparison when comparing with null</li>
+ *   <li>NULL comparison support (though IsNull is preferred for clarity)</li>
  *   <li>Support for subquery comparisons</li>
  *   <li>Case-sensitive for string comparisons (database-dependent)</li>
  * </ul>
