@@ -17,6 +17,7 @@ package com.landawn.abacus.query.condition;
 import java.util.Collection;
 import java.util.Map;
 
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
 
 /**

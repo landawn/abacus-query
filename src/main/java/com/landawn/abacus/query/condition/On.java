@@ -16,6 +16,8 @@ package com.landawn.abacus.query.condition;
 
 import java.util.Map;
 
+import com.landawn.abacus.query.Filters;
+
 /**
  * Represents an ON clause used in SQL JOIN operations.
  * The ON clause specifies the join condition between tables, providing maximum flexibility

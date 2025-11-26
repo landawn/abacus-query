@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.landawn.abacus.query.condition;
+package com.landawn.abacus.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,7 +30,38 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.query.condition.And;
+import com.landawn.abacus.query.condition.Between;
+import com.landawn.abacus.query.condition.Binary;
+import com.landawn.abacus.query.condition.Condition;
+import com.landawn.abacus.query.condition.Equal;
+import com.landawn.abacus.query.condition.Expression;
+import com.landawn.abacus.query.condition.GreaterEqual;
+import com.landawn.abacus.query.condition.GreaterThan;
+import com.landawn.abacus.query.condition.GroupBy;
+import com.landawn.abacus.query.condition.Is;
+import com.landawn.abacus.query.condition.IsInfinite;
+import com.landawn.abacus.query.condition.IsNaN;
+import com.landawn.abacus.query.condition.IsNot;
+import com.landawn.abacus.query.condition.IsNotInfinite;
+import com.landawn.abacus.query.condition.IsNotNaN;
+import com.landawn.abacus.query.condition.IsNotNull;
+import com.landawn.abacus.query.condition.IsNull;
+import com.landawn.abacus.query.condition.Junction;
+import com.landawn.abacus.query.condition.LessEqual;
+import com.landawn.abacus.query.condition.LessThan;
+import com.landawn.abacus.query.condition.Like;
+import com.landawn.abacus.query.condition.NamedProperty;
+import com.landawn.abacus.query.condition.Not;
+import com.landawn.abacus.query.condition.NotBetween;
+import com.landawn.abacus.query.condition.NotEqual;
+import com.landawn.abacus.query.condition.NotLike;
+import com.landawn.abacus.query.condition.Operator;
+import com.landawn.abacus.query.condition.Or;
+import com.landawn.abacus.query.condition.Where;
+import com.landawn.abacus.query.condition.XOR;
 import com.landawn.abacus.query.entity.Account;
 
 @Tag("2025")

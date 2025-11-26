@@ -33,7 +33,6 @@ import com.landawn.abacus.query.SQLBuilder.PLC;
 import com.landawn.abacus.query.SQLBuilder.PSB;
 import com.landawn.abacus.query.SQLBuilder.PSC;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Filters;
 
 /**
  * Unit tests for SQLBuilder class

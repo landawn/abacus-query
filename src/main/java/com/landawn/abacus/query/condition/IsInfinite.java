@@ -14,6 +14,8 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.Filters;
+
 /**
  * Represents a condition that checks if a numeric property value is infinite.
  * This class extends {@link Is} to provide a specialized condition for checking
