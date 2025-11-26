@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import com.landawn.abacus.query.SortDirection;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 
 /**
  * Represents a GROUP BY clause in SQL queries.

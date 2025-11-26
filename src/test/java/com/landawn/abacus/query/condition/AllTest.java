@@ -9,7 +9,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.All;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.GreaterThan;
@@ -23,8 +23,8 @@ public class AllTest extends TestBase {
 
     @Test
     public void testConstructor() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
-        All all = ConditionFactory.all(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
+        All all = Filters.all(subQuery);
 
         Assertions.assertNotNull(all);
         Assertions.assertEquals(Operator.ALL, all.getOperator());
@@ -33,8 +33,8 @@ public class AllTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT salary FROM employees WHERE is_manager = true");
-        All all = ConditionFactory.all(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
+        All all = Filters.all(subQuery);
 
         SubQuery retrieved = all.getCondition();
         Assertions.assertEquals(subQuery, retrieved);
@@ -42,8 +42,8 @@ public class AllTest extends TestBase {
 
     @Test
     public void testToString() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT price FROM competitor_products");
-        All all = ConditionFactory.all(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT price FROM competitor_products");
+        All all = Filters.all(subQuery);
 
         String result = all.toString();
         Assertions.assertTrue(result.contains("ALL"));
@@ -52,8 +52,8 @@ public class AllTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT minPrice FROM priceRanges");
-        All all = ConditionFactory.all(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT minPrice FROM priceRanges");
+        All all = Filters.all(subQuery);
 
         String result = all.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
         Assertions.assertTrue(result.contains("ALL"));
@@ -61,9 +61,9 @@ public class AllTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = ConditionFactory.subQuery("products", Arrays.asList("price"),
-                ConditionFactory.and(ConditionFactory.eq("category", "Premium"), ConditionFactory.eq("active", true)));
-        All all = ConditionFactory.all(subQuery);
+        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"),
+                Filters.and(Filters.eq("category", "Premium"), Filters.eq("active", true)));
+        All all = Filters.all(subQuery);
 
         var params = all.getParameters();
         Assertions.assertEquals(2, params.size());
@@ -73,8 +73,8 @@ public class AllTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = ConditionFactory.subQuery("grades", Arrays.asList("score"), ConditionFactory.between("year", 2020, 2023));
-        All all = ConditionFactory.all(subQuery);
+        SubQuery subQuery = Filters.subQuery("grades", Arrays.asList("score"), Filters.between("year", 2020, 2023));
+        All all = Filters.all(subQuery);
 
         Assertions.assertEquals(2, all.getParameters().size());
 
@@ -85,8 +85,8 @@ public class AllTest extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT threshold FROM limits WHERE active = true");
-        All original = ConditionFactory.all(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT threshold FROM limits WHERE active = true");
+        All original = Filters.all(subQuery);
 
         All copy = original.copy();
 
@@ -98,13 +98,13 @@ public class AllTest extends TestBase {
 
     @Test
     public void testEquals() {
-        SubQuery subQuery1 = ConditionFactory.subQuery("SELECT value FROM table1");
-        SubQuery subQuery2 = ConditionFactory.subQuery("SELECT value FROM table1");
-        SubQuery subQuery3 = ConditionFactory.subQuery("SELECT value FROM table2");
+        SubQuery subQuery1 = Filters.subQuery("SELECT value FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT value FROM table1");
+        SubQuery subQuery3 = Filters.subQuery("SELECT value FROM table2");
 
-        All all1 = ConditionFactory.all(subQuery1);
-        All all2 = ConditionFactory.all(subQuery2);
-        All all3 = ConditionFactory.all(subQuery3);
+        All all1 = Filters.all(subQuery1);
+        All all2 = Filters.all(subQuery2);
+        All all3 = Filters.all(subQuery3);
 
         Assertions.assertEquals(all1, all1);
         Assertions.assertEquals(all1, all2);
@@ -115,20 +115,20 @@ public class AllTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = ConditionFactory.subQuery("SELECT score FROM exams");
-        SubQuery subQuery2 = ConditionFactory.subQuery("SELECT score FROM exams");
+        SubQuery subQuery1 = Filters.subQuery("SELECT score FROM exams");
+        SubQuery subQuery2 = Filters.subQuery("SELECT score FROM exams");
 
-        All all1 = ConditionFactory.all(subQuery1);
-        All all2 = ConditionFactory.all(subQuery2);
+        All all1 = Filters.all(subQuery1);
+        All all2 = Filters.all(subQuery2);
 
         Assertions.assertEquals(all1.hashCode(), all2.hashCode());
     }
 
     @Test
     public void testAnd() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT min_salary FROM job_grades");
-        All all = ConditionFactory.all(subQuery);
-        Equal eq = ConditionFactory.eq("department", "Engineering");
+        SubQuery subQuery = Filters.subQuery("SELECT min_salary FROM job_grades");
+        All all = Filters.all(subQuery);
+        Equal eq = Filters.eq("department", "Engineering");
 
         And and = all.and(eq);
 
@@ -140,9 +140,9 @@ public class AllTest extends TestBase {
 
     @Test
     public void testOr() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT required_score FROM certifications");
-        All all = ConditionFactory.all(subQuery);
-        GreaterThan gt = ConditionFactory.gt("experience_years", 10);
+        SubQuery subQuery = Filters.subQuery("SELECT required_score FROM certifications");
+        All all = Filters.all(subQuery);
+        GreaterThan gt = Filters.gt("experience_years", 10);
 
         Or or = all.or(gt);
 
@@ -152,8 +152,8 @@ public class AllTest extends TestBase {
 
     @Test
     public void testNot() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT banned_id FROM blacklist");
-        All all = ConditionFactory.all(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT banned_id FROM blacklist");
+        All all = Filters.all(subQuery);
 
         Not not = all.not();
 
@@ -163,9 +163,9 @@ public class AllTest extends TestBase {
 
     @Test
     public void testSetCondition() {
-        SubQuery subQuery1 = ConditionFactory.subQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = ConditionFactory.subQuery("SELECT id FROM table2");
-        All all = ConditionFactory.all(subQuery1);
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
+        All all = Filters.all(subQuery1);
 
         Assertions.assertEquals(subQuery1, all.getCondition());
 
@@ -176,26 +176,26 @@ public class AllTest extends TestBase {
     @Test
     public void testAllOperatorBehaviors() {
         // Test > ALL (greater than maximum)
-        SubQuery maxQuery = ConditionFactory.subQuery("SELECT MAX(price) FROM products WHERE category = 'Budget'");
-        All greaterThanAll = ConditionFactory.all(maxQuery);
+        SubQuery maxQuery = Filters.subQuery("SELECT MAX(price) FROM products WHERE category = 'Budget'");
+        All greaterThanAll = Filters.all(maxQuery);
         // This would be used like: our_price > ALL (subquery)
         Assertions.assertNotNull(greaterThanAll);
 
         // Test < ALL (less than minimum)
-        SubQuery minQuery = ConditionFactory.subQuery("SELECT MIN(price) FROM products WHERE category = 'Premium'");
-        All lessThanAll = ConditionFactory.all(minQuery);
+        SubQuery minQuery = Filters.subQuery("SELECT MIN(price) FROM products WHERE category = 'Premium'");
+        All lessThanAll = Filters.all(minQuery);
         // This would be used like: our_price < ALL (subquery)
         Assertions.assertNotNull(lessThanAll);
 
         // Test = ALL (equal to all - only if all values are same)
-        SubQuery sameQuery = ConditionFactory.subQuery("SELECT DISTINCT status FROM orders WHERE date = '2023-01-01'");
-        All equalToAll = ConditionFactory.all(sameQuery);
+        SubQuery sameQuery = Filters.subQuery("SELECT DISTINCT status FROM orders WHERE date = '2023-01-01'");
+        All equalToAll = Filters.all(sameQuery);
         // This would be used like: status = ALL (subquery)
         Assertions.assertNotNull(equalToAll);
 
         // Test != ALL (different from all - equivalent to NOT IN)
-        SubQuery excludeQuery = ConditionFactory.subQuery("SELECT id FROM excluded_items");
-        All notEqualAll = ConditionFactory.all(excludeQuery);
+        SubQuery excludeQuery = Filters.subQuery("SELECT id FROM excluded_items");
+        All notEqualAll = Filters.all(excludeQuery);
         // This would be used like: item_id != ALL (subquery)
         Assertions.assertNotNull(notEqualAll);
     }
@@ -203,9 +203,9 @@ public class AllTest extends TestBase {
     @Test
     public void testComplexAllScenarios() {
         // Find products more expensive than all competitor products in a region
-        SubQuery competitorPrices = ConditionFactory.subQuery("competitors", Arrays.asList("price"), ConditionFactory
-                .and(ConditionFactory.eq("region", "Europe"), ConditionFactory.eq("product_type", "Premium"), ConditionFactory.eq("active", true)));
-        All allCompetitorPrices = ConditionFactory.all(competitorPrices);
+        SubQuery competitorPrices = Filters.subQuery("competitors", Arrays.asList("price"), Filters
+                .and(Filters.eq("region", "Europe"), Filters.eq("product_type", "Premium"), Filters.eq("active", true)));
+        All allCompetitorPrices = Filters.all(competitorPrices);
 
         var params = allCompetitorPrices.getParameters();
         Assertions.assertEquals(3, params.size());
@@ -214,9 +214,9 @@ public class AllTest extends TestBase {
         Assertions.assertTrue(params.contains(true));
 
         // Find employees earning more than all managers in their department
-        SubQuery managerSalaries = ConditionFactory.subQuery("employees", Arrays.asList("salary"),
-                ConditionFactory.and(ConditionFactory.eq("is_manager", true), ConditionFactory.eq("department_id", Expression.of("e.department_id"))));
-        All allManagerSalaries = ConditionFactory.all(managerSalaries);
+        SubQuery managerSalaries = Filters.subQuery("employees", Arrays.asList("salary"),
+                Filters.and(Filters.eq("is_manager", true), Filters.eq("department_id", Expression.of("e.department_id"))));
+        All allManagerSalaries = Filters.all(managerSalaries);
 
         Assertions.assertNotNull(allManagerSalaries);
     }

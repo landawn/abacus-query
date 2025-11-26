@@ -9,7 +9,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.In;
@@ -26,7 +26,7 @@ public class ClauseTest extends TestBase {
 
     @Test
     public void testConstructor() {
-        Equal eq = ConditionFactory.eq("status", "active");
+        Equal eq = Filters.eq("status", "active");
         TestClause clause = new TestClause(Operator.WHERE, eq);
 
         Assertions.assertNotNull(clause);
@@ -36,25 +36,25 @@ public class ClauseTest extends TestBase {
 
     @Test
     public void testAndThrowsException() {
-        TestClause clause = new TestClause(Operator.WHERE, ConditionFactory.eq("id", 1));
+        TestClause clause = new TestClause(Operator.WHERE, Filters.eq("id", 1));
 
         Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            clause.and(ConditionFactory.eq("name", "test"));
+            clause.and(Filters.eq("name", "test"));
         });
     }
 
     @Test
     public void testOrThrowsException() {
-        TestClause clause = new TestClause(Operator.HAVING, ConditionFactory.gt("COUNT(*)", 5));
+        TestClause clause = new TestClause(Operator.HAVING, Filters.gt("COUNT(*)", 5));
 
         Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            clause.or(ConditionFactory.lt("SUM(amount)", 1000));
+            clause.or(Filters.lt("SUM(amount)", 1000));
         });
     }
 
     @Test
     public void testNotThrowsException() {
-        TestClause clause = new TestClause(Operator.GROUP_BY, ConditionFactory.expr("department"));
+        TestClause clause = new TestClause(Operator.GROUP_BY, Filters.expr("department"));
 
         Assertions.assertThrows(UnsupportedOperationException.class, () -> {
             clause.not();
@@ -63,7 +63,7 @@ public class ClauseTest extends TestBase {
 
     @Test
     public void testInheritedMethodsFromCell() {
-        GreaterThan gt = ConditionFactory.gt("price", 100);
+        GreaterThan gt = Filters.gt("price", 100);
         TestClause clause = new TestClause(Operator.WHERE, gt);
 
         // Test getCondition
@@ -82,7 +82,7 @@ public class ClauseTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Between between = ConditionFactory.between("age", 18, 65);
+        Between between = Filters.between("age", 18, 65);
         TestClause original = new TestClause(Operator.WHERE, between);
 
         TestClause copy = original.copy();
@@ -95,7 +95,7 @@ public class ClauseTest extends TestBase {
 
     @Test
     public void testToString() {
-        Equal eq = ConditionFactory.eq("status", "active");
+        Equal eq = Filters.eq("status", "active");
         TestClause clause = new TestClause(Operator.WHERE, eq);
 
         String result = clause.toString();
@@ -105,8 +105,8 @@ public class ClauseTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Equal eq1 = ConditionFactory.eq("id", 1);
-        Equal eq2 = ConditionFactory.eq("id", 1);
+        Equal eq1 = Filters.eq("id", 1);
+        Equal eq2 = Filters.eq("id", 1);
 
         TestClause clause1 = new TestClause(Operator.WHERE, eq1);
         TestClause clause2 = new TestClause(Operator.WHERE, eq2);
@@ -118,7 +118,7 @@ public class ClauseTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        In in = ConditionFactory.in("type", Arrays.asList("A", "B", "C"));
+        In in = Filters.in("type", Arrays.asList("A", "B", "C"));
         TestClause clause1 = new TestClause(Operator.WHERE, in);
         TestClause clause2 = new TestClause(Operator.WHERE, in);
 

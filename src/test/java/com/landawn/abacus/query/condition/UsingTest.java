@@ -14,7 +14,7 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.Using;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 
 public class UsingTest extends TestBase {
 

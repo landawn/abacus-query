@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.NotInSubQuery;
 import com.landawn.abacus.query.condition.SubQuery;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class NotInSubQueryTest extends TestBase {

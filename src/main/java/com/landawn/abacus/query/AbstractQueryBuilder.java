@@ -52,8 +52,8 @@ import com.landawn.abacus.query.SQLBuilder.PSC;
 import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Join;
@@ -2057,8 +2057,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param cond the WHERE condition
      * @return this SQLBuilder instance for method chaining
-     * @see ConditionFactory
-     * @see ConditionFactory.CF
+     * @see Filters
+     * @see Filters.CF
      */
     public This where(final Condition cond) {
         checkIfAlreadyCalled(SK.WHERE);
@@ -2274,8 +2274,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param cond the HAVING condition
      * @return this SQLBuilder instance for method chaining
-     * @see ConditionFactory
-     * @see ConditionFactory.CF
+     * @see Filters
+     * @see Filters.CF
      */
     public This having(final Condition cond) {
         checkIfAlreadyCalled(SK.HAVING);
@@ -2693,8 +2693,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param cond the condition to append
      * @return this SQLBuilder instance for method chaining
-     * @see ConditionFactory
-     * @see ConditionFactory.CF
+     * @see Filters
+     * @see Filters.CF
      */
     @Beta
     public This append(final Condition cond) {

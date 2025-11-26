@@ -33,7 +33,7 @@ import com.landawn.abacus.query.SQLBuilder.PLC;
 import com.landawn.abacus.query.SQLBuilder.PSB;
 import com.landawn.abacus.query.SQLBuilder.PSC;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 
 /**
  * Unit tests for SQLBuilder class
@@ -568,7 +568,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testParse() {
-            Condition cond = ConditionFactory.eq("firstName", "John");
+            Condition cond = Filters.eq("firstName", "John");
             SQLBuilder builder = PSB.parse(cond, User.class);
             assertNotNull(builder);
 
@@ -576,7 +576,7 @@ public class SQLBuilder12Test extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> PSB.parse(null, User.class));
 
             // Test with complex condition
-            Condition complexCond = ConditionFactory.and(ConditionFactory.eq("firstName", "John"), ConditionFactory.gt("id", 1));
+            Condition complexCond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("id", 1));
             SQLBuilder complexBuilder = PSB.parse(complexCond, User.class);
             assertNotNull(complexBuilder);
         }
@@ -823,7 +823,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.update("account");
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("UPDATE account"));
             assertTrue(sql.contains("first_name = ?"));
         }
@@ -833,7 +833,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.update("account", Account.class);
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("UPDATE account"));
             assertTrue(sql.contains("first_name = ?"));
         }
@@ -843,7 +843,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.update(Account.class);
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("UPDATE account"));
             assertTrue(sql.contains("first_name = ?"));
             // Should include updatable fields
@@ -861,7 +861,7 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             // Get the generated column names
-            String sql = builder.set("firstName", "John").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("first_name"));
             assertFalse(sql.contains("email"));
         }
@@ -871,7 +871,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.deleteFrom("account");
             assertNotNull(builder);
 
-            String sql = builder.where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("DELETE FROM account"));
             assertTrue(sql.contains("WHERE"));
         }
@@ -881,7 +881,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.deleteFrom("account", Account.class);
             assertNotNull(builder);
 
-            String sql = builder.where(ConditionFactory.eq("firstName", "John")).sql();
+            String sql = builder.where(Filters.eq("firstName", "John")).sql();
             assertTrue(sql.contains("DELETE FROM account"));
             assertTrue(sql.contains("first_name = ?"));
         }
@@ -891,7 +891,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.deleteFrom(Account.class);
             assertNotNull(builder);
 
-            String sql = builder.where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("DELETE FROM account"));
         }
 
@@ -1045,7 +1045,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testParse() {
-            Condition cond = ConditionFactory.and(ConditionFactory.eq("firstName", "John"), ConditionFactory.like("email", "%@example.com"));
+            Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.like("email", "%@example.com"));
 
             SQLBuilder builder = PSC.parse(cond, Account.class);
             assertNotNull(builder);
@@ -1280,7 +1280,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.update("USER_ACCOUNT");
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("UPDATE USER_ACCOUNT"));
             assertTrue(sql.contains("FIRST_NAME = ?"));
         }
@@ -1290,7 +1290,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.update(UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("UPDATE USER_ACCOUNT"));
             assertTrue(sql.contains("FIRST_NAME = ?"));
         }
@@ -1300,7 +1300,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.deleteFrom("USER_ACCOUNT");
             assertNotNull(builder);
 
-            String sql = builder.where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("DELETE FROM USER_ACCOUNT"));
         }
 
@@ -1309,7 +1309,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.deleteFrom(UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("DELETE FROM USER_ACCOUNT"));
         }
 
@@ -1414,7 +1414,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testParse() {
-            Condition cond = ConditionFactory.and(ConditionFactory.eq("firstName", "John"), ConditionFactory.gt("id", 1));
+            Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("id", 1));
 
             SQLBuilder builder = PAC.parse(cond, UserAccount.class);
             assertNotNull(builder);
@@ -1454,7 +1454,7 @@ public class SQLBuilder12Test extends TestBase {
 
             SQLBuilder builder = PAC.select(UserAccount.class, "u1", "user1", excludeUser1, UserAccount.class, "u2", "user2", excludeUser2);
 
-            String sql = builder.from("USER_ACCOUNT u1, USER_ACCOUNT u2").where(ConditionFactory.eq("u1.id", "u2.id")).sql();
+            String sql = builder.from("USER_ACCOUNT u1, USER_ACCOUNT u2").where(Filters.eq("u1.id", "u2.id")).sql();
 
             assertTrue(sql.contains("u1.ID AS \"user1.id\""));
             assertTrue(sql.contains("u2.ID AS \"user2.id\""));
@@ -1707,7 +1707,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.update("userProfile");
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("UPDATE userProfile"));
             assertTrue(sql.contains("firstName = ?"));
         }
@@ -1717,7 +1717,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.update(UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("UPDATE userProfile"));
             assertTrue(sql.contains("firstName = ?"));
         }
@@ -1727,7 +1727,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.deleteFrom("userProfile");
             assertNotNull(builder);
 
-            String sql = builder.where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("DELETE FROM userProfile"));
         }
 
@@ -1736,7 +1736,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.deleteFrom(UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.where(ConditionFactory.eq("id", 1)).sql();
+            String sql = builder.where(Filters.eq("id", 1)).sql();
             assertTrue(sql.contains("DELETE FROM userProfile"));
         }
 
@@ -1842,7 +1842,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testParse() {
-            Condition cond = ConditionFactory.and(ConditionFactory.eq("firstName", "John"), ConditionFactory.eq("isActive", true));
+            Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.eq("isActive", true));
 
             SQLBuilder builder = PLC.parse(cond, UserProfile.class);
             assertNotNull(builder);

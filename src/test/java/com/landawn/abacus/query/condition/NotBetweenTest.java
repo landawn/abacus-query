@@ -10,7 +10,7 @@ import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.NotBetween;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class NotBetweenTest extends TestBase {

@@ -16,7 +16,7 @@ package com.landawn.abacus.query.condition;
 
 import java.util.Map;
 
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 
 /**
  * Represents an ON clause used in SQL JOIN operations.

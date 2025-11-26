@@ -10,7 +10,7 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Union;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 
 public class UnionTest extends TestBase {
 

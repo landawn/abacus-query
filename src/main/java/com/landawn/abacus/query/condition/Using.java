@@ -16,7 +16,7 @@ package com.landawn.abacus.query.condition;
 
 import java.util.Collection;
 
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.N;
 
 /**

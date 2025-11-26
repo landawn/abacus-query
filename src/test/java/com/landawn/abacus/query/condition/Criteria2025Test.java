@@ -115,7 +115,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGetByOperator() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John"));
+        criteria.where(Filters.equal("name", "John"));
         List<Condition> whereConditions = criteria.get(Operator.WHERE);
         assertNotNull(whereConditions);
     }
@@ -123,7 +123,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testClear() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John"));
+        criteria.where(Filters.equal("name", "John"));
         criteria.clear();
         assertTrue(criteria.getConditions().isEmpty());
     }
@@ -131,7 +131,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGetParameters() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("age", 30));
+        criteria.where(Filters.equal("age", 30));
         List<Object> params = criteria.getParameters();
         assertNotNull(params);
     }
@@ -139,7 +139,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testClearParameters() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("age", 30));
+        criteria.where(Filters.equal("age", 30));
         criteria.clearParameters();
         // Parameters should be cleared
     }
@@ -176,7 +176,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testJoinVarargs() {
         Criteria criteria = new Criteria();
-        Join join = new LeftJoin("orders", ConditionFactory.expr("users.id = orders.user_id"));
+        Join join = new LeftJoin("orders", Filters.expr("users.id = orders.user_id"));
         Criteria result = criteria.join(join);
         assertNotNull(result);
         assertEquals(1, criteria.getJoins().size());
@@ -185,8 +185,8 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testJoinCollection() {
         Criteria criteria = new Criteria();
-        Join join1 = new LeftJoin("orders", ConditionFactory.expr("users.id = orders.user_id"));
-        Join join2 = new InnerJoin("products", ConditionFactory.expr("orders.product_id = products.id"));
+        Join join1 = new LeftJoin("orders", Filters.expr("users.id = orders.user_id"));
+        Join join2 = new InnerJoin("products", Filters.expr("orders.product_id = products.id"));
         Criteria result = criteria.join(Arrays.asList(join1, join2));
         assertNotNull(result);
         assertEquals(2, criteria.getJoins().size());
@@ -202,7 +202,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testJoinEntityWithCondition() {
         Criteria criteria = new Criteria();
-        Condition condition = ConditionFactory.equal("user_id", "id");
+        Condition condition = Filters.equal("user_id", "id");
         Criteria result = criteria.join("orders", condition);
         assertNotNull(result);
     }
@@ -210,7 +210,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testWhereCondition() {
         Criteria criteria = new Criteria();
-        Condition condition = ConditionFactory.equal("name", "John");
+        Condition condition = Filters.equal("name", "John");
         Criteria result = criteria.where(condition);
         assertNotNull(result);
         assertNotNull(criteria.getWhere());
@@ -226,7 +226,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGroupByCondition() {
         Criteria criteria = new Criteria();
-        Condition condition = ConditionFactory.expr("department");
+        Condition condition = Filters.expr("department");
         Criteria result = criteria.groupBy(condition);
         assertNotNull(result);
     }
@@ -286,7 +286,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testHavingCondition() {
         Criteria criteria = new Criteria();
-        Condition condition = ConditionFactory.expr("COUNT(*) > 5");
+        Condition condition = Filters.expr("COUNT(*) > 5");
         Criteria result = criteria.having(condition);
         assertNotNull(result);
     }
@@ -329,7 +329,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testOrderByCondition() {
         Criteria criteria = new Criteria();
-        Condition condition = ConditionFactory.expr("name ASC");
+        Condition condition = Filters.expr("name ASC");
         Criteria result = criteria.orderBy(condition);
         assertNotNull(result);
     }
@@ -413,7 +413,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testChainedOperations() {
         Criteria criteria = new Criteria();
-        Criteria result = criteria.where(ConditionFactory.equal("status", "active"))
+        Criteria result = criteria.where(Filters.equal("status", "active"))
                 .groupBy("department")
                 .having("COUNT(*) > 5")
                 .orderByDesc("created_date")
@@ -429,8 +429,8 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testMultipleWhereConditions() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("status", "active"));
-        criteria.where(ConditionFactory.greaterThan("age", 18));
+        criteria.where(Filters.equal("status", "active"));
+        criteria.where(Filters.greaterThan("age", 18));
         assertNotNull(criteria.getWhere());
     }
 
@@ -444,7 +444,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGetConditionsMultipleTypes() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John"));
+        criteria.where(Filters.equal("name", "John"));
         criteria.groupBy("department");
         criteria.having("COUNT(*) > 5");
         criteria.orderBy("name");
@@ -457,7 +457,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testClearAll() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John")).groupBy("department").having("COUNT(*) > 5").orderBy("name").limit(10);
+        criteria.where(Filters.equal("name", "John")).groupBy("department").having("COUNT(*) > 5").orderBy("name").limit(10);
 
         criteria.clear();
 
@@ -467,7 +467,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testPreselectChaining() {
         Criteria criteria = new Criteria();
-        Criteria result = criteria.preselect("DISTINCT").where(ConditionFactory.equal("status", "active"));
+        Criteria result = criteria.preselect("DISTINCT").where(Filters.equal("status", "active"));
         assertNotNull(result);
         assertEquals("DISTINCT", criteria.preselect());
     }
@@ -475,7 +475,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGetParametersWithMultipleConditions() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John")).where(ConditionFactory.equal("age", 30)).where(ConditionFactory.equal("status", "active"));
+        criteria.where(Filters.equal("name", "John")).where(Filters.equal("age", 30)).where(Filters.equal("status", "active"));
 
         List<Object> params = criteria.getParameters();
         assertNotNull(params);

@@ -11,7 +11,7 @@ import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.In;
@@ -24,7 +24,7 @@ public class CellTest extends TestBase {
 
     @Test
     public void testConstructor() {
-        Equal eq = ConditionFactory.eq("status", "active");
+        Equal eq = Filters.eq("status", "active");
         Cell cell = new Cell(Operator.NOT, eq);
 
         Assertions.assertNotNull(cell);
@@ -34,7 +34,7 @@ public class CellTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Equal eq = ConditionFactory.eq("name", "John");
+        Equal eq = Filters.eq("name", "John");
         Cell cell = new Cell(Operator.NOT, eq);
 
         Equal retrieved = cell.getCondition();
@@ -43,7 +43,7 @@ public class CellTest extends TestBase {
 
     @Test
     public void testGetParametersWithCondition() {
-        Between between = ConditionFactory.between("age", 18, 65);
+        Between between = Filters.between("age", 18, 65);
         Cell cell = new Cell(Operator.NOT, between);
 
         List<Object> params = cell.getParameters();
@@ -54,7 +54,7 @@ public class CellTest extends TestBase {
 
     @Test
     public void testClearParametersWithCondition() {
-        In in = ConditionFactory.in("id", Arrays.asList(1, 2, 3));
+        In in = Filters.in("id", Arrays.asList(1, 2, 3));
         Cell cell = new Cell(Operator.NOT, in);
 
         cell.clearParameters();
@@ -70,7 +70,7 @@ public class CellTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Equal eq = ConditionFactory.eq("status", "active");
+        Equal eq = Filters.eq("status", "active");
         Cell original = new Cell(Operator.NOT, eq);
 
         Cell copy = original.copy();
@@ -83,7 +83,7 @@ public class CellTest extends TestBase {
 
     @Test
     public void testToString() {
-        Equal eq = ConditionFactory.eq("name", "John");
+        Equal eq = Filters.eq("name", "John");
         Cell cell = new Cell(Operator.NOT, eq);
 
         String result = cell.toString();
@@ -93,7 +93,7 @@ public class CellTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Equal eq = ConditionFactory.eq("userName", "test");
+        Equal eq = Filters.eq("userName", "test");
         Cell cell = new Cell(Operator.NOT, eq);
 
         String result = cell.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
@@ -102,8 +102,8 @@ public class CellTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Equal eq1 = ConditionFactory.eq("id", 1);
-        Equal eq2 = ConditionFactory.eq("id", 1);
+        Equal eq1 = Filters.eq("id", 1);
+        Equal eq2 = Filters.eq("id", 1);
 
         Cell cell1 = new Cell(Operator.NOT, eq1);
         Cell cell2 = new Cell(Operator.NOT, eq2);
@@ -117,8 +117,8 @@ public class CellTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        Equal eq1 = ConditionFactory.eq("id", 1);
-        Equal eq2 = ConditionFactory.eq("id", 1);
+        Equal eq1 = Filters.eq("id", 1);
+        Equal eq2 = Filters.eq("id", 1);
 
         Cell cell1 = new Cell(Operator.NOT, eq1);
         Cell cell2 = new Cell(Operator.NOT, eq2);
@@ -128,8 +128,8 @@ public class CellTest extends TestBase {
 
     @Test
     public void testAnd() {
-        Cell cell = new Cell(Operator.NOT, ConditionFactory.eq("active", true));
-        Equal eq = ConditionFactory.eq("status", "published");
+        Cell cell = new Cell(Operator.NOT, Filters.eq("active", true));
+        Equal eq = Filters.eq("status", "published");
 
         And and = cell.and(eq);
 
@@ -139,8 +139,8 @@ public class CellTest extends TestBase {
 
     @Test
     public void testOr() {
-        Cell cell = new Cell(Operator.EXISTS, ConditionFactory.subQuery("SELECT 1"));
-        GreaterThan gt = ConditionFactory.gt("count", 0);
+        Cell cell = new Cell(Operator.EXISTS, Filters.subQuery("SELECT 1"));
+        GreaterThan gt = Filters.gt("count", 0);
 
         Or or = cell.or(gt);
 
@@ -150,7 +150,7 @@ public class CellTest extends TestBase {
 
     @Test
     public void testNot() {
-        Cell cell = new Cell(Operator.EXISTS, ConditionFactory.subQuery("SELECT id FROM users"));
+        Cell cell = new Cell(Operator.EXISTS, Filters.subQuery("SELECT id FROM users"));
 
         Not not = cell.not();
 

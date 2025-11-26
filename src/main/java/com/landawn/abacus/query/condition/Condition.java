@@ -64,8 +64,8 @@ import com.landawn.abacus.util.NamingPolicy;
  * List<Object> params = combined.getParameters(); // [18, "active"]
  * }</pre>
  * 
- * @see ConditionFactory
- * @see ConditionFactory.CF
+ * @see Filters
+ * @see Filters.CF
  * @see AbstractCondition
  */
 public interface Condition {

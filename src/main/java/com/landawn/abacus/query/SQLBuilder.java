@@ -35,7 +35,7 @@ import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.In;
@@ -288,7 +288,7 @@ import com.landawn.abacus.util.u.Optional;
  *   <li><b>Concurrent Usage:</b> Multiple threads can use separate builder instances safely</li>
  * </ul>
  *
- * @see ConditionFactory
+ * @see Filters
  * @see Condition
  * @see Expression
  * @see AbstractQueryBuilder
@@ -4503,8 +4503,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @return a new SQLBuilder instance containing only the condition SQL
          * @throws IllegalArgumentException if cond is null
          * 
-         * @see ConditionFactory
-         * @see ConditionFactory.CF
+         * @see Filters
+         * @see Filters.CF
          */
         public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");

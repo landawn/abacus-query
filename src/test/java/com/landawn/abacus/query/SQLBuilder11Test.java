@@ -22,7 +22,7 @@ import com.landawn.abacus.query.SQLBuilder.ACSB;
 import com.landawn.abacus.query.SQLBuilder.LCSB;
 import com.landawn.abacus.query.SQLBuilder.SCSB;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.util.N;
 
@@ -392,7 +392,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.update("account");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'ACTIVE'").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).sql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
             Assertions.assertTrue(sql.contains("account"));
@@ -403,7 +403,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.update("account", Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'ACTIVE'").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).sql();
             Assertions.assertNotNull(sql);
         }
 
@@ -412,7 +412,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.update(Account.class);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(ConditionFactory.eq("id", 1)).sql());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).sql());
         }
 
         @Test
@@ -421,7 +421,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.update(Account.class, excluded);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(ConditionFactory.eq("id", 1)).sql());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).sql());
         }
 
         @Test
@@ -429,7 +429,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.deleteFrom("account");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(ConditionFactory.eq("status", "'DELETED'")).sql();
+            String sql = sb.where(Filters.eq("status", "'DELETED'")).sql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM"));
             Assertions.assertTrue(sql.contains("account"));
@@ -440,7 +440,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.deleteFrom("account", Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(ConditionFactory.eq("status", "'DELETED'")).sql();
+            String sql = sb.where(Filters.eq("status", "'DELETED'")).sql();
             Assertions.assertNotNull(sql);
         }
 
@@ -449,7 +449,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.deleteFrom(Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(ConditionFactory.eq("status", "'DELETED'")).sql();
+            String sql = sb.where(Filters.eq("status", "'DELETED'")).sql();
             Assertions.assertNotNull(sql);
         }
 
@@ -699,7 +699,7 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testParseCondition() {
-            Condition cond = ConditionFactory.and(ConditionFactory.eq("status", "'ACTIVE'"), ConditionFactory.gt("balance", 1000));
+            Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000));
 
             SQLBuilder sb = SCSB.parse(cond, Account.class);
             Assertions.assertNotNull(sb);
@@ -733,7 +733,7 @@ public class SQLBuilder11Test extends TestBase {
         public void testComplexQueryWithConditions() {
             SQLBuilder sb = SCSB.select("firstName", "lastName")
                     .from("account")
-                    .where(ConditionFactory.eq("status", "'ACTIVE'").and(ConditionFactory.gt("age", 18)))
+                    .where(Filters.eq("status", "'ACTIVE'").and(Filters.gt("age", 18)))
                     .orderBy("lastName");
 
             Assertions.assertNotNull(sb);
@@ -954,7 +954,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.update("users");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'ACTIVE'").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).sql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
         }
@@ -964,7 +964,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.update("users", User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status").where(ConditionFactory.eq("id", 1)).sql();
+            String sql = sb.set("status").where(Filters.eq("id", 1)).sql();
             Assertions.assertNotNull(sql);
         }
 
@@ -973,7 +973,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.update(User.class);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(ConditionFactory.eq("id", 1)).sql());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).sql());
         }
 
         @Test
@@ -982,7 +982,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.update(User.class, excluded);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(ConditionFactory.eq("id", 1)).sql());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).sql());
         }
 
         @Test
@@ -990,7 +990,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.deleteFrom("users");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(ConditionFactory.eq("status", "'INACTIVE'")).sql();
+            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).sql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM"));
         }
@@ -1000,7 +1000,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.deleteFrom("users", User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(ConditionFactory.eq("status", "'INACTIVE'")).sql();
+            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).sql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1009,7 +1009,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.deleteFrom(User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(ConditionFactory.eq("status", "'INACTIVE'")).sql();
+            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).sql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1259,7 +1259,7 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testParseCondition() {
-            Condition cond = ConditionFactory.or(ConditionFactory.eq("status", "'ACTIVE'"), ConditionFactory.eq("status", "'PENDING'"));
+            Condition cond = Filters.or(Filters.eq("status", "'ACTIVE'"), Filters.eq("status", "'PENDING'"));
 
             SQLBuilder sb = ACSB.parse(cond, User.class);
             Assertions.assertNotNull(sb);
@@ -1292,9 +1292,9 @@ public class SQLBuilder11Test extends TestBase {
                     .from("users u")
                     .leftJoin("orders o")
                     .on("u.id = o.userId")
-                    .where(ConditionFactory.eq("u.status", "'ACTIVE'"))
+                    .where(Filters.eq("u.status", "'ACTIVE'"))
                     .groupBy("u.id", "u.firstName", "u.lastName")
-                    .having(ConditionFactory.gt("COUNT(o.id)", 5))
+                    .having(Filters.gt("COUNT(o.id)", 5))
                     .orderBy("u.lastName");
 
             Assertions.assertNotNull(sb);
@@ -1532,7 +1532,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.update("customers");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'PREMIUM'").where(ConditionFactory.gt("totalPurchases", 1000)).sql();
+            String sql = sb.set("status", "'PREMIUM'").where(Filters.gt("totalPurchases", 1000)).sql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
         }
@@ -1542,7 +1542,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.update("customers", Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status").where(ConditionFactory.eq("customerId", 100)).sql();
+            String sql = sb.set("status").where(Filters.eq("customerId", 100)).sql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1551,7 +1551,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.update(Customer.class);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(ConditionFactory.eq("customerId", 100)).sql());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("customerId", 100)).sql());
         }
 
         @Test
@@ -1560,7 +1560,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.update(Customer.class, excluded);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(ConditionFactory.eq("customerId", 100)).sql());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("customerId", 100)).sql());
         }
 
         @Test
@@ -1568,7 +1568,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.deleteFrom("customers");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(ConditionFactory.eq("status", "'INACTIVE'")).sql();
+            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).sql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM"));
         }
@@ -1578,7 +1578,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.deleteFrom("customers", Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(ConditionFactory.lt("lastLoginDate", "2020-01-01")).sql();
+            String sql = sb.where(Filters.lt("lastLoginDate", "2020-01-01")).sql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1587,7 +1587,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.deleteFrom(Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(ConditionFactory.isNull("emailAddress")).sql();
+            String sql = sb.where(Filters.isNull("emailAddress")).sql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1781,8 +1781,8 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testParseCondition() {
-            Condition cond = ConditionFactory.and(ConditionFactory.eq("status", "'ACTIVE'"),
-                    ConditionFactory.between("registrationDate", "2020-01-01", "2023-12-31"));
+            Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"),
+                    Filters.between("registrationDate", "2020-01-01", "2023-12-31"));
 
             SQLBuilder sb = LCSB.parse(cond, Customer.class);
             Assertions.assertNotNull(sb);
@@ -1795,8 +1795,8 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testParseComplexCondition() {
-            Condition cond = ConditionFactory.or(ConditionFactory.and(ConditionFactory.eq("status", "'PREMIUM'"), ConditionFactory.gt("totalPurchases", 5000)),
-                    ConditionFactory.and(ConditionFactory.eq("status", "'GOLD'"), ConditionFactory.gt("totalPurchases", 3000)));
+            Condition cond = Filters.or(Filters.and(Filters.eq("status", "'PREMIUM'"), Filters.gt("totalPurchases", 5000)),
+                    Filters.and(Filters.eq("status", "'GOLD'"), Filters.gt("totalPurchases", 3000)));
 
             SQLBuilder sb = LCSB.parse(cond, Customer.class);
             Assertions.assertNotNull(sb);
@@ -1845,9 +1845,9 @@ public class SQLBuilder11Test extends TestBase {
                     .from("customers c")
                     .innerJoin("orders o")
                     .on("c.customerId = o.customerId")
-                    .where(ConditionFactory.eq("c.status", "'ACTIVE'"))
+                    .where(Filters.eq("c.status", "'ACTIVE'"))
                     .groupBy("c.customerId", "c.firstName", "c.lastName")
-                    .having(ConditionFactory.gt("SUM(o.amount)", 10000))
+                    .having(Filters.gt("SUM(o.amount)", 10000))
                     .orderBy("SUM(o.amount) DESC");
 
             Assertions.assertNotNull(sb);
@@ -1861,9 +1861,9 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testQueryWithSubquery() {
-            SubQuery subquery = ConditionFactory.subQuery("orders", N.asList("customerId"), ConditionFactory.gt("amount", 1000));
+            SubQuery subquery = Filters.subQuery("orders", N.asList("customerId"), Filters.gt("amount", 1000));
 
-            SQLBuilder sb = LCSB.select("*").from("customers").where(ConditionFactory.in("customerId", subquery));
+            SQLBuilder sb = LCSB.select("*").from("customers").where(Filters.in("customerId", subquery));
 
             Assertions.assertNotNull(sb);
             String sql = sb.sql();
@@ -1876,7 +1876,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.update("customers")
                     .set("status", "'INACTIVE'")
                     .set("lastModified", "CURRENT_TIMESTAMP")
-                    .where(ConditionFactory.lt("lastLoginDate", "2020-01-01"));
+                    .where(Filters.lt("lastLoginDate", "2020-01-01"));
 
             Assertions.assertNotNull(sb);
             String sql = sb.sql();
@@ -1897,7 +1897,7 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testQueryWithLimit() {
-            SQLBuilder sb = LCSB.select("*").from("customers").where(ConditionFactory.eq("status", "'ACTIVE'")).orderBy("registrationDate DESC").limit(10);
+            SQLBuilder sb = LCSB.select("*").from("customers").where(Filters.eq("status", "'ACTIVE'")).orderBy("registrationDate DESC").limit(10);
 
             Assertions.assertNotNull(sb);
             String sql = sb.sql();
@@ -1907,7 +1907,7 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testQueryWithLimitAndOffset() {
-            SQLBuilder sb = LCSB.select("*").from("customers").where(ConditionFactory.eq("status", "'ACTIVE'")).orderBy("customerId").limit(10, 20);
+            SQLBuilder sb = LCSB.select("*").from("customers").where(Filters.eq("status", "'ACTIVE'")).orderBy("customerId").limit(10, 20);
 
             Assertions.assertNotNull(sb);
             String sql = sb.sql();
@@ -1917,9 +1917,9 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testUnionQuery() {
-            SQLBuilder query1 = LCSB.select("firstName", "lastName").from("customers").where(ConditionFactory.eq("status", "'ACTIVE'"));
+            SQLBuilder query1 = LCSB.select("firstName", "lastName").from("customers").where(Filters.eq("status", "'ACTIVE'"));
 
-            SQLBuilder query2 = LCSB.select("firstName", "lastName").from("employees").where(ConditionFactory.eq("department", "'SALES'"));
+            SQLBuilder query2 = LCSB.select("firstName", "lastName").from("employees").where(Filters.eq("department", "'SALES'"));
 
             SQLBuilder sb = query1.union(query2);
 
@@ -1946,7 +1946,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select("status", "COUNT(*) as count", "AVG(totalPurchases) as avgPurchases", "MAX(lastLoginDate) as lastActive")
                     .from("customers")
                     .groupBy("status")
-                    .having(ConditionFactory.gt("COUNT(*)", 10));
+                    .having(Filters.gt("COUNT(*)", 10));
 
             Assertions.assertNotNull(sb);
             String sql = sb.sql();

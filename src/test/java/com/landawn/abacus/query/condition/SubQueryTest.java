@@ -13,7 +13,7 @@ import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class SubQueryTest extends TestBase {

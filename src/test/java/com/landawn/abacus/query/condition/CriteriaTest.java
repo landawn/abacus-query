@@ -14,7 +14,7 @@ import com.landawn.abacus.query.SQLBuilder.NSC;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Expression;
@@ -26,7 +26,7 @@ import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.Or;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Where;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.NamingPolicy;
 
@@ -34,7 +34,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testConstructor() {
-        Criteria criteria = ConditionFactory.criteria();
+        Criteria criteria = Filters.criteria();
 
         Assertions.assertNotNull(criteria);
         Assertions.assertEquals(Operator.EMPTY, criteria.getOperator());
@@ -44,49 +44,49 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testPreselect() {
-        Criteria criteria = ConditionFactory.criteria();
+        Criteria criteria = Filters.criteria();
         Assertions.assertNull(criteria.preselect());
     }
 
     @Test
     public void testDistinct() {
-        Criteria criteria = ConditionFactory.criteria().distinct();
+        Criteria criteria = Filters.criteria().distinct();
         Assertions.assertEquals("DISTINCT", criteria.preselect());
     }
 
     @Test
     public void testDistinctBy() {
-        Criteria criteria = ConditionFactory.criteria().distinctBy("department, location");
+        Criteria criteria = Filters.criteria().distinctBy("department, location");
         Assertions.assertEquals("DISTINCT(department, location)", criteria.preselect());
     }
 
     @Test
     public void testDistinctByEmpty() {
-        Criteria criteria = ConditionFactory.criteria().distinctBy("");
+        Criteria criteria = Filters.criteria().distinctBy("");
         Assertions.assertEquals("DISTINCT", criteria.preselect());
     }
 
     @Test
     public void testDistinctRow() {
-        Criteria criteria = ConditionFactory.criteria().distinctRow();
+        Criteria criteria = Filters.criteria().distinctRow();
         Assertions.assertEquals("DISTINCTROW", criteria.preselect());
     }
 
     @Test
     public void testDistinctRowBy() {
-        Criteria criteria = ConditionFactory.criteria().distinctRowBy("id, name");
+        Criteria criteria = Filters.criteria().distinctRowBy("id, name");
         Assertions.assertEquals("DISTINCTROW(id, name)", criteria.preselect());
     }
 
     @Test
     public void testPreselectCustom() {
-        Criteria criteria = ConditionFactory.criteria().preselect("CUSTOM");
+        Criteria criteria = Filters.criteria().preselect("CUSTOM");
         Assertions.assertEquals("CUSTOM", criteria.preselect());
     }
 
     @Test
     public void testJoinSingle() {
-        Criteria criteria = ConditionFactory.criteria().join("orders");
+        Criteria criteria = Filters.criteria().join("orders");
 
         List<Join> joins = criteria.getJoins();
         Assertions.assertEquals(1, joins.size());
@@ -95,8 +95,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testJoinWithCondition() {
-        Equal eq = ConditionFactory.eq("users.id", "orders.user_id");
-        Criteria criteria = ConditionFactory.criteria().join("orders", eq);
+        Equal eq = Filters.eq("users.id", "orders.user_id");
+        Criteria criteria = Filters.criteria().join("orders", eq);
 
         List<Join> joins = criteria.getJoins();
         Assertions.assertEquals(1, joins.size());
@@ -106,8 +106,8 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testJoinMultiple() {
         List<String> tables = Arrays.asList("orders", "order_items");
-        Equal eq = ConditionFactory.eq("orders.id", "order_items.order_id");
-        Criteria criteria = ConditionFactory.criteria().join(tables, eq);
+        Equal eq = Filters.eq("orders.id", "order_items.order_id");
+        Criteria criteria = Filters.criteria().join(tables, eq);
 
         List<Join> joins = criteria.getJoins();
         Assertions.assertEquals(1, joins.size());
@@ -116,9 +116,9 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testJoinArray() {
-        Join join1 = ConditionFactory.join("orders");
-        Join join2 = ConditionFactory.leftJoin("products");
-        Criteria criteria = ConditionFactory.criteria().join(join1, join2);
+        Join join1 = Filters.join("orders");
+        Join join2 = Filters.leftJoin("products");
+        Criteria criteria = Filters.criteria().join(join1, join2);
 
         List<Join> joins = criteria.getJoins();
         Assertions.assertEquals(2, joins.size());
@@ -126,8 +126,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testJoinCollection() {
-        List<Join> joinList = Arrays.asList(ConditionFactory.join("orders"), ConditionFactory.rightJoin("customers"));
-        Criteria criteria = ConditionFactory.criteria().join(joinList);
+        List<Join> joinList = Arrays.asList(Filters.join("orders"), Filters.rightJoin("customers"));
+        Criteria criteria = Filters.criteria().join(joinList);
 
         List<Join> joins = criteria.getJoins();
         Assertions.assertEquals(2, joins.size());
@@ -135,8 +135,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testWhere() {
-        Equal eq = ConditionFactory.eq("status", "active");
-        Criteria criteria = ConditionFactory.criteria().where(eq);
+        Equal eq = Filters.eq("status", "active");
+        Criteria criteria = Filters.criteria().where(eq);
 
         Cell where = criteria.getWhere();
         Assertions.assertNotNull(where);
@@ -146,7 +146,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testWhereString() {
-        Criteria criteria = ConditionFactory.criteria().where("age > 18");
+        Criteria criteria = Filters.criteria().where("age > 18");
 
         Cell where = criteria.getWhere();
         Assertions.assertNotNull(where);
@@ -155,8 +155,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testWhereWithWhereCondition() {
-        Where whereCondition = ConditionFactory.where(ConditionFactory.eq("id", 1));
-        Criteria criteria = ConditionFactory.criteria().where(whereCondition);
+        Where whereCondition = Filters.where(Filters.eq("id", 1));
+        Criteria criteria = Filters.criteria().where(whereCondition);
 
         Cell where = criteria.getWhere();
         Assertions.assertNotNull(where);
@@ -165,7 +165,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testGroupBy() {
-        Criteria criteria = ConditionFactory.criteria().groupBy("department", "location");
+        Criteria criteria = Filters.criteria().groupBy("department", "location");
 
         Cell groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
@@ -174,7 +174,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testGroupByWithDirection() {
-        Criteria criteria = ConditionFactory.criteria().groupBy("salary", SortDirection.DESC);
+        Criteria criteria = Filters.criteria().groupBy("salary", SortDirection.DESC);
 
         Cell groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
@@ -183,7 +183,7 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testGroupByCollection() {
         List<String> props = Arrays.asList("dept", "team");
-        Criteria criteria = ConditionFactory.criteria().groupBy(props);
+        Criteria criteria = Filters.criteria().groupBy(props);
 
         Cell groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
@@ -195,7 +195,7 @@ public class CriteriaTest extends TestBase {
         orders.put("department", SortDirection.ASC);
         orders.put("salary", SortDirection.DESC);
 
-        Criteria criteria = ConditionFactory.criteria().groupBy(orders);
+        Criteria criteria = Filters.criteria().groupBy(orders);
 
         Cell groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
@@ -203,8 +203,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testGroupByCondition() {
-        Expression expr = ConditionFactory.expr("YEAR(date)");
-        Criteria criteria = ConditionFactory.criteria().groupBy(expr);
+        Expression expr = Filters.expr("YEAR(date)");
+        Criteria criteria = Filters.criteria().groupBy(expr);
 
         Cell groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
@@ -213,8 +213,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testHaving() {
-        GreaterThan gt = ConditionFactory.gt("COUNT(*)", 5);
-        Criteria criteria = ConditionFactory.criteria().having(gt);
+        GreaterThan gt = Filters.gt("COUNT(*)", 5);
+        Criteria criteria = Filters.criteria().having(gt);
 
         Cell having = criteria.getHaving();
         Assertions.assertNotNull(having);
@@ -224,7 +224,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testHavingString() {
-        Criteria criteria = ConditionFactory.criteria().having("SUM(amount) > 1000");
+        Criteria criteria = Filters.criteria().having("SUM(amount) > 1000");
 
         Cell having = criteria.getHaving();
         Assertions.assertNotNull(having);
@@ -233,7 +233,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testOrderByAsc() {
-        Criteria criteria = ConditionFactory.criteria().orderByAsc("lastName", "firstName");
+        Criteria criteria = Filters.criteria().orderByAsc("lastName", "firstName");
 
         Cell orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
@@ -242,7 +242,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testOrderByDesc() {
-        Criteria criteria = ConditionFactory.criteria().orderByDesc("createdDate", "id");
+        Criteria criteria = Filters.criteria().orderByDesc("createdDate", "id");
 
         Cell orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
@@ -250,7 +250,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testOrderBy() {
-        Criteria criteria = ConditionFactory.criteria().orderBy("name", SortDirection.ASC);
+        Criteria criteria = Filters.criteria().orderBy("name", SortDirection.ASC);
 
         Cell orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
@@ -258,7 +258,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testOrderByMultiple() {
-        Criteria criteria = ConditionFactory.criteria().orderBy("dept", SortDirection.ASC, "salary", SortDirection.DESC);
+        Criteria criteria = Filters.criteria().orderBy("dept", SortDirection.ASC, "salary", SortDirection.DESC);
 
         Cell orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
@@ -270,7 +270,7 @@ public class CriteriaTest extends TestBase {
         orders.put("priority", SortDirection.DESC);
         orders.put("date", SortDirection.ASC);
 
-        Criteria criteria = ConditionFactory.criteria().orderBy(orders);
+        Criteria criteria = Filters.criteria().orderBy(orders);
 
         Cell orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
@@ -278,7 +278,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testLimit() {
-        Criteria criteria = ConditionFactory.criteria().limit(10);
+        Criteria criteria = Filters.criteria().limit(10);
 
         Limit limit = criteria.getLimit();
         Assertions.assertNotNull(limit);
@@ -287,7 +287,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testLimitWithOffset() {
-        Criteria criteria = ConditionFactory.criteria().limit(20, 10);
+        Criteria criteria = Filters.criteria().limit(20, 10);
 
         Limit limit = criteria.getLimit();
         Assertions.assertNotNull(limit);
@@ -297,7 +297,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testLimitString() {
-        Criteria criteria = ConditionFactory.criteria().limit("10 OFFSET 20");
+        Criteria criteria = Filters.criteria().limit("10 OFFSET 20");
 
         Limit limit = criteria.getLimit();
         Assertions.assertNotNull(limit);
@@ -305,8 +305,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testUnion() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT * FROM archived_orders");
-        Criteria criteria = ConditionFactory.criteria().union(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_orders");
+        Criteria criteria = Filters.criteria().union(subQuery);
 
         List<Cell> aggregations = criteria.getAggregation();
         Assertions.assertEquals(1, aggregations.size());
@@ -315,8 +315,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testUnionAll() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT * FROM temp_orders");
-        Criteria criteria = ConditionFactory.criteria().unionAll(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT * FROM temp_orders");
+        Criteria criteria = Filters.criteria().unionAll(subQuery);
 
         List<Cell> aggregations = criteria.getAggregation();
         Assertions.assertEquals(1, aggregations.size());
@@ -325,8 +325,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testIntersect() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM active_users");
-        Criteria criteria = ConditionFactory.criteria().intersect(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
+        Criteria criteria = Filters.criteria().intersect(subQuery);
 
         List<Cell> aggregations = criteria.getAggregation();
         Assertions.assertEquals(1, aggregations.size());
@@ -335,8 +335,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testExcept() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM blocked_users");
-        Criteria criteria = ConditionFactory.criteria().except(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM blocked_users");
+        Criteria criteria = Filters.criteria().except(subQuery);
 
         List<Cell> aggregations = criteria.getAggregation();
         Assertions.assertEquals(1, aggregations.size());
@@ -345,8 +345,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testMinus() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM inactive_users");
-        Criteria criteria = ConditionFactory.criteria().minus(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
+        Criteria criteria = Filters.criteria().minus(subQuery);
 
         List<Cell> aggregations = criteria.getAggregation();
         Assertions.assertEquals(1, aggregations.size());
@@ -355,10 +355,10 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Criteria criteria = ConditionFactory.criteria()
-                .join("orders", ConditionFactory.eq("users.id", "orders.user_id"))
-                .where(ConditionFactory.and(ConditionFactory.eq("status", "active"), ConditionFactory.gt("amount", 100)))
-                .having(ConditionFactory.gt("COUNT(*)", 5));
+        Criteria criteria = Filters.criteria()
+                .join("orders", Filters.eq("users.id", "orders.user_id"))
+                .where(Filters.and(Filters.eq("status", "active"), Filters.gt("amount", 100)))
+                .having(Filters.gt("COUNT(*)", 5));
 
         List<Object> params = criteria.getParameters();
 
@@ -370,9 +370,9 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        Criteria criteria = ConditionFactory.criteria()
-                .where(ConditionFactory.in("id", Arrays.asList(1, 2, 3)))
-                .having(ConditionFactory.between("count", 10, 100));
+        Criteria criteria = Filters.criteria()
+                .where(Filters.in("id", Arrays.asList(1, 2, 3)))
+                .having(Filters.between("count", 10, 100));
 
         criteria.clearParameters();
 
@@ -382,11 +382,11 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testClear() {
-        Criteria criteria = ConditionFactory.criteria()
+        Criteria criteria = Filters.criteria()
                 .join("orders")
-                .where(ConditionFactory.eq("active", true))
+                .where(Filters.eq("active", true))
                 .groupBy("department")
-                .having(ConditionFactory.gt("COUNT(*)", 5))
+                .having(Filters.gt("COUNT(*)", 5))
                 .orderBy("name")
                 .limit(10);
 
@@ -403,7 +403,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testGet() {
-        Criteria criteria = ConditionFactory.criteria().join("orders").join("products").where(ConditionFactory.eq("status", "active"));
+        Criteria criteria = Filters.criteria().join("orders").join("products").where(Filters.eq("status", "active"));
 
         List<Condition> joins = criteria.get(Operator.JOIN);
         Assertions.assertEquals(2, joins.size());
@@ -414,12 +414,12 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Criteria original = ConditionFactory.criteria()
+        Criteria original = Filters.criteria()
                 .distinct()
-                .join("orders", ConditionFactory.eq("users.id", "orders.user_id"))
-                .where(ConditionFactory.eq("active", true))
+                .join("orders", Filters.eq("users.id", "orders.user_id"))
+                .where(Filters.eq("active", true))
                 .groupBy("department")
-                .having(ConditionFactory.gt("COUNT(*)", 5))
+                .having(Filters.gt("COUNT(*)", 5))
                 .orderBy("name")
                 .limit(10);
 
@@ -437,12 +437,12 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testToString() {
-        Criteria criteria = ConditionFactory.criteria()
+        Criteria criteria = Filters.criteria()
                 .distinct()
-                .join("orders", ConditionFactory.eq("users.id", "orders.user_id"))
-                .where(ConditionFactory.eq("status", "active"))
+                .join("orders", Filters.eq("users.id", "orders.user_id"))
+                .where(Filters.eq("status", "active"))
                 .groupBy("department")
-                .having(ConditionFactory.gt("COUNT(*)", 5))
+                .having(Filters.gt("COUNT(*)", 5))
                 .orderBy("department")
                 .limit(10);
 
@@ -459,7 +459,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Criteria criteria = ConditionFactory.criteria().where(ConditionFactory.eq("firstName", "John")).orderBy("lastName");
+        Criteria criteria = Filters.criteria().where(Filters.eq("firstName", "John")).orderBy("lastName");
 
         String result = criteria.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
@@ -473,13 +473,13 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Criteria criteria1 = ConditionFactory.criteria().distinct().where(ConditionFactory.eq("id", 1));
+        Criteria criteria1 = Filters.criteria().distinct().where(Filters.eq("id", 1));
 
-        Criteria criteria2 = ConditionFactory.criteria().distinct().where(ConditionFactory.eq("id", 1));
+        Criteria criteria2 = Filters.criteria().distinct().where(Filters.eq("id", 1));
 
-        Criteria criteria3 = ConditionFactory.criteria().where(ConditionFactory.eq("id", 1));
+        Criteria criteria3 = Filters.criteria().where(Filters.eq("id", 1));
 
-        Criteria criteria4 = ConditionFactory.criteria().distinct().where(ConditionFactory.eq("id", 2));
+        Criteria criteria4 = Filters.criteria().distinct().where(Filters.eq("id", 2));
 
         Assertions.assertEquals(criteria1, criteria1);
         Assertions.assertEquals(criteria1, criteria2);
@@ -491,23 +491,23 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        Criteria criteria1 = ConditionFactory.criteria().distinctBy("name").where(ConditionFactory.eq("active", true)).limit(10);
+        Criteria criteria1 = Filters.criteria().distinctBy("name").where(Filters.eq("active", true)).limit(10);
 
-        Criteria criteria2 = ConditionFactory.criteria().distinctBy("name").where(ConditionFactory.eq("active", true)).limit(10);
+        Criteria criteria2 = Filters.criteria().distinctBy("name").where(Filters.eq("active", true)).limit(10);
 
         Assertions.assertEquals(criteria1.hashCode(), criteria2.hashCode());
     }
 
     @Test
     public void testComplexCriteria() {
-        Criteria criteria = ConditionFactory.criteria()
+        Criteria criteria = Filters.criteria()
                 .distinct()
-                .join("orders", ConditionFactory.eq("users.id", "orders.user_id"))
-                .join("payments", ConditionFactory.eq("orders.id", "payments.order_id"))
-                .where(ConditionFactory.and(ConditionFactory.eq("users.status", "active"), ConditionFactory.gt("orders.amount", 100),
-                        ConditionFactory.between("orders.date", "2023-01-01", "2023-12-31")))
+                .join("orders", Filters.eq("users.id", "orders.user_id"))
+                .join("payments", Filters.eq("orders.id", "payments.order_id"))
+                .where(Filters.and(Filters.eq("users.status", "active"), Filters.gt("orders.amount", 100),
+                        Filters.between("orders.date", "2023-01-01", "2023-12-31")))
                 .groupBy("users.id", "users.name")
-                .having(ConditionFactory.and(ConditionFactory.gt("COUNT(*)", 5), ConditionFactory.lt("SUM(orders.amount)", 10000)))
+                .having(Filters.and(Filters.gt("COUNT(*)", 5), Filters.lt("SUM(orders.amount)", 10000)))
                 .orderBy("total_amount", SortDirection.DESC, "user_name", SortDirection.ASC)
                 .limit(20, 100);
 
@@ -532,7 +532,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testReplaceClause() {
-        Criteria criteria = ConditionFactory.criteria().where(ConditionFactory.eq("id", 1)).where(ConditionFactory.eq("id", 2)); // Should replace the first where
+        Criteria criteria = Filters.criteria().where(Filters.eq("id", 1)).where(Filters.eq("id", 2)); // Should replace the first where
 
         Cell where = criteria.getWhere();
         Equal eq = where.getCondition();
@@ -541,7 +541,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testMultipleGroupBy() {
-        Criteria criteria = ConditionFactory.criteria().groupBy("dept", SortDirection.ASC, "team", SortDirection.DESC, "member", SortDirection.ASC);
+        Criteria criteria = Filters.criteria().groupBy("dept", SortDirection.ASC, "team", SortDirection.DESC, "member", SortDirection.ASC);
 
         Cell groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
@@ -549,7 +549,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testMultipleOrderBy() {
-        Criteria criteria = ConditionFactory.criteria().orderBy("priority", SortDirection.DESC, "date", SortDirection.ASC, "id", SortDirection.ASC);
+        Criteria criteria = Filters.criteria().orderBy("priority", SortDirection.DESC, "date", SortDirection.ASC, "id", SortDirection.ASC);
 
         Cell orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
@@ -557,25 +557,25 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testAnd() {
-        Criteria criteria = ConditionFactory.criteria().where(ConditionFactory.eq("id", 1));
+        Criteria criteria = Filters.criteria().where(Filters.eq("id", 1));
 
-        And and = criteria.and(ConditionFactory.eq("status", "active"));
+        And and = criteria.and(Filters.eq("status", "active"));
         Assertions.assertNotNull(and);
         Assertions.assertEquals(2, and.getConditions().size());
     }
 
     @Test
     public void testOr() {
-        Criteria criteria = ConditionFactory.criteria().where(ConditionFactory.eq("type", "A"));
+        Criteria criteria = Filters.criteria().where(Filters.eq("type", "A"));
 
-        Or or = criteria.or(ConditionFactory.eq("type", "B"));
+        Or or = criteria.or(Filters.eq("type", "B"));
         Assertions.assertNotNull(or);
         Assertions.assertEquals(2, or.getConditions().size());
     }
 
     @Test
     public void testNot() {
-        Criteria criteria = ConditionFactory.criteria().where(ConditionFactory.eq("active", true));
+        Criteria criteria = Filters.criteria().where(Filters.eq("active", true));
 
         Not not = criteria.not();
         Assertions.assertNotNull(not);

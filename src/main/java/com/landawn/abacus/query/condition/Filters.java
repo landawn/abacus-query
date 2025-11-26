@@ -39,7 +39,7 @@ import com.landawn.abacus.util.N;
  * secure SQL queries that prevent SQL injection attacks while maintaining optimal performance through
  * prepared statement usage and intelligent query optimization strategies.
  *
- * <p>The {@code ConditionFactory} class addresses critical challenges in enterprise database programming
+ * <p>The {@code Filters} class addresses critical challenges in enterprise database programming
  * by providing a fluent, type-safe API for constructing complex SQL WHERE clauses, JOIN conditions,
  * and subquery predicates. It supports the full spectrum of SQL operators and logical constructs,
  * enabling developers to build sophisticated queries programmatically while maintaining code readability
@@ -144,34 +144,34 @@ import com.landawn.abacus.util.N;
  * <p><b>Common Usage Patterns:</b>
  * <pre>{@code
  * // Basic equality and comparison conditions
- * Condition userActive = ConditionFactory.eq("status", "ACTIVE");
- * Condition adultUsers = ConditionFactory.ge("age", 18);
- * Condition recentOrders = ConditionFactory.gt("order_date", lastWeek);
+ * Condition userActive = Filters.eq("status", "ACTIVE");
+ * Condition adultUsers = Filters.ge("age", 18);
+ * Condition recentOrders = Filters.gt("order_date", lastWeek);
  *
  * // Complex logical conditions with proper precedence
- * Condition complexFilter = ConditionFactory.and(
- *     ConditionFactory.eq("department", "Engineering"),
- *     ConditionFactory.or(
- *         ConditionFactory.gt("salary", 75000),
- *         ConditionFactory.eq("level", "Senior")
+ * Condition complexFilter = Filters.and(
+ *     Filters.eq("department", "Engineering"),
+ *     Filters.or(
+ *         Filters.gt("salary", 75000),
+ *         Filters.eq("level", "Senior")
  *     ),
- *     ConditionFactory.isNotNull("manager_id")
+ *     Filters.isNotNull("manager_id")
  * );
  *
  * // Collection-based conditions for efficient IN operations
  * List<String> validStatuses = Arrays.asList("PENDING", "APPROVED", "ACTIVE");
- * Condition statusFilter = ConditionFactory.in("status", validStatuses);
+ * Condition statusFilter = Filters.in("status", validStatuses);
  *
  * // Pattern matching for flexible text search
- * Condition emailFilter = ConditionFactory.like("email", "%@company.com");
- * Condition namePattern = ConditionFactory.regex("name", "^[A-Z][a-z]+ [A-Z][a-z]+$");
+ * Condition emailFilter = Filters.like("email", "%@company.com");
+ * Condition namePattern = Filters.regex("name", "^[A-Z][a-z]+ [A-Z][a-z]+$");
  *
  * // Range conditions for efficient database queries
- * Condition priceRange = ConditionFactory.between("price", 100.0, 500.0);
- * Condition dateRange = ConditionFactory.between("created_date", startDate, endDate);
+ * Condition priceRange = Filters.between("price", 100.0, 500.0);
+ * Condition dateRange = Filters.between("created_date", startDate, endDate);
  *
  * // Subquery conditions for complex business logic
- * Condition hasOrders = ConditionFactory.exists(
+ * Condition hasOrders = Filters.exists(
  *     "SELECT 1 FROM orders WHERE customer_id = customers.id AND status = 'COMPLETED'"
  * );
  * }</pre>
@@ -186,51 +186,51 @@ import com.landawn.abacus.util.N;
  *
  *         // Add conditions based on provided criteria
  *         if (criteria.getName() != null) {
- *             conditions.add(ConditionFactory.like("name", "%" + criteria.getName() + "%"));
+ *             conditions.add(Filters.like("name", "%" + criteria.getName() + "%"));
  *         }
  *
  *         if (criteria.getDepartment() != null) {
- *             conditions.add(ConditionFactory.eq("department", criteria.getDepartment()));
+ *             conditions.add(Filters.eq("department", criteria.getDepartment()));
  *         }
  *
  *         if (criteria.getMinAge() != null) {
- *             conditions.add(ConditionFactory.ge("age", criteria.getMinAge()));
+ *             conditions.add(Filters.ge("age", criteria.getMinAge()));
  *         }
  *
  *         if (criteria.getMaxAge() != null) {
- *             conditions.add(ConditionFactory.le("age", criteria.getMaxAge()));
+ *             conditions.add(Filters.le("age", criteria.getMaxAge()));
  *         }
  *
  *         if (criteria.getSkills() != null && !criteria.getSkills().isEmpty()) {
- *             conditions.add(ConditionFactory.exists(
+ *             conditions.add(Filters.exists(
  *                 "SELECT 1 FROM user_skills WHERE user_id = users.id AND skill IN (" +
  *                 criteria.getSkills().stream().map(s -> "?").collect(Collectors.joining(",")) + ")"
  *             ));
  *         }
  *
  *         // Combine all conditions with AND logic
- *         return conditions.isEmpty() ? ConditionFactory.alwaysTrue() :
- *                conditions.stream().reduce(ConditionFactory::and).orElse(ConditionFactory.alwaysTrue());
+ *         return conditions.isEmpty() ? Filters.alwaysTrue() :
+ *                conditions.stream().reduce(Filters::and).orElse(Filters.alwaysTrue());
  *     }
  *
  *     // Complex join condition building
  *     public static Condition buildUserOrderJoinCondition(OrderSearchCriteria orderCriteria) {
- *         Condition baseJoin = ConditionFactory.eq("users.id", "orders.customer_id");
+ *         Condition baseJoin = Filters.eq("users.id", "orders.customer_id");
  *
  *         List<Condition> orderConditions = new ArrayList<>();
  *         orderConditions.add(baseJoin);
  *
  *         if (orderCriteria.getMinTotal() != null) {
- *             orderConditions.add(ConditionFactory.ge("orders.total_amount", orderCriteria.getMinTotal()));
+ *             orderConditions.add(Filters.ge("orders.total_amount", orderCriteria.getMinTotal()));
  *         }
  *
  *         if (orderCriteria.getDateRange() != null) {
- *             orderConditions.add(ConditionFactory.between("orders.order_date",
+ *             orderConditions.add(Filters.between("orders.order_date",
  *                 orderCriteria.getDateRange().getStart(),
  *                 orderCriteria.getDateRange().getEnd()));
  *         }
  *
- *         return orderConditions.stream().reduce(ConditionFactory::and).orElse(baseJoin);
+ *         return orderConditions.stream().reduce(Filters::and).orElse(baseJoin);
  *     }
  * }
  * }</pre>
@@ -323,7 +323,7 @@ import com.landawn.abacus.util.N;
  * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/PreparedStatement.html">PreparedStatement</a>
  * @see <a href="https://en.wikipedia.org/wiki/SQL_injection">SQL Injection Prevention</a>
  */
-public class ConditionFactory {
+public class Filters {
     /**
      * Expression representing a question mark literal ("?") for use in parameterized SQL queries.
      * This constant is used when creating conditions with placeholders for prepared statements.
@@ -331,7 +331,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a parameterized condition
-     * Equal condition = ConditionFactory.eq("age"); // Uses QME internally
+     * Equal condition = Filters.eq("age"); // Uses QME internally
      * }</pre>
      */
     public static final Expression QME = Expr.of(SK.QUESTION_MARK);
@@ -351,7 +351,7 @@ public class ConditionFactory {
 
     private static final Expression ALWAYS_FALSE = Expression.of("1 > 2");
 
-    private ConditionFactory() {
+    private Filters() {
         // No instance;
     }
 
@@ -361,8 +361,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition condition = includeFilter ? ConditionFactory.eq("status", "active") 
-     *                                    : ConditionFactory.alwaysTrue();
+     * Condition condition = includeFilter ? Filters.eq("status", "active") 
+     *                                    : Filters.alwaysTrue();
      * }</pre>
      *
      * @return an Expression that always evaluates to true (1 &lt; 2)
@@ -414,7 +414,7 @@ public class ConditionFactory {
      * @return a Not condition that wraps and negates the provided condition
      * @see Not
      * @see Condition
-     * @see ConditionFactory
+     * @see Filters
      */
     public static Not not(final Condition condition) {
         return condition.not();
@@ -426,7 +426,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty prop = ConditionFactory.namedProperty("user_name");
+     * NamedProperty prop = Filters.namedProperty("user_name");
      * }</pre>
      *
      * @param propName the name of the property/column
@@ -442,7 +442,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression expr = ConditionFactory.expr("UPPER(name) = 'JOHN'");
+     * Expression expr = Filters.expr("UPPER(name) = 'JOHN'");
      * }</pre>
      *
      * @param literal the SQL expression as a string
@@ -458,7 +458,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Binary condition = ConditionFactory.binary("price", Operator.GREATER_THAN, 100);
+     * Binary condition = Filters.binary("price", Operator.GREATER_THAN, 100);
      * }</pre>
      *
      * @param propName the property/column name
@@ -475,7 +475,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Equal condition = ConditionFactory.equal("username", "john_doe");
+     * Equal condition = Filters.equal("username", "john_doe");
      * }</pre>
      *
      * @param propName the property/column name
@@ -492,7 +492,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Equal condition = ConditionFactory.equal("user_id");
+     * Equal condition = Filters.equal("user_id");
      * // Results in SQL like: WHERE user_id = ?
      * }</pre>
      *
@@ -510,7 +510,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Equal condition = ConditionFactory.eq("status", "active");
+     * Equal condition = Filters.eq("status", "active");
      * }</pre>
      *
      * @param propName the property/column name
@@ -527,7 +527,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Equal condition = ConditionFactory.eq("email");
+     * Equal condition = Filters.eq("email");
      * // Results in SQL like: WHERE email = ?
      * }</pre>
      *
@@ -539,13 +539,13 @@ public class ConditionFactory {
         return eq(propName, QME);
     }
 
-    //    // The method eqOr(String, Object[]) is ambiguous for the type ConditionFactory
+    //    // The method eqOr(String, Object[]) is ambiguous for the type Filters
     //    /**
     //     * Creates an OR condition where the property equals any of the provided values.
     //     * 
     //     * <p><b>Usage Examples:</b></p>
     //     * <pre>{@code
-    //     * Or condition = ConditionFactory.eqOr("status", "active", "pending", "approved");
+    //     * Or condition = Filters.eqOr("status", "active", "pending", "approved");
     //     * // Results in SQL like: WHERE status = 'active' OR status = 'pending' OR status = 'approved'
     //     * }</pre>
     //     *
@@ -575,7 +575,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> statuses = Arrays.asList("active", "pending");
-     * Or condition = ConditionFactory.eqOr("status", statuses);
+     * Or condition = Filters.eqOr("status", statuses);
      * }</pre>
      *
      * @param propName the property/column name
@@ -607,7 +607,7 @@ public class ConditionFactory {
      * Map<String, Object> props = new HashMap<>();
      * props.put("name", "John");
      * props.put("email", "john@example.com");
-     * Or condition = ConditionFactory.eqOr(props);
+     * Or condition = Filters.eqOr(props);
      * // Results in SQL like: WHERE name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
@@ -647,7 +647,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com");
-     * Or condition = ConditionFactory.eqOr(user);
+     * Or condition = Filters.eqOr(user);
      * // Results in SQL like: WHERE name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
@@ -665,7 +665,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
-     * Or condition = ConditionFactory.eqOr(user, Arrays.asList("name", "email"));
+     * Or condition = Filters.eqOr(user, Arrays.asList("name", "email"));
      * // Only uses name and email, ignores age
      * }</pre>
      *
@@ -705,7 +705,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = ConditionFactory.eqOr("name", "John", "email", "john@example.com");
+     * Or condition = Filters.eqOr("name", "John", "email", "john@example.com");
      * // Results in SQL like: WHERE name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
@@ -724,7 +724,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = ConditionFactory.eqOr("status", "active", "type", "premium", "verified", true);
+     * Or condition = Filters.eqOr("status", "active", "type", "premium", "verified", true);
      * }</pre>
      *
      * @param propName1 first property name
@@ -748,7 +748,7 @@ public class ConditionFactory {
      * Map<String, Object> props = new HashMap<>();
      * props.put("status", "active");
      * props.put("type", "premium");
-     * And condition = ConditionFactory.eqAnd(props);
+     * And condition = Filters.eqAnd(props);
      * // Results in SQL like: WHERE status = 'active' AND type = 'premium'
      * }</pre>
      *
@@ -789,7 +789,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
-     * And condition = ConditionFactory.eqAnd(user);
+     * And condition = Filters.eqAnd(user);
      * // Results in SQL like: WHERE name = 'John' AND email = 'john@example.com' AND age = 25
      * }</pre>
      *
@@ -807,7 +807,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
-     * And condition = ConditionFactory.eqAnd(user, Arrays.asList("email", "age"));
+     * And condition = Filters.eqAnd(user, Arrays.asList("email", "age"));
      * // Only uses email and age, ignores name
      * }</pre>
      *
@@ -847,7 +847,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.eqAnd("status", "active", "type", "premium");
+     * And condition = Filters.eqAnd("status", "active", "type", "premium");
      * // Results in SQL like: WHERE status = 'active' AND type = 'premium'
      * }</pre>
      *
@@ -866,7 +866,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.eqAnd("status", "active", "type", "premium", "verified", true);
+     * And condition = Filters.eqAnd("status", "active", "type", "premium", "verified", true);
      * }</pre>
      *
      * @param propName1 first property name
@@ -891,7 +891,7 @@ public class ConditionFactory {
      * List<Map<String, Object>> propsList = new ArrayList<>();
      * propsList.add(Map.of("status", "active", "type", "premium"));
      * propsList.add(Map.of("status", "trial", "verified", true));
-     * Or condition = ConditionFactory.eqAndOr(propsList);
+     * Or condition = Filters.eqAndOr(propsList);
      * // Results in: (status='active' AND type='premium') OR (status='trial' AND verified=true)
      * }</pre>
      *
@@ -922,7 +922,7 @@ public class ConditionFactory {
      *     new User("John", "john@example.com"),
      *     new User("Jane", "jane@example.com")
      * );
-     * Or condition = ConditionFactory.eqAndOr(users);
+     * Or condition = Filters.eqAndOr(users);
      * // Results in: (name='John' AND email='john@example.com') OR (name='Jane' AND email='jane@example.com')
      * }</pre>
      *
@@ -945,7 +945,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<User> users = Arrays.asList(new User(...), new User(...));
-     * Or condition = ConditionFactory.eqAndOr(users, Arrays.asList("name", "status"));
+     * Or condition = Filters.eqAndOr(users, Arrays.asList("name", "status"));
      * // Only uses name and status properties from each user
      * }</pre>
      *
@@ -975,7 +975,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.gtAndLt("age", 18, 65);
+     * And condition = Filters.gtAndLt("age", 18, 65);
      * // Results in SQL like: WHERE age &gt; 18 AND age &lt; 65
      * }</pre>
      *
@@ -994,7 +994,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.gtAndLt("price");
+     * And condition = Filters.gtAndLt("price");
      * // Results in SQL like: WHERE price &gt; ? AND price &lt; ?
      * }</pre>
      *
@@ -1011,7 +1011,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.geAndLt("price", 100, 500);
+     * And condition = Filters.geAndLt("price", 100, 500);
      * // Results in SQL like: WHERE price &gt;= 100 AND price &lt; 500
      * }</pre>
      *
@@ -1030,7 +1030,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.geAndLt("score");
+     * And condition = Filters.geAndLt("score");
      * // Results in SQL like: WHERE score &gt;= ? AND score &lt; ?
      * }</pre>
      *
@@ -1047,7 +1047,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.geAndLe("date", startDate, endDate);
+     * And condition = Filters.geAndLe("date", startDate, endDate);
      * // Results in SQL like: WHERE date &gt;= '2023-01-01' AND date &lt;= '2023-12-31'
      * }</pre>
      *
@@ -1066,7 +1066,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.geAndLe("amount");
+     * And condition = Filters.geAndLe("amount");
      * // Results in SQL like: WHERE amount &gt;= ? AND amount &lt;= ?
      * }</pre>
      *
@@ -1083,7 +1083,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.gtAndLe("score", 0, 100);
+     * And condition = Filters.gtAndLe("score", 0, 100);
      * // Results in SQL like: WHERE score &gt; 0 AND score &lt;= 100
      * }</pre>
      *
@@ -1102,7 +1102,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.gtAndLe("temperature");
+     * And condition = Filters.gtAndLe("temperature");
      * // Results in SQL like: WHERE temperature &gt; ? AND temperature &lt;= ?
      * }</pre>
      *
@@ -1120,7 +1120,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * EntityId id = EntityId.of("userId", 123, "orderId", 456);
-     * And condition = ConditionFactory.id2Cond(id);
+     * And condition = Filters.id2Cond(id);
      * // Results in SQL like: WHERE userId = 123 AND orderId = 456
      * }</pre>
      *
@@ -1164,7 +1164,7 @@ public class ConditionFactory {
      *     EntityId.of("userId", 1, "orderId", 100),
      *     EntityId.of("userId", 2, "orderId", 200)
      * );
-     * Or condition = ConditionFactory.id2Cond(ids);
+     * Or condition = Filters.id2Cond(ids);
      * // Results in: (userId=1 AND orderId=100) OR (userId=2 AND orderId=200)
      * }</pre>
      *
@@ -1190,7 +1190,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotEqual condition = ConditionFactory.notEqual("status", "deleted");
+     * NotEqual condition = Filters.notEqual("status", "deleted");
      * // Results in SQL like: WHERE status != 'deleted'
      * }</pre>
      *
@@ -1208,7 +1208,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotEqual condition = ConditionFactory.notEqual("user_type");
+     * NotEqual condition = Filters.notEqual("user_type");
      * // Results in SQL like: WHERE user_type != ?
      * }</pre>
      *
@@ -1226,7 +1226,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotEqual condition = ConditionFactory.ne("status", "inactive");
+     * NotEqual condition = Filters.ne("status", "inactive");
      * }</pre>
      *
      * @param propName the property/column name
@@ -1243,7 +1243,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotEqual condition = ConditionFactory.ne("category");
+     * NotEqual condition = Filters.ne("category");
      * // Results in SQL like: WHERE category != ?
      * }</pre>
      *
@@ -1260,7 +1260,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThan condition = ConditionFactory.greaterThan("age", 18);
+     * GreaterThan condition = Filters.greaterThan("age", 18);
      * // Results in SQL like: WHERE age > 18
      * }</pre>
      *
@@ -1277,7 +1277,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThan condition = ConditionFactory.greaterThan("salary");
+     * GreaterThan condition = Filters.greaterThan("salary");
      * // Results in SQL like: WHERE salary > ?
      * }</pre>
      *
@@ -1295,7 +1295,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThan condition = ConditionFactory.gt("price", 100);
+     * GreaterThan condition = Filters.gt("price", 100);
      * }</pre>
      *
      * @param propName the property/column name
@@ -1312,7 +1312,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThan condition = ConditionFactory.gt("quantity");
+     * GreaterThan condition = Filters.gt("quantity");
      * // Results in SQL like: WHERE quantity > ?
      * }</pre>
      *
@@ -1329,7 +1329,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = ConditionFactory.greaterEqual("score", 60);
+     * GreaterEqual condition = Filters.greaterEqual("score", 60);
      * // Results in SQL like: WHERE score >= 60
      * }</pre>
      *
@@ -1346,7 +1346,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = ConditionFactory.greaterEqual("min_age");
+     * GreaterEqual condition = Filters.greaterEqual("min_age");
      * // Results in SQL like: WHERE min_age >= ?
      * }</pre>
      *
@@ -1364,7 +1364,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = ConditionFactory.ge("level", 5);
+     * GreaterEqual condition = Filters.ge("level", 5);
      * }</pre>
      *
      * @param propName the property/column name
@@ -1381,7 +1381,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = ConditionFactory.ge("rating");
+     * GreaterEqual condition = Filters.ge("rating");
      * // Results in SQL like: WHERE rating >= ?
      * }</pre>
      *
@@ -1398,7 +1398,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThan condition = ConditionFactory.lessThan("age", 65);
+     * LessThan condition = Filters.lessThan("age", 65);
      * // Results in SQL like: WHERE age &lt; 65
      * }</pre>
      *
@@ -1415,7 +1415,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThan condition = ConditionFactory.lessThan("max_price");
+     * LessThan condition = Filters.lessThan("max_price");
      * // Results in SQL like: WHERE max_price &lt; ?
      * }</pre>
      *
@@ -1433,7 +1433,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThan condition = ConditionFactory.lt("stock", 10);
+     * LessThan condition = Filters.lt("stock", 10);
      * }</pre>
      *
      * @param propName the property/column name
@@ -1450,7 +1450,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThan condition = ConditionFactory.lt("expiry_date");
+     * LessThan condition = Filters.lt("expiry_date");
      * // Results in SQL like: WHERE expiry_date < ?
      * }</pre>
      *
@@ -1467,7 +1467,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = ConditionFactory.lessEqual("discount", 50);
+     * LessEqual condition = Filters.lessEqual("discount", 50);
      * // Results in SQL like: WHERE discount &lt;= 50
      * }</pre>
      *
@@ -1484,7 +1484,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = ConditionFactory.lessEqual("max_attempts");
+     * LessEqual condition = Filters.lessEqual("max_attempts");
      * // Results in SQL like: WHERE max_attempts &lt;= ?
      * }</pre>
      *
@@ -1502,7 +1502,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = ConditionFactory.le("priority", 3);
+     * LessEqual condition = Filters.le("priority", 3);
      * }</pre>
      *
      * @param propName the property/column name
@@ -1519,7 +1519,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = ConditionFactory.le("weight");
+     * LessEqual condition = Filters.le("weight");
      * // Results in SQL like: WHERE weight <= ?
      * }</pre>
      *
@@ -1537,7 +1537,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Between condition = ConditionFactory.between("age", 18, 65);
+     * Between condition = Filters.between("age", 18, 65);
      * // Results in SQL like: WHERE age BETWEEN 18 AND 65
      * }</pre>
      *
@@ -1555,7 +1555,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Between condition = ConditionFactory.between("price");
+     * Between condition = Filters.between("price");
      * // Results in SQL like: WHERE price BETWEEN ? AND ?
      * }</pre>
      *
@@ -1602,7 +1602,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotBetween condition = ConditionFactory.notBetween("temperature", -10, 40);
+     * NotBetween condition = Filters.notBetween("temperature", -10, 40);
      * // Results in SQL like: WHERE temperature NOT BETWEEN -10 AND 40
      * }</pre>
      *
@@ -1620,7 +1620,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotBetween condition = ConditionFactory.notBetween("score");
+     * NotBetween condition = Filters.notBetween("score");
      * // Results in SQL like: WHERE score NOT BETWEEN ? AND ?
      * }</pre>
      *
@@ -1637,7 +1637,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Like condition = ConditionFactory.like("email", "%@gmail.com");
+     * Like condition = Filters.like("email", "%@gmail.com");
      * // Results in SQL like: WHERE email LIKE '%@gmail.com'
      * }</pre>
      *
@@ -1654,7 +1654,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Like condition = ConditionFactory.like("name");
+     * Like condition = Filters.like("name");
      * // Results in SQL like: WHERE name LIKE ?
      * }</pre>
      *
@@ -1671,7 +1671,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotLike condition = ConditionFactory.notLike("filename", "%.tmp");
+     * NotLike condition = Filters.notLike("filename", "%.tmp");
      * // Results in SQL like: WHERE filename NOT LIKE '%.tmp'
      * }</pre>
      *
@@ -1688,7 +1688,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotLike condition = ConditionFactory.notLike("description");
+     * NotLike condition = Filters.notLike("description");
      * // Results in SQL like: WHERE description NOT LIKE ?
      * }</pre>
      *
@@ -1705,7 +1705,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Like condition = ConditionFactory.contains("description", "java");
+     * Like condition = Filters.contains("description", "java");
      * // Results in SQL like: WHERE description LIKE '%java%'
      * }</pre>
      *
@@ -1723,7 +1723,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotLike condition = ConditionFactory.notContains("tags", "deprecated");
+     * NotLike condition = Filters.notContains("tags", "deprecated");
      * // Results in SQL like: WHERE tags NOT LIKE '%deprecated%'
      * }</pre>
      *
@@ -1741,7 +1741,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Like condition = ConditionFactory.startsWith("name", "John");
+     * Like condition = Filters.startsWith("name", "John");
      * // Results in SQL like: WHERE name LIKE 'John%'
      * }</pre>
      *
@@ -1759,7 +1759,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotLike condition = ConditionFactory.notStartsWith("code", "TEST");
+     * NotLike condition = Filters.notStartsWith("code", "TEST");
      * // Results in SQL like: WHERE code NOT LIKE 'TEST%'
      * }</pre>
      *
@@ -1777,7 +1777,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Like condition = ConditionFactory.endsWith("email", "@company.com");
+     * Like condition = Filters.endsWith("email", "@company.com");
      * // Results in SQL like: WHERE email LIKE '%@company.com'
      * }</pre>
      *
@@ -1795,7 +1795,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotLike condition = ConditionFactory.notEndsWith("filename", ".tmp");
+     * NotLike condition = Filters.notEndsWith("filename", ".tmp");
      * // Results in SQL like: WHERE filename NOT LIKE '%.tmp'
      * }</pre>
      *
@@ -1812,7 +1812,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * IsNull condition = ConditionFactory.isNull("deleted_at");
+     * IsNull condition = Filters.isNull("deleted_at");
      * // Results in SQL like: WHERE deleted_at IS NULL
      * }</pre>
      *
@@ -1829,7 +1829,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = ConditionFactory.isEmpty("description");
+     * Or condition = Filters.isEmpty("description");
      * // Results in SQL like: WHERE description IS NULL OR description = ''
      * }</pre>
      *
@@ -1847,7 +1847,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = ConditionFactory.isNullOrZero("quantity");
+     * Or condition = Filters.isNullOrZero("quantity");
      * // Results in SQL like: WHERE quantity IS NULL OR quantity = 0
      * }</pre>
      *
@@ -1864,7 +1864,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * IsNotNull condition = ConditionFactory.isNotNull("created_at");
+     * IsNotNull condition = Filters.isNotNull("created_at");
      * // Results in SQL like: WHERE created_at IS NOT NULL
      * }</pre>
      *
@@ -1881,7 +1881,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * IsNaN condition = ConditionFactory.isNaN("calculation_result");
+     * IsNaN condition = Filters.isNaN("calculation_result");
      * // Results in SQL like: WHERE calculation_result IS NAN
      * }</pre>
      *
@@ -1898,7 +1898,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * IsNotNaN condition = ConditionFactory.isNotNaN("temperature");
+     * IsNotNaN condition = Filters.isNotNaN("temperature");
      * // Results in SQL like: WHERE temperature IS NOT NAN
      * }</pre>
      *
@@ -1915,7 +1915,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * IsInfinite condition = ConditionFactory.isInfinite("ratio");
+     * IsInfinite condition = Filters.isInfinite("ratio");
      * // Results in SQL like: WHERE ratio IS INFINITE
      * }</pre>
      *
@@ -1932,7 +1932,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * IsNotInfinite condition = ConditionFactory.isNotInfinite("percentage");
+     * IsNotInfinite condition = Filters.isNotInfinite("percentage");
      * // Results in SQL like: WHERE percentage IS NOT INFINITE
      * }</pre>
      *
@@ -1949,7 +1949,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Is condition = ConditionFactory.is("is_active", true);
+     * Is condition = Filters.is("is_active", true);
      * // Results in SQL like: WHERE is_active IS TRUE
      * }</pre>
      *
@@ -1967,7 +1967,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * IsNot condition = ConditionFactory.isNot("is_deleted", true);
+     * IsNot condition = Filters.isNot("is_deleted", true);
      * // Results in SQL like: WHERE is_deleted IS NOT TRUE
      * }</pre>
      *
@@ -1985,7 +1985,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * XOR condition = ConditionFactory.xor("is_premium", true);
+     * XOR condition = Filters.xor("is_premium", true);
      * // Results in SQL like: WHERE is_premium XOR TRUE
      * }</pre>
      *
@@ -2003,10 +2003,10 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = ConditionFactory.or(
-     *     ConditionFactory.eq("status", "active"),
-     *     ConditionFactory.gt("priority", 5),
-     *     ConditionFactory.isNull("deleted_at")
+     * Or condition = Filters.or(
+     *     Filters.eq("status", "active"),
+     *     Filters.gt("priority", 5),
+     *     Filters.isNull("deleted_at")
      * );
      * // Results in: ((status = 'active') OR (priority > 5) OR (deleted_at IS NULL))
      * }</pre>
@@ -2025,10 +2025,10 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Condition> conditions = Arrays.asList(
-     *     ConditionFactory.eq("type", "admin"),
-     *     ConditionFactory.eq("type", "moderator")
+     *     Filters.eq("type", "admin"),
+     *     Filters.eq("type", "moderator")
      * );
-     * Or condition = ConditionFactory.or(conditions);
+     * Or condition = Filters.or(conditions);
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with OR
@@ -2044,10 +2044,10 @@ public class ConditionFactory {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = ConditionFactory.and(
-     *     ConditionFactory.eq("status", "active"),
-     *     ConditionFactory.ge("age", 18),
-     *     ConditionFactory.isNotNull("email")
+     * And condition = Filters.and(
+     *     Filters.eq("status", "active"),
+     *     Filters.ge("age", 18),
+     *     Filters.isNotNull("email")
      * );
      * // Results in: ((status = 'active') AND (age >= 18) AND (email IS NOT NULL))
      * }</pre>
@@ -2066,10 +2066,10 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Condition> conditions = Arrays.asList(
-     *     ConditionFactory.between("price", 10, 100),
-     *     ConditionFactory.eq("in_stock", true)
+     *     Filters.between("price", 10, 100),
+     *     Filters.eq("in_stock", true)
      * );
-     * And condition = ConditionFactory.and(conditions);
+     * And condition = Filters.and(conditions);
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with AND
@@ -2085,9 +2085,9 @@ public class ConditionFactory {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Junction condition = ConditionFactory.junction(CustomOperator.NAND,
-     *     ConditionFactory.eq("flag1", true),
-     *     ConditionFactory.eq("flag2", true)
+     * Junction condition = Filters.junction(CustomOperator.NAND,
+     *     Filters.eq("flag1", true),
+     *     Filters.eq("flag2", true)
      * );
      * }</pre>
      *
@@ -2106,7 +2106,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Junction condition = ConditionFactory.junction(CustomOperator.NOR, conditionsList);
+     * Junction condition = Filters.junction(CustomOperator.NOR, conditionsList);
      * }</pre>
      *
      * @param operator the junction operator to use
@@ -2124,7 +2124,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Where where = ConditionFactory.where(ConditionFactory.eq("active", true));
+     * Where where = Filters.where(Filters.eq("active", true));
      * }</pre>
      *
      * @param condition the condition for the WHERE clause
@@ -2140,7 +2140,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Where where = ConditionFactory.where("YEAR(created_date) = 2023");
+     * Where where = Filters.where("YEAR(created_date) = 2023");
      * }</pre>
      *
      * @param condition the SQL expression as a string
@@ -2156,7 +2156,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy("department", "role");
+     * GroupBy groupBy = Filters.groupBy("department", "role");
      * // Results in SQL like: GROUP BY department, role
      * }</pre>
      *
@@ -2174,7 +2174,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> columns = Arrays.asList("country", "city");
-     * GroupBy groupBy = ConditionFactory.groupBy(columns);
+     * GroupBy groupBy = Filters.groupBy(columns);
      * }</pre>
      *
      * @param propNames collection of property/column names to group by
@@ -2189,7 +2189,7 @@ public class ConditionFactory {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy(Arrays.asList("sales", "region"), SortDirection.DESC);
+     * GroupBy groupBy = Filters.groupBy(Arrays.asList("sales", "region"), SortDirection.DESC);
      * // Results in SQL like: GROUP BY sales DESC, region DESC
      * }</pre>
      *
@@ -2206,7 +2206,7 @@ public class ConditionFactory {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy("category", SortDirection.DESC);
+     * GroupBy groupBy = Filters.groupBy("category", SortDirection.DESC);
      * // Results in SQL like: GROUP BY category DESC
      * }</pre>
      *
@@ -2223,7 +2223,7 @@ public class ConditionFactory {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
+     * GroupBy groupBy = Filters.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
      * // Results in SQL like: GROUP BY year DESC, month ASC
      * }</pre>
      *
@@ -2242,7 +2242,7 @@ public class ConditionFactory {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
+     * GroupBy groupBy = Filters.groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
      * }</pre>
      *
      * @param propNameA first property name
@@ -2267,7 +2267,7 @@ public class ConditionFactory {
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
      * orders.put("department", SortDirection.ASC);
      * orders.put("salary", SortDirection.DESC);
-     * GroupBy groupBy = ConditionFactory.groupBy(orders);
+     * GroupBy groupBy = Filters.groupBy(orders);
      * }</pre>
      *
      * @param orders map of property names to sort directions (should be LinkedHashMap)
@@ -2283,8 +2283,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = ConditionFactory.groupBy(
-     *     ConditionFactory.expr("YEAR(order_date), MONTH(order_date)")
+     * GroupBy groupBy = Filters.groupBy(
+     *     Filters.expr("YEAR(order_date), MONTH(order_date)")
      * );
      * }</pre>
      *
@@ -2301,7 +2301,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Having having = ConditionFactory.having(ConditionFactory.gt("COUNT(*)", 5));
+     * Having having = Filters.having(Filters.gt("COUNT(*)", 5));
      * // Results in SQL like: HAVING COUNT(*) > 5
      * }</pre>
      *
@@ -2318,7 +2318,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Having having = ConditionFactory.having("SUM(amount) > 1000");
+     * Having having = Filters.having("SUM(amount) > 1000");
      * }</pre>
      *
      * @param condition the SQL expression as a string
@@ -2334,7 +2334,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = ConditionFactory.orderBy("last_name", "first_name");
+     * OrderBy orderBy = Filters.orderBy("last_name", "first_name");
      * // Results in SQL like: ORDER BY last_name, first_name
      * }</pre>
      *
@@ -2350,7 +2350,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = ConditionFactory.orderByAsc("created_date", "id");
+     * OrderBy orderBy = Filters.orderByAsc("created_date", "id");
      * // Results in SQL like: ORDER BY created_date ASC, id ASC
      * }</pre>
      *
@@ -2367,7 +2367,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> columns = Arrays.asList("priority", "created_date");
-     * OrderBy orderBy = ConditionFactory.orderByAsc(columns);
+     * OrderBy orderBy = Filters.orderByAsc(columns);
      * }</pre>
      *
      * @param propNames collection of property/column names to order by ascending
@@ -2382,7 +2382,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = ConditionFactory.orderByDesc("score", "timestamp");
+     * OrderBy orderBy = Filters.orderByDesc("score", "timestamp");
      * // Results in SQL like: ORDER BY score DESC, timestamp DESC
      * }</pre>
      *
@@ -2399,7 +2399,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> columns = Arrays.asList("amount", "date");
-     * OrderBy orderBy = ConditionFactory.orderByDesc(columns);
+     * OrderBy orderBy = Filters.orderByDesc(columns);
      * }</pre>
      *
      * @param propNames collection of property/column names to order by descending
@@ -2415,7 +2415,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> columns = new HashSet<>(Arrays.asList("name", "age"));
-     * OrderBy orderBy = ConditionFactory.orderBy(columns);
+     * OrderBy orderBy = Filters.orderBy(columns);
      * }</pre>
      *
      * @param propNames collection of property/column names to order by
@@ -2430,7 +2430,7 @@ public class ConditionFactory {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = ConditionFactory.orderBy(Arrays.asList("price", "rating"), SortDirection.DESC);
+     * OrderBy orderBy = Filters.orderBy(Arrays.asList("price", "rating"), SortDirection.DESC);
      * // Results in SQL like: ORDER BY price DESC, rating DESC
      * }</pre>
      *
@@ -2447,7 +2447,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = ConditionFactory.orderBy("modified_date", DESC);
+     * OrderBy orderBy = Filters.orderBy("modified_date", DESC);
      * // Results in SQL like: ORDER BY modified_date DESC
      * }</pre>
      *
@@ -2464,7 +2464,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = ConditionFactory.orderBy("status", ASC, "priority", DESC);
+     * OrderBy orderBy = Filters.orderBy("status", ASC, "priority", DESC);
      * // Results in SQL like: ORDER BY status ASC, priority DESC
      * }</pre>
      *
@@ -2483,7 +2483,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = ConditionFactory.orderBy("year", DESC, "month", DESC, "day", ASC);
+     * OrderBy orderBy = Filters.orderBy("year", DESC, "month", DESC, "day", ASC);
      * }</pre>
      *
      * @param propNameA first property name
@@ -2509,7 +2509,7 @@ public class ConditionFactory {
      * orders.put("category", ASC);
      * orders.put("price", DESC);
      * orders.put("name", ASC);
-     * OrderBy orderBy = ConditionFactory.orderBy(orders);
+     * OrderBy orderBy = Filters.orderBy(orders);
      * }</pre>
      *
      * @param orders map of property names to sort directions (should be LinkedHashMap)
@@ -2525,8 +2525,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = ConditionFactory.orderBy(
-     *     ConditionFactory.expr("CASE WHEN status = 'urgent' THEN 1 ELSE 2 END, created_date DESC")
+     * OrderBy orderBy = Filters.orderBy(
+     *     Filters.expr("CASE WHEN status = 'urgent' THEN 1 ELSE 2 END, created_date DESC")
      * );
      * }</pre>
      *
@@ -2542,7 +2542,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * On on = ConditionFactory.on(ConditionFactory.eq("users.id", "orders.user_id"));
+     * On on = Filters.on(Filters.eq("users.id", "orders.user_id"));
      * // Results in SQL like: ON users.id = orders.user_id
      * }</pre>
      *
@@ -2558,7 +2558,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * On on = ConditionFactory.on("users.department_id = departments.id AND users.active = true");
+     * On on = Filters.on("users.department_id = departments.id AND users.active = true");
      * }</pre>
      *
      * @param condition the join condition as a string
@@ -2573,7 +2573,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * On on = ConditionFactory.on("user_id", "id");
+     * On on = Filters.on("user_id", "id");
      * // Results in SQL like: ON user_id = id
      * }</pre>
      *
@@ -2594,7 +2594,7 @@ public class ConditionFactory {
      * Map<String, String> joinPairs = new HashMap<>();
      * joinPairs.put("orders.user_id", "users.id");
      * joinPairs.put("orders.product_id", "products.id");
-     * On on = ConditionFactory.on(joinPairs);
+     * On on = Filters.on(joinPairs);
      * }</pre>
      *
      * @param propNamePair map of column name pairs for joining
@@ -2639,7 +2639,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Join join = ConditionFactory.join("orders");
+     * Join join = Filters.join("orders");
      * // Results in SQL like: JOIN orders
      * }</pre>
      *
@@ -2655,8 +2655,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Join join = ConditionFactory.join("orders", 
-     *     ConditionFactory.on("users.id", "orders.user_id"));
+     * Join join = Filters.join("orders", 
+     *     Filters.on("users.id", "orders.user_id"));
      * // Results in SQL like: JOIN orders ON users.id = orders.user_id
      * }</pre>
      *
@@ -2673,8 +2673,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Join join = ConditionFactory.join(Arrays.asList("orders", "products"),
-     *     ConditionFactory.on("orders.product_id", "products.id"));
+     * Join join = Filters.join(Arrays.asList("orders", "products"),
+     *     Filters.on("orders.product_id", "products.id"));
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to join
@@ -2691,7 +2691,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LeftJoin join = ConditionFactory.leftJoin("orders");
+     * LeftJoin join = Filters.leftJoin("orders");
      * // Results in SQL like: LEFT JOIN orders
      * }</pre>
      *
@@ -2707,8 +2707,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LeftJoin join = ConditionFactory.leftJoin("orders",
-     *     ConditionFactory.on("users.id", "orders.user_id"));
+     * LeftJoin join = Filters.leftJoin("orders",
+     *     Filters.on("users.id", "orders.user_id"));
      * // Results in SQL like: LEFT JOIN orders ON users.id = orders.user_id
      * }</pre>
      *
@@ -2725,8 +2725,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LeftJoin join = ConditionFactory.leftJoin(Arrays.asList("orders", "order_items"),
-     *     ConditionFactory.on("orders.id", "order_items.order_id"));
+     * LeftJoin join = Filters.leftJoin(Arrays.asList("orders", "order_items"),
+     *     Filters.on("orders.id", "order_items.order_id"));
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to left join
@@ -2743,7 +2743,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * RightJoin join = ConditionFactory.rightJoin("users");
+     * RightJoin join = Filters.rightJoin("users");
      * // Results in SQL like: RIGHT JOIN users
      * }</pre>
      *
@@ -2759,8 +2759,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * RightJoin join = ConditionFactory.rightJoin("users",
-     *     ConditionFactory.on("orders.user_id", "users.id"));
+     * RightJoin join = Filters.rightJoin("users",
+     *     Filters.on("orders.user_id", "users.id"));
      * // Results in SQL like: RIGHT JOIN users ON orders.user_id = users.id
      * }</pre>
      *
@@ -2789,7 +2789,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * CrossJoin join = ConditionFactory.crossJoin("colors");
+     * CrossJoin join = Filters.crossJoin("colors");
      * // Results in SQL like: CROSS JOIN colors
      * }</pre>
      *
@@ -2829,7 +2829,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * FullJoin join = ConditionFactory.fullJoin("departments");
+     * FullJoin join = Filters.fullJoin("departments");
      * // Results in SQL like: FULL JOIN departments
      * }</pre>
      *
@@ -2845,8 +2845,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * FullJoin join = ConditionFactory.fullJoin("employees",
-     *     ConditionFactory.on("departments.id", "employees.dept_id"));
+     * FullJoin join = Filters.fullJoin("employees",
+     *     Filters.on("departments.id", "employees.dept_id"));
      * // Results in SQL like: FULL JOIN employees ON departments.id = employees.dept_id
      * }</pre>
      *
@@ -2875,7 +2875,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * InnerJoin join = ConditionFactory.innerJoin("orders");
+     * InnerJoin join = Filters.innerJoin("orders");
      * // Results in SQL like: INNER JOIN orders
      * }</pre>
      *
@@ -2891,8 +2891,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * InnerJoin join = ConditionFactory.innerJoin("products",
-     *     ConditionFactory.on("order_items.product_id", "products.id"));
+     * InnerJoin join = Filters.innerJoin("products",
+     *     Filters.on("order_items.product_id", "products.id"));
      * // Results in SQL like: INNER JOIN products ON order_items.product_id = products.id
      * }</pre>
      *
@@ -2921,7 +2921,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NaturalJoin join = ConditionFactory.naturalJoin("departments");
+     * NaturalJoin join = Filters.naturalJoin("departments");
      * // Results in SQL like: NATURAL JOIN departments
      * }</pre>
      *
@@ -2960,7 +2960,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * In condition = ConditionFactory.in("user_id", new int[] {1, 2, 3, 4});
+     * In condition = Filters.in("user_id", new int[] {1, 2, 3, 4});
      * // Results in SQL like: WHERE user_id IN (1, 2, 3, 4)
      * }</pre>
      *
@@ -2977,7 +2977,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * In condition = ConditionFactory.in("order_id", new long[] {1001L, 1002L, 1003L});
+     * In condition = Filters.in("order_id", new long[] {1001L, 1002L, 1003L});
      * // Results in SQL like: WHERE order_id IN (1001, 1002, 1003)
      * }</pre>
      *
@@ -2994,7 +2994,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * In condition = ConditionFactory.in("price", new double[] {9.99, 19.99, 29.99});
+     * In condition = Filters.in("price", new double[] {9.99, 19.99, 29.99});
      * // Results in SQL like: WHERE price IN (9.99, 19.99, 29.99)
      * }</pre>
      *
@@ -3011,7 +3011,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * In condition = ConditionFactory.in("status", new String[] {"active", "pending", "approved"});
+     * In condition = Filters.in("status", new String[] {"active", "pending", "approved"});
      * // Results in SQL like: WHERE status IN ('active', 'pending', 'approved')
      * }</pre>
      *
@@ -3029,7 +3029,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> categories = Arrays.asList("electronics", "books", "toys");
-     * In condition = ConditionFactory.in("category", categories);
+     * In condition = Filters.in("category", categories);
      * // Results in SQL like: WHERE category IN ('electronics', 'books', 'toys')
      * }</pre>
      *
@@ -3047,8 +3047,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM active_users");
-     * InSubQuery condition = ConditionFactory.in("user_id", subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
+     * InSubQuery condition = Filters.in("user_id", subQuery);
      * // Results in SQL like: WHERE user_id IN (SELECT id FROM active_users)
      * }</pre>
      *
@@ -3066,8 +3066,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT user_id, order_id FROM recent_orders");
-     * InSubQuery condition = ConditionFactory.in(Arrays.asList("user_id", "order_id"), subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT user_id, order_id FROM recent_orders");
+     * InSubQuery condition = Filters.in(Arrays.asList("user_id", "order_id"), subQuery);
      * // Results in SQL like: WHERE (user_id, order_id) IN (SELECT user_id, order_id FROM recent_orders)
      * }</pre>
      *
@@ -3084,7 +3084,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotIn condition = ConditionFactory.notIn("status_code", new int[] {404, 500, 503});
+     * NotIn condition = Filters.notIn("status_code", new int[] {404, 500, 503});
      * // Results in SQL like: WHERE status_code NOT IN (404, 500, 503)
      * }</pre>
      *
@@ -3101,7 +3101,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotIn condition = ConditionFactory.notIn("excluded_ids", new long[] {110L, 120L, 130L});
+     * NotIn condition = Filters.notIn("excluded_ids", new long[] {110L, 120L, 130L});
      * // Results in SQL like: WHERE excluded_ids NOT IN (110, 120, 130)
      * }</pre>
      *
@@ -3118,7 +3118,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotIn condition = ConditionFactory.notIn("discount", new double[] {0.0, 100.0});
+     * NotIn condition = Filters.notIn("discount", new double[] {0.0, 100.0});
      * // Results in SQL like: WHERE discount NOT IN (0.0, 100.0)
      * }</pre>
      *
@@ -3135,7 +3135,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotIn condition = ConditionFactory.notIn("role", new String[] {"guest", "banned"});
+     * NotIn condition = Filters.notIn("role", new String[] {"guest", "banned"});
      * // Results in SQL like: WHERE role NOT IN ('guest', 'banned')
      * }</pre>
      *
@@ -3153,7 +3153,7 @@ public class ConditionFactory {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> excludedCountries = new HashSet<>(Arrays.asList("XX", "YY"));
-     * NotIn condition = ConditionFactory.notIn("country_code", excludedCountries);
+     * NotIn condition = Filters.notIn("country_code", excludedCountries);
      * // Results in SQL like: WHERE country_code NOT IN ('XX', 'YY')
      * }</pre>
      *
@@ -3171,8 +3171,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM blacklisted_users");
-     * NotInSubQuery condition = ConditionFactory.notIn("user_id", subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM blacklisted_users");
+     * NotInSubQuery condition = Filters.notIn("user_id", subQuery);
      * // Results in SQL like: WHERE user_id NOT IN (SELECT id FROM blacklisted_users)
      * }</pre>
      *
@@ -3190,8 +3190,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT user_id, product_id FROM returns");
-     * NotInSubQuery condition = ConditionFactory.notIn(Arrays.asList("user_id", "product_id"), subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT user_id, product_id FROM returns");
+     * NotInSubQuery condition = Filters.notIn(Arrays.asList("user_id", "product_id"), subQuery);
      * // Results in SQL like: WHERE (user_id, product_id) NOT IN (SELECT user_id, product_id FROM returns)
      * }</pre>
      *
@@ -3209,8 +3209,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT salary FROM employees WHERE dept = 'IT'");
-     * All condition = ConditionFactory.all(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE dept = 'IT'");
+     * All condition = Filters.all(subQuery);
      * // Used in: WHERE salary > ALL (SELECT salary FROM employees WHERE dept = 'IT')
      * }</pre>
      *
@@ -3227,8 +3227,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT price FROM products WHERE category = 'electronics'");
-     * Any condition = ConditionFactory.any(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'electronics'");
+     * Any condition = Filters.any(subQuery);
      * // Used in: WHERE price < ANY (SELECT price FROM products WHERE category = 'electronics')
      * }</pre>
      *
@@ -3245,8 +3245,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT score FROM exams WHERE student_id = 123");
-     * Some condition = ConditionFactory.some(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT score FROM exams WHERE student_id = 123");
+     * Some condition = Filters.some(subQuery);
      * // Used in: WHERE passing_score <= SOME (SELECT score FROM exams WHERE student_id = 123)
      * }</pre>
      *
@@ -3262,8 +3262,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
-     * Exists condition = ConditionFactory.exists(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
+     * Exists condition = Filters.exists(subQuery);
      * // Results in SQL like: WHERE EXISTS (SELECT 1 FROM orders WHERE orders.user_id = users.id)
      * }</pre>
      *
@@ -3279,8 +3279,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM archived_users WHERE archived_users.id = users.id");
-     * NotExists condition = ConditionFactory.notExists(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM archived_users WHERE archived_users.id = users.id");
+     * NotExists condition = Filters.notExists(subQuery);
      * // Results in SQL like: WHERE NOT EXISTS (SELECT 1 FROM archived_users WHERE archived_users.id = users.id)
      * }</pre>
      *
@@ -3297,8 +3297,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM archived_users");
-     * Union union = ConditionFactory.union(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM archived_users");
+     * Union union = Filters.union(subQuery);
      * // Results in SQL like: UNION SELECT id FROM archived_users
      * }</pre>
      *
@@ -3315,8 +3315,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT name FROM inactive_products");
-     * UnionAll unionAll = ConditionFactory.unionAll(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT name FROM inactive_products");
+     * UnionAll unionAll = Filters.unionAll(subQuery);
      * // Results in SQL like: UNION ALL SELECT name FROM inactive_products
      * }</pre>
      *
@@ -3333,8 +3333,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM blacklisted_customers");
-     * Except except = ConditionFactory.except(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM blacklisted_customers");
+     * Except except = Filters.except(subQuery);
      * // Results in SQL like: EXCEPT SELECT id FROM blacklisted_customers
      * }</pre>
      *
@@ -3351,8 +3351,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT product_id FROM discounted_items");
-     * Intersect intersect = ConditionFactory.intersect(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT product_id FROM discounted_items");
+     * Intersect intersect = Filters.intersect(subQuery);
      * // Results in SQL like: INTERSECT SELECT product_id FROM discounted_items
      * }</pre>
      *
@@ -3369,8 +3369,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM deleted_records");
-     * Minus minus = ConditionFactory.minus(subQuery);
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM deleted_records");
+     * Minus minus = Filters.minus(subQuery);
      * // Results in SQL like: MINUS SELECT id FROM deleted_records
      * }</pre>
      *
@@ -3399,9 +3399,9 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery(User.class, 
+     * SubQuery subQuery = Filters.subQuery(User.class, 
      *     Arrays.asList("id", "name"),
-     *     ConditionFactory.eq("active", true));
+     *     Filters.eq("active", true));
      * // Generates subquery based on User entity
      * }</pre>
      *
@@ -3419,9 +3419,9 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("users",
+     * SubQuery subQuery = Filters.subQuery("users",
      *     Arrays.asList("id", "email"),
-     *     ConditionFactory.like("email", "%@company.com"));
+     *     Filters.like("email", "%@company.com"));
      * }</pre>
      *
      * @param entityName the entity/table name
@@ -3438,7 +3438,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("products",
+     * SubQuery subQuery = Filters.subQuery("products",
      *     Arrays.asList("id", "price"),
      *     "category = 'electronics' AND in_stock = true");
      * }</pre>
@@ -3458,7 +3458,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery("orders", 
+     * SubQuery subQuery = Filters.subQuery("orders", 
      *     "SELECT COUNT(*) FROM orders WHERE user_id = ?");
      * }</pre>
      *
@@ -3479,7 +3479,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = ConditionFactory.subQuery(
+     * SubQuery subQuery = Filters.subQuery(
      *     "SELECT user_id FROM orders WHERE total > 1000 GROUP BY user_id"
      * );
      * }</pre>
@@ -3496,7 +3496,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Limit limit = ConditionFactory.limit(10);
+     * Limit limit = Filters.limit(10);
      * // Results in SQL like: LIMIT 10
      * }</pre>
      *
@@ -3513,7 +3513,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Limit limit = ConditionFactory.limit(20, 10);
+     * Limit limit = Filters.limit(20, 10);
      * // Results in SQL like: LIMIT 10 OFFSET 20 (skip 20, take 10)
      * }</pre>
      *
@@ -3531,7 +3531,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Limit limit = ConditionFactory.limit("10 OFFSET 20");
+     * Limit limit = Filters.limit("10 OFFSET 20");
      * }</pre>
      *
      * @param expr the limit expression as a string
@@ -3547,8 +3547,8 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = ConditionFactory.criteria()
-     *     .where(ConditionFactory.eq("status", "active"))
+     * Criteria criteria = Filters.criteria()
+     *     .where(Filters.eq("status", "active"))
      *     .orderBy("created_date", DESC)
      *     .limit(10);
      * }</pre>
@@ -3560,37 +3560,19 @@ public class ConditionFactory {
     }
 
     /**
-     * A utility class providing static factory methods identical to ConditionFactory.
+     * A utility class providing static factory methods identical to Filters.
+     * CF serves as a shorter alias for Filters to reduce verbosity.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Instead of ConditionFactory.eq("name", "John")
-     * Condition c = Filters.eq("name", "John");
-     * }</pre>
-     * 
-     * <p>All methods in ConditionFactory are available through Filters.</p>
-     */
-    @Beta
-    public static final class Filters extends ConditionFactory {
-
-        private Filters() {
-            // singleton for utility class.
-        }
-    }
-
-    /**
-     * A utility class providing static factory methods identical to ConditionFactory.
-     * CF serves as a shorter alias for ConditionFactory to reduce verbosity.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Instead of ConditionFactory.eq("name", "John")
+     * // Instead of Filters.eq("name", "John")
      * Condition c = CF.eq("name", "John");
      * }</pre>
      * 
-     * <p>All methods in ConditionFactory are available through CF.</p>
+     * <p>All methods in Filters are available through CF.</p>
      */
-    public static final class CF extends ConditionFactory {
+    @Beta
+    public static final class CF extends Filters {
 
         private CF() {
             // singleton for utility class.
@@ -3607,7 +3589,7 @@ public class ConditionFactory {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Instead of: ConditionFactory.criteria().where(condition)
+     * // Instead of: Filters.criteria().where(condition)
      * Criteria c = CB.where(CF.eq("status", "active"));
      * 
      * // Chain multiple operations
@@ -3616,6 +3598,7 @@ public class ConditionFactory {
      *     .limit(50);
      * }</pre>
      */
+    @Beta
     public static final class CB {
 
         private CB() {

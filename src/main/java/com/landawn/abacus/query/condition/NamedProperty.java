@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Strings;
 
@@ -78,7 +78,7 @@ import com.landawn.abacus.util.Strings;
  * }</pre>
  *
  * @see Condition
- * @see ConditionFactory.CF
+ * @see Filters.CF
  */
 public final class NamedProperty {
 
@@ -162,7 +162,7 @@ public final class NamedProperty {
      * @param values the value to compare against. Can be of any type compatible with the property.
      * @return an Equal condition for this property
      * @see Equal
-     * @see ConditionFactory.CF#eq(String, Object)
+     * @see Filters.CF#eq(String, Object)
      */
     public Equal eq(final Object values) {
         return CF.eq(propName, values);
@@ -241,7 +241,7 @@ public final class NamedProperty {
      * @param values the value to compare against. Can be of any type compatible with the property.
      * @return a NotEqual condition for this property
      * @see NotEqual
-     * @see ConditionFactory.CF#ne(String, Object)
+     * @see Filters.CF#ne(String, Object)
      */
     public NotEqual ne(final Object values) {
         return CF.ne(propName, values);
@@ -260,7 +260,7 @@ public final class NamedProperty {
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a GreaterThan condition for this property
      * @see GreaterThan
-     * @see ConditionFactory.CF#gt(String, Object)
+     * @see Filters.CF#gt(String, Object)
      */
     public GreaterThan gt(final Object value) {
         return CF.gt(propName, value);
@@ -279,7 +279,7 @@ public final class NamedProperty {
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
      * @return a GreaterEqual condition for this property
      * @see GreaterEqual
-     * @see ConditionFactory.CF#ge(String, Object)
+     * @see Filters.CF#ge(String, Object)
      */
     public GreaterEqual ge(final Object value) {
         return CF.ge(propName, value);
@@ -298,7 +298,7 @@ public final class NamedProperty {
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a LessThan condition for this property
      * @see LessThan
-     * @see ConditionFactory.CF#lt(String, Object)
+     * @see Filters.CF#lt(String, Object)
      */
     public LessThan lt(final Object value) {
         return CF.lt(propName, value);
@@ -317,7 +317,7 @@ public final class NamedProperty {
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
      * @return a LessEqual condition for this property
      * @see LessEqual
-     * @see ConditionFactory.CF#le(String, Object)
+     * @see Filters.CF#le(String, Object)
      */
     public LessEqual le(final Object value) {
         return CF.le(propName, value);
@@ -335,7 +335,7 @@ public final class NamedProperty {
      *
      * @return an IsNull condition for this property
      * @see IsNull
-     * @see ConditionFactory.CF#isNull(String)
+     * @see Filters.CF#isNull(String)
      */
     public IsNull isNull() {
         return CF.isNull(propName);
@@ -353,7 +353,7 @@ public final class NamedProperty {
      *
      * @return an IsNotNull condition for this property
      * @see IsNotNull
-     * @see ConditionFactory.CF#isNotNull(String)
+     * @see Filters.CF#isNotNull(String)
      */
     public IsNotNull isNotNull() {
         return CF.isNotNull(propName);
@@ -373,7 +373,7 @@ public final class NamedProperty {
      * @param maxValue the maximum value (inclusive). Can be numeric, date, string, or any comparable type.
      * @return a Between condition for this property
      * @see Between
-     * @see ConditionFactory.CF#between(String, Object, Object)
+     * @see Filters.CF#between(String, Object, Object)
      */
     public Between between(final Object minValue, final Object maxValue) {
         return CF.between(propName, minValue, maxValue);
@@ -405,7 +405,7 @@ public final class NamedProperty {
      * @param value the pattern to match (can include % for any characters and _ for single character)
      * @return a Like condition for this property
      * @see Like
-     * @see ConditionFactory.CF#like(String, Object)
+     * @see Filters.CF#like(String, Object)
      */
     public Like like(final Object value) {
         return CF.like(propName, value);
@@ -424,7 +424,7 @@ public final class NamedProperty {
      * @param value the pattern to exclude (can include % for any characters and _ for single character)
      * @return a NotLike condition for this property
      * @see NotLike
-     * @see ConditionFactory.CF#notLike(String, Object)
+     * @see Filters.CF#notLike(String, Object)
      */
     public NotLike notLike(final Object value) {
         return CF.notLike(propName, value);
@@ -443,7 +443,7 @@ public final class NamedProperty {
      * @param value the prefix to match. The % wildcard will be automatically appended.
      * @return a Like condition with % appended to the value
      * @see Like
-     * @see ConditionFactory.CF#startsWith(String, Object)
+     * @see Filters.CF#startsWith(String, Object)
      */
     public Like startsWith(final Object value) {
         return CF.startsWith(propName, value);
@@ -462,7 +462,7 @@ public final class NamedProperty {
      * @param value the suffix to match. The % wildcard will be automatically prepended.
      * @return a Like condition with % prepended to the value
      * @see Like
-     * @see ConditionFactory.CF#endsWith(String, Object)
+     * @see Filters.CF#endsWith(String, Object)
      */
     public Like endsWith(final Object value) {
         return CF.endsWith(propName, value);
@@ -481,7 +481,7 @@ public final class NamedProperty {
      * @param value the substring to match. The % wildcard will be automatically added to both sides.
      * @return a Like condition with % on both sides of the value
      * @see Like
-     * @see ConditionFactory.CF#contains(String, Object)
+     * @see Filters.CF#contains(String, Object)
      */
     public Like contains(final Object value) {
         return CF.contains(propName, value);
@@ -503,7 +503,7 @@ public final class NamedProperty {
      * @param values array of values to check membership against
      * @return an In condition for this property
      * @see In
-     * @see ConditionFactory.CF#in(String, Object[])
+     * @see Filters.CF#in(String, Object[])
      */
     public In in(final Object... values) {
         return CF.in(propName, values);
@@ -528,7 +528,7 @@ public final class NamedProperty {
      * @param values collection of values to check membership against
      * @return an In condition for this property
      * @see In
-     * @see ConditionFactory.CF#in(String, Collection)
+     * @see Filters.CF#in(String, Collection)
      */
     public In in(final Collection<?> values) {
         return CF.in(propName, values);

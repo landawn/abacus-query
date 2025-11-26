@@ -10,7 +10,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.LessThan;
@@ -24,7 +24,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testConstructor() {
-        Binary binary = ConditionFactory.binary("price", Operator.GREATER_THAN, 100.0);
+        Binary binary = Filters.binary("price", Operator.GREATER_THAN, 100.0);
 
         Assertions.assertNotNull(binary);
         Assertions.assertEquals("price", binary.getPropName());
@@ -34,7 +34,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testConstructorWithNullValue() {
-        Binary binary = ConditionFactory.binary("optional", Operator.EQUAL, null);
+        Binary binary = Filters.binary("optional", Operator.EQUAL, null);
 
         Assertions.assertNotNull(binary);
         Assertions.assertNull(binary.getPropValue());
@@ -56,27 +56,27 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testGetPropName() {
-        Binary binary = ConditionFactory.binary("userName", Operator.EQUAL, "John");
+        Binary binary = Filters.binary("userName", Operator.EQUAL, "John");
         Assertions.assertEquals("userName", binary.getPropName());
     }
 
     @Test
     public void testGetPropValue() {
-        Binary binary = ConditionFactory.binary("age", Operator.GREATER_EQUAL, 25);
+        Binary binary = Filters.binary("age", Operator.GREATER_EQUAL, 25);
         Integer value = binary.getPropValue();
         Assertions.assertEquals(25, value);
     }
 
     @Test
     public void testSetPropValue() {
-        Binary binary = ConditionFactory.binary("status", Operator.EQUAL, "active");
+        Binary binary = Filters.binary("status", Operator.EQUAL, "active");
         binary.setPropValue("inactive");
         Assertions.assertEquals("inactive", binary.getPropValue());
     }
 
     @Test
     public void testGetParametersWithLiteralValue() {
-        Binary binary = ConditionFactory.binary("score", Operator.LESS_THAN, 80.5);
+        Binary binary = Filters.binary("score", Operator.LESS_THAN, 80.5);
         List<Object> params = binary.getParameters();
 
         Assertions.assertEquals(1, params.size());
@@ -85,8 +85,8 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testGetParametersWithConditionValue() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT MAX(price) FROM products");
-        Binary binary = ConditionFactory.binary("price", Operator.EQUAL, subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT MAX(price) FROM products");
+        Binary binary = Filters.binary("price", Operator.EQUAL, subQuery);
 
         List<Object> params = binary.getParameters();
         Assertions.assertEquals(subQuery.getParameters(), params);
@@ -94,7 +94,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testClearParametersWithLiteralValue() {
-        Binary binary = ConditionFactory.binary("count", Operator.GREATER_THAN, 100);
+        Binary binary = Filters.binary("count", Operator.GREATER_THAN, 100);
         binary.clearParameters();
 
         Assertions.assertNull(binary.getPropValue());
@@ -102,8 +102,8 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testClearParametersWithConditionValue() {
-        Between between = ConditionFactory.between("value", 10, 20);
-        Binary binary = ConditionFactory.binary("range", Operator.EQUAL, between);
+        Between between = Filters.between("value", 10, 20);
+        Binary binary = Filters.binary("range", Operator.EQUAL, between);
 
         binary.clearParameters();
 
@@ -113,7 +113,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Binary original = ConditionFactory.binary("temperature", Operator.LESS_EQUAL, 32.0);
+        Binary original = Filters.binary("temperature", Operator.LESS_EQUAL, 32.0);
         Binary copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
@@ -124,8 +124,8 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testCopyWithConditionValue() {
-        In in = ConditionFactory.in("id", Arrays.asList(1, 2, 3));
-        Binary original = ConditionFactory.binary("ids", Operator.EQUAL, in);
+        In in = Filters.in("id", Arrays.asList(1, 2, 3));
+        Binary original = Filters.binary("ids", Operator.EQUAL, in);
         Binary copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
@@ -135,7 +135,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testToString() {
-        Binary binary = ConditionFactory.binary("name", Operator.NOT_EQUAL, "Test");
+        Binary binary = Filters.binary("name", Operator.NOT_EQUAL, "Test");
         String result = binary.toString();
 
         Assertions.assertEquals("name != 'Test'", result);
@@ -143,7 +143,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testToStringWithNumber() {
-        Binary binary = ConditionFactory.binary("amount", Operator.GREATER_THAN, 1000);
+        Binary binary = Filters.binary("amount", Operator.GREATER_THAN, 1000);
         String result = binary.toString();
 
         Assertions.assertEquals("amount > 1000", result);
@@ -151,7 +151,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testToStringWithNull() {
-        Binary binary = ConditionFactory.binary("deleted", Operator.EQUAL, null);
+        Binary binary = Filters.binary("deleted", Operator.EQUAL, null);
         String result = binary.toString();
 
         Assertions.assertEquals("deleted = null", result);
@@ -159,7 +159,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Binary binary = ConditionFactory.binary("firstName", Operator.LIKE, "John%");
+        Binary binary = Filters.binary("firstName", Operator.LIKE, "John%");
         String result = binary.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
         Assertions.assertEquals("first_name LIKE 'John%'", result);
@@ -167,8 +167,8 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testToStringWithConditionValue() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM users WHERE active = true");
-        Binary binary = ConditionFactory.binary("user_id", Operator.IN, subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
+        Binary binary = Filters.binary("user_id", Operator.IN, subQuery);
         String result = binary.toString();
 
         Assertions.assertTrue(result.contains("user_id IN"));
@@ -177,11 +177,11 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Binary binary1 = ConditionFactory.binary("age", Operator.GREATER_EQUAL, 18);
-        Binary binary2 = ConditionFactory.binary("age", Operator.GREATER_EQUAL, 18);
-        Binary binary3 = ConditionFactory.binary("age", Operator.GREATER_EQUAL, 21);
-        Binary binary4 = ConditionFactory.binary("age", Operator.GREATER_THAN, 18);
-        Binary binary5 = ConditionFactory.binary("height", Operator.GREATER_EQUAL, 18);
+        Binary binary1 = Filters.binary("age", Operator.GREATER_EQUAL, 18);
+        Binary binary2 = Filters.binary("age", Operator.GREATER_EQUAL, 18);
+        Binary binary3 = Filters.binary("age", Operator.GREATER_EQUAL, 21);
+        Binary binary4 = Filters.binary("age", Operator.GREATER_THAN, 18);
+        Binary binary5 = Filters.binary("height", Operator.GREATER_EQUAL, 18);
 
         Assertions.assertEquals(binary1, binary1);
         Assertions.assertEquals(binary1, binary2);
@@ -194,24 +194,24 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        Binary binary1 = ConditionFactory.binary("status", Operator.EQUAL, "active");
-        Binary binary2 = ConditionFactory.binary("status", Operator.EQUAL, "active");
+        Binary binary1 = Filters.binary("status", Operator.EQUAL, "active");
+        Binary binary2 = Filters.binary("status", Operator.EQUAL, "active");
 
         Assertions.assertEquals(binary1.hashCode(), binary2.hashCode());
     }
 
     @Test
     public void testHashCodeWithNull() {
-        Binary binary1 = ConditionFactory.binary("optional", Operator.EQUAL, null);
-        Binary binary2 = ConditionFactory.binary("optional", Operator.EQUAL, null);
+        Binary binary1 = Filters.binary("optional", Operator.EQUAL, null);
+        Binary binary2 = Filters.binary("optional", Operator.EQUAL, null);
 
         Assertions.assertEquals(binary1.hashCode(), binary2.hashCode());
     }
 
     @Test
     public void testAnd() {
-        Binary binary = ConditionFactory.binary("age", Operator.GREATER_EQUAL, 18);
-        LessThan lt = ConditionFactory.lt("age", 65);
+        Binary binary = Filters.binary("age", Operator.GREATER_EQUAL, 18);
+        LessThan lt = Filters.lt("age", 65);
 
         And and = binary.and(lt);
 
@@ -223,8 +223,8 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testOr() {
-        Binary binary = ConditionFactory.binary("status", Operator.EQUAL, "premium");
-        Equal eq = ConditionFactory.eq("status", "vip");
+        Binary binary = Filters.binary("status", Operator.EQUAL, "premium");
+        Equal eq = Filters.eq("status", "vip");
 
         Or or = binary.or(eq);
 
@@ -234,7 +234,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testNot() {
-        Binary binary = ConditionFactory.binary("active", Operator.EQUAL, false);
+        Binary binary = Filters.binary("active", Operator.EQUAL, false);
 
         Not not = binary.not();
 
@@ -245,14 +245,14 @@ public class BinaryTest extends TestBase {
     @Test
     public void testAllOperators() {
         // Test with various operators
-        Binary eq = ConditionFactory.binary("prop", Operator.EQUAL, 1);
-        Binary ne = ConditionFactory.binary("prop", Operator.NOT_EQUAL, 1);
-        Binary gt = ConditionFactory.binary("prop", Operator.GREATER_THAN, 1);
-        Binary ge = ConditionFactory.binary("prop", Operator.GREATER_EQUAL, 1);
-        Binary lt = ConditionFactory.binary("prop", Operator.LESS_THAN, 1);
-        Binary le = ConditionFactory.binary("prop", Operator.LESS_EQUAL, 1);
-        Binary like = ConditionFactory.binary("prop", Operator.LIKE, "%test%");
-        Binary in = ConditionFactory.binary("prop", Operator.IN, Arrays.asList(1, 2, 3));
+        Binary eq = Filters.binary("prop", Operator.EQUAL, 1);
+        Binary ne = Filters.binary("prop", Operator.NOT_EQUAL, 1);
+        Binary gt = Filters.binary("prop", Operator.GREATER_THAN, 1);
+        Binary ge = Filters.binary("prop", Operator.GREATER_EQUAL, 1);
+        Binary lt = Filters.binary("prop", Operator.LESS_THAN, 1);
+        Binary le = Filters.binary("prop", Operator.LESS_EQUAL, 1);
+        Binary like = Filters.binary("prop", Operator.LIKE, "%test%");
+        Binary in = Filters.binary("prop", Operator.IN, Arrays.asList(1, 2, 3));
 
         Assertions.assertEquals("prop = 1", eq.toString());
         Assertions.assertEquals("prop != 1", ne.toString());

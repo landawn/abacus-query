@@ -10,7 +10,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.FullJoin;
 import com.landawn.abacus.query.condition.GreaterThan;
@@ -19,14 +19,14 @@ import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.NotEqual;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.Or;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class FullJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
-        FullJoin join = ConditionFactory.fullJoin("departments");
+        FullJoin join = Filters.fullJoin("departments");
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.FULL_JOIN, join.getOperator());
@@ -37,8 +37,8 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntityAndCondition() {
-        Equal eq = ConditionFactory.eq("departments.id", "employees.dept_id");
-        FullJoin join = ConditionFactory.fullJoin("employees", eq);
+        Equal eq = Filters.eq("departments.id", "employees.dept_id");
+        FullJoin join = Filters.fullJoin("employees", eq);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.FULL_JOIN, join.getOperator());
@@ -50,8 +50,8 @@ public class FullJoinTest extends TestBase {
     @Test
     public void testConstructorWithMultipleEntities() {
         List<String> entities = Arrays.asList("employees", "contractors");
-        Equal eq = ConditionFactory.eq("departments.id", "person.dept_id");
-        FullJoin join = ConditionFactory.fullJoin(entities, eq);
+        Equal eq = Filters.eq("departments.id", "person.dept_id");
+        FullJoin join = Filters.fullJoin(entities, eq);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.FULL_JOIN, join.getOperator());
@@ -62,7 +62,7 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testToString() {
-        FullJoin join = ConditionFactory.fullJoin("orders");
+        FullJoin join = Filters.fullJoin("orders");
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("FULL JOIN"));
@@ -71,8 +71,8 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testToStringWithCondition() {
-        And condition = ConditionFactory.and(ConditionFactory.eq("users.id", "orders.user_id"), ConditionFactory.ne("orders.status", "cancelled"));
-        FullJoin join = ConditionFactory.fullJoin("orders", condition);
+        And condition = Filters.and(Filters.eq("users.id", "orders.user_id"), Filters.ne("orders.status", "cancelled"));
+        FullJoin join = Filters.fullJoin("orders", condition);
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("FULL JOIN"));
@@ -84,8 +84,8 @@ public class FullJoinTest extends TestBase {
     @Test
     public void testToStringWithMultipleEntitiesAndCondition() {
         List<String> entities = Arrays.asList("table1", "table2", "table3");
-        GreaterThan gt = ConditionFactory.gt("amount", 0);
-        FullJoin join = ConditionFactory.fullJoin(entities, gt);
+        GreaterThan gt = Filters.gt("amount", 0);
+        FullJoin join = Filters.fullJoin(entities, gt);
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("FULL JOIN"));
@@ -97,8 +97,8 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Between between = ConditionFactory.between("salary", 40000, 80000);
-        FullJoin join = ConditionFactory.fullJoin("employees", between);
+        Between between = Filters.between("salary", 40000, 80000);
+        FullJoin join = Filters.fullJoin("employees", between);
 
         List<Object> params = join.getParameters();
         Assertions.assertEquals(2, params.size());
@@ -108,7 +108,7 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testGetParametersWithoutCondition() {
-        FullJoin join = ConditionFactory.fullJoin("departments");
+        FullJoin join = Filters.fullJoin("departments");
 
         List<Object> params = join.getParameters();
         Assertions.assertNotNull(params);
@@ -117,8 +117,8 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        In in = ConditionFactory.in("department_id", Arrays.asList(10, 20, 30));
-        FullJoin join = ConditionFactory.fullJoin("departments", in);
+        In in = Filters.in("department_id", Arrays.asList(10, 20, 30));
+        FullJoin join = Filters.fullJoin("departments", in);
 
         Assertions.assertEquals(3, join.getParameters().size());
 
@@ -130,9 +130,9 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Like like = ConditionFactory.like("name", "%Corp%");
+        Like like = Filters.like("name", "%Corp%");
         List<String> entities = Arrays.asList("companies", "subsidiaries");
-        FullJoin original = ConditionFactory.fullJoin(entities, like);
+        FullJoin original = Filters.fullJoin(entities, like);
 
         FullJoin copy = original.copy();
 
@@ -146,13 +146,13 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Equal eq1 = ConditionFactory.eq("dept.id", "emp.dept_id");
-        Equal eq2 = ConditionFactory.eq("dept.id", "emp.dept_id");
+        Equal eq1 = Filters.eq("dept.id", "emp.dept_id");
+        Equal eq2 = Filters.eq("dept.id", "emp.dept_id");
 
-        FullJoin join1 = ConditionFactory.fullJoin("employees", eq1);
-        FullJoin join2 = ConditionFactory.fullJoin("employees", eq2);
-        FullJoin join3 = ConditionFactory.fullJoin("departments", eq1);
-        FullJoin join4 = ConditionFactory.fullJoin("employees");
+        FullJoin join1 = Filters.fullJoin("employees", eq1);
+        FullJoin join2 = Filters.fullJoin("employees", eq2);
+        FullJoin join3 = Filters.fullJoin("departments", eq1);
+        FullJoin join4 = Filters.fullJoin("employees");
 
         Assertions.assertEquals(join1, join1);
         Assertions.assertEquals(join1, join2);
@@ -164,17 +164,17 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        NotEqual ne = ConditionFactory.ne("status", "inactive");
-        FullJoin join1 = ConditionFactory.fullJoin("records", ne);
-        FullJoin join2 = ConditionFactory.fullJoin("records", ne);
+        NotEqual ne = Filters.ne("status", "inactive");
+        FullJoin join1 = Filters.fullJoin("records", ne);
+        FullJoin join2 = Filters.fullJoin("records", ne);
 
         Assertions.assertEquals(join1.hashCode(), join2.hashCode());
     }
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Equal eq = ConditionFactory.eq("departmentId", CF.expr("employeeDeptId"));
-        FullJoin join = ConditionFactory.fullJoin("employees", eq);
+        Equal eq = Filters.eq("departmentId", CF.expr("employeeDeptId"));
+        FullJoin join = Filters.fullJoin("employees", eq);
 
         String result = join.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
@@ -186,10 +186,10 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        Or complexCondition = ConditionFactory.or(ConditionFactory.and(ConditionFactory.eq("dept.active", true), ConditionFactory.isNotNull("emp.id")),
-                ConditionFactory.isNull("dept.closed_date"));
+        Or complexCondition = Filters.or(Filters.and(Filters.eq("dept.active", true), Filters.isNotNull("emp.id")),
+                Filters.isNull("dept.closed_date"));
 
-        FullJoin join = ConditionFactory.fullJoin("employees emp", complexCondition);
+        FullJoin join = Filters.fullJoin("employees emp", complexCondition);
 
         String result = join.toString();
         Assertions.assertTrue(result.contains("FULL JOIN"));

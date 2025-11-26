@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.CriteriaUtil;
 import com.landawn.abacus.query.condition.Equal;
@@ -104,29 +104,29 @@ public class CriteriaUtilTest extends TestBase {
     @Test
     public void testIsClauseWithCondition() {
         // Test clause conditions
-        Where where = ConditionFactory.where(ConditionFactory.eq("id", 1));
+        Where where = Filters.where(Filters.eq("id", 1));
         Assertions.assertTrue(CriteriaUtil.isClause(where));
 
-        Join join = ConditionFactory.join("orders");
+        Join join = Filters.join("orders");
         Assertions.assertTrue(CriteriaUtil.isClause(join));
 
-        GroupBy groupBy = ConditionFactory.groupBy("department");
+        GroupBy groupBy = Filters.groupBy("department");
         Assertions.assertTrue(CriteriaUtil.isClause(groupBy));
 
-        Having having = ConditionFactory.having(ConditionFactory.gt("COUNT(*)", 5));
+        Having having = Filters.having(Filters.gt("COUNT(*)", 5));
         Assertions.assertTrue(CriteriaUtil.isClause(having));
 
-        OrderBy orderBy = ConditionFactory.orderBy("name");
+        OrderBy orderBy = Filters.orderBy("name");
         Assertions.assertTrue(CriteriaUtil.isClause(orderBy));
 
-        Limit limit = ConditionFactory.limit(10);
+        Limit limit = Filters.limit(10);
         Assertions.assertTrue(CriteriaUtil.isClause(limit));
 
         // Test non-clause conditions
-        Equal eq = ConditionFactory.eq("status", "active");
+        Equal eq = Filters.eq("status", "active");
         Assertions.assertFalse(CriteriaUtil.isClause(eq));
 
-        And and = ConditionFactory.and(eq);
+        And and = Filters.and(eq);
         Assertions.assertFalse(CriteriaUtil.isClause(and));
 
         // Test null
@@ -135,9 +135,9 @@ public class CriteriaUtilTest extends TestBase {
 
     @Test
     public void testAddWithVarargs() {
-        Criteria criteria = ConditionFactory.criteria();
-        Where where = ConditionFactory.where(ConditionFactory.eq("active", true));
-        OrderBy orderBy = ConditionFactory.orderBy("name");
+        Criteria criteria = Filters.criteria();
+        Where where = Filters.where(Filters.eq("active", true));
+        OrderBy orderBy = Filters.orderBy("name");
 
         CriteriaUtil.add(criteria, where, orderBy);
 
@@ -148,9 +148,9 @@ public class CriteriaUtilTest extends TestBase {
 
     @Test
     public void testAddWithCollection() {
-        Criteria criteria = ConditionFactory.criteria();
-        List<Condition> conditions = Arrays.asList(ConditionFactory.join("orders"), ConditionFactory.where(ConditionFactory.eq("status", "active")),
-                ConditionFactory.limit(10));
+        Criteria criteria = Filters.criteria();
+        List<Condition> conditions = Arrays.asList(Filters.join("orders"), Filters.where(Filters.eq("status", "active")),
+                Filters.limit(10));
 
         CriteriaUtil.add(criteria, conditions);
 
@@ -162,7 +162,7 @@ public class CriteriaUtilTest extends TestBase {
 
     @Test
     public void testRemoveByOperator() {
-        Criteria criteria = ConditionFactory.criteria().where(ConditionFactory.eq("active", true)).orderBy("name").limit(10);
+        Criteria criteria = Filters.criteria().where(Filters.eq("active", true)).orderBy("name").limit(10);
 
         CriteriaUtil.remove(criteria, Operator.WHERE);
 
@@ -173,10 +173,10 @@ public class CriteriaUtilTest extends TestBase {
 
     @Test
     public void testRemoveWithVarargs() {
-        Criteria criteria = ConditionFactory.criteria();
-        Where where = ConditionFactory.where(ConditionFactory.eq("id", 1));
-        OrderBy orderBy = ConditionFactory.orderBy("date");
-        Limit limit = ConditionFactory.limit(5);
+        Criteria criteria = Filters.criteria();
+        Where where = Filters.where(Filters.eq("id", 1));
+        OrderBy orderBy = Filters.orderBy("date");
+        Limit limit = Filters.limit(5);
 
         CriteriaUtil.add(criteria, where, orderBy, limit);
         CriteriaUtil.remove(criteria, where, limit);
@@ -188,10 +188,10 @@ public class CriteriaUtilTest extends TestBase {
 
     @Test
     public void testRemoveWithCollection() {
-        Criteria criteria = ConditionFactory.criteria();
-        Join join1 = ConditionFactory.join("orders");
-        Join join2 = ConditionFactory.leftJoin("products");
-        Where where = ConditionFactory.where(ConditionFactory.eq("active", true));
+        Criteria criteria = Filters.criteria();
+        Join join1 = Filters.join("orders");
+        Join join2 = Filters.leftJoin("products");
+        Where where = Filters.where(Filters.eq("active", true));
 
         CriteriaUtil.add(criteria, join1, join2, where);
         CriteriaUtil.remove(criteria, Arrays.asList(join1, where));

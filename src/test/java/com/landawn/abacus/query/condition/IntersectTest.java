@@ -9,7 +9,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.Intersect;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class IntersectTest extends TestBase {

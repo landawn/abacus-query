@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.CrossJoin;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.GreaterThan;
@@ -23,7 +23,7 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
-        CrossJoin join = ConditionFactory.crossJoin("products");
+        CrossJoin join = Filters.crossJoin("products");
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.CROSS_JOIN, join.getOperator());
@@ -33,8 +33,8 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntityAndCondition() {
-        Equal eq = ConditionFactory.eq("available", true);
-        CrossJoin join = ConditionFactory.crossJoin("products", eq);
+        Equal eq = Filters.eq("available", true);
+        CrossJoin join = Filters.crossJoin("products", eq);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.CROSS_JOIN, join.getOperator());
@@ -46,8 +46,8 @@ public class CrossJoinTest extends TestBase {
     @Test
     public void testConstructorWithMultipleEntities() {
         List<String> entities = Arrays.asList("sizes", "colors", "styles");
-        Equal eq = ConditionFactory.eq("active", true);
-        CrossJoin join = ConditionFactory.crossJoin(entities, eq);
+        Equal eq = Filters.eq("active", true);
+        CrossJoin join = Filters.crossJoin(entities, eq);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.CROSS_JOIN, join.getOperator());
@@ -58,7 +58,7 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testToString() {
-        CrossJoin join = ConditionFactory.crossJoin("categories");
+        CrossJoin join = Filters.crossJoin("categories");
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("CROSS JOIN"));
@@ -67,8 +67,8 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testToStringWithCondition() {
-        GreaterThan gt = ConditionFactory.gt("price", 0);
-        CrossJoin join = ConditionFactory.crossJoin("products", gt);
+        GreaterThan gt = Filters.gt("price", 0);
+        CrossJoin join = Filters.crossJoin("products", gt);
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("CROSS JOIN"));
@@ -79,8 +79,8 @@ public class CrossJoinTest extends TestBase {
     @Test
     public void testToStringWithMultipleEntities() {
         List<String> entities = Arrays.asList("table1", "table2", "table3");
-        Equal eq = ConditionFactory.eq("status", "active");
-        CrossJoin join = ConditionFactory.crossJoin(entities, eq);
+        Equal eq = Filters.eq("status", "active");
+        CrossJoin join = Filters.crossJoin(entities, eq);
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("CROSS JOIN"));
@@ -92,8 +92,8 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        Between between = ConditionFactory.between("quantity", 10, 100);
-        CrossJoin join = ConditionFactory.crossJoin("inventory", between);
+        Between between = Filters.between("quantity", 10, 100);
+        CrossJoin join = Filters.crossJoin("inventory", between);
 
         List<Object> params = join.getParameters();
         Assertions.assertEquals(2, params.size());
@@ -103,7 +103,7 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testGetParametersWithoutCondition() {
-        CrossJoin join = ConditionFactory.crossJoin("products");
+        CrossJoin join = Filters.crossJoin("products");
 
         List<Object> params = join.getParameters();
         Assertions.assertNotNull(params);
@@ -112,8 +112,8 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        In in = ConditionFactory.in("category_id", Arrays.asList(1, 2, 3));
-        CrossJoin join = ConditionFactory.crossJoin("categories", in);
+        In in = Filters.in("category_id", Arrays.asList(1, 2, 3));
+        CrossJoin join = Filters.crossJoin("categories", in);
 
         join.clearParameters();
 
@@ -123,8 +123,8 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Like like = ConditionFactory.like("name", "%test%");
-        CrossJoin original = ConditionFactory.crossJoin("products", like);
+        Like like = Filters.like("name", "%test%");
+        CrossJoin original = Filters.crossJoin("products", like);
 
         CrossJoin copy = original.copy();
 
@@ -137,13 +137,13 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Equal eq1 = ConditionFactory.eq("active", true);
-        Equal eq2 = ConditionFactory.eq("active", true);
+        Equal eq1 = Filters.eq("active", true);
+        Equal eq2 = Filters.eq("active", true);
 
-        CrossJoin join1 = ConditionFactory.crossJoin("products", eq1);
-        CrossJoin join2 = ConditionFactory.crossJoin("products", eq2);
-        CrossJoin join3 = ConditionFactory.crossJoin("categories", eq1);
-        CrossJoin join4 = ConditionFactory.crossJoin("products");
+        CrossJoin join1 = Filters.crossJoin("products", eq1);
+        CrossJoin join2 = Filters.crossJoin("products", eq2);
+        CrossJoin join3 = Filters.crossJoin("categories", eq1);
+        CrossJoin join4 = Filters.crossJoin("products");
 
         Assertions.assertEquals(join1, join2);
         Assertions.assertNotEquals(join1, join3);
@@ -154,16 +154,16 @@ public class CrossJoinTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        NotEqual ne = ConditionFactory.ne("deleted", true);
-        CrossJoin join1 = ConditionFactory.crossJoin("items", ne);
-        CrossJoin join2 = ConditionFactory.crossJoin("items", ne);
+        NotEqual ne = Filters.ne("deleted", true);
+        CrossJoin join1 = Filters.crossJoin("items", ne);
+        CrossJoin join2 = Filters.crossJoin("items", ne);
 
         Assertions.assertEquals(join1.hashCode(), join2.hashCode());
     }
 
     @Test
     public void testInheritedJoinMethods() {
-        CrossJoin join = ConditionFactory.crossJoin("products");
+        CrossJoin join = Filters.crossJoin("products");
 
         // Test getJoinEntities
         Collection<String> entities = join.getJoinEntities();

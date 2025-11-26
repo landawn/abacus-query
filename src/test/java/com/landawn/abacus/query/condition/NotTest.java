@@ -12,7 +12,7 @@ import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.Not;
 import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 
 public class NotTest extends TestBase {
 

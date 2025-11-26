@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Exists;
 import com.landawn.abacus.query.condition.Not;
@@ -22,8 +22,8 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testConstructor() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
-        Exists exists = ConditionFactory.exists(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+        Exists exists = Filters.exists(subQuery);
 
         Assertions.assertNotNull(exists);
         Assertions.assertEquals(Operator.EXISTS, exists.getOperator());
@@ -32,8 +32,8 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM reviews WHERE reviews.product_id = products.id");
-        Exists exists = ConditionFactory.exists(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM reviews WHERE reviews.product_id = products.id");
+        Exists exists = Filters.exists(subQuery);
 
         SubQuery retrieved = exists.getCondition();
         Assertions.assertEquals(subQuery, retrieved);
@@ -41,8 +41,8 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testToString() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM subordinates WHERE manager_id = emp.id");
-        Exists exists = ConditionFactory.exists(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM subordinates WHERE manager_id = emp.id");
+        Exists exists = Filters.exists(subQuery);
 
         String result = exists.toString();
         Assertions.assertTrue(result.contains("EXISTS"));
@@ -51,8 +51,8 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM orderItems WHERE orderId = orders.id");
-        Exists exists = ConditionFactory.exists(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orderItems WHERE orderId = orders.id");
+        Exists exists = Filters.exists(subQuery);
 
         String result = exists.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
         Assertions.assertTrue(result.contains("EXISTS"));
@@ -60,9 +60,9 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = ConditionFactory.subQuery("orders", Arrays.asList("id"),
-                ConditionFactory.and(ConditionFactory.eq("customer_id", 123), ConditionFactory.eq("status", "pending")));
-        Exists exists = ConditionFactory.exists(subQuery);
+        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"),
+                Filters.and(Filters.eq("customer_id", 123), Filters.eq("status", "pending")));
+        Exists exists = Filters.exists(subQuery);
 
         var params = exists.getParameters();
         Assertions.assertEquals(2, params.size());
@@ -72,8 +72,8 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = ConditionFactory.subQuery("products", Arrays.asList("id"), ConditionFactory.in("category_id", Arrays.asList(1, 2, 3)));
-        Exists exists = ConditionFactory.exists(subQuery);
+        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("id"), Filters.in("category_id", Arrays.asList(1, 2, 3)));
+        Exists exists = Filters.exists(subQuery);
 
         Assertions.assertEquals(3, exists.getParameters().size());
 
@@ -84,8 +84,8 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM items WHERE active = true");
-        Exists original = ConditionFactory.exists(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM items WHERE active = true");
+        Exists original = Filters.exists(subQuery);
 
         Exists copy = original.copy();
 
@@ -97,13 +97,13 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testEquals() {
-        SubQuery subQuery1 = ConditionFactory.subQuery("SELECT 1 FROM orders WHERE customer_id = 100");
-        SubQuery subQuery2 = ConditionFactory.subQuery("SELECT 1 FROM orders WHERE customer_id = 100");
-        SubQuery subQuery3 = ConditionFactory.subQuery("SELECT 1 FROM orders WHERE customer_id = 200");
+        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = 100");
+        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = 100");
+        SubQuery subQuery3 = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = 200");
 
-        Exists exists1 = ConditionFactory.exists(subQuery1);
-        Exists exists2 = ConditionFactory.exists(subQuery2);
-        Exists exists3 = ConditionFactory.exists(subQuery3);
+        Exists exists1 = Filters.exists(subQuery1);
+        Exists exists2 = Filters.exists(subQuery2);
+        Exists exists3 = Filters.exists(subQuery3);
 
         Assertions.assertEquals(exists1, exists1);
         Assertions.assertEquals(exists1, exists2);
@@ -114,20 +114,20 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = ConditionFactory.subQuery("SELECT 1 FROM tags WHERE product_id = p.id");
-        SubQuery subQuery2 = ConditionFactory.subQuery("SELECT 1 FROM tags WHERE product_id = p.id");
+        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM tags WHERE product_id = p.id");
+        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM tags WHERE product_id = p.id");
 
-        Exists exists1 = ConditionFactory.exists(subQuery1);
-        Exists exists2 = ConditionFactory.exists(subQuery2);
+        Exists exists1 = Filters.exists(subQuery1);
+        Exists exists2 = Filters.exists(subQuery2);
 
         Assertions.assertEquals(exists1.hashCode(), exists2.hashCode());
     }
 
     @Test
     public void testAnd() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM permissions WHERE user_id = u.id");
-        Exists exists = ConditionFactory.exists(subQuery);
-        Equal eq = ConditionFactory.eq("active", true);
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM permissions WHERE user_id = u.id");
+        Exists exists = Filters.exists(subQuery);
+        Equal eq = Filters.eq("active", true);
 
         And and = exists.and(eq);
 
@@ -139,9 +139,9 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testOr() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM admins WHERE user_id = u.id");
-        Exists exists = ConditionFactory.exists(subQuery);
-        Equal eq = ConditionFactory.eq("superuser", true);
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM admins WHERE user_id = u.id");
+        Exists exists = Filters.exists(subQuery);
+        Equal eq = Filters.eq("superuser", true);
 
         Or or = exists.or(eq);
 
@@ -151,8 +151,8 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testNot() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM blacklist WHERE user_id = u.id");
-        Exists exists = ConditionFactory.exists(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM blacklist WHERE user_id = u.id");
+        Exists exists = Filters.exists(subQuery);
 
         Not not = exists.not();
 
@@ -162,8 +162,8 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testNotExists() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT 1 FROM blocked_users WHERE id = users.id");
-        NotExists notExists = ConditionFactory.notExists(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM blocked_users WHERE id = users.id");
+        NotExists notExists = Filters.notExists(subQuery);
 
         Assertions.assertNotNull(notExists);
         Assertions.assertEquals(Operator.NOT_EXISTS, notExists.getOperator());
@@ -171,9 +171,9 @@ public class ExistsTest extends TestBase {
 
     @Test
     public void testSetCondition() {
-        SubQuery subQuery1 = ConditionFactory.subQuery("SELECT 1 FROM table1");
-        SubQuery subQuery2 = ConditionFactory.subQuery("SELECT 1 FROM table2");
-        Exists exists = ConditionFactory.exists(subQuery1);
+        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM table2");
+        Exists exists = Filters.exists(subQuery1);
 
         Assertions.assertEquals(subQuery1, exists.getCondition());
 
@@ -184,18 +184,18 @@ public class ExistsTest extends TestBase {
     @Test
     public void testComplexExistsScenarios() {
         // Test customers with orders
-        SubQuery hasOrders = ConditionFactory.subQuery("orders", Arrays.asList("1"),
-                ConditionFactory.and(ConditionFactory.eq("orders.customer_id", "customers.id"), ConditionFactory.ge("order_date", "2023-01-01")));
-        Exists customersWithRecentOrders = ConditionFactory.exists(hasOrders);
+        SubQuery hasOrders = Filters.subQuery("orders", Arrays.asList("1"),
+                Filters.and(Filters.eq("orders.customer_id", "customers.id"), Filters.ge("order_date", "2023-01-01")));
+        Exists customersWithRecentOrders = Filters.exists(hasOrders);
 
         Assertions.assertNotNull(customersWithRecentOrders);
         var params = customersWithRecentOrders.getParameters();
         Assertions.assertTrue(params.contains("2023-01-01"));
 
         // Test products with stock
-        SubQuery hasStock = ConditionFactory.subQuery("inventory", Arrays.asList("1"),
-                ConditionFactory.and(ConditionFactory.eq("inventory.product_id", "products.id"), ConditionFactory.gt("quantity", 0)));
-        Exists productsInStock = ConditionFactory.exists(hasStock);
+        SubQuery hasStock = Filters.subQuery("inventory", Arrays.asList("1"),
+                Filters.and(Filters.eq("inventory.product_id", "products.id"), Filters.gt("quantity", 0)));
+        Exists productsInStock = Filters.exists(hasStock);
 
         Assertions.assertNotNull(productsInStock);
         params = productsInStock.getParameters();
@@ -205,12 +205,12 @@ public class ExistsTest extends TestBase {
     @Test
     public void testPerformanceConsideration() {
         // EXISTS with SELECT 1 (optimal)
-        SubQuery optimal = ConditionFactory.subQuery("SELECT 1 FROM large_table WHERE condition = true");
-        Exists exists1 = ConditionFactory.exists(optimal);
+        SubQuery optimal = Filters.subQuery("SELECT 1 FROM large_table WHERE condition = true");
+        Exists exists1 = Filters.exists(optimal);
 
         // EXISTS with SELECT * (works but less optimal)
-        SubQuery lessOptimal = ConditionFactory.subQuery("SELECT * FROM large_table WHERE condition = true");
-        Exists exists2 = ConditionFactory.exists(lessOptimal);
+        SubQuery lessOptimal = Filters.subQuery("SELECT * FROM large_table WHERE condition = true");
+        Exists exists2 = Filters.exists(lessOptimal);
 
         // Both should work correctly
         Assertions.assertNotNull(exists1);

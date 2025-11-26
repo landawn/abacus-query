@@ -69,10 +69,10 @@ import com.landawn.abacus.query.condition.UnionAll;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.query.condition.XOR;
-import com.landawn.abacus.query.condition.ConditionFactory.CB;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CB;
+import com.landawn.abacus.query.condition.Filters.CF;
 
-public class ConditionFactoryTest extends TestBase {
+public class FiltersTest extends TestBase {
 
     @Test
     public void testAlwaysTrue() {

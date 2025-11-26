@@ -64,7 +64,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.query.SK;
 import com.landawn.abacus.query.SQLParser;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
@@ -101,7 +101,7 @@ import com.landawn.abacus.util.Strings;
  * }</pre>
  *
  * @see AbstractCondition
- * @see ConditionFactory#expr(String)
+ * @see Filters#expr(String)
  */
 public class Expression extends AbstractCondition {
 

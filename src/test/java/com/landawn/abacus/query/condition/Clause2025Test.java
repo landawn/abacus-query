@@ -33,7 +33,7 @@ public class Clause2025Test extends TestBase {
 
     @Test
     public void testConstructor() {
-        Condition condition = ConditionFactory.eq("test", "value");
+        Condition condition = Filters.eq("test", "value");
         TestClause clause = new TestClause(Operator.WHERE, condition);
         assertNotNull(clause);
         assertNotNull(clause.getOperator());
@@ -42,9 +42,9 @@ public class Clause2025Test extends TestBase {
 
     @Test
     public void testAnd_ThrowsException() {
-        Condition condition = ConditionFactory.eq("test", "value");
+        Condition condition = Filters.eq("test", "value");
         TestClause clause = new TestClause(Operator.WHERE, condition);
-        Condition otherCondition = ConditionFactory.eq("other", "value2");
+        Condition otherCondition = Filters.eq("other", "value2");
 
         assertThrows(UnsupportedOperationException.class, () -> {
             clause.and(otherCondition);
@@ -53,9 +53,9 @@ public class Clause2025Test extends TestBase {
 
     @Test
     public void testOr_ThrowsException() {
-        Condition condition = ConditionFactory.eq("test", "value");
+        Condition condition = Filters.eq("test", "value");
         TestClause clause = new TestClause(Operator.WHERE, condition);
-        Condition otherCondition = ConditionFactory.eq("other", "value2");
+        Condition otherCondition = Filters.eq("other", "value2");
 
         assertThrows(UnsupportedOperationException.class, () -> {
             clause.or(otherCondition);
@@ -64,7 +64,7 @@ public class Clause2025Test extends TestBase {
 
     @Test
     public void testNot_ThrowsException() {
-        Condition condition = ConditionFactory.eq("test", "value");
+        Condition condition = Filters.eq("test", "value");
         TestClause clause = new TestClause(Operator.WHERE, condition);
 
         assertThrows(UnsupportedOperationException.class, () -> {

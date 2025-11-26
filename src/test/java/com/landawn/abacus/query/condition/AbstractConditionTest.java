@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.AbstractCondition;
 import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Not;
 import com.landawn.abacus.query.condition.Operator;
@@ -156,14 +156,14 @@ public class AbstractConditionTest extends TestBase {
 
     @Test
     public void testParameter2StringWithCondition() {
-        Equal eq = ConditionFactory.eq("name", "John");
+        Equal eq = Filters.eq("name", "John");
         String result = AbstractCondition.parameter2String(eq, NamingPolicy.NO_CHANGE);
         Assertions.assertEquals("name = 'John'", result);
     }
 
     @Test
     public void testParameter2StringWithConditionAndNamingPolicy() {
-        Equal eq = ConditionFactory.eq("firstName", "John");
+        Equal eq = Filters.eq("firstName", "John");
         String result = AbstractCondition.parameter2String(eq, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
         Assertions.assertEquals("first_name = 'John'", result);
     }

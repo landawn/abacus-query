@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.landawn.abacus.query.SK;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;

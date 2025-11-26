@@ -14,7 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 
 /**
  * Represents a condition that checks if a property value is NULL.

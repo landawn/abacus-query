@@ -9,7 +9,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Any;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.Not;
@@ -22,8 +22,8 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testConstructor() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
-        Any any = ConditionFactory.any(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
+        Any any = Filters.any(subQuery);
 
         Assertions.assertNotNull(any);
         Assertions.assertEquals(Operator.ANY, any.getOperator());
@@ -32,8 +32,8 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT salary FROM employees WHERE is_manager = true");
-        Any any = ConditionFactory.any(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
+        Any any = Filters.any(subQuery);
 
         SubQuery retrieved = any.getCondition();
         Assertions.assertEquals(subQuery, retrieved);
@@ -41,8 +41,8 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testToString() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT budget FROM departments");
-        Any any = ConditionFactory.any(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT budget FROM departments");
+        Any any = Filters.any(subQuery);
 
         String result = any.toString();
         Assertions.assertTrue(result.contains("ANY"));
@@ -51,8 +51,8 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT departmentId FROM employees");
-        Any any = ConditionFactory.any(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT departmentId FROM employees");
+        Any any = Filters.any(subQuery);
 
         // Naming policy should be applied to the subquery
         String result = any.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
@@ -62,8 +62,8 @@ public class AnyTest extends TestBase {
     @Test
     public void testGetParameters() {
         // Create a subquery with parameters
-        SubQuery subQuery = ConditionFactory.subQuery("products", Arrays.asList("price"), ConditionFactory.eq("category", "Electronics"));
-        Any any = ConditionFactory.any(subQuery);
+        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), Filters.eq("category", "Electronics"));
+        Any any = Filters.any(subQuery);
 
         var params = any.getParameters();
         Assertions.assertEquals(1, params.size());
@@ -72,8 +72,8 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = ConditionFactory.subQuery("products", Arrays.asList("price"), ConditionFactory.between("price", 100, 500));
-        Any any = ConditionFactory.any(subQuery);
+        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), Filters.between("price", 100, 500));
+        Any any = Filters.any(subQuery);
 
         Assertions.assertEquals(2, any.getParameters().size());
 
@@ -84,8 +84,8 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT id FROM users WHERE active = true");
-        Any original = ConditionFactory.any(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
+        Any original = Filters.any(subQuery);
 
         Any copy = original.copy();
 
@@ -97,13 +97,13 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testEquals() {
-        SubQuery subQuery1 = ConditionFactory.subQuery("SELECT price FROM products");
-        SubQuery subQuery2 = ConditionFactory.subQuery("SELECT price FROM products");
-        SubQuery subQuery3 = ConditionFactory.subQuery("SELECT cost FROM products");
+        SubQuery subQuery1 = Filters.subQuery("SELECT price FROM products");
+        SubQuery subQuery2 = Filters.subQuery("SELECT price FROM products");
+        SubQuery subQuery3 = Filters.subQuery("SELECT cost FROM products");
 
-        Any any1 = ConditionFactory.any(subQuery1);
-        Any any2 = ConditionFactory.any(subQuery2);
-        Any any3 = ConditionFactory.any(subQuery3);
+        Any any1 = Filters.any(subQuery1);
+        Any any2 = Filters.any(subQuery2);
+        Any any3 = Filters.any(subQuery3);
 
         Assertions.assertEquals(any1, any1);
         Assertions.assertEquals(any1, any2);
@@ -114,20 +114,20 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = ConditionFactory.subQuery("SELECT level FROM grades");
-        SubQuery subQuery2 = ConditionFactory.subQuery("SELECT level FROM grades");
+        SubQuery subQuery1 = Filters.subQuery("SELECT level FROM grades");
+        SubQuery subQuery2 = Filters.subQuery("SELECT level FROM grades");
 
-        Any any1 = ConditionFactory.any(subQuery1);
-        Any any2 = ConditionFactory.any(subQuery2);
+        Any any1 = Filters.any(subQuery1);
+        Any any2 = Filters.any(subQuery2);
 
         Assertions.assertEquals(any1.hashCode(), any2.hashCode());
     }
 
     @Test
     public void testAnd() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT min_salary FROM positions");
-        Any any = ConditionFactory.any(subQuery);
-        Equal eq = ConditionFactory.eq("department", "Sales");
+        SubQuery subQuery = Filters.subQuery("SELECT min_salary FROM positions");
+        Any any = Filters.any(subQuery);
+        Equal eq = Filters.eq("department", "Sales");
 
         And and = any.and(eq);
 
@@ -139,9 +139,9 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testOr() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT threshold FROM limits");
-        Any any = ConditionFactory.any(subQuery);
-        GreaterThan gt = ConditionFactory.gt("priority", 5);
+        SubQuery subQuery = Filters.subQuery("SELECT threshold FROM limits");
+        Any any = Filters.any(subQuery);
+        GreaterThan gt = Filters.gt("priority", 5);
 
         Or or = any.or(gt);
 
@@ -151,8 +151,8 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testNot() {
-        SubQuery subQuery = ConditionFactory.subQuery("SELECT restricted_id FROM blacklist");
-        Any any = ConditionFactory.any(subQuery);
+        SubQuery subQuery = Filters.subQuery("SELECT restricted_id FROM blacklist");
+        Any any = Filters.any(subQuery);
 
         Not not = any.not();
 
@@ -162,9 +162,9 @@ public class AnyTest extends TestBase {
 
     @Test
     public void testSetCondition() {
-        SubQuery subQuery1 = ConditionFactory.subQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = ConditionFactory.subQuery("SELECT id FROM table2");
-        Any any = ConditionFactory.any(subQuery1);
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
+        Any any = Filters.any(subQuery1);
 
         Assertions.assertEquals(subQuery1, any.getCondition());
 
@@ -175,10 +175,10 @@ public class AnyTest extends TestBase {
     @Test
     public void testComplexSubQuery() {
         // Test with a complex subquery
-        SubQuery complexSubQuery = ConditionFactory.subQuery("departments", Arrays.asList("budget"), ConditionFactory.and(ConditionFactory.eq("region", "West"),
-                ConditionFactory.gt("employee_count", 50), ConditionFactory.ne("status", "inactive")));
+        SubQuery complexSubQuery = Filters.subQuery("departments", Arrays.asList("budget"), Filters.and(Filters.eq("region", "West"),
+                Filters.gt("employee_count", 50), Filters.ne("status", "inactive")));
 
-        Any any = ConditionFactory.any(complexSubQuery);
+        Any any = Filters.any(complexSubQuery);
 
         var params = any.getParameters();
         Assertions.assertEquals(3, params.size());
@@ -190,15 +190,15 @@ public class AnyTest extends TestBase {
     @Test
     public void testUsageScenarios() {
         // Test = ANY (equivalent to IN)
-        SubQuery managerIds = ConditionFactory.subQuery("SELECT id FROM employees WHERE is_manager = true");
-        Any anyManager = ConditionFactory.any(managerIds);
+        SubQuery managerIds = Filters.subQuery("SELECT id FROM employees WHERE is_manager = true");
+        Any anyManager = Filters.any(managerIds);
 
         // This would be used like: employee_id = ANY (subquery)
         Assertions.assertNotNull(anyManager);
 
         // Test > ANY (greater than at least one)
-        SubQuery juniorSalaries = ConditionFactory.subQuery("SELECT salary FROM employees WHERE level = 'junior'");
-        Any anyJuniorSalary = ConditionFactory.any(juniorSalaries);
+        SubQuery juniorSalaries = Filters.subQuery("SELECT salary FROM employees WHERE level = 'junior'");
+        Any anyJuniorSalary = Filters.any(juniorSalaries);
 
         // This would be used like: salary > ANY (subquery)
         Assertions.assertNotNull(anyJuniorSalary);

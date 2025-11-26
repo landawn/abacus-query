@@ -12,7 +12,7 @@ import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.NaturalJoin;
 import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 
 public class NaturalJoinTest extends TestBase {
 

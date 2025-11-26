@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.entity.Account;
 
 @Tag("2025")
@@ -50,14 +50,14 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testPSCWithWhere() {
-        String sql = SQLBuilder.PSC.select("id", "firstName").from(Account.class).where(ConditionFactory.eq("id", 1)).sql();
+        String sql = SQLBuilder.PSC.select("id", "firstName").from(Account.class).where(Filters.eq("id", 1)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("WHERE"));
     }
 
     @Test
     public void testPSCWithMultipleConditions() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).where(ConditionFactory.eq("status", "active").and(ConditionFactory.gt("age", 18))).sql();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).where(Filters.eq("status", "active").and(Filters.gt("age", 18))).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("AND"));
     }
@@ -130,7 +130,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
         String sql = SQLBuilder.PSC.select("department", "COUNT(*)")
                 .from("employees")
                 .groupBy("department")
-                .having(ConditionFactory.expr("COUNT(*) > 5"))
+                .having(Filters.expr("COUNT(*) > 5"))
                 .sql();
         assertNotNull(sql);
         assertTrue(sql.contains("HAVING"));
@@ -149,9 +149,9 @@ public class AbstractQueryBuilder2025Test extends TestBase {
                 .from("users u")
                 .leftJoin("orders o")
                 .on("u.id = o.user_id")
-                .where(ConditionFactory.eq("u.status", "active"))
+                .where(Filters.eq("u.status", "active"))
                 .groupBy("u.id", "u.firstName")
-                .having(ConditionFactory.expr("COUNT(o.id) > 0"))
+                .having(Filters.expr("COUNT(o.id) > 0"))
                 .orderBy("order_count", SortDirection.DESC)
                 .limit(10)
                 .sql();
@@ -174,7 +174,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testUpdate() {
-        String sql = SQLBuilder.PSC.update(Account.class).set("firstName", "John").where(ConditionFactory.eq("id", 1)).sql();
+        String sql = SQLBuilder.PSC.update(Account.class).set("firstName", "John").where(Filters.eq("id", 1)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("UPDATE"));
         assertTrue(sql.contains("SET"));
@@ -182,7 +182,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testDeleteFrom() {
-        String sql = SQLBuilder.PSC.deleteFrom(Account.class).where(ConditionFactory.eq("id", 1)).sql();
+        String sql = SQLBuilder.PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("DELETE FROM"));
     }
@@ -204,7 +204,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
     public void testWhereWithOr() {
         String sql = SQLBuilder.PSC.select("*")
                 .from(Account.class)
-                .where(ConditionFactory.eq("status", "active").or(ConditionFactory.eq("status", "pending")))
+                .where(Filters.eq("status", "active").or(Filters.eq("status", "pending")))
                 .sql();
         assertNotNull(sql);
         assertTrue(sql.contains("OR"));
@@ -259,14 +259,14 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testUpdateWithSet() {
-        String sql = SQLBuilder.PSC.update("accounts").set("status", "inactive").set("updated_at", "NOW()").where(ConditionFactory.eq("id", 1)).sql();
+        String sql = SQLBuilder.PSC.update("accounts").set("status", "inactive").set("updated_at", "NOW()").where(Filters.eq("id", 1)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("SET"));
     }
 
     @Test
     public void testDeleteFromWithTable() {
-        String sql = SQLBuilder.PSC.deleteFrom("accounts").where(ConditionFactory.eq("status", "deleted")).sql();
+        String sql = SQLBuilder.PSC.deleteFrom("accounts").where(Filters.eq("status", "deleted")).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("DELETE FROM"));
     }
@@ -288,7 +288,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
     public void testChainedAndOr() {
         String sql = SQLBuilder.PSC.select("*")
                 .from(Account.class)
-                .where(ConditionFactory.eq("status", "active").and(ConditionFactory.gt("age", 18)).or(ConditionFactory.eq("role", "admin")))
+                .where(Filters.eq("status", "active").and(Filters.gt("age", 18)).or(Filters.eq("role", "admin")))
                 .sql();
         assertNotNull(sql);
         assertTrue(sql.contains("AND"));

@@ -73,13 +73,13 @@ public class CriteriaUtil2025Test extends TestBase {
 
     @Test
     public void testIsClauseWithCondition() {
-        Condition whereCondition = new Where(ConditionFactory.equal("name", "John"));
+        Condition whereCondition = new Where(Filters.equal("name", "John"));
         assertTrue(CriteriaUtil.isClause(whereCondition));
 
         Condition groupByCondition = new GroupBy("department");
         assertTrue(CriteriaUtil.isClause(groupByCondition));
 
-        Condition havingCondition = new Having(ConditionFactory.expr("COUNT(*) > 5"));
+        Condition havingCondition = new Having(Filters.expr("COUNT(*) > 5"));
         assertTrue(CriteriaUtil.isClause(havingCondition));
 
         Condition orderByCondition = new OrderBy("name", SortDirection.ASC);
@@ -88,17 +88,17 @@ public class CriteriaUtil2025Test extends TestBase {
 
     @Test
     public void testIsClauseWithNonClauseCondition() {
-        Condition equalCondition = ConditionFactory.equal("name", "John");
+        Condition equalCondition = Filters.equal("name", "John");
         assertFalse(CriteriaUtil.isClause(equalCondition));
 
-        Condition betweenCondition = ConditionFactory.between("age", 18, 65);
+        Condition betweenCondition = Filters.between("age", 18, 65);
         assertFalse(CriteriaUtil.isClause(betweenCondition));
     }
 
     @Test
     public void testAddVarargs() {
         Criteria criteria = new Criteria();
-        Condition where1 = new Where(ConditionFactory.equal("name", "John"));
+        Condition where1 = new Where(Filters.equal("name", "John"));
         Condition orderBy = new OrderBy("age", SortDirection.ASC);
 
         CriteriaUtil.add(criteria, where1, orderBy);
@@ -109,7 +109,7 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testAddCollection() {
         Criteria criteria = new Criteria();
-        Condition where = new Where(ConditionFactory.equal("name", "John"));
+        Condition where = new Where(Filters.equal("name", "John"));
         Condition groupBy = new GroupBy("department");
 
         CriteriaUtil.add(criteria, Arrays.asList(where, groupBy));
@@ -127,7 +127,7 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testRemoveByOperator() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John"));
+        criteria.where(Filters.equal("name", "John"));
         criteria.orderBy("name");
 
         CriteriaUtil.remove(criteria, Operator.WHERE);
@@ -138,8 +138,8 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testRemoveVarargs() {
         Criteria criteria = new Criteria();
-        Condition cond1 = ConditionFactory.equal("name", "John");
-        Condition cond2 = ConditionFactory.equal("age", 30);
+        Condition cond1 = Filters.equal("name", "John");
+        Condition cond2 = Filters.equal("age", 30);
 
         criteria.where(cond1);
         criteria.where(cond2);
@@ -151,8 +151,8 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testRemoveCollection() {
         Criteria criteria = new Criteria();
-        Condition cond1 = ConditionFactory.equal("name", "John");
-        Condition cond2 = ConditionFactory.equal("age", 30);
+        Condition cond1 = Filters.equal("name", "John");
+        Condition cond2 = Filters.equal("age", 30);
 
         criteria.where(cond1);
         criteria.where(cond2);
@@ -164,7 +164,7 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testRemoveEmptyCollection() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John"));
+        criteria.where(Filters.equal("name", "John"));
         CriteriaUtil.remove(criteria, Arrays.asList());
         // Should not throw, original conditions should remain
         assertFalse(criteria.getConditions().isEmpty());
@@ -196,8 +196,8 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testAddMultipleConditionsOfDifferentTypes() {
         Criteria criteria = new Criteria();
-        Condition whereCondition = new Where(ConditionFactory.equal("name", "John"));
-        Condition havingCondition = new Having(ConditionFactory.expr("COUNT(*) > 5"));
+        Condition whereCondition = new Where(Filters.equal("name", "John"));
+        Condition havingCondition = new Having(Filters.expr("COUNT(*) > 5"));
 
         CriteriaUtil.add(criteria, whereCondition, havingCondition);
 
@@ -207,9 +207,9 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testRemoveNonExistentCondition() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John"));
+        criteria.where(Filters.equal("name", "John"));
 
-        Condition nonExistent = ConditionFactory.equal("age", 30);
+        Condition nonExistent = Filters.equal("age", 30);
         CriteriaUtil.remove(criteria, nonExistent);
 
         // Should not throw, original condition should remain
@@ -219,7 +219,7 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testAddWithClauseConditions() {
         Criteria criteria = new Criteria();
-        Condition whereCondition = new Where(ConditionFactory.equal("name", "John"));
+        Condition whereCondition = new Where(Filters.equal("name", "John"));
         Condition groupByCondition = new GroupBy("department");
 
         CriteriaUtil.add(criteria, whereCondition, groupByCondition);
@@ -230,7 +230,7 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testRemoveMultipleOperators() {
         Criteria criteria = new Criteria();
-        criteria.where(ConditionFactory.equal("name", "John"));
+        criteria.where(Filters.equal("name", "John"));
         criteria.groupBy("department");
         criteria.having("COUNT(*) > 5");
         criteria.orderBy("name");
@@ -253,7 +253,7 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testAddSingleCondition() {
         Criteria criteria = new Criteria();
-        Condition condition = new Where(ConditionFactory.equal("status", "active"));
+        Condition condition = new Where(Filters.equal("status", "active"));
 
         CriteriaUtil.add(criteria, condition);
 
@@ -263,7 +263,7 @@ public class CriteriaUtil2025Test extends TestBase {
     @Test
     public void testRemoveSingleCondition() {
         Criteria criteria = new Criteria();
-        Condition condition = ConditionFactory.equal("status", "active");
+        Condition condition = Filters.equal("status", "active");
         criteria.where(condition);
 
         CriteriaUtil.remove(criteria, condition);

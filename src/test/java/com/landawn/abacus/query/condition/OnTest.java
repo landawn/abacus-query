@@ -13,7 +13,7 @@ import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.On;
 import com.landawn.abacus.query.condition.Operator;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 
 public class OnTest extends TestBase {
 

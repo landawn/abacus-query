@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.ConditionFactory;
+import com.landawn.abacus.query.condition.Filters;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.Not;
@@ -23,10 +23,10 @@ public class AndTest extends TestBase {
 
     @Test
     public void testConstructorWithVarargs() {
-        Equal eq1 = ConditionFactory.eq("status", "active");
-        GreaterThan gt = ConditionFactory.gt("age", 18);
+        Equal eq1 = Filters.eq("status", "active");
+        GreaterThan gt = Filters.gt("age", 18);
 
-        And and = ConditionFactory.and(eq1, gt);
+        And and = Filters.and(eq1, gt);
 
         Assertions.assertNotNull(and);
         Assertions.assertEquals(Operator.AND, and.getOperator());
@@ -37,10 +37,10 @@ public class AndTest extends TestBase {
 
     @Test
     public void testConstructorWithCollection() {
-        List<Condition> conditions = Arrays.asList(ConditionFactory.eq("department", "Sales"), ConditionFactory.ge("salary", 50000),
-                ConditionFactory.lt("age", 65));
+        List<Condition> conditions = Arrays.asList(Filters.eq("department", "Sales"), Filters.ge("salary", 50000),
+                Filters.lt("age", 65));
 
-        And and = ConditionFactory.and(conditions);
+        And and = Filters.and(conditions);
 
         Assertions.assertNotNull(and);
         Assertions.assertEquals(3, and.getConditions().size());
@@ -48,7 +48,7 @@ public class AndTest extends TestBase {
 
     @Test
     public void testConstructorWithEmptyArray() {
-        And and = ConditionFactory.and();
+        And and = Filters.and();
 
         Assertions.assertNotNull(and);
         Assertions.assertEquals(0, and.getConditions().size());
@@ -57,14 +57,14 @@ public class AndTest extends TestBase {
     @Test
     public void testConstructorWithNullCollection() {
         Assertions.assertThrows(NullPointerException.class, () -> {
-            ConditionFactory.and((Collection<Condition>) null);
+            Filters.and((Collection<Condition>) null);
         });
     }
 
     @Test
     public void testAndMethod() {
-        And and = ConditionFactory.and(ConditionFactory.eq("status", "active"));
-        NotEqual ne = ConditionFactory.ne("type", "temp");
+        And and = Filters.and(Filters.eq("status", "active"));
+        NotEqual ne = Filters.ne("type", "temp");
 
         And extended = and.and(ne);
 
@@ -76,7 +76,7 @@ public class AndTest extends TestBase {
 
     @Test
     public void testAndMethodThrowsException() {
-        And and = ConditionFactory.and();
+        And and = Filters.and();
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             and.and(null);
@@ -85,7 +85,7 @@ public class AndTest extends TestBase {
 
     @Test
     public void testToString() {
-        And and = ConditionFactory.and(ConditionFactory.eq("name", "John"), ConditionFactory.gt("age", 25));
+        And and = Filters.and(Filters.eq("name", "John"), Filters.gt("age", 25));
 
         String result = and.toString();
         Assertions.assertTrue(result.contains("name = 'John'"));
@@ -95,7 +95,7 @@ public class AndTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        And and = ConditionFactory.and(ConditionFactory.eq("firstName", "Jane"), ConditionFactory.le("yearOfBirth", 2000));
+        And and = Filters.and(Filters.eq("firstName", "Jane"), Filters.le("yearOfBirth", 2000));
 
         String result = and.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
         Assertions.assertTrue(result.contains("first_name = 'Jane'"));
@@ -104,8 +104,8 @@ public class AndTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        And and = ConditionFactory.and(ConditionFactory.eq("status", "active"), ConditionFactory.between("age", 18, 65),
-                ConditionFactory.like("name", "John%"));
+        And and = Filters.and(Filters.eq("status", "active"), Filters.between("age", 18, 65),
+                Filters.like("name", "John%"));
 
         List<Object> params = and.getParameters();
 
@@ -118,7 +118,7 @@ public class AndTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        And and = ConditionFactory.and(ConditionFactory.eq("id", 100), ConditionFactory.ne("status", "deleted"));
+        And and = Filters.and(Filters.eq("id", 100), Filters.ne("status", "deleted"));
 
         and.clearParameters();
 
@@ -128,7 +128,7 @@ public class AndTest extends TestBase {
 
     @Test
     public void testCopy() {
-        And original = ConditionFactory.and(ConditionFactory.eq("active", true), ConditionFactory.gt("score", 80));
+        And original = Filters.and(Filters.eq("active", true), Filters.gt("score", 80));
 
         And copy = original.copy();
 
@@ -139,11 +139,11 @@ public class AndTest extends TestBase {
 
     @Test
     public void testEquals() {
-        And and1 = ConditionFactory.and(ConditionFactory.eq("name", "Test"), ConditionFactory.gt("value", 10));
+        And and1 = Filters.and(Filters.eq("name", "Test"), Filters.gt("value", 10));
 
-        And and2 = ConditionFactory.and(ConditionFactory.eq("name", "Test"), ConditionFactory.gt("value", 10));
+        And and2 = Filters.and(Filters.eq("name", "Test"), Filters.gt("value", 10));
 
-        And and3 = ConditionFactory.and(ConditionFactory.eq("name", "Test"));
+        And and3 = Filters.and(Filters.eq("name", "Test"));
 
         Assertions.assertEquals(and1, and2);
         Assertions.assertNotEquals(and1, and3);
@@ -153,18 +153,18 @@ public class AndTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        And and1 = ConditionFactory.and(ConditionFactory.eq("id", 1), ConditionFactory.ne("deleted", true));
+        And and1 = Filters.and(Filters.eq("id", 1), Filters.ne("deleted", true));
 
-        And and2 = ConditionFactory.and(ConditionFactory.eq("id", 1), ConditionFactory.ne("deleted", true));
+        And and2 = Filters.and(Filters.eq("id", 1), Filters.ne("deleted", true));
 
         Assertions.assertEquals(and1.hashCode(), and2.hashCode());
     }
 
     @Test
     public void testOr() {
-        And and = ConditionFactory.and(ConditionFactory.eq("type", "A"), ConditionFactory.eq("status", "active"));
+        And and = Filters.and(Filters.eq("type", "A"), Filters.eq("status", "active"));
 
-        Or or = and.or(ConditionFactory.eq("priority", "high"));
+        Or or = and.or(Filters.eq("priority", "high"));
 
         Assertions.assertNotNull(or);
         Assertions.assertEquals(Operator.OR, or.getOperator());
@@ -173,7 +173,7 @@ public class AndTest extends TestBase {
 
     @Test
     public void testNot() {
-        And and = ConditionFactory.and(ConditionFactory.eq("available", true), ConditionFactory.gt("stock", 0));
+        And and = Filters.and(Filters.eq("available", true), Filters.gt("stock", 0));
 
         Not not = and.not();
 
@@ -184,11 +184,11 @@ public class AndTest extends TestBase {
 
     @Test
     public void testComplexNestedAnd() {
-        And nested1 = ConditionFactory.and(ConditionFactory.eq("a", 1), ConditionFactory.eq("b", 2));
+        And nested1 = Filters.and(Filters.eq("a", 1), Filters.eq("b", 2));
 
-        And nested2 = ConditionFactory.and(ConditionFactory.eq("c", 3), ConditionFactory.eq("d", 4));
+        And nested2 = Filters.and(Filters.eq("c", 3), Filters.eq("d", 4));
 
-        And complex = ConditionFactory.and(nested1, nested2);
+        And complex = Filters.and(nested1, nested2);
 
         Assertions.assertEquals(2, complex.getConditions().size());
         List<Object> params = complex.getParameters();

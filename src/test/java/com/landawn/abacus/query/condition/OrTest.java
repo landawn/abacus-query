@@ -11,7 +11,7 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.Or;
-import com.landawn.abacus.query.condition.ConditionFactory.CF;
+import com.landawn.abacus.query.condition.Filters.CF;
 
 public class OrTest extends TestBase {
 

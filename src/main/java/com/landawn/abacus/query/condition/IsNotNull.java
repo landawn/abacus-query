@@ -14,7 +14,6 @@
 
 package com.landawn.abacus.query.condition;
 
-
 /**
  * Represents a condition that checks if a property value is NOT NULL.
  * This class extends {@link IsNot} to provide a specialized condition for non-null checks,
