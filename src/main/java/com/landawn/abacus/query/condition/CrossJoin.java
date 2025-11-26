@@ -45,7 +45,8 @@ import java.util.Collection;
  * // Each product will be paired with each color
  *
  * // CROSS JOIN multiple tables
- * CrossJoin multiJoin = new CrossJoin(Arrays.asList("sizes", "colors"));
+ * List<String> tables = Arrays.asList("sizes", "colors");
+ * CrossJoin multiJoin = new CrossJoin(tables, null);
  * // Generates: CROSS JOIN sizes, colors
  * // Results in all combinations of products × sizes × colors
  *
@@ -59,6 +60,7 @@ import java.util.Collection;
  * CrossJoin exprJoin = new CrossJoin("inventory",
  *     Filters.expr("quantity > 0"));
  * // Generates: CROSS JOIN inventory quantity > 0
+ * // Note: Expression conditions don't add ON keyword
  * }</pre>
  * 
  * @see Join
@@ -115,6 +117,7 @@ public class CrossJoin extends Join {
      * CrossJoin filtered = new CrossJoin("products p",
      *     Filters.expr("p.category = 'electronics'"));
      * // Generates: CROSS JOIN products p p.category = 'electronics'
+     * // Note: Expression conditions don't add ON keyword
      *
      * // Cross join with ON condition (unusual usage)
      * CrossJoin withOn = new CrossJoin("inventory i",
@@ -162,6 +165,7 @@ public class CrossJoin extends Join {
      * CrossJoin exprJoin = new CrossJoin(tables,
      *     Filters.expr("active = true AND archived = false"));
      * // Generates: CROSS JOIN sizes s, colors c, styles st active = true AND archived = false
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

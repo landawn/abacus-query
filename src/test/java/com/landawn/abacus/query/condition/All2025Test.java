@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -36,7 +37,7 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testConstructor_WithRawSQLSubQuery() {
-        SubQuery subQuery = new SubQuery("SELECT price FROM products WHERE category = 'Electronics'");
+        SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
         All condition = new All(subQuery);
         assertNotNull(condition);
         assertEquals(Operator.ALL, condition.getOperator());
@@ -45,21 +46,21 @@ public class All2025Test extends TestBase {
     @Test
     public void testConstructor_WithStructuredSubQuery() {
         Condition whereCondition = new Equal("department", "Sales");
-        SubQuery subQuery = new SubQuery("employees", Arrays.asList("salary"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("employees", Arrays.asList("salary"), whereCondition);
         All condition = new All(subQuery);
         assertNotNull(condition);
     }
 
     @Test
     public void testGetOperator() {
-        SubQuery subQuery = new SubQuery("SELECT score FROM tests");
+        SubQuery subQuery = Filters.subQuery("SELECT score FROM tests");
         All condition = new All(subQuery);
         assertEquals(Operator.ALL, condition.getOperator());
     }
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = new SubQuery("SELECT price FROM products WHERE in_stock = true");
+        SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE in_stock = true");
         All condition = new All(subQuery);
         SubQuery retrieved = condition.getCondition();
         assertNotNull(retrieved);
@@ -68,7 +69,7 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testGetParameters_EmptyForRawSQL() {
-        SubQuery subQuery = new SubQuery("SELECT price FROM products");
+        SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
         All condition = new All(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
@@ -78,7 +79,7 @@ public class All2025Test extends TestBase {
     @Test
     public void testGetParameters_WithConditionParameters() {
         Condition whereCondition = new Equal("category", "Premium");
-        SubQuery subQuery = new SubQuery("products", Arrays.asList("price"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), whereCondition);
         All condition = new All(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
@@ -89,7 +90,7 @@ public class All2025Test extends TestBase {
     @Test
     public void testClearParameters() {
         Condition whereCondition = new Equal("active", true);
-        SubQuery subQuery = new SubQuery("items", Arrays.asList("cost"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("items", Arrays.asList("cost"), whereCondition);
         All condition = new All(subQuery);
 
         condition.clearParameters();
@@ -99,7 +100,7 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = new SubQuery("SELECT salary FROM employees WHERE is_manager = true");
+        SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
         All original = new All(subQuery);
         All copy = original.copy();
 
@@ -110,7 +111,7 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testToString_NoChange() {
-        SubQuery subQuery = new SubQuery("SELECT price FROM products WHERE category = 'Electronics'");
+        SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
         All condition = new All(subQuery);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("ALL"));
@@ -120,7 +121,7 @@ public class All2025Test extends TestBase {
     @Test
     public void testToString_WithStructuredQuery() {
         Condition whereCondition = new GreaterThan("rating", (Object) 4);
-        SubQuery subQuery = new SubQuery("reviews", Arrays.asList("score"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("reviews", Arrays.asList("score"), whereCondition);
         All condition = new All(subQuery);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("ALL"));
@@ -130,8 +131,8 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = new SubQuery("SELECT value FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT value FROM table1");
+        SubQuery subQuery1 = Filters.subQuery("SELECT value FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT value FROM table1");
         All cond1 = new All(subQuery1);
         All cond2 = new All(subQuery2);
         assertEquals(cond1.hashCode(), cond2.hashCode());
@@ -139,8 +140,8 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testHashCode_DifferentSubQueries() {
-        SubQuery subQuery1 = new SubQuery("SELECT value FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT value FROM table2");
+        SubQuery subQuery1 = Filters.subQuery("SELECT value FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT value FROM table2");
         All cond1 = new All(subQuery1);
         All cond2 = new All(subQuery2);
         assertNotEquals(cond1.hashCode(), cond2.hashCode());
@@ -148,15 +149,15 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        SubQuery subQuery = new SubQuery("SELECT price FROM products");
+        SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
         All condition = new All(subQuery);
         assertEquals(condition, condition);
     }
 
     @Test
     public void testEquals_EqualObjects() {
-        SubQuery subQuery1 = new SubQuery("SELECT salary FROM employees WHERE active = true");
-        SubQuery subQuery2 = new SubQuery("SELECT salary FROM employees WHERE active = true");
+        SubQuery subQuery1 = Filters.subQuery("SELECT salary FROM employees WHERE active = true");
+        SubQuery subQuery2 = Filters.subQuery("SELECT salary FROM employees WHERE active = true");
         All cond1 = new All(subQuery1);
         All cond2 = new All(subQuery2);
         assertEquals(cond1, cond2);
@@ -164,8 +165,8 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentSubQueries() {
-        SubQuery subQuery1 = new SubQuery("SELECT price FROM products");
-        SubQuery subQuery2 = new SubQuery("SELECT cost FROM items");
+        SubQuery subQuery1 = Filters.subQuery("SELECT price FROM products");
+        SubQuery subQuery2 = Filters.subQuery("SELECT cost FROM items");
         All cond1 = new All(subQuery1);
         All cond2 = new All(subQuery2);
         assertNotEquals(cond1, cond2);
@@ -173,22 +174,22 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testEquals_Null() {
-        SubQuery subQuery = new SubQuery("SELECT value FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT value FROM table1");
         All condition = new All(subQuery);
         assertNotEquals(null, condition);
     }
 
     @Test
     public void testEquals_DifferentClass() {
-        SubQuery subQuery = new SubQuery("SELECT value FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT value FROM table1");
         All condition = new All(subQuery);
         assertNotEquals(condition, "string");
     }
 
     @Test
     public void testAnd() {
-        SubQuery subQuery1 = new SubQuery("SELECT price FROM products");
-        SubQuery subQuery2 = new SubQuery("SELECT cost FROM items");
+        SubQuery subQuery1 = Filters.subQuery("SELECT price FROM products");
+        SubQuery subQuery2 = Filters.subQuery("SELECT cost FROM items");
         All cond1 = new All(subQuery1);
         All cond2 = new All(subQuery2);
         And result = cond1.and(cond2);
@@ -197,8 +198,8 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testOr() {
-        SubQuery subQuery1 = new SubQuery("SELECT price FROM products");
-        SubQuery subQuery2 = new SubQuery("SELECT cost FROM items");
+        SubQuery subQuery1 = Filters.subQuery("SELECT price FROM products");
+        SubQuery subQuery2 = Filters.subQuery("SELECT cost FROM items");
         All cond1 = new All(subQuery1);
         All cond2 = new All(subQuery2);
         Or result = cond1.or(cond2);
@@ -207,7 +208,7 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testNot() {
-        SubQuery subQuery = new SubQuery("SELECT value FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT value FROM table1");
         All condition = new All(subQuery);
         Not result = condition.not();
         assertNotNull(result);
@@ -216,7 +217,7 @@ public class All2025Test extends TestBase {
 
     @Test
     public void testInheritance() {
-        SubQuery subQuery = new SubQuery("SELECT value FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT value FROM table1");
         All condition = new All(subQuery);
         assertTrue(condition instanceof Cell);
         assertTrue(condition instanceof AbstractCondition);
@@ -226,7 +227,7 @@ public class All2025Test extends TestBase {
     @Test
     public void testGreaterThanAllScenario() {
         // price > ALL (SELECT price FROM competitor_products)
-        SubQuery subQuery = new SubQuery("SELECT price FROM competitor_products WHERE product_type = 'Premium'");
+        SubQuery subQuery = Filters.subQuery("SELECT price FROM competitor_products WHERE product_type = 'Premium'");
         All condition = new All(subQuery);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ALL"));
@@ -236,7 +237,7 @@ public class All2025Test extends TestBase {
     @Test
     public void testLessThanAllScenario() {
         // cost < ALL (SELECT budget FROM departments)
-        SubQuery subQuery = new SubQuery("SELECT budget FROM departments WHERE region = 'West'");
+        SubQuery subQuery = Filters.subQuery("SELECT budget FROM departments WHERE region = 'West'");
         All condition = new All(subQuery);
         assertNotNull(condition);
     }
@@ -244,7 +245,7 @@ public class All2025Test extends TestBase {
     @Test
     public void testSalaryComparison() {
         // Find employees earning more than ALL managers
-        SubQuery subQuery = new SubQuery("SELECT salary FROM employees WHERE is_manager = true");
+        SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
         All condition = new All(subQuery);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ALL"));
@@ -253,7 +254,7 @@ public class All2025Test extends TestBase {
     @Test
     public void testWithMultipleConditions() {
         And andCondition = new And(Arrays.asList(new Equal("active", true), new Equal("category", "Electronics")));
-        SubQuery subQuery = new SubQuery("products", Arrays.asList("price"), andCondition);
+        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), andCondition);
         All condition = new All(subQuery);
         List<Object> params = condition.getParameters();
         assertEquals(2, (int) params.size());
@@ -263,7 +264,7 @@ public class All2025Test extends TestBase {
     public void testScoreComparison() {
         // score >= ALL (SELECT avg_score FROM class_statistics)
         Condition whereCondition = new Equal("year", (Object) 2024);
-        SubQuery subQuery = new SubQuery("class_statistics", Arrays.asList("avg_score"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("class_statistics", Arrays.asList("avg_score"), whereCondition);
         All condition = new All(subQuery);
         assertNotNull(condition);
     }

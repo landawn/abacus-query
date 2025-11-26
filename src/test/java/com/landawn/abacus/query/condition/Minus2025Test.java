@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -36,7 +37,7 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testConstructor() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Minus minus = new Minus(subQuery);
         assertNotNull(minus);
         assertEquals(Operator.MINUS, minus.getOperator());
@@ -44,7 +45,7 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Minus minus = new Minus(subQuery);
         SubQuery retrieved = minus.getCondition();
         assertNotNull(retrieved);
@@ -53,7 +54,7 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = new SubQuery("sales", List.of("product_id"), new Equal("region", "WEST"));
+        SubQuery subQuery = Filters.subQuery("sales", List.of("product_id"), new Equal("region", "WEST"));
         Minus minus = new Minus(subQuery);
         List<Object> params = minus.getParameters();
         assertEquals(1, (int) params.size());
@@ -62,7 +63,7 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = new SubQuery("project_assignments", List.of("employee_id"), new Equal("active", "true"));
+        SubQuery subQuery = Filters.subQuery("project_assignments", List.of("employee_id"), new Equal("active", "true"));
         Minus minus = new Minus(subQuery);
         assertFalse(minus.getParameters().isEmpty());
         minus.clearParameters();
@@ -72,7 +73,7 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         Minus original = new Minus(subQuery);
         Minus copy = original.copy();
         assertNotSame(original, copy);
@@ -81,7 +82,7 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testToString() {
-        SubQuery subQuery = new SubQuery("SELECT product_id FROM inventory");
+        SubQuery subQuery = Filters.subQuery("SELECT product_id FROM inventory");
         Minus minus = new Minus(subQuery);
         String result = minus.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("MINUS"));
@@ -89,8 +90,8 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
         Minus minus1 = new Minus(subQuery1);
         Minus minus2 = new Minus(subQuery2);
         assertEquals(minus1.hashCode(), minus2.hashCode());
@@ -98,15 +99,15 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Minus minus = new Minus(subQuery);
         assertEquals(minus, minus);
     }
 
     @Test
     public void testEquals_EqualObjects() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
         Minus minus1 = new Minus(subQuery1);
         Minus minus2 = new Minus(subQuery2);
         assertEquals(minus1, minus2);
@@ -114,8 +115,8 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentSubQueries() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table2");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
         Minus minus1 = new Minus(subQuery1);
         Minus minus2 = new Minus(subQuery2);
         assertNotEquals(minus1, minus2);
@@ -123,14 +124,14 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testEquals_Null() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Minus minus = new Minus(subQuery);
         assertNotEquals(null, minus);
     }
 
     @Test
     public void testOracleStyle() {
-        SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+        SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Minus minus = new Minus(customersWithOrders);
         assertNotNull(minus);
         assertEquals(Operator.MINUS, minus.getOperator());
@@ -138,14 +139,14 @@ public class Minus2025Test extends TestBase {
 
     @Test
     public void testFindUnsoldProducts() {
-        SubQuery soldProducts = new SubQuery("SELECT product_id FROM sales");
+        SubQuery soldProducts = Filters.subQuery("SELECT product_id FROM sales");
         Minus minus = new Minus(soldProducts);
         assertEquals(Operator.MINUS, minus.getOperator());
     }
 
     @Test
     public void testFindUnassignedEmployees() {
-        SubQuery assignedEmployees = new SubQuery("project_assignments", List.of("employee_id"), new Equal("status", "ACTIVE"));
+        SubQuery assignedEmployees = Filters.subQuery("project_assignments", List.of("employee_id"), new Equal("status", "ACTIVE"));
         Minus minus = new Minus(assignedEmployees);
         assertEquals(1, (int) minus.getParameters().size());
     }

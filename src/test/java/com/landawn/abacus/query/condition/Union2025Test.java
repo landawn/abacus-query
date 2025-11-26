@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -35,7 +36,7 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testConstructor() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Union union = new Union(subQuery);
         assertNotNull(union);
         assertEquals(Operator.UNION, union.getOperator());
@@ -43,7 +44,7 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = new SubQuery("SELECT * FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT * FROM orders");
         Union union = new Union(subQuery);
         SubQuery retrieved = union.getCondition();
         assertNotNull(retrieved);
@@ -52,7 +53,7 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = new SubQuery("customers", List.of("*"), new Equal("status", "active"));
+        SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("status", "active"));
         Union union = new Union(subQuery);
         List<Object> params = union.getParameters();
         assertEquals(1, (int) params.size());
@@ -61,7 +62,7 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         Union original = new Union(subQuery);
         Union copy = original.copy();
         assertNotSame(original, copy);
@@ -70,7 +71,7 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testToString() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM customers");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM customers");
         Union union = new Union(subQuery);
         String result = union.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("UNION"));
@@ -78,8 +79,8 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
         Union union1 = new Union(subQuery1);
         Union union2 = new Union(subQuery2);
         assertEquals(union1.hashCode(), union2.hashCode());
@@ -87,15 +88,15 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Union union = new Union(subQuery);
         assertEquals(union, union);
     }
 
     @Test
     public void testEquals_EqualObjects() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
         Union union1 = new Union(subQuery1);
         Union union2 = new Union(subQuery2);
         assertEquals(union1, union2);
@@ -103,8 +104,8 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentSubQueries() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table2");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
         Union union1 = new Union(subQuery1);
         Union union2 = new Union(subQuery2);
         assertNotEquals(union1, union2);
@@ -112,14 +113,14 @@ public class Union2025Test extends TestBase {
 
     @Test
     public void testEquals_Null() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Union union = new Union(subQuery);
         assertNotEquals(null, union);
     }
 
     @Test
     public void testRemovesDuplicates() {
-        SubQuery subQuery = new SubQuery("SELECT customer_id FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM orders");
         Union union = new Union(subQuery);
         assertNotNull(union);
         assertEquals(Operator.UNION, union.getOperator());

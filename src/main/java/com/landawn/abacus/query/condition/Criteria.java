@@ -1271,7 +1271,7 @@ public class Criteria extends AbstractCondition {
      * Criteria criteria = new Criteria()
      *     .orderBy("id")
      *     .limit(40, 20);
-     * // Results in: ORDER BY id LIMIT 40, 20
+     * // Results in: ORDER BY id LIMIT 20 OFFSET 40
      * }</pre>
      * 
      * @param offset the number of rows to skip

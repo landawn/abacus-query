@@ -65,17 +65,17 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Get all transactions from both tables, including duplicates
- * SubQuery currentTransactions = new SubQuery("SELECT * FROM transactions WHERE year = 2024");
- * SubQuery archivedTransactions = new SubQuery("SELECT * FROM archived_transactions WHERE year = 2024");
+ * SubQuery archivedTransactions = Filters.subQuery("SELECT * FROM archived_transactions WHERE year = 2024");
  * UnionAll unionAll = new UnionAll(archivedTransactions);
- * // Results in: SELECT * FROM transactions WHERE year = 2024 
- * //             UNION ALL 
+ * // When combined with current transactions query:
+ * // Results in: SELECT * FROM transactions WHERE year = 2024
+ * //             UNION ALL
  * //             SELECT * FROM archived_transactions WHERE year = 2024
- * 
+ *
  * // Combine active and inactive records
- * SubQuery activeUsers = new SubQuery("SELECT id, name, 'active' as status FROM active_users");
- * SubQuery inactiveUsers = new SubQuery("SELECT id, name, 'inactive' as status FROM inactive_users");
+ * SubQuery inactiveUsers = Filters.subQuery("SELECT id, name, 'inactive' as status FROM inactive_users");
  * UnionAll allUsers = new UnionAll(inactiveUsers);
+ * // When combined with active users query, keeps all records including any duplicates
  * }</pre>
  * 
  * @see Union
@@ -112,7 +112,7 @@ public class UnionAll extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Combine orders from multiple regions
-     * SubQuery eastOrders = new SubQuery("SELECT order_id, amount FROM orders WHERE region = 'EAST'");
+     * SubQuery eastOrders = Filters.subQuery("SELECT order_id, amount FROM orders WHERE region = 'EAST'");
      * UnionAll allOrders = new UnionAll(eastOrders);
      * // When combined with West region query:
      * // SELECT order_id, amount FROM orders WHERE region = 'WEST'
@@ -121,13 +121,13 @@ public class UnionAll extends Clause {
      * // Keeps all orders, including any duplicates
      *
      * // Merge current and archived transactions
-     * SubQuery archivedTxns = new SubQuery("SELECT txn_id, date, amount FROM archived_transactions");
+     * SubQuery archivedTxns = Filters.subQuery("SELECT txn_id, date, amount FROM archived_transactions");
      * UnionAll allTxns = new UnionAll(archivedTxns);
      * // Combines with current transactions, preserving all records
      *
      * // Combine data from partitioned tables
-     * SubQuery q1Data = new SubQuery("SELECT * FROM sales_q1");
-     * SubQuery q2Data = new SubQuery("SELECT * FROM sales_q2");
+     * SubQuery q1Data = Filters.subQuery("SELECT * FROM sales_q1");
+     * SubQuery q2Data = Filters.subQuery("SELECT * FROM sales_q2");
      * UnionAll allSales = new UnionAll(q2Data);
      * // Efficiently combines quarterly data without duplicate check
      * }</pre>

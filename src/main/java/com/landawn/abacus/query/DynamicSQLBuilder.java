@@ -43,7 +43,7 @@ import com.landawn.abacus.util.Strings;
  *     .orderBy().append("u.name ASC")
  *     .limit(10)
  *     .build();
- * // Result: SELECT id AS user_id, name FROM users u WHERE u.active = ? AND u.age > ? ORDER BY u.name ASC LIMIT 10
+ * // Result: "SELECT id AS user_id, name FROM users u WHERE u.active = ? AND u.age > ? ORDER BY u.name ASC LIMIT 10"
  * }</pre>
  */
 @SuppressWarnings("java:S1192")

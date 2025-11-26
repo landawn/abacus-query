@@ -82,13 +82,14 @@ public class Cell extends AbstractCondition {
     /**
      * Gets the wrapped condition.
      * The returned condition can be cast to its specific type if needed.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * Equal eq = cell.getCondition(); // Returns the Equal condition
-     * 
+     * Condition condition = cell.getCondition(); // Returns the Equal condition
+     *
      * // For subqueries
+     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM products WHERE price > 100");
      * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
      * SubQuery sq = existsCell.getCondition();
      * }</pre>

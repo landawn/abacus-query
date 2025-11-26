@@ -42,13 +42,13 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Single property NOT IN subquery
- * SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+ * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
  * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
  * // Generates: userId NOT IN (SELECT id FROM inactive_users)
  * 
  * // Multiple properties NOT IN subquery
  * List<String> props = Arrays.asList("firstName", "lastName");
- * SubQuery subQuery2 = new SubQuery("SELECT fname, lname FROM blacklist");
+ * SubQuery subQuery2 = Filters.subQuery("SELECT fname, lname FROM blacklist");
  * NotInSubQuery condition2 = new NotInSubQuery(props, subQuery2);
  * // Generates: (firstName, lastName) NOT IN (SELECT fname, lname FROM blacklist)
  * }</pre>
@@ -95,12 +95,12 @@ public class NotInSubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Exclude deleted items
-     * SubQuery deletedItems = new SubQuery("SELECT id FROM deleted_items");
+     * SubQuery deletedItems = Filters.subQuery("SELECT id FROM deleted_items");
      * NotInSubQuery condition = new NotInSubQuery("itemId", deletedItems);
      * // Generates: itemId NOT IN (SELECT id FROM deleted_items)
      *
      * // Exclude users from specific departments
-     * SubQuery deptQuery = new SubQuery("SELECT user_id FROM dept_users WHERE dept = 'HR'");
+     * SubQuery deptQuery = Filters.subQuery("SELECT user_id FROM dept_users WHERE dept = 'HR'");
      * NotInSubQuery notHR = new NotInSubQuery("id", deptQuery);
      * // Generates: id NOT IN (SELECT user_id FROM dept_users WHERE dept = 'HR')
      * }</pre>
@@ -132,13 +132,13 @@ public class NotInSubQuery extends AbstractCondition {
      * <pre>{@code
      * // Exclude based on composite key
      * List<String> props = Arrays.asList("country", "city");
-     * SubQuery restricted = new SubQuery("SELECT country, city FROM restricted_locations");
+     * SubQuery restricted = Filters.subQuery("SELECT country, city FROM restricted_locations");
      * NotInSubQuery condition = new NotInSubQuery(props, restricted);
      * // Generates: (country, city) NOT IN (SELECT country, city FROM restricted_locations)
      *
      * // Exclude duplicate entries
      * List<String> uniqueProps = Arrays.asList("firstName", "lastName", "email");
-     * SubQuery existing = new SubQuery("SELECT fname, lname, email FROM existing_users");
+     * SubQuery existing = Filters.subQuery("SELECT fname, lname, email FROM existing_users");
      * NotInSubQuery noDupes = new NotInSubQuery(uniqueProps, existing);
      * // Generates: (firstName, lastName, email) NOT IN (SELECT fname, lname, email FROM existing_users)
      * }</pre>
@@ -205,7 +205,7 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
      * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
      * SubQuery retrieved = condition.getSubQuery(); // Returns the subquery
      * }</pre>
@@ -232,11 +232,11 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery1 = new SubQuery("SELECT id FROM inactive_users");
+     * SubQuery subQuery1 = Filters.subQuery("SELECT id FROM inactive_users");
      * NotInSubQuery condition = new NotInSubQuery("user_id", subQuery1);
      *
      * // Not recommended - breaks immutability
-     * SubQuery subQuery2 = new SubQuery("SELECT id FROM deleted_users");
+     * SubQuery subQuery2 = Filters.subQuery("SELECT id FROM deleted_users");
      * condition.setSubQuery(subQuery2);
      *
      * // Recommended approach - create a new condition
@@ -259,7 +259,7 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM users WHERE age > ?", 18);
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE age > ?", 18);
      * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
      * List<Object> params = condition.getParameters(); // Returns [18]
      * }</pre>
@@ -295,7 +295,7 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
      * NotInSubQuery original = new NotInSubQuery("userId", subQuery);
      * NotInSubQuery copy = original.copy();
      * // copy is independent of original
@@ -321,7 +321,7 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
      * NotInSubQuery c1 = new NotInSubQuery("userId", subQuery);
      * NotInSubQuery c2 = new NotInSubQuery("userId", subQuery);
      * assert c1.hashCode() == c2.hashCode();
@@ -344,7 +344,7 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
      * NotInSubQuery c1 = new NotInSubQuery("userId", subQuery);
      * NotInSubQuery c2 = new NotInSubQuery("userId", subQuery);
      * assert c1.equals(c2); // true

@@ -61,7 +61,7 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find all customers except those who have placed orders
- * SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+ * SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
  * Except customersWithoutOrders = new Except(customersWithOrders);
  * // When combined with all customers query:
  * // SELECT customer_id FROM customers WHERE status = 'active'
@@ -70,7 +70,7 @@ package com.landawn.abacus.query.condition;
  * // Results: active customers who have no orders
  *
  * // Find products not sold in the last month
- * SubQuery recentlySold = new SubQuery(
+ * SubQuery recentlySold = Filters.subQuery(
  *     "SELECT product_id FROM order_items WHERE order_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)"
  * );
  * Except unsoldProducts = new Except(recentlySold);
@@ -119,7 +119,7 @@ public class Except extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find employees who are not managers
-     * SubQuery managers = new SubQuery("SELECT employee_id FROM employees WHERE is_manager = true");
+     * SubQuery managers = Filters.subQuery("SELECT employee_id FROM employees WHERE is_manager = true");
      * Except notManagers = new Except(managers);
      * // When combined with all employees query:
      * // SELECT employee_id FROM employees WHERE department = 'Sales'
@@ -128,7 +128,7 @@ public class Except extends Clause {
      * // Returns Sales employees who are not managers
      *
      * // Find customers who haven't placed orders
-     * SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+     * SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
      * Except customersWithoutOrders = new Except(customersWithOrders);
      * // SELECT customer_id FROM customers
      * // EXCEPT
@@ -136,7 +136,7 @@ public class Except extends Clause {
      * // Returns customers with no orders
      *
      * // Find skills not required for a specific job
-     * SubQuery requiredSkills = new SubQuery("SELECT skill_id FROM job_requirements WHERE job_id = 123");
+     * SubQuery requiredSkills = Filters.subQuery("SELECT skill_id FROM job_requirements WHERE job_id = 123");
      * Except otherSkills = new Except(requiredSkills);
      * // SELECT skill_id FROM skills
      * // EXCEPT
@@ -144,7 +144,7 @@ public class Except extends Clause {
      * // Returns all skills except those required for job 123
      *
      * // Find products in inventory but never sold
-     * SubQuery soldProducts = new SubQuery("SELECT product_id FROM sales");
+     * SubQuery soldProducts = Filters.subQuery("SELECT product_id FROM sales");
      * Except unsoldProducts = new Except(soldProducts);
      * // SELECT product_id FROM inventory
      * // EXCEPT

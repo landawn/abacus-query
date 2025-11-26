@@ -73,6 +73,7 @@ import java.util.Collection;
  * InnerJoin exprJoin = new InnerJoin("customers c",
  *     Filters.expr("orders.customer_id = c.id"));
  * // Generates: INNER JOIN customers c orders.customer_id = c.id
+ * // Note: Expression conditions don't add ON keyword
  * }</pre>
  * 
  * @see Join
@@ -152,6 +153,7 @@ public class InnerJoin extends Join {
      * InnerJoin exprJoin = new InnerJoin("customers c",
      *     Filters.expr("orders.customer_id = c.id"));
      * // Generates: INNER JOIN customers c orders.customer_id = c.id
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -189,6 +191,7 @@ public class InnerJoin extends Join {
      * InnerJoin exprMulti = new InnerJoin(tables,
      *     Filters.expr("o.customer_id = c.id AND o.status = 'active'"));
      * // Generates: INNER JOIN orders o, customers c o.customer_id = c.id AND o.status = 'active'
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

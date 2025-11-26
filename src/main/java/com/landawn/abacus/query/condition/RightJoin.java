@@ -64,6 +64,7 @@ import java.util.Collection;
  * RightJoin exprJoin = new RightJoin("departments",
  *     Filters.expr("employees.dept_id = departments.id"));
  * // Generates: RIGHT JOIN departments employees.dept_id = departments.id
+ * // Note: Expression conditions don't add ON keyword
  * }</pre>
  * 
  * @see Join
@@ -140,6 +141,7 @@ public class RightJoin extends Join {
      * RightJoin exprJoin = new RightJoin("products p",
      *     Filters.expr("order_items.product_id = p.id AND p.stock > 0"));
      * // Generates: RIGHT JOIN products p order_items.product_id = p.id AND p.stock > 0
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -170,6 +172,7 @@ public class RightJoin extends Join {
      * RightJoin exprJoin = new RightJoin(tables,
      *     Filters.expr("p.category_id = c.id AND p.subcategory_id = sc.id"));
      * // Generates: RIGHT JOIN categories c, subcategories sc p.category_id = c.id AND p.subcategory_id = sc.id
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

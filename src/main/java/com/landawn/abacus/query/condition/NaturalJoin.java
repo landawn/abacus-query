@@ -59,6 +59,7 @@ import java.util.Collection;
  * NaturalJoin join3 = new NaturalJoin("orders",
  *     Filters.expr("order_date > '2024-01-01'"));
  * // Generates: NATURAL JOIN orders order_date > '2024-01-01'
+ * // Note: Expression conditions don't add ON keyword
  *
  * // Multiple tables natural join
  * List<String> tables = Arrays.asList("employees", "departments");
@@ -129,6 +130,7 @@ public class NaturalJoin extends Join {
      * NaturalJoin join2 = new NaturalJoin("products",
      *     Filters.expr("price > 100 AND stock > 0"));
      * // Generates: NATURAL JOIN products price > 100 AND stock > 0
+     * // Note: Expression conditions don't add ON keyword
      *
      * // Natural join with complex And condition
      * NaturalJoin join3 = new NaturalJoin("employees",
@@ -169,6 +171,7 @@ public class NaturalJoin extends Join {
      * NaturalJoin join2 = new NaturalJoin(tables,
      *     Filters.expr("status = 'active' AND verified = true"));
      * // Generates: NATURAL JOIN customers, orders, products status = 'active' AND verified = true
+     * // Note: Expression conditions don't add ON keyword
      *
      * // Natural join with complex conditions
      * NaturalJoin join3 = new NaturalJoin(tables,

@@ -131,6 +131,7 @@ public class FullJoin extends Join {
      * FullJoin exprJoin = new FullJoin("departments d",
      *     Filters.expr("employees.dept_id = d.id AND d.active = true"));
      * // Generates: FULL JOIN departments d employees.dept_id = d.id AND d.active = true
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -161,6 +162,7 @@ public class FullJoin extends Join {
      * FullJoin exprJoin = new FullJoin(tables,
      *     Filters.expr("d.id = e.dept_id AND d.id = c.dept_id"));
      * // Generates: FULL JOIN employees e, contractors c d.id = e.dept_id AND d.id = c.dept_id
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

@@ -63,7 +63,7 @@ package com.landawn.abacus.query.condition;
  * // Results in: NOT (priority = 'HIGH' AND status = 'URGENT')
  * 
  * // NOT with EXISTS subquery
- * SubQuery hasOrders = new SubQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+ * SubQuery hasOrders = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
  * Exists existsCondition = new Exists(hasOrders);
  * Not noOrders = new Not(existsCondition);
  * // Results in: NOT EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id)

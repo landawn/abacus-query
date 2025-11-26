@@ -75,25 +75,23 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Combine customers from different cities, removing duplicates
- * SubQuery nyCustomers = new SubQuery("SELECT id, name FROM customers WHERE city='NY'");
- * SubQuery laCustomers = new SubQuery("SELECT id, name FROM customers WHERE city='LA'");
+ * SubQuery laCustomers = Filters.subQuery("SELECT id, name FROM customers WHERE city='LA'");
  * Union union = new Union(laCustomers);
+ * // When added to a query that already has "SELECT id, name FROM customers WHERE city='NY'":
  * // Results in: SELECT id, name FROM customers WHERE city='NY'
  * //             UNION
  * //             SELECT id, name FROM customers WHERE city='LA'
  * // If a customer appears in both result sets, they will appear only once
  *
  * // Combine active and inactive users, ensuring no duplicates
- * SubQuery activeUsers = new SubQuery("SELECT user_id, email FROM active_users");
- * SubQuery inactiveUsers = new SubQuery("SELECT user_id, email FROM inactive_users");
+ * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id, email FROM inactive_users");
  * Union allUsers = new Union(inactiveUsers);
- * // If a user appears in both tables, only one instance is returned
+ * // Combined with active users query, if a user appears in both tables, only one instance is returned
  *
  * // Merge current and historical data
- * SubQuery currentOrders = new SubQuery("SELECT order_id, customer_id FROM orders WHERE year = 2024");
- * SubQuery pastOrders = new SubQuery("SELECT order_id, customer_id FROM orders WHERE year = 2023");
+ * SubQuery pastOrders = Filters.subQuery("SELECT order_id, customer_id FROM orders WHERE year = 2023");
  * Union allOrders = new Union(pastOrders);
- * // Duplicates are removed if an order appears in both years
+ * // When combined with current orders query, duplicates are removed if an order appears in both years
  * }</pre>
  *
  * @see UnionAll
@@ -126,23 +124,23 @@ public class Union extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Combine customers from different regions
-     * SubQuery eastCustomers = new SubQuery("SELECT customer_id, name FROM customers WHERE region = 'East'");
+     * SubQuery eastCustomers = Filters.subQuery("SELECT customer_id, name FROM customers WHERE region = 'East'");
      * Union union = new Union(eastCustomers);
-     * // When combined with West region query:
+     * // When added to a query that has West region:
      * // SELECT customer_id, name FROM customers WHERE region = 'West'
      * // UNION
      * // SELECT customer_id, name FROM customers WHERE region = 'East'
      * // Duplicates are automatically removed
      *
      * // Merge active and inactive users
-     * SubQuery inactiveUsers = new SubQuery("SELECT user_id, email FROM inactive_users");
+     * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id, email FROM inactive_users");
      * Union allUsers = new Union(inactiveUsers);
-     * // Use with active users query to get complete list without duplicates
+     * // When combined with active users query, returns complete list without duplicates
      *
      * // Combine current and historical orders
-     * SubQuery historicalOrders = new SubQuery("SELECT order_id, total FROM archived_orders");
+     * SubQuery historicalOrders = Filters.subQuery("SELECT order_id, total FROM archived_orders");
      * Union allOrders = new Union(historicalOrders);
-     * // Merges with current orders, removing any duplicate order_id entries
+     * // When combined with current orders query, removes any duplicate order_id entries
      * }</pre>
      *
      * @param condition the subquery to perform the UNION operation with. Must not be null.

@@ -22,7 +22,7 @@ public class SimpleNotExistsTest extends TestBase {
 
     @BeforeEach
     void setUp() {
-        simpleSubQuery = new SubQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+        simpleSubQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
         notExistsCondition = new NotExists(simpleSubQuery);
     }
 

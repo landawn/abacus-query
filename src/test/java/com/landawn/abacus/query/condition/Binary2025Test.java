@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -95,7 +96,7 @@ public class Binary2025Test extends TestBase {
 
     @Test
     public void testGetParameters_WithCondition() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         Binary condition = new Binary("userId", Operator.IN, subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);

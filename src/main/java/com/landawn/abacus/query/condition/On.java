@@ -105,7 +105,7 @@ public class On extends Cell {
      * // Simple equality using Expression
      * On on1 = new On(Filters.expr("a.id = b.a_id"));
      * InnerJoin join1 = new InnerJoin("table_b b", on1);
-     * // Generates: INNER JOIN table_b b a.id = b.a_id
+     * // Generates: INNER JOIN table_b b ON a.id = b.a_id
      *
      * // Complex multi-condition join
      * Condition complexCondition = Filters.and(
@@ -115,7 +115,7 @@ public class On extends Cell {
      * );
      * On on2 = new On(complexCondition);
      * LeftJoin join2 = new LeftJoin("customers", on2);
-     * // Generates: LEFT JOIN customers (orders.customer_id = customers.id) AND (orders.order_date BETWEEN '2024-01-01' AND '2024-12-31') AND (customers.status != 'DELETED')
+     * // Generates: LEFT JOIN customers ON (orders.customer_id = customers.id) AND (orders.order_date BETWEEN '2024-01-01' AND '2024-12-31') AND (customers.status != 'DELETED')
      *
      * // Range join for salary bands
      * Condition rangeJoin = Filters.and(
@@ -124,7 +124,7 @@ public class On extends Cell {
      * );
      * On on3 = new On(rangeJoin);
      * InnerJoin join3 = new InnerJoin("salary_grades", on3);
-     * // Generates: INNER JOIN salary_grades (emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary)
+     * // Generates: INNER JOIN salary_grades ON (emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary)
      * }</pre>
      *
      * @param condition the join condition, can be any type of condition including

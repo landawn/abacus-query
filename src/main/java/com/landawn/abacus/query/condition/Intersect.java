@@ -74,18 +74,17 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who are both active AND have recent orders
- * SubQuery activeCustomers = new SubQuery("SELECT customer_id FROM customers WHERE status = 'active'");
- * SubQuery recentOrders = new SubQuery("SELECT customer_id FROM orders WHERE order_date > '2023-01-01'");
+ * SubQuery recentOrders = Filters.subQuery("SELECT customer_id FROM orders WHERE order_date > '2023-01-01'");
  * Intersect intersect = new Intersect(recentOrders);
- * // When combined with the first query:
+ * // When combined with active customers query:
  * // SELECT customer_id FROM customers WHERE status = 'active'
  * // INTERSECT
  * // SELECT customer_id FROM orders WHERE order_date > '2023-01-01'
- * 
+ *
  * // Find products that are both in stock AND on sale
- * SubQuery inStock = new SubQuery("SELECT product_id FROM inventory WHERE quantity > 0");
- * SubQuery onSale = new SubQuery("SELECT product_id FROM promotions WHERE discount > 0");
+ * SubQuery onSale = Filters.subQuery("SELECT product_id FROM promotions WHERE discount > 0");
  * Intersect commonProducts = new Intersect(onSale);
+ * // When combined with inventory query, returns only products in both sets
  * }</pre>
  * 
  * @see Union
@@ -119,7 +118,7 @@ public class Intersect extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find users who are both premium AND active in the last 30 days
-     * SubQuery activeUsers = new SubQuery("SELECT user_id FROM activity WHERE last_login > CURRENT_DATE - 30");
+     * SubQuery activeUsers = Filters.subQuery("SELECT user_id FROM activity WHERE last_login > CURRENT_DATE - 30");
      * Intersect premiumActive = new Intersect(activeUsers);
      * // When combined with premium users query:
      * // SELECT user_id FROM users WHERE plan = 'premium'
@@ -128,17 +127,17 @@ public class Intersect extends Clause {
      * // Returns only user_id values present in both result sets
      *
      * // Find employees who work in both projects
-     * SubQuery projectB = new SubQuery("SELECT employee_id FROM assignments WHERE project = 'B'");
+     * SubQuery projectB = Filters.subQuery("SELECT employee_id FROM assignments WHERE project = 'B'");
      * Intersect bothProjects = new Intersect(projectB);
      * // Use with project A query to find employees assigned to both projects
      *
      * // Find common skills between two job positions
-     * SubQuery position2Skills = new SubQuery("SELECT skill_id FROM position_skills WHERE position_id = 2");
+     * SubQuery position2Skills = Filters.subQuery("SELECT skill_id FROM position_skills WHERE position_id = 2");
      * Intersect commonSkills = new Intersect(position2Skills);
      * // Identifies skills required by both positions
      *
      * // Find products in stock AND on promotion
-     * SubQuery onPromotion = new SubQuery("SELECT product_id FROM promotions WHERE active = true");
+     * SubQuery onPromotion = Filters.subQuery("SELECT product_id FROM promotions WHERE active = true");
      * Intersect availablePromotions = new Intersect(onPromotion);
      * // SELECT product_id FROM inventory WHERE quantity > 0
      * // INTERSECT

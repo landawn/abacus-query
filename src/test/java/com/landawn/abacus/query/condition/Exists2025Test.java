@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -37,7 +38,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testConstructor_WithRawSQLSubQuery() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders WHERE customer_id = users.id");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = users.id");
         Exists condition = new Exists(subQuery);
         assertNotNull(condition);
         assertEquals(Operator.EXISTS, condition.getOperator());
@@ -46,21 +47,21 @@ public class Exists2025Test extends TestBase {
     @Test
     public void testConstructor_WithStructuredSubQuery() {
         Condition whereCondition = new Equal("status", "active");
-        SubQuery subQuery = new SubQuery("orders", Arrays.asList("id"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), whereCondition);
         Exists condition = new Exists(subQuery);
         assertNotNull(condition);
     }
 
     @Test
     public void testGetOperator() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM products");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM products");
         Exists condition = new Exists(subQuery);
         assertEquals(Operator.EXISTS, condition.getOperator());
     }
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users WHERE active = true");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
         Exists condition = new Exists(subQuery);
         SubQuery retrieved = condition.getCondition();
         assertNotNull(retrieved);
@@ -69,7 +70,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testGetParameters_EmptyForRawSQL() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         Exists condition = new Exists(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
@@ -79,7 +80,7 @@ public class Exists2025Test extends TestBase {
     @Test
     public void testGetParameters_WithConditionParameters() {
         Condition whereCondition = new Equal("status", "active");
-        SubQuery subQuery = new SubQuery("orders", Arrays.asList("id"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), whereCondition);
         Exists condition = new Exists(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
@@ -90,7 +91,7 @@ public class Exists2025Test extends TestBase {
     @Test
     public void testClearParameters() {
         Condition whereCondition = new Equal("status", "pending");
-        SubQuery subQuery = new SubQuery("orders", Arrays.asList("id"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), whereCondition);
         Exists condition = new Exists(subQuery);
 
         condition.clearParameters();
@@ -100,7 +101,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM products WHERE price > 100");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM products WHERE price > 100");
         Exists original = new Exists(subQuery);
         Exists copy = original.copy();
 
@@ -111,7 +112,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testToString_NoChange() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders WHERE status = 'active'");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE status = 'active'");
         Exists condition = new Exists(subQuery);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("EXISTS"));
@@ -121,7 +122,7 @@ public class Exists2025Test extends TestBase {
     @Test
     public void testToString_WithStructuredQuery() {
         Condition whereCondition = new Equal("active", true);
-        SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "name"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), whereCondition);
         Exists condition = new Exists(subQuery);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("EXISTS"));
@@ -131,8 +132,8 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = new SubQuery("SELECT 1 FROM orders");
-        SubQuery subQuery2 = new SubQuery("SELECT 1 FROM orders");
+        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders");
+        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM orders");
         Exists cond1 = new Exists(subQuery1);
         Exists cond2 = new Exists(subQuery2);
         assertEquals(cond1.hashCode(), cond2.hashCode());
@@ -140,8 +141,8 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testHashCode_DifferentSubQueries() {
-        SubQuery subQuery1 = new SubQuery("SELECT 1 FROM orders");
-        SubQuery subQuery2 = new SubQuery("SELECT 1 FROM products");
+        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders");
+        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM products");
         Exists cond1 = new Exists(subQuery1);
         Exists cond2 = new Exists(subQuery2);
         assertNotEquals(cond1.hashCode(), cond2.hashCode());
@@ -149,15 +150,15 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         Exists condition = new Exists(subQuery);
         assertEquals(condition, condition);
     }
 
     @Test
     public void testEquals_EqualObjects() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM users WHERE active = true");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM users WHERE active = true");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users WHERE active = true");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM users WHERE active = true");
         Exists cond1 = new Exists(subQuery1);
         Exists cond2 = new Exists(subQuery2);
         assertEquals(cond1, cond2);
@@ -165,8 +166,8 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentSubQueries() {
-        SubQuery subQuery1 = new SubQuery("SELECT 1 FROM orders");
-        SubQuery subQuery2 = new SubQuery("SELECT 1 FROM products");
+        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders");
+        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM products");
         Exists cond1 = new Exists(subQuery1);
         Exists cond2 = new Exists(subQuery2);
         assertNotEquals(cond1, cond2);
@@ -174,22 +175,22 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testEquals_Null() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         Exists condition = new Exists(subQuery);
         assertNotEquals(null, condition);
     }
 
     @Test
     public void testEquals_DifferentClass() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         Exists condition = new Exists(subQuery);
         assertNotEquals(condition, "string");
     }
 
     @Test
     public void testAnd() {
-        SubQuery subQuery1 = new SubQuery("SELECT 1 FROM orders");
-        SubQuery subQuery2 = new SubQuery("SELECT 1 FROM products");
+        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders");
+        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM products");
         Exists cond1 = new Exists(subQuery1);
         Exists cond2 = new Exists(subQuery2);
         And result = cond1.and(cond2);
@@ -198,8 +199,8 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testOr() {
-        SubQuery subQuery1 = new SubQuery("SELECT 1 FROM orders");
-        SubQuery subQuery2 = new SubQuery("SELECT 1 FROM products");
+        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders");
+        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM products");
         Exists cond1 = new Exists(subQuery1);
         Exists cond2 = new Exists(subQuery2);
         Or result = cond1.or(cond2);
@@ -208,7 +209,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testNot() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         Exists condition = new Exists(subQuery);
         Not result = condition.not();
         assertNotNull(result);
@@ -217,7 +218,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testInheritance() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         Exists condition = new Exists(subQuery);
         assertTrue(condition instanceof Cell);
         assertTrue(condition instanceof AbstractCondition);
@@ -226,7 +227,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testCorrelatedSubQuery() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM orders o WHERE o.customer_id = customers.id");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders o WHERE o.customer_id = customers.id");
         Exists condition = new Exists(subQuery);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("EXISTS"));
@@ -235,7 +236,7 @@ public class Exists2025Test extends TestBase {
 
     @Test
     public void testComplexSubQueryWithJoin() {
-        SubQuery subQuery = new SubQuery("SELECT 1 FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE o.status = 'active'");
+        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE o.status = 'active'");
         Exists condition = new Exists(subQuery);
         assertNotNull(condition);
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
@@ -245,7 +246,7 @@ public class Exists2025Test extends TestBase {
     @Test
     public void testSubQueryWithMultipleConditions() {
         And andCondition = new And(Arrays.asList(new Equal("status", "active"), new GreaterThan("total", (Object) 100)));
-        SubQuery subQuery = new SubQuery("orders", Arrays.asList("id"), andCondition);
+        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), andCondition);
         Exists condition = new Exists(subQuery);
         List<Object> params = condition.getParameters();
         assertEquals(2, (int) params.size());
@@ -254,7 +255,7 @@ public class Exists2025Test extends TestBase {
     @Test
     public void testCopyIndependence() {
         Condition whereCondition = new Equal("status", "active");
-        SubQuery subQuery = new SubQuery("orders", Arrays.asList("id"), whereCondition);
+        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), whereCondition);
         Exists original = new Exists(subQuery);
         Exists copy = original.copy();
 

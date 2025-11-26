@@ -46,12 +46,12 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Single column IN subquery - find orders from premium customers
- * SubQuery premiumCustomers = new SubQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
+ * SubQuery premiumCustomers = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
  * InSubQuery condition = new InSubQuery("customer_id", premiumCustomers);
  * // Generates: customer_id IN (SELECT customer_id FROM customers WHERE status = 'premium')
  * 
  * // Multiple columns IN subquery - find employees in specific department/location combinations
- * SubQuery validAssignments = new SubQuery("SELECT dept_id, location_id FROM allowed_assignments");
+ * SubQuery validAssignments = Filters.subQuery("SELECT dept_id, location_id FROM allowed_assignments");
  * InSubQuery multiColumn = new InSubQuery(Arrays.asList("department_id", "location_id"), validAssignments);
  * // Generates: (department_id, location_id) IN (SELECT dept_id, location_id FROM allowed_assignments)
  * }</pre>
@@ -93,12 +93,12 @@ public class InSubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find all products in active categories
-     * SubQuery activeCategories = new SubQuery("SELECT category_id FROM categories WHERE active = true");
+     * SubQuery activeCategories = Filters.subQuery("SELECT category_id FROM categories WHERE active = true");
      * InSubQuery condition = new InSubQuery("category_id", activeCategories);
      * // Generates: category_id IN (SELECT category_id FROM categories WHERE active = true)
      *
      * // Find employees in departments with high budgets
-     * SubQuery richDepts = new SubQuery("SELECT dept_id FROM departments WHERE budget > 1000000");
+     * SubQuery richDepts = Filters.subQuery("SELECT dept_id FROM departments WHERE budget > 1000000");
      * InSubQuery condition2 = new InSubQuery("department_id", richDepts);
      * // Generates: department_id IN (SELECT dept_id FROM departments WHERE budget > 1000000)
      * }</pre>
@@ -126,7 +126,7 @@ public class InSubQuery extends AbstractCondition {
      * <pre>{@code
      * // Find employees assigned to valid department/location combinations
      * List<String> columns = Arrays.asList("dept_id", "loc_id");
-     * SubQuery validCombinations = new SubQuery(
+     * SubQuery validCombinations = Filters.subQuery(
      *     "SELECT department_id, location_id FROM dept_locations WHERE active = 'Y'"
      * );
      * InSubQuery condition = new InSubQuery(columns, validCombinations);
@@ -195,7 +195,7 @@ public class InSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM active_users");
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
      * InSubQuery condition = new InSubQuery("userId", subQuery);
      * SubQuery retrieved = condition.getSubQuery(); // Returns the subquery
      * }</pre>
@@ -222,11 +222,11 @@ public class InSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery1 = new SubQuery("SELECT id FROM active_users");
+     * SubQuery subQuery1 = Filters.subQuery("SELECT id FROM active_users");
      * InSubQuery condition = new InSubQuery("user_id", subQuery1);
      *
      * // Not recommended - breaks immutability
-     * SubQuery subQuery2 = new SubQuery("SELECT id FROM premium_users");
+     * SubQuery subQuery2 = Filters.subQuery("SELECT id FROM premium_users");
      * condition.setSubQuery(subQuery2);
      *
      * // Recommended approach - create a new condition
@@ -249,7 +249,7 @@ public class InSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM users WHERE age > ?", 18);
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE age > ?", 18);
      * InSubQuery condition = new InSubQuery("userId", subQuery);
      * List<Object> params = condition.getParameters(); // Returns [18]
      * }</pre>
@@ -286,7 +286,7 @@ public class InSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM active_users");
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
      * InSubQuery original = new InSubQuery("userId", subQuery);
      * InSubQuery copy = original.copy();
      * // copy is independent of original
@@ -312,7 +312,7 @@ public class InSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM active_users");
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
      * InSubQuery c1 = new InSubQuery("userId", subQuery);
      * InSubQuery c2 = new InSubQuery("userId", subQuery);
      * assert c1.hashCode() == c2.hashCode();
@@ -335,7 +335,7 @@ public class InSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT id FROM active_users");
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
      * InSubQuery c1 = new InSubQuery("userId", subQuery);
      * InSubQuery c2 = new InSubQuery("userId", subQuery);
      * assert c1.equals(c2); // true

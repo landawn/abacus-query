@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -39,7 +40,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testConstructor_SingleProperty() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
         assertEquals("userId", condition.getPropName());
@@ -56,7 +57,7 @@ public class NotInSubQuery2025Test extends TestBase {
     @Test
     public void testConstructor_MultipleProperties() {
         List<String> props = Arrays.asList("firstName", "lastName");
-        SubQuery subQuery = new SubQuery("SELECT fname, lname FROM blacklist");
+        SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
         NotInSubQuery condition = new NotInSubQuery(props, subQuery);
 
         assertNull(condition.getPropName());
@@ -66,19 +67,19 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testConstructor_EmptyPropNames() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery(Arrays.asList(), subQuery));
     }
 
     @Test
     public void testConstructor_NullPropNames() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery((Collection<String>) null, subQuery));
     }
 
     @Test
     public void testGetPropName() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM deleted_items");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM deleted_items");
         NotInSubQuery condition = new NotInSubQuery("itemId", subQuery);
 
         assertEquals("itemId", condition.getPropName());
@@ -87,7 +88,7 @@ public class NotInSubQuery2025Test extends TestBase {
     @Test
     public void testGetPropNames() {
         List<String> props = Arrays.asList("country", "city");
-        SubQuery subQuery = new SubQuery("SELECT country, city FROM restricted_locations");
+        SubQuery subQuery = Filters.subQuery("SELECT country, city FROM restricted_locations");
         NotInSubQuery condition = new NotInSubQuery(props, subQuery);
 
         Collection<String> propNames = condition.getPropNames();
@@ -97,7 +98,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testGetSubQuery() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
         SubQuery result = condition.getSubQuery();
@@ -107,10 +108,10 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testSetSubQuery() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM users WHERE active = false");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users WHERE active = false");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery1);
 
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM users WHERE deleted = true");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM users WHERE deleted = true");
         condition.setSubQuery(subQuery2);
 
         assertEquals(subQuery2, condition.getSubQuery());
@@ -118,7 +119,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
         List<Object> params = condition.getParameters();
@@ -128,7 +129,7 @@ public class NotInSubQuery2025Test extends TestBase {
     @Test
     public void testClearParameters() {
         Equal statusCondition = new Equal("status", "deleted");
-        SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), statusCondition);
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), statusCondition);
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
         condition.clearParameters();
@@ -137,7 +138,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery original = new NotInSubQuery("userId", subQuery);
 
         NotInSubQuery copy = original.copy();
@@ -147,7 +148,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testToString_SingleProperty() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM inactive_users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -158,7 +159,7 @@ public class NotInSubQuery2025Test extends TestBase {
     @Test
     public void testToString_MultipleProperties() {
         List<String> props = Arrays.asList("firstName", "lastName");
-        SubQuery subQuery = new SubQuery("SELECT fname, lname FROM blacklist");
+        SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
         NotInSubQuery condition = new NotInSubQuery(props, subQuery);
 
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -169,7 +170,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testHashCode_Equal() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery c1 = new NotInSubQuery("userId", subQuery);
         NotInSubQuery c2 = new NotInSubQuery("userId", subQuery);
 
@@ -178,7 +179,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
         assertEquals(condition, condition);
@@ -186,7 +187,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testEquals_EqualObjects() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery c1 = new NotInSubQuery("userId", subQuery);
         NotInSubQuery c2 = new NotInSubQuery("userId", subQuery);
 
@@ -195,7 +196,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentPropName() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery c1 = new NotInSubQuery("userId", subQuery);
         NotInSubQuery c2 = new NotInSubQuery("customerId", subQuery);
 
@@ -204,7 +205,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testEquals_Null() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
         assertNotEquals(null, condition);
@@ -212,7 +213,7 @@ public class NotInSubQuery2025Test extends TestBase {
 
     @Test
     public void testUseCaseScenario_ExcludeDeletedItems() {
-        SubQuery deletedItems = new SubQuery("SELECT id FROM deleted_items");
+        SubQuery deletedItems = Filters.subQuery("SELECT id FROM deleted_items");
         NotInSubQuery condition = new NotInSubQuery("itemId", deletedItems);
 
         assertTrue(condition.toString(NamingPolicy.NO_CHANGE).contains("itemId"));
@@ -221,7 +222,7 @@ public class NotInSubQuery2025Test extends TestBase {
     @Test
     public void testUseCaseScenario_ExcludeRestrictedLocations() {
         List<String> props = Arrays.asList("country", "city");
-        SubQuery restricted = new SubQuery("SELECT country, city FROM restricted_locations");
+        SubQuery restricted = Filters.subQuery("SELECT country, city FROM restricted_locations");
         NotInSubQuery condition = new NotInSubQuery(props, restricted);
 
         assertEquals(2, condition.getPropNames().size());

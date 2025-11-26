@@ -31,7 +31,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testConstructorWithRawSQL() {
         String sql = "SELECT id FROM users WHERE status = 'active'";
-        SubQuery subQuery = new SubQuery(sql);
+        SubQuery subQuery = Filters.subQuery(sql);
 
         assertNotNull(subQuery);
         assertEquals(sql, subQuery.getSql());
@@ -43,7 +43,7 @@ public class SubQuery2025Test extends TestBase {
     public void testConstructorWithEntityNameAndSQL() {
         String entityName = "orders";
         String sql = "SELECT order_id FROM orders WHERE total > 1000";
-        SubQuery subQuery = new SubQuery(entityName, sql);
+        SubQuery subQuery = Filters.subQuery(entityName, sql);
 
         assertNotNull(subQuery);
         assertEquals(entityName, subQuery.getEntityName());
@@ -70,7 +70,7 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("id", "email");
         Condition condition = Filters.eq("active", true);
 
-        SubQuery subQuery = new SubQuery(entityName, props, condition);
+        SubQuery subQuery = Filters.subQuery(entityName, props, condition);
 
         assertNotNull(subQuery);
         assertEquals(entityName, subQuery.getEntityName());
@@ -84,7 +84,7 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("id", "name");
         Condition condition = Filters.like("name", "%test%");
 
-        SubQuery subQuery = new SubQuery(TestEntity.class, props, condition);
+        SubQuery subQuery = Filters.subQuery(TestEntity.class, props, condition);
 
         assertNotNull(subQuery);
         assertEquals("TestEntity", subQuery.getEntityName());
@@ -99,7 +99,7 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("id");
         Condition condition = Filters.gt("price", 100);
 
-        SubQuery subQuery = new SubQuery(entityName, props, condition);
+        SubQuery subQuery = Filters.subQuery(entityName, props, condition);
 
         // Condition should be wrapped in WHERE
         assertNotNull(subQuery.getCondition());
@@ -112,7 +112,7 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("id");
         Condition condition = Filters.where(Filters.gt("price", 100));
 
-        SubQuery subQuery = new SubQuery(entityName, props, condition);
+        SubQuery subQuery = Filters.subQuery(entityName, props, condition);
 
         assertNotNull(subQuery.getCondition());
         assertEquals(Operator.WHERE, subQuery.getCondition().getOperator());
@@ -123,7 +123,7 @@ public class SubQuery2025Test extends TestBase {
         String entityName = "users";
         Collection<String> props = Arrays.asList("id");
 
-        SubQuery subQuery = new SubQuery(entityName, props, null);
+        SubQuery subQuery = Filters.subQuery(entityName, props, (Condition) null);
 
         assertNotNull(subQuery);
         assertNull(subQuery.getCondition());
@@ -132,7 +132,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testGetSql() {
         String sql = "SELECT * FROM users";
-        SubQuery subQuery = new SubQuery(sql);
+        SubQuery subQuery = Filters.subQuery(sql);
 
         assertEquals(sql, subQuery.getSql());
     }
@@ -140,14 +140,14 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testGetEntityName() {
         String entityName = "orders";
-        SubQuery subQuery = new SubQuery(entityName, Arrays.asList("id"), null);
+        SubQuery subQuery = Filters.subQuery(entityName, Arrays.asList("id"), (Condition) null);
 
         assertEquals(entityName, subQuery.getEntityName());
     }
 
     @Test
     public void testGetEntityClass() {
-        SubQuery subQuery = new SubQuery(TestEntity.class, Arrays.asList("id"), null);
+        SubQuery subQuery = Filters.subQuery(TestEntity.class, Arrays.asList("id"), null);
 
         assertEquals(TestEntity.class, subQuery.getEntityClass());
     }
@@ -155,7 +155,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testGetSelectPropNames() {
         Collection<String> props = Arrays.asList("id", "name", "email");
-        SubQuery subQuery = new SubQuery("users", props, null);
+        SubQuery subQuery = Filters.subQuery("users", props, (Condition) null);
 
         assertEquals(props, subQuery.getSelectPropNames());
     }
@@ -163,7 +163,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testGetCondition() {
         Condition condition = Filters.eq("status", "active");
-        SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
 
         assertNotNull(subQuery.getCondition());
     }
@@ -172,7 +172,7 @@ public class SubQuery2025Test extends TestBase {
     public void testGetParametersFromCondition() {
         Condition condition = Filters.and(Filters.eq("status", "active"), Filters.between("age", 18, 65));
 
-        SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
 
         List<Object> params = subQuery.getParameters();
 
@@ -184,7 +184,7 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testGetParametersEmptyForRawSQL() {
-        SubQuery subQuery = new SubQuery("SELECT * FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT * FROM users");
 
         List<Object> params = subQuery.getParameters();
 
@@ -194,7 +194,7 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testGetParametersEmptyForNullCondition() {
-        SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), null);
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
 
         List<Object> params = subQuery.getParameters();
 
@@ -204,7 +204,7 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testClearParametersForRawSQL() {
-        SubQuery subQuery = new SubQuery("SELECT * FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT * FROM users");
 
         // Should not throw exception
         assertDoesNotThrow(() -> subQuery.clearParameters());
@@ -213,7 +213,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testClearParametersWithCondition() {
         Condition condition = Filters.eq("status", "active");
-        SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
 
         assertFalse(subQuery.getParameters().isEmpty());
 
@@ -226,7 +226,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testCopy() {
         Condition condition = Filters.eq("active", true);
-        SubQuery original = new SubQuery("users", Arrays.asList("id", "name"), condition);
+        SubQuery original = Filters.subQuery("users", Arrays.asList("id", "name"), condition);
 
         SubQuery copy = original.copy();
 
@@ -240,7 +240,7 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testCopyRawSQL() {
-        SubQuery original = new SubQuery("SELECT * FROM users");
+        SubQuery original = Filters.subQuery("SELECT * FROM users");
 
         SubQuery copy = original.copy();
 
@@ -252,7 +252,7 @@ public class SubQuery2025Test extends TestBase {
     @Test
     public void testToStringRawSQL() {
         String sql = "SELECT id FROM users WHERE status = 'active'";
-        SubQuery subQuery = new SubQuery(sql);
+        SubQuery subQuery = Filters.subQuery(sql);
 
         String result = subQuery.toString(NamingPolicy.NO_CHANGE);
 
@@ -264,7 +264,7 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("id", "name");
         Condition condition = Filters.where(Filters.eq("status", "active"));
 
-        SubQuery subQuery = new SubQuery("users", props, condition);
+        SubQuery subQuery = Filters.subQuery("users", props, condition);
 
         String result = subQuery.toString(NamingPolicy.NO_CHANGE);
 
@@ -280,7 +280,7 @@ public class SubQuery2025Test extends TestBase {
     public void testToStringStructuredWithoutCondition() {
         Collection<String> props = Arrays.asList("id");
 
-        SubQuery subQuery = new SubQuery("products", props, null);
+        SubQuery subQuery = Filters.subQuery("products", props, (Condition) null);
 
         String result = subQuery.toString(NamingPolicy.NO_CHANGE);
 
@@ -296,7 +296,7 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("firstName", "lastName");
         Condition condition = Filters.where(Filters.eq("isActive", true));
 
-        SubQuery subQuery = new SubQuery("users", props, condition);
+        SubQuery subQuery = Filters.subQuery("users", props, condition);
 
         String result = subQuery.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
 
@@ -305,8 +305,8 @@ public class SubQuery2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery sq1 = new SubQuery("SELECT * FROM users");
-        SubQuery sq2 = new SubQuery("SELECT * FROM users");
+        SubQuery sq1 = Filters.subQuery("SELECT * FROM users");
+        SubQuery sq2 = Filters.subQuery("SELECT * FROM users");
 
         assertEquals(sq1.hashCode(), sq2.hashCode());
     }
@@ -316,45 +316,45 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("id");
         Condition condition = Filters.eq("active", true);
 
-        SubQuery sq1 = new SubQuery("users", props, condition);
-        SubQuery sq2 = new SubQuery("users", props, condition);
+        SubQuery sq1 = Filters.subQuery("users", props, condition);
+        SubQuery sq2 = Filters.subQuery("users", props, condition);
 
         assertEquals(sq1.hashCode(), sq2.hashCode());
     }
 
     @Test
     public void testEquals() {
-        SubQuery sq1 = new SubQuery("SELECT * FROM users");
-        SubQuery sq2 = new SubQuery("SELECT * FROM users");
+        SubQuery sq1 = Filters.subQuery("SELECT * FROM users");
+        SubQuery sq2 = Filters.subQuery("SELECT * FROM users");
 
         assertEquals(sq1, sq2);
     }
 
     @Test
     public void testEqualsSameInstance() {
-        SubQuery sq = new SubQuery("SELECT * FROM users");
+        SubQuery sq = Filters.subQuery("SELECT * FROM users");
 
         assertEquals(sq, sq);
     }
 
     @Test
     public void testEqualsNull() {
-        SubQuery sq = new SubQuery("SELECT * FROM users");
+        SubQuery sq = Filters.subQuery("SELECT * FROM users");
 
         assertNotEquals(sq, null);
     }
 
     @Test
     public void testEqualsDifferentType() {
-        SubQuery sq = new SubQuery("SELECT * FROM users");
+        SubQuery sq = Filters.subQuery("SELECT * FROM users");
 
         assertNotEquals(sq, "not a subquery");
     }
 
     @Test
     public void testEqualsDifferentSQL() {
-        SubQuery sq1 = new SubQuery("SELECT * FROM users");
-        SubQuery sq2 = new SubQuery("SELECT * FROM orders");
+        SubQuery sq1 = Filters.subQuery("SELECT * FROM users");
+        SubQuery sq2 = Filters.subQuery("SELECT * FROM orders");
 
         assertNotEquals(sq1, sq2);
     }
@@ -364,8 +364,8 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("id");
         Condition condition = Filters.eq("active", true);
 
-        SubQuery sq1 = new SubQuery("users", props, condition);
-        SubQuery sq2 = new SubQuery("users", props, condition);
+        SubQuery sq1 = Filters.subQuery("users", props, condition);
+        SubQuery sq2 = Filters.subQuery("users", props, condition);
 
         assertEquals(sq1, sq2);
     }
@@ -374,8 +374,8 @@ public class SubQuery2025Test extends TestBase {
     public void testEqualsStructuredDifferentEntity() {
         Collection<String> props = Arrays.asList("id");
 
-        SubQuery sq1 = new SubQuery("users", props, null);
-        SubQuery sq2 = new SubQuery("orders", props, null);
+        SubQuery sq1 = Filters.subQuery("users", props, (Condition) null);
+        SubQuery sq2 = Filters.subQuery("orders", props, (Condition) null);
 
         assertNotEquals(sq1, sq2);
     }
@@ -385,7 +385,7 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("id", "name", "email", "age");
         Condition condition = Filters.and(Filters.eq("status", "active"), Filters.between("age", 18, 65));
 
-        SubQuery subQuery = new SubQuery("users", props, condition);
+        SubQuery subQuery = Filters.subQuery("users", props, condition);
 
         String sql = subQuery.toString(NamingPolicy.NO_CHANGE);
 
@@ -401,7 +401,7 @@ public class SubQuery2025Test extends TestBase {
         Collection<String> props = Arrays.asList("id");
         Condition condition = Filters.expr("custom_function(column) > 100");
 
-        SubQuery subQuery = new SubQuery("table", props, condition);
+        SubQuery subQuery = Filters.subQuery("table", props, condition);
 
         assertNotNull(subQuery.getCondition());
     }

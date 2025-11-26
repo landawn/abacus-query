@@ -40,8 +40,8 @@ import com.landawn.abacus.annotation.Internal;
  * // Get operation from SQL statement
  * String sql = "SELECT * FROM users";
  * String firstWord = sql.trim().split("\\s+")[0].toUpperCase();
- * SQLOperation op = SQLOperation.getOperation(firstWord);
- * 
+ * SQLOperation op = SQLOperation.of(firstWord);
+ *
  * if (op == SQLOperation.SELECT) {
  *     // Handle SELECT query
  * }

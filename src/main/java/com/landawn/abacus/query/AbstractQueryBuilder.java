@@ -2181,7 +2181,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a GROUP BY clause with a collection of columns and sort direction.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("category", "brand");
+     * String sql = PSC.select("category", "brand", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupBy(columns, SortDirection.DESC)
+     *                 .sql();
+     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category, brand DESC
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns to group by
      * @param direction the sort direction for all columns
      * @return this SQLBuilder instance for method chaining
@@ -2365,7 +2375,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY clause with a collection of columns.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("lastName", "firstName");
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderBy(columns)
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY last_name, first_name
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns to order by
      * @return this SQLBuilder instance for method chaining
      */
@@ -2388,7 +2408,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY clause with a collection of columns and sort direction.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("lastName", "firstName");
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderBy(columns, SortDirection.DESC)
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY last_name, first_name DESC
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns to order by
      * @param direction the sort direction for all columns
      * @return this SQLBuilder instance for method chaining

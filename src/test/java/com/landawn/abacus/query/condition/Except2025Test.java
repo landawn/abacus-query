@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -36,7 +37,7 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testConstructor() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Except except = new Except(subQuery);
         assertNotNull(except);
         assertEquals(Operator.EXCEPT, except.getOperator());
@@ -44,7 +45,7 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+        SubQuery subQuery = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Except except = new Except(subQuery);
         SubQuery retrieved = except.getCondition();
         assertNotNull(retrieved);
@@ -53,7 +54,7 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = new SubQuery("SELECT skill_id FROM job_requirements WHERE job_id = 123");
+        SubQuery subQuery = Filters.subQuery("SELECT skill_id FROM job_requirements WHERE job_id = 123");
         Except except = new Except(subQuery);
         List<Object> params = except.getParameters();
         // Raw SQL SubQuery has no parameters
@@ -62,7 +63,7 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = new SubQuery("employees", List.of("employee_id"), new Equal("is_manager", "true"));
+        SubQuery subQuery = Filters.subQuery("employees", List.of("employee_id"), new Equal("is_manager", "true"));
         Except except = new Except(subQuery);
         assertFalse(except.getParameters().isEmpty());
         except.clearParameters();
@@ -72,7 +73,7 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         Except original = new Except(subQuery);
         Except copy = original.copy();
         assertNotSame(original, copy);
@@ -81,7 +82,7 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testToString() {
-        SubQuery subQuery = new SubQuery("SELECT product_id FROM sales");
+        SubQuery subQuery = Filters.subQuery("SELECT product_id FROM sales");
         Except except = new Except(subQuery);
         String result = except.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("EXCEPT"));
@@ -89,8 +90,8 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
         Except except1 = new Except(subQuery1);
         Except except2 = new Except(subQuery2);
         assertEquals(except1.hashCode(), except2.hashCode());
@@ -98,15 +99,15 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Except except = new Except(subQuery);
         assertEquals(except, except);
     }
 
     @Test
     public void testEquals_EqualObjects() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
         Except except1 = new Except(subQuery1);
         Except except2 = new Except(subQuery2);
         assertEquals(except1, except2);
@@ -114,8 +115,8 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentSubQueries() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table2");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
         Except except1 = new Except(subQuery1);
         Except except2 = new Except(subQuery2);
         assertNotEquals(except1, except2);
@@ -123,14 +124,14 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testEquals_Null() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table1");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Except except = new Except(subQuery);
         assertNotEquals(null, except);
     }
 
     @Test
     public void testSetDifference() {
-        SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+        SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Except except = new Except(customersWithOrders);
         assertNotNull(except);
         assertEquals(Operator.EXCEPT, except.getOperator());
@@ -138,7 +139,7 @@ public class Except2025Test extends TestBase {
 
     @Test
     public void testFindMissingRecords() {
-        SubQuery soldProducts = new SubQuery("order_items", List.of("product_id"), new GreaterThan("order_date", "2024-01-01"));
+        SubQuery soldProducts = Filters.subQuery("order_items", List.of("product_id"), new GreaterThan("order_date", "2024-01-01"));
         Except except = new Except(soldProducts);
         assertEquals(1, (int) except.getParameters().size());
     }

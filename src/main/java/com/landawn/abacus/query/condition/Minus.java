@@ -65,25 +65,24 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who have never placed an order
- * SubQuery allCustomers = new SubQuery("SELECT customer_id FROM customers");
- * SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+ * SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
  * Minus customersWithoutOrders = new Minus(customersWithOrders);
- * // When used with main query:
+ * // When combined with all customers query:
  * // SELECT customer_id FROM customers
  * // MINUS
  * // SELECT DISTINCT customer_id FROM orders
  *
  * // Find products not sold in the last month
- * SubQuery allProducts = new SubQuery("SELECT product_id FROM products WHERE active = 'Y'");
- * SubQuery soldProducts = new SubQuery(
+ * SubQuery soldProducts = Filters.subQuery(
  *     "SELECT DISTINCT product_id FROM order_items WHERE order_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)"
  * );
  * Minus unsoldProducts = new Minus(soldProducts);
+ * // When combined with all products query, returns products not in sales
  *
  * // Find employees not assigned to any project
- * SubQuery allEmployees = new SubQuery("SELECT employee_id FROM employees WHERE status = 'ACTIVE'");
- * SubQuery assignedEmployees = new SubQuery("SELECT DISTINCT employee_id FROM project_assignments");
+ * SubQuery assignedEmployees = Filters.subQuery("SELECT DISTINCT employee_id FROM project_assignments");
  * Minus unassignedEmployees = new Minus(assignedEmployees);
+ * // When combined with all employees query, returns unassigned employees
  * }</pre>
  *
  * <p>Relationship to other set operations:</p>
@@ -129,7 +128,7 @@ public class Minus extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find products that are in inventory but have never been sold
-     * SubQuery soldProducts = new SubQuery("SELECT product_id FROM sales");
+     * SubQuery soldProducts = Filters.subQuery("SELECT product_id FROM sales");
      * Minus unsoldProducts = new Minus(soldProducts);
      * // When used with a query selecting from inventory:
      * // SELECT product_id FROM inventory
@@ -138,7 +137,7 @@ public class Minus extends Clause {
      * // Returns product_id values in inventory but not in sales
      *
      * // Find active employees not assigned to any project
-     * SubQuery assignedEmployees = new SubQuery("SELECT employee_id FROM project_assignments");
+     * SubQuery assignedEmployees = Filters.subQuery("SELECT employee_id FROM project_assignments");
      * Minus unassigned = new Minus(assignedEmployees);
      * // SELECT employee_id FROM employees WHERE status = 'ACTIVE'
      * // MINUS
@@ -146,7 +145,7 @@ public class Minus extends Clause {
      * // Returns active employees with no project assignments
      *
      * // Find customers who have never placed an order
-     * SubQuery customersWithOrders = new SubQuery("SELECT DISTINCT customer_id FROM orders");
+     * SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
      * Minus customersWithoutOrders = new Minus(customersWithOrders);
      * // SELECT customer_id FROM customers
      * // MINUS
@@ -154,7 +153,7 @@ public class Minus extends Clause {
      * // Returns customers who have never ordered
      *
      * // Find skills not required for a position
-     * SubQuery requiredSkills = new SubQuery("SELECT skill_id FROM position_requirements WHERE position_id = 5");
+     * SubQuery requiredSkills = Filters.subQuery("SELECT skill_id FROM position_requirements WHERE position_id = 5");
      * Minus optionalSkills = new Minus(requiredSkills);
      * // SELECT skill_id FROM all_skills
      * // MINUS

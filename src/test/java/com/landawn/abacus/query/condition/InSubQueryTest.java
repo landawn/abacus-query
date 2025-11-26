@@ -9,13 +9,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class InSubQueryTest extends TestBase {
 
     @Test
     public void testConstructorWithSinglePropName() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM employees WHERE role = 'manager'");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM employees WHERE role = 'manager'");
         InSubQuery condition = new InSubQuery("manager_id", subQuery);
 
         Assertions.assertNotNull(condition);
@@ -28,7 +29,7 @@ public class InSubQueryTest extends TestBase {
     @Test
     public void testConstructorWithMultiplePropNames() {
         List<String> propNames = Arrays.asList("department_id", "location_id");
-        SubQuery subQuery = new SubQuery("SELECT dept_id, loc_id FROM valid_assignments");
+        SubQuery subQuery = Filters.subQuery("SELECT dept_id, loc_id FROM valid_assignments");
         InSubQuery condition = new InSubQuery(propNames, subQuery);
 
         Assertions.assertNotNull(condition);
@@ -40,7 +41,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testGetPropName() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
         Assertions.assertEquals("user_id", condition.getPropName());
@@ -49,7 +50,7 @@ public class InSubQueryTest extends TestBase {
     @Test
     public void testGetPropNames() {
         List<String> propNames = Arrays.asList("city", "state");
-        SubQuery subQuery = new SubQuery("SELECT city, state FROM locations");
+        SubQuery subQuery = Filters.subQuery("SELECT city, state FROM locations");
         InSubQuery condition = new InSubQuery(propNames, subQuery);
 
         Assertions.assertEquals(propNames, condition.getPropNames());
@@ -57,7 +58,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testGetSubQuery() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
         Assertions.assertEquals(subQuery, condition.getSubQuery());
@@ -66,8 +67,8 @@ public class InSubQueryTest extends TestBase {
     @Test
     @SuppressWarnings("deprecation")
     public void testSetSubQuery() {
-        SubQuery originalSubQuery = new SubQuery("SELECT id FROM table1");
-        SubQuery newSubQuery = new SubQuery("SELECT id FROM table2");
+        SubQuery originalSubQuery = Filters.subQuery("SELECT id FROM table1");
+        SubQuery newSubQuery = Filters.subQuery("SELECT id FROM table2");
         InSubQuery condition = new InSubQuery("id", originalSubQuery);
 
         condition.setSubQuery(newSubQuery);
@@ -77,7 +78,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users WHERE status = ?", "active");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE status = ?", "active");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
         List<Object> params = condition.getParameters();
@@ -88,7 +89,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testGetParametersWithMultipleValues() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM products WHERE price BETWEEN ? AND ?");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM products WHERE price BETWEEN ? AND ?");
         InSubQuery condition = new InSubQuery("product_id", subQuery);
 
         List<Object> params = condition.getParameters();
@@ -98,7 +99,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table WHERE value = ?");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE value = ?");
         InSubQuery condition = new InSubQuery("id", subQuery);
 
         condition.clearParameters();
@@ -109,7 +110,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testCopy() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users WHERE active = ?");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = ?");
         InSubQuery original = new InSubQuery("user_id", subQuery);
         InSubQuery copy = original.copy();
 
@@ -123,7 +124,7 @@ public class InSubQueryTest extends TestBase {
     @Test
     public void testCopyWithMultiplePropNames() {
         List<String> propNames = Arrays.asList("col1", "col2");
-        SubQuery subQuery = new SubQuery("SELECT a, b FROM table");
+        SubQuery subQuery = Filters.subQuery("SELECT a, b FROM table");
         InSubQuery original = new InSubQuery(propNames, subQuery);
         InSubQuery copy = original.copy();
 
@@ -134,9 +135,9 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table");
-        SubQuery subQuery3 = new SubQuery("SELECT id FROM other");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table");
+        SubQuery subQuery3 = Filters.subQuery("SELECT id FROM other");
 
         InSubQuery condition1 = new InSubQuery("field", subQuery1);
         InSubQuery condition2 = new InSubQuery("field", subQuery2);
@@ -150,8 +151,8 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testEquals() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table");
 
         InSubQuery condition1 = new InSubQuery("field", subQuery1);
         InSubQuery condition2 = new InSubQuery("field", subQuery2);
@@ -166,7 +167,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testToString() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users WHERE active = true");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
         String result = condition.toString();
@@ -179,7 +180,7 @@ public class InSubQueryTest extends TestBase {
     @Test
     public void testToStringWithMultiplePropNames() {
         List<String> propNames = Arrays.asList("city", "state");
-        SubQuery subQuery = new SubQuery("SELECT city, state FROM allowed_locations");
+        SubQuery subQuery = Filters.subQuery("SELECT city, state FROM allowed_locations");
         InSubQuery condition = new InSubQuery(propNames, subQuery);
 
         String result = condition.toString();
@@ -191,7 +192,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
         InSubQuery condition = new InSubQuery("userId", subQuery);
 
         String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
@@ -209,7 +210,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testConstructorWithEmptyPropNames() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             new InSubQuery(new ArrayList<String>(), subQuery);
@@ -218,7 +219,7 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testConstructorWithNullPropNames() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             new InSubQuery((Collection<String>) null, subQuery);

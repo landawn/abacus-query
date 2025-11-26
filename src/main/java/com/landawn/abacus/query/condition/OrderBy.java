@@ -167,13 +167,11 @@ public class OrderBy extends Clause {
      * List<String> dateFields = Arrays.asList("created", "updated", "published");
      * OrderBy orderBy = new OrderBy(dateFields, SortDirection.DESC);
      * // SQL: ORDER BY created, updated, published DESC
-     * // Note: All columns will be sorted DESC (library-specific behavior)
      *
      * // Sort name fields in ascending order
      * List<String> nameFields = Arrays.asList("lastName", "firstName", "middleName");
      * OrderBy nameOrder = new OrderBy(nameFields, SortDirection.ASC);
      * // SQL: ORDER BY lastName, firstName, middleName ASC
-     * // Note: All columns will be sorted ASC (library-specific behavior)
      * }</pre>
      *
      * @param propNames collection of property names to sort by. Must not be null or empty.

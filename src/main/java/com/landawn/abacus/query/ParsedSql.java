@@ -455,6 +455,17 @@ public final class ParsedSql {
      * Indicates whether some other object is "equal to" this one.
      * Two ParsedSql objects are equal if they have the same original SQL string.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql ps1 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
+     * ParsedSql ps2 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
+     * ParsedSql ps3 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
+     *
+     * boolean result1 = ps1.equals(ps2); // Returns: true (same SQL)
+     * boolean result2 = ps1.equals(ps3); // Returns: false (different SQL)
+     * boolean result3 = ps1.equals(null); // Returns: false
+     * }</pre>
+     *
      * @param obj the reference object with which to compare
      * @return {@code true} if this object equals the obj argument; false otherwise
      */

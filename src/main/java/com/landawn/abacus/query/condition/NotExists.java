@@ -35,13 +35,13 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who have not placed any orders
- * SubQuery orderNotExists = new SubQuery(
+ * SubQuery orderNotExists = Filters.subQuery(
  *     "SELECT 1 FROM orders WHERE orders.customer_id = customers.id"
  * );
  * NotExists noOrders = new NotExists(orderNotExists);
  * 
  * // Find products that have not been reviewed
- * SubQuery reviewNotExists = new SubQuery(
+ * SubQuery reviewNotExists = Filters.subQuery(
  *     "SELECT 1 FROM reviews WHERE reviews.product_id = products.id"
  * );
  * NotExists noReviews = new NotExists(reviewNotExists);
@@ -74,7 +74,7 @@ public class NotExists extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find employees without any assigned projects
-     * SubQuery projectCheck = new SubQuery(
+     * SubQuery projectCheck = Filters.subQuery(
      *     "SELECT 1 FROM project_assignments " +
      *     "WHERE project_assignments.employee_id = employees.id"
      * );
@@ -82,17 +82,17 @@ public class NotExists extends Cell {
      * // Generates: NOT EXISTS (SELECT 1 FROM project_assignments WHERE project_assignments.employee_id = employees.id)
      *
      * // Find customers who have never placed an order
-     * SubQuery orderCheck = new SubQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+     * SubQuery orderCheck = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
      * NotExists noOrders = new NotExists(orderCheck);
      * // Generates: NOT EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id)
      *
      * // Find products with no reviews
-     * SubQuery reviewCheck = new SubQuery("SELECT 1 FROM reviews WHERE reviews.product_id = products.id");
+     * SubQuery reviewCheck = Filters.subQuery("SELECT 1 FROM reviews WHERE reviews.product_id = products.id");
      * NotExists noReviews = new NotExists(reviewCheck);
      * // Generates: NOT EXISTS (SELECT 1 FROM reviews WHERE reviews.product_id = products.id)
      *
      * // Find departments without employees
-     * SubQuery empCheck = new SubQuery("SELECT 1 FROM employees WHERE employees.dept_id = departments.id");
+     * SubQuery empCheck = Filters.subQuery("SELECT 1 FROM employees WHERE employees.dept_id = departments.id");
      * NotExists emptyDept = new NotExists(empCheck);
      * // Generates: NOT EXISTS (SELECT 1 FROM employees WHERE employees.dept_id = departments.id)
      * }</pre>

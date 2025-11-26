@@ -163,9 +163,9 @@ import com.landawn.abacus.util.N;
  *   </tr>
  *   <tr>
  *     <td>Pattern Matching</td>
- *     <td>LIKE, NOT LIKE, REGEX</td>
- *     <td>like(), notLike(), regex()</td>
- *     <td>like("email", "%@company.com")</td>
+ *     <td>LIKE, NOT LIKE</td>
+ *     <td>like(), notLike(), contains(), startsWith(), endsWith()</td>
+ *     <td>like("email", "%@company.com"), contains("name", "John")</td>
  *   </tr>
  *   <tr>
  *     <td>Null Checking</td>
@@ -191,10 +191,10 @@ import com.landawn.abacus.util.N;
  * <ul>
  *   <li><b>Basic Comparison:</b> {@code eq()}, {@code ne()}, {@code lt()}, {@code le()}, {@code gt()}, {@code ge()}</li>
  *   <li><b>Range and Collection:</b> {@code between()}, {@code in()}, {@code notIn()}, {@code like()}</li>
- *   <li><b>Null Operations:</b> {@code isNull()}, {@code isNotNull()}, {@code isEmpty()}, {@code isNotEmpty()}</li>
+ *   <li><b>Null Operations:</b> {@code isNull()}, {@code isNotNull()}, {@code isEmpty()}, {@code isNullOrZero()}</li>
  *   <li><b>Logical Combinators:</b> {@code and()}, {@code or()}, {@code not()}, {@code xor()}</li>
- *   <li><b>Advanced Patterns:</b> {@code regex()}, {@code fullTextSearch()}, {@code soundex()}</li>
- *   <li><b>Join Conditions:</b> {@code join()}, {@code leftJoin()}, {@code innerJoin()}, {@code outerJoin()}</li>
+ *   <li><b>String Patterns:</b> {@code like()}, {@code notLike()}, {@code contains()}, {@code startsWith()}, {@code endsWith()}</li>
+ *   <li><b>Join Conditions:</b> {@code join()}, {@code leftJoin()}, {@code rightJoin()}, {@code innerJoin()}, {@code fullJoin()}</li>
  * </ul>
  *
  * <p><b>Common Usage Patterns:</b>
@@ -220,7 +220,7 @@ import com.landawn.abacus.util.N;
  *
  * // Pattern matching for flexible text search
  * Condition emailFilter = Filters.like("email", "%@company.com");
- * Condition namePattern = Filters.regex("name", "^[A-Z][a-z]+ [A-Z][a-z]+$");
+ * Condition companyEmail = Filters.endsWith("email", "@company.com");
  *
  * // Range conditions for efficient database queries
  * Condition priceRange = Filters.between("price", 100.0, 500.0);
@@ -317,13 +317,11 @@ import com.landawn.abacus.util.N;
  *   <li><b>Framework Agnostic:</b> Works with any JDBC-based persistence framework</li>
  * </ul>
  *
- * <p><b>Advanced Pattern Matching Support:</b>
+ * <p><b>Pattern Matching Support:</b>
  * <ul>
- *   <li><b>SQL LIKE Patterns:</b> Full support for SQL LIKE with % and _ wildcards</li>
- *   <li><b>Regular Expressions:</b> Database-specific regex support (MySQL, PostgreSQL, Oracle)</li>
- *   <li><b>Case Sensitivity:</b> Configurable case-sensitive and case-insensitive matching</li>
- *   <li><b>Full-Text Search:</b> Integration with database full-text search capabilities</li>
- *   <li><b>Phonetic Matching:</b> SOUNDEX and similar phonetic matching algorithms</li>
+ *   <li><b>SQL LIKE Patterns:</b> Full support for SQL LIKE with % and _ wildcards via {@code like()} and {@code notLike()}</li>
+ *   <li><b>String Matching:</b> Convenience methods {@code contains()}, {@code startsWith()}, {@code endsWith()}, {@code notContains()}, {@code notStartsWith()}, {@code notEndsWith()}</li>
+ *   <li><b>Custom Expressions:</b> Support for database-specific patterns through {@code expr()} for regex, full-text search, and other advanced features</li>
  * </ul>
  *
  * <p><b>Logical Operation Precedence and Grouping:</b>
@@ -1654,17 +1652,18 @@ public class Filters {
 
     /**
      * Creates a NOT BETWEEN condition for the specified property and range values.
-     * The condition excludes both boundary values.
-     * 
+     * Returns true when the value is outside the specified range (inclusive boundaries).
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = Filters.notBetween("temperature", -10, 40);
      * // Results in SQL like: WHERE temperature NOT BETWEEN -10 AND 40
+     * // True when temperature < -10 OR temperature > 40
      * }</pre>
      *
      * @param propName the property/column name
-     * @param minValue the minimum value (exclusive)
-     * @param maxValue the maximum value (exclusive)
+     * @param minValue the minimum value of the excluded range (inclusive)
+     * @param maxValue the maximum value of the excluded range (inclusive)
      * @return a NotBetween condition
      */
     public static NotBetween notBetween(final String propName, final Object minValue, final Object maxValue) {
@@ -2500,10 +2499,10 @@ public class Filters {
 
     /**
      * Creates an ORDER BY clause with a single property and sort direction.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = Filters.orderBy("modified_date", DESC);
+     * OrderBy orderBy = Filters.orderBy("modified_date", SortDirection.DESC);
      * // Results in SQL like: ORDER BY modified_date DESC
      * }</pre>
      *
@@ -2517,10 +2516,10 @@ public class Filters {
 
     /**
      * Creates an ORDER BY clause with two properties and their respective sort directions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = Filters.orderBy("status", ASC, "priority", DESC);
+     * OrderBy orderBy = Filters.orderBy("status", SortDirection.ASC, "priority", SortDirection.DESC);
      * // Results in SQL like: ORDER BY status ASC, priority DESC
      * }</pre>
      *
@@ -2536,10 +2535,10 @@ public class Filters {
 
     /**
      * Creates an ORDER BY clause with three properties and their respective sort directions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = Filters.orderBy("year", DESC, "month", DESC, "day", ASC);
+     * OrderBy orderBy = Filters.orderBy("year", SortDirection.DESC, "month", SortDirection.DESC, "day", SortDirection.ASC);
      * }</pre>
      *
      * @param propNameA first property name
@@ -2558,13 +2557,13 @@ public class Filters {
     /**
      * Creates an ORDER BY clause from a map of property names to sort directions.
      * The map should be a LinkedHashMap to preserve order.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
-     * orders.put("category", ASC);
-     * orders.put("price", DESC);
-     * orders.put("name", ASC);
+     * orders.put("category", SortDirection.ASC);
+     * orders.put("price", SortDirection.DESC);
+     * orders.put("name", SortDirection.ASC);
      * OrderBy orderBy = Filters.orderBy(orders);
      * }</pre>
      *
@@ -2830,7 +2829,13 @@ public class Filters {
 
     /**
      * Creates a RIGHT JOIN clause with multiple entities and a join condition.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * RightJoin join = Filters.rightJoin(Arrays.asList("departments", "locations"),
+     *     Filters.on("departments.location_id", "locations.id"));
+     * }</pre>
+     *
      * @param joinEntities collection of entity/table names to right join
      * @param condition the join condition
      * @return a RightJoin clause
@@ -2859,7 +2864,12 @@ public class Filters {
     /**
      * Creates a CROSS JOIN clause with the specified entity and optional condition.
      * Note: Traditional CROSS JOIN doesn't use conditions, but some databases support it.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * CrossJoin join = Filters.crossJoin("sizes", Filters.eq("active", true));
+     * }</pre>
+     *
      * @param joinEntity the entity/table name to cross join
      * @param condition the optional join condition
      * @return a CrossJoin clause
@@ -2870,7 +2880,12 @@ public class Filters {
 
     /**
      * Creates a CROSS JOIN clause with multiple entities and optional condition.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * CrossJoin join = Filters.crossJoin(Arrays.asList("colors", "sizes"), null);
+     * }</pre>
+     *
      * @param joinEntities collection of entity/table names to cross join
      * @param condition the optional join condition
      * @return a CrossJoin clause
@@ -2916,7 +2931,13 @@ public class Filters {
 
     /**
      * Creates a FULL JOIN clause with multiple entities and a join condition.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * FullJoin join = Filters.fullJoin(Arrays.asList("employees", "contractors"),
+     *     Filters.on("employees.project_id", "contractors.project_id"));
+     * }</pre>
+     *
      * @param joinEntities collection of entity/table names to full join
      * @param condition the join condition
      * @return a FullJoin clause
@@ -2962,7 +2983,13 @@ public class Filters {
 
     /**
      * Creates an INNER JOIN clause with multiple entities and a join condition.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * InnerJoin join = Filters.innerJoin(Arrays.asList("orders", "order_details"),
+     *     Filters.on("orders.id", "order_details.order_id"));
+     * }</pre>
+     *
      * @param joinEntities collection of entity/table names to inner join
      * @param condition the join condition
      * @return an InnerJoin clause
@@ -2991,7 +3018,12 @@ public class Filters {
     /**
      * Creates a NATURAL JOIN clause with the specified entity and additional condition.
      * Note: Traditional NATURAL JOIN doesn't use conditions, but some databases support it.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NaturalJoin join = Filters.naturalJoin("departments", Filters.eq("active", true));
+     * }</pre>
+     *
      * @param joinEntity the entity/table name to natural join
      * @param condition the additional join condition
      * @return a NaturalJoin clause
@@ -3002,7 +3034,12 @@ public class Filters {
 
     /**
      * Creates a NATURAL JOIN clause with multiple entities and additional condition.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NaturalJoin join = Filters.naturalJoin(Arrays.asList("tables", "categories"), null);
+     * }</pre>
+     *
      * @param joinEntities collection of entity/table names to natural join
      * @param condition the additional join condition
      * @return a NaturalJoin clause
@@ -3440,7 +3477,13 @@ public class Filters {
     /**
      * Creates a Cell condition with a custom operator and condition.
      * This is for advanced use cases requiring special condition handling.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Cell cell = Filters.cell(Operator.ALL, Filters.exists(subQuery));
+     * // Advanced condition wrapping for database-specific operations
+     * }</pre>
+     *
      * @param operator the operator to apply
      * @param condition the condition to wrap
      * @return a Cell condition
@@ -3600,12 +3643,12 @@ public class Filters {
     /**
      * Creates an empty Criteria object for building complex query conditions.
      * Criteria allows for fluent building of query conditions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = Filters.criteria()
      *     .where(Filters.eq("status", "active"))
-     *     .orderBy("created_date", DESC)
+     *     .orderBy("created_date", SortDirection.DESC)
      *     .limit(10);
      * }</pre>
      *
@@ -3725,10 +3768,10 @@ public class Filters {
 
         /**
          * Creates a new Criteria with a GROUP BY clause for a single property with sort direction.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.groupBy("sales_amount", DESC);
+         * Criteria criteria = CB.groupBy("sales_amount", SortDirection.DESC);
          * }</pre>
          *
          * @param propName the property/column name to group by
@@ -3757,10 +3800,10 @@ public class Filters {
 
         /**
          * Creates a new Criteria with a GROUP BY clause for properties with sort direction.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.groupBy(Arrays.asList("year", "quarter"), DESC);
+         * Criteria criteria = CB.groupBy(Arrays.asList("year", "quarter"), SortDirection.DESC);
          * }</pre>
          *
          * @param propNames collection of property/column names to group by
@@ -3773,12 +3816,12 @@ public class Filters {
 
         /**
          * Creates a new Criteria with a GROUP BY clause from a map of properties to sort directions.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Map<String, SortDirection> grouping = new LinkedHashMap<>();
-         * grouping.put("category", ASC);
-         * grouping.put("subcategory", DESC);
+         * grouping.put("category", SortDirection.ASC);
+         * grouping.put("subcategory", SortDirection.DESC);
          * Criteria criteria = CB.groupBy(grouping);
          * }</pre>
          *
@@ -3913,10 +3956,10 @@ public class Filters {
 
         /**
          * Creates a new Criteria with an ORDER BY clause for a single property with direction.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.orderBy("created_date", DESC);
+         * Criteria criteria = CB.orderBy("created_date", SortDirection.DESC);
          * }</pre>
          *
          * @param propName the property/column name to order by
@@ -3944,10 +3987,10 @@ public class Filters {
 
         /**
          * Creates a new Criteria with an ORDER BY clause for properties with direction.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.orderBy(Arrays.asList("amount", "date"), DESC);
+         * Criteria criteria = CB.orderBy(Arrays.asList("amount", "date"), SortDirection.DESC);
          * }</pre>
          *
          * @param propNames collection of property/column names to order by

@@ -72,6 +72,7 @@ import com.landawn.abacus.util.Strings;
  * Join exprJoin = new Join("orders o",
  *     Filters.expr("customers.id = o.customer_id"));
  * // Generates: JOIN orders o customers.id = o.customer_id
+ * // Note: Expression conditions don't add ON keyword
  *
  * // Join multiple tables
  * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
@@ -162,6 +163,7 @@ public class Join extends AbstractCondition {
      * Join exprJoin = new Join("orders o",
      *     Filters.expr("customers.id = o.customer_id"));
      * // Generates: JOIN orders o customers.id = o.customer_id
+     * // Note: Expression conditions don't add ON keyword
      *
      * // Join with complex condition using And
      * Join complexJoin = new Join("products p",
@@ -170,6 +172,7 @@ public class Join extends AbstractCondition {
      *         Filters.eq("p.active", true)
      *     ));
      * // Generates: JOIN products p (ON categories.id = p.category_id) AND (p.active = true)
+     * // Note: And wraps each condition in parentheses
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -224,6 +227,7 @@ public class Join extends AbstractCondition {
      *         Filters.expr("o.status = 'active'")
      *     ));
      * // Generates: JOIN orders o, customers c (o.customer_id = c.id) AND (o.status = 'active')
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with

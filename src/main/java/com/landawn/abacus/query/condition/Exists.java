@@ -38,13 +38,13 @@ package com.landawn.abacus.query.condition;
  *     "SELECT 1 FROM orders WHERE orders.customer_id = customers.id"
  * );
  * Exists hasOrders = new Exists(orderExists);
- * 
+ *
  * // Find products that have been reviewed
  * SubQuery reviewExists = Filters.subQuery(
  *     "SELECT 1 FROM reviews WHERE reviews.product_id = products.id"
  * );
  * Exists hasReviews = new Exists(reviewExists);
- * 
+ *
  * // Find departments with employees
  * SubQuery employeeExists = Filters.subQuery(
  *     "SELECT 1 FROM employees WHERE employees.dept_id = departments.id"
@@ -78,14 +78,14 @@ public class Exists extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if employee has any subordinates
-     * SubQuery subordinatesQuery = new SubQuery(
+     * SubQuery subordinatesQuery = Filters.subQuery(
      *     "SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id"
      * );
      * Exists hasSubordinates = new Exists(subordinatesQuery);
      * // Generates: EXISTS (SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id)
      *
      * // Check if product is in any active order
-     * SubQuery activeOrderQuery = new SubQuery(
+     * SubQuery activeOrderQuery = Filters.subQuery(
      *     "SELECT 1 FROM order_items oi " +
      *     "JOIN orders o ON oi.order_id = o.id " +
      *     "WHERE oi.product_id = products.id " +
@@ -95,7 +95,7 @@ public class Exists extends Cell {
      * // Generates: EXISTS (SELECT 1 FROM order_items oi JOIN orders o ...)
      *
      * // Find users with specific permissions
-     * SubQuery permissionQuery = new SubQuery(
+     * SubQuery permissionQuery = Filters.subQuery(
      *     "SELECT 1 FROM user_permissions up " +
      *     "WHERE up.user_id = users.id " +
      *     "AND up.permission = 'admin'"
@@ -104,7 +104,7 @@ public class Exists extends Cell {
      * // Generates: EXISTS (SELECT 1 FROM user_permissions up WHERE ...)
      *
      * // Find departments with employees
-     * SubQuery hasEmployees = new SubQuery("SELECT 1 FROM employees WHERE dept_id = departments.id");
+     * SubQuery hasEmployees = Filters.subQuery("SELECT 1 FROM employees WHERE dept_id = departments.id");
      * Exists deptHasEmployees = new Exists(hasEmployees);
      * // Generates: EXISTS (SELECT 1 FROM employees WHERE dept_id = departments.id)
      * }</pre>

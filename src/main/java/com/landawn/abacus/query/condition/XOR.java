@@ -48,20 +48,23 @@ package com.landawn.abacus.query.condition;
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Ensure exactly one authentication method is enabled
- * XOR authCheck = new XOR("usePasswordAuth", true);
- * // Can be combined with another XOR for biometric auth
- * // Ensures user has password XOR biometric, but not both
+ * // Basic XOR usage (MySQL syntax)
+ * XOR xor = new XOR("usePasswordAuth", true);
+ * // SQL: usePasswordAuth XOR true
  *
- * // Validate mutually exclusive discount types
- * XOR studentDiscount = new XOR("hasStudentDiscount", true);
- * XOR seniorDiscount = new XOR("hasSeniorDiscount", true);
- * // Business rule: customer can have one discount type, not both
+ * // XOR with column and value
+ * XOR flagCheck = new XOR("isActive", 1);
+ * // SQL: isActive XOR 1
+ * // True when isActive is 0 or false, false when isActive is non-zero
  *
- * // Membership tiers - exactly one active
- * XOR basicMember = new XOR("isBasicMember", true);
- * XOR premiumMember = new XOR("isPremiumMember", true);
- * // Ensures member has exactly one tier active
+ * // For portable mutually exclusive conditions, use AND/OR/NOT:
+ * // Instead of: XOR for checking "exactly one of A or B"
+ * // Use: (A AND NOT B) OR (NOT A AND B)
+ * Or exclusiveOr = new Or(
+ *     new And(Filters.eq("hasPasswordAuth", true), Filters.eq("hasBiometricAuth", false)),
+ *     new And(Filters.eq("hasPasswordAuth", false), Filters.eq("hasBiometricAuth", true))
+ * );
+ * // This ensures exactly one authentication method is active
  * }</pre>
  *
  * <p>Database compatibility notes:</p>
@@ -105,25 +108,26 @@ public class XOR extends Binary {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Enforce exactly one authentication method
-     * XOR passwordAuth = new XOR("usePassword", true);
-     * // This should be paired with XOR for alternative auth
-     * // to ensure exactly one method is enabled
+     * // Note: XOR is a binary operator in SQL, typically used with boolean expressions
+     * // The exact SQL syntax varies by database
      *
-     * // Mutually exclusive payment methods
-     * XOR creditCard = new XOR("useCreditCard", true);
-     * XOR paypal = new XOR("usePaypal", true);
-     * // Ensures customer selects one payment method, not both
+     * // MySQL-style XOR - ensure exactly one condition is true
+     * XOR exclusiveAuth = new XOR("usePasswordAuth", true);
+     * // SQL: usePasswordAuth XOR true
+     * // This evaluates to true when usePasswordAuth != true
      *
-     * // Subscription model - exactly one tier active
-     * XOR freeTier = new XOR("hasFreeTier", true);
-     * XOR paidTier = new XOR("hasPaidTier", true);
-     * // User should be on free XOR paid, not both
+     * // XOR with numeric values (treated as boolean: 0=false, non-zero=true)
+     * XOR xorCheck = new XOR("flagA", 1);
+     * // SQL: flagA XOR 1
      *
-     * // Validation for exclusive features
-     * XOR feature1 = new XOR("hasFeatureA", true);
-     * XOR feature2 = new XOR("hasFeatureB", true);
-     * // Features A and B are mutually exclusive
+     * // Database compatibility note:
+     * // MySQL: Native XOR operator support
+     * // Other databases: May need to be expanded to (A AND NOT B) OR (NOT A AND B)
+     * // Consider using AND/OR/NOT combinations for better portability:
+     * // Or portableXor = new Or(
+     * //     new And(condition1, new Not(condition2)),
+     * //     new And(new Not(condition1), condition2)
+     * // );
      * }</pre>
      *
      * @param propName the property/column name. Must not be null or empty.

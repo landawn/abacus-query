@@ -13,7 +13,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testConstructorWithSubQuery() {
-        SubQuery subQuery = new SubQuery("SELECT customer_id FROM customers WHERE status = 'active'");
+        SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'active'");
         Intersect intersect = new Intersect(subQuery);
 
         Assertions.assertNotNull(intersect);
@@ -23,7 +23,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testConstructorWithComplexSubQuery() {
-        SubQuery subQuery = new SubQuery("SELECT user_id FROM users WHERE plan = 'premium' AND active = true");
+        SubQuery subQuery = Filters.subQuery("SELECT user_id FROM users WHERE plan = 'premium' AND active = true");
         Intersect intersect = new Intersect(subQuery);
 
         Assertions.assertNotNull(intersect);
@@ -33,7 +33,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table WHERE value = ?");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE value = ?");
         Intersect intersect = new Intersect(subQuery);
 
         List<Object> params = intersect.getParameters();
@@ -43,7 +43,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testGetParametersWithMultipleValues() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table WHERE value BETWEEN ? AND ?");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE value BETWEEN ? AND ?");
         Intersect intersect = new Intersect(subQuery);
 
         List<Object> params = intersect.getParameters();
@@ -53,7 +53,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table WHERE status = ?", "active");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE status = ?", "active");
         Intersect intersect = new Intersect(subQuery);
 
         intersect.clearParameters();
@@ -77,7 +77,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testToString() {
-        SubQuery subQuery = new SubQuery("SELECT customer_id FROM orders WHERE order_date > '2023-01-01'");
+        SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM orders WHERE order_date > '2023-01-01'");
         Intersect intersect = new Intersect(subQuery);
 
         String result = intersect.toString();
@@ -89,7 +89,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        SubQuery subQuery = new SubQuery("SELECT userId FROM userTable");
+        SubQuery subQuery = Filters.subQuery("SELECT userId FROM userTable");
         Intersect intersect = new Intersect(subQuery);
 
         String result = intersect.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
@@ -101,9 +101,9 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery3 = new SubQuery("SELECT id FROM table2");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery3 = Filters.subQuery("SELECT id FROM table2");
 
         Intersect intersect1 = new Intersect(subQuery1);
         Intersect intersect2 = new Intersect(subQuery2);
@@ -115,9 +115,9 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testEquals() {
-        SubQuery subQuery1 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = new SubQuery("SELECT id FROM table1");
-        SubQuery subQuery3 = new SubQuery("SELECT id FROM table2");
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery3 = Filters.subQuery("SELECT id FROM table2");
 
         Intersect intersect1 = new Intersect(subQuery1);
         Intersect intersect2 = new Intersect(subQuery2);
@@ -132,7 +132,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         Intersect intersect = new Intersect(subQuery);
 
         SubQuery retrieved = intersect.getCondition();
@@ -150,7 +150,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testWithEmptyParametersSubQuery() {
-        SubQuery subQuery = new SubQuery("SELECT id FROM table");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
         Intersect intersect = new Intersect(subQuery);
 
         List<Object> params = intersect.getParameters();

@@ -70,6 +70,7 @@ import java.util.Collection;
  * LeftJoin exprJoin = new LeftJoin("orders o",
  *     Filters.expr("customers.id = o.customer_id"));
  * // Generates: LEFT JOIN orders o customers.id = o.customer_id
+ * // Note: Expression conditions don't add ON keyword
  * }</pre>
  * 
  * @see Join
@@ -146,6 +147,7 @@ public class LeftJoin extends Join {
      * LeftJoin exprJoin = new LeftJoin("orders o",
      *     Filters.expr("customers.id = o.customer_id AND o.amount > 100"));
      * // Generates: LEFT JOIN orders o customers.id = o.customer_id AND o.amount > 100
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -176,6 +178,7 @@ public class LeftJoin extends Join {
      * LeftJoin exprJoin = new LeftJoin(tables,
      *     Filters.expr("c.id = o.customer_id AND o.id = oi.order_id"));
      * // Generates: LEFT JOIN orders o, order_items oi c.id = o.customer_id AND o.id = oi.order_id
+     * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

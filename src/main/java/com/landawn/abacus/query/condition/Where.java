@@ -85,7 +85,7 @@ public class Where extends Clause {
      * // SQL: WHERE ((status = 'active') AND (balance > 1000)) OR (vip = true)
      *
      * // WHERE with subquery
-     * SubQuery activeUsers = new SubQuery("SELECT id FROM users WHERE active = true");
+     * SubQuery activeUsers = Filters.subQuery("SELECT id FROM users WHERE active = true");
      * Where whereIn = new Where(Filters.in("user_id", activeUsers));
      * // SQL: WHERE user_id IN (SELECT id FROM users WHERE active = true)
      * }</pre>
