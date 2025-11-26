@@ -91,8 +91,9 @@ public abstract class Clause extends Cell {
      * }
      * }</pre>
      *
-     * @param operator the clause operator (e.g., WHERE, HAVING, GROUP_BY)
-     * @param condition the condition to be wrapped by this clause
+     * @param operator the clause operator (e.g., WHERE, HAVING, GROUP_BY). Must not be null.
+     * @param condition the condition to be wrapped by this clause. Must not be null.
+     * @throws IllegalArgumentException if operator or condition is null (validated by parent constructor)
      */
     protected Clause(final Operator operator, final Condition condition) {
         super(operator, condition);

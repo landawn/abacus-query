@@ -85,8 +85,7 @@ public class Limit extends AbstractCondition {
      * // SQL: SELECT * FROM products WHERE name LIKE '%phone%' LIMIT 100
      * }</pre>
      *
-     * @param count the maximum number of rows to return. Must be non-negative.
-     * @throws IllegalArgumentException if count is negative
+     * @param count the maximum number of rows to return. Should be non-negative.
      */
     public Limit(final int count) {
         this(0, count);
@@ -113,9 +112,8 @@ public class Limit extends AbstractCondition {
      * // SQL: SELECT * FROM products LIMIT 50 OFFSET 100
      * }</pre>
      *
-     * @param offset the number of rows to skip before returning results. Must be non-negative.
-     * @param count the maximum number of rows to return after the offset. Must be non-negative.
-     * @throws IllegalArgumentException if offset or count is negative
+     * @param offset the number of rows to skip before returning results. Should be non-negative.
+     * @param count the maximum number of rows to return after the offset. Should be non-negative.
      */
     public Limit(final int offset, final int count) {
         super(Operator.LIMIT);
@@ -140,8 +138,7 @@ public class Limit extends AbstractCondition {
      * Limit custom = new Limit("FIRST 10 SKIP 20");
      * }</pre>
      *
-     * @param expr the custom LIMIT expression as a string. Must not be null.
-     * @throws IllegalArgumentException if expr is null
+     * @param expr the custom LIMIT expression as a string. Should not be null.
      */
     public Limit(final String expr) {
         this(0, Integer.MAX_VALUE);

@@ -48,15 +48,15 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * // Simple GROUP BY
  * GroupBy byDept = new GroupBy("department");
  * // SQL: GROUP BY department
- * 
+ *
  * // GROUP BY multiple columns
  * GroupBy byLocation = new GroupBy("department", "location");
  * // SQL: GROUP BY department, location
- * 
+ *
  * // GROUP BY with sort direction
  * GroupBy bySales = new GroupBy("sales_amount", SortDirection.DESC);
  * // SQL: GROUP BY sales_amount DESC
- * 
+ *
  * // GROUP BY with mixed sort directions
  * Map<String, SortDirection> orders = new LinkedHashMap<>();
  * orders.put("department", SortDirection.ASC);
@@ -164,10 +164,10 @@ public class GroupBy extends Clause {
      * GroupBy allDesc = new GroupBy(columns, SortDirection.DESC);
      * // SQL: GROUP BY department DESC, location DESC, year DESC
      *
-     * // Group by categories in ascending order
-     * Set<String> categories = new HashSet<>(Arrays.asList("type", "subtype"));
+     * // Group by categories in ascending order (use LinkedHashSet to preserve order)
+     * Set<String> categories = new LinkedHashSet<>(Arrays.asList("type", "subtype"));
      * GroupBy byCategory = new GroupBy(categories, SortDirection.ASC);
-     * // SQL: GROUP BY type ASC, subtype ASC
+     * // SQL: GROUP BY type ASC, subtype ASC (order preserved)
      * }</pre>
      *
      * @param propNames the collection of property names to group by. Must not be null or empty.

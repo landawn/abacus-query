@@ -99,7 +99,7 @@ public class OrderBy extends Clause {
      * }</pre>
      *
      * @param condition the ordering condition. Must not be null.
-     * @throws IllegalArgumentException if condition is null
+     * @throws IllegalArgumentException if condition is null (validated by parent constructor)
      */
     public OrderBy(final Condition condition) {
         super(Operator.ORDER_BY, condition);
@@ -166,11 +166,13 @@ public class OrderBy extends Clause {
      * List<String> dateFields = Arrays.asList("created", "updated", "published");
      * OrderBy orderBy = new OrderBy(dateFields, SortDirection.DESC);
      * // Results in: ORDER BY created, updated, published DESC
+     * // Note: All columns will be sorted DESC (library-specific behavior)
      *
      * // Sort name fields in ascending order
      * List<String> nameFields = Arrays.asList("lastName", "firstName", "middleName");
      * OrderBy nameOrder = new OrderBy(nameFields, SortDirection.ASC);
      * // Results in: ORDER BY lastName, firstName, middleName ASC
+     * // Note: All columns will be sorted ASC (library-specific behavior)
      * }</pre>
      *
      * @param propNames collection of property names to sort by. Must not be null or empty.
@@ -190,6 +192,7 @@ public class OrderBy extends Clause {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Requires: import java.util.LinkedHashMap;
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
      * orders.put("isActive", SortDirection.DESC);  // Active records first
      * orders.put("priority", SortDirection.DESC);  // High priority first
@@ -199,8 +202,8 @@ public class OrderBy extends Clause {
      * }</pre>
      *
      * @param orders should be a {@code LinkedHashMap} to preserve insertion order.
-     *               Maps property names to their respective sort directions.
-     * @throws IllegalArgumentException if orders is null or empty
+     *               Maps property names to their respective sort directions. Must not be null or empty.
+     * @throws IllegalArgumentException if orders is null/empty, or contains null/empty keys or null values
      */
     public OrderBy(final Map<String, SortDirection> orders) {
         this(CF.expr(createCondition(orders)));
@@ -216,9 +219,9 @@ public class OrderBy extends Clause {
      * // Returns: "name, age, city"
      * }</pre>
      *
-     * @param propNames array of property names
+     * @param propNames array of property names. Must not be null or empty.
      * @return formatted string for ORDER BY clause
-     * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
+     * @throws IllegalArgumentException if propNames contains null or empty elements
      */
     static String createCondition(final String... propNames) {
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -320,6 +323,7 @@ public class OrderBy extends Clause {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Requires: import java.util.LinkedHashMap;
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
      * orders.put("priority", SortDirection.DESC);
      * orders.put("created", SortDirection.ASC);

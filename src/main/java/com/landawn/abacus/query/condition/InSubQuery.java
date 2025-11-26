@@ -54,10 +54,6 @@ import com.landawn.abacus.util.Strings;
  * SubQuery validAssignments = new SubQuery("SELECT dept_id, location_id FROM allowed_assignments");
  * InSubQuery multiColumn = new InSubQuery(Arrays.asList("department_id", "location_id"), validAssignments);
  * // Generates: (department_id, location_id) IN (SELECT dept_id, location_id FROM allowed_assignments)
- * 
- * // With parameterized subquery
- * SubQuery recentOrders = new SubQuery("SELECT order_id FROM orders WHERE order_date > ?", "2024-01-01");
- * InSubQuery recentCondition = new InSubQuery("order_id", recentOrders);
  * }</pre>
  * 
  * @see NotInSubQuery
