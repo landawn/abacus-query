@@ -149,15 +149,18 @@ public class Binary extends AbstractCondition {
     /**
      * Sets the value being compared against.
      * This method should generally not be used as conditions should be immutable.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("status", "active");
      * // Not recommended: condition.setPropValue("inactive");
      * }</pre>
-     * 
+     *
      * @param propValue the new property value
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Instead of modifying an existing condition, create a new condition with the desired value.
+     *             For example, use {@code new Equal(propName, newValue)} instead of
+     *             {@code existingCondition.setPropValue(newValue)}.
      */
     @Deprecated
     public void setPropValue(final Object propValue) {

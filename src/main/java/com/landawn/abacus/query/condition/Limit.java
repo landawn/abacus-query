@@ -86,6 +86,7 @@ public class Limit extends AbstractCondition {
      * }</pre>
      *
      * @param count the maximum number of rows to return. Must be non-negative.
+     * @throws IllegalArgumentException if count is negative
      */
     public Limit(final int count) {
         this(0, count);
@@ -114,6 +115,7 @@ public class Limit extends AbstractCondition {
      *
      * @param offset the number of rows to skip before returning results. Must be non-negative.
      * @param count the maximum number of rows to return after the offset. Must be non-negative.
+     * @throws IllegalArgumentException if offset or count is negative
      */
     public Limit(final int offset, final int count) {
         super(Operator.LIMIT);
@@ -139,6 +141,7 @@ public class Limit extends AbstractCondition {
      * }</pre>
      *
      * @param expr the custom LIMIT expression as a string. Must not be null.
+     * @throws IllegalArgumentException if expr is null
      */
     public Limit(final String expr) {
         this(0, Integer.MAX_VALUE);

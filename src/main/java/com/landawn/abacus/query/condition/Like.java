@@ -128,7 +128,7 @@ public class Like extends Binary {
      * }</pre>
      *
      * @param propName the property/column name (must not be null or empty)
-     * @param propValue the pattern to match, including wildcards. Must not be null.
+     * @param propValue the pattern to match, including wildcards (can be null, literal value, or subquery).
      *                  Use % for any characters, _ for single character.
      * @throws IllegalArgumentException if propName is null or empty
      */

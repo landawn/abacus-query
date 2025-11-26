@@ -57,7 +57,7 @@ import java.util.Collection;
  *
  * // CROSS JOIN with Expression
  * CrossJoin exprJoin = new CrossJoin("inventory",
- *     ConditionFactory.expr("quantity > 0"));
+ *     CF.expr("quantity > 0"));
  * // Generates: CROSS JOIN inventory quantity > 0
  * }</pre>
  * 
@@ -110,7 +110,7 @@ public class CrossJoin extends Join {
      * <pre>{@code
      * // Cross join with filter using Expression
      * CrossJoin filtered = new CrossJoin("products p",
-     *     ConditionFactory.expr("p.category = 'electronics'"));
+     *     CF.expr("p.category = 'electronics'"));
      * // Generates: CROSS JOIN products p p.category = 'electronics'
      *
      * // Cross join with ON condition (unusual usage)
@@ -157,7 +157,7 @@ public class CrossJoin extends Join {
      *
      * // Using Expression for complex conditions
      * CrossJoin exprJoin = new CrossJoin(tables,
-     *     ConditionFactory.expr("active = true AND archived = false"));
+     *     CF.expr("active = true AND archived = false"));
      * // Generates: CROSS JOIN sizes s, colors c, styles st active = true AND archived = false
      * }</pre>
      *

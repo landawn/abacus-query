@@ -286,20 +286,23 @@ public class Junction extends AbstractCondition {
     /**
      * Removes the specified conditions from this junction.
      * Only exact object matches are removed, not logically equivalent conditions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
      * Condition cond1 = new Equal("status", "active");
      * Condition cond2 = new Equal("type", "premium");
      * junction.add(cond1, cond2);
-     * 
+     *
      * // Remove specific condition
      * junction.remove(cond1);
      * }</pre>
      *
      * @param conditions the conditions to remove
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Instead of modifying an existing junction, create a new junction with the desired conditions.
+     *             For example, use {@code new Junction(operator, desiredConditions)} instead of
+     *             {@code junction.remove(unwantedConditions)}.
      */
     @Deprecated
     public final void remove(final Condition... conditions) {
@@ -311,7 +314,7 @@ public class Junction extends AbstractCondition {
     /**
      * Removes the specified collection of conditions from this junction.
      * Only exact object matches are removed, not logically equivalent conditions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
@@ -321,6 +324,9 @@ public class Junction extends AbstractCondition {
      *
      * @param conditions the collection of conditions to remove
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Instead of modifying an existing junction, create a new junction with the desired conditions.
+     *             For example, use {@code new Junction(operator, desiredConditions)} instead of
+     *             {@code junction.remove(unwantedConditions)}.
      */
     @Deprecated
     public void remove(final Collection<? extends Condition> conditions) {

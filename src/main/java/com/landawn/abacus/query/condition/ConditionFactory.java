@@ -385,9 +385,11 @@ public class ConditionFactory {
 
     /**
      * Returns a condition that always evaluates to false.
-     * 
-     * @return an Expression that always evaluates to false (1 > 2)
-     * @deprecated This method is deprecated and should not be used in new code
+     *
+     * @return an Expression that always evaluates to false (1 &gt; 2)
+     * @deprecated This method is deprecated and should not be used in new code.
+     *             Consider using explicit condition logic or {@link #not(Condition)} with
+     *             {@link #alwaysTrue()} instead: {@code not(alwaysTrue())}.
      */
     @Deprecated
     public static Expression alwaysFalse() {
@@ -581,7 +583,7 @@ public class ConditionFactory {
 
     /**
      * Creates an OR condition where the property equals any of the values in the collection.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> statuses = Arrays.asList("active", "pending");
@@ -592,7 +594,9 @@ public class ConditionFactory {
      * @param propValues the collection of values to compare against (must not be empty)
      * @return an Or condition
      * @throws IllegalArgumentException if propValues is empty
-     * @deprecated Use {@link #in(String, Collection)} instead for better clarity.
+     * @deprecated Use {@link #in(String, Collection)} instead for better clarity and performance.
+     *             For example, replace {@code eqOr("status", Arrays.asList("a", "b"))}
+     *             with {@code in("status", Arrays.asList("a", "b"))}.
      */
     @Deprecated
     public static Or eqOr(final String propName, final Collection<?> propValues) {
@@ -1577,12 +1581,13 @@ public class ConditionFactory {
     /**
      * Creates a BETWEEN condition for the specified property and range values.
      * This is an alias for {@link #between(String, Object, Object)}.
-     * 
+     *
      * @param propName the property/column name
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (inclusive)
      * @return a Between condition
-     * @deprecated please use {@link #between(String, Object, Object)}
+     * @deprecated Use {@link #between(String, Object, Object)} instead for better code readability.
+     *             Replace {@code bt(propName, min, max)} with {@code between(propName, min, max)}.
      */
     @Deprecated
     public static Between bt(final String propName, final Object minValue, final Object maxValue) {
@@ -1592,10 +1597,11 @@ public class ConditionFactory {
     /**
      * Creates a parameterized BETWEEN condition for use with prepared statements.
      * This is an alias for {@link #between(String)}.
-     * 
+     *
      * @param propName the property/column name
      * @return a Between condition with parameter placeholders
-     * @deprecated please use {@link #between(String)}
+     * @deprecated Use {@link #between(String)} instead for better code readability.
+     *             Replace {@code bt(propName)} with {@code between(propName)}.
      */
     @Deprecated
     public static Between bt(final String propName) {
@@ -2613,10 +2619,12 @@ public class ConditionFactory {
     /**
      * Creates a USING clause for JOIN operations with the specified columns.
      * USING is an alternative to ON when joining tables on columns with the same name.
-     * 
+     *
      * @param columnNames the column names used for joining
      * @return a Using clause
-     * @deprecated It's recommended to use {@code On}, instead of {@code Using}
+     * @deprecated It's recommended to use {@link #on(String, String)} instead of {@code Using} for better
+     *             portability and clarity. Replace {@code using("col1", "col2")} with explicit
+     *             {@code on("table1.col1", "table2.col1").and(eq("table1.col2", "table2.col2"))}.
      */
     @Deprecated
     public static Using using(final String... columnNames) {
@@ -2625,10 +2633,12 @@ public class ConditionFactory {
 
     /**
      * Creates a USING clause from a collection of column names for JOIN operations.
-     * 
+     *
      * @param columnNames collection of column names used for joining
      * @return a Using clause
-     * @deprecated It's recommended to use {@code On}, instead of {@code Using}
+     * @deprecated It's recommended to use {@link #on(String, String)} instead of {@code Using} for better
+     *             portability and clarity. Replace {@code using(columnList)} with explicit
+     *             {@code on()} conditions that specify the full column names with table prefixes.
      */
     @Deprecated
     public static Using using(final Collection<String> columnNames) {

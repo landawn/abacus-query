@@ -100,7 +100,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria criteria = new Criteria();
      * criteria.where(CF.eq("status", "active"))
-     *         .orderBy("created_date", DESC)
+     *         .orderBy("created_date", SortDirection.DESC)
      *         .limit(10);
      * }</pre>
      */
@@ -318,7 +318,8 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Adds conditions to this criteria.
-     * 
+     * Package-private method used internally and by CriteriaUtil for framework operations.
+     *
      * @param conditions the conditions to add
      */
     void add(final Condition... conditions) {
@@ -327,7 +328,8 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Adds conditions to this criteria.
-     * 
+     * Package-private method used internally and by CriteriaUtil for framework operations.
+     *
      * @param conditions the collection of conditions to add
      */
     void add(final Collection<? extends Condition> conditions) {
@@ -336,7 +338,8 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Removes all conditions with the specified operator.
-     * 
+     * Package-private method used internally and by CriteriaUtil for framework operations.
+     *
      * @param operator the operator of conditions to remove
      */
     void remove(final Operator operator) {
@@ -346,7 +349,8 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Removes specific conditions from this criteria.
-     * 
+     * Package-private method used internally and by CriteriaUtil for framework operations.
+     *
      * @param conditions the conditions to remove
      */
     void remove(final Condition... conditions) {
@@ -357,7 +361,8 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Removes specific conditions from this criteria.
-     * 
+     * Package-private method used internally and by CriteriaUtil for framework operations.
+     *
      * @param conditions the collection of conditions to remove
      */
     void remove(final Collection<? extends Condition> conditions) {
@@ -797,7 +802,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .groupBy("year", DESC, "month", ASC);
+     *     .groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
      * // Results in: GROUP BY year DESC, month ASC
      * }</pre>
      * 
@@ -819,7 +824,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .groupBy("country", ASC, "state", ASC, "city", DESC);
+     *     .groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
      * // Results in: GROUP BY country ASC, state ASC, city DESC
      * }</pre>
      * 
@@ -886,9 +891,9 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> grouping = new LinkedHashMap<>();
-     * grouping.put("department", ASC);
-     * grouping.put("salary_range", DESC);
-     * grouping.put("years_experience", DESC);
+     * grouping.put("department", SortDirection.ASC);
+     * grouping.put("salary_range", SortDirection.DESC);
+     * grouping.put("years_experience", SortDirection.DESC);
      * Criteria criteria = new Criteria()
      *     .groupBy(grouping);
      * }</pre>
@@ -1098,7 +1103,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .orderBy("priority", DESC, "createdDate", ASC);
+     *     .orderBy("priority", SortDirection.DESC, "createdDate", SortDirection.ASC);
      * // Results in: ORDER BY priority DESC, createdDate ASC
      * }</pre>
      * 
@@ -1120,7 +1125,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .orderBy("category", ASC, "price", DESC, "name", ASC);
+     *     .orderBy("category", SortDirection.ASC, "price", SortDirection.DESC, "name", SortDirection.ASC);
      * // Results in: ORDER BY category ASC, price DESC, name ASC
      * }</pre>
      * 
@@ -1187,9 +1192,9 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> ordering = new LinkedHashMap<>();
-     * ordering.put("priority", DESC);
-     * ordering.put("createdDate", DESC);
-     * ordering.put("name", ASC);
+     * ordering.put("priority", SortDirection.DESC);
+     * ordering.put("createdDate", SortDirection.DESC);
+     * ordering.put("name", SortDirection.ASC);
      * Criteria criteria = new Criteria()
      *     .orderBy(ordering);
      * }</pre>

@@ -224,7 +224,7 @@ public class Join extends AbstractCondition {
      *
      * @param joinEntities the collection of tables or entities to join with
      * @param condition the join condition, typically On conditions or Expressions
-     * @throws IllegalArgumentException if joinEntities is null/empty
+     * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public Join(final Collection<String> joinEntities, final Condition condition) {
         this(Operator.JOIN, joinEntities, condition);

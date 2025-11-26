@@ -183,10 +183,34 @@ public class InSubQuery extends AbstractCondition {
 
     /**
      * Sets a new subquery for this IN condition.
-     * Note: Modifying conditions after creation is not recommended as they should be immutable.
+     * This method allows replacing the subquery after construction.
+     * However, modifying conditions after creation is strongly discouraged as conditions should
+     * be treated as immutable to ensure thread safety and predictable behavior.
+     *
+     * <p>Important notes:
+     * <ul>
+     *   <li>This method exists for backward compatibility only</li>
+     *   <li>Using this method breaks the immutability contract of conditions</li>
+     *   <li>Instead of modifying, create a new InSubQuery instance with the desired subquery</li>
+     *   <li>Shared conditions modified this way can cause race conditions</li>
+     * </ul>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery1 = new SubQuery("SELECT id FROM active_users");
+     * InSubQuery condition = new InSubQuery("user_id", subQuery1);
+     *
+     * // Not recommended - breaks immutability
+     * SubQuery subQuery2 = new SubQuery("SELECT id FROM premium_users");
+     * condition.setSubQuery(subQuery2);
+     *
+     * // Recommended approach - create a new condition
+     * InSubQuery newCondition = new InSubQuery("user_id", subQuery2);
+     * }</pre>
      *
      * @param subQuery the new subquery to set. Must not be null.
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Create a new InSubQuery instance instead of modifying existing conditions.
      */
     @Deprecated
     public void setSubQuery(final SubQuery subQuery) {

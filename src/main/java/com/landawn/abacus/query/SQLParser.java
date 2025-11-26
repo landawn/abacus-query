@@ -651,9 +651,10 @@ public final class SQLParser {
      * <pre>{@code
      * List<String> words = SQLParser.parse("SELECT COUNT(*), MAX(age) FROM users");
      * // Assuming words = ["SELECT", " ", "COUNT", "(", "*", ")", ",", " ", "MAX", "(", "age", ")", " ", "FROM", " ", "users"]
-     * boolean isFunc1 = SQLParser.isFunctionName(words, words.size(), 2);  // Returns: true (COUNT)
-     * boolean isFunc2 = SQLParser.isFunctionName(words, words.size(), 8);  // Returns: true (MAX)
-     * boolean isFunc3 = SQLParser.isFunctionName(words, words.size(), 15); // Returns: false (users)
+     * int len = words.size();
+     * boolean isFunc1 = SQLParser.isFunctionName(words, len, 2);  // Returns: true (COUNT)
+     * boolean isFunc2 = SQLParser.isFunctionName(words, len, 8);  // Returns: true (MAX)
+     * boolean isFunc3 = SQLParser.isFunctionName(words, len, 15); // Returns: false (users)
      * }</pre>
      * 
      * @param words the list of parsed SQL words/tokens

@@ -85,29 +85,29 @@ public class Between extends AbstractCondition {
     /**
      * Creates a new BETWEEN condition.
      * The condition checks if the property value falls within the specified range, inclusive.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if age is between 18 and 65 (inclusive)
      * Between ageRange = new Between("age", 18, 65);
-     * 
+     *
      * // Check if salary is within a range
      * Between salaryRange = new Between("salary", 50000, 100000);
-     * 
+     *
      * // Check if date is in current year
      * Between currentYear = new Between("createdDate",
      *     LocalDate.of(2024, 1, 1),
      *     LocalDate.of(2024, 12, 31));
-     * 
+     *
      * // Use with subqueries for dynamic ranges
      * SubQuery avgMinus10 = CF.subQuery("SELECT AVG(score) - 10 FROM scores");
      * SubQuery avgPlus10 = CF.subQuery("SELECT AVG(score) + 10 FROM scores");
      * Between nearAverage = new Between("score", avgMinus10, avgPlus10);
      * }</pre>
-     * 
+     *
      * @param propName the property/column name (must not be null or empty)
-     * @param minValue the minimum value (inclusive), can be a literal or Condition
-     * @param maxValue the maximum value (inclusive), can be a literal or Condition
+     * @param minValue the minimum value (inclusive) (can be null, literal value, or subquery)
+     * @param maxValue the maximum value (inclusive) (can be null, literal value, or subquery)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public Between(final String propName, final Object minValue, final Object maxValue) {
@@ -170,6 +170,7 @@ public class Between extends AbstractCondition {
      *
      * @param minValue the new minimum value
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Create a new Between instance instead.
      */
     @Deprecated
     public void setMinValue(final Object minValue) {
@@ -209,6 +210,7 @@ public class Between extends AbstractCondition {
      *
      * @param maxValue the new maximum value
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Create a new Between instance instead.
      */
     @Deprecated
     public void setMaxValue(final Object maxValue) {
@@ -253,8 +255,8 @@ public class Between extends AbstractCondition {
     }
 
     /**
-     * Clears the min and max parameter values by setting them to null to free memory.
-     * If either value is a nested Condition, delegates to that condition's clearParameters() method.
+     * Clears all parameter values by setting them to null to free memory.
+     * If min/max values are themselves conditions (like subqueries), their parameters are cleared.
      *
      * <p>This method sets both minValue and maxValue fields to null unless they are Conditions,
      * in which case it recursively clears parameters in the nested conditions.</p>

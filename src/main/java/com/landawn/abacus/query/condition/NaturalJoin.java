@@ -57,7 +57,7 @@ import java.util.Collection;
  *
  * // Natural join with Expression condition
  * NaturalJoin join3 = new NaturalJoin("orders",
- *     ConditionFactory.expr("order_date > '2024-01-01'"));
+ *     CF.expr("order_date > '2024-01-01'"));
  * // Generates: NATURAL JOIN orders order_date > '2024-01-01'
  *
  * // Multiple tables natural join
@@ -124,7 +124,7 @@ public class NaturalJoin extends Join {
      *
      * // Natural join with Expression condition
      * NaturalJoin join2 = new NaturalJoin("products",
-     *     ConditionFactory.expr("price > 100 AND stock > 0"));
+     *     CF.expr("price > 100 AND stock > 0"));
      * // Generates: NATURAL JOIN products price > 100 AND stock > 0
      *
      * // Natural join with complex And condition
@@ -164,7 +164,7 @@ public class NaturalJoin extends Join {
      *
      * // Natural join with Expression condition
      * NaturalJoin join2 = new NaturalJoin(tables,
-     *     ConditionFactory.expr("status = 'active' AND verified = true"));
+     *     CF.expr("status = 'active' AND verified = true"));
      * // Generates: NATURAL JOIN customers, orders, products status = 'active' AND verified = true
      *
      * // Natural join with complex conditions

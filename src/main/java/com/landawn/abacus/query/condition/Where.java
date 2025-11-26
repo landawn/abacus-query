@@ -35,12 +35,12 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple condition
- * Condition condition = new Equal("status", "active");
+ * Condition condition = CF.eq("status", "active");
  * Where where = new Where(condition);
  * // Results in: WHERE status = 'active'
- * 
+ *
  * // Complex condition
- * And and = new And(new Equal("age", 25), new GreaterThan("salary", 50000));
+ * Condition and = CF.and(CF.eq("age", 25), CF.gt("salary", 50000));
  * Where where2 = new Where(and);
  * // Results in: WHERE age = 25 AND salary > 50000
  * }</pre>
@@ -72,21 +72,21 @@ public class Where extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple WHERE clause
-     * Condition condition = new Like("name", "%John%");
+     * Condition condition = CF.like("name", "%John%");
      * Where where = new Where(condition);
      * // Results in: WHERE name LIKE '%John%'
      *
      * // Complex WHERE with multiple conditions
-     * Or complexCondition = new Or(
-     *     new And(new Equal("status", "active"), new GreaterThan("balance", 1000)),
-     *     new Equal("vip", true)
+     * Condition complexCondition = CF.or(
+     *     CF.and(CF.eq("status", "active"), CF.gt("balance", 1000)),
+     *     CF.eq("vip", true)
      * );
      * Where complexWhere = new Where(complexCondition);
      * // Results in: WHERE ((status = 'active') AND (balance > 1000)) OR (vip = true)
      *
      * // WHERE with subquery
      * SubQuery activeUsers = new SubQuery("SELECT id FROM users WHERE active = true");
-     * Where whereIn = new Where(new In("user_id", activeUsers));
+     * Where whereIn = new Where(CF.in("user_id", activeUsers));
      * // Results in: WHERE user_id IN (SELECT id FROM users WHERE active = true)
      * }</pre>
      *

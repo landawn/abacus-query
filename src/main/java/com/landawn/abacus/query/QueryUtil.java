@@ -633,8 +633,10 @@ public final class QueryUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String placeholders = QueryUtil.repeatQM(3); // Returns "?, ?, ?"
+     * String placeholders = QueryUtil.repeatQM(3);
+     * // Returns: "?, ?, ?"
      * String sql = "INSERT INTO users (name, email, age) VALUES (" + placeholders + ")";
+     * // Result: "INSERT INTO users (name, email, age) VALUES (?, ?, ?)"
      * }</pre>
      *
      * @param n the number of question marks to generate

@@ -43,16 +43,16 @@ package com.landawn.abacus.query.condition;
  * // Clauses are typically used through their specific implementations
  * Where where = new Where(CF.eq("status", "active"));
  * Having having = new Having(CF.gt("COUNT(*)", 5));
- * OrderBy orderBy = new OrderBy("created_date", DESC);
- * 
+ * OrderBy orderBy = new OrderBy("created_date", SortDirection.DESC);
+ *
  * // Add them to criteria
  * Criteria criteria = new Criteria()
  *     .where(CF.eq("status", "active"))    // Correct usage
  *     .having(CF.gt("COUNT(*)", 5));
- * 
+ *
  * // Cannot combine clauses with AND/OR/NOT
  * // where.and(having); // This will throw UnsupportedOperationException
- * 
+ *
  * // Instead, combine conditions within a clause
  * Where complexWhere = new Where(
  *     CF.and(

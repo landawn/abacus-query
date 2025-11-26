@@ -51,7 +51,7 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * // Generates: INNER JOIN customers ON orders.customer_id = customers.id
  *
  * // Complex condition with custom logic using Expression
- * And complexJoin = new And(
+ * Condition complexJoin = CF.and(
  *     new On("o.customer_id", "c.id"),
  *     CF.expr("o.order_date > c.registration_date")
  * );
@@ -66,9 +66,9 @@ import com.landawn.abacus.query.condition.ConditionFactory.CF;
  * // Generates: ON emp.department_id = dept.id AND emp.location_id = dept.location_id
  *
  * // Join with ON condition and additional filter
- * And filteredJoin = new And(
+ * Condition filteredJoin = CF.and(
  *     new On("products.category_id", "categories.id"),
- *     new Equal("categories.active", true)
+ *     CF.eq("categories.active", true)
  * );
  * RightJoin rightJoin = new RightJoin("categories", filteredJoin);
  * // Generates: RIGHT JOIN categories (ON products.category_id = categories.id) AND (categories.active = true)
@@ -104,17 +104,17 @@ public class On extends Cell {
      * // Generates: INNER JOIN table_b b a.id = b.a_id
      *
      * // Complex multi-condition join
-     * And complexCondition = new And(
+     * Condition complexCondition = CF.and(
      *     CF.expr("orders.customer_id = customers.id"),
-     *     new Between("orders.order_date", "2024-01-01", "2024-12-31"),
-     *     new NotEqual("customers.status", "DELETED")
+     *     CF.between("orders.order_date", "2024-01-01", "2024-12-31"),
+     *     CF.ne("customers.status", "DELETED")
      * );
      * On on2 = new On(complexCondition);
      * LeftJoin join2 = new LeftJoin("customers", on2);
      * // Generates: LEFT JOIN customers (orders.customer_id = customers.id) AND (orders.order_date BETWEEN '2024-01-01' AND '2024-12-31') AND (customers.status != 'DELETED')
      *
      * // Range join for salary bands
-     * And rangeJoin = new And(
+     * Condition rangeJoin = CF.and(
      *     CF.expr("emp.salary >= salary_grades.min_salary"),
      *     CF.expr("emp.salary <= salary_grades.max_salary")
      * );

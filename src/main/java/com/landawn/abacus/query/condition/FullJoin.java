@@ -125,7 +125,7 @@ public class FullJoin extends Join {
      *
      * // Using Expression for custom join logic
      * FullJoin exprJoin = new FullJoin("departments d",
-     *     ConditionFactory.expr("employees.dept_id = d.id AND d.active = true"));
+     *     CF.expr("employees.dept_id = d.id AND d.active = true"));
      * // Generates: FULL JOIN departments d employees.dept_id = d.id AND d.active = true
      * }</pre>
      *
@@ -155,7 +155,7 @@ public class FullJoin extends Join {
      *
      * // Using Expression for multiple tables
      * FullJoin exprJoin = new FullJoin(tables,
-     *     ConditionFactory.expr("d.id = e.dept_id AND d.id = c.dept_id"));
+     *     CF.expr("d.id = e.dept_id AND d.id = c.dept_id"));
      * // Generates: FULL JOIN employees e, contractors c d.id = e.dept_id AND d.id = c.dept_id
      * }</pre>
      *

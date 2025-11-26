@@ -94,15 +94,15 @@ public class NotBetween extends AbstractCondition {
      * // Find products with extreme prices (very cheap or very expensive)
      * NotBetween priceRange = new NotBetween("price", 10.0, 1000.0);
      * // Matches: price < 10.0 OR price > 1000.0
-     * 
+     *
      * // Find events outside regular working days
      * NotBetween workdays = new NotBetween("day_of_week", 2, 6);  // Monday = 2, Friday = 6
      * // Matches: Sunday (1) and Saturday (7)
      * }</pre>
      *
      * @param propName the property/column name (must not be null or empty)
-     * @param minValue the minimum value of the range to exclude
-     * @param maxValue the maximum value of the range to exclude
+     * @param minValue the minimum value of the range to exclude (can be null, literal value, or subquery)
+     * @param maxValue the maximum value of the range to exclude (can be null, literal value, or subquery)
      * @throws IllegalArgumentException if propName is null or empty
      */
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {

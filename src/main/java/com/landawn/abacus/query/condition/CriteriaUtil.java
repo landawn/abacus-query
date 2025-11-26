@@ -276,8 +276,19 @@ public final class CriteriaUtil {
 
     /**
      * Removes a collection of conditions from the criteria.
-     * This method provides access to the protected remove method of Criteria.
-     * 
+     * This method provides access to the protected remove method of Criteria for framework use.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<Condition> conditionsToRemove = new ArrayList<>();
+     * conditionsToRemove.add(whereClause);
+     * conditionsToRemove.add(limitClause);
+     * Criteria criteria = // ... contains these conditions
+     *
+     * CriteriaUtil.remove(criteria, conditionsToRemove);
+     * // Removes all conditions in the list
+     * }</pre>
+     *
      * @param criteria the criteria to remove conditions from
      * @param conditions the collection of conditions to remove
      */

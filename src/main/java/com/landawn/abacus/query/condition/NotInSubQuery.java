@@ -218,10 +218,34 @@ public class NotInSubQuery extends AbstractCondition {
 
     /**
      * Sets a new subquery for this NOT IN condition.
-     * This method allows updating the subquery after construction.
+     * This method allows replacing the subquery after construction.
+     * However, modifying conditions after creation is strongly discouraged as conditions should
+     * be treated as immutable to ensure thread safety and predictable behavior.
      *
-     * @param subQuery the new subquery to set
+     * <p>Important notes:
+     * <ul>
+     *   <li>This method exists for backward compatibility only</li>
+     *   <li>Using this method breaks the immutability contract of conditions</li>
+     *   <li>Instead of modifying, create a new NotInSubQuery instance with the desired subquery</li>
+     *   <li>Shared conditions modified this way can cause race conditions</li>
+     * </ul>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery1 = new SubQuery("SELECT id FROM inactive_users");
+     * NotInSubQuery condition = new NotInSubQuery("user_id", subQuery1);
+     *
+     * // Not recommended - breaks immutability
+     * SubQuery subQuery2 = new SubQuery("SELECT id FROM deleted_users");
+     * condition.setSubQuery(subQuery2);
+     *
+     * // Recommended approach - create a new condition
+     * NotInSubQuery newCondition = new NotInSubQuery("user_id", subQuery2);
+     * }</pre>
+     *
+     * @param subQuery the new subquery to set. Must not be null.
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Create a new NotInSubQuery instance instead of modifying existing conditions.
      */
     @Deprecated
     public void setSubQuery(final SubQuery subQuery) {

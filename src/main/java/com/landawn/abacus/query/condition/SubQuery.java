@@ -52,19 +52,19 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * // Raw SQL subquery
  * SubQuery subQuery1 = new SubQuery("SELECT id FROM users WHERE status = 'active'");
- * 
+ *
  * // Structured subquery with entity name
- * Condition activeCondition = new Equal("status", "active");
+ * Condition activeCondition = CF.eq("status", "active");
  * SubQuery subQuery2 = new SubQuery("users", Arrays.asList("id"), activeCondition);
  * // Generates: SELECT id FROM users WHERE status = 'active'
- * 
+ *
  * // Structured subquery with entity class
- * SubQuery subQuery3 = new SubQuery(User.class, Arrays.asList("id", "name"), 
- *                                   new GreaterThan("age", 18));
+ * SubQuery subQuery3 = new SubQuery(User.class, Arrays.asList("id", "name"),
+ *                                   CF.gt("age", 18));
  * // Generates: SELECT id, name FROM User WHERE age > 18
- * 
+ *
  * // Use in IN condition
- * In inCondition = new In("userId", subQuery1);
+ * Condition inCondition = CF.in("userId", subQuery1);
  * // Results in: userId IN (SELECT id FROM users WHERE status = 'active')
  * }</pre>
  * 
@@ -173,9 +173,9 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * // Select specific columns with conditions
      * List<String> props = Arrays.asList("id", "email");
-     * Condition condition = new And(
-     *     new Equal("active", true),
-     *     new GreaterThan("created", "2024-01-01")
+     * Condition condition = CF.and(
+     *     CF.eq("active", true),
+     *     CF.gt("created", "2024-01-01")
      * );
      * SubQuery subQuery = new SubQuery("users", props, condition);
      * // Generates: SELECT id, email FROM users WHERE active = true AND created > '2024-01-01'
@@ -220,16 +220,16 @@ public class SubQuery extends AbstractCondition {
      * // Type-safe subquery construction
      * SubQuery subQuery = new SubQuery(Product.class,
      *     Arrays.asList("id", "categoryId"),
-     *     new Like("name", "%electronics%")
+     *     CF.like("name", "%electronics%")
      * );
      * // Generates: SELECT id, categoryId FROM Product WHERE name LIKE '%electronics%'
      *
      * // With complex conditions
      * SubQuery activeProducts = new SubQuery(Product.class,
      *     Arrays.asList("id", "name", "price"),
-     *     new And(
-     *         new Equal("active", true),
-     *         new Between("price", 10, 100)
+     *     CF.and(
+     *         CF.eq("active", true),
+     *         CF.between("price", 10, 100)
      *     )
      * );
      * }</pre>
@@ -263,6 +263,16 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Returns the raw SQL script if this is a raw SQL subquery.
+     * For structured subqueries created with entity name/class and conditions, this returns {@code null}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery rawSubQuery = new SubQuery("SELECT id FROM users WHERE active = true");
+     * String sql = rawSubQuery.getSql(); // Returns "SELECT id FROM users WHERE active = true"
+     *
+     * SubQuery structuredSubQuery = new SubQuery("users", Arrays.asList("id"), CF.eq("active", true));
+     * String sql2 = structuredSubQuery.getSql(); // Returns null
+     * }</pre>
      *
      * @return the SQL script, or {@code null} if this is a structured subquery
      */
@@ -272,17 +282,39 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Gets the entity/table name for this subquery.
+     * This is available for both structured subqueries and raw SQL subqueries that were
+     * created with an entity name parameter. For raw SQL subqueries created without
+     * an entity name, this may be empty.
      *
-     * @return the entity name, or {@code null} if not set
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "name"), CF.eq("status", "active"));
+     * String entityName = subQuery.getEntityName(); // Returns "users"
+     *
+     * SubQuery rawSubQuery = new SubQuery("SELECT * FROM products");
+     * String entityName2 = rawSubQuery.getEntityName(); // Returns empty string
+     * }</pre>
+     *
+     * @return the entity/table name, or an empty string if not set
      */
     public String getEntityName() {
         return entityName;
     }
 
     /**
-     * Gets the entity class if this subquery was created with a class.
+     * Gets the entity class if this subquery was created with a class reference.
+     * This provides type information for subqueries constructed using the class-based constructor.
      *
-     * @return the entity class, or {@code null} if created with entity name or raw SQL
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery(User.class, Arrays.asList("id", "email"), CF.isNotNull("email"));
+     * Class<?> entityClass = subQuery.getEntityClass(); // Returns User.class
+     *
+     * SubQuery stringSubQuery = new SubQuery("users", Arrays.asList("id"), CF.eq("active", true));
+     * Class<?> entityClass2 = stringSubQuery.getEntityClass(); // Returns null
+     * }</pre>
+     *
+     * @return the entity class, or {@code null} if created with entity name string or raw SQL
      */
     public Class<?> getEntityClass() {
         return entityClass;
@@ -290,8 +322,20 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Gets the collection of property names to select in this subquery.
+     * These are the columns that will appear in the SELECT clause of the generated SQL.
+     * For raw SQL subqueries, this returns {@code null}.
      *
-     * @return collection of property names, or {@code null} for raw SQL subqueries
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> props = Arrays.asList("id", "name", "email");
+     * SubQuery subQuery = new SubQuery("users", props, CF.eq("active", true));
+     * Collection<String> selectProps = subQuery.getSelectPropNames(); // Returns ["id", "name", "email"]
+     *
+     * SubQuery rawSubQuery = new SubQuery("SELECT id, name FROM users");
+     * Collection<String> selectProps2 = rawSubQuery.getSelectPropNames(); // Returns null
+     * }</pre>
+     *
+     * @return collection of property names to select, or {@code null} for raw SQL subqueries
      */
     public Collection<String> getSelectPropNames() {
         return propNames;
@@ -299,8 +343,20 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Gets the WHERE condition for this subquery.
+     * This condition is applied when generating the SQL for structured subqueries.
+     * For raw SQL subqueries or subqueries without conditions, this returns {@code null}.
      *
-     * @return the condition, or {@code null} if no condition or raw SQL subquery
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition condition = CF.and(CF.eq("status", "active"), CF.gt("age", 18));
+     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), condition);
+     * Condition retrieved = subQuery.getCondition(); // Returns the And condition
+     *
+     * SubQuery rawSubQuery = new SubQuery("SELECT * FROM users WHERE active = true");
+     * Condition retrieved2 = rawSubQuery.getCondition(); // Returns null
+     * }</pre>
+     *
+     * @return the WHERE condition, or {@code null} if no condition or raw SQL subquery
      */
     public Condition getCondition() {
         return condition;

@@ -109,7 +109,8 @@ public class Exists extends Cell {
      * // Generates: EXISTS (SELECT 1 FROM employees WHERE dept_id = departments.id)
      * }</pre>
      *
-     * @param condition the subquery to check for existence of rows. Must not be null.
+     * @param condition the subquery to check for existence of rows (must not be null)
+     * @throws NullPointerException if condition is null
      */
     public Exists(final SubQuery condition) {
         super(Operator.EXISTS, condition);
