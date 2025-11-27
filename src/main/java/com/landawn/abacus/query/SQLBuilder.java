@@ -4503,7 +4503,6 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * @throws IllegalArgumentException if cond is null
          * 
          * @see Filters
-         * @see Filters.CF
          */
         public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");

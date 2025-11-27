@@ -2056,7 +2056,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param cond the WHERE condition
      * @return this SQLBuilder instance for method chaining
      * @see Filters
-     * @see Filters.CF
      */
     public This where(final Condition cond) {
         checkIfAlreadyCalled(SK.WHERE);
@@ -2283,7 +2282,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param cond the HAVING condition
      * @return this SQLBuilder instance for method chaining
      * @see Filters
-     * @see Filters.CF
      */
     public This having(final Condition cond) {
         checkIfAlreadyCalled(SK.HAVING);
@@ -2722,7 +2720,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param cond the condition to append
      * @return this SQLBuilder instance for method chaining
      * @see Filters
-     * @see Filters.CF
      */
     @Beta
     public This append(final Condition cond) {

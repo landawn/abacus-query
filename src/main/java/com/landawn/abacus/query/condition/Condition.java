@@ -66,7 +66,6 @@ import com.landawn.abacus.util.NamingPolicy;
  * }</pre>
  * 
  * @see Filters
- * @see Filters.CF
  * @see AbstractCondition
  */
 public interface Condition {

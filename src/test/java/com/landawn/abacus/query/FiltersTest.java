@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.Filters.CB;
 import com.landawn.abacus.query.condition.All;
 import com.landawn.abacus.query.condition.And;
@@ -1139,16 +1137,6 @@ public class FiltersTest extends TestBase {
     public void testCriteria() {
         Criteria criteria = Filters.criteria();
         Assertions.assertNotNull(criteria);
-    }
-
-    @Test
-    public void testCF() {
-
-        // Test a method via CF
-        Equal eq = Filters.eq("test", "value");
-        Assertions.assertNotNull(eq);
-        Assertions.assertEquals("test", eq.getPropName());
-        Assertions.assertEquals("value", eq.getPropValue());
     }
 
     @Test
