@@ -1,7 +1,7 @@
 # abacus-query
  
 [![Maven Central](https://img.shields.io/maven-central/v/com.landawn/abacus-query.svg)](https://maven-badges.herokuapp.com/maven-central/com.landawn/abacus-query/)
-[![Javadocs](https://img.shields.io/badge/javadoc-3.26.3-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn/abacus-query/3.26.3/index.html)
+[![Javadocs](https://img.shields.io/badge/javadoc-3.26.5-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn/abacus-query/3.26.5/index.html)
 
 ## Download/Installation & [Changes](https://github.com/landawn/abacus-query/blob/master/CHANGES.md):
 
@@ -9,8 +9,8 @@
 
 * Gradle:
 ```gradle
-// JDK 1.8 or above:
-compile 'com.landawn:abacus-query:3.26.3'
+// JDK 17 or above:
+compile 'com.landawn:abacus-query:3.26.5'
 ```
 
 
