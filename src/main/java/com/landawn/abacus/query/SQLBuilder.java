@@ -18566,7 +18566,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT SQL builder for a single column expression.
          * The column name remains in camelCase format and uses MyBatis-style parameter placeholder.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.insert("firstName").into("account").sql();
@@ -18575,6 +18575,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * @param expr the column expression or property name to insert
          * @return a new SQLBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if expr is null or empty
          */
         public static SQLBuilder insert(final String expr) {
             N.checkArgNotEmpty(expr, INSERTION_PART_MSG);

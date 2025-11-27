@@ -155,16 +155,19 @@ public enum SQLOperation {
 
     /**
      * Retrieves the SQLOperation enum value corresponding to the given operation name.
-     * The lookup is case-sensitive and returns null if no matching operation is found.
-     * 
+     * The lookup is case-sensitive and matches against both the SQL text representation
+     * and the enum constant name.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLOperation selectOp = SQLOperation.of("SELECT"); // returns SELECT
-     * SQLOperation unknownOp = SQLOperation.of("TRUNCATE"); // returns null
+     * SQLOperation selectOp = SQLOperation.of("SELECT");    // returns SELECT
+     * SQLOperation insertOp = SQLOperation.of("INSERT");    // returns INSERT
+     * SQLOperation mergeOp = SQLOperation.of("MERGE");      // returns MERGE
+     * SQLOperation unknownOp = SQLOperation.of("TRUNCATE"); // returns null (not supported)
      * }</pre>
      *
-     * @param name the SQL operation name to look up
-     * @return the corresponding SQLOperation enum value, or null if not found
+     * @param name the SQL operation name to look up (case-sensitive)
+     * @return the corresponding SQLOperation enum value, or {@code null} if no matching operation is found
      */
     public static SQLOperation of(final String name) {
         return operationMap.get(name);
@@ -175,15 +178,19 @@ public enum SQLOperation {
      *
      * <p>This method returns the canonical SQL keyword associated with this operation.
      * For standard SQL operations, this will be the standard SQL keyword (e.g., "SELECT", "INSERT").
-     * For composite operations like BEGIN_TRANSACTION, it returns the appropriate command text.</p>
+     * For composite operations like BEGIN_TRANSACTION, it returns the full command text
+     * (e.g., "BEGIN TRANSACTION").</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLOperation op = SQLOperation.SELECT;
      * String sqlKeyword = op.sqlText(); // Returns "SELECT"
+     *
+     * SQLOperation txOp = SQLOperation.BEGIN_TRANSACTION;
+     * String txText = txOp.sqlText();   // Returns "BEGIN TRANSACTION"
      * }</pre>
      *
-     * @return the SQL keyword string representation of this operation
+     * @return the SQL keyword string representation of this operation, never {@code null}
      */
     public String sqlText() {
         return sqlText;

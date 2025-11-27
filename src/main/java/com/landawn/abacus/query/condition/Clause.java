@@ -97,7 +97,6 @@ public abstract class Clause extends Cell {
      *
      * @param operator the clause operator (e.g., WHERE, HAVING, GROUP_BY). Must not be null.
      * @param condition the condition to be wrapped by this clause. Must not be null.
-     * @throws NullPointerException if operator or condition is null (validated by parent constructor)
      */
     protected Clause(final Operator operator, final Condition condition) {
         super(operator, condition);

@@ -72,7 +72,6 @@ public class Cell extends AbstractCondition {
      *
      * @param operator the operator to apply to the condition
      * @param condition the condition to wrap (must not be null)
-     * @throws NullPointerException if condition is null
      */
     public Cell(final Operator operator, final Condition condition) {
         super(operator);

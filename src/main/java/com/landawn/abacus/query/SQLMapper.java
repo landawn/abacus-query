@@ -205,6 +205,7 @@ public final class SQLMapper {
 
     /**
      * Returns a set of all SQL identifiers registered in this mapper.
+     * The returned set maintains the insertion order of SQL definitions.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -213,7 +214,7 @@ public final class SQLMapper {
      * sqlIds.forEach(id -> System.out.println("Available SQL: " + id));
      * }</pre>
      *
-     * @return an unmodifiable set of SQL identifiers
+     * @return a set view of all SQL identifiers in this mapper, maintaining insertion order
      */
     public Set<String> keySet() {
         return sqlMap.keySet();
@@ -226,11 +227,13 @@ public final class SQLMapper {
      * <pre>{@code
      * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
      * ParsedSql sql = mapper.get("findAccountById");
-     * String sqlString = sql.sql();
+     * if (sql != null) {
+     *     String sqlString = sql.sql();
+     * }
      * }</pre>
      *
-     * @param id the SQL identifier
-     * @return the ParsedSql object, or null if the id is empty, too long, or not found
+     * @param id the SQL identifier to look up
+     * @return the ParsedSql object, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found
      */
     public ParsedSql get(final String id) {
         if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
@@ -248,12 +251,14 @@ public final class SQLMapper {
      * <pre>{@code
      * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
      * ImmutableMap<String, String> attrs = mapper.getAttrs("batchInsertAccounts");
-     * String batchSizeStr = attrs.get("batchSize");
-     * Integer batchSize = batchSizeStr != null ? Integer.parseInt(batchSizeStr) : 100;
+     * if (attrs != null) {
+     *     String batchSizeStr = attrs.get("batchSize");
+     *     int batchSize = batchSizeStr != null ? Integer.parseInt(batchSizeStr) : 100;
+     * }
      * }</pre>
      *
-     * @param id the SQL identifier
-     * @return an immutable map of attribute names to values, or null if the id is invalid or not found
+     * @param id the SQL identifier to look up
+     * @return an immutable map of attribute names to values, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found
      */
     public ImmutableMap<String, String> getAttrs(final String id) {
         if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
@@ -264,8 +269,8 @@ public final class SQLMapper {
     }
 
     /**
-     * Adds or replaces a parsed SQL with the specified identifier.
-     * If an SQL with the same ID already exists, this method will throw an exception.
+     * Adds a parsed SQL with the specified identifier.
+     * This method validates the ID and throws an exception if an SQL with the same ID already exists.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -277,10 +282,10 @@ public final class SQLMapper {
      * ParsedSql retrieved = mapper.get("findUserById");
      * }</pre>
      *
-     * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed 128 characters)
+     * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier
-     * @return the previous ParsedSql associated with the id, or null if there was no mapping
-     * @throws IllegalArgumentException if the id is empty, contains whitespace, exceeds 128 characters, or already exists
+     * @return the previous ParsedSql associated with the id, or {@code null} if there was no mapping
+     * @throws IllegalArgumentException if the id is empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
      */
     public ParsedSql add(final String id, final ParsedSql sql) {
         checkId(id);
@@ -290,7 +295,7 @@ public final class SQLMapper {
 
     /**
      * Adds a SQL string with the specified identifier and attributes.
-     * The SQL string will be parsed before storing.
+     * The SQL string will be parsed using {@link ParsedSql#parse(String)} before storing.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -301,10 +306,10 @@ public final class SQLMapper {
      * mapper.add("insertUser", "insert into users (id, name) values (?, ?)", attrs);
      * }</pre>
      *
-     * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed 128 characters)
+     * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the SQL string to parse and store
-     * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize)
-     * @throws IllegalArgumentException if the id is empty, contains whitespace, exceeds 128 characters, or already exists
+     * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be empty but not null
+     * @throws IllegalArgumentException if the id is empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
      */
     public void add(final String id, final String sql, final Map<String, String> attrs) {
         checkId(id);
@@ -340,13 +345,15 @@ public final class SQLMapper {
     }
 
     /**
-     * Removes the SQL associated with the specified identifier.
-     * If the id is empty, too long, or not found, this method does nothing.
+     * Removes the SQL and its attributes associated with the specified identifier.
+     * If the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found, this method does nothing.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
      * mapper.remove("deprecatedQuery");
+     * // Verify removal
+     * boolean removed = mapper.get("deprecatedQuery") == null;
      * }</pre>
      *
      * @param id the SQL identifier to remove
@@ -360,17 +367,19 @@ public final class SQLMapper {
     }
 
     /**
-     * Creates a deep copy of this SQLMapper instance.
-     * The copy contains all SQL definitions and attributes from the original.
+     * Creates a shallow copy of this SQLMapper instance.
+     * The copy contains references to the same ParsedSql objects and attribute maps from the original.
+     * Modifications to one mapper (adding/removing entries) will not affect the other.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLMapper original = SQLMapper.fromFile("sql/queries.xml");
      * SQLMapper copy = original.copy();
      * copy.add("newQuery", "select * from new_table", Collections.emptyMap());
+     * // original does not contain "newQuery"
      * }</pre>
      *
-     * @return a new SQLMapper instance with the same content
+     * @return a new SQLMapper instance with the same SQL definitions and attributes
      */
     public SQLMapper copy() {
         final SQLMapper copy = new SQLMapper();
@@ -401,8 +410,8 @@ public final class SQLMapper {
      * mapper.saveTo(new File("sql/queries.xml"));
      * }</pre>
      *
-     * @param file the file to write to (will be created if it doesn't exist)
-     * @throws UncheckedIOException if an I/O error occurs while writing to the file
+     * @param file the file to write to (will be created if it doesn't exist; parent directories must exist)
+     * @throws UncheckedIOException if an I/O error occurs while creating or writing to the file
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void saveTo(final File file) {
