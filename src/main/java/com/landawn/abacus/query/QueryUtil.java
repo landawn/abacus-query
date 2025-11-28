@@ -84,7 +84,7 @@ public final class QueryUtil {
      *
      * Tuple2<String, Boolean> result = propMap.get("firstName");
      * String columnName = result._1;  // "first_name"
-     * boolean isSimple = result._2;   // true (no dots in property name)
+     * boolean isSimple = result._2;  // true (no dots in property name)
      *
      * // Nested property example
      * Tuple2<String, Boolean> nested = propMap.get("address.street");
@@ -146,7 +146,7 @@ public final class QueryUtil {
      * // Given a User entity with property 'userName' mapped to column 'user_name'
      * ImmutableMap<String, String> columnMap = QueryUtil.getColumn2PropNameMap(User.class);
      *
-     * String propName = columnMap.get("user_name");   // returns "userName"
+     * String propName = columnMap.get("user_name");  // returns "userName"
      * String propName2 = columnMap.get("USER_NAME");  // returns "userName"
      * String propName3 = columnMap.get("User_Name");  // returns null (only exact, lower, upper stored)
      * }</pre>
@@ -194,9 +194,9 @@ public final class QueryUtil {
      * ImmutableMap<String, String> propMap = QueryUtil.getProp2ColumnNameMap(
      *     User.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
      *
-     * String columnName = propMap.get("firstName");   // returns "first_name"
-     * String columnName2 = propMap.get("lastName");   // returns "last_name"
-     * String columnName3 = propMap.get("address.street"); // returns "address.street"
+     * String columnName = propMap.get("firstName");  // returns "first_name"
+     * String columnName2 = propMap.get("lastName");  // returns "last_name"
+     * String columnName3 = propMap.get("address.street");  // returns "address.street"
      * }</pre>
      *
      * @param entityClass the entity class to analyze
@@ -564,7 +564,7 @@ public final class QueryUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * PropInfo propInfo = ...; // property info for "tempData" field
+     * PropInfo propInfo = ...;  // property info for "tempData" field
      * boolean excluded = QueryUtil.isNotColumn(columnFields, nonColumnFields, propInfo);
      * // Returns true if property should not be mapped to a database column
      * }</pre>

@@ -51,21 +51,21 @@ import com.landawn.abacus.util.Strings;
  * NamedProperty name = NamedProperty.of("name");
  *
  * // Use it to create various conditions
- * Condition c1 = age.eq(25);                      // age = 25
- * Condition c2 = age.gt(18);                      // age > 18
- * Condition c3 = age.between(20, 30);             // age BETWEEN 20 AND 30
- * Condition c4 = age.in(Arrays.asList(25, 30, 35)); // age IN (25, 30, 35)
+ * Condition c1 = age.eq(25);  // age = 25
+ * Condition c2 = age.gt(18);  // age > 18
+ * Condition c3 = age.between(20, 30);  // age BETWEEN 20 AND 30
+ * Condition c4 = age.in(Arrays.asList(25, 30, 35));  // age IN (25, 30, 35)
  *
  * // Pattern matching conditions
- * Condition c5 = name.like("John%");              // name LIKE 'John%'
- * Condition c6 = name.startsWith("J");            // name LIKE 'J%'
- * Condition c7 = name.contains("oh");             // name LIKE '%oh%'
+ * Condition c5 = name.like("John%");  // name LIKE 'John%'
+ * Condition c6 = name.startsWith("J");  // name LIKE 'J%'
+ * Condition c7 = name.contains("oh");  // name LIKE '%oh%'
  *
  * // Null checks
- * Condition c8 = status.isNotNull();              // status IS NOT NULL
+ * Condition c8 = status.isNotNull();  // status IS NOT NULL
  *
  * // Chain conditions with OR
- * Or orCondition = age.eqOr(25, 30, 35);          // age = 25 OR age = 30 OR age = 35
+ * Or orCondition = age.eqOr(25, 30, 35);  // age = 25 OR age = 30 OR age = 35
  *
  * // Combine with AND/OR for complex queries
  * Condition complex = age.gt(18).and(status.eq("active"));
@@ -138,7 +138,7 @@ public final class NamedProperty {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty age = NamedProperty.of("age");
-     * String name = age.propName(); // Returns "age"
+     * String name = age.propName();  // Returns "age"
      * }</pre>
      *
      * @return the property name
@@ -154,8 +154,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("status").eq("active"); // status = 'active'
-     * NamedProperty.of("count").eq(5); // count = 5
+     * NamedProperty.of("status").eq("active");  // status = 'active'
+     * NamedProperty.of("count").eq(5);  // count = 5
      * }</pre>
      *
      * @param values the value to compare against. Can be of any type compatible with the property.
@@ -233,8 +233,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("status").ne("deleted"); // status != 'deleted'
-     * NamedProperty.of("count").ne(0); // count != 0
+     * NamedProperty.of("status").ne("deleted");  // status != 'deleted'
+     * NamedProperty.of("count").ne(0);  // count != 0
      * }</pre>
      *
      * @param values the value to compare against. Can be of any type compatible with the property.
@@ -252,8 +252,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("age").gt(18); // age > 18
-     * NamedProperty.of("price").gt(99.99); // price > 99.99
+     * NamedProperty.of("age").gt(18);  // age > 18
+     * NamedProperty.of("price").gt(99.99);  // price > 99.99
      * }</pre>
      *
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
@@ -271,8 +271,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("score").ge(60); // score >= 60
-     * NamedProperty.of("age").ge(21); // age >= 21
+     * NamedProperty.of("score").ge(60);  // score >= 60
+     * NamedProperty.of("age").ge(21);  // age >= 21
      * }</pre>
      *
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
@@ -290,8 +290,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("price").lt(100); // price < 100
-     * NamedProperty.of("age").lt(18); // age < 18
+     * NamedProperty.of("price").lt(100);  // price < 100
+     * NamedProperty.of("age").lt(18);  // age < 18
      * }</pre>
      *
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
@@ -309,8 +309,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("quantity").le(10); // quantity <= 10
-     * NamedProperty.of("age").le(65); // age <= 65
+     * NamedProperty.of("quantity").le(10);  // quantity <= 10
+     * NamedProperty.of("age").le(65);  // age <= 65
      * }</pre>
      *
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
@@ -328,8 +328,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("deletedDate").isNull(); // deletedDate IS NULL
-     * NamedProperty.of("endDate").isNull(); // endDate IS NULL
+     * NamedProperty.of("deletedDate").isNull();  // deletedDate IS NULL
+     * NamedProperty.of("endDate").isNull();  // endDate IS NULL
      * }</pre>
      *
      * @return an IsNull condition for this property
@@ -346,8 +346,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("email").isNotNull(); // email IS NOT NULL
-     * NamedProperty.of("phoneNumber").isNotNull(); // phoneNumber IS NOT NULL
+     * NamedProperty.of("email").isNotNull();  // email IS NOT NULL
+     * NamedProperty.of("phoneNumber").isNotNull();  // phoneNumber IS NOT NULL
      * }</pre>
      *
      * @return an IsNotNull condition for this property
@@ -364,8 +364,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("age").between(18, 65); // age BETWEEN 18 AND 65
-     * NamedProperty.of("price").between(10.0, 100.0); // price BETWEEN 10.0 AND 100.0
+     * NamedProperty.of("age").between(18, 65);  // age BETWEEN 18 AND 65
+     * NamedProperty.of("price").between(10.0, 100.0);  // price BETWEEN 10.0 AND 100.0
      * }</pre>
      *
      * @param minValue the minimum value (inclusive). Can be numeric, date, string, or any comparable type.
@@ -397,8 +397,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("name").like("John%"); // name LIKE 'John%'
-     * NamedProperty.of("email").like("%@example.com"); // email LIKE '%@example.com'
+     * NamedProperty.of("name").like("John%");  // name LIKE 'John%'
+     * NamedProperty.of("email").like("%@example.com");  // email LIKE '%@example.com'
      * }</pre>
      *
      * @param value the pattern to match (can include % for any characters and _ for single character)
@@ -416,8 +416,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("email").notLike("%@temp.com"); // email NOT LIKE '%@temp.com'
-     * NamedProperty.of("name").notLike("test%"); // name NOT LIKE 'test%'
+     * NamedProperty.of("email").notLike("%@temp.com");  // email NOT LIKE '%@temp.com'
+     * NamedProperty.of("name").notLike("test%");  // name NOT LIKE 'test%'
      * }</pre>
      *
      * @param value the pattern to exclude (can include % for any characters and _ for single character)
@@ -435,8 +435,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("name").startsWith("John"); // name LIKE 'John%'
-     * NamedProperty.of("code").startsWith("PRD"); // code LIKE 'PRD%'
+     * NamedProperty.of("name").startsWith("John");  // name LIKE 'John%'
+     * NamedProperty.of("code").startsWith("PRD");  // code LIKE 'PRD%'
      * }</pre>
      *
      * @param value the prefix to match. The % wildcard will be automatically appended.
@@ -454,8 +454,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("email").endsWith("@example.com"); // email LIKE '%@example.com'
-     * NamedProperty.of("filename").endsWith(".pdf"); // filename LIKE '%.pdf'
+     * NamedProperty.of("email").endsWith("@example.com");  // email LIKE '%@example.com'
+     * NamedProperty.of("filename").endsWith(".pdf");  // filename LIKE '%.pdf'
      * }</pre>
      *
      * @param value the suffix to match. The % wildcard will be automatically prepended.
@@ -473,8 +473,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("description").contains("important"); // description LIKE '%important%'
-     * NamedProperty.of("title").contains("query"); // title LIKE '%query%'
+     * NamedProperty.of("description").contains("important");  // description LIKE '%important%'
+     * NamedProperty.of("title").contains("query");  // title LIKE '%query%'
      * }</pre>
      *
      * @param value the substring to match. The % wildcard will be automatically added to both sides.
@@ -542,7 +542,7 @@ public final class NamedProperty {
      * <pre>{@code
      * NamedProperty p1 = NamedProperty.of("age");
      * NamedProperty p2 = NamedProperty.of("age");
-     * assert p1.hashCode() == p2.hashCode(); // true due to caching
+     * assert p1.hashCode() == p2.hashCode();  // true due to caching
      * }</pre>
      *
      * @return hash code of the property name
@@ -561,10 +561,10 @@ public final class NamedProperty {
      * <pre>{@code
      * NamedProperty p1 = NamedProperty.of("age");
      * NamedProperty p2 = NamedProperty.of("age");
-     * assert p1.equals(p2); // true
+     * assert p1.equals(p2);  // true
      *
      * NamedProperty p3 = NamedProperty.of("Age");
-     * assert !p1.equals(p3); // false - case sensitive
+     * assert !p1.equals(p3);  // false - case sensitive
      * }</pre>
      *
      * @param obj the object to compare with
@@ -582,7 +582,7 @@ public final class NamedProperty {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty age = NamedProperty.of("age");
-     * String str = age.toString(); // Returns "age"
+     * String str = age.toString();  // Returns "age"
      * }</pre>
      *
      * @return the property name

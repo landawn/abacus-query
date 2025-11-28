@@ -157,10 +157,10 @@ public class InSubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * InSubQuery condition = new InSubQuery("userId", subQuery);
-     * String propName = condition.getPropName(); // Returns "userId"
+     * String propName = condition.getPropName();  // Returns "userId"
      *
      * InSubQuery multiProp = new InSubQuery(Arrays.asList("a", "b"), subQuery);
-     * String name = multiProp.getPropName(); // Returns null
+     * String name = multiProp.getPropName();  // Returns null
      * }</pre>
      *
      * @return the property name, or null if this is a multi-column condition
@@ -177,10 +177,10 @@ public class InSubQuery extends AbstractCondition {
      * <pre>{@code
      * List<String> props = Arrays.asList("country", "city");
      * InSubQuery condition = new InSubQuery(props, subQuery);
-     * Collection<String> propNames = condition.getPropNames(); // Returns ["country", "city"]
+     * Collection<String> propNames = condition.getPropNames();  // Returns ["country", "city"]
      *
      * InSubQuery singleProp = new InSubQuery("userId", subQuery);
-     * Collection<String> names = singleProp.getPropNames(); // Returns null
+     * Collection<String> names = singleProp.getPropNames();  // Returns null
      * }</pre>
      *
      * @return collection of property names, or null if this is a single-column condition
@@ -197,7 +197,7 @@ public class InSubQuery extends AbstractCondition {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
      * InSubQuery condition = new InSubQuery("userId", subQuery);
-     * SubQuery retrieved = condition.getSubQuery(); // Returns the subquery
+     * SubQuery retrieved = condition.getSubQuery();  // Returns the subquery
      * }</pre>
      *
      * @return the subquery
@@ -251,7 +251,7 @@ public class InSubQuery extends AbstractCondition {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE age > ?", 18);
      * InSubQuery condition = new InSubQuery("userId", subQuery);
-     * List<Object> params = condition.getParameters(); // Returns [18]
+     * List<Object> params = condition.getParameters();  // Returns [18]
      * }</pre>
      *
      * @return list of parameter values from the subquery
@@ -269,9 +269,9 @@ public class InSubQuery extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * List<Object> parameters = condition.getParameters();  // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters();  // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters();  // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override
@@ -338,10 +338,10 @@ public class InSubQuery extends AbstractCondition {
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
      * InSubQuery c1 = new InSubQuery("userId", subQuery);
      * InSubQuery c2 = new InSubQuery("userId", subQuery);
-     * assert c1.equals(c2); // true
+     * assert c1.equals(c2);  // true
      *
      * InSubQuery c3 = new InSubQuery("otherId", subQuery);
-     * assert !c1.equals(c3); // false - different property
+     * assert !c1.equals(c3);  // false - different property
      * }</pre>
      *
      * @param obj the object to compare with

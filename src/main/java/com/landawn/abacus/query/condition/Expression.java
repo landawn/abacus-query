@@ -169,7 +169,7 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = new Expression("UPPER(name)");
-     * String sql = expr.getLiteral(); // Returns "UPPER(name)"
+     * String sql = expr.getLiteral();  // Returns "UPPER(name)"
      * }</pre>
      *
      * @return the SQL expression string
@@ -931,15 +931,15 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression.formalize("text");     // Returns: "'text'"
+     * Expression.formalize("text");  // Returns: "'text'"
      * Expression.formalize("O'Brien");  // Returns: "'O\'Brien'" (escaped quote)
-     * Expression.formalize(123);        // Returns: "123"
-     * Expression.formalize(45.67);      // Returns: "45.67"
-     * Expression.formalize(null);       // Returns: "null"
-     * Expression.formalize(true);       // Returns: "true"
-     * Expression.formalize(false);      // Returns: "false"
+     * Expression.formalize(123);  // Returns: "123"
+     * Expression.formalize(45.67);  // Returns: "45.67"
+     * Expression.formalize(null);  // Returns: "null"
+     * Expression.formalize(true);  // Returns: "true"
+     * Expression.formalize(false);  // Returns: "false"
      * Expression expr = new Expression("COUNT(*)");
-     * Expression.formalize(expr);       // Returns: "COUNT(*)" (the expression's literal)
+     * Expression.formalize(expr);  // Returns: "COUNT(*)" (the expression's literal)
      * }</pre>
      *
      * @param value the value to formalize
@@ -967,9 +967,9 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.count("*");           // Returns: "COUNT(*)"
-     * String expr2 = Expression.count("id");         // Returns: "COUNT(id)"
-     * String expr3 = Expression.count("DISTINCT department"); // Returns: "COUNT(DISTINCT department)"
+     * String expr = Expression.count("*");  // Returns: "COUNT(*)"
+     * String expr2 = Expression.count("id");  // Returns: "COUNT(id)"
+     * String expr3 = Expression.count("DISTINCT department");  // Returns: "COUNT(DISTINCT department)"
      * }</pre>
      *
      * @param expression the expression to count
@@ -985,8 +985,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.average("salary");    // Returns: "AVG(salary)"
-     * String expr2 = Expression.average("age");      // Returns: "AVG(age)"
+     * String expr = Expression.average("salary");  // Returns: "AVG(salary)"
+     * String expr2 = Expression.average("age");  // Returns: "AVG(age)"
      * }</pre>
      *
      * @param expression the expression to average
@@ -1002,8 +1002,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.sum("amount");        // Returns: "SUM(amount)"
-     * String expr2 = Expression.sum("quantity * price"); // Returns: "SUM(quantity * price)"
+     * String expr = Expression.sum("amount");  // Returns: "SUM(amount)"
+     * String expr2 = Expression.sum("quantity * price");  // Returns: "SUM(quantity * price)"
      * }</pre>
      *
      * @param expression the expression to sum
@@ -1019,8 +1019,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.min("price");         // Returns: "MIN(price)"
-     * String expr2 = Expression.min("created_date"); // Returns: "MIN(created_date)"
+     * String expr = Expression.min("price");  // Returns: "MIN(price)"
+     * String expr2 = Expression.min("created_date");  // Returns: "MIN(created_date)"
      * }</pre>
      *
      * @param expression the expression to find minimum
@@ -1036,8 +1036,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.max("score");         // Returns: "MAX(score)"
-     * String expr2 = Expression.max("last_login");   // Returns: "MAX(last_login)"
+     * String expr = Expression.max("score");  // Returns: "MAX(score)"
+     * String expr2 = Expression.max("last_login");  // Returns: "MAX(last_login)"
      * }</pre>
      *
      * @param expression the expression to find maximum
@@ -1053,7 +1053,7 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.abs("balance");       // Returns: "ABS(balance)"
+     * String expr = Expression.abs("balance");  // Returns: "ABS(balance)"
      * String expr2 = Expression.abs("temperature");  // Returns: "ABS(temperature)"
      * }</pre>
      *
@@ -1070,8 +1070,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.acos("0.5");          // Returns: "ACOS(0.5)"
-     * String expr2 = Expression.acos("cosine_value"); // Returns: "ACOS(cosine_value)"
+     * String expr = Expression.acos("0.5");  // Returns: "ACOS(0.5)"
+     * String expr2 = Expression.acos("cosine_value");  // Returns: "ACOS(cosine_value)"
      * }</pre>
      *
      * @param expression the expression to calculate arc cosine of
@@ -1087,7 +1087,7 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.asin("0.5");          // Returns: "ASIN(0.5)"
+     * String expr = Expression.asin("0.5");  // Returns: "ASIN(0.5)"
      * String expr2 = Expression.asin("sine_value");  // Returns: "ASIN(sine_value)"
      * }</pre>
      *
@@ -1104,8 +1104,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.atan("1");            // Returns: "ATAN(1)"
-     * String expr2 = Expression.atan("tangent_value"); // Returns: "ATAN(tangent_value)"
+     * String expr = Expression.atan("1");  // Returns: "ATAN(1)"
+     * String expr2 = Expression.atan("tangent_value");  // Returns: "ATAN(tangent_value)"
      * }</pre>
      *
      * @param expression the expression to calculate arc tangent of
@@ -1121,8 +1121,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.ceil("4.2");          // Returns: "CEIL(4.2)"
-     * String expr2 = Expression.ceil("price");       // Returns: "CEIL(price)"
+     * String expr = Expression.ceil("4.2");  // Returns: "CEIL(4.2)"
+     * String expr2 = Expression.ceil("price");  // Returns: "CEIL(price)"
      * }</pre>
      *
      * @param expression the expression to round up
@@ -1138,8 +1138,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.cos("3.14159");       // Returns: "COS(3.14159)"
-     * String expr2 = Expression.cos("angle");        // Returns: "COS(angle)"
+     * String expr = Expression.cos("3.14159");  // Returns: "COS(3.14159)"
+     * String expr2 = Expression.cos("angle");  // Returns: "COS(angle)"
      * }</pre>
      *
      * @param expression the expression to calculate cosine of
@@ -1155,7 +1155,7 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.exp("2");             // Returns: "EXP(2)"
+     * String expr = Expression.exp("2");  // Returns: "EXP(2)"
      * String expr2 = Expression.exp("growth_rate");  // Returns: "EXP(growth_rate)"
      * }</pre>
      *
@@ -1172,8 +1172,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.floor("4.8");         // Returns: "FLOOR(4.8)"
-     * String expr2 = Expression.floor("average");    // Returns: "FLOOR(average)"
+     * String expr = Expression.floor("4.8");  // Returns: "FLOOR(4.8)"
+     * String expr2 = Expression.floor("average");  // Returns: "FLOOR(average)"
      * }</pre>
      *
      * @param expression the expression to round down
@@ -1189,8 +1189,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.log("10", "100");     // Returns: "LOG(10, 100)"
-     * String expr2 = Expression.log("2", "value");   // Returns: "LOG(2, value)"
+     * String expr = Expression.log("10", "100");  // Returns: "LOG(10, 100)"
+     * String expr2 = Expression.log("2", "value");  // Returns: "LOG(2, value)"
      * }</pre>
      *
      * @param b the logarithm base
@@ -1207,8 +1207,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.ln("10");             // Returns: "LN(10)"
-     * String expr2 = Expression.ln("value");         // Returns: "LN(value)"
+     * String expr = Expression.ln("10");  // Returns: "LN(10)"
+     * String expr2 = Expression.ln("value");  // Returns: "LN(value)"
      * }</pre>
      *
      * @param expression the expression to calculate natural logarithm of
@@ -1224,8 +1224,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.mod("10", "3");       // Returns: "MOD(10, 3)"
-     * String expr2 = Expression.mod("id", "batch_size"); // Returns: "MOD(id, batch_size)"
+     * String expr = Expression.mod("10", "3");  // Returns: "MOD(10, 3)"
+     * String expr2 = Expression.mod("id", "batch_size");  // Returns: "MOD(id, batch_size)"
      * }</pre>
      *
      * @param n1 the dividend
@@ -1242,8 +1242,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.power("2", "10");     // Returns: "POWER(2, 10)"
-     * String expr2 = Expression.power("base", "exponent"); // Returns: "POWER(base, exponent)"
+     * String expr = Expression.power("2", "10");  // Returns: "POWER(2, 10)"
+     * String expr2 = Expression.power("base", "exponent");  // Returns: "POWER(base, exponent)"
      * }</pre>
      *
      * @param n1 the base
@@ -1260,8 +1260,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.sign("-5");           // Returns: "SIGN(-5)"
-     * String expr2 = Expression.sign("balance");     // Returns: "SIGN(balance)"
+     * String expr = Expression.sign("-5");  // Returns: "SIGN(-5)"
+     * String expr2 = Expression.sign("balance");  // Returns: "SIGN(balance)"
      * }</pre>
      *
      * @param expression the expression to get sign of
@@ -1277,8 +1277,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.sin("1.5708");        // Returns: "SIN(1.5708)"
-     * String expr2 = Expression.sin("angle");        // Returns: "SIN(angle)"
+     * String expr = Expression.sin("1.5708");  // Returns: "SIN(1.5708)"
+     * String expr2 = Expression.sin("angle");  // Returns: "SIN(angle)"
      * }</pre>
      *
      * @param expression the expression to calculate sine of
@@ -1294,8 +1294,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.sqrt("16");           // Returns: "SQRT(16)"
-     * String expr2 = Expression.sqrt("area");        // Returns: "SQRT(area)"
+     * String expr = Expression.sqrt("16");  // Returns: "SQRT(16)"
+     * String expr2 = Expression.sqrt("area");  // Returns: "SQRT(area)"
      * }</pre>
      *
      * @param expression the expression to calculate square root of
@@ -1311,8 +1311,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.tan("0.7854");        // Returns: "TAN(0.7854)"
-     * String expr2 = Expression.tan("angle");        // Returns: "TAN(angle)"
+     * String expr = Expression.tan("0.7854");  // Returns: "TAN(0.7854)"
+     * String expr2 = Expression.tan("angle");  // Returns: "TAN(angle)"
      * }</pre>
      *
      * @param expression the expression to calculate tangent of
@@ -1371,8 +1371,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.stringLength("name");     // Returns: "LENGTH(name)"
-     * String expr2 = Expression.stringLength("description"); // Returns: "LENGTH(description)"
+     * String expr = Expression.stringLength("name");  // Returns: "LENGTH(name)"
+     * String expr2 = Expression.stringLength("description");  // Returns: "LENGTH(description)"
      * }</pre>
      *
      * @param st the string to get length of
@@ -1388,8 +1388,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.subString("phone", 1);    // Returns: "SUBSTR(phone, 1)"
-     * String expr2 = Expression.subString("code", 3);    // Returns: "SUBSTR(code, 3)"
+     * String expr = Expression.subString("phone", 1);  // Returns: "SUBSTR(phone, 1)"
+     * String expr2 = Expression.subString("code", 3);  // Returns: "SUBSTR(code, 3)"
      * }</pre>
      *
      * @param st the string to extract from
@@ -1407,7 +1407,7 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String expr = Expression.subString("phone", 1, 3);  // Returns: "SUBSTR(phone, 1, 3)"
-     * String expr2 = Expression.subString("zip", 1, 5);   // Returns: "SUBSTR(zip, 1, 5)"
+     * String expr2 = Expression.subString("zip", 1, 5);  // Returns: "SUBSTR(zip, 1, 5)"
      * }</pre>
      *
      * @param st the string to extract from
@@ -1425,8 +1425,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.trim("input");         // Returns: "TRIM(input)"
-     * String expr2 = Expression.trim("user_name");    // Returns: "TRIM(user_name)"
+     * String expr = Expression.trim("input");  // Returns: "TRIM(input)"
+     * String expr2 = Expression.trim("user_name");  // Returns: "TRIM(user_name)"
      * }</pre>
      *
      * @param st the string to trim
@@ -1442,8 +1442,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lTrim("comment");      // Returns: "LTRIM(comment)"
-     * String expr2 = Expression.lTrim("address");     // Returns: "LTRIM(address)"
+     * String expr = Expression.lTrim("comment");  // Returns: "LTRIM(comment)"
+     * String expr2 = Expression.lTrim("address");  // Returns: "LTRIM(address)"
      * }</pre>
      *
      * @param st the string to left trim
@@ -1459,8 +1459,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.rTrim("code");         // Returns: "RTRIM(code)"
-     * String expr2 = Expression.rTrim("description"); // Returns: "RTRIM(description)"
+     * String expr = Expression.rTrim("code");  // Returns: "RTRIM(code)"
+     * String expr2 = Expression.rTrim("description");  // Returns: "RTRIM(description)"
      * }</pre>
      *
      * @param st the string to right trim
@@ -1476,8 +1476,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lPad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
-     * String expr2 = Expression.lPad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
+     * String expr = Expression.lPad("id", 10, "'0'");  // Returns: "LPAD(id, 10, '0')"
+     * String expr2 = Expression.lPad("code", 5, "' '");  // Returns: "LPAD(code, 5, ' ')"
      * }</pre>
      *
      * @param st the string to pad
@@ -1495,7 +1495,7 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.rPad("name", 20, "' '");   // Returns: "RPAD(name, 20, ' ')"
+     * String expr = Expression.rPad("name", 20, "' '");  // Returns: "RPAD(name, 20, ' ')"
      * String expr2 = Expression.rPad("code", 10, "'X'");  // Returns: "RPAD(code, 10, 'X')"
      * }</pre>
      *
@@ -1514,8 +1514,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lower("email");        // Returns: "LOWER(email)"
-     * String expr2 = Expression.lower("COUNTRY");     // Returns: "LOWER(COUNTRY)"
+     * String expr = Expression.lower("email");  // Returns: "LOWER(email)"
+     * String expr2 = Expression.lower("COUNTRY");  // Returns: "LOWER(COUNTRY)"
      * }</pre>
      *
      * @param st the string to convert to lowercase
@@ -1531,8 +1531,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.upper("name");         // Returns: "UPPER(name)"
-     * String expr2 = Expression.upper("country_code"); // Returns: "UPPER(country_code)"
+     * String expr = Expression.upper("name");  // Returns: "UPPER(name)"
+     * String expr2 = Expression.upper("country_code");  // Returns: "UPPER(country_code)"
      * }</pre>
      *
      * @param st the string to convert to uppercase
@@ -1549,7 +1549,7 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = Expression.of("price * 1.1");
-     * List<Object> params = expr.getParameters(); // Always returns empty list
+     * List<Object> params = expr.getParameters();  // Always returns empty list
      * }</pre>
      *
      * @return an empty list
@@ -1568,8 +1568,8 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = Expression.of("price * 1.1");
-     * expr.clearParameters(); // Does nothing - Expression has no parameters
-     * List<Object> params = expr.getParameters(); // Still returns empty list
+     * expr.clearParameters();  // Does nothing - Expression has no parameters
+     * List<Object> params = expr.getParameters();  // Still returns empty list
      * }</pre>
      */
     @Override
@@ -1701,7 +1701,7 @@ public class Expression extends AbstractCondition {
      * Expr expr2 = new Expr("price * quantity");
      *
      * // Both objects function identically
-     * boolean same = expr1.getLiteral().equals(expr2.getLiteral()); // true
+     * boolean same = expr1.getLiteral().equals(expr2.getLiteral());  // true
      * }</pre>
      *
      * @see Expression
@@ -1719,7 +1719,7 @@ public class Expression extends AbstractCondition {
          * Expr expr = new Expr("price * quantity");
          *
          * // The expression works exactly like a regular Expression
-         * String result = expr.getLiteral(); // returns "price * quantity"
+         * String result = expr.getLiteral();  // returns "price * quantity"
          * }</pre>
          *
          * @param literal the SQL expression as a string

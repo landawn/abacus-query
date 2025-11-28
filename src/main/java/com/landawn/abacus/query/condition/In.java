@@ -130,7 +130,7 @@ public class In extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = new In("status", Arrays.asList("active", "pending", "approved"));
-     * String propName = condition.getPropName(); // Returns "status"
+     * String propName = condition.getPropName();  // Returns "status"
      *
      * // Useful for introspection or debugging
      * System.out.println("Checking property: " + condition.getPropName());
@@ -151,10 +151,10 @@ public class In extends AbstractCondition {
      * <pre>{@code
      * List<String> statuses = Arrays.asList("active", "pending", "approved");
      * In condition = new In("status", statuses);
-     * List<?> values = condition.getValues(); // Returns ["active", "pending", "approved"]
+     * List<?> values = condition.getValues();  // Returns ["active", "pending", "approved"]
      *
      * // Check how many values are in the condition
-     * int count = condition.getValues().size(); // Returns 3
+     * int count = condition.getValues().size();  // Returns 3
      *
      * // Inspect the values (useful for debugging)
      * System.out.println("Checking against values: " + condition.getValues());
@@ -211,10 +211,10 @@ public class In extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = new In("status", Arrays.asList("active", "pending", "approved"));
-     * List<Object> params = condition.getParameters(); // Returns ["active", "pending", "approved"]
+     * List<Object> params = condition.getParameters();  // Returns ["active", "pending", "approved"]
      *
      * // Check number of parameters
-     * int paramCount = condition.getParameters().size(); // Returns 3
+     * int paramCount = condition.getParameters().size();  // Returns 3
      *
      * // Use in query preparation
      * PreparedStatement stmt = connection.prepareStatement(sql);
@@ -240,9 +240,9 @@ public class In extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In in = new In("status", Arrays.asList("active", "pending", "review"));
-     * List<Object> parameters = in.getParameters(); // Returns [active, pending, review]
-     * in.clearParameters(); // All values become null
-     * List<Object> updatedParameters = in.getParameters(); // Returns [null, null, null]
+     * List<Object> parameters = in.getParameters();  // Returns [active, pending, review]
+     * in.clearParameters();  // All values become null
+     * List<Object> updatedParameters = in.getParameters();  // Returns [null, null, null]
      * }</pre>
      */
     @SuppressWarnings("rawtypes")
@@ -266,7 +266,7 @@ public class In extends AbstractCondition {
      *
      * // Modifying copy doesn't affect original
      * copy.clearParameters();
-     * System.out.println(original.getParameters()); // Still returns ["active", "pending", "approved"]
+     * System.out.println(original.getParameters());  // Still returns ["active", "pending", "approved"]
      * }</pre>
      *
      * @param <T> the type of the condition
@@ -326,12 +326,12 @@ public class In extends AbstractCondition {
      * <pre>{@code
      * In c1 = new In("status", Arrays.asList("active", "pending"));
      * In c2 = new In("status", Arrays.asList("active", "pending"));
-     * assert c1.hashCode() == c2.hashCode(); // true - same property and values
+     * assert c1.hashCode() == c2.hashCode();  // true - same property and values
      *
      * // Useful in collections
      * Set<In> conditions = new HashSet<>();
      * conditions.add(c1);
-     * assert conditions.contains(c2); // true
+     * assert conditions.contains(c2);  // true
      * }</pre>
      *
      * @return the hash code based on property name, operator, and values
@@ -353,13 +353,13 @@ public class In extends AbstractCondition {
      * <pre>{@code
      * In c1 = new In("status", Arrays.asList("active", "pending"));
      * In c2 = new In("status", Arrays.asList("active", "pending"));
-     * assert c1.equals(c2); // true
+     * assert c1.equals(c2);  // true
      *
      * In c3 = new In("type", Arrays.asList("active", "pending"));
-     * assert !c1.equals(c3); // false - different property name
+     * assert !c1.equals(c3);  // false - different property name
      *
      * In c4 = new In("status", Arrays.asList("active", "approved"));
-     * assert !c1.equals(c4); // false - different values
+     * assert !c1.equals(c4);  // false - different values
      * }</pre>
      *
      * @param obj the object to compare with

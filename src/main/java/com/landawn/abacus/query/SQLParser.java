@@ -505,8 +505,8 @@ public final class SQLParser {
      * <pre>{@code
      * String sql = "SELECT   name,   age FROM users";
      * String word1 = SQLParser.nextWord(sql, 6);  // Returns: "name" (skips spaces after SELECT)
-     * String word2 = SQLParser.nextWord(sql, 13); // Returns: ","
-     * String word3 = SQLParser.nextWord(sql, 14); // Returns: "age" (skips spaces after comma)
+     * String word2 = SQLParser.nextWord(sql, 13);  // Returns: ","
+     * String word3 = SQLParser.nextWord(sql, 14);  // Returns: "age" (skips spaces after comma)
      * }</pre>
      * 
      * @param sql the SQL statement to extract the word from
@@ -569,7 +569,7 @@ public final class SQLParser {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLParser.registerSeparator('$'); // Register $ as a separator
+     * SQLParser.registerSeparator('$');  // Register $ as a separator
      * List<String> words = SQLParser.parse("SELECT$FROM$users");
      * // Result: ["SELECT", "$", "FROM", "$", "users"]
      * }</pre>
@@ -590,8 +590,8 @@ public final class SQLParser {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLParser.registerSeparator("<=>"); // Register the NULL-safe equal operator
-     * SQLParser.registerSeparator("::"); // Register PostgreSQL cast operator
+     * SQLParser.registerSeparator("<=>");  // Register the NULL-safe equal operator
+     * SQLParser.registerSeparator("::");  // Register PostgreSQL cast operator
      * }</pre>
      *
      * @param separator the string to register as a separator (must not be null)
@@ -654,7 +654,7 @@ public final class SQLParser {
      * int len = words.size();
      * boolean isFunc1 = SQLParser.isFunctionName(words, len, 2);  // Returns: true (COUNT)
      * boolean isFunc2 = SQLParser.isFunctionName(words, len, 8);  // Returns: true (MAX)
-     * boolean isFunc3 = SQLParser.isFunctionName(words, len, 15); // Returns: false (users)
+     * boolean isFunc3 = SQLParser.isFunctionName(words, len, 15);  // Returns: false (users)
      * }</pre>
      * 
      * @param words the list of parsed SQL words/tokens

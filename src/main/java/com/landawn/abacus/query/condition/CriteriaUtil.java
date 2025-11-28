@@ -44,8 +44,8 @@ import com.landawn.abacus.util.N;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if an operator is a clause operator
- * boolean isClause = CriteriaUtil.isClause(Operator.WHERE); // true
- * boolean notClause = CriteriaUtil.isClause(Operator.EQUAL); // false
+ * boolean isClause = CriteriaUtil.isClause(Operator.WHERE);  // true
+ * boolean notClause = CriteriaUtil.isClause(Operator.EQUAL);  // false
  * 
  * // Get all clause operators
  * Set<Operator> clauses = CriteriaUtil.getClauseOperators();
@@ -101,7 +101,7 @@ public final class CriteriaUtil {
      * // Contains: JOIN, LEFT_JOIN, WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.
      * 
      * // Check if a specific operator is a clause
-     * boolean hasWhere = clauses.contains(Operator.WHERE); // true
+     * boolean hasWhere = clauses.contains(Operator.WHERE);  // true
      * }</pre>
      * 
      * @return an immutable set of clause operators in proper SQL order
@@ -116,10 +116,10 @@ public final class CriteriaUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * boolean isClause = CriteriaUtil.isClause(Operator.WHERE); // true
-     * boolean isClause2 = CriteriaUtil.isClause(Operator.GROUP_BY); // true
-     * boolean notClause = CriteriaUtil.isClause(Operator.EQUAL); // false
-     * boolean notClause2 = CriteriaUtil.isClause(Operator.GREATER_THAN); // false
+     * boolean isClause = CriteriaUtil.isClause(Operator.WHERE);  // true
+     * boolean isClause2 = CriteriaUtil.isClause(Operator.GROUP_BY);  // true
+     * boolean notClause = CriteriaUtil.isClause(Operator.EQUAL);  // false
+     * boolean notClause2 = CriteriaUtil.isClause(Operator.GREATER_THAN);  // false
      * }</pre>
      * 
      * @param operator the operator to check
@@ -135,10 +135,10 @@ public final class CriteriaUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * boolean isClause = CriteriaUtil.isClause("WHERE"); // true
-     * boolean isClause2 = CriteriaUtil.isClause("LEFT JOIN"); // true
-     * boolean notClause = CriteriaUtil.isClause("="); // false
-     * boolean notClause2 = CriteriaUtil.isClause("LIKE"); // false
+     * boolean isClause = CriteriaUtil.isClause("WHERE");  // true
+     * boolean isClause2 = CriteriaUtil.isClause("LEFT JOIN");  // true
+     * boolean notClause = CriteriaUtil.isClause("=");  // false
+     * boolean notClause2 = CriteriaUtil.isClause("LIKE");  // false
      * }</pre>
      * 
      * @param operator the operator string to check
@@ -155,13 +155,13 @@ public final class CriteriaUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition where = new Where(Filters.eq("status", "active"));
-     * boolean isClause = CriteriaUtil.isClause(where); // true
+     * boolean isClause = CriteriaUtil.isClause(where);  // true
      * 
      * Condition orderBy = new OrderBy("name", SortDirection.ASC);
-     * boolean isClause2 = CriteriaUtil.isClause(orderBy); // true
+     * boolean isClause2 = CriteriaUtil.isClause(orderBy);  // true
      * 
      * Condition eq = Filters.eq("status", "active");
-     * boolean notClause = CriteriaUtil.isClause(eq); // false
+     * boolean notClause = CriteriaUtil.isClause(eq);  // false
      * }</pre>
      * 
      * @param condition the condition to check

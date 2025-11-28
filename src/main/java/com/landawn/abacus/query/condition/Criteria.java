@@ -116,7 +116,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().distinct();
-     * String modifier = criteria.preselect(); // Returns "DISTINCT"
+     * String modifier = criteria.preselect();  // Returns "DISTINCT"
      * }</pre>
      * 
      * @return the preselect modifier, or null if not set
@@ -134,11 +134,11 @@ public class Criteria extends AbstractCondition {
      * Criteria criteria = new Criteria()
      *     .join("orders", new On("users.id", "orders.user_id"))
      *     .join(new LeftJoin("payments", new On("orders.id", "payments.order_id")));
-     * List<Join> joins = criteria.getJoins(); // Returns 2 joins
+     * List<Join> joins = criteria.getJoins();  // Returns 2 joins
      *
      * // Iterate through joins
      * for (Join join : criteria.getJoins()) {
-     *     System.out.println(join.getOperator()); // JOIN, LEFT_JOIN, etc.
+     *     System.out.println(join.getOperator());  // JOIN, LEFT_JOIN, etc.
      * }
      * }</pre>
      *
@@ -163,8 +163,8 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().where(Filters.eq("status", "active"));
-     * Cell where = criteria.getWhere(); // Returns the WHERE clause
-     * Condition condition = where.getCondition(); // Gets the wrapped condition
+     * Cell where = criteria.getWhere();  // Returns the WHERE clause
+     * Condition condition = where.getCondition();  // Gets the wrapped condition
      * }</pre>
      * 
      * @return the Where condition, or null if not set
@@ -180,7 +180,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().groupBy("department", "role");
-     * Cell groupBy = criteria.getGroupBy(); // Returns the GROUP BY clause
+     * Cell groupBy = criteria.getGroupBy();  // Returns the GROUP BY clause
      * }</pre>
      * 
      * @return the GroupBy condition, or null if not set
@@ -198,7 +198,7 @@ public class Criteria extends AbstractCondition {
      * Criteria criteria = new Criteria()
      *     .groupBy("department")
      *     .having(Filters.gt("COUNT(*)", 10));
-     * Cell having = criteria.getHaving(); // Returns the HAVING clause
+     * Cell having = criteria.getHaving();  // Returns the HAVING clause
      * }</pre>
      * 
      * @return the Having condition, or null if not set
@@ -217,7 +217,7 @@ public class Criteria extends AbstractCondition {
      * Criteria criteria = new Criteria()
      *     .where(Filters.eq("active", true))
      *     .union(subQuery);
-     * List<Cell> aggregations = criteria.getAggregation(); // Returns the UNION
+     * List<Cell> aggregations = criteria.getAggregation();  // Returns the UNION
      * }</pre>
      * 
      * @return a list of aggregation conditions, empty if none exist
@@ -249,7 +249,7 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().orderBy("name", SortDirection.DESC);
-     * Cell orderBy = criteria.getOrderBy(); // Returns the ORDER BY clause
+     * Cell orderBy = criteria.getOrderBy();  // Returns the ORDER BY clause
      * }</pre>
      *
      * @return the OrderBy condition, or null if not set
@@ -265,8 +265,8 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().limit(10);
-     * Limit limit = criteria.getLimit(); // Returns the LIMIT clause
-     * int count = limit.getCount(); // Returns 10
+     * Limit limit = criteria.getLimit();  // Returns the LIMIT clause
+     * int count = limit.getCount();  // Returns 10
      * }</pre>
      * 
      * @return the Limit condition, or null if not set
@@ -284,7 +284,7 @@ public class Criteria extends AbstractCondition {
      * Criteria criteria = new Criteria()
      *     .where(Filters.eq("active", true))
      *     .orderBy("name");
-     * List<Condition> conditions = criteria.getConditions(); // Returns all conditions
+     * List<Condition> conditions = criteria.getConditions();  // Returns all conditions
      * }</pre>
      * 
      * @return a list of all conditions
@@ -401,7 +401,7 @@ public class Criteria extends AbstractCondition {
      * Criteria criteria = new Criteria()
      *     .where(Filters.eq("status", "active"))
      *     .having(Filters.gt("COUNT(*)", 5));
-     * List<Object> params = criteria.getParameters(); // Returns ["active", 5]
+     * List<Object> params = criteria.getParameters();  // Returns ["active", 5]
      * }</pre>
      * 
      * @return a list of all parameters from all conditions
@@ -471,9 +471,9 @@ public class Criteria extends AbstractCondition {
      * Criteria criteria = new Criteria()
      *     .where(Filters.eq("status", "active"))
      *     .having(Filters.gt("COUNT(*)", 5));
-     * List<Object> parameters = criteria.getParameters(); // Returns ["active", 5]
-     * criteria.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = criteria.getParameters(); // Returns [null, null]
+     * List<Object> parameters = criteria.getParameters();  // Returns ["active", 5]
+     * criteria.clearParameters();  // All parameters become null
+     * List<Object> updatedParameters = criteria.getParameters();  // Returns [null, null]
      * }</pre>
      */
     @Override
@@ -1428,7 +1428,7 @@ public class Criteria extends AbstractCondition {
      *     .orderBy("name");
      * Criteria copy = original.copy();
      * // copy is independent of original
-     * copy.limit(10); // Doesn't affect original
+     * copy.limit(10);  // Doesn't affect original
      * }</pre>
      * 
      * @param <T> the type of condition to return
@@ -1507,7 +1507,7 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria c1 = new Criteria().where(Filters.eq("status", "active"));
      * Criteria c2 = new Criteria().where(Filters.eq("status", "active"));
-     * boolean sameHash = c1.hashCode() == c2.hashCode(); // true
+     * boolean sameHash = c1.hashCode() == c2.hashCode();  // true
      * }</pre>
      * 
      * @return the hash code value
@@ -1530,7 +1530,7 @@ public class Criteria extends AbstractCondition {
      * Criteria c2 = new Criteria()
      *     .distinct()
      *     .where(Filters.eq("status", "active"));
-     * boolean isEqual = c1.equals(c2); // Returns true
+     * boolean isEqual = c1.equals(c2);  // Returns true
      * }</pre>
      * 
      * @param obj the object to compare with

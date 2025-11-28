@@ -268,7 +268,7 @@ public class Join extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Join join = new Join(Arrays.asList("orders o", "customers c"), condition);
-     * List<String> entities = join.getJoinEntities(); // Returns ["orders o", "customers c"]
+     * List<String> entities = join.getJoinEntities();  // Returns ["orders o", "customers c"]
      * }</pre>
      *
      * @return the list of join entities
@@ -287,12 +287,12 @@ public class Join extends AbstractCondition {
      * // Create join with ON condition
      * On onCondition = new On("a.id", "b.a_id");
      * Join join = new Join("table_b b", onCondition);
-     * Condition retrieved = join.getCondition(); // Returns the On condition
+     * Condition retrieved = join.getCondition();  // Returns the On condition
      *
      * // Create join with Expression
      * Condition exprCondition = Filters.expr("a.id = b.a_id");
      * Join exprJoin = new Join("table_b b", exprCondition);
-     * Condition exprRetrieved = exprJoin.getCondition(); // Returns the Expression
+     * Condition exprRetrieved = exprJoin.getCondition();  // Returns the Expression
      * }</pre>
      *
      * @param <T> the type of the condition
@@ -315,7 +315,7 @@ public class Join extends AbstractCondition {
      *         new On("c.id", "o.customer_id"),
      *         Filters.gt("o.amount", 1000)
      *     ));
-     * List<Object> params = join.getParameters(); // Returns [1000]
+     * List<Object> params = join.getParameters();  // Returns [1000]
      * }</pre>
      *
      * @return the list of parameters from the condition, or an empty list if no condition
@@ -333,9 +333,9 @@ public class Join extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * List<Object> parameters = condition.getParameters();  // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters();  // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters();  // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override
@@ -385,19 +385,19 @@ public class Join extends AbstractCondition {
      * <pre>{@code
      * // Simple join
      * Join j1 = new Join("orders");
-     * j1.toString(policy); // "JOIN orders"
+     * j1.toString(policy);  // "JOIN orders"
      *
      * // Join with ON condition
      * Join j2 = new Join("orders o", new On("c.id", "o.customer_id"));
-     * j2.toString(policy); // "JOIN orders o ON c.id = o.customer_id"
+     * j2.toString(policy);  // "JOIN orders o ON c.id = o.customer_id"
      *
      * // Join with Expression condition
      * Join j3 = new Join("orders o", Filters.expr("c.id = o.customer_id"));
-     * j3.toString(policy); // "JOIN orders o c.id = o.customer_id"
+     * j3.toString(policy);  // "JOIN orders o c.id = o.customer_id"
      *
      * // Multiple tables
      * Join j4 = new Join(Arrays.asList("t1", "t2"), new On("t1.id", "t2.t1_id"));
-     * j4.toString(policy); // "JOIN t1, t2 ON t1.id = t2.t1_id"
+     * j4.toString(policy);  // "JOIN t1, t2 ON t1.id = t2.t1_id"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply
@@ -446,10 +446,10 @@ public class Join extends AbstractCondition {
      * <pre>{@code
      * Join j1 = new Join("orders o", new On("c.id", "o.customer_id"));
      * Join j2 = new Join("orders o", new On("c.id", "o.customer_id"));
-     * assert j1.equals(j2); // true
+     * assert j1.equals(j2);  // true
      *
      * Join j3 = new Join("products p", new On("c.id", "p.category_id"));
-     * assert !j1.equals(j3); // false
+     * assert !j1.equals(j3);  // false
      * }</pre>
      *
      * @param obj the object to compare with

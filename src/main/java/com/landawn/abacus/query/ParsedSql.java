@@ -45,8 +45,8 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
- * String parameterized = parsed.getParameterizedSql(); // "SELECT * FROM users WHERE id = ? AND status = ?"
- * List<String> params = parsed.getNamedParameters(); // ["userId", "status"]
+ * String parameterized = parsed.getParameterizedSql();  // "SELECT * FROM users WHERE id = ? AND status = ?"
+ * List<String> params = parsed.getNamedParameters();  // ["userId", "status"]
  * }</pre>
  * 
  * @see SQLParser
@@ -169,15 +169,15 @@ public final class ParsedSql {
      * <pre>{@code
      * // Using named parameters
      * ParsedSql ps1 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-     * System.out.println(ps1.getParameterizedSql()); // "SELECT * FROM users WHERE id = ?"
+     * System.out.println(ps1.getParameterizedSql());  // "SELECT * FROM users WHERE id = ?"
      *
      * // Using iBatis/MyBatis style
      * ParsedSql ps2 = ParsedSql.parse("INSERT INTO users (name, email) VALUES (#{name}, #{email})");
-     * System.out.println(ps2.getNamedParameters()); // ["name", "email"]
+     * System.out.println(ps2.getNamedParameters());  // ["name", "email"]
      *
      * // Using standard JDBC placeholders
      * ParsedSql ps3 = ParsedSql.parse("UPDATE users SET status = ? WHERE id = ?");
-     * System.out.println(ps3.getParameterCount()); // 2
+     * System.out.println(ps3.getParameterCount());  // 2
      * }</pre>
      *
      * @param sql the SQL string to parse (must not be null or empty)
@@ -214,7 +214,7 @@ public final class ParsedSql {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-     * String original = parsed.sql(); // Returns: "SELECT * FROM users WHERE id = :userId"
+     * String original = parsed.sql();  // Returns: "SELECT * FROM users WHERE id = :userId"
      * }</pre>
      *
      * @return the original SQL string
@@ -230,7 +230,7 @@ public final class ParsedSql {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-     * String sql = parsed.getParameterizedSql(); // Returns: "SELECT * FROM users WHERE id = ?"
+     * String sql = parsed.getParameterizedSql();  // Returns: "SELECT * FROM users WHERE id = ?"
      * }</pre>
      *
      * @return the parameterized SQL string with ? placeholders
@@ -279,7 +279,7 @@ public final class ParsedSql {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE age > :minAge AND age < :maxAge");
-     * List<String> params = parsed.getNamedParameters(); // Returns: ["minAge", "maxAge"]
+     * List<String> params = parsed.getNamedParameters();  // Returns: ["minAge", "maxAge"]
      * }</pre>
      *
      * @return an immutable list of parameter names
@@ -329,7 +329,7 @@ public final class ParsedSql {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (?, ?, ?)");
-     * int count = parsed.getParameterCount(); // Returns: 3
+     * int count = parsed.getParameterCount();  // Returns: 3
      * }</pre>
      *
      * @return the number of parameters in the SQL
@@ -344,8 +344,8 @@ public final class ParsedSql {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("INSERT INTO orders (user_id, product_id, qty) VALUES (:userId, :productId, :qty)");
-     * int jdbcCount = parsed.getParameterCount(false); // Returns: 3
-     * int couchbaseCount = parsed.getParameterCount(true); // Returns: 3
+     * int jdbcCount = parsed.getParameterCount(false);  // Returns: 3
+     * int couchbaseCount = parsed.getParameterCount(true);  // Returns: 3
      * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase parameter count, {@code false} for standard count
@@ -461,9 +461,9 @@ public final class ParsedSql {
      * ParsedSql ps2 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
      * ParsedSql ps3 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
      *
-     * boolean result1 = ps1.equals(ps2); // Returns: true (same SQL)
-     * boolean result2 = ps1.equals(ps3); // Returns: false (different SQL)
-     * boolean result3 = ps1.equals(null); // Returns: false
+     * boolean result1 = ps1.equals(ps2);  // Returns: true (same SQL)
+     * boolean result2 = ps1.equals(ps3);  // Returns: false (different SQL)
+     * boolean result3 = ps1.equals(null);  // Returns: false
      * }</pre>
      *
      * @param obj the reference object with which to compare

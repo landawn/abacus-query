@@ -385,7 +385,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a parameterized condition
-     * Equal condition = Filters.eq("age"); // Uses QME internally
+     * Equal condition = Filters.eq("age");  // Uses QME internally
      * }</pre>
      */
     public static final Expression QME = Expr.of(SK.QUESTION_MARK);

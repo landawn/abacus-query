@@ -272,10 +272,10 @@ public class SubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery rawSubQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
-     * String sql = rawSubQuery.getSql(); // Returns "SELECT id FROM users WHERE active = true"
+     * String sql = rawSubQuery.getSql();  // Returns "SELECT id FROM users WHERE active = true"
      *
      * SubQuery structuredSubQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-     * String sql2 = structuredSubQuery.getSql(); // Returns null
+     * String sql2 = structuredSubQuery.getSql();  // Returns null
      * }</pre>
      *
      * @return the SQL script, or {@code null} if this is a structured subquery
@@ -293,10 +293,10 @@ public class SubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), Filters.eq("status", "active"));
-     * String entityName = subQuery.getEntityName(); // Returns "users"
+     * String entityName = subQuery.getEntityName();  // Returns "users"
      *
      * SubQuery rawSubQuery = Filters.subQuery("SELECT * FROM products");
-     * String entityName2 = rawSubQuery.getEntityName(); // Returns empty string
+     * String entityName2 = rawSubQuery.getEntityName();  // Returns empty string
      * }</pre>
      *
      * @return the entity/table name, or an empty string if not set
@@ -312,10 +312,10 @@ public class SubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery(User.class, Arrays.asList("id", "email"), Filters.isNotNull("email"));
-     * Class<?> entityClass = subQuery.getEntityClass(); // Returns User.class
+     * Class<?> entityClass = subQuery.getEntityClass();  // Returns User.class
      *
      * SubQuery stringSubQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-     * Class<?> entityClass2 = stringSubQuery.getEntityClass(); // Returns null
+     * Class<?> entityClass2 = stringSubQuery.getEntityClass();  // Returns null
      * }</pre>
      *
      * @return the entity class, or {@code null} if created with entity name string or raw SQL
@@ -333,10 +333,10 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * List<String> props = Arrays.asList("id", "name", "email");
      * SubQuery subQuery = Filters.subQuery("users", props, Filters.eq("active", true));
-     * Collection<String> selectProps = subQuery.getSelectPropNames(); // Returns ["id", "name", "email"]
+     * Collection<String> selectProps = subQuery.getSelectPropNames();  // Returns ["id", "name", "email"]
      *
      * SubQuery rawSubQuery = Filters.subQuery("SELECT id, name FROM users");
-     * Collection<String> selectProps2 = rawSubQuery.getSelectPropNames(); // Returns null
+     * Collection<String> selectProps2 = rawSubQuery.getSelectPropNames();  // Returns null
      * }</pre>
      *
      * @return collection of property names to select, or {@code null} for raw SQL subqueries
@@ -354,10 +354,10 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * Condition condition = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18));
      * SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
-     * Condition retrieved = subQuery.getCondition(); // Returns the And condition
+     * Condition retrieved = subQuery.getCondition();  // Returns the And condition
      *
      * SubQuery rawSubQuery = Filters.subQuery("SELECT * FROM users WHERE active = true");
-     * Condition retrieved2 = rawSubQuery.getCondition(); // Returns null
+     * Condition retrieved2 = rawSubQuery.getCondition();  // Returns null
      * }</pre>
      *
      * @return the WHERE condition, or {@code null} if no condition or raw SQL subquery
@@ -375,10 +375,10 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * Condition condition = Filters.gt("age", 18);
      * SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
-     * List<Object> params = subQuery.getParameters(); // Returns [18]
+     * List<Object> params = subQuery.getParameters();  // Returns [18]
      *
      * SubQuery rawSubQuery = Filters.subQuery("SELECT * FROM users");
-     * List<Object> params2 = rawSubQuery.getParameters(); // Returns empty list
+     * List<Object> params2 = rawSubQuery.getParameters();  // Returns empty list
      * }</pre>
      *
      * @return list of parameter values, or an empty list if no condition or raw SQL subquery
@@ -396,9 +396,9 @@ public class SubQuery extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters(); // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null, null, null, null]
+     * List<Object> parameters = condition.getParameters();  // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters();  // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters();  // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override
@@ -527,10 +527,10 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * SubQuery sq1 = Filters.subQuery("SELECT id FROM users WHERE active = true");
      * SubQuery sq2 = Filters.subQuery("SELECT id FROM users WHERE active = true");
-     * assert sq1.equals(sq2); // true
+     * assert sq1.equals(sq2);  // true
      *
      * SubQuery sq3 = Filters.subQuery("SELECT id FROM users WHERE active = false");
-     * assert !sq1.equals(sq3); // false - different SQL
+     * assert !sq1.equals(sq3);  // false - different SQL
      * }</pre>
      *
      * @param obj the object to compare with

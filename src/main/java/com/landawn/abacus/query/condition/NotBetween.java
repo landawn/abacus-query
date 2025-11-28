@@ -130,7 +130,7 @@ public class NotBetween extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
-     * String prop = condition.getPropName(); // Returns "age"
+     * String prop = condition.getPropName();  // Returns "age"
      * }</pre>
      *
      * @return the property name
@@ -147,7 +147,7 @@ public class NotBetween extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("temperature", 36.0, 37.5);
-     * Double min = condition.getMinValue(); // Returns 36.0
+     * Double min = condition.getMinValue();  // Returns 36.0
      * }</pre>
      *
      * @param <T> the type of the minimum value
@@ -166,7 +166,7 @@ public class NotBetween extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
-     * condition.setMinValue(21); // Not recommended - creates mutable state
+     * condition.setMinValue(21);  // Not recommended - creates mutable state
      * }</pre>
      *
      * @param minValue the new minimum value to set
@@ -186,7 +186,7 @@ public class NotBetween extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("temperature", 36.0, 37.5);
-     * Double max = condition.getMaxValue(); // Returns 37.5
+     * Double max = condition.getMaxValue();  // Returns 37.5
      * }</pre>
      *
      * @param <T> the type of the maximum value
@@ -205,7 +205,7 @@ public class NotBetween extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
-     * condition.setMaxValue(70); // Not recommended - creates mutable state
+     * condition.setMaxValue(70);  // Not recommended - creates mutable state
      * }</pre>
      *
      * @param maxValue the new maximum value to set
@@ -225,7 +225,7 @@ public class NotBetween extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
-     * List<Object> params = condition.getParameters(); // Returns [18, 65]
+     * List<Object> params = condition.getParameters();  // Returns [18, 65]
      * }</pre>
      *
      * @return list containing the min and max values or their parameters
@@ -258,9 +258,9 @@ public class NotBetween extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
-     * List<Object> parameters = condition.getParameters(); // Returns [18, 65]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null]
+     * List<Object> parameters = condition.getParameters();  // Returns [18, 65]
+     * condition.clearParameters();  // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters();  // Returns [null, null]
      * }</pre>
      */
     @Override
@@ -339,7 +339,7 @@ public class NotBetween extends AbstractCondition {
      * <pre>{@code
      * NotBetween c1 = new NotBetween("age", 18, 65);
      * NotBetween c2 = new NotBetween("age", 18, 65);
-     * assert c1.hashCode() == c2.hashCode(); // true
+     * assert c1.hashCode() == c2.hashCode();  // true
      * }</pre>
      *
      * @return hash code based on property name, operator, and range values
@@ -362,10 +362,10 @@ public class NotBetween extends AbstractCondition {
      * <pre>{@code
      * NotBetween c1 = new NotBetween("age", 18, 65);
      * NotBetween c2 = new NotBetween("age", 18, 65);
-     * assert c1.equals(c2); // true
+     * assert c1.equals(c2);  // true
      *
      * NotBetween c3 = new NotBetween("age", 20, 65);
-     * assert !c1.equals(c3); // false - different minValue
+     * assert !c1.equals(c3);  // false - different minValue
      * }</pre>
      *
      * @param obj the object to compare with

@@ -62,7 +62,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * query.where(combined);
  * 
  * // Get parameters for prepared statements
- * List<Object> params = combined.getParameters(); // [18, "active"]
+ * List<Object> params = combined.getParameters();  // [18, "active"]
  * }</pre>
  * 
  * @see Filters
@@ -80,13 +80,13 @@ public interface Condition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition eq = Filters.eq("name", "John");
-     * Operator op1 = eq.getOperator(); // Returns Operator.EQUAL
+     * Operator op1 = eq.getOperator();  // Returns Operator.EQUAL
      * 
      * Condition gt = Filters.gt("age", 18);
-     * Operator op2 = gt.getOperator(); // Returns Operator.GREATER_THAN
+     * Operator op2 = gt.getOperator();  // Returns Operator.GREATER_THAN
      * 
      * Condition and = eq.and(gt);
-     * Operator op3 = and.getOperator(); // Returns Operator.AND
+     * Operator op3 = and.getOperator();  // Returns Operator.AND
      * }</pre>
      * 
      * @return the operator for this condition
@@ -223,9 +223,9 @@ public interface Condition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition condition = Filters.between("age", 18, 65);
-     * List<Object> parameters = condition.getParameters(); // Returns [18, 65]
-     * condition.clearParameters(); // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters(); // Returns [null, null]
+     * List<Object> parameters = condition.getParameters();  // Returns [18, 65]
+     * condition.clearParameters();  // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters();  // Returns [null, null]
      * }</pre>
      */
     void clearParameters();

@@ -379,11 +379,11 @@ public enum Operator {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Operator eq = Operator.getOperator("=");        // Returns EQUAL
-     * Operator and = Operator.getOperator("AND");     // Returns AND
-     * Operator gt = Operator.getOperator(">");        // Returns GREATER_THAN
-     * Operator like = Operator.getOperator("like");   // Returns LIKE (case-insensitive)
-     * Operator unknown = Operator.getOperator("XYZ"); // Returns null (not found)
+     * Operator eq = Operator.getOperator("=");  // Returns EQUAL
+     * Operator and = Operator.getOperator("AND");  // Returns AND
+     * Operator gt = Operator.getOperator(">");  // Returns GREATER_THAN
+     * Operator like = Operator.getOperator("like");  // Returns LIKE (case-insensitive)
+     * Operator unknown = Operator.getOperator("XYZ");  // Returns null (not found)
      * }</pre>
      *
      * @param name the string representation of the operator. Can be null.
@@ -421,10 +421,10 @@ public enum Operator {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Operator eq = Operator.EQUAL;
-     * String opStr = eq.getName(); // Returns "="
+     * String opStr = eq.getName();  // Returns "="
      *
      * Operator and = Operator.AND;
-     * String andStr = and.getName(); // Returns "AND"
+     * String andStr = and.getName();  // Returns "AND"
      * }</pre>
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
@@ -440,9 +440,9 @@ public enum Operator {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Operator like = Operator.LIKE;
-     * System.out.println(like); // Prints: LIKE
+     * System.out.println(like);  // Prints: LIKE
      *
-     * String sql = "column " + Operator.EQUAL + " ?"; // "column = ?"
+     * String sql = "column " + Operator.EQUAL + " ?";  // "column = ?"
      * }</pre>
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
