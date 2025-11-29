@@ -163,8 +163,8 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().where(Filters.eq("status", "active"));
-     * Cell where = criteria.getWhere();  // Returns the WHERE clause
-     * Condition condition = where.getCondition();  // Gets the wrapped condition
+     * Cell where = criteria.getWhere();             // Returns the WHERE clause
+     * Condition condition = where.getCondition();   // Gets the wrapped condition
      * }</pre>
      * 
      * @return the Where condition, or null if not set
@@ -265,8 +265,8 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().limit(10);
-     * Limit limit = criteria.getLimit();  // Returns the LIMIT clause
-     * int count = limit.getCount();  // Returns 10
+     * Limit limit = criteria.getLimit();   // Returns the LIMIT clause
+     * int count = limit.getCount();        // Returns 10
      * }</pre>
      * 
      * @return the Limit condition, or null if not set
@@ -471,9 +471,9 @@ public class Criteria extends AbstractCondition {
      * Criteria criteria = new Criteria()
      *     .where(Filters.eq("status", "active"))
      *     .having(Filters.gt("COUNT(*)", 5));
-     * List<Object> parameters = criteria.getParameters();  // Returns ["active", 5]
-     * criteria.clearParameters();  // All parameters become null
-     * List<Object> updatedParameters = criteria.getParameters();  // Returns [null, null]
+     * List<Object> parameters = criteria.getParameters();          // Returns ["active", 5]
+     * criteria.clearParameters();                                  // All parameters become null
+     * List<Object> updatedParameters = criteria.getParameters();   // Returns [null, null]
      * }</pre>
      */
     @Override

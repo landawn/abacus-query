@@ -258,9 +258,9 @@ public class NotBetween extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = new NotBetween("age", 18, 65);
-     * List<Object> parameters = condition.getParameters();  // Returns [18, 65]
-     * condition.clearParameters();  // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters();  // Returns [null, null]
+     * List<Object> parameters = condition.getParameters();          // Returns [18, 65]
+     * condition.clearParameters();                                  // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters();   // Returns [null, null]
      * }</pre>
      */
     @Override

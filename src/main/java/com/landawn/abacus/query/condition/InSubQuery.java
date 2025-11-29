@@ -269,9 +269,9 @@ public class InSubQuery extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Object> parameters = condition.getParameters();  // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters();  // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters();  // Returns [null, null, null, null, null]
+     * List<Object> parameters = condition.getParameters();          // e.g., [1, 2, 3, 4, 5]
+     * condition.clearParameters();                                  // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters();   // Returns [null, null, null, null, null]
      * }</pre>
      */
     @Override

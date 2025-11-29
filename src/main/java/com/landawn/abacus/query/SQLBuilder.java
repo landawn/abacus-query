@@ -13557,36 +13557,36 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     }
 
     /**
-    * Named SQL builder with lower camel case field/column naming strategy.
-    * This builder generates SQL with named parameters (e.g., :paramName) and preserves
-    * property names in lowerCamelCase format.
-    * 
-    * <p>The NLC builder is ideal for applications that use camelCase naming conventions
-    * in their Java code and want to maintain this convention in their SQL queries.
-    * Named parameters make the generated SQL more readable and easier to debug.</p>
-    * 
-    * <p>Key features:</p>
-    * <ul>
-    *   <li>Generates named parameters instead of positional parameters (?)</li>
-    *   <li>Preserves lowerCamelCase property names without conversion</li>
-    *   <li>Supports all standard SQL operations (SELECT, INSERT, UPDATE, DELETE)</li>
-    *   <li>Integrates with entity classes using annotations</li>
-    * </ul>
-    *
-    * <p><b>Usage Examples:</b></p>
-    * <pre>{@code
-    * // Simple SELECT with named parameters
-    * N.println(NLC.select("firstName", "lastName").from("account").where(Filters.eq("id", 1)).sql());
-    * // Output: SELECT firstName, lastName FROM account WHERE id = :id
-    * 
-    * // INSERT with entity
-    * Account account = new Account();
-    * account.setFirstName("John");
-    * account.setLastName("Doe");
-    * String sql = NLC.insert(account).into("account").sql();
-    * // Output: INSERT INTO account (firstName, lastName) VALUES (:firstName, :lastName)
-    * }</pre>
-    */
+     * Named SQL builder with lower camel case field/column naming strategy.
+     * This builder generates SQL with named parameters (e.g., :paramName) and preserves
+     * property names in lowerCamelCase format.
+     * 
+     * <p>The NLC builder is ideal for applications that use camelCase naming conventions
+     * in their Java code and want to maintain this convention in their SQL queries.
+     * Named parameters make the generated SQL more readable and easier to debug.</p>
+     * 
+     * <p>Key features:</p>
+     * <ul>
+     *   <li>Generates named parameters instead of positional parameters (?)</li>
+     *   <li>Preserves lowerCamelCase property names without conversion</li>
+     *   <li>Supports all standard SQL operations (SELECT, INSERT, UPDATE, DELETE)</li>
+     *   <li>Integrates with entity classes using annotations</li>
+     * </ul>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Simple SELECT with named parameters
+     * N.println(NLC.select("firstName", "lastName").from("account").where(Filters.eq("id", 1)).sql());
+     * // Output: SELECT firstName, lastName FROM account WHERE id = :id
+     * 
+     * // INSERT with entity
+     * Account account = new Account();
+     * account.setFirstName("John");
+     * account.setLastName("Doe");
+     * String sql = NLC.insert(account).into("account").sql();
+     * // Output: INSERT INTO account (firstName, lastName) VALUES (:firstName, :lastName)
+     * }</pre>
+     */
     public static class NLC extends SQLBuilder {
 
         /**
@@ -16145,32 +16145,32 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     }
 
     /**
-    * MyBatis-style SQL builder with snake_case field/column naming strategy.
-    * This class automatically converts camelCase property names to snake_case column names.
-    * 
-    * <p>This builder is ideal for databases that follow the snake_case naming convention
-    * (e.g., user_name, first_name) while keeping Java property names in camelCase.</p>
-    *
-    * <p><b>Usage Examples:</b></p>
-    * <pre>{@code
-    * // Property names are automatically converted to snake_case
-    * String sql = MSC.select("firstName", "lastName")
-    *                 .from("account")
-    *                 .where(Filters.eq("userId", 1))
-    *                 .sql();
-    * // Output: SELECT first_name AS "firstName", last_name AS "lastName" 
-    * //         FROM account WHERE user_id = #{userId}
-    * 
-    * // INSERT with entity
-    * Account account = new Account();
-    * account.setFirstName("John");
-    * account.setLastName("Doe");
-    * String sql = MSC.insert(account).into("account").sql();
-    * // Output: INSERT INTO account (first_name, last_name) VALUES (#{firstName}, #{lastName})
-    * }</pre>
-    * 
-    * @deprecated Use {@link NSC} or other non-deprecated builders instead
-    */
+     * MyBatis-style SQL builder with snake_case field/column naming strategy.
+     * This class automatically converts camelCase property names to snake_case column names.
+     * 
+     * <p>This builder is ideal for databases that follow the snake_case naming convention
+     * (e.g., user_name, first_name) while keeping Java property names in camelCase.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Property names are automatically converted to snake_case
+     * String sql = MSC.select("firstName", "lastName")
+     *                 .from("account")
+     *                 .where(Filters.eq("userId", 1))
+     *                 .sql();
+     * // Output: SELECT first_name AS "firstName", last_name AS "lastName" 
+     * //         FROM account WHERE user_id = #{userId}
+     * 
+     * // INSERT with entity
+     * Account account = new Account();
+     * account.setFirstName("John");
+     * account.setLastName("Doe");
+     * String sql = MSC.insert(account).into("account").sql();
+     * // Output: INSERT INTO account (first_name, last_name) VALUES (#{firstName}, #{lastName})
+     * }</pre>
+     * 
+     * @deprecated Use {@link NSC} or other non-deprecated builders instead
+     */
     @Deprecated
     public static class MSC extends SQLBuilder {
 

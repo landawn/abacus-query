@@ -193,9 +193,9 @@ public class OrderBy extends Clause {
      * <pre>{@code
      * // Requires: import java.util.LinkedHashMap;
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
-     * orders.put("isActive", SortDirection.DESC);  // Active records first
-     * orders.put("priority", SortDirection.DESC);  // High priority first
-     * orders.put("created", SortDirection.ASC);  // Oldest first
+     * orders.put("isActive", SortDirection.DESC);   // Active records first
+     * orders.put("priority", SortDirection.DESC);   // High priority first
+     * orders.put("created", SortDirection.ASC);     // Oldest first
      * OrderBy orderBy = new OrderBy(orders);
      * // SQL: ORDER BY isActive DESC, priority DESC, created ASC
      * }</pre>

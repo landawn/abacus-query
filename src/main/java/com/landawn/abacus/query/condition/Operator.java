@@ -379,11 +379,11 @@ public enum Operator {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Operator eq = Operator.getOperator("=");  // Returns EQUAL
-     * Operator and = Operator.getOperator("AND");  // Returns AND
-     * Operator gt = Operator.getOperator(">");  // Returns GREATER_THAN
-     * Operator like = Operator.getOperator("like");  // Returns LIKE (case-insensitive)
-     * Operator unknown = Operator.getOperator("XYZ");  // Returns null (not found)
+     * Operator eq = Operator.getOperator("=");          // Returns EQUAL
+     * Operator and = Operator.getOperator("AND");       // Returns AND
+     * Operator gt = Operator.getOperator(">");          // Returns GREATER_THAN
+     * Operator like = Operator.getOperator("like");     // Returns LIKE (case-insensitive)
+     * Operator unknown = Operator.getOperator("XYZ");   // Returns null (not found)
      * }</pre>
      *
      * @param name the string representation of the operator. Can be null.

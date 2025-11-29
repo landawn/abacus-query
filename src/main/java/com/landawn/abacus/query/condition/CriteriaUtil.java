@@ -116,10 +116,10 @@ public final class CriteriaUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * boolean isClause = CriteriaUtil.isClause(Operator.WHERE);  // true
-     * boolean isClause2 = CriteriaUtil.isClause(Operator.GROUP_BY);  // true
-     * boolean notClause = CriteriaUtil.isClause(Operator.EQUAL);  // false
-     * boolean notClause2 = CriteriaUtil.isClause(Operator.GREATER_THAN);  // false
+     * boolean isClause = CriteriaUtil.isClause(Operator.WHERE);            // true
+     * boolean isClause2 = CriteriaUtil.isClause(Operator.GROUP_BY);        // true
+     * boolean notClause = CriteriaUtil.isClause(Operator.EQUAL);           // false
+     * boolean notClause2 = CriteriaUtil.isClause(Operator.GREATER_THAN);   // false
      * }</pre>
      * 
      * @param operator the operator to check
@@ -135,10 +135,10 @@ public final class CriteriaUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * boolean isClause = CriteriaUtil.isClause("WHERE");  // true
-     * boolean isClause2 = CriteriaUtil.isClause("LEFT JOIN");  // true
-     * boolean notClause = CriteriaUtil.isClause("=");  // false
-     * boolean notClause2 = CriteriaUtil.isClause("LIKE");  // false
+     * boolean isClause = CriteriaUtil.isClause("WHERE");        // true
+     * boolean isClause2 = CriteriaUtil.isClause("LEFT JOIN");   // true
+     * boolean notClause = CriteriaUtil.isClause("=");           // false
+     * boolean notClause2 = CriteriaUtil.isClause("LIKE");       // false
      * }</pre>
      * 
      * @param operator the operator string to check

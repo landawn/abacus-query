@@ -146,9 +146,9 @@ public final class QueryUtil {
      * // Given a User entity with property 'userName' mapped to column 'user_name'
      * ImmutableMap<String, String> columnMap = QueryUtil.getColumn2PropNameMap(User.class);
      *
-     * String propName = columnMap.get("user_name");  // returns "userName"
-     * String propName2 = columnMap.get("USER_NAME");  // returns "userName"
-     * String propName3 = columnMap.get("User_Name");  // returns null (only exact, lower, upper stored)
+     * String propName = columnMap.get("user_name");    // returns "userName"
+     * String propName2 = columnMap.get("USER_NAME");   // returns "userName"
+     * String propName3 = columnMap.get("User_Name");   // returns null (only exact, lower, upper stored)
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be null)
@@ -194,9 +194,9 @@ public final class QueryUtil {
      * ImmutableMap<String, String> propMap = QueryUtil.getProp2ColumnNameMap(
      *     User.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
      *
-     * String columnName = propMap.get("firstName");  // returns "first_name"
-     * String columnName2 = propMap.get("lastName");  // returns "last_name"
-     * String columnName3 = propMap.get("address.street");  // returns "address.street"
+     * String columnName = propMap.get("firstName");         // returns "first_name"
+     * String columnName2 = propMap.get("lastName");         // returns "last_name"
+     * String columnName3 = propMap.get("address.street");   // returns "address.street"
      * }</pre>
      *
      * @param entityClass the entity class to analyze

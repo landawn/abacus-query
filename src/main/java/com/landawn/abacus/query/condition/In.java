@@ -240,9 +240,9 @@ public class In extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In in = new In("status", Arrays.asList("active", "pending", "review"));
-     * List<Object> parameters = in.getParameters();  // Returns [active, pending, review]
-     * in.clearParameters();  // All values become null
-     * List<Object> updatedParameters = in.getParameters();  // Returns [null, null, null]
+     * List<Object> parameters = in.getParameters();          // Returns [active, pending, review]
+     * in.clearParameters();                                  // All values become null
+     * List<Object> updatedParameters = in.getParameters();   // Returns [null, null, null]
      * }</pre>
      */
     @SuppressWarnings("rawtypes")

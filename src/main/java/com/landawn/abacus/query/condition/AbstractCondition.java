@@ -280,10 +280,10 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * parameter2String("John", NamingPolicy.NO_CHANGE);  // Returns: 'John'
-     * parameter2String(123, NamingPolicy.NO_CHANGE);  // Returns: 123
-     * parameter2String(null, NamingPolicy.NO_CHANGE);  // Returns: null
-     * parameter2String(subCondition, NamingPolicy.NO_CHANGE);  // Returns: subCondition.toString(policy)
+     * parameter2String("John", NamingPolicy.NO_CHANGE);         // Returns: 'John'
+     * parameter2String(123, NamingPolicy.NO_CHANGE);            // Returns: 123
+     * parameter2String(null, NamingPolicy.NO_CHANGE);           // Returns: null
+     * parameter2String(subCondition, NamingPolicy.NO_CHANGE);   // Returns: subCondition.toString(policy)
      * }</pre>
      *
      * @param parameter the parameter value to convert
@@ -326,10 +326,10 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * concatPropNames("name");  // Returns: name
-     * concatPropNames("city", "state");  // Returns: (city, state)
-     * concatPropNames("a", "b", "c");  // Returns: (a, b, c)
-     * concatPropNames();  // Returns: ""
+     * concatPropNames("name");            // Returns: name
+     * concatPropNames("city", "state");   // Returns: (city, state)
+     * concatPropNames("a", "b", "c");     // Returns: (a, b, c)
+     * concatPropNames();                  // Returns: ""
      * }</pre>
      *
      * @param propNames the property names to concatenate (varargs, can be empty)

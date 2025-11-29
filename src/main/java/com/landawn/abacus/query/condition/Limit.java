@@ -240,8 +240,8 @@ public class Limit extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit = new Limit(10);
-     * limit.clearParameters();  // Does nothing - no parameters to clear
-     * List<Object> parameters = limit.getParameters();  // Returns empty list
+     * limit.clearParameters();                           // Does nothing - no parameters to clear
+     * List<Object> parameters = limit.getParameters();   // Returns empty list
      * }</pre>
      */
     @Override

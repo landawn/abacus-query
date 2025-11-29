@@ -504,9 +504,9 @@ public final class SQLParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT   name,   age FROM users";
-     * String word1 = SQLParser.nextWord(sql, 6);  // Returns: "name" (skips spaces after SELECT)
-     * String word2 = SQLParser.nextWord(sql, 13);  // Returns: ","
-     * String word3 = SQLParser.nextWord(sql, 14);  // Returns: "age" (skips spaces after comma)
+     * String word1 = SQLParser.nextWord(sql, 6);    // Returns: "name" (skips spaces after SELECT)
+     * String word2 = SQLParser.nextWord(sql, 13);   // Returns: ","
+     * String word3 = SQLParser.nextWord(sql, 14);   // Returns: "age" (skips spaces after comma)
      * }</pre>
      * 
      * @param sql the SQL statement to extract the word from
@@ -590,8 +590,8 @@ public final class SQLParser {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLParser.registerSeparator("<=>");  // Register the NULL-safe equal operator
-     * SQLParser.registerSeparator("::");  // Register PostgreSQL cast operator
+     * SQLParser.registerSeparator("<=>");   // Register the NULL-safe equal operator
+     * SQLParser.registerSeparator("::");    // Register PostgreSQL cast operator
      * }</pre>
      *
      * @param separator the string to register as a separator (must not be null)
@@ -621,8 +621,8 @@ public final class SQLParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "WHERE id = #{userId} AND age > 25";
-     * boolean isSep1 = SQLParser.isSeparator(sql, sql.length(), 9, '=');  // Returns: true
-     * boolean isSep2 = SQLParser.isSeparator(sql, sql.length(), 11, '#');  // Returns: false (part of #{userId})
+     * boolean isSep1 = SQLParser.isSeparator(sql, sql.length(), 9, '=');    // Returns: true
+     * boolean isSep2 = SQLParser.isSeparator(sql, sql.length(), 11, '#');   // Returns: false (part of #{userId})
      * }</pre>
      * 
      * @param str the SQL string being parsed
@@ -652,9 +652,9 @@ public final class SQLParser {
      * List<String> words = SQLParser.parse("SELECT COUNT(*), MAX(age) FROM users");
      * // Assuming words = ["SELECT", " ", "COUNT", "(", "*", ")", ",", " ", "MAX", "(", "age", ")", " ", "FROM", " ", "users"]
      * int len = words.size();
-     * boolean isFunc1 = SQLParser.isFunctionName(words, len, 2);  // Returns: true (COUNT)
-     * boolean isFunc2 = SQLParser.isFunctionName(words, len, 8);  // Returns: true (MAX)
-     * boolean isFunc3 = SQLParser.isFunctionName(words, len, 15);  // Returns: false (users)
+     * boolean isFunc1 = SQLParser.isFunctionName(words, len, 2);    // Returns: true (COUNT)
+     * boolean isFunc2 = SQLParser.isFunctionName(words, len, 8);    // Returns: true (MAX)
+     * boolean isFunc3 = SQLParser.isFunctionName(words, len, 15);   // Returns: false (users)
      * }</pre>
      * 
      * @param words the list of parsed SQL words/tokens

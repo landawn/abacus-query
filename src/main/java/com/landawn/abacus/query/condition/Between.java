@@ -268,8 +268,8 @@ public class Between extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between between = new Between("age", 18, 65);
-     * between.clearParameters();  // Both minValue and maxValue become null
-     * List<Object> parameters = between.getParameters();  // Returns [null, null]
+     * between.clearParameters();                           // Both minValue and maxValue become null
+     * List<Object> parameters = between.getParameters();   // Returns [null, null]
      *
      * // With nested condition
      * SubQuery minSubQuery = Filters.subQuery("SELECT MIN(id) FROM table");

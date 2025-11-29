@@ -344,8 +344,8 @@ public final class ParsedSql {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("INSERT INTO orders (user_id, product_id, qty) VALUES (:userId, :productId, :qty)");
-     * int jdbcCount = parsed.getParameterCount(false);  // Returns: 3
-     * int couchbaseCount = parsed.getParameterCount(true);  // Returns: 3
+     * int jdbcCount = parsed.getParameterCount(false);       // Returns: 3
+     * int couchbaseCount = parsed.getParameterCount(true);   // Returns: 3
      * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase parameter count, {@code false} for standard count
@@ -461,9 +461,9 @@ public final class ParsedSql {
      * ParsedSql ps2 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
      * ParsedSql ps3 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
      *
-     * boolean result1 = ps1.equals(ps2);  // Returns: true (same SQL)
-     * boolean result2 = ps1.equals(ps3);  // Returns: false (different SQL)
-     * boolean result3 = ps1.equals(null);  // Returns: false
+     * boolean result1 = ps1.equals(ps2);    // Returns: true (same SQL)
+     * boolean result2 = ps1.equals(ps3);    // Returns: false (different SQL)
+     * boolean result3 = ps1.equals(null);   // Returns: false
      * }</pre>
      *
      * @param obj the reference object with which to compare

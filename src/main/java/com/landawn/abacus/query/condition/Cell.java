@@ -150,9 +150,9 @@ public class Cell extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell = new Cell(Operator.NOT, Filters.between("age", 18, 65));
-     * List<Object> parameters = cell.getParameters();  // Returns [18, 65]
-     * cell.clearParameters();  // All parameters become null
-     * List<Object> updatedParameters = cell.getParameters();  // Returns [null, null]
+     * List<Object> parameters = cell.getParameters();          // Returns [18, 65]
+     * cell.clearParameters();                                  // All parameters become null
+     * List<Object> updatedParameters = cell.getParameters();   // Returns [null, null]
      * }</pre>
      */
     @Override

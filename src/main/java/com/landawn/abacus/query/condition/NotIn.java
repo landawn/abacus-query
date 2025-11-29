@@ -229,9 +229,9 @@ public class NotIn extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived", "suspended"));
-     * List<Object> parameters = condition.getParameters();  // Returns [deleted, archived, suspended]
-     * condition.clearParameters();  // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters();  // Returns [null, null, null]
+     * List<Object> parameters = condition.getParameters();          // Returns [deleted, archived, suspended]
+     * condition.clearParameters();                                  // All parameters become null
+     * List<Object> updatedParameters = condition.getParameters();   // Returns [null, null, null]
      * }</pre>
      */
     @SuppressWarnings("rawtypes")

@@ -160,10 +160,10 @@ public enum SQLOperation {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLOperation selectOp = SQLOperation.of("SELECT");  // returns SELECT
-     * SQLOperation insertOp = SQLOperation.of("INSERT");  // returns INSERT
-     * SQLOperation mergeOp = SQLOperation.of("MERGE");  // returns MERGE
-     * SQLOperation unknownOp = SQLOperation.of("TRUNCATE");  // returns null (not supported)
+     * SQLOperation selectOp = SQLOperation.of("SELECT");      // returns SELECT
+     * SQLOperation insertOp = SQLOperation.of("INSERT");      // returns INSERT
+     * SQLOperation mergeOp = SQLOperation.of("MERGE");        // returns MERGE
+     * SQLOperation unknownOp = SQLOperation.of("TRUNCATE");   // returns null (not supported)
      * }</pre>
      *
      * @param name the SQL operation name to look up (case-sensitive)
