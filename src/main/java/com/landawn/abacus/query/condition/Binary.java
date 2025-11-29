@@ -108,10 +108,10 @@ public class Binary extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("userName", "John");
-     * String prop = condition.getPropName();  // Returns "userName"
+     * String prop = condition.getPropName();   // Returns "userName"
      * 
      * Binary ageCheck = new GreaterThan("age", 18);
-     * String ageProp = ageCheck.getPropName();  // Returns "age"
+     * String ageProp = ageCheck.getPropName();   // Returns "age"
      * }</pre>
      * 
      * @return the property name
@@ -128,14 +128,14 @@ public class Binary extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("age", 25);
-     * Integer age = condition.getPropValue();  // Returns 25
+     * Integer age = condition.getPropValue();   // Returns 25
      * 
      * Binary strCondition = new Like("name", "%John%");
-     * String pattern = strCondition.getPropValue();  // Returns "%John%"
+     * String pattern = strCondition.getPropValue();   // Returns "%John%"
      * 
      * // For subquery conditions
      * Binary subCondition = new In("id", subQuery);
-     * SubQuery sq = subCondition.getPropValue();  // Returns the SubQuery
+     * SubQuery sq = subCondition.getPropValue();   // Returns the SubQuery
      * }</pre>
      * 
      * @param <T> the expected type of the value
@@ -175,14 +175,14 @@ public class Binary extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = new Equal("status", "active");
-     * List<Object> params = condition.getParameters();  // Returns ["active"]
+     * List<Object> params = condition.getParameters();   // Returns ["active"]
      *
      * Binary numCondition = new GreaterThan("age", 18);
-     * List<Object> numParams = numCondition.getParameters();  // Returns [18]
+     * List<Object> numParams = numCondition.getParameters();   // Returns [18]
      *
      * // For subquery conditions
      * Binary inSubquery = new InSubQuery("id", subQuery);
-     * List<Object> subParams = inSubquery.getParameters();  // Returns subquery's parameters
+     * List<Object> subParams = inSubquery.getParameters();   // Returns subquery's parameters
      * }</pre>
      *
      * @return a list of parameter values
@@ -206,11 +206,11 @@ public class Binary extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary eq = new Binary("age", Operator.EQUAL, 25);
-     * eq.clearParameters();  // propValue becomes null
+     * eq.clearParameters();   // propValue becomes null
      *
      * // With nested condition
      * Binary withSubquery = new Binary("id", Operator.IN, new SubQuery("SELECT id FROM users"));
-     * withSubquery.clearParameters();  // Delegates to SubQuery.clearParameters()
+     * withSubquery.clearParameters();   // Delegates to SubQuery.clearParameters()
      * }</pre>
      */
     @Override
@@ -287,7 +287,7 @@ public class Binary extends AbstractCondition {
      * <pre>{@code
      * Binary c1 = new Equal("name", "John");
      * Binary c2 = new Equal("name", "John");
-     * boolean sameHash = c1.hashCode() == c2.hashCode();  // true
+     * boolean sameHash = c1.hashCode() == c2.hashCode();   // true
      * }</pre>
      * 
      * @return the hash code value
@@ -308,13 +308,13 @@ public class Binary extends AbstractCondition {
      * <pre>{@code
      * Binary c1 = new Equal("name", "John");
      * Binary c2 = new Equal("name", "John");
-     * boolean isEqual = c1.equals(c2);  // Returns true
+     * boolean isEqual = c1.equals(c2);   // Returns true
      * 
      * Binary c3 = new Equal("name", "Jane");
-     * boolean isDifferent = c1.equals(c3);  // Returns false
+     * boolean isDifferent = c1.equals(c3);   // Returns false
      * 
      * Binary c4 = new GreaterThan("name", "John");
-     * boolean diffOperator = c1.equals(c4);  // Returns false
+     * boolean diffOperator = c1.equals(c4);   // Returns false
      * }</pre>
      * 
      * @param obj the object to compare with

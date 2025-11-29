@@ -569,7 +569,7 @@ public final class SQLParser {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLParser.registerSeparator('$');  // Register $ as a separator
+     * SQLParser.registerSeparator('$');   // Register $ as a separator
      * List<String> words = SQLParser.parse("SELECT$FROM$users");
      * // Result: ["SELECT", "$", "FROM", "$", "users"]
      * }</pre>

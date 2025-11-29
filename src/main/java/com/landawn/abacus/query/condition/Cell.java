@@ -85,7 +85,7 @@ public class Cell extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * Condition condition = cell.getCondition();  // Returns the Equal condition
+     * Condition condition = cell.getCondition();   // Returns the Equal condition
      *
      * // For subqueries
      * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM products WHERE price > 100");
@@ -126,11 +126,11 @@ public class Cell extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Cell cell = new Cell(Operator.NOT, Filters.eq("name", "John"));
-     * List<Object> params = cell.getParameters();  // Returns ["John"]
+     * List<Object> params = cell.getParameters();   // Returns ["John"]
      * 
      * // For complex conditions
      * Cell notBetween = new Cell(Operator.NOT, Filters.between("age", 18, 65));
-     * List<Object> params2 = notBetween.getParameters();  // Returns [18, 65]
+     * List<Object> params2 = notBetween.getParameters();   // Returns [18, 65]
      * }</pre>
      * 
      * @return a list of parameters from the wrapped condition, or an empty list if no condition is set
@@ -175,7 +175,7 @@ public class Cell extends AbstractCondition {
      * 
      * // Modifying the copy doesn't affect the original
      * copy.clearParameters();
-     * List<Object> originalParams = original.getParameters();  // Still contains ["active"]
+     * List<Object> originalParams = original.getParameters();   // Still contains ["active"]
      * }</pre>
      * 
      * @param <T> the type of condition to return
@@ -224,7 +224,7 @@ public class Cell extends AbstractCondition {
      * <pre>{@code
      * Cell cell1 = new Cell(Operator.NOT, Filters.eq("status", "active"));
      * Cell cell2 = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * boolean sameHash = cell1.hashCode() == cell2.hashCode();  // true
+     * boolean sameHash = cell1.hashCode() == cell2.hashCode();   // true
      * }</pre>
      * 
      * @return the hash code value
@@ -244,10 +244,10 @@ public class Cell extends AbstractCondition {
      * <pre>{@code
      * Cell cell1 = new Cell(Operator.NOT, Filters.eq("status", "active"));
      * Cell cell2 = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * boolean isEqual = cell1.equals(cell2);  // Returns true
+     * boolean isEqual = cell1.equals(cell2);   // Returns true
      * 
      * Cell cell3 = new Cell(Operator.EXISTS, Filters.eq("status", "active"));
-     * boolean isNotEqual = cell1.equals(cell3);  // Returns false (different operator)
+     * boolean isNotEqual = cell1.equals(cell3);   // Returns false (different operator)
      * }</pre>
      * 
      * @param obj the object to compare with

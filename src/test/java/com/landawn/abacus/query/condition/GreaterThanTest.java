@@ -121,8 +121,8 @@ public class GreaterThanTest extends TestBase {
 
         Assertions.assertEquals(gt1, gt1);
         Assertions.assertEquals(gt1, gt2);
-        Assertions.assertNotEquals(gt1, gt3); // Different value
-        Assertions.assertNotEquals(gt1, gt4); // Different property
+        Assertions.assertNotEquals(gt1, gt3);   // Different value
+        Assertions.assertNotEquals(gt1, gt4);   // Different property
         Assertions.assertNotEquals(gt1, null);
         Assertions.assertNotEquals(gt1, "string");
     }

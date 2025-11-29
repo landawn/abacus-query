@@ -62,7 +62,7 @@ public class AndTest extends TestBase {
         Assertions.assertNotNull(extended);
         Assertions.assertNotSame(and, extended);
         Assertions.assertEquals(2, extended.getConditions().size());
-        Assertions.assertEquals(1, and.getConditions().size()); // Original unchanged
+        Assertions.assertEquals(1, and.getConditions().size());   // Original unchanged
     }
 
     @Test

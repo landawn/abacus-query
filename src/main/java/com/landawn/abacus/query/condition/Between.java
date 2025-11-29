@@ -132,7 +132,7 @@ public class Between extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("age", 18, 65);
-     * String prop = condition.getPropName();  // Returns "age"
+     * String prop = condition.getPropName();   // Returns "age"
      * }</pre>
      * 
      * @return the property name
@@ -148,10 +148,10 @@ public class Between extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("price", 10.0, 50.0);
-     * Double min = condition.getMinValue();  // Returns 10.0
+     * Double min = condition.getMinValue();   // Returns 10.0
      * 
      * Between dateRange = new Between("date", date1, date2);
-     * LocalDate minDate = dateRange.getMinValue();  // Returns date1
+     * LocalDate minDate = dateRange.getMinValue();   // Returns date1
      * }</pre>
      * 
      * @param <T> the expected type of the minimum value
@@ -188,10 +188,10 @@ public class Between extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("price", 10.0, 50.0);
-     * Double max = condition.getMaxValue();  // Returns 50.0
+     * Double max = condition.getMaxValue();   // Returns 50.0
      * 
      * Between dateRange = new Between("date", date1, date2);
-     * LocalDate maxDate = dateRange.getMaxValue();  // Returns date2
+     * LocalDate maxDate = dateRange.getMaxValue();   // Returns date2
      * }</pre>
      * 
      * @param <T> the expected type of the maximum value
@@ -229,7 +229,7 @@ public class Between extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = new Between("age", 18, 65);
-     * List<Object> params = condition.getParameters();  // Returns [18, 65]
+     * List<Object> params = condition.getParameters();   // Returns [18, 65]
      * 
      * // With subqueries
      * Between subCondition = new Between("price", minSubQuery, maxSubQuery);
@@ -275,7 +275,7 @@ public class Between extends AbstractCondition {
      * SubQuery minSubQuery = Filters.subQuery("SELECT MIN(id) FROM table");
      * SubQuery maxSubQuery = Filters.subQuery("SELECT MAX(id) FROM table");
      * Between withSubquery = new Between("id", minSubQuery, maxSubQuery);
-     * withSubquery.clearParameters();  // Delegates to both SubQuery.clearParameters()
+     * withSubquery.clearParameters();   // Delegates to both SubQuery.clearParameters()
      * }</pre>
      */
     @Override
@@ -360,7 +360,7 @@ public class Between extends AbstractCondition {
      * <pre>{@code
      * Between b1 = new Between("age", 18, 65);
      * Between b2 = new Between("age", 18, 65);
-     * boolean sameHash = b1.hashCode() == b2.hashCode();  // true
+     * boolean sameHash = b1.hashCode() == b2.hashCode();   // true
      * }</pre>
      * 
      * @return the hash code value
@@ -383,10 +383,10 @@ public class Between extends AbstractCondition {
      * <pre>{@code
      * Between b1 = new Between("age", 18, 65);
      * Between b2 = new Between("age", 18, 65);
-     * boolean isEqual = b1.equals(b2);  // Returns true
+     * boolean isEqual = b1.equals(b2);   // Returns true
      * 
      * Between b3 = new Between("age", 21, 65);
-     * boolean isDifferent = b1.equals(b3);  // Returns false (different minValue)
+     * boolean isDifferent = b1.equals(b3);   // Returns false (different minValue)
      * }</pre>
      * 
      * @param obj the object to compare with

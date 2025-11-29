@@ -54,7 +54,7 @@ import com.landawn.abacus.util.Strings;
  * // Using logical operations inherited from AbstractCondition
  * Condition c1 = new Equal("status", "active");
  * Condition c2 = new GreaterThan("age", 18);
- * Condition combined = c1.and(c2);  // Inherited method
+ * Condition combined = c1.and(c2);   // Inherited method
  * }</pre>
  * 
  * @see Condition
@@ -86,7 +86,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <pre>{@code
      * // In a subclass constructor
      * public Equal(String propName, Object propValue) {
-     *     super(Operator.EQUAL);  // Sets the operator
+     *     super(Operator.EQUAL);   // Sets the operator
      *     this.propName = propName;
      *     this.propValue = propValue;
      * }
@@ -105,10 +105,10 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition condition = Filters.eq("status", "active");
-     * Operator op = condition.getOperator();  // Returns Operator.EQUAL
+     * Operator op = condition.getOperator();   // Returns Operator.EQUAL
      *
      * Condition andCondition = Filters.and(c1, c2);
-     * Operator andOp = andCondition.getOperator();  // Returns Operator.AND
+     * Operator andOp = andCondition.getOperator();   // Returns Operator.AND
      * }</pre>
      *
      * @return the operator for this condition
@@ -212,12 +212,12 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * // Using copy() on a condition
      * Condition original = Filters.eq("status", "active");
      * Condition copy = original.copy();
-     * copy.clearParameters();  // Doesn't affect original
+     * copy.clearParameters();   // Doesn't affect original
      *
      * // Example implementation in a subclass:
      * @Override
      * public <T extends Condition> T copy() {
-     *     Binary copy = super.copy();  // Shallow copy
+     *     Binary copy = super.copy();   // Shallow copy
      *     // Deep copy any mutable fields
      *     if (propValue instanceof Condition) {
      *         copy.propValue = ((Condition) propValue).copy();
@@ -393,13 +393,13 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> names = Arrays.asList("city", "state", "zip");
-     * concatPropNames(names);  // Returns: (city, state, zip)
+     * concatPropNames(names);   // Returns: (city, state, zip)
      *
      * Set<String> single = Collections.singleton("id");
-     * concatPropNames(single);  // Returns: id
+     * concatPropNames(single);   // Returns: id
      *
      * List<String> empty = Collections.emptyList();
-     * concatPropNames(empty);  // Returns: ""
+     * concatPropNames(empty);   // Returns: ""
      * }</pre>
      *
      * @param propNames the collection of property names to concatenate (can be empty)

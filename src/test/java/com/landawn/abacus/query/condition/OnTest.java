@@ -174,7 +174,7 @@ public class OnTest extends TestBase {
         Assertions.assertTrue(on1.equals(on1));
         Assertions.assertTrue(on1.equals(on2));
         Assertions.assertFalse(on1.equals(on3));
-        Assertions.assertTrue(on1.equals(on4)); // Same condition, different construction
+        Assertions.assertTrue(on1.equals(on4));   // Same condition, different construction
         Assertions.assertFalse(on1.equals(null));
         Assertions.assertFalse(on1.equals("not an On"));
     }

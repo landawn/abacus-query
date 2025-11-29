@@ -192,7 +192,7 @@ public class SQLOperationTest extends TestBase {
 
         // Test invalid enum name
         assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("INVALID"));
-        assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("select")); // Case sensitive
+        assertThrows(IllegalArgumentException.class, () -> SQLOperation.valueOf("select"));   // Case sensitive
     }
 
     @Test

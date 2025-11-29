@@ -155,7 +155,7 @@ public class Junction extends AbstractCondition {
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
         conditionList = new ArrayList<>();
-        add(conditions); // NOSONAR
+        add(conditions);   // NOSONAR
     }
 
     /**
@@ -343,7 +343,7 @@ public class Junction extends AbstractCondition {
      * <pre>{@code
      * Junction junction = new Junction(Operator.AND);
      * junction.add(new Equal("status", "active"));
-     * junction.clear();  // Junction is now empty
+     * junction.clear();   // Junction is now empty
      * }</pre>
      */
     public void clear() {
@@ -397,7 +397,7 @@ public class Junction extends AbstractCondition {
      *     new GreaterThan("age", 18),
      *     new In("role", Arrays.asList("admin", "moderator"))
      * );
-     * and.clearParameters();  // Recursively clears all child conditions
+     * and.clearParameters();   // Recursively clears all child conditions
      * }</pre>
      */
     @Override
@@ -422,7 +422,7 @@ public class Junction extends AbstractCondition {
      * );
      * 
      * Junction copy = original.copy();
-     * copy.add(new Equal("verified", true));  // Original is unaffected
+     * copy.add(new Equal("verified", true));   // Original is unaffected
      * }</pre>
      *
      * @param <T> the type of the condition
@@ -537,7 +537,7 @@ public class Junction extends AbstractCondition {
      *     new GreaterThan("age", 18)
      * );
      * 
-     * assert j1.equals(j2);  // true
+     * assert j1.equals(j2);   // true
      * }</pre>
      *
      * @param obj the object to compare with

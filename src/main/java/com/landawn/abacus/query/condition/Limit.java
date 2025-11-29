@@ -157,10 +157,10 @@ public class Limit extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit1 = new Limit("10 OFFSET 20");
-     * String expr = limit1.getExpr();  // Returns "10 OFFSET 20"
+     * String expr = limit1.getExpr();   // Returns "10 OFFSET 20"
      *
      * Limit limit2 = new Limit(10, 20);
-     * String expr2 = limit2.getExpr();  // Returns null
+     * String expr2 = limit2.getExpr();   // Returns null
      * }</pre>
      *
      * @return the custom expression string, or {@code null} if constructed with count/offset parameters
@@ -176,10 +176,10 @@ public class Limit extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit = new Limit(50, 20);
-     * int maxRows = limit.getCount();  // Returns 20
+     * int maxRows = limit.getCount();   // Returns 20
      *
      * Limit customLimit = new Limit("10 OFFSET 20");
-     * int count = customLimit.getCount();  // Returns Integer.MAX_VALUE
+     * int count = customLimit.getCount();   // Returns Integer.MAX_VALUE
      * }</pre>
      *
      * @return the row count limit, or {@link Integer#MAX_VALUE} if constructed with a custom expression
@@ -196,13 +196,13 @@ public class Limit extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit = new Limit(50, 20);
-     * int skip = limit.getOffset();  // Returns 50
+     * int skip = limit.getOffset();   // Returns 50
      *
      * Limit limitNoOffset = new Limit(10);
-     * int skip2 = limitNoOffset.getOffset();  // Returns 0
+     * int skip2 = limitNoOffset.getOffset();   // Returns 0
      *
      * Limit customLimit = new Limit("10 OFFSET 20");
-     * int skip3 = customLimit.getOffset();  // Returns 0
+     * int skip3 = customLimit.getOffset();   // Returns 0
      * }</pre>
      *
      * @return the offset value, or 0 if constructed with only count or with a custom expression
@@ -220,7 +220,7 @@ public class Limit extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit = new Limit(10);
-     * List<Object> params = limit.getParameters();  // Returns empty list
+     * List<Object> params = limit.getParameters();   // Returns empty list
      * }</pre>
      *
      * @return an empty list as LIMIT has no parameters
@@ -258,7 +258,7 @@ public class Limit extends AbstractCondition {
      * <pre>{@code
      * Limit limit = new Limit(10);
      * try {
-     *     limit.and(someCondition);  // Throws UnsupportedOperationException
+     *     limit.and(someCondition);   // Throws UnsupportedOperationException
      * } catch (UnsupportedOperationException e) {
      *     // Expected behavior
      * }
@@ -282,7 +282,7 @@ public class Limit extends AbstractCondition {
      * <pre>{@code
      * Limit limit = new Limit(10);
      * try {
-     *     limit.or(someCondition);  // Throws UnsupportedOperationException
+     *     limit.or(someCondition);   // Throws UnsupportedOperationException
      * } catch (UnsupportedOperationException e) {
      *     // Expected behavior
      * }
@@ -306,7 +306,7 @@ public class Limit extends AbstractCondition {
      * <pre>{@code
      * Limit limit = new Limit(10);
      * try {
-     *     limit.not();  // Throws UnsupportedOperationException
+     *     limit.not();   // Throws UnsupportedOperationException
      * } catch (UnsupportedOperationException e) {
      *     // Expected behavior
      * }
@@ -330,13 +330,13 @@ public class Limit extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit1 = new Limit(10);
-     * String sql1 = limit1.toString(NamingPolicy.LOWER_CASE);  // "LIMIT 10"
+     * String sql1 = limit1.toString(NamingPolicy.LOWER_CASE);   // "LIMIT 10"
      * 
      * Limit limit2 = new Limit(20, 10);
-     * String sql2 = limit2.toString(NamingPolicy.LOWER_CASE);  // "LIMIT 10 OFFSET 20"
+     * String sql2 = limit2.toString(NamingPolicy.LOWER_CASE);   // "LIMIT 10 OFFSET 20"
      * 
      * Limit limit3 = new Limit("FIRST 5 ROWS");
-     * String sql3 = limit3.toString(NamingPolicy.LOWER_CASE);  // "FIRST 5 ROWS"
+     * String sql3 = limit3.toString(NamingPolicy.LOWER_CASE);   // "FIRST 5 ROWS"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply (though LIMIT typically doesn't need name conversion)
@@ -391,11 +391,11 @@ public class Limit extends AbstractCondition {
      * <pre>{@code
      * Limit limit1 = new Limit(50, 20);
      * Limit limit2 = new Limit(50, 20);
-     * assert limit1.equals(limit2);  // true
+     * assert limit1.equals(limit2);   // true
      * 
      * Limit limit3 = new Limit("LIMIT 20 OFFSET 50");
      * Limit limit4 = new Limit("LIMIT 20 OFFSET 50");
-     * assert limit3.equals(limit4);  // true
+     * assert limit3.equals(limit4);   // true
      * }</pre>
      *
      * @param obj the object to compare with

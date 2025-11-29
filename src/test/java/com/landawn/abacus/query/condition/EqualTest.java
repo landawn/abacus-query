@@ -132,8 +132,8 @@ public class EqualTest extends TestBase {
 
         Assertions.assertEquals(eq1, eq1);
         Assertions.assertEquals(eq1, eq2);
-        Assertions.assertNotEquals(eq1, eq3); // Different value
-        Assertions.assertNotEquals(eq1, eq4); // Different property
+        Assertions.assertNotEquals(eq1, eq3);   // Different value
+        Assertions.assertNotEquals(eq1, eq4);   // Different property
         Assertions.assertNotEquals(eq1, null);
         Assertions.assertNotEquals(eq1, "string");
     }

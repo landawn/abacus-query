@@ -385,7 +385,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a parameterized condition
-     * Equal condition = Filters.eq("age");  // Uses QME internally
+     * Equal condition = Filters.eq("age");   // Uses QME internally
      * }</pre>
      */
     public static final Expression QME = Expr.of(SK.QUESTION_MARK);
@@ -729,7 +729,7 @@ public class Filters {
      * @throws IllegalArgumentException if selectPropNames is empty
      */
     public static Or eqOr(final Object entity, final Collection<String> selectPropNames) {
-        N.checkArgNotEmpty(selectPropNames, "selectPropNames"); //NOSONAR
+        N.checkArgNotEmpty(selectPropNames, "selectPropNames");   //NOSONAR
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
         final Iterator<String> iter = selectPropNames.iterator();

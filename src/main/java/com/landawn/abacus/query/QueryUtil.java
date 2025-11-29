@@ -261,7 +261,7 @@ public final class QueryUtil {
                             propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(), subTableAliasOrName + SK.PERIOD + entry.getValue());
                         }
 
-                        propColumnNameMap.remove(propInfo.name); // remove sub entity prop.
+                        propColumnNameMap.remove(propInfo.name);   // remove sub entity prop.
                     }
                 }
             }

@@ -421,10 +421,10 @@ public enum Operator {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Operator eq = Operator.EQUAL;
-     * String opStr = eq.getName();  // Returns "="
+     * String opStr = eq.getName();   // Returns "="
      *
      * Operator and = Operator.AND;
-     * String andStr = and.getName();  // Returns "AND"
+     * String andStr = and.getName();   // Returns "AND"
      * }</pre>
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
@@ -440,7 +440,7 @@ public enum Operator {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Operator like = Operator.LIKE;
-     * System.out.println(like);  // Prints: LIKE
+     * System.out.println(like);   // Prints: LIKE
      *
      * String sql = "column " + Operator.EQUAL + " ?";  // "column = ?"
      * }</pre>

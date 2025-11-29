@@ -351,7 +351,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected final SQLPolicy _sqlPolicy; //NOSONAR
 
-    protected final List<Object> _parameters = new ArrayList<>(); //NOSONAR
+    protected final List<Object> _parameters = new ArrayList<>();   //NOSONAR
 
     protected StringBuilder _sb; //NOSONAR
 
@@ -386,7 +386,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected final BiConsumer<StringBuilder, String> _handlerForNamedParameter; //NOSONAR
 
-    protected final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
+    protected final Set<String> calledOpSet = new HashSet<>();   //NOSONAR
 
     /**
      * Constructs a new SQLBuilder with the specified naming policy and SQL policy.
@@ -628,11 +628,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     val[3].remove(Beans.getPropNameByMethod(Beans.getPropGetMethod(entityClass, idPropName)));
                 }
 
-                val[0] = ImmutableSet.wrap(val[0]); // for select, including sub entity properties.
-                val[1] = ImmutableSet.wrap(val[1]); // for select, no sub entity properties.
-                val[2] = ImmutableSet.wrap(val[2]); // for insert with id
-                val[3] = ImmutableSet.wrap(val[3]); // for insert without id
-                val[4] = ImmutableSet.wrap(val[4]); // for update.
+                val[0] = ImmutableSet.wrap(val[0]);   // for select, including sub entity properties.
+                val[1] = ImmutableSet.wrap(val[1]);   // for select, no sub entity properties.
+                val[2] = ImmutableSet.wrap(val[2]);   // for insert with id
+                val[3] = ImmutableSet.wrap(val[3]);   // for insert without id
+                val[4] = ImmutableSet.wrap(val[4]);   // for update.
 
                 defaultPropNamesPool.put(entityClass, val);
             }
@@ -944,7 +944,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
 
                 default:
-                    throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy); //NOSONAR
+                    throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy);   //NOSONAR
             }
         } else if (N.notEmpty(_props)) {
             appendInsertProps(_props);
@@ -3607,7 +3607,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (N.isEmpty(excludedPropNames)) {
                 return set((Map<String, Object>) entity);
             }
-            final Map<String, Object> localProps = new LinkedHashMap<>((Map<String, Object>) entity); //NOSONAR
+            final Map<String, Object> localProps = new LinkedHashMap<>((Map<String, Object>) entity);   //NOSONAR
             Maps.removeKeys(localProps, excludedPropNames);
             return set(localProps);
         }

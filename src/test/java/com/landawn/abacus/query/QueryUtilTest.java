@@ -305,7 +305,7 @@ public class QueryUtilTest extends TestBase {
         // Test without exclusions
         Collection<String> props = QueryUtil.getUpdatePropNames(TestUser.class, excludedProps);
         assertNotNull(props);
-        assertTrue(props.contains("id")); // ID should be excluded from update
+        assertTrue(props.contains("id"));   // ID should be excluded from update
         assertTrue(props.contains("name"));
         assertFalse(props.contains("email"));
 

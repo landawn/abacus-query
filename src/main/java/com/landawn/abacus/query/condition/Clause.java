@@ -51,7 +51,7 @@ package com.landawn.abacus.query.condition;
  *     .having(Filters.gt("COUNT(*)", 5));
  *
  * // Cannot combine clauses with AND/OR/NOT
- * // where.and(having);  // This will throw UnsupportedOperationException
+ * // where.and(having);   // This will throw UnsupportedOperationException
  *
  * // Instead, combine conditions within a clause
  * Where complexWhere = new Where(
@@ -113,7 +113,7 @@ public abstract class Clause extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Wrong - trying to AND clauses
-     * // where.and(having);  // Throws UnsupportedOperationException
+     * // where.and(having);   // Throws UnsupportedOperationException
      *
      * // Correct - AND conditions within a clause
      * Where where = new Where(
@@ -144,7 +144,7 @@ public abstract class Clause extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Wrong - trying to OR clauses
-     * // where.or(orderBy);  // Throws UnsupportedOperationException
+     * // where.or(orderBy);   // Throws UnsupportedOperationException
      *
      * // Correct - OR conditions within a clause
      * Where where = new Where(
@@ -174,7 +174,7 @@ public abstract class Clause extends Cell {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Wrong - trying to negate a clause
-     * // where.not();  // Throws UnsupportedOperationException
+     * // where.not();   // Throws UnsupportedOperationException
      *
      * // Correct - NOT condition within a clause
      * Where where = new Where(

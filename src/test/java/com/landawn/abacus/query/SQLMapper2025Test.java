@@ -202,19 +202,19 @@ public class SQLMapper2025Test extends TestBase {
     @Test
     public void testRemoveNonExistent() {
         SQLMapper mapper = new SQLMapper();
-        mapper.remove("nonExistent"); // Should not throw
+        mapper.remove("nonExistent");   // Should not throw
     }
 
     @Test
     public void testRemoveEmptyId() {
         SQLMapper mapper = new SQLMapper();
-        mapper.remove(""); // Should not throw
+        mapper.remove("");   // Should not throw
     }
 
     @Test
     public void testRemoveNullId() {
         SQLMapper mapper = new SQLMapper();
-        mapper.remove(null); // Should not throw
+        mapper.remove(null);   // Should not throw
     }
 
     @Test

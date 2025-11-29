@@ -24,7 +24,7 @@ public class ExpressionTest extends TestBase {
         Expression expr1 = Expression.of("CURRENT_TIMESTAMP");
         Expression expr2 = Expression.of("CURRENT_TIMESTAMP");
 
-        Assertions.assertSame(expr1, expr2); // Should be cached
+        Assertions.assertSame(expr1, expr2);   // Should be cached
         Assertions.assertEquals("CURRENT_TIMESTAMP", expr1.getLiteral());
     }
 
@@ -434,7 +434,7 @@ public class ExpressionTest extends TestBase {
     @Test
     public void testClearParameters() {
         Expression expr = Expression.of("CURRENT_DATE");
-        expr.clearParameters(); // Should do nothing
+        expr.clearParameters();   // Should do nothing
 
         Assertions.assertEquals("CURRENT_DATE", expr.getLiteral());
     }

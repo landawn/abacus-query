@@ -124,7 +124,7 @@ public class NotIn extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
-     * String propName = condition.getPropName();  // Returns "status"
+     * String propName = condition.getPropName();   // Returns "status"
      * }</pre>
      *
      * @return the property name
@@ -142,10 +142,10 @@ public class NotIn extends AbstractCondition {
      * <pre>{@code
      * List<String> statuses = Arrays.asList("deleted", "archived", "suspended");
      * NotIn condition = new NotIn("status", statuses);
-     * List<?> values = condition.getValues();  // Returns ["deleted", "archived", "suspended"]
+     * List<?> values = condition.getValues();   // Returns ["deleted", "archived", "suspended"]
      *
      * // Check how many values are being excluded
-     * int count = condition.getValues().size();  // Returns 3
+     * int count = condition.getValues().size();   // Returns 3
      *
      * // Inspect the values (useful for debugging)
      * System.out.println("Excluding values: " + condition.getValues());
@@ -200,10 +200,10 @@ public class NotIn extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived", "suspended"));
-     * List<Object> params = condition.getParameters();  // Returns ["deleted", "archived", "suspended"]
+     * List<Object> params = condition.getParameters();   // Returns ["deleted", "archived", "suspended"]
      *
      * // Check number of parameters
-     * int paramCount = condition.getParameters().size();  // Returns 3
+     * int paramCount = condition.getParameters().size();   // Returns 3
      *
      * // Use in query preparation
      * PreparedStatement stmt = connection.prepareStatement(sql);
@@ -331,10 +331,10 @@ public class NotIn extends AbstractCondition {
      * <pre>{@code
      * NotIn c1 = new NotIn("status", Arrays.asList("deleted", "archived"));
      * NotIn c2 = new NotIn("status", Arrays.asList("deleted", "archived"));
-     * assert c1.equals(c2);  // true
+     * assert c1.equals(c2);   // true
      *
      * NotIn c3 = new NotIn("type", Arrays.asList("deleted", "archived"));
-     * assert !c1.equals(c3);  // false - different property
+     * assert !c1.equals(c3);   // false - different property
      * }</pre>
      *
      * @param obj the object to compare with

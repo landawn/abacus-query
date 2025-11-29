@@ -2565,7 +2565,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * List<String> columns = getRequiredColumns();  // returns ["firstName", "email"]
+         * List<String> columns = getRequiredColumns();   // returns ["firstName", "email"]
          * String sql = ACSB.select(columns)
          *                  .from("users")
          *                  .sql();
@@ -8900,7 +8900,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Account account = getAccount();
          * account.setFirstName("John");
          * account.setLastName("Doe");
-         * account.setCreatedDate(new Date());  // This will be ignored
+         * account.setCreatedDate(new Date());   // This will be ignored
          * 
          * SP sqlPair = PLC.update(Account.class, excluded)
          *                 .set(account)
@@ -10565,7 +10565,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * List<String> columns = getRequiredColumns();  // Dynamic column list
+         * List<String> columns = getRequiredColumns();   // Dynamic column list
          * String sql = NSB.select(columns)
          *                 .from("products")
          *                 .where(Filters.gt("price", 100))
@@ -18694,7 +18694,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Account account = new Account();
-         * account.setId(1L);  // Will be excluded
+         * account.setId(1L);   // Will be excluded
          * account.setFirstName("John");
          * account.setLastName("Doe");
          * Set<String> excludes = new HashSet<>(Arrays.asList("id", "version"));

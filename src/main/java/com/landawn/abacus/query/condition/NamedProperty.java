@@ -51,21 +51,21 @@ import com.landawn.abacus.util.Strings;
  * NamedProperty name = NamedProperty.of("name");
  *
  * // Use it to create various conditions
- * Condition c1 = age.eq(25);  // age = 25
- * Condition c2 = age.gt(18);  // age > 18
- * Condition c3 = age.between(20, 30);  // age BETWEEN 20 AND 30
- * Condition c4 = age.in(Arrays.asList(25, 30, 35));  // age IN (25, 30, 35)
+ * Condition c1 = age.eq(25);   // age = 25
+ * Condition c2 = age.gt(18);   // age > 18
+ * Condition c3 = age.between(20, 30);   // age BETWEEN 20 AND 30
+ * Condition c4 = age.in(Arrays.asList(25, 30, 35));   // age IN (25, 30, 35)
  *
  * // Pattern matching conditions
- * Condition c5 = name.like("John%");  // name LIKE 'John%'
- * Condition c6 = name.startsWith("J");  // name LIKE 'J%'
- * Condition c7 = name.contains("oh");  // name LIKE '%oh%'
+ * Condition c5 = name.like("John%");   // name LIKE 'John%'
+ * Condition c6 = name.startsWith("J");   // name LIKE 'J%'
+ * Condition c7 = name.contains("oh");   // name LIKE '%oh%'
  *
  * // Null checks
- * Condition c8 = status.isNotNull();  // status IS NOT NULL
+ * Condition c8 = status.isNotNull();   // status IS NOT NULL
  *
  * // Chain conditions with OR
- * Or orCondition = age.eqOr(25, 30, 35);  // age = 25 OR age = 30 OR age = 35
+ * Or orCondition = age.eqOr(25, 30, 35);   // age = 25 OR age = 30 OR age = 35
  *
  * // Combine with AND/OR for complex queries
  * Condition complex = age.gt(18).and(status.eq("active"));
@@ -138,7 +138,7 @@ public final class NamedProperty {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty age = NamedProperty.of("age");
-     * String name = age.propName();  // Returns "age"
+     * String name = age.propName();   // Returns "age"
      * }</pre>
      *
      * @return the property name
@@ -542,7 +542,7 @@ public final class NamedProperty {
      * <pre>{@code
      * NamedProperty p1 = NamedProperty.of("age");
      * NamedProperty p2 = NamedProperty.of("age");
-     * assert p1.hashCode() == p2.hashCode();  // true due to caching
+     * assert p1.hashCode() == p2.hashCode();   // true due to caching
      * }</pre>
      *
      * @return hash code of the property name
@@ -561,10 +561,10 @@ public final class NamedProperty {
      * <pre>{@code
      * NamedProperty p1 = NamedProperty.of("age");
      * NamedProperty p2 = NamedProperty.of("age");
-     * assert p1.equals(p2);  // true
+     * assert p1.equals(p2);   // true
      *
      * NamedProperty p3 = NamedProperty.of("Age");
-     * assert !p1.equals(p3);  // false - case sensitive
+     * assert !p1.equals(p3);   // false - case sensitive
      * }</pre>
      *
      * @param obj the object to compare with
@@ -582,7 +582,7 @@ public final class NamedProperty {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty age = NamedProperty.of("age");
-     * String str = age.toString();  // Returns "age"
+     * String str = age.toString();   // Returns "age"
      * }</pre>
      *
      * @return the property name

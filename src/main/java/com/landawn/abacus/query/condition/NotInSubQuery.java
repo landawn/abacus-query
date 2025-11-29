@@ -167,10 +167,10 @@ public class NotInSubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
-     * String propName = condition.getPropName();  // Returns "userId"
+     * String propName = condition.getPropName();   // Returns "userId"
      *
      * NotInSubQuery multiProp = new NotInSubQuery(Arrays.asList("a", "b"), subQuery);
-     * String name = multiProp.getPropName();  // Returns null
+     * String name = multiProp.getPropName();   // Returns null
      * }</pre>
      *
      * @return the property name, or null if this is a multi-property condition
@@ -187,10 +187,10 @@ public class NotInSubQuery extends AbstractCondition {
      * <pre>{@code
      * List<String> props = Arrays.asList("country", "city");
      * NotInSubQuery condition = new NotInSubQuery(props, subQuery);
-     * Collection<String> propNames = condition.getPropNames();  // Returns ["country", "city"]
+     * Collection<String> propNames = condition.getPropNames();   // Returns ["country", "city"]
      *
      * NotInSubQuery singleProp = new NotInSubQuery("userId", subQuery);
-     * Collection<String> names = singleProp.getPropNames();  // Returns null
+     * Collection<String> names = singleProp.getPropNames();   // Returns null
      * }</pre>
      *
      * @return collection of property names, or null if this is a single-property condition
@@ -207,7 +207,7 @@ public class NotInSubQuery extends AbstractCondition {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
      * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
-     * SubQuery retrieved = condition.getSubQuery();  // Returns the subquery
+     * SubQuery retrieved = condition.getSubQuery();   // Returns the subquery
      * }</pre>
      *
      * @return the subquery
@@ -261,7 +261,7 @@ public class NotInSubQuery extends AbstractCondition {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE age > ?", 18);
      * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
-     * List<Object> params = condition.getParameters();  // Returns [18]
+     * List<Object> params = condition.getParameters();   // Returns [18]
      * }</pre>
      *
      * @return list of parameter values from the subquery
@@ -347,10 +347,10 @@ public class NotInSubQuery extends AbstractCondition {
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
      * NotInSubQuery c1 = new NotInSubQuery("userId", subQuery);
      * NotInSubQuery c2 = new NotInSubQuery("userId", subQuery);
-     * assert c1.equals(c2);  // true
+     * assert c1.equals(c2);   // true
      *
      * NotInSubQuery c3 = new NotInSubQuery("otherId", subQuery);
-     * assert !c1.equals(c3);  // false - different property
+     * assert !c1.equals(c3);   // false - different property
      * }</pre>
      *
      * @param obj the object to compare with

@@ -187,7 +187,7 @@ public class SQLMapperTest extends TestBase {
         // Test normal add
         ParsedSql sql1 = ParsedSql.parse("SELECT * FROM users");
         ParsedSql result = mapper.add("query1", sql1);
-        assertNull(result); // First add returns null
+        assertNull(result);   // First add returns null
 
         // Test replace
         ParsedSql sql2 = ParsedSql.parse("SELECT id, name FROM users");

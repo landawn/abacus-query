@@ -143,7 +143,7 @@ public class JunctionTest extends TestBase {
         List<Object> params = junction.getParameters();
 
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(5, params.size()); // "John", 20, 30, "A", "B"
+        Assertions.assertEquals(5, params.size());   // "John", 20, 30, "A", "B"
         Assertions.assertTrue(params.contains("John"));
         Assertions.assertTrue(params.contains(20));
         Assertions.assertTrue(params.contains(30));

@@ -175,9 +175,9 @@ public class BinaryTest extends TestBase {
 
         Assertions.assertEquals(binary1, binary1);
         Assertions.assertEquals(binary1, binary2);
-        Assertions.assertNotEquals(binary1, binary3); // Different value
-        Assertions.assertNotEquals(binary1, binary4); // Different operator
-        Assertions.assertNotEquals(binary1, binary5); // Different property
+        Assertions.assertNotEquals(binary1, binary3);   // Different value
+        Assertions.assertNotEquals(binary1, binary4);   // Different operator
+        Assertions.assertNotEquals(binary1, binary5);   // Different property
         Assertions.assertNotEquals(binary1, null);
         Assertions.assertNotEquals(binary1, "string");
     }

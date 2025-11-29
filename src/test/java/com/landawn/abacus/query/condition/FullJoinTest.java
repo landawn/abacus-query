@@ -144,8 +144,8 @@ public class FullJoinTest extends TestBase {
 
         Assertions.assertEquals(join1, join1);
         Assertions.assertEquals(join1, join2);
-        Assertions.assertNotEquals(join1, join3); // Different entity
-        Assertions.assertNotEquals(join1, join4); // No condition vs with condition
+        Assertions.assertNotEquals(join1, join3);   // Different entity
+        Assertions.assertNotEquals(join1, join4);   // No condition vs with condition
         Assertions.assertNotEquals(join1, null);
         Assertions.assertNotEquals(join1, "string");
     }

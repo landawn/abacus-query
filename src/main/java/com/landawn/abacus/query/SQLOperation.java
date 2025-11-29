@@ -184,10 +184,10 @@ public enum SQLOperation {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLOperation op = SQLOperation.SELECT;
-     * String sqlKeyword = op.sqlText();  // Returns "SELECT"
+     * String sqlKeyword = op.sqlText();   // Returns "SELECT"
      *
      * SQLOperation txOp = SQLOperation.BEGIN_TRANSACTION;
-     * String txText = txOp.sqlText();  // Returns "BEGIN TRANSACTION"
+     * String txText = txOp.sqlText();   // Returns "BEGIN TRANSACTION"
      * }</pre>
      *
      * @return the SQL keyword string representation of this operation, never {@code null}

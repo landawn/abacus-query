@@ -34,7 +34,7 @@ public class BetweenTest extends TestBase {
 
         // Test with Date
         Date startDate = new Date();
-        Date endDate = new Date(System.currentTimeMillis() + 86400000); // +1 day
+        Date endDate = new Date(System.currentTimeMillis() + 86400000);   // +1 day
         Between betweenDate = Filters.between("createdDate", startDate, endDate);
         Assertions.assertEquals(startDate, betweenDate.getMinValue());
         Assertions.assertEquals(endDate, betweenDate.getMaxValue());
@@ -214,9 +214,9 @@ public class BetweenTest extends TestBase {
 
         Assertions.assertEquals(between1, between1);
         Assertions.assertEquals(between1, between2);
-        Assertions.assertNotEquals(between1, between3); // Different min
-        Assertions.assertNotEquals(between1, between4); // Different max
-        Assertions.assertNotEquals(between1, between5); // Different property
+        Assertions.assertNotEquals(between1, between3);   // Different min
+        Assertions.assertNotEquals(between1, between4);   // Different max
+        Assertions.assertNotEquals(between1, between5);   // Different property
         Assertions.assertNotEquals(between1, null);
         Assertions.assertNotEquals(between1, "string");
     }

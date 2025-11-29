@@ -441,7 +441,7 @@ public final class SQLMapper {
 
             if (!file.exists()) {
                 //noinspection ResultOfMethodCallIgnored
-                file.createNewFile(); //NOSONAR
+                file.createNewFile();   //NOSONAR
             }
 
             XmlUtil.transform(doc, os);

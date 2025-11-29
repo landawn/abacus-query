@@ -261,22 +261,22 @@ public class SQLBuilder10Test extends TestBase {
 
         // propNames[2] - for insert with id
         assertTrue(propNames[2].contains("id"));
-        assertTrue(propNames[2].contains("createdDate")); // @NonUpdatable
-        assertFalse(propNames[2].contains("lastModifiedDate")); // @ReadOnly
+        assertTrue(propNames[2].contains("createdDate"));   // @NonUpdatable
+        assertFalse(propNames[2].contains("lastModifiedDate"));   // @ReadOnly
 
         // propNames[3] - for insert without id
-        assertFalse(propNames[3].contains("id")); // ID should be excluded
+        assertFalse(propNames[3].contains("id"));   // ID should be excluded
 
         // propNames[4] - for update
-        assertFalse(propNames[4].contains("createdDate")); // @NonUpdatable
-        assertFalse(propNames[4].contains("lastModifiedDate")); // @ReadOnly
+        assertFalse(propNames[4].contains("createdDate"));   // @NonUpdatable
+        assertFalse(propNames[4].contains("lastModifiedDate"));   // @ReadOnly
     }
 
     @Test
     public void testGetSubEntityPropNames() {
         ImmutableSet<String> subProps = AbstractQueryBuilder.getSubEntityPropNames(Account.class);
         assertNotNull(subProps);
-        assertTrue(subProps.isEmpty()); // Account has no sub-entities
+        assertTrue(subProps.isEmpty());   // Account has no sub-entities
     }
 
     @Test
@@ -1205,7 +1205,7 @@ public class SQLBuilder10Test extends TestBase {
         assertTrue(map.containsKey("status"));
 
         assertEquals("first_name", map.get("firstName")._1);
-        assertEquals("account_status", map.get("status")._1); // Should use @Column annotation
+        assertEquals("account_status", map.get("status")._1);   // Should use @Column annotation
     }
 
     @Test
@@ -1533,8 +1533,8 @@ public class SQLBuilder10Test extends TestBase {
         assertTrue(sql.contains("UPDATE account SET"));
         assertTrue(sql.contains("first_name = ?"));
         assertTrue(sql.contains("last_name = ?"));
-        assertFalse(sql.contains("created_date")); // @NonUpdatable
-        assertFalse(sql.contains("last_modified_date")); // @ReadOnly
+        assertFalse(sql.contains("created_date"));   // @NonUpdatable
+        assertFalse(sql.contains("last_modified_date"));   // @ReadOnly
     }
 
     @Test
@@ -1679,7 +1679,7 @@ public class SQLBuilder10Test extends TestBase {
     public void testClosedBuilderException() {
         // Test that using a closed builder throws exception
         SQLBuilder builder = PSC.select("*").from("users");
-        builder.sql(); // This closes the builder
+        builder.sql();   // This closes the builder
 
         // Any operation after sql() should throw exception
         assertThrows(RuntimeException.class, () -> builder.where(Filters.eq("id", 1)));

@@ -123,7 +123,7 @@ public class Like extends Binary {
      * // Matches: "(555) 123-4567" format
      * 
      * // Escape special characters if needed (syntax varies by database)
-     * Like escaped = new Like("path", "%\\_%");  // To match literal underscore
+     * Like escaped = new Like("path", "%\\_%");   // To match literal underscore
      * // Check your database documentation for escape syntax
      * }</pre>
      *

@@ -169,7 +169,7 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = new Expression("UPPER(name)");
-     * String sql = expr.getLiteral();  // Returns "UPPER(name)"
+     * String sql = expr.getLiteral();   // Returns "UPPER(name)"
      * }</pre>
      *
      * @return the SQL expression string
@@ -939,7 +939,7 @@ public class Expression extends AbstractCondition {
      * Expression.formalize(true);        // Returns: "true"
      * Expression.formalize(false);       // Returns: "false"
      * Expression expr = new Expression("COUNT(*)");
-     * Expression.formalize(expr);  // Returns: "COUNT(*)" (the expression's literal)
+     * Expression.formalize(expr);   // Returns: "COUNT(*)" (the expression's literal)
      * }</pre>
      *
      * @param value the value to formalize
@@ -1549,7 +1549,7 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = Expression.of("price * 1.1");
-     * List<Object> params = expr.getParameters();  // Always returns empty list
+     * List<Object> params = expr.getParameters();   // Always returns empty list
      * }</pre>
      *
      * @return an empty list
@@ -1701,7 +1701,7 @@ public class Expression extends AbstractCondition {
      * Expr expr2 = new Expr("price * quantity");
      *
      * // Both objects function identically
-     * boolean same = expr1.getLiteral().equals(expr2.getLiteral());  // true
+     * boolean same = expr1.getLiteral().equals(expr2.getLiteral());   // true
      * }</pre>
      *
      * @see Expression
@@ -1719,7 +1719,7 @@ public class Expression extends AbstractCondition {
          * Expr expr = new Expr("price * quantity");
          *
          * // The expression works exactly like a regular Expression
-         * String result = expr.getLiteral();  // returns "price * quantity"
+         * String result = expr.getLiteral();   // returns "price * quantity"
          * }</pre>
          *
          * @param literal the SQL expression as a string
