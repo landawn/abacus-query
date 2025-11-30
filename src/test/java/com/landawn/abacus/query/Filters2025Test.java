@@ -562,12 +562,12 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testPatternForAlphanumericColumnName() {
-        assertNotNull(Filters.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME);
-        assertTrue(Filters.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user_name").matches());
-        assertTrue(Filters.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user123").matches());
-        assertTrue(Filters.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user-name").matches());
-        assertFalse(Filters.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user.name").matches());
-        assertFalse(Filters.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user name").matches());
+        assertNotNull(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME);
+        assertTrue(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user_name").matches());
+        assertTrue(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user123").matches());
+        assertTrue(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user-name").matches());
+        assertFalse(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user.name").matches());
+        assertFalse(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user name").matches());
     }
 
     @Test

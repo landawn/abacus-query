@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.parser.ParserUtil;
@@ -389,17 +388,6 @@ public class Filters {
      * }</pre>
      */
     public static final Expression QME = Expr.of(SK.QUESTION_MARK);
-
-    /**
-     * Regular expression pattern for validating alphanumeric column names.
-     * Column names must consist of letters, digits, underscores, or hyphens.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * boolean isValid = PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("column_name").matches();
-     * }</pre>
-     */
-    public static final Pattern PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
     static final Expression ALWAYS_TRUE = Expression.of("1 < 2");
 

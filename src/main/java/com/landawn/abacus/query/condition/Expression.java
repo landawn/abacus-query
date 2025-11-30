@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.SK;
 import com.landawn.abacus.query.SQLParser;
 import com.landawn.abacus.util.N;
@@ -1636,7 +1637,7 @@ public class Expression extends AbstractCondition {
             return Strings.EMPTY;
         }
 
-        if (literal.length() < 16 && Filters.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).find()) {
+        if (literal.length() < 16 && QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).find()) {
             return namingPolicy.convert(literal);
         }
 

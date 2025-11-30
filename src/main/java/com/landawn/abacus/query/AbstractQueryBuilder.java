@@ -4445,7 +4445,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // TODO performance improvement.
 
         if (expr.length() < 16) {
-            final boolean matched = Filters.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(expr).find();
+            final boolean matched = QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(expr).find();
 
             if (matched) {
                 if (isFromAppendColumn) {

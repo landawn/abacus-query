@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.Immutable;
@@ -54,6 +55,17 @@ import com.landawn.abacus.util.Tuple.Tuple2;
  * @see NamingPolicy
  */
 public final class QueryUtil {
+
+    /**
+     * Regular expression pattern for validating alphanumeric column names.
+     * Column names must consist of letters, digits, underscores, or hyphens.
+     * 
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * boolean isValid = PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("column_name").matches();
+     * }</pre>
+     */
+    public static final Pattern PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
     private QueryUtil() {
         // singleton
@@ -261,7 +273,7 @@ public final class QueryUtil {
                             propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(), subTableAliasOrName + SK.PERIOD + entry.getValue());
                         }
 
-                        propColumnNameMap.remove(propInfo.name);   // remove sub entity prop.
+                        propColumnNameMap.remove(propInfo.name); // remove sub entity prop.
                     }
                 }
             }
