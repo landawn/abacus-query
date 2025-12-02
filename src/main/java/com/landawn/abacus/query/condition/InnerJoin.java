@@ -176,7 +176,7 @@ public class InnerJoin extends Join {
      * List<String> tables = Arrays.asList("orders o", "customers c");
      * InnerJoin multiJoin = new InnerJoin(tables,
      *     new On("o.customer_id", "c.id"));
-     * // Generates: INNER JOIN orders o, customers c ON o.customer_id = c.id
+     * // Generates: INNER JOIN (orders o, customers c) ON o.customer_id = c.id
      *
      * // Complex multi-table join with multiple ON conditions
      * List<String> entities = Arrays.asList("products p", "categories cat", "suppliers s");
@@ -185,12 +185,12 @@ public class InnerJoin extends Join {
      *         new On("p.category_id", "cat.id"),
      *         new On("p.supplier_id", "s.id")
      *     ));
-     * // Generates: INNER JOIN products p, categories cat, suppliers s (ON p.category_id = cat.id) AND (ON p.supplier_id = s.id)
+     * // Generates: INNER JOIN (products p, categories cat, suppliers s) (ON p.category_id = cat.id) AND (ON p.supplier_id = s.id)
      *
      * // Using Expression for multiple tables
      * InnerJoin exprMulti = new InnerJoin(tables,
      *     Filters.expr("o.customer_id = c.id AND o.status = 'active'"));
-     * // Generates: INNER JOIN orders o, customers c o.customer_id = c.id AND o.status = 'active'
+     * // Generates: INNER JOIN (orders o, customers c) o.customer_id = c.id AND o.status = 'active'
      * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *

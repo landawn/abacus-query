@@ -166,12 +166,12 @@ public class RightJoin extends Join {
      *         new On("p.category_id", "c.id"),
      *         new On("p.subcategory_id", "sc.id")
      *     ));
-     * // Generates: RIGHT JOIN categories c, subcategories sc (ON p.category_id = c.id) AND (ON p.subcategory_id = sc.id)
+     * // Generates: RIGHT JOIN (categories c, subcategories sc) (ON p.category_id = c.id) AND (ON p.subcategory_id = sc.id)
      *
      * // Using Expression for multiple tables
      * RightJoin exprJoin = new RightJoin(tables,
      *     Filters.expr("p.category_id = c.id AND p.subcategory_id = sc.id"));
-     * // Generates: RIGHT JOIN categories c, subcategories sc p.category_id = c.id AND p.subcategory_id = sc.id
+     * // Generates: RIGHT JOIN (categories c, subcategories sc) p.category_id = c.id AND p.subcategory_id = sc.id
      * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *

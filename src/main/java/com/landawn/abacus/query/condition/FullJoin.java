@@ -156,12 +156,12 @@ public class FullJoin extends Join {
      *         new On("d.id", "e.dept_id"),
      *         new On("d.id", "c.dept_id")
      *     ));
-     * // Generates: FULL JOIN employees e, contractors c (ON d.id = e.dept_id) AND (ON d.id = c.dept_id)
+     * // Generates: FULL JOIN (employees e, contractors c) (ON d.id = e.dept_id) AND (ON d.id = c.dept_id)
      *
      * // Using Expression for multiple tables
      * FullJoin exprJoin = new FullJoin(tables,
      *     Filters.expr("d.id = e.dept_id AND d.id = c.dept_id"));
-     * // Generates: FULL JOIN employees e, contractors c d.id = e.dept_id AND d.id = c.dept_id
+     * // Generates: FULL JOIN (employees e, contractors c) d.id = e.dept_id AND d.id = c.dept_id
      * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *

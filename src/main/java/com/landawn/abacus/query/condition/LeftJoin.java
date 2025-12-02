@@ -172,12 +172,12 @@ public class LeftJoin extends Join {
      *         new On("c.id", "o.customer_id"),
      *         new On("o.id", "oi.order_id")
      *     ));
-     * // Generates: LEFT JOIN orders o, order_items oi (ON c.id = o.customer_id) AND (ON o.id = oi.order_id)
+     * // Generates: LEFT JOIN (orders o, order_items oi) (ON c.id = o.customer_id) AND (ON o.id = oi.order_id)
      *
      * // Using Expression for multiple tables
      * LeftJoin exprJoin = new LeftJoin(tables,
      *     Filters.expr("c.id = o.customer_id AND o.id = oi.order_id"));
-     * // Generates: LEFT JOIN orders o, order_items oi c.id = o.customer_id AND o.id = oi.order_id
+     * // Generates: LEFT JOIN (orders o, order_items oi) c.id = o.customer_id AND o.id = oi.order_id
      * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *

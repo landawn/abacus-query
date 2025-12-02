@@ -47,7 +47,7 @@ import java.util.Collection;
  * // CROSS JOIN multiple tables
  * List<String> tables = Arrays.asList("sizes", "colors");
  * CrossJoin multiJoin = new CrossJoin(tables, null);
- * // Generates: CROSS JOIN sizes, colors
+ * // Generates: CROSS JOIN (sizes, colors)
  * // Results in all combinations of products × sizes × colors
  *
  * // CROSS JOIN with condition (unusual but supported)
@@ -153,18 +153,18 @@ public class CrossJoin extends Join {
      * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
      * CrossJoin join = new CrossJoin(tables,
      *     Filters.eq("active", true));
-     * // Generates: CROSS JOIN sizes s, colors c, styles st (active = true)
+     * // Generates: CROSS JOIN (sizes s, colors c, styles st) (active = true)
      *
      * // Using ON conditions (makes it similar to INNER JOIN)
      * List<String> relatedTables = Arrays.asList("table1 t1", "table2 t2");
      * CrossJoin withOn = new CrossJoin(relatedTables,
      *     new On("t1.id", "t2.t1_id"));
-     * // Generates: CROSS JOIN table1 t1, table2 t2 ON t1.id = t2.t1_id
+     * // Generates: CROSS JOIN (table1 t1, table2 t2) ON t1.id = t2.t1_id
      *
      * // Using Expression for complex conditions
      * CrossJoin exprJoin = new CrossJoin(tables,
      *     Filters.expr("active = true AND archived = false"));
-     * // Generates: CROSS JOIN sizes s, colors c, styles st active = true AND archived = false
+     * // Generates: CROSS JOIN (sizes s, colors c, styles st) active = true AND archived = false
      * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *

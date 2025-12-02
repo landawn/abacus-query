@@ -77,7 +77,7 @@ import com.landawn.abacus.util.Strings;
  * // Join multiple tables
  * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
  *     new On("o.id", "oi.order_id"));
- * // Generates: JOIN orders o, order_items oi ON o.id = oi.order_id
+ * // Generates: JOIN (orders o, order_items oi) ON o.id = oi.order_id
  * }</pre>
  * 
  * @see InnerJoin
@@ -218,7 +218,7 @@ public class Join extends AbstractCondition {
      *         new On("o.customer_id", "c.id"),
      *         new On("c.address_id", "a.id")
      *     ));
-     * // Generates: JOIN orders o, customers c (ON o.customer_id = c.id) AND (ON c.address_id = a.id)
+     * // Generates: JOIN (orders o, customers c) (ON o.customer_id = c.id) AND (ON c.address_id = a.id)
      *
      * // Join multiple tables with Expression
      * Join exprMultiJoin = new Join(tables,
@@ -226,7 +226,7 @@ public class Join extends AbstractCondition {
      *         Filters.expr("o.customer_id = c.id"),
      *         Filters.expr("o.status = 'active'")
      *     ));
-     * // Generates: JOIN orders o, customers c (o.customer_id = c.id) AND (o.status = 'active')
+     * // Generates: JOIN (orders o, customers c) (o.customer_id = c.id) AND (o.status = 'active')
      * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
@@ -397,7 +397,7 @@ public class Join extends AbstractCondition {
      *
      * // Multiple tables
      * Join j4 = new Join(Arrays.asList("t1", "t2"), new On("t1.id", "t2.t1_id"));
-     * j4.toString(policy);   // "JOIN t1, t2 ON t1.id = t2.t1_id"
+     * j4.toString(policy);   // "JOIN (t1, t2) ON t1.id = t2.t1_id"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply

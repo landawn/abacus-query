@@ -45,7 +45,7 @@ import com.landawn.abacus.util.N;
  * // Single column join - joining employees and departments on department_id
  * Using using1 = new Using("department_id");
  * InnerJoin join1 = new InnerJoin("departments", using1);
- * // Generates: INNER JOIN departments USING (department_id)
+ * // Generates: INNER JOIN departments USING department_id
  * // Equivalent to: INNER JOIN departments ON employees.department_id = departments.department_id
  * // But returns only one department_id column instead of two
  *
@@ -98,8 +98,8 @@ public class Using extends Cell {
      * // Simple join on employee_id
      * Using using = new Using("employee_id");
      * InnerJoin join = new InnerJoin("employees", using);
-     * // Generates: INNER JOIN employees USING (employee_id)
-     * // In query: SELECT * FROM orders INNER JOIN employees USING (employee_id)
+     * // Generates: INNER JOIN employees USING employee_id
+     * // In query: SELECT * FROM orders INNER JOIN employees USING employee_id
      *
      * // Composite key join with three columns
      * Using multiColumn = new Using("company_id", "department_id", "team_id");
@@ -128,11 +128,11 @@ public class Using extends Cell {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Dynamic column list from metadata
-     * List<String> sharedColumns = metadata.getSharedColumns("orders", "customers");
+     * // Dynamic column list from metadata (multiple columns)
+     * List<String> sharedColumns = Arrays.asList("customer_id", "order_date");
      * Using using = new Using(sharedColumns);
      * InnerJoin join = new InnerJoin("customers", using);
-     * // Generates: INNER JOIN customers USING (column1, column2, ...)
+     * // Generates: INNER JOIN customers USING (customer_id, order_date)
      *
      * // Multi-tenant join pattern
      * Set<String> tenantColumns = new LinkedHashSet<>();
@@ -164,7 +164,12 @@ public class Using extends Cell {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition usingCondition = Using.createUsingCondition("customer_id", "order_date");
+     * // Single column - no parentheses in output
+     * Condition singleCol = Using.createUsingCondition("customer_id");
+     * // Creates condition for: USING customer_id
+     *
+     * // Multiple columns - parentheses in output
+     * Condition multiCol = Using.createUsingCondition("customer_id", "order_date");
      * // Creates condition for: USING (customer_id, order_date)
      * }</pre>
      *
@@ -187,8 +192,14 @@ public class Using extends Cell {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<String> columns = Arrays.asList("tenant_id", "user_id");
-     * Condition usingCondition = Using.createUsingCondition(columns);
+     * // Single column collection - no parentheses in output
+     * List<String> singleCol = Collections.singletonList("tenant_id");
+     * Condition singleCondition = Using.createUsingCondition(singleCol);
+     * // Creates condition for: USING tenant_id
+     *
+     * // Multiple columns collection - parentheses in output
+     * List<String> multiCols = Arrays.asList("tenant_id", "user_id");
+     * Condition multiCondition = Using.createUsingCondition(multiCols);
      * // Creates condition for: USING (tenant_id, user_id)
      * }</pre>
      *

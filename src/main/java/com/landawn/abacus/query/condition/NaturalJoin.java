@@ -65,7 +65,7 @@ import java.util.Collection;
  * List<String> tables = Arrays.asList("employees", "departments");
  * NaturalJoin multiJoin = new NaturalJoin(tables,
  *     Filters.eq("active", true));
- * // Generates: NATURAL JOIN employees, departments (active = true)
+ * // Generates: NATURAL JOIN (employees, departments) (active = true)
  * }</pre>
  * 
  * @see Join
@@ -164,13 +164,13 @@ public class NaturalJoin extends Join {
      * List<String> tables = Arrays.asList("customers", "orders", "products");
      * NaturalJoin join1 = new NaturalJoin(tables,
      *     Filters.gt("totalAmount", 1000));
-     * // Generates: NATURAL JOIN customers, orders, products (totalAmount > 1000)
+     * // Generates: NATURAL JOIN (customers, orders, products) (totalAmount > 1000)
      * // Natural join across all tables on matching columns, filtered by amount
      *
      * // Natural join with Expression condition
      * NaturalJoin join2 = new NaturalJoin(tables,
      *     Filters.expr("status = 'active' AND verified = true"));
-     * // Generates: NATURAL JOIN customers, orders, products status = 'active' AND verified = true
+     * // Generates: NATURAL JOIN (customers, orders, products) status = 'active' AND verified = true
      * // Note: Expression conditions don't add ON keyword
      *
      * // Natural join with complex conditions
@@ -179,7 +179,7 @@ public class NaturalJoin extends Join {
      *         Filters.eq("region", "US"),
      *         Filters.gt("created_date", "2024-01-01")
      *     ));
-     * // Generates: NATURAL JOIN customers, orders, products (region = 'US') AND (created_date > '2024-01-01')
+     * // Generates: NATURAL JOIN (customers, orders, products) (region = 'US') AND (created_date > '2024-01-01')
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
