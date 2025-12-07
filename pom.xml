@@ -36,9 +36,9 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.release>17</maven.compiler.release>
-		<junit.jupiter.version>5.10.1</junit.jupiter.version>
-		<mockito.version>5.18.0</mockito.version> 
-		<junit.platform.version>1.10.1</junit.platform.version>
+		<junit.jupiter.version>5.14.1</junit.jupiter.version>
+		<junit.platform.version>1.14.1</junit.platform.version>
+		<mockito.version>5.18.0</mockito.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
@@ -67,8 +67,14 @@
 
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
+			<artifactId>junit-jupiter-engine</artifactId>
 			<version>${junit.jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-suite-api</artifactId>
+			<version>${junit.platform.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -76,8 +82,14 @@
 			<artifactId>junit-platform-suite</artifactId>
 			<version>${junit.platform.version}</version>
 			<scope>test</scope>
-		</dependency> 
-		
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-params</artifactId>
+			<version>${junit.jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 		    <groupId>org.mockito</groupId>
 		    <artifactId>mockito-core</artifactId>
