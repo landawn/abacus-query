@@ -210,13 +210,10 @@ public class OrderBy extends Clause {
 
     /**
      * Creates a comma-separated string of property names for ordering.
-     * This static helper method formats property names for the ORDER BY clause.
+     * This is an internal helper method used by OrderBy and GroupBy constructors.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String condition = OrderBy.createCondition("name", "age", "city");
-     * // Returns: "name, age, city"
-     * }</pre>
+     * <p>This method is package-private and not intended for direct use by application code.
+     * Use the public OrderBy constructors instead.</p>
      *
      * @param propNames array of property names. Must not be null or empty.
      * @return formatted string for ORDER BY clause
@@ -247,13 +244,10 @@ public class OrderBy extends Clause {
 
     /**
      * Creates an ordering condition for a single property with direction.
-     * This static helper method formats a property name with its sort direction.
+     * This is an internal helper method used by OrderBy and GroupBy constructors.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String condition = OrderBy.createCondition("price", SortDirection.DESC);
-     * // Returns: "price DESC"
-     * }</pre>
+     * <p>This method is package-private and not intended for direct use by application code.
+     * Use the public OrderBy constructors instead.</p>
      *
      * @param propName the property name
      * @param direction the sort direction
@@ -272,14 +266,10 @@ public class OrderBy extends Clause {
 
     /**
      * Creates an ordering condition for multiple properties with the same direction.
-     * This static helper method formats multiple property names with a single sort direction.
+     * This is an internal helper method used by OrderBy and GroupBy constructors.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> props = Arrays.asList("created", "modified");
-     * String condition = OrderBy.createCondition(props, SortDirection.DESC);
-     * // Returns: "created, modified DESC"
-     * }</pre>
+     * <p>This method is package-private and not intended for direct use by application code.
+     * Use the public OrderBy constructors instead.</p>
      *
      * @param propNames collection of property names
      * @param direction the sort direction
@@ -318,17 +308,10 @@ public class OrderBy extends Clause {
 
     /**
      * Creates an ordering condition from a map of properties and their directions.
-     * This static helper method formats multiple property-direction pairs for complex ordering.
+     * This is an internal helper method used by OrderBy and GroupBy constructors.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Requires: import java.util.LinkedHashMap;
-     * Map<String, SortDirection> orders = new LinkedHashMap<>();
-     * orders.put("priority", SortDirection.DESC);
-     * orders.put("created", SortDirection.ASC);
-     * String condition = OrderBy.createCondition(orders);
-     * // Returns: "priority DESC, created ASC"
-     * }</pre>
+     * <p>This method is package-private and not intended for direct use by application code.
+     * Use the public OrderBy constructors instead.</p>
      *
      * @param orders map of property names to sort directions
      * @return formatted string for ORDER BY clause

@@ -36,9 +36,9 @@ import org.xml.sax.SAXException;
 import com.landawn.abacus.annotation.SuppressFBWarnings;
 import com.landawn.abacus.exception.ParseException;
 import com.landawn.abacus.exception.UncheckedIOException;
-import com.landawn.abacus.util.Configuration;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.PropertiesUtil;
 import com.landawn.abacus.util.Splitter;
 import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.XmlUtil;
@@ -175,7 +175,7 @@ public final class SQLMapper {
         final SQLMapper sqlMapper = new SQLMapper();
 
         for (final String subFilePath : filePaths) {
-            final File file = Configuration.formatPath(Configuration.findFile(subFilePath));
+            final File file = PropertiesUtil.formatPath(PropertiesUtil.findFile(subFilePath));
 
             try (InputStream is = new FileInputStream(file)) {
 
