@@ -1640,7 +1640,6 @@ public class Filters {
 
     /**
      * Creates a NOT BETWEEN condition for the specified property and range values.
-     * Returns true when the value is outside the specified range (inclusive boundaries).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
