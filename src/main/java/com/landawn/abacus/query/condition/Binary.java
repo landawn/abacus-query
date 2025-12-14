@@ -66,7 +66,11 @@ public class Binary extends AbstractCondition {
 
     private Object propValue;
 
-    // For Kryo
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized Binary instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
+     */
     Binary() {
         propName = null;
     }
