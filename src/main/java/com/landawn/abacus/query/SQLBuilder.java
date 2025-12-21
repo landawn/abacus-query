@@ -524,7 +524,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             final List<Condition> conditionList = junction.getConditions();
 
             if (N.isEmpty(conditionList)) {
-                throw new IllegalArgumentException("The junction condition(" + junction.getOperator().toString() + ") doesn't include any element.");
+                throw new IllegalArgumentException("Junction condition (" + junction.getOperator() + ") must contain at least one element");
             }
 
             if (conditionList.size() == 1) {
@@ -585,7 +585,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
                 } else if (this instanceof NSB) {
                     _sb.append(NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
                 } else {
-                    throw new RuntimeException("Unsupported subQuery condition: " + cond);
+                    throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
                 }
             } else if (this instanceof SCSB) {
                 _sb.append(SCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
@@ -616,7 +616,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             } else if (this instanceof NSB) {
                 _sb.append(NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
             } else {
-                throw new RuntimeException("Unsupported subQuery condition: " + cond);
+                throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
             }
         } else if (cond instanceof Expression) {
             // ==== version 1
@@ -644,7 +644,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             // ==== version 3
             appendStringExpr(((Expression) cond).getLiteral(), false);
         } else {
-            throw new IllegalArgumentException("Unsupported condition: " + cond.toString());
+            throw new IllegalArgumentException("Unsupported condition type: " + cond);
         }
     }
 

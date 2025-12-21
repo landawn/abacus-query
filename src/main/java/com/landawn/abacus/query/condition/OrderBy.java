@@ -221,7 +221,7 @@ public class OrderBy extends Clause {
      * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
      */
     static String createCondition(final String... propNames) {
-        N.checkArgNotEmpty(propNames, "propNames cannot be null or empty");
+        N.checkArgNotEmpty(propNames, "propNames");
 
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -259,7 +259,7 @@ public class OrderBy extends Clause {
      */
     static String createCondition(final String propName, final SortDirection direction) {
         if (propName == null || propName.trim().isEmpty()) {
-            throw new IllegalArgumentException("propName cannot be null or empty");
+            throw new IllegalArgumentException("Property name cannot be null or empty");
         }
         if (direction == null) {
             throw new IllegalArgumentException("direction cannot be null");
@@ -280,7 +280,7 @@ public class OrderBy extends Clause {
      * @throws IllegalArgumentException if propNames is null/empty, direction is null, or propNames contains null/empty elements
      */
     static String createCondition(final Collection<String> propNames, final SortDirection direction) {
-        N.checkArgNotEmpty(propNames, "propNames cannot be null or empty");
+        N.checkArgNotEmpty(propNames, "propNames");
 
         if (direction == null) {
             throw new IllegalArgumentException("direction cannot be null");

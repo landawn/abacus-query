@@ -340,7 +340,7 @@ public final class SQLMapper {
         }
 
         if (sqlMap.containsKey(id)) {
-            throw new IllegalArgumentException("SQL id '" + id + "' already exists with SQL: " + sqlMap.get(id));
+            throw new IllegalArgumentException("SQL id '" + id + "' already exists. Use a unique identifier");
         }
     }
 

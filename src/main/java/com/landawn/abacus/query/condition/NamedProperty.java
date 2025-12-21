@@ -100,7 +100,7 @@ public final class NamedProperty {
      * @param propName the property name. Must not be null.
      */
     public NamedProperty(final String propName) {
-        this.propName = N.requireNonNull(propName);
+        this.propName = N.requireNonNull(propName, "propName");
     }
 
     /**

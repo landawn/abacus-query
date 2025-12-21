@@ -130,7 +130,7 @@ public abstract class Clause extends Cell {
      */
     @Override
     public And and(final Condition condition) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("AND operation is not supported for Clause. Combine conditions within the clause instead");
     }
 
     /**
@@ -161,7 +161,7 @@ public abstract class Clause extends Cell {
      */
     @Override
     public Or or(final Condition condition) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("OR operation is not supported for Clause. Combine conditions within the clause instead");
     }
 
     /**
@@ -190,6 +190,6 @@ public abstract class Clause extends Cell {
      */
     @Override
     public Not not() throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("NOT operation is not supported for Clause. Use NOT within the clause condition instead");
     }
 }

@@ -232,11 +232,11 @@ public final class QueryUtil {
 
     static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses) {
-        N.checkArgNotNull(entityClass);
+        N.checkArgNotNull(entityClass, "entityClass");
 
         if (registeringClasses != null) {
             if (registeringClasses.contains(entityClass)) {
-                throw new RuntimeException("Cyclic references detected among: " + registeringClasses);
+                throw new IllegalStateException("Cyclic references detected among: " + registeringClasses);
             }
 
             registeringClasses.add(entityClass);

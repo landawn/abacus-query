@@ -274,7 +274,7 @@ public class Limit extends AbstractCondition {
      */
     @Override
     public And and(final Condition condition) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("AND operation is not supported for LIMIT clause");
     }
 
     /**
@@ -298,7 +298,7 @@ public class Limit extends AbstractCondition {
      */
     @Override
     public Or or(final Condition condition) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("OR operation is not supported for LIMIT clause");
     }
 
     /**
@@ -321,7 +321,7 @@ public class Limit extends AbstractCondition {
      */
     @Override
     public Not not() throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("NOT operation is not supported for LIMIT clause");
     }
 
     /**

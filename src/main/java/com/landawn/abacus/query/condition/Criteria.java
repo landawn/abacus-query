@@ -1569,7 +1569,7 @@ public class Criteria extends AbstractCondition {
     private void checkCondition(final Condition cond) {
         if (!CriteriaUtil.isClause(cond.getOperator())) {
             throw new IllegalArgumentException(
-                    "Criteria only accepts clause operators: " + CriteriaUtil.getClauseOperators() + ". Cannot accept operator: " + cond.getOperator());
+                    "Invalid operator '" + cond.getOperator() + "' for Criteria. Expected clause operators: WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.");
         }
     }
 

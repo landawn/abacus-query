@@ -110,7 +110,7 @@ public class InSubQuery extends AbstractCondition {
     public InSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.IN);
 
-        N.checkArgNotNull(subQuery, "'subQuery' cannot be null");
+        N.checkArgNotNull(subQuery, "subQuery");
 
         this.propName = propName;
         this.subQuery = subQuery;
@@ -143,7 +143,7 @@ public class InSubQuery extends AbstractCondition {
         super(Operator.IN);
 
         N.checkArgNotEmpty(propNames, "propNames");
-        N.checkArgNotNull(subQuery, "'subQuery' cannot be null");
+        N.checkArgNotNull(subQuery, "subQuery");
 
         this.propNames = propNames;
         this.subQuery = subQuery;

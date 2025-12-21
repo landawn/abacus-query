@@ -112,7 +112,7 @@ public class NotIn extends AbstractCondition {
     public NotIn(final String propName, final Collection<?> values) {
         super(Operator.NOT_IN);
 
-        N.checkArgNotEmpty(values, "'values' cannot be null or empty");
+        N.checkArgNotEmpty(values, "values");
 
         this.propName = propName;
         this.values = new ArrayList<>(values);
@@ -189,7 +189,7 @@ public class NotIn extends AbstractCondition {
      */
     @Deprecated
     public void setValues(final List<?> values) {
-        N.checkArgNotEmpty(values, "'values' cannot be null or empty");
+        N.checkArgNotEmpty(values, "values");
 
         this.values = values;
     }

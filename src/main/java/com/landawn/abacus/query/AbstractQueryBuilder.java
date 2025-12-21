@@ -849,16 +849,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This into(final String tableName) {
         if (!(_op == OperationType.ADD || _op == OperationType.QUERY)) {
-            throw new RuntimeException("Invalid operation: " + _op);
+            throw new IllegalStateException("Invalid operation for into(): " + _op + ". Expected ADD or QUERY");
         }
 
         if (_op == OperationType.QUERY) {
             if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
-                throw new RuntimeException("Column names or props must be set first by select");
+                throw new IllegalStateException("Column names must be set by select() before calling into()");
             }
         } else {
             if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_props) && N.isEmpty(_propsList)) {
-                throw new RuntimeException("Column names or props must be set first by insert");
+                throw new IllegalStateException("Column names must be set by insert() before calling into()");
             }
         }
 
@@ -944,7 +944,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
 
                 default:
-                    throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy); //NOSONAR
+                    throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy); //NOSONAR
             }
         } else if (N.notEmpty(_props)) {
             appendInsertProps(_props);
@@ -1037,7 +1037,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This preselect(final String preselect) {
         if (Strings.isNotEmpty(_preselect)) {
-            throw new IllegalStateException("preselect has been set. Can not set it again");
+            throw new IllegalStateException("preselect has already been set and cannot be set again");
         }
 
         if (Strings.isNotEmpty(preselect)) {
@@ -1307,11 +1307,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected void appendOperationBeforeFrom(final String tableName) {
         if (_op != OperationType.QUERY) {
-            throw new RuntimeException("Invalid operation: " + _op);
+            throw new IllegalStateException("Invalid operation for from(): " + _op + ". Expected QUERY");
         }
 
         if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
-            throw new RuntimeException("Column names or props must be set first by select");
+            throw new IllegalStateException("Column names must be set by select() before calling from()");
         }
 
         final int idx = tableName.indexOf(' ');
@@ -2701,7 +2701,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected void checkIfAlreadyCalled(final String op) {
         if (!calledOpSet.add(op)) {
-            throw new IllegalStateException("'" + op + "' has already been set. Can not set it again.");
+            throw new IllegalStateException("'" + op + "' has already been set and cannot be set again");
         }
     }
 
@@ -3457,7 +3457,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             default:
-                throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy);
+                throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy);
         }
 
         _propOrColumnNames = null;
@@ -3555,7 +3555,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             default:
-                throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy);
+                throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy);
         }
 
         _propOrColumnNames = null;
@@ -3685,7 +3685,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public String query() {
         if (_sb == null) {
-            throw new RuntimeException("This SQLBuilder has been closed after sql() was called previously");
+            throw new IllegalStateException("SQLBuilder is closed and cannot be reused after sql() or build() was called");
         }
 
         init(true);
@@ -4250,7 +4250,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             _sb.append(deleteFromTableChars);
         } else if (_op == OperationType.QUERY && !_hasFromBeenSet && !_isForConditionOnly) {
-            throw new RuntimeException("'from' methods has not been called for query: " + _op);
+            throw new IllegalStateException("from() method must be called before building query for operation: " + _op);
         }
     }
 
@@ -4371,7 +4371,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             default:
-                throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy);
+                throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy);
         }
     }
 
@@ -4435,7 +4435,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             default:
-                throw new RuntimeException("Not supported SQL policy: " + _sqlPolicy);
+                throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy);
         }
     }
 
