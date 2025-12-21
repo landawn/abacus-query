@@ -118,7 +118,7 @@ public final class ParsedSql {
                 if (word.equals(SK.QUESTION_MARK)) {
                     parameterCount++;
                     type |= QUESTION_MARK_TYPE;
-                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() >= 3) {
+                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() > 3) {
                     namedParameterList.add(word.substring(2, word.length() - 1));
 
                     word = SK.QUESTION_MARK;
@@ -263,7 +263,11 @@ public final class ParsedSql {
     public String getParameterizedSql(final boolean isForCouchbase) {
         if (isForCouchbase) {
             if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                parseForCouchbase();
+                synchronized (this) {
+                    if (Strings.isEmpty(couchbaseParameterizedSql)) {
+                        parseForCouchbase();
+                    }
+                }
             }
 
             return couchbaseParameterizedSql;
@@ -313,7 +317,11 @@ public final class ParsedSql {
     public ImmutableList<String> getNamedParameters(final boolean isForCouchbase) {
         if (isForCouchbase) {
             if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                parseForCouchbase();
+                synchronized (this) {
+                    if (Strings.isEmpty(couchbaseParameterizedSql)) {
+                        parseForCouchbase();
+                    }
+                }
             }
 
             return couchbaseNamedParameters;
@@ -354,7 +362,11 @@ public final class ParsedSql {
     public int getParameterCount(final boolean isForCouchbase) {
         if (isForCouchbase) {
             if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                parseForCouchbase();
+                synchronized (this) {
+                    if (Strings.isEmpty(couchbaseParameterizedSql)) {
+                        parseForCouchbase();
+                    }
+                }
             }
 
             return couchbaseParameterCount;
@@ -370,7 +382,7 @@ public final class ParsedSql {
 
         boolean isOpSqlPrefix = false;
         for (final String word : words) {
-            if (Strings.isNotEmpty(word)) {
+            if (Strings.isNotEmpty(word) && !(word.equals(" ") || word.startsWith("--") || word.startsWith("/*"))) {
                 isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase());
                 break;
             }
@@ -388,7 +400,7 @@ public final class ParsedSql {
 
                     countOfParameter++;
                     word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
-                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() >= 3) {
+                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() > 3) {
                     couchbaseNamedParameterList.add(word.substring(2, word.length() - 1));
 
                     countOfParameter++;
@@ -406,7 +418,7 @@ public final class ParsedSql {
 
             boolean isNamedParametersByNum = true;
 
-            for (int i = 0; i < countOfParameter; i++) {
+            for (int i = 0; i < countOfParameter && i < couchbaseNamedParameterList.size(); i++) {
                 try {
                     if (Numbers.toInt(couchbaseNamedParameterList.get(i)) != i + 1) {
                         isNamedParametersByNum = false;

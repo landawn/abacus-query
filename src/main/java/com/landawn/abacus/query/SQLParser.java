@@ -214,7 +214,7 @@ public final class SQLParser {
                 sb.append(c);
 
                 // end in quote.
-                if (c == quoteChar && (index == 0 || (index > 0 && sql.charAt(index - 1) != '\\'))) {
+                if (c == quoteChar && (index == 0 || sql.charAt(index - 1) != '\\')) {
                     words.add(sb.toString());
                     sb.setLength(0);
 

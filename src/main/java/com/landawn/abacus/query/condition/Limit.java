@@ -409,9 +409,9 @@ public class Limit extends AbstractCondition {
 
         if (obj instanceof final Limit other) {
             if (Strings.isNotEmpty(expr)) {
-                return expr.equals(other.expr);
+                return Strings.isNotEmpty(other.expr) && expr.equals(other.expr);
             } else {
-                return (count == other.count) && (offset == other.offset);
+                return Strings.isEmpty(other.expr) && (count == other.count) && (offset == other.offset);
             }
         }
 

@@ -717,7 +717,7 @@ public class Filters {
      * @throws IllegalArgumentException if selectPropNames is empty
      */
     public static Or eqOr(final Object entity, final Collection<String> selectPropNames) {
-        N.checkArgNotEmpty(selectPropNames, "selectPropNames");   //NOSONAR
+        N.checkArgNotEmpty(selectPropNames, "selectPropNames"); //NOSONAR
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
         final Iterator<String> iter = selectPropNames.iterator();

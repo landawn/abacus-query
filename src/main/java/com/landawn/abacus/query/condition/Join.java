@@ -427,8 +427,8 @@ public class Join extends AbstractCondition {
     @Override
     public int hashCode() {
         int h = 17;
-        h = (h * 31) + operator.hashCode();
-        h = (h * 31) + joinEntities.hashCode();
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+        h = (h * 31) + ((joinEntities == null) ? 0 : joinEntities.hashCode());
 
         if (condition != null) {
             h = (h * 31) + condition.hashCode();

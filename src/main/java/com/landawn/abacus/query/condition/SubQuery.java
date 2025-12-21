@@ -464,12 +464,14 @@ public class SubQuery extends AbstractCondition {
 
                 int i = 0;
 
-                for (final String propName : propNames) {
-                    if (i++ > 0) {
-                        sb.append(COMMA_SPACE);
-                    }
+                if (propNames != null) {
+                    for (final String propName : propNames) {
+                        if (i++ > 0) {
+                            sb.append(COMMA_SPACE);
+                        }
 
-                    sb.append(propName);
+                        sb.append(propName);
+                    }
                 }
 
                 sb.append(_SPACE);
