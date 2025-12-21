@@ -277,6 +277,10 @@ public class Junction extends AbstractCondition {
      * @throws IllegalArgumentException if conditions contains null elements
      */
     public void add(final Collection<? extends Condition> conditions) {
+        if (conditions == null) {
+            return;
+        }
+
         for (final Condition condition : conditions) {
             if (condition == null) {
                 throw new IllegalArgumentException("Condition cannot be null");
@@ -516,7 +520,7 @@ public class Junction extends AbstractCondition {
     @Override
     public int hashCode() {
         int h = 17;
-        h = (h * 31) + operator.hashCode();
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         return (h * 31) + conditionList.hashCode();
     }
 

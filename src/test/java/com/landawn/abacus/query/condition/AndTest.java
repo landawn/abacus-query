@@ -1,5 +1,7 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -47,9 +49,9 @@ public class AndTest extends TestBase {
 
     @Test
     public void testConstructorWithNullCollection() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
-            Filters.and((Collection<Condition>) null);
-        });
+        And and = Filters.and((Collection<Condition>) null);
+
+        assertTrue(and.getConditions().isEmpty());
     }
 
     @Test

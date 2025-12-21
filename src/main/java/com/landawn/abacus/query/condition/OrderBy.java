@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
 
 /**
@@ -220,6 +221,8 @@ public class OrderBy extends Clause {
      * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
      */
     static String createCondition(final String... propNames) {
+        N.checkArgNotEmpty(propNames, "propNames cannot be null or empty");
+
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -277,6 +280,8 @@ public class OrderBy extends Clause {
      * @throws IllegalArgumentException if propNames is null/empty, direction is null, or propNames contains null/empty elements
      */
     static String createCondition(final Collection<String> propNames, final SortDirection direction) {
+        N.checkArgNotEmpty(propNames, "propNames cannot be null or empty");
+
         if (direction == null) {
             throw new IllegalArgumentException("direction cannot be null");
         }
@@ -318,6 +323,10 @@ public class OrderBy extends Clause {
      * @throws IllegalArgumentException if orders is null/empty, or contains null/empty keys or null values
      */
     static String createCondition(final Map<String, SortDirection> orders) {
+        if (orders == null || orders.isEmpty()) {
+            throw new IllegalArgumentException("orders cannot be null or empty");
+        }
+
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {

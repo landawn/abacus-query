@@ -198,15 +198,7 @@ public class Expression extends AbstractCondition {
      * @return a cached or new Expression instance
      */
     public static Expression of(final String literal) {
-        Expression expr = cachedExpression.get(literal);
-
-        if (expr == null) {
-            expr = new Expression(literal);
-
-            cachedExpression.put(literal, expr);
-        }
-
-        return expr;
+        return cachedExpression.computeIfAbsent(literal, Expression::new);
     }
 
     /**

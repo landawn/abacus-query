@@ -1,5 +1,7 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.Assert.assertThrows;
+
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -156,9 +158,7 @@ public class GroupByTest extends TestBase {
 
     @Test
     public void testEmptyPropNames() {
-        GroupBy groupBy = new GroupBy(new String[0]);
-        String result = groupBy.toString();
-        Assertions.assertTrue(result.contains("GROUP BY"));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(new String[0]));
     }
 
     @Test

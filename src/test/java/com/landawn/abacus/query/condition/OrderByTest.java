@@ -1,5 +1,7 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.Assert.assertThrows;
+
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -81,8 +83,7 @@ public class OrderByTest extends TestBase {
 
     @Test
     public void testCreateConditionWithEmptyVarArgs() {
-        String result = OrderBy.createCondition();
-        Assertions.assertEquals("", result);
+        assertThrows(IllegalArgumentException.class, () -> OrderBy.createCondition());
     }
 
     @Test
@@ -101,8 +102,7 @@ public class OrderByTest extends TestBase {
     @Test
     public void testCreateConditionWithEmptyCollection() {
         List<String> emptyList = Arrays.asList();
-        String result = OrderBy.createCondition(emptyList, SortDirection.ASC);
-        Assertions.assertEquals(" ASC", result);
+        assertThrows(IllegalArgumentException.class, () -> OrderBy.createCondition(emptyList, SortDirection.ASC));
     }
 
     @Test
@@ -118,8 +118,7 @@ public class OrderByTest extends TestBase {
     @Test
     public void testCreateConditionWithEmptyMap() {
         Map<String, SortDirection> emptyMap = new LinkedHashMap<>();
-        String result = OrderBy.createCondition(emptyMap);
-        Assertions.assertEquals("", result);
+        assertThrows(IllegalArgumentException.class, () -> OrderBy.createCondition(emptyMap));
     }
 
     @Test

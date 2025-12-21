@@ -189,6 +189,8 @@ public class NotIn extends AbstractCondition {
      */
     @Deprecated
     public void setValues(final List<?> values) {
+        N.checkArgNotEmpty(values, "'values' can't be null or empty");
+
         this.values = values;
     }
 
@@ -318,7 +320,7 @@ public class NotIn extends AbstractCondition {
     public int hashCode() {
         int h = 17;
         h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
-        h = (h * 31) + operator.hashCode();
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         return (h * 31) + ((values == null) ? 0 : values.hashCode());
     }
 

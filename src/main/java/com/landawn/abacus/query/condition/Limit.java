@@ -146,6 +146,10 @@ public class Limit extends AbstractCondition {
     public Limit(final String expr) {
         this(0, Integer.MAX_VALUE);
 
+        if (Strings.isEmpty(expr)) {
+            throw new IllegalArgumentException("expr cannot be null or empty");
+        }
+
         this.expr = expr;
     }
 
