@@ -257,6 +257,9 @@ public class Join extends AbstractCondition {
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition condition) {
         super(operator);
+
+        N.checkArgNotEmpty(joinEntities, "joinEntities");
+
         this.joinEntities = new ArrayList<>(joinEntities);
         this.condition = condition;
     }

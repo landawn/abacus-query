@@ -75,10 +75,8 @@ public class OnTest extends TestBase {
     public void testConstructorWithEmptyMap() {
         Map<String, String> emptyMap = new LinkedHashMap<>();
 
-        On on = Filters.on(emptyMap);
-
-        // Empty map should still create an On with an And condition
-        Assertions.assertNotNull(on.getCondition());
+        // Empty map should throw IllegalArgumentException
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(emptyMap));
     }
 
     @Test

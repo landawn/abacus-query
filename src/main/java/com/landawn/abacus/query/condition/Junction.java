@@ -476,13 +476,13 @@ public class Junction extends AbstractCondition {
         try {
             sb.append(_PARENTHESES_L);
 
-            boolean first = true;
+            boolean isFirst = true;
             for (final Condition condition : conditionList) {
                 if (condition == null) {
                     continue;
                 }
 
-                if (!first) {
+                if (!isFirst) {
                     sb.append(_SPACE);
                     sb.append(getOperator().toString());
                     sb.append(_SPACE);
@@ -492,7 +492,7 @@ public class Junction extends AbstractCondition {
                 sb.append(condition.toString(namingPolicy));
                 sb.append(_PARENTHESES_R);
 
-                first = false;
+                isFirst = false;
             }
 
             sb.append(_PARENTHESES_R);

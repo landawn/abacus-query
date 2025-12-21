@@ -164,11 +164,11 @@ public class And extends Junction {
     public And and(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 
-        final List<Condition> condList = new ArrayList<>(conditionList.size() + 1);
+        final List<Condition> conditions = new ArrayList<>(conditionList.size() + 1);
 
-        condList.addAll(conditionList);
-        condList.add(condition);
+        conditions.addAll(conditionList);
+        conditions.add(condition);
 
-        return new And(condList);
+        return new And(conditions);
     }
 }

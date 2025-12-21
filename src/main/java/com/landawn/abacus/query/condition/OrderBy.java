@@ -332,13 +332,13 @@ public class OrderBy extends Clause {
         try {
             int i = 0;
             for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
-                final String key = entry.getKey();
-                final SortDirection value = entry.getValue();
+                final String propName = entry.getKey();
+                final SortDirection direction = entry.getValue();
 
-                if (key == null || key.trim().isEmpty()) {
+                if (propName == null || propName.trim().isEmpty()) {
                     throw new IllegalArgumentException("Property name in orders cannot be null or empty");
                 }
-                if (value == null) {
+                if (direction == null) {
                     throw new IllegalArgumentException("SortDirection in orders cannot be null");
                 }
 
@@ -346,9 +346,9 @@ public class OrderBy extends Clause {
                     sb.append(COMMA_SPACE);
                 }
 
-                sb.append(key);
+                sb.append(propName);
                 sb.append(SPACE);
-                sb.append(value);
+                sb.append(direction);
             }
 
             return sb.toString();

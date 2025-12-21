@@ -17,6 +17,7 @@ package com.landawn.abacus.query.condition;
 import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.N;
 
 /**
  * Represents an ON clause used in SQL JOIN operations.
@@ -158,10 +159,10 @@ public class On extends Cell {
      * }</pre>
      *
      * @param propName the column name from the first table (can include table name/alias)
-     * @param anoPropName the column name from the second table (can include table name/alias)
+     * @param anotherPropName the column name from the second table (can include table name/alias)
      */
-    public On(final String propName, final String anoPropName) {
-        this(createOnCondition(propName, anoPropName));
+    public On(final String propName, final String anotherPropName) {
+        this(createOnCondition(propName, anotherPropName));
     }
 
     /**
@@ -217,11 +218,11 @@ public class On extends Cell {
      * }</pre>
      *
      * @param propName the first column name
-     * @param anoPropName the second column name
+     * @param anotherPropName the second column name
      * @return an Equal condition comparing the two columns
      */
-    static Condition createOnCondition(final String propName, final String anoPropName) {
-        return new Equal(propName, Filters.expr(anoPropName));
+    static Condition createOnCondition(final String propName, final String anotherPropName) {
+        return new Equal(propName, Filters.expr(anotherPropName));
     }
 
     /**
@@ -243,6 +244,8 @@ public class On extends Cell {
      * @return a single Equal condition or an And condition combining multiple equalities
      */
     static Condition createOnCondition(final Map<String, String> propNamePair) {
+        N.checkArgNotEmpty(propNamePair, "propNamePair");
+
         if (propNamePair.size() == 1) {
             final Map.Entry<String, String> entry = propNamePair.entrySet().iterator().next();
 

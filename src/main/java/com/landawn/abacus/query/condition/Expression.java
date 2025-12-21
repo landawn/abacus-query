@@ -1186,12 +1186,12 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.log("2", "value");   // Returns: "LOG(2, value)"
      * }</pre>
      *
-     * @param b the logarithm base
-     * @param x the value to calculate logarithm of
+     * @param base the logarithm base
+     * @param value the value to calculate logarithm of
      * @return a LOG function string
      */
-    public static String log(final String b, final String x) {
-        return function(LOG, b, x);
+    public static String log(final String base, final String value) {
+        return function(LOG, base, value);
     }
 
     /**
@@ -1221,12 +1221,12 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.mod("id", "batch_size");   // Returns: "MOD(id, batch_size)"
      * }</pre>
      *
-     * @param n1 the dividend
-     * @param n2 the divisor
+     * @param dividend the dividend
+     * @param divisor the divisor
      * @return a MOD function string
      */
-    public static String mod(final String n1, final String n2) {
-        return function(MOD, n1, n2);
+    public static String mod(final String dividend, final String divisor) {
+        return function(MOD, dividend, divisor);
     }
 
     /**
@@ -1239,12 +1239,12 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.power("base", "exponent");   // Returns: "POWER(base, exponent)"
      * }</pre>
      *
-     * @param n1 the base
-     * @param n2 the exponent
+     * @param base the base
+     * @param exponent the exponent
      * @return a POWER function string
      */
-    public static String power(final String n1, final String n2) {
-        return function(POWER, n1, n2);
+    public static String power(final String base, final String exponent) {
+        return function(POWER, base, exponent);
     }
 
     /**
@@ -1328,12 +1328,12 @@ public class Expression extends AbstractCondition {
      * // Returns: "CONCAT(city, ', ')"
      * }</pre>
      *
-     * @param st1 the first string
-     * @param st2 the second string
+     * @param str1 the first string
+     * @param str2 the second string
      * @return a CONCAT function string
      */
-    public static String concat(final String st1, final String st2) {
-        return function(CONCAT, st1, st2);
+    public static String concat(final String str1, final String str2) {
+        return function(CONCAT, str1, str2);
     }
 
     /**
@@ -1349,13 +1349,13 @@ public class Expression extends AbstractCondition {
      * // Returns: "REPLACE(phone, '-', '')"
      * }</pre>
      *
-     * @param st the string to search in
+     * @param str the string to search in
      * @param oldString the string to search for
      * @param replacement the replacement string
      * @return a REPLACE function string
      */
-    public static String replace(final String st, final String oldString, final String replacement) {
-        return function(REPLACE, st, oldString, replacement);
+    public static String replace(final String str, final String oldString, final String replacement) {
+        return function(REPLACE, str, oldString, replacement);
     }
 
     /**
@@ -1368,11 +1368,11 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.stringLength("description");   // Returns: "LENGTH(description)"
      * }</pre>
      *
-     * @param st the string to get length of
+     * @param str the string to get length of
      * @return a LENGTH function string
      */
-    public static String stringLength(final String st) {
-        return function(LENGTH, st);
+    public static String stringLength(final String str) {
+        return function(LENGTH, str);
     }
 
     /**
@@ -1385,12 +1385,12 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.subString("code", 3);   // Returns: "SUBSTR(code, 3)"
      * }</pre>
      *
-     * @param st the string to extract from
+     * @param str the string to extract from
      * @param fromIndex the starting position (1-based)
      * @return a SUBSTR function string
      */
-    public static String subString(final String st, final int fromIndex) {
-        return function(SUBSTR, st, fromIndex);
+    public static String subString(final String str, final int fromIndex) {
+        return function(SUBSTR, str, fromIndex);
     }
 
     /**
@@ -1403,13 +1403,13 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.subString("zip", 1, 5);    // Returns: "SUBSTR(zip, 1, 5)"
      * }</pre>
      *
-     * @param st the string to extract from
+     * @param str the string to extract from
      * @param fromIndex the starting position (1-based)
      * @param length the number of characters to extract
      * @return a SUBSTR function string
      */
-    public static String subString(final String st, final int fromIndex, final int length) {
-        return function(SUBSTR, st, fromIndex, length);
+    public static String subString(final String str, final int fromIndex, final int length) {
+        return function(SUBSTR, str, fromIndex, length);
     }
 
     /**
@@ -1422,11 +1422,11 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.trim("user_name");   // Returns: "TRIM(user_name)"
      * }</pre>
      *
-     * @param st the string to trim
+     * @param str the string to trim
      * @return a TRIM function string
      */
-    public static String trim(final String st) {
-        return function(TRIM, st);
+    public static String trim(final String str) {
+        return function(TRIM, str);
     }
 
     /**
@@ -1439,11 +1439,11 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.lTrim("address");   // Returns: "LTRIM(address)"
      * }</pre>
      *
-     * @param st the string to left trim
+     * @param str the string to left trim
      * @return an LTRIM function string
      */
-    public static String lTrim(final String st) {
-        return function(LTRIM, st);
+    public static String lTrim(final String str) {
+        return function(LTRIM, str);
     }
 
     /**
@@ -1456,11 +1456,11 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.rTrim("description");   // Returns: "RTRIM(description)"
      * }</pre>
      *
-     * @param st the string to right trim
+     * @param str the string to right trim
      * @return an RTRIM function string
      */
-    public static String rTrim(final String st) {
-        return function(RTRIM, st);
+    public static String rTrim(final String str) {
+        return function(RTRIM, str);
     }
 
     /**
@@ -1473,13 +1473,13 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.lPad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
      * }</pre>
      *
-     * @param st the string to pad
+     * @param str the string to pad
      * @param length the total length after padding
      * @param padStr the string to pad with
      * @return an LPAD function string
      */
-    public static String lPad(final String st, final int length, final String padStr) {
-        return function(LPAD, st, length, padStr);
+    public static String lPad(final String str, final int length, final String padStr) {
+        return function(LPAD, str, length, padStr);
     }
 
     /**
@@ -1492,13 +1492,13 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.rPad("code", 10, "'X'");   // Returns: "RPAD(code, 10, 'X')"
      * }</pre>
      *
-     * @param st the string to pad
+     * @param str the string to pad
      * @param length the total length after padding
      * @param padStr the string to pad with
      * @return an RPAD function string
      */
-    public static String rPad(final String st, final int length, final String padStr) {
-        return function(RPAD, st, length, padStr);
+    public static String rPad(final String str, final int length, final String padStr) {
+        return function(RPAD, str, length, padStr);
     }
 
     /**
@@ -1511,11 +1511,11 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.lower("COUNTRY");   // Returns: "LOWER(COUNTRY)"
      * }</pre>
      *
-     * @param st the string to convert to lowercase
+     * @param str the string to convert to lowercase
      * @return a LOWER function string
      */
-    public static String lower(final String st) {
-        return function(LOWER, st);
+    public static String lower(final String str) {
+        return function(LOWER, str);
     }
 
     /**
@@ -1528,11 +1528,11 @@ public class Expression extends AbstractCondition {
      * String expr2 = Expression.upper("country_code");   // Returns: "UPPER(country_code)"
      * }</pre>
      *
-     * @param st the string to convert to uppercase
+     * @param str the string to convert to uppercase
      * @return an UPPER function string
      */
-    public static String upper(final String st) {
-        return function(UPPER, st);
+    public static String upper(final String str) {
+        return function(UPPER, str);
     }
 
     /**

@@ -2620,11 +2620,11 @@ public class Filters {
      * }</pre>
      *
      * @param propName the first column name
-     * @param anoPropName the second column name to join with
+     * @param anotherPropName the second column name to join with
      * @return an On clause
      */
-    public static On on(final String propName, final String anoPropName) {
-        return new On(propName, anoPropName);
+    public static On on(final String propName, final String anotherPropName) {
+        return new On(propName, anotherPropName);
     }
 
     /**

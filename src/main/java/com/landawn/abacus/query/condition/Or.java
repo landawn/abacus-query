@@ -179,11 +179,11 @@ public class Or extends Junction {
     public Or or(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 
-        final List<Condition> condList = new ArrayList<>(conditionList.size() + 1);
+        final List<Condition> conditions = new ArrayList<>(conditionList.size() + 1);
 
-        condList.addAll(conditionList);
-        condList.add(condition);
+        conditions.addAll(conditionList);
+        conditions.add(condition);
 
-        return new Or(condList);
+        return new Or(conditions);
     }
 }

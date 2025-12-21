@@ -1567,6 +1567,10 @@ public class Criteria extends AbstractCondition {
      * @param cond
      */
     private void checkCondition(final Condition cond) {
+        if (cond == null) {
+            throw new IllegalArgumentException("Condition cannot be null");
+        }
+
         if (!CriteriaUtil.isClause(cond.getOperator())) {
             throw new IllegalArgumentException(
                     "Invalid operator '" + cond.getOperator() + "' for Criteria. Expected clause operators: WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.");
