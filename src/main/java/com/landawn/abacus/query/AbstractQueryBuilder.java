@@ -2500,7 +2500,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY ASC clause with multiple columns.
-     * 
+     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.ASC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByAsc("lastName", "firstName")
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY last_name, first_name ASC
+     * }</pre>
+     *
      * @param propOrColumnNames the columns to order by ascending
      * @return this SQLBuilder instance for method chaining
      */
@@ -2511,7 +2521,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY ASC clause with a collection of columns.
-     * 
+     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.ASC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("lastName", "firstName");
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByAsc(columns)
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY last_name, first_name ASC
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns to order by ascending
      * @return this SQLBuilder instance for method chaining
      */
@@ -2542,7 +2563,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY DESC clause with multiple columns.
-     * 
+     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.DESC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByDesc("createdDate", "id")
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY created_date, id DESC
+     * }</pre>
+     *
      * @param propOrColumnNames the columns to order by descending
      * @return this SQLBuilder instance for method chaining
      */
@@ -2553,7 +2584,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY DESC clause with a collection of columns.
-     * 
+     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.DESC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("createdDate", "id");
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByDesc(columns)
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY created_date, id DESC
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns to order by descending
      * @return this SQLBuilder instance for method chaining
      */
@@ -2874,7 +2916,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Conditionally appends a string expression to the SQL statement.
-     * 
+     * Useful for building dynamic SQL based on runtime conditions.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * boolean includeForUpdate = true;
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .where(Filters.eq("id", 1))
+     *                 .appendIf(includeForUpdate, " FOR UPDATE")
+     *                 .sql();
+     * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
+     * }</pre>
+     *
      * @param b if true, the expression will be appended
      * @param expr the expression to append
      * @return this SQLBuilder instance for method chaining
@@ -2945,7 +2999,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Conditionally appends one of two string expressions based on a boolean value.
-     * 
+     * Useful for building dynamic SQL with alternative clauses.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * boolean sortAscending = true;
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .appendIfOrElse(sortAscending,
+     *                     " ORDER BY name ASC",
+     *                     " ORDER BY name DESC")
+     *                 .sql();
+     * // Output: SELECT * FROM users ORDER BY name ASC
+     * }</pre>
+     *
      * @param b if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
      * @param exprToAppendForTrue the expression to append if b is true
      * @param exprToAppendForFalse the expression to append if b is false
@@ -2987,7 +3054,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a UNION clause with a SQL query string.
-     * 
+     * UNION combines result sets from two queries and removes duplicates.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .union("SELECT id, name FROM customers")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
+     * }</pre>
+     *
      * @param query the SQL query to union
      * @return this SQLBuilder instance for method chaining
      */
@@ -3032,7 +3109,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for UNION operation with a collection of columns.
-     * 
+     * This method prepares the builder to specify a second SELECT query after UNION.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("id", "name");
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .union(columns)
+     *                 .from("customers")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns for the union query
      * @return this SQLBuilder instance for method chaining
      */
@@ -3072,7 +3161,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a UNION ALL clause with a SQL query string.
-     * 
+     * UNION ALL combines result sets from two queries and keeps all duplicates.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .unionAll("SELECT id, name FROM customers")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
+     * }</pre>
+     *
      * @param query the SQL query to union all
      * @return this SQLBuilder instance for method chaining
      */
@@ -3082,7 +3181,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for UNION ALL operation.
-     * 
+     * This method prepares the builder to specify a second SELECT query after UNION ALL.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .unionAll("id", "name")
+     *                 .from("customers")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
+     * }</pre>
+     *
      * @param propOrColumnNames the columns for the union all query
      * @return this SQLBuilder instance for method chaining
      */
@@ -3108,7 +3218,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for UNION ALL operation with a collection of columns.
-     * 
+     * This method prepares the builder to specify a second SELECT query after UNION ALL.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("id", "name");
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .unionAll(columns)
+     *                 .from("customers")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns for the union all query
      * @return this SQLBuilder instance for method chaining
      */
@@ -3148,7 +3270,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an INTERSECT clause with a SQL query string.
-     * 
+     * INTERSECT returns only rows that appear in both result sets.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .intersect("SELECT id, name FROM premium_users")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
+     * }</pre>
+     *
      * @param query the SQL query to intersect
      * @return this SQLBuilder instance for method chaining
      */
@@ -3158,7 +3290,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for INTERSECT operation.
-     * 
+     * This method prepares the builder to specify a second SELECT query after INTERSECT.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .intersect("id", "name")
+     *                 .from("premium_users")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
+     * }</pre>
+     *
      * @param propOrColumnNames the columns for the intersect query
      * @return this SQLBuilder instance for method chaining
      */
@@ -3184,7 +3327,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for INTERSECT operation with a collection of columns.
-     * 
+     * This method prepares the builder to specify a second SELECT query after INTERSECT.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("id", "name");
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .intersect(columns)
+     *                 .from("premium_users")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns for the intersect query
      * @return this SQLBuilder instance for method chaining
      */
@@ -3224,7 +3379,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an EXCEPT clause with a SQL query string.
-     * 
+     * EXCEPT returns rows from the first query that don't appear in the second query.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .except("SELECT id, name FROM inactive_users")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
+     * }</pre>
+     *
      * @param query the SQL query to except
      * @return this SQLBuilder instance for method chaining
      */
@@ -3234,7 +3399,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for EXCEPT operation.
-     * 
+     * This method prepares the builder to specify a second SELECT query after EXCEPT.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .except("id", "name")
+     *                 .from("inactive_users")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
+     * }</pre>
+     *
      * @param propOrColumnNames the columns for the except query
      * @return this SQLBuilder instance for method chaining
      */
@@ -3260,7 +3436,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for EXCEPT operation with a collection of columns.
-     * 
+     * This method prepares the builder to specify a second SELECT query after EXCEPT.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("id", "name");
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .except(columns)
+     *                 .from("inactive_users")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns for the except query
      * @return this SQLBuilder instance for method chaining
      */
@@ -3277,7 +3465,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a MINUS clause with another SQL query (Oracle syntax).
-     * 
+     * MINUS is Oracle's equivalent to EXCEPT - returns rows from the first query that don't appear in the second.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLBuilder query1 = PSC.select("id", "name").from("users");
+     * SQLBuilder query2 = PSC.select("id", "name").from("inactive_users");
+     * String sql = query1.minus(query2).sql();
+     * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
+     * }</pre>
+     *
      * @param sqlBuilder the SQL builder containing the query to minus
      * @return this SQLBuilder instance for method chaining
      */
@@ -3293,7 +3490,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a MINUS clause with a SQL query string (Oracle syntax).
-     * 
+     * MINUS is Oracle's equivalent to EXCEPT - returns rows from the first query that don't appear in the second.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .minus("SELECT id, name FROM inactive_users")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
+     * }</pre>
+     *
      * @param query the SQL query to minus
      * @return this SQLBuilder instance for method chaining
      */
@@ -3303,7 +3510,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for MINUS operation (Oracle syntax).
-     * 
+     * This method prepares the builder to specify a second SELECT query after MINUS.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .minus("id", "name")
+     *                 .from("inactive_users")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
+     * }</pre>
+     *
      * @param propOrColumnNames the columns for the minus query
      * @return this SQLBuilder instance for method chaining
      */
@@ -3329,7 +3547,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for MINUS operation with a collection of columns (Oracle syntax).
-     * 
+     * This method prepares the builder to specify a second SELECT query after MINUS.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("id", "name");
+     * String sql = PSC.select("id", "name")
+     *                 .from("users")
+     *                 .minus(columns)
+     *                 .from("inactive_users")
+     *                 .sql();
+     * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns for the minus query
      * @return this SQLBuilder instance for method chaining
      */
@@ -3402,7 +3632,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets columns for UPDATE operation with a collection.
-     * 
+     * Generates parameterized placeholders (?, :name, or #{name}) based on SQL policy.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("firstName", "lastName", "email");
+     * String sql = PSC.update("users")
+     *                 .set(columns)
+     *                 .where(Filters.eq("id", 1))
+     *                 .sql();
+     * // Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?
+     * }</pre>
+     *
      * @param propOrColumnNames the collection of columns to update
      * @return this SQLBuilder instance for method chaining
      */
