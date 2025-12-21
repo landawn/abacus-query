@@ -563,6 +563,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         if (val == null) {
             synchronized (defaultPropNamesPool) {
+                val = defaultPropNamesPool.get(entityClass);
+
+                if (val != null) {
+                    return val;
+                }
+
                 final Set<String> entityPropNames = N.newLinkedHashSet(Beans.getPropNameList(entityClass));
                 final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
@@ -652,11 +658,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         ImmutableSet<String> subEntityPropNames = subEntityPropNamesPool.get(entityClass);
         if (subEntityPropNames == null) {
             synchronized (subEntityPropNamesPool) {
-                final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
-                final Set<String> subEntityPropNameSet = N.newLinkedHashSet(entityInfo.subEntityPropNameList);
-                subEntityPropNames = ImmutableSet.wrap(subEntityPropNameSet);
+                subEntityPropNames = subEntityPropNamesPool.get(entityClass);
 
-                subEntityPropNamesPool.put(entityClass, subEntityPropNames);
+                if (subEntityPropNames == null) {
+                    final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
+                    final Set<String> subEntityPropNameSet = N.newLinkedHashSet(entityInfo.subEntityPropNameList);
+                    subEntityPropNames = ImmutableSet.wrap(subEntityPropNameSet);
+
+                    subEntityPropNamesPool.put(entityClass, subEntityPropNames);
+                }
             }
         }
 

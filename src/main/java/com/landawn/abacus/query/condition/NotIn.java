@@ -112,6 +112,7 @@ public class NotIn extends AbstractCondition {
     public NotIn(final String propName, final Collection<?> values) {
         super(Operator.NOT_IN);
 
+        N.checkArgNotEmpty(propName, "propName");
         N.checkArgNotEmpty(values, "values");
 
         this.propName = propName;
@@ -264,7 +265,7 @@ public class NotIn extends AbstractCondition {
     public <T extends Condition> T copy() {
         final NotIn copy = super.copy();
 
-        copy.values = new ArrayList<>(values);
+        copy.values = values == null ? null : new ArrayList<>(values);
 
         return (T) copy;
     }
@@ -291,11 +292,13 @@ public class NotIn extends AbstractCondition {
         final StringBuilder sb = new StringBuilder();
         sb.append(namingPolicy.convert(propName)).append(SK._SPACE).append(getOperator().toString()).append(SK.SPACE_PARENTHESES_L);
 
-        for (int i = 0; i < values.size(); i++) {
-            if (i > 0) {
-                sb.append(SK.COMMA_SPACE);
+        if (values != null) {
+            for (int i = 0; i < values.size(); i++) {
+                if (i > 0) {
+                    sb.append(SK.COMMA_SPACE);
+                }
+                sb.append(parameter2String(values.get(i), namingPolicy));
             }
-            sb.append(parameter2String(values.get(i), namingPolicy));
         }
 
         sb.append(SK._PARENTHESES_R);

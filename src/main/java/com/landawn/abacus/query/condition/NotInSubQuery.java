@@ -112,6 +112,7 @@ public class NotInSubQuery extends AbstractCondition {
     public NotInSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.NOT_IN);
 
+        N.checkArgNotEmpty(propName, "propName");
         N.checkArgNotNull(subQuery, "subQuery");
 
         this.propName = propName;
