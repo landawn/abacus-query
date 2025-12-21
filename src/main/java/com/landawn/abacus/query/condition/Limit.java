@@ -147,7 +147,7 @@ public class Limit extends AbstractCondition {
         this(0, Integer.MAX_VALUE);
 
         if (Strings.isEmpty(expr)) {
-            throw new IllegalArgumentException("expr cannot be null or empty");
+            throw new IllegalArgumentException("Limit expression cannot be null or empty");
         }
 
         this.expr = expr;

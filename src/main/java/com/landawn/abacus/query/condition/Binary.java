@@ -98,7 +98,7 @@ public class Binary extends AbstractCondition {
         super(operator);
 
         if (Strings.isEmpty(propName)) {
-            throw new IllegalArgumentException("property name can't be null or empty.");
+            throw new IllegalArgumentException("Property name cannot be null or empty");
         }
 
         this.propName = propName;

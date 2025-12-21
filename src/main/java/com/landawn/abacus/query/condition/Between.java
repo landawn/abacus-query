@@ -118,7 +118,7 @@ public class Between extends AbstractCondition {
         super(Operator.BETWEEN);
 
         if (Strings.isEmpty(propName)) {
-            throw new IllegalArgumentException("property name can't be null or empty.");
+            throw new IllegalArgumentException("Property name cannot be null or empty");
         }
 
         this.propName = propName;

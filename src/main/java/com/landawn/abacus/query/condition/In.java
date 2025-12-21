@@ -116,7 +116,7 @@ public class In extends AbstractCondition {
     public In(final String propName, final Collection<?> values) {
         super(Operator.IN);
 
-        N.checkArgNotEmpty(values, "'values' can't be null or empty");
+        N.checkArgNotEmpty(values, "'values' cannot be null or empty");
 
         this.propName = propName;
         this.values = new ArrayList<>(values);
@@ -198,7 +198,7 @@ public class In extends AbstractCondition {
      */
     @Deprecated
     public void setValues(final List<?> values) {
-        N.checkArgNotEmpty(values, "'values' can't be null or empty");
+        N.checkArgNotEmpty(values, "'values' cannot be null or empty");
 
         this.values = values;
     }

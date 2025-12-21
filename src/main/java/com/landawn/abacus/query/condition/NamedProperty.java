@@ -126,7 +126,7 @@ public final class NamedProperty {
      */
     public static NamedProperty of(final String propName) {
         if (Strings.isEmpty(propName)) {
-            throw new IllegalArgumentException("the property name can't be null or empty string.");
+            throw new IllegalArgumentException("Property name cannot be null or empty");
         }
 
         return instancePool.computeIfAbsent(propName, NamedProperty::new);

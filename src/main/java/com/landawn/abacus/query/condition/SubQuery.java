@@ -158,7 +158,7 @@ public class SubQuery extends AbstractCondition {
         entityClass = null;
 
         if (Strings.isEmpty(sql)) {
-            throw new IllegalArgumentException("The sql script can't be null or empty.");
+            throw new IllegalArgumentException("SQL script cannot be null or empty");
         }
 
         propNames = null;

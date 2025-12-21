@@ -179,7 +179,7 @@ public class Using extends Cell {
      */
     static Condition createUsingCondition(final String... columnNames) {
         if (N.isEmpty(columnNames)) {
-            throw new IllegalArgumentException("To create the using condition, columnNames can't be null or empty");
+            throw new IllegalArgumentException("Column names cannot be null or empty");
         }
 
         return Filters.expr(concatPropNames(columnNames));
@@ -209,7 +209,7 @@ public class Using extends Cell {
      */
     static Condition createUsingCondition(final Collection<String> columnNames) {
         if (N.isEmpty(columnNames)) {
-            throw new IllegalArgumentException("To create the using condition, columnNames can't be null or empty");
+            throw new IllegalArgumentException("Column names cannot be null or empty");
         }
 
         return Filters.expr(concatPropNames(columnNames));

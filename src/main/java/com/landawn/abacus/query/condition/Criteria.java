@@ -1569,7 +1569,7 @@ public class Criteria extends AbstractCondition {
     private void checkCondition(final Condition cond) {
         if (!CriteriaUtil.isClause(cond.getOperator())) {
             throw new IllegalArgumentException(
-                    "Criteria only accepts condition: " + CriteriaUtil.getClauseOperators() + ". Doesn't accept[" + cond.getOperator() + "]. ");
+                    "Criteria only accepts clause operators: " + CriteriaUtil.getClauseOperators() + ". Cannot accept operator: " + cond.getOperator());
         }
     }
 

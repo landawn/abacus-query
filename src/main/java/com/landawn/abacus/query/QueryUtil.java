@@ -236,7 +236,7 @@ public final class QueryUtil {
 
         if (registeringClasses != null) {
             if (registeringClasses.contains(entityClass)) {
-                throw new RuntimeException("Cycling references found among: " + registeringClasses);
+                throw new RuntimeException("Cyclic references detected among: " + registeringClasses);
             }
 
             registeringClasses.add(entityClass);

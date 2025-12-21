@@ -133,7 +133,7 @@ public final class ParsedSql {
                 }
 
                 if (Integer.bitCount(type) > 1) {
-                    throw new IllegalArgumentException("can't mix '?', ':propName' or '#{propName}' in the same sql script");
+                    throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
                 }
 
                 sb.append(word);
@@ -395,7 +395,7 @@ public final class ParsedSql {
             for (String word : words) {
                 if (word.equals(SK.QUESTION_MARK)) {
                     if (couchbaseNamedParameterList.size() > 0) {
-                        throw new IllegalArgumentException("can't mix '?' with name parameter ':propName' or '#{propName}' in the same sql script");
+                        throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
                     }
 
                     countOfParameter++;

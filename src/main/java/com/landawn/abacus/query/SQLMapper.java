@@ -183,7 +183,7 @@ public final class SQLMapper {
                 final NodeList sqlMapperEle = doc.getElementsByTagName(SQLMapper.SQL_MAPPER);
 
                 if (0 == sqlMapperEle.getLength()) {
-                    throw new RuntimeException("There is no 'sqlMapper' element. ");
+                    throw new RuntimeException("No 'sqlMapper' element found in the configuration");
                 }
 
                 final List<Element> sqlElementList = XmlUtil.getElementsByTagName((Element) sqlMapperEle.item(0), SQL);
@@ -332,15 +332,15 @@ public final class SQLMapper {
         N.checkArgNotEmpty(id, "id");
 
         if (Strings.containsWhitespace(id)) {
-            throw new IllegalArgumentException("Sql id: " + id + " contains whitespace characters");
+            throw new IllegalArgumentException("SQL id '" + id + "' contains whitespace characters");
         }
 
         if (id.length() > MAX_ID_LENGTH) {
-            throw new IllegalArgumentException("Sql id: " + id + " is too long. The maximum length for id is: " + MAX_ID_LENGTH);
+            throw new IllegalArgumentException("SQL id '" + id + "' exceeds maximum length of " + MAX_ID_LENGTH + " characters");
         }
 
         if (sqlMap.containsKey(id)) {
-            throw new IllegalArgumentException(id + " already exists with sql: " + sqlMap.get(id));
+            throw new IllegalArgumentException("SQL id '" + id + "' already exists with SQL: " + sqlMap.get(id));
         }
     }
 
