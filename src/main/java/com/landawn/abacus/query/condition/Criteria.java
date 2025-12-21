@@ -360,7 +360,7 @@ public class Criteria extends AbstractCondition {
      */
     void remove(final Condition... conditions) {
         for (final Condition cond : conditions) {
-            conditionList.remove(cond);   // NOSONAR
+            conditionList.remove(cond); // NOSONAR
         }
     }
 
@@ -1480,19 +1480,19 @@ public class Criteria extends AbstractCondition {
 
         for (final Condition cond : conditionList) {
             if (cond.getOperator() == Operator.WHERE) {
-                where += (SK._SPACE + cond.toString(namingPolicy));   //NOSONAR
+                where += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.getOperator() == Operator.ORDER_BY) {
-                orderBy += (SK._SPACE + cond.toString(namingPolicy));   //NOSONAR
+                orderBy += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.getOperator() == Operator.GROUP_BY) {
-                groupBy += (SK._SPACE + cond.toString(namingPolicy));   //NOSONAR
+                groupBy += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.getOperator() == Operator.HAVING) {
-                having += (SK._SPACE + cond.toString(namingPolicy));   //NOSONAR
+                having += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.getOperator() == Operator.LIMIT) {
-                limit += (SK._SPACE + cond.toString(namingPolicy));   //NOSONAR
+                limit += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond instanceof Join) {
-                join += (SK._SPACE + cond.toString(namingPolicy));   //NOSONAR
+                join += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else {
-                aggregate += (SK._SPACE + cond.toString(namingPolicy));   //NOSONAR
+                aggregate += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             }
         }
 
@@ -1611,7 +1611,7 @@ public class Criteria extends AbstractCondition {
             final Condition cell = find(cond.getOperator());
 
             if (cell != null) {
-                conditionList.remove(cell);   // NOSONAR
+                conditionList.remove(cell); // NOSONAR
             }
         }
 
