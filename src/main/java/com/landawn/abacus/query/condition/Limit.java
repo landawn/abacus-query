@@ -113,12 +113,20 @@ public class Limit extends AbstractCondition {
      * // SQL: SELECT * FROM products LIMIT 50 OFFSET 100
      * }</pre>
      *
-     * @param offset the number of rows to skip before returning results. Should be non-negative.
-     * @param count the maximum number of rows to return after the offset. Should be non-negative.
-     * @throws IllegalArgumentException if offset or count is negative (implementation-dependent)
+     * @param offset the number of rows to skip before returning results. Must be non-negative.
+     * @param count the maximum number of rows to return after the offset. Must be non-negative.
+     * @throws IllegalArgumentException if offset or count is negative
      */
     public Limit(final int offset, final int count) {
         super(Operator.LIMIT);
+
+        if (offset < 0) {
+            throw new IllegalArgumentException("offset cannot be negative: " + offset);
+        }
+        if (count < 0) {
+            throw new IllegalArgumentException("count cannot be negative: " + count);
+        }
+
         this.count = count;
         this.offset = offset;
     }

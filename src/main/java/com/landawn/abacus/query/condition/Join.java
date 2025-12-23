@@ -266,18 +266,18 @@ public class Join extends AbstractCondition {
 
     /**
      * Gets the list of tables/entities involved in this join.
-     * Returns the tables that are being joined, including any aliases.
-     * 
+     * Returns a defensive copy of the tables that are being joined, including any aliases.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Join join = new Join(Arrays.asList("orders o", "customers c"), condition);
      * List<String> entities = join.getJoinEntities();   // Returns ["orders o", "customers c"]
      * }</pre>
      *
-     * @return the list of join entities
+     * @return a copy of the list of join entities
      */
     public List<String> getJoinEntities() {
-        return joinEntities;
+        return joinEntities == null ? null : new ArrayList<>(joinEntities);
     }
 
     /**

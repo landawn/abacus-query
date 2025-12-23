@@ -14,8 +14,8 @@
 
 package com.landawn.abacus.query.condition;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.query.SK;
 import com.landawn.abacus.util.Strings;
@@ -360,7 +360,7 @@ public enum Operator {
     /**
      * Cache for operator lookup by name.
      */
-    private static final Map<String, Operator> operatorMap = new HashMap<>();
+    private static final Map<String, Operator> operatorMap = new ConcurrentHashMap<>();
 
     /**
      * Constructs an Operator with the specified string representation.
@@ -389,7 +389,7 @@ public enum Operator {
      * @param name the string representation of the operator. Can be null.
      * @return the corresponding Operator enum value, or {@code null} if name is null or not found
      */
-    public static synchronized Operator getOperator(final String name) {
+    public static Operator getOperator(final String name) {
         if (name == null) {
             return null;
         }
