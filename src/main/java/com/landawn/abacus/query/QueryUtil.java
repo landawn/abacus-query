@@ -178,9 +178,10 @@ public final class QueryUtil {
 
             for (final PropInfo propInfo : entityInfo.propInfoList) {
                 if (propInfo.columnName.isPresent()) {
-                    map.put(propInfo.columnName.get(), propInfo.name);
-                    map.put(propInfo.columnName.get().toLowerCase(), propInfo.name);
-                    map.put(propInfo.columnName.get().toUpperCase(), propInfo.name);
+                    final String columnName = propInfo.columnName.get();
+                    map.put(columnName, propInfo.name);
+                    map.put(columnName.toLowerCase(), propInfo.name);
+                    map.put(columnName.toUpperCase(), propInfo.name);
                 }
             }
 
@@ -359,8 +360,12 @@ public final class QueryUtil {
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
 
         for (final String idPropName : idPropNames) {
-            if (!SQLBuilder.isDefaultIdPropValue(entityInfo.getPropInfo(idPropName))) {
-                return val[2];
+            final PropInfo propInfo = entityInfo.getPropInfo(idPropName);
+            if (propInfo != null) {
+                final Object propValue = propInfo.getPropValue(entity);
+                if (!SQLBuilder.isDefaultIdPropValue(propValue)) {
+                    return val[2];
+                }
             }
         }
 

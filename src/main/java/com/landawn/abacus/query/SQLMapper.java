@@ -439,9 +439,11 @@ public final class SQLMapper {
 
             doc.appendChild(sqlMapperNode);
 
-            if (!file.exists()) {
-                //noinspection ResultOfMethodCallIgnored
-                file.createNewFile(); //NOSONAR
+            // Create parent directories if they don't exist
+            if (file.getParentFile() != null && !file.getParentFile().exists()) {
+                if (!file.getParentFile().mkdirs()) {
+                    throw new IOException("Failed to create parent directories for file: " + file.getAbsolutePath());
+                }
             }
 
             XmlUtil.transform(doc, os);

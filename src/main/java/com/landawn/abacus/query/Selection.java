@@ -89,7 +89,7 @@ public final class Selection {
     private String tableAlias;
     private String classAlias;
     private Collection<String> selectPropNames;
-    boolean includeSubEntityProperties;
+    private boolean includeSubEntityProperties;
     private Set<String> excludedPropNames;
 
     /**

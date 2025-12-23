@@ -5134,7 +5134,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 sb.append(' ').append(selection.tableAlias());
             }
 
-            if (N.notEmpty(selection.selectPropNames()) || selection.includeSubEntityProperties) {
+            if (N.notEmpty(selection.selectPropNames()) || selection.includeSubEntityProperties()) {
                 final Class<?> entityClass = selection.entityClass();
                 final Collection<String> selectPropNames = selection.selectPropNames();
                 final Set<String> excludedPropNames = selection.excludedPropNames();

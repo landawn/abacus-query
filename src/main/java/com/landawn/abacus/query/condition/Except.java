@@ -153,7 +153,7 @@ public class Except extends Clause {
      *
      * @param condition the subquery to perform the EXCEPT operation with. Must not be null.
      *                  The subquery must have the same number of columns with compatible types as the main query.
-     * @throws IllegalArgumentException if condition is null
+     * @throws NullPointerException if condition is null
      * @see Minus
      * @see Union
      * @see UnionAll

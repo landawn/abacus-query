@@ -237,7 +237,7 @@ public class QueryUtilTest extends TestBase {
         Set<String> excludedProps = new HashSet<>();
         Collection<String> props = QueryUtil.getInsertPropNames(user, excludedProps);
         assertNotNull(props);
-        assertTrue(props.contains("id"));
+        assertFalse(props.contains("id"));
         assertTrue(props.contains("name"));
         assertFalse(props.contains("email"));
 

@@ -277,7 +277,7 @@ public class Join extends AbstractCondition {
      * @return a copy of the list of join entities
      */
     public List<String> getJoinEntities() {
-        return joinEntities == null ? null : new ArrayList<>(joinEntities);
+        return joinEntities == null ? N.emptyList() : new ArrayList<>(joinEntities);
     }
 
     /**

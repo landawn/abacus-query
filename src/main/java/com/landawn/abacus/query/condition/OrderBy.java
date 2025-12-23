@@ -24,6 +24,7 @@ import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.Strings;
 
 /**
  * Represents an ORDER BY clause in SQL queries.
@@ -228,7 +229,7 @@ public class OrderBy extends Clause {
         try {
             int i = 0;
             for (final String propName : propNames) {
-                if (propName == null || propName.trim().isEmpty()) {
+                if (Strings.isEmpty(propName)) {
                     throw new IllegalArgumentException("Property name cannot be null or empty");
                 }
 
@@ -258,7 +259,7 @@ public class OrderBy extends Clause {
      * @throws IllegalArgumentException if propName is null/empty or direction is null
      */
     static String createCondition(final String propName, final SortDirection direction) {
-        if (propName == null || propName.trim().isEmpty()) {
+        if (Strings.isEmpty(propName)) {
             throw new IllegalArgumentException("Property name cannot be null or empty");
         }
         if (direction == null) {
@@ -291,7 +292,7 @@ public class OrderBy extends Clause {
         try {
             int i = 0;
             for (final String propName : propNames) {
-                if (propName == null || propName.trim().isEmpty()) {
+                if (Strings.isEmpty(propName)) {
                     throw new IllegalArgumentException("Property name in collection cannot be null or empty");
                 }
 
@@ -335,7 +336,7 @@ public class OrderBy extends Clause {
                 final String propName = entry.getKey();
                 final SortDirection direction = entry.getValue();
 
-                if (propName == null || propName.trim().isEmpty()) {
+                if (Strings.isEmpty(propName)) {
                     throw new IllegalArgumentException("Property name in orders cannot be null or empty");
                 }
                 if (direction == null) {
