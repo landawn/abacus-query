@@ -262,7 +262,9 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE age > ?", 18);
+     * // Using a structured subquery with conditions that have parameters
+     * Condition ageCondition = Filters.gt("age", 18);
+     * SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), ageCondition);
      * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
      * List<Object> params = condition.getParameters();   // Returns [18]
      * }</pre>
