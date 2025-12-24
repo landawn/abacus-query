@@ -424,8 +424,8 @@ public final class SQLMapper {
                 final Element sqlNode = doc.createElement(SQL);
                 sqlNode.setAttribute(ID, sqlEntry.getKey());
 
-                if (!N.isEmpty(attrsMap.get(sqlEntry.getKey()))) {
-                    final Map<String, String> attrs = attrsMap.get(sqlEntry.getKey());
+                final Map<String, String> attrs = attrsMap.get(sqlEntry.getKey());
+                if (!N.isEmpty(attrs)) {
 
                     for (final Map.Entry<String, String> entry : attrs.entrySet()) {
                         sqlNode.setAttribute(entry.getKey(), entry.getValue());

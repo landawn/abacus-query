@@ -16,6 +16,7 @@
 
 package com.landawn.abacus.query;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -142,15 +143,18 @@ public enum SQLOperation {
         this.sqlText = name;
     }
 
-    private static final Map<String, SQLOperation> operationMap = new HashMap<>();
+    private static final Map<String, SQLOperation> operationMap;
 
     static {
         final SQLOperation[] values = SQLOperation.values();
+        final Map<String, SQLOperation> tempMap = new HashMap<>();
 
         for (final SQLOperation value : values) {
-            operationMap.put(value.sqlText, value);
-            operationMap.put(value.name(), value);
+            tempMap.put(value.sqlText, value);
+            tempMap.put(value.name(), value);
         }
+
+        operationMap = Collections.unmodifiableMap(tempMap);
     }
 
     /**
