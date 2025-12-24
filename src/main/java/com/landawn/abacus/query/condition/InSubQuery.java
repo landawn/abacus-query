@@ -240,6 +240,8 @@ public class InSubQuery extends AbstractCondition {
      */
     @Deprecated
     public void setSubQuery(final SubQuery subQuery) {
+        N.checkArgNotNull(subQuery, "subQuery");
+
         this.subQuery = subQuery;
     }
 

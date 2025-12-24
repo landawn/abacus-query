@@ -394,21 +394,30 @@ public enum Operator {
             return null;
         }
 
+        // Check cache first
+        Operator operator = operatorMap.get(name);
+
+        if (operator != null) {
+            return operator;
+        }
+
+        // Initialize map if empty (thread-safe due to ConcurrentHashMap)
         if (operatorMap.isEmpty()) {
             final Operator[] values = Operator.values();
 
             for (final Operator value : values) {
-                operatorMap.put(value.name, value);
+                operatorMap.putIfAbsent(value.name, value);
             }
         }
 
-        Operator operator = operatorMap.get(name);
+        // Try exact match again after initialization
+        operator = operatorMap.get(name);
 
         if (operator == null) {
             operator = operatorMap.get(name.toUpperCase());
 
             if (operator != null) {
-                operatorMap.put(name, operator);
+                operatorMap.putIfAbsent(name, operator);
             }
         }
 

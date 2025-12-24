@@ -201,8 +201,9 @@ public class SubQuery extends AbstractCondition {
         }
 
         this.entityName = entityName;
-        entityClass = null;
-        this.propNames = propNames;
+        this.entityClass = null;
+        this.propNames = new ArrayList<>(propNames);
+
         if (condition == null || CriteriaUtil.isClause(condition) || condition instanceof Expression) {
             this.condition = condition;
         } else {
@@ -253,9 +254,9 @@ public class SubQuery extends AbstractCondition {
             throw new IllegalArgumentException("Property names cannot be null");
         }
 
-        entityName = ClassUtil.getSimpleClassName(entityClass);
+        this.entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
-        this.propNames = propNames;
+        this.propNames = new ArrayList<>(propNames);
         if (condition == null || CriteriaUtil.isClause(condition) || condition instanceof Expression) {
             this.condition = condition;
         } else {
