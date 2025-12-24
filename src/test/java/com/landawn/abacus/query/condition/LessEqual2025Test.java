@@ -210,4 +210,36 @@ public class LessEqual2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.getOperator());
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue() {
+        LessEqual condition = new LessEqual("field", 80);
+        condition.setPropValue(90);
+        assertEquals(Integer.valueOf(90), condition.getPropValue());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue_ChangeType() {
+        LessEqual condition = new LessEqual("field", 80);
+        condition.setPropValue("modifiedValue");
+        assertEquals("modifiedValue", condition.getPropValue());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        LessEqual condition = new LessEqual("quantity", 100);
+        String result = condition.toString();
+        assertNotNull(result);
+        assertTrue(result.contains("quantity"));
+        assertTrue(result.contains("100"));
+    }
+
+    @Test
+    public void testEquals_DifferentOperator() {
+        LessEqual lessEqual = new LessEqual("field", 40);
+        GreaterEqual greaterEqual = new GreaterEqual("field", 40);
+        assertNotEquals(lessEqual, greaterEqual);
+    }
 }

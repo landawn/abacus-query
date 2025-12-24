@@ -332,4 +332,87 @@ public class Limit2025Test extends TestBase {
         Limit standardStyle = new Limit("20 OFFSET 10");
         assertEquals("20 OFFSET 10", standardStyle.getExpr());
     }
+
+    @Test
+    public void testToString_NoArgsWithCountOnly() {
+        Limit limit = new Limit(15);
+        String result = limit.toString();
+
+        assertTrue(result.contains("LIMIT"));
+        assertTrue(result.contains("15"));
+    }
+
+    @Test
+    public void testToString_NoArgsWithOffset() {
+        Limit limit = new Limit(10, 20);
+        String result = limit.toString();
+
+        assertTrue(result.contains("LIMIT"));
+        assertTrue(result.contains("20"));
+        assertTrue(result.contains("OFFSET"));
+        assertTrue(result.contains("10"));
+    }
+
+    @Test
+    public void testToString_NoArgsWithExpression() {
+        Limit limit = new Limit("FIRST 5 ROWS");
+        String result = limit.toString();
+
+        assertEquals("FIRST 5 ROWS", result);
+    }
+
+    @Test
+    public void testCopy_PreservesAllFields() {
+        Limit original = new Limit(50, 25);
+        Limit copy = original.copy();
+
+        assertEquals(original.getCount(), copy.getCount());
+        assertEquals(original.getOffset(), copy.getOffset());
+        assertEquals(original.getExpr(), copy.getExpr());
+    }
+
+    @Test
+    public void testEquals_SameValues() {
+        Limit limit1 = new Limit(100, 50);
+        Limit limit2 = new Limit(100, 50);
+
+        assertEquals(limit1, limit2);
+        assertEquals(limit1.hashCode(), limit2.hashCode());
+    }
+
+    @Test
+    public void testToStringWithDifferentNamingPolicy() {
+        Limit limit = new Limit(10);
+        String result1 = limit.toString(NamingPolicy.NO_CHANGE);
+        String result2 = limit.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+
+        // Naming policy shouldn't affect LIMIT clause output significantly
+        assertNotNull(result1);
+        assertNotNull(result2);
+        assertTrue(result1.contains("10"));
+        assertTrue(result2.contains("10"));
+    }
+
+    @Test
+    public void testEdgeCaseZeroCount() {
+        Limit limit = new Limit(0);
+        assertEquals(0, limit.getCount());
+        assertEquals(0, limit.getOffset());
+    }
+
+    @Test
+    public void testEdgeCaseLargeValues() {
+        Limit limit = new Limit(Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 1);
+        assertEquals(Integer.MAX_VALUE - 1, limit.getOffset());
+        assertEquals(Integer.MAX_VALUE - 1, limit.getCount());
+    }
+
+    @Test
+    public void testEqualsWithMixedExpressionAndNumeric() {
+        Limit limit1 = new Limit("10");
+        Limit limit2 = new Limit(10);
+
+        // These should not be equal as one uses expression and one uses numeric
+        assertNotEquals(limit1, limit2);
+    }
 }

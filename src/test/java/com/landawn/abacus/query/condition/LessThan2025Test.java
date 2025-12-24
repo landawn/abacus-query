@@ -210,4 +210,36 @@ public class LessThan2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.getOperator());
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue() {
+        LessThan condition = new LessThan("field", 15);
+        condition.setPropValue(25);
+        assertEquals(Integer.valueOf(25), condition.getPropValue());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue_ChangeType() {
+        LessThan condition = new LessThan("field", 15);
+        condition.setPropValue("changedValue");
+        assertEquals("changedValue", condition.getPropValue());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        LessThan condition = new LessThan("temperature", 100);
+        String result = condition.toString();
+        assertNotNull(result);
+        assertTrue(result.contains("temperature"));
+        assertTrue(result.contains("100"));
+    }
+
+    @Test
+    public void testEquals_DifferentOperator() {
+        LessThan lessThan = new LessThan("field", 30);
+        GreaterThan greaterThan = new GreaterThan("field", 30);
+        assertNotEquals(lessThan, greaterThan);
+    }
 }

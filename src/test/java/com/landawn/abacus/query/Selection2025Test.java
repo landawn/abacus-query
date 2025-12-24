@@ -270,4 +270,91 @@ public class Selection2025Test extends TestBase {
         assertNull(selection.selectPropNames());
         assertNull(selection.excludedPropNames());
     }
+
+    @Test
+    public void testMultiSelectionBuilder_ApplyWithPSC() {
+        // Test that apply method works with a function
+        Selection.MultiSelectionBuilder builder = Selection.multiSelectionBuilder().add(String.class, "t", "alias");
+
+        // We can't test actual PSC::selectFrom without full SQLBuilder setup,
+        // but we can test that apply returns a result from the function
+        com.landawn.abacus.query.SQLBuilder result = builder.apply(selections -> {
+            assertNotNull(selections);
+            assertEquals(1, selections.size());
+            return null; // Return null since we can't create actual SQLBuilder in unit test
+        });
+
+        assertNull(result); // Expected since our test function returns null
+    }
+
+    @Test
+    public void testMultiSelectionBuilder_ApplyExecutesFunction() {
+        final boolean[] functionCalled = { false };
+
+        com.landawn.abacus.query.SQLBuilder result = Selection.multiSelectionBuilder().add(String.class).add(Integer.class).apply(selections -> {
+            functionCalled[0] = true;
+            assertEquals(2, selections.size());
+            return null;
+        });
+
+        assertTrue(functionCalled[0]);
+        assertNull(result);
+    }
+
+    @Test
+    public void testSelectionEquality() {
+        List<String> propNames = Arrays.asList("id", "name");
+
+        Selection s1 = new Selection(String.class, "t", "alias", propNames, false, null);
+        Selection s2 = new Selection(String.class, "t", "alias", propNames, false, null);
+
+        // Lombok @Data should provide equals
+        assertEquals(s1, s2);
+    }
+
+    @Test
+    public void testSelectionHashCode() {
+        List<String> propNames = Arrays.asList("id", "name");
+
+        Selection s1 = new Selection(String.class, "t", "alias", propNames, false, null);
+        Selection s2 = new Selection(String.class, "t", "alias", propNames, false, null);
+
+        // Lombok @Data should provide hashCode
+        assertEquals(s1.hashCode(), s2.hashCode());
+    }
+
+    @Test
+    public void testSelectionToString() {
+        Selection selection = new Selection(String.class, "t", "alias", Arrays.asList("id"), true, null);
+
+        // Lombok @Data should provide toString
+        String str = selection.toString();
+        assertNotNull(str);
+        assertTrue(str.contains("String"));
+    }
+
+    @Test
+    public void testMultiSelectionBuilder_AddNullEntity() {
+        List<Selection> selections = Selection.multiSelectionBuilder().add(null).build();
+
+        assertEquals(1, selections.size());
+        assertNull(selections.get(0).entityClass());
+    }
+
+    @Test
+    public void testMultiSelectionBuilder_AddWithEmptyPropNames() {
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class, Arrays.asList()).build();
+
+        assertEquals(1, selections.size());
+        assertTrue(selections.get(0).selectPropNames().isEmpty());
+    }
+
+    @Test
+    public void testMultiSelectionBuilder_AddWithEmptyExcluded() {
+        Set<String> emptySet = new HashSet<>();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class, false, emptySet).build();
+
+        assertEquals(1, selections.size());
+        assertTrue(selections.get(0).excludedPropNames().isEmpty());
+    }
 }

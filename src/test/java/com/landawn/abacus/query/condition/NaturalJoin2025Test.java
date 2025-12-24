@@ -182,6 +182,14 @@ public class NaturalJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testNot() {
+        NaturalJoin join = new NaturalJoin("employees");
+        Not result = join.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
+
+    @Test
     public void testAutomaticColumnMatching() {
         NaturalJoin join = new NaturalJoin("customers");
         assertNotNull(join);

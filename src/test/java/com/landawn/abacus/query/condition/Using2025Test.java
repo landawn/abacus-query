@@ -203,4 +203,30 @@ public class Using2025Test extends TestBase {
         Using using = new Using(sharedColumns);
         assertNotNull(using);
     }
+
+    @Test
+    public void testAnd() {
+        Using using1 = new Using("department_id");
+        Using using2 = new Using("branch_id");
+        And result = using1.and(using2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testOr() {
+        Using using1 = new Using("department_id");
+        Using using2 = new Using("branch_id");
+        Or result = using1.or(using2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testNot() {
+        Using using = new Using("department_id");
+        Not result = using.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
 }

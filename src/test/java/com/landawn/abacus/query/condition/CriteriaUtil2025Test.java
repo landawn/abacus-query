@@ -47,6 +47,20 @@ public class CriteriaUtil2025Test extends TestBase {
         assertTrue(CriteriaUtil.isClause(Operator.HAVING));
         assertTrue(CriteriaUtil.isClause(Operator.ORDER_BY));
         assertTrue(CriteriaUtil.isClause(Operator.LIMIT));
+        // JOIN operators
+        assertTrue(CriteriaUtil.isClause(Operator.JOIN));
+        assertTrue(CriteriaUtil.isClause(Operator.LEFT_JOIN));
+        assertTrue(CriteriaUtil.isClause(Operator.RIGHT_JOIN));
+        assertTrue(CriteriaUtil.isClause(Operator.FULL_JOIN));
+        assertTrue(CriteriaUtil.isClause(Operator.CROSS_JOIN));
+        assertTrue(CriteriaUtil.isClause(Operator.INNER_JOIN));
+        assertTrue(CriteriaUtil.isClause(Operator.NATURAL_JOIN));
+        // Set operations
+        assertTrue(CriteriaUtil.isClause(Operator.UNION));
+        assertTrue(CriteriaUtil.isClause(Operator.UNION_ALL));
+        assertTrue(CriteriaUtil.isClause(Operator.INTERSECT));
+        assertTrue(CriteriaUtil.isClause(Operator.EXCEPT));
+        assertTrue(CriteriaUtil.isClause(Operator.MINUS));
     }
 
     @Test
@@ -85,6 +99,23 @@ public class CriteriaUtil2025Test extends TestBase {
 
         Condition orderByCondition = new OrderBy("name", SortDirection.ASC);
         assertTrue(CriteriaUtil.isClause(orderByCondition));
+
+        // Set operations
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Condition unionCondition = new Union(subQuery);
+        assertTrue(CriteriaUtil.isClause(unionCondition));
+
+        Condition unionAllCondition = new UnionAll(subQuery);
+        assertTrue(CriteriaUtil.isClause(unionAllCondition));
+
+        Condition intersectCondition = new Intersect(subQuery);
+        assertTrue(CriteriaUtil.isClause(intersectCondition));
+
+        Condition exceptCondition = new Except(subQuery);
+        assertTrue(CriteriaUtil.isClause(exceptCondition));
+
+        Condition minusCondition = new Minus(subQuery);
+        assertTrue(CriteriaUtil.isClause(minusCondition));
     }
 
     @Test
@@ -192,6 +223,20 @@ public class CriteriaUtil2025Test extends TestBase {
         assertTrue(operators.contains(Operator.HAVING));
         assertTrue(operators.contains(Operator.ORDER_BY));
         assertTrue(operators.contains(Operator.LIMIT));
+        // Verify JOIN operators
+        assertTrue(operators.contains(Operator.JOIN));
+        assertTrue(operators.contains(Operator.LEFT_JOIN));
+        assertTrue(operators.contains(Operator.RIGHT_JOIN));
+        assertTrue(operators.contains(Operator.FULL_JOIN));
+        assertTrue(operators.contains(Operator.CROSS_JOIN));
+        assertTrue(operators.contains(Operator.INNER_JOIN));
+        assertTrue(operators.contains(Operator.NATURAL_JOIN));
+        // Verify set operation operators
+        assertTrue(operators.contains(Operator.UNION));
+        assertTrue(operators.contains(Operator.UNION_ALL));
+        assertTrue(operators.contains(Operator.INTERSECT));
+        assertTrue(operators.contains(Operator.EXCEPT));
+        assertTrue(operators.contains(Operator.MINUS));
     }
 
     @Test

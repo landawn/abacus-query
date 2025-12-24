@@ -1,10 +1,12 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -412,5 +414,135 @@ public class Junction2025Test extends TestBase {
         conditions.add(Filters.eq("test", "value"));
 
         assertEquals(1, junction.getConditions().size());
+    }
+
+    @Test
+    public void testAddConditions_WithNullArray() {
+        Junction junction = new Junction(Operator.AND);
+        junction.add((Condition[]) null);
+        assertEquals(0, junction.getConditions().size());
+    }
+
+    @Test
+    public void testAddConditions_WithNullElement() {
+        Junction junction = new Junction(Operator.AND);
+        assertThrows(IllegalArgumentException.class, () -> {
+            junction.add(Filters.eq("a", 1), null, Filters.eq("b", 2));
+        });
+    }
+
+    @Test
+    public void testAddConditions_CollectionWithNullElement() {
+        Junction junction = new Junction(Operator.OR);
+        List<Condition> conditions = new java.util.ArrayList<>();
+        conditions.add(Filters.eq("a", 1));
+        conditions.add(null);
+        conditions.add(Filters.eq("b", 2));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            junction.add(conditions);
+        });
+    }
+
+    @Test
+    public void testAddConditions_NullCollection() {
+        Junction junction = new Junction(Operator.AND);
+        junction.add((java.util.Collection<Condition>) null);
+        assertEquals(0, junction.getConditions().size());
+    }
+
+    @Test
+    public void testSetConditions_WithNullElement() {
+        Junction junction = new Junction(Operator.AND, Filters.eq("old", "value"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            junction.set(Filters.eq("a", 1), null);
+        });
+    }
+
+    @Test
+    public void testSetConditions_CollectionWithNullElement() {
+        Junction junction = new Junction(Operator.OR);
+        List<Condition> conditions = new java.util.ArrayList<>();
+        conditions.add(null);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            junction.set(conditions);
+        });
+    }
+
+    @Test
+    public void testConstructor_WithNullElementInVarargs() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Junction(Operator.AND, Filters.eq("a", 1), null, Filters.eq("b", 2));
+        });
+    }
+
+    @Test
+    public void testConstructor_WithNullElementInCollection() {
+        List<Condition> conditions = new java.util.ArrayList<>();
+        conditions.add(Filters.eq("a", 1));
+        conditions.add(null);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Junction(Operator.OR, conditions);
+        });
+    }
+
+    @Test
+    public void testToString_WithNullConditionInList() {
+        Junction junction = new Junction(Operator.AND);
+        junction.getConditions().add(Filters.eq("a", 1));
+        junction.getConditions().add(null);
+        junction.getConditions().add(Filters.eq("b", 2));
+
+        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        assertNotNull(result);
+        assertTrue(result.contains("a"));
+        assertTrue(result.contains("b"));
+    }
+
+    @Test
+    public void testGetParameters_WithNullConditionInList() {
+        Junction junction = new Junction(Operator.AND);
+        junction.getConditions().add(Filters.eq("a", 1));
+        junction.getConditions().add(null);
+        junction.getConditions().add(Filters.eq("b", 2));
+
+        List<Object> params = junction.getParameters();
+        assertEquals(2, params.size());
+        assertEquals(1, params.get(0));
+        assertEquals(2, params.get(1));
+    }
+
+    @Test
+    public void testClearParameters_WithNullConditionInList() {
+        Junction junction = new Junction(Operator.AND);
+        junction.getConditions().add(Filters.eq("a", 1));
+        junction.getConditions().add(null);
+        junction.getConditions().add(Filters.eq("b", 2));
+
+        assertDoesNotThrow(() -> junction.clearParameters());
+    }
+
+    @Test
+    public void testRemoveConditions_VarargsWithMultiple() {
+        Equal cond1 = Filters.eq("a", 1);
+        Equal cond2 = Filters.eq("b", 2);
+        Equal cond3 = Filters.eq("c", 3);
+
+        Junction junction = new Junction(Operator.AND, cond1, cond2, cond3);
+        junction.remove(cond1, cond3);
+
+        assertEquals(1, junction.getConditions().size());
+        assertEquals(cond2, junction.getConditions().get(0));
+    }
+
+    @Test
+    public void testToString_DefaultNamingPolicy() {
+        Junction junction = new Junction(Operator.AND, Filters.eq("userName", "John"), Filters.gt("userAge", 18));
+
+        String sql = junction.toString();
+        assertNotNull(sql);
+        assertTrue(sql.contains("userName") || sql.contains("user_name"));
     }
 }

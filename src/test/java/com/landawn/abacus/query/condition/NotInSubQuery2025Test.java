@@ -227,4 +227,35 @@ public class NotInSubQuery2025Test extends TestBase {
 
         assertEquals(2, condition.getPropNames().size());
     }
+
+    @Test
+    public void testAnd() {
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM deleted_users");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM suspended_users");
+        NotInSubQuery cond1 = new NotInSubQuery("userId", subQuery1);
+        NotInSubQuery cond2 = new NotInSubQuery("userId", subQuery2);
+        And result = cond1.and(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testOr() {
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM deleted_users");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM archived_users");
+        NotInSubQuery cond1 = new NotInSubQuery("userId", subQuery1);
+        NotInSubQuery cond2 = new NotInSubQuery("userId", subQuery2);
+        Or result = cond1.or(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testNot() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM deleted_users");
+        NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
+        Not result = condition.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
 }

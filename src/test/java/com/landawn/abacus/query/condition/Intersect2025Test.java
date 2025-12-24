@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -143,5 +144,83 @@ public class Intersect2025Test extends TestBase {
         Intersect intersect = new Intersect(onSale);
         // Raw SQL SubQuery has no parameters
         assertEquals(0, (int) intersect.getParameters().size());
+    }
+
+    @Test
+    public void testAnd_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Intersect intersect = new Intersect(subQuery);
+        Condition otherCondition = Filters.eq("test", "value");
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            intersect.and(otherCondition);
+        });
+    }
+
+    @Test
+    public void testOr_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Intersect intersect = new Intersect(subQuery);
+        Condition otherCondition = Filters.eq("test", "value");
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            intersect.or(otherCondition);
+        });
+    }
+
+    @Test
+    public void testNot_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Intersect intersect = new Intersect(subQuery);
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            intersect.not();
+        });
+    }
+
+    @Test
+    public void testGetOperator() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Intersect intersect = new Intersect(subQuery);
+        assertEquals(Operator.INTERSECT, intersect.getOperator());
+    }
+
+    @Test
+    public void testSetCondition() {
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
+        Intersect intersect = new Intersect(subQuery1);
+        intersect.setCondition(subQuery2);
+        assertEquals(subQuery2, intersect.getCondition());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        SubQuery subQuery = Filters.subQuery("SELECT employee_id FROM assignments");
+        Intersect intersect = new Intersect(subQuery);
+        String result = intersect.toString();
+        assertTrue(result.contains("INTERSECT"));
+    }
+
+    @Test
+    public void testCopy_DeepCopy() {
+        SubQuery subQuery = Filters.subQuery("activity", List.of("user_id"), new GreaterThan("last_login", "2024-01-01"));
+        Intersect original = new Intersect(subQuery);
+        Intersect copy = original.copy();
+
+        // Modify original's subquery
+        original.clearParameters();
+
+        // Copy should not be affected
+        List<Object> copyParams = copy.getParameters();
+        assertEquals("2024-01-01", copyParams.get(0));
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Intersect intersect = new Intersect(subQuery);
+        assertNotEquals(intersect, "not an Intersect");
+        assertNotEquals(intersect, new Union(subQuery));
     }
 }

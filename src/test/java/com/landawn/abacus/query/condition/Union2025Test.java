@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -126,4 +127,92 @@ public class Union2025Test extends TestBase {
         assertEquals(Operator.UNION, union.getOperator());
     }
 
+    @Test
+    public void testClearParameters() {
+        SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("status", "active"));
+        Union union = new Union(subQuery);
+        List<Object> params = union.getParameters();
+        assertEquals(1, (int) params.size());
+        union.clearParameters();
+        List<Object> clearedParams = union.getParameters();
+        assertTrue(clearedParams.size() == 1 && clearedParams.stream().allMatch(param -> param == null));
+    }
+
+    @Test
+    public void testAnd_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Union union = new Union(subQuery);
+        Condition otherCondition = Filters.eq("test", "value");
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            union.and(otherCondition);
+        });
+    }
+
+    @Test
+    public void testOr_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Union union = new Union(subQuery);
+        Condition otherCondition = Filters.eq("test", "value");
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            union.or(otherCondition);
+        });
+    }
+
+    @Test
+    public void testNot_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Union union = new Union(subQuery);
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            union.not();
+        });
+    }
+
+    @Test
+    public void testGetOperator() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Union union = new Union(subQuery);
+        assertEquals(Operator.UNION, union.getOperator());
+    }
+
+    @Test
+    public void testSetCondition() {
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
+        Union union = new Union(subQuery1);
+        union.setCondition(subQuery2);
+        assertEquals(subQuery2, union.getCondition());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM customers");
+        Union union = new Union(subQuery);
+        String result = union.toString();
+        assertTrue(result.contains("UNION"));
+    }
+
+    @Test
+    public void testCopy_DeepCopy() {
+        SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("status", "active"));
+        Union original = new Union(subQuery);
+        Union copy = original.copy();
+
+        // Modify original's subquery
+        original.clearParameters();
+
+        // Copy should not be affected
+        List<Object> copyParams = copy.getParameters();
+        assertEquals("active", copyParams.get(0));
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Union union = new Union(subQuery);
+        assertNotEquals(union, "not a Union");
+        assertNotEquals(union, new UnionAll(subQuery));
+    }
 }

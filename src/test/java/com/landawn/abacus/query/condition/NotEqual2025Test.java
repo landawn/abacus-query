@@ -210,4 +210,36 @@ public class NotEqual2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.getOperator());
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue() {
+        NotEqual condition = new NotEqual("field", "oldValue");
+        condition.setPropValue("newValue");
+        assertEquals("newValue", condition.getPropValue());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue_ChangeType() {
+        NotEqual condition = new NotEqual("field", "stringValue");
+        condition.setPropValue(456);
+        assertEquals(Integer.valueOf(456), condition.getPropValue());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        NotEqual condition = new NotEqual("name", "value");
+        String result = condition.toString();
+        assertNotNull(result);
+        assertTrue(result.contains("name"));
+        assertTrue(result.contains("value"));
+    }
+
+    @Test
+    public void testEquals_DifferentOperator() {
+        NotEqual notEqual = new NotEqual("field", "value");
+        Equal equal = new Equal("field", "value");
+        assertNotEquals(notEqual, equal);
+    }
 }

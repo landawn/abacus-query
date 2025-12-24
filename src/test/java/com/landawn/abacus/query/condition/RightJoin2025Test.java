@@ -182,6 +182,14 @@ public class RightJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testNot() {
+        RightJoin join = new RightJoin("orders");
+        Not result = join.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
+
+    @Test
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("orders.product_id", "products.id"), new Equal("products.active", true)));
         RightJoin join = new RightJoin("products", andCondition);

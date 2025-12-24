@@ -424,4 +424,68 @@ public class NamedProperty2025Test extends TestBase {
 
         assertEquals(4, or.getConditions().size());
     }
+
+    @Test
+    public void testEqOrWithSingleValue() {
+        NamedProperty status = NamedProperty.of("status");
+
+        Or or = status.eqOr("active");
+
+        assertNotNull(or);
+        assertEquals(1, or.getConditions().size());
+    }
+
+    @Test
+    public void testEqOrWithEmptyCollection() {
+        NamedProperty status = NamedProperty.of("status");
+
+        Or or = status.eqOr(Arrays.asList());
+
+        assertNotNull(or);
+        assertEquals(0, or.getConditions().size());
+    }
+
+    @Test
+    public void testInWithSingleValue() {
+        NamedProperty id = NamedProperty.of("id");
+
+        In in = id.in(1);
+
+        assertNotNull(in);
+        assertEquals("id", in.getPropName());
+        assertEquals(1, in.getValues().size());
+    }
+
+    @Test
+    public void testBetweenWithStrings() {
+        NamedProperty code = NamedProperty.of("code");
+
+        Between between = code.between("A", "Z");
+
+        assertNotNull(between);
+        assertEquals("code", between.getPropName());
+        assertEquals("A", between.getMinValue());
+        assertEquals("Z", between.getMaxValue());
+    }
+
+    @Test
+    public void testConstructorWithCamelCase() {
+        NamedProperty np = new NamedProperty("firstName");
+
+        assertEquals("firstName", np.propName());
+    }
+
+    @Test
+    public void testConstructorWithUnderscore() {
+        NamedProperty np = new NamedProperty("first_name");
+
+        assertEquals("first_name", np.propName());
+    }
+
+    @Test
+    public void testOfMethodWithComplexName() {
+        NamedProperty np = NamedProperty.of("user.address.city");
+
+        assertEquals("user.address.city", np.propName());
+    }
 }

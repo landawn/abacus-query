@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -263,5 +264,91 @@ public class GroupBy2025Test extends TestBase {
         String result = groupBy.toString();
         assertTrue(result.contains("singleColumn"));
         assertTrue(result.contains("ASC"));
+    }
+
+    @Test
+    public void testAndThrowsException() {
+        GroupBy groupBy = new GroupBy("department");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            groupBy.and(Filters.eq("status", "active"));
+        });
+    }
+
+    @Test
+    public void testOrThrowsException() {
+        GroupBy groupBy = new GroupBy("department");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            groupBy.or(Filters.eq("status", "active"));
+        });
+    }
+
+    @Test
+    public void testNotThrowsException() {
+        GroupBy groupBy = new GroupBy("department");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            groupBy.not();
+        });
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetCondition() {
+        GroupBy groupBy = new GroupBy(Filters.expr("department"));
+        Expression newCondition = Filters.expr("location");
+        groupBy.setCondition(newCondition);
+
+        Condition retrieved = groupBy.getCondition();
+        assertEquals(newCondition, retrieved);
+    }
+
+    @Test
+    public void testGetCondition() {
+        Expression condition = Filters.expr("department, location");
+        GroupBy groupBy = new GroupBy(condition);
+
+        Condition retrieved = groupBy.getCondition();
+        assertEquals(condition, retrieved);
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        GroupBy groupBy = new GroupBy("category", "region");
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("category"));
+        assertTrue(result.contains("region"));
+    }
+
+    @Test
+    public void testCopy_Independence() {
+        GroupBy original = new GroupBy("department", "location");
+        GroupBy copy = original.copy();
+
+        assertNotSame(original, copy);
+        assertEquals(original, copy);
+        assertNotSame(original.getCondition(), copy.getCondition());
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        GroupBy groupBy = new GroupBy("column");
+        OrderBy orderBy = new OrderBy("column");
+        assertNotEquals(groupBy, (Object) orderBy);
+    }
+
+    @Test
+    public void testConstructorWithEmptyMap() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        assertThrows(IllegalArgumentException.class, () -> {
+            new GroupBy(orders);
+        });
+    }
+
+    @Test
+    public void testConstructorWithCollectionOfOne() {
+        List<String> props = Arrays.asList("singleCol");
+        GroupBy groupBy = new GroupBy(props, SortDirection.DESC);
+
+        assertTrue(groupBy.toString().contains("singleCol"));
     }
 }

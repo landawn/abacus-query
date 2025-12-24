@@ -256,4 +256,57 @@ public class NotIn2025Test extends TestBase {
         assertEquals(3, notIn.getParameters().size());
         assertTrue(notIn.toString(NamingPolicy.NO_CHANGE).contains("category"));
     }
+
+    @Test
+    public void testSetValues_Null() {
+        NotIn condition = new NotIn("status", Arrays.asList("deleted"));
+        assertThrows(IllegalArgumentException.class, () -> condition.setValues(null));
+    }
+
+    @Test
+    public void testSetValues_Empty() {
+        NotIn condition = new NotIn("status", Arrays.asList("deleted"));
+        assertThrows(IllegalArgumentException.class, () -> condition.setValues(Arrays.asList()));
+    }
+
+    @Test
+    public void testEquals_DifferentType() {
+        NotIn condition = new NotIn("status", Arrays.asList("deleted"));
+        String other = "not a NotIn";
+        assertNotEquals(condition, other);
+    }
+
+    @Test
+    public void testConstructor_SingleValue() {
+        NotIn condition = new NotIn("type", Arrays.asList("test"));
+
+        assertEquals("type", condition.getPropName());
+        assertEquals(1, condition.getValues().size());
+    }
+
+    @Test
+    public void testAnd() {
+        NotIn cond1 = new NotIn("status", Arrays.asList("deleted", "archived"));
+        NotIn cond2 = new NotIn("type", Arrays.asList("test", "demo"));
+        And result = cond1.and(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testOr() {
+        NotIn cond1 = new NotIn("status", Arrays.asList("deleted"));
+        NotIn cond2 = new NotIn("status", Arrays.asList("archived"));
+        Or result = cond1.or(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testNot() {
+        NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
+        Not result = condition.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
 }

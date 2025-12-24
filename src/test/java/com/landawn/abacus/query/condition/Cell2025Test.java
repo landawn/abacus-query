@@ -323,4 +323,53 @@ public class Cell2025Test extends TestBase {
         // Original should still have parameters
         assertFalse(original.getParameters().isEmpty());
     }
+
+    @Test
+    public void testToString_DefaultNamingPolicy() {
+        Condition condition = Filters.eq("userName", "John");
+        Cell cell = new Cell(Operator.NOT, condition);
+
+        String result = cell.toString();
+
+        assertNotNull(result);
+        assertTrue(result.contains("NOT"));
+    }
+
+    @Test
+    public void testGetOperator() {
+        Cell cell = new Cell(Operator.EXISTS, Filters.isNull("test"));
+        assertEquals(Operator.EXISTS, cell.getOperator());
+    }
+
+    @Test
+    public void testAnd_InheritedFromAbstractCondition() {
+        Cell cell = new Cell(Operator.NOT, Filters.eq("a", 1));
+        Condition other = Filters.eq("b", 2);
+
+        And result = cell.and(other);
+
+        assertNotNull(result);
+        assertEquals(2, result.getConditions().size());
+    }
+
+    @Test
+    public void testOr_InheritedFromAbstractCondition() {
+        Cell cell = new Cell(Operator.NOT, Filters.eq("a", 1));
+        Condition other = Filters.eq("b", 2);
+
+        Or result = cell.or(other);
+
+        assertNotNull(result);
+        assertEquals(2, result.getConditions().size());
+    }
+
+    @Test
+    public void testNot_InheritedFromAbstractCondition() {
+        Cell cell = new Cell(Operator.EXISTS, Filters.isNull("test"));
+
+        Not result = cell.not();
+
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
 }

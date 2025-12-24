@@ -18,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
@@ -240,5 +242,84 @@ public class Having2025Test extends TestBase {
 
         assertTrue(result.startsWith("HAVING"));
         assertTrue(result.contains(">="));
+    }
+
+    @Test
+    public void testAndThrowsException() {
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
+        assertThrows(UnsupportedOperationException.class, () -> {
+            having.and(Filters.lt("AVG(age)", 30));
+        });
+    }
+
+    @Test
+    public void testOrThrowsException() {
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
+        assertThrows(UnsupportedOperationException.class, () -> {
+            having.or(Filters.lt("SUM(amount)", 1000));
+        });
+    }
+
+    @Test
+    public void testNotThrowsException() {
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
+        assertThrows(UnsupportedOperationException.class, () -> {
+            having.not();
+        });
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetCondition() {
+        Equal originalCondition = Filters.eq("COUNT(*)", 5);
+        Having having = new Having(originalCondition);
+
+        Equal newCondition = Filters.eq("COUNT(*)", 10);
+        having.setCondition(newCondition);
+
+        Condition retrieved = having.getCondition();
+        assertEquals(newCondition, retrieved);
+        assertEquals(10, (int) ((Equal) retrieved).getPropValue());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        Having having = new Having(Filters.gt("SUM(sales)", 50000));
+        String result = having.toString();
+
+        assertTrue(result.contains("HAVING"));
+        assertTrue(result.contains("SUM"));
+    }
+
+    @Test
+    public void testGetOperator() {
+        Having having = new Having(Filters.gt("COUNT(*)", 0));
+        assertEquals(Operator.HAVING, having.getOperator());
+    }
+
+    @Test
+    public void testCopy_Independence() {
+        Equal innerCondition = Filters.eq("COUNT(*)", 5);
+        Having original = new Having(innerCondition);
+        Having copy = original.copy();
+
+        innerCondition.clearParameters();
+        assertNull(innerCondition.getPropValue());
+
+        Equal copiedCondition = copy.getCondition();
+        assertEquals(5, (int) copiedCondition.getPropValue());
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
+        Where where = new Where(Filters.gt("COUNT(*)", 5));
+        assertNotEquals(having, (Object) where);
+    }
+
+    @Test
+    public void testWithIsNull() {
+        Having having = new Having(Filters.isNull("MAX(deletedAt)"));
+        assertEquals(0, having.getParameters().size());
     }
 }

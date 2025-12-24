@@ -337,4 +337,30 @@ public class NotBetween2025Test extends TestBase {
         assertEquals(36.0, (Double) params.get(0));
         assertEquals(37.5, (Double) params.get(1));
     }
+
+    @Test
+    public void testAnd() {
+        NotBetween cond1 = new NotBetween("age", 18, 65);
+        NotBetween cond2 = new NotBetween("salary", 30000, 100000);
+        And result = cond1.and(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testOr() {
+        NotBetween cond1 = new NotBetween("age", 18, 30);
+        NotBetween cond2 = new NotBetween("age", 50, 65);
+        Or result = cond1.or(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testNot() {
+        NotBetween condition = new NotBetween("age", 18, 65);
+        Not result = condition.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
 }

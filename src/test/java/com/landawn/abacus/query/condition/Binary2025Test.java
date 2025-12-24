@@ -250,4 +250,39 @@ public class Binary2025Test extends TestBase {
         assertEquals(Operator.LESS_THAN, lt.getOperator());
         assertEquals(Operator.LIKE, like.getOperator());
     }
+
+    @Test
+    public void testSetPropValue() {
+        Binary condition = new Binary("status", Operator.EQUAL, "active");
+        assertEquals("active", (String) condition.getPropValue());
+
+        condition.setPropValue("inactive");
+        assertEquals("inactive", (String) condition.getPropValue());
+    }
+
+    @Test
+    public void testSetPropValue_Null() {
+        Binary condition = new Binary("field", Operator.EQUAL, "initial");
+        condition.setPropValue(null);
+        assertNull(condition.getPropValue());
+    }
+
+    @Test
+    public void testSetPropValue_DifferentType() {
+        Binary condition = new Binary("field", Operator.EQUAL, "string");
+        condition.setPropValue(123);
+        assertEquals(Integer.valueOf(123), condition.getPropValue());
+    }
+
+    @Test
+    public void testSetPropValue_WithCondition() {
+        Equal initialCond = new Equal("id", 1);
+        Binary condition = new Binary("field", Operator.EQUAL, initialCond);
+
+        Equal newCond = new Equal("id", 2);
+        condition.setPropValue(newCond);
+
+        Equal retrieved = condition.getPropValue();
+        assertEquals(newCond, retrieved);
+    }
 }

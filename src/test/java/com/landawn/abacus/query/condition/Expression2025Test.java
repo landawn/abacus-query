@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -755,5 +756,189 @@ public class Expression2025Test extends TestBase {
 
         assertNotNull(expr);
         assertEquals("test", expr.getLiteral());
+    }
+
+    @Test
+    public void testBt() {
+        String result = Expression.bt("score", 0, 100);
+
+        assertTrue(result.contains("score"));
+        assertTrue(result.contains("BETWEEN"));
+        assertTrue(result.contains("0"));
+        assertTrue(result.contains("100"));
+    }
+
+    @Test
+    public void testConcatWithTwoStrings() {
+        String result = Expression.concat("firstName", "lastName");
+
+        assertTrue(result.contains("CONCAT"));
+        assertTrue(result.contains("firstName"));
+        assertTrue(result.contains("lastName"));
+    }
+
+    @Test
+    public void testAndWithMultipleExpressions() {
+        String result = Expression.and("x > 0", "y > 0", "z > 0");
+
+        assertTrue(result.contains("x > 0"));
+        assertTrue(result.contains("AND"));
+        assertTrue(result.contains("y > 0"));
+        assertTrue(result.contains("z > 0"));
+    }
+
+    @Test
+    public void testOrWithMultipleExpressions() {
+        String result = Expression.or("status = 'A'", "status = 'B'", "status = 'C'");
+
+        assertTrue(result.contains("status = 'A'"));
+        assertTrue(result.contains("OR"));
+        assertTrue(result.contains("status = 'B'"));
+        assertTrue(result.contains("status = 'C'"));
+    }
+
+    @Test
+    public void testPlusWithMultipleValues() {
+        String result = Expression.plus("a", "b", "c");
+
+        assertTrue(result.contains("a"));
+        assertTrue(result.contains("+"));
+        assertTrue(result.contains("b"));
+        assertTrue(result.contains("c"));
+    }
+
+    @Test
+    public void testMinusWithMultipleValues() {
+        String result = Expression.minus("total", "tax", "discount");
+
+        assertTrue(result.contains("total"));
+        assertTrue(result.contains("-"));
+        assertTrue(result.contains("tax"));
+        assertTrue(result.contains("discount"));
+    }
+
+    @Test
+    public void testMultiWithMultipleValues() {
+        String result = Expression.multi("price", "quantity", "rate");
+
+        assertTrue(result.contains("price"));
+        assertTrue(result.contains("*"));
+        assertTrue(result.contains("quantity"));
+        assertTrue(result.contains("rate"));
+    }
+
+    @Test
+    public void testDivisionWithMultipleValues() {
+        String result = Expression.division("total", "count", "factor");
+
+        assertTrue(result.contains("total"));
+        assertTrue(result.contains("/"));
+        assertTrue(result.contains("count"));
+        assertTrue(result.contains("factor"));
+    }
+
+    @Test
+    public void testModulusWithMultipleValues() {
+        String result = Expression.modulus("value", "10", "3");
+
+        assertTrue(result.contains("value"));
+        assertTrue(result.contains("%"));
+        assertTrue(result.contains("10"));
+    }
+
+    @Test
+    public void testLShiftWithMultipleValues() {
+        String result = Expression.lShift("flags", "2", "1");
+
+        assertTrue(result.contains("flags"));
+        assertTrue(result.contains("<<"));
+        assertTrue(result.contains("2"));
+    }
+
+    @Test
+    public void testRShiftWithMultipleValues() {
+        String result = Expression.rShift("value", "4", "2");
+
+        assertTrue(result.contains("value"));
+        assertTrue(result.contains(">>"));
+        assertTrue(result.contains("4"));
+    }
+
+    @Test
+    public void testBitwiseAndWithMultipleValues() {
+        String result = Expression.bitwiseAnd("flags1", "flags2", "mask");
+
+        assertTrue(result.contains("flags1"));
+        assertTrue(result.contains("&"));
+        assertTrue(result.contains("flags2"));
+        assertTrue(result.contains("mask"));
+    }
+
+    @Test
+    public void testBitwiseOrWithMultipleValues() {
+        String result = Expression.bitwiseOr("flags1", "flags2", "flags3");
+
+        assertTrue(result.contains("flags1"));
+        assertTrue(result.contains("|"));
+        assertTrue(result.contains("flags2"));
+        assertTrue(result.contains("flags3"));
+    }
+
+    @Test
+    public void testBitwiseXOrWithMultipleValues() {
+        String result = Expression.bitwiseXOr("value1", "value2", "value3");
+
+        assertTrue(result.contains("value1"));
+        assertTrue(result.contains("^"));
+        assertTrue(result.contains("value2"));
+        assertTrue(result.contains("value3"));
+    }
+
+    @Test
+    public void testFormalizeCharSequence() {
+        String result = Expression.formalize(new StringBuilder("test"));
+
+        assertEquals("'test'", result);
+    }
+
+    @Test
+    public void testFormalizeDouble() {
+        String result = Expression.formalize(3.14);
+
+        assertEquals("3.14", result);
+    }
+
+    @Test
+    public void testFormalizeLong() {
+        String result = Expression.formalize(999L);
+
+        assertEquals("999", result);
+    }
+
+    @Test
+    public void testOfMethodWithNull() {
+        // Expression.of(null) throws NullPointerException
+        assertThrows(NullPointerException.class, () -> {
+            Expression.of(null);
+        });
+    }
+
+    @Test
+    public void testCopy() {
+        Expression original = new Expression("test_expr");
+
+        Expression copy = original.copy();
+
+        assertNotNull(copy);
+        assertNotSame(original, copy);
+        assertEquals(original.getLiteral(), copy.getLiteral());
+    }
+
+    @Test
+    public void testEqualsWithNullLiterals() {
+        Expression expr1 = new Expression(null);
+        Expression expr2 = new Expression(null);
+
+        assertEquals(expr1, expr2);
     }
 }

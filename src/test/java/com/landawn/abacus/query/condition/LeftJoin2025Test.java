@@ -182,6 +182,14 @@ public class LeftJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testNot() {
+        LeftJoin join = new LeftJoin("orders");
+        Not result = join.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
+
+    @Test
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("customers.id", "o.customer_id"), new Equal("o.status", "active")));
         LeftJoin join = new LeftJoin("orders o", andCondition);

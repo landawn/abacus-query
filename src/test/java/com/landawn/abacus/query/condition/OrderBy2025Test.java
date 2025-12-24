@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -315,5 +316,104 @@ public class OrderBy2025Test extends TestBase {
         assertTrue(result.contains("b"));
         assertTrue(result.contains("c"));
         assertTrue(result.contains(", "));
+    }
+
+    @Test
+    public void testAndThrowsException() {
+        OrderBy orderBy = new OrderBy("name");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            orderBy.and(Filters.eq("status", "active"));
+        });
+    }
+
+    @Test
+    public void testOrThrowsException() {
+        OrderBy orderBy = new OrderBy("name");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            orderBy.or(Filters.eq("status", "active"));
+        });
+    }
+
+    @Test
+    public void testNotThrowsException() {
+        OrderBy orderBy = new OrderBy("name");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            orderBy.not();
+        });
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetCondition() {
+        OrderBy orderBy = new OrderBy(Filters.expr("name ASC"));
+        Expression newCondition = Filters.expr("age DESC");
+        orderBy.setCondition(newCondition);
+
+        Condition retrieved = orderBy.getCondition();
+        assertEquals(newCondition, retrieved);
+    }
+
+    @Test
+    public void testGetCondition() {
+        Expression condition = Filters.expr("name ASC, age DESC");
+        OrderBy orderBy = new OrderBy(condition);
+
+        Condition retrieved = orderBy.getCondition();
+        assertEquals(condition, retrieved);
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        OrderBy orderBy = new OrderBy("name", "age");
+        String result = orderBy.toString();
+
+        assertTrue(result.contains("name"));
+        assertTrue(result.contains("age"));
+    }
+
+    @Test
+    public void testCopy_Independence() {
+        OrderBy original = new OrderBy("name", "age");
+        OrderBy copy = original.copy();
+
+        assertNotSame(original, copy);
+        assertEquals(original, copy);
+        assertNotSame(original.getCondition(), copy.getCondition());
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        OrderBy orderBy = new OrderBy("column");
+        GroupBy groupBy = new GroupBy("column");
+        assertNotEquals(orderBy, (Object) groupBy);
+    }
+
+    @Test
+    public void testConstructorWithEmptyMap() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        assertThrows(IllegalArgumentException.class, () -> {
+            new OrderBy(orders);
+        });
+    }
+
+    @Test
+    public void testStaticCreateConditionWithSingleProperty() {
+        String result = OrderBy.createCondition("name");
+        assertTrue(result.contains("name"));
+    }
+
+    @Test
+    public void testStaticCreateConditionWithEmptyMap() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        assertThrows(IllegalArgumentException.class, () -> {
+            OrderBy.createCondition(orders);
+        });
+    }
+
+    @Test
+    public void testHashCode_DifferentDirections() {
+        OrderBy orderBy1 = new OrderBy("name", SortDirection.ASC);
+        OrderBy orderBy2 = new OrderBy("name", SortDirection.DESC);
+        assertNotEquals(orderBy1.hashCode(), orderBy2.hashCode());
     }
 }

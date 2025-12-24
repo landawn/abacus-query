@@ -210,4 +210,36 @@ public class GreaterEqual2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.getOperator());
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue() {
+        GreaterEqual condition = new GreaterEqual("field", 50);
+        condition.setPropValue(75);
+        assertEquals(Integer.valueOf(75), condition.getPropValue());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue_ChangeType() {
+        GreaterEqual condition = new GreaterEqual("field", 50);
+        condition.setPropValue("updatedValue");
+        assertEquals("updatedValue", condition.getPropValue());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        GreaterEqual condition = new GreaterEqual("score", 60);
+        String result = condition.toString();
+        assertNotNull(result);
+        assertTrue(result.contains("score"));
+        assertTrue(result.contains("60"));
+    }
+
+    @Test
+    public void testEquals_DifferentOperator() {
+        GreaterEqual greaterEqual = new GreaterEqual("field", 20);
+        LessEqual lessEqual = new LessEqual("field", 20);
+        assertNotEquals(greaterEqual, lessEqual);
+    }
 }

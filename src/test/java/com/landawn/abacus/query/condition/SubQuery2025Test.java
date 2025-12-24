@@ -406,6 +406,48 @@ public class SubQuery2025Test extends TestBase {
         assertNotNull(subQuery.getCondition());
     }
 
+    @Test
+    public void testToStringDefault() {
+        String sql = "SELECT * FROM users WHERE active = true";
+        SubQuery subQuery = Filters.subQuery(sql);
+
+        String result = subQuery.toString();
+
+        assertEquals(sql, result);
+    }
+
+    @Test
+    public void testGetOperatorReturnsEmptyOrNull() {
+        SubQuery subQuery = Filters.subQuery("SELECT * FROM users");
+
+        // SubQuery doesn't have a specific operator, verify it returns empty or null
+        Operator op = subQuery.getOperator();
+        assertTrue(op == null || op.toString().isEmpty());
+    }
+
+    @Test
+    public void testCopyWithEntityClass() {
+        Collection<String> props = Arrays.asList("id");
+        Condition condition = Filters.eq("active", true);
+
+        SubQuery original = Filters.subQuery(TestEntity.class, props, condition);
+        SubQuery copy = original.copy();
+
+        assertNotNull(copy);
+        assertNotSame(original, copy);
+        assertEquals(original.getEntityClass(), copy.getEntityClass());
+    }
+
+    @Test
+    public void testConstructorWithEntityNameAndEntityClass() {
+        Collection<String> props = Arrays.asList("id", "name");
+
+        SubQuery subQuery = Filters.subQuery(TestEntity.class, props, null);
+
+        assertEquals(TestEntity.class, subQuery.getEntityClass());
+        assertEquals("TestEntity", subQuery.getEntityName());
+    }
+
     // Helper test class
     private static class TestEntity {
         @SuppressWarnings("unused")

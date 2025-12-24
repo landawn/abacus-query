@@ -210,4 +210,57 @@ public class Like2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.getOperator());
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue() {
+        Like condition = new Like("field", "%old%");
+        condition.setPropValue("%new%");
+        assertEquals("%new%", condition.getPropValue());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue_ChangeType() {
+        Like condition = new Like("field", "%pattern%");
+        condition.setPropValue(999);
+        assertEquals(Integer.valueOf(999), condition.getPropValue());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        Like condition = new Like("name", "%John%");
+        String result = condition.toString();
+        assertNotNull(result);
+        assertTrue(result.contains("name"));
+        assertTrue(result.contains("John"));
+    }
+
+    @Test
+    public void testEquals_DifferentOperator() {
+        Like like = new Like("field", "%pattern%");
+        NotLike notLike = new NotLike("field", "%pattern%");
+        assertNotEquals(like, notLike);
+    }
+
+    @Test
+    public void testPatternMatching_StartsWith() {
+        Like condition = new Like("name", "John%");
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("John%"));
+    }
+
+    @Test
+    public void testPatternMatching_EndsWith() {
+        Like condition = new Like("email", "%@example.com");
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("@example.com"));
+    }
+
+    @Test
+    public void testPatternMatching_Contains() {
+        Like condition = new Like("description", "%important%");
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("important"));
+    }
 }

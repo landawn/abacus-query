@@ -231,4 +231,48 @@ public class Between2025Test extends TestBase {
         assertEquals(Integer.valueOf(0), condition.getMinValue());
         assertEquals(Integer.valueOf(100), condition.getMaxValue());
     }
+
+    @Test
+    public void testSetMinValue() {
+        Between condition = new Between("age", 18, 65);
+        condition.setMinValue(21);
+        assertEquals(Integer.valueOf(21), condition.getMinValue());
+    }
+
+    @Test
+    public void testSetMaxValue() {
+        Between condition = new Between("age", 18, 65);
+        condition.setMaxValue(70);
+        assertEquals(Integer.valueOf(70), condition.getMaxValue());
+    }
+
+    @Test
+    public void testCopy_DeepCopy() {
+        Between original = new Between("price", 10.0, 50.0);
+        Between copy = original.copy();
+
+        assertNotSame(original, copy);
+
+        // Modify original
+        original.clearParameters();
+
+        // Copy should not be affected
+        assertEquals(10.0, copy.getMinValue());
+        assertEquals(50.0, copy.getMaxValue());
+    }
+
+    @Test
+    public void testToString_WithNullValues() {
+        Between condition = new Between("value", null, null);
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("value"));
+        assertTrue(result.contains("BETWEEN"));
+    }
+
+    @Test
+    public void testDoubleValues() {
+        Between condition = new Between("price", 9.99, 99.99);
+        assertEquals(9.99, (Double) condition.getMinValue());
+        assertEquals(99.99, (Double) condition.getMaxValue());
+    }
 }

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -149,5 +150,83 @@ public class Minus2025Test extends TestBase {
         SubQuery assignedEmployees = Filters.subQuery("project_assignments", List.of("employee_id"), new Equal("status", "ACTIVE"));
         Minus minus = new Minus(assignedEmployees);
         assertEquals(1, (int) minus.getParameters().size());
+    }
+
+    @Test
+    public void testAnd_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Minus minus = new Minus(subQuery);
+        Condition otherCondition = Filters.eq("test", "value");
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            minus.and(otherCondition);
+        });
+    }
+
+    @Test
+    public void testOr_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Minus minus = new Minus(subQuery);
+        Condition otherCondition = Filters.eq("test", "value");
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            minus.or(otherCondition);
+        });
+    }
+
+    @Test
+    public void testNot_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Minus minus = new Minus(subQuery);
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            minus.not();
+        });
+    }
+
+    @Test
+    public void testGetOperator() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Minus minus = new Minus(subQuery);
+        assertEquals(Operator.MINUS, minus.getOperator());
+    }
+
+    @Test
+    public void testSetCondition() {
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
+        Minus minus = new Minus(subQuery1);
+        minus.setCondition(subQuery2);
+        assertEquals(subQuery2, minus.getCondition());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        SubQuery subQuery = Filters.subQuery("SELECT product_id FROM inventory");
+        Minus minus = new Minus(subQuery);
+        String result = minus.toString();
+        assertTrue(result.contains("MINUS"));
+    }
+
+    @Test
+    public void testCopy_DeepCopy() {
+        SubQuery subQuery = Filters.subQuery("sales", List.of("product_id"), new Equal("region", "WEST"));
+        Minus original = new Minus(subQuery);
+        Minus copy = original.copy();
+
+        // Modify original's subquery
+        original.clearParameters();
+
+        // Copy should not be affected
+        List<Object> copyParams = copy.getParameters();
+        assertEquals("WEST", copyParams.get(0));
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Minus minus = new Minus(subQuery);
+        assertNotEquals(minus, "not a Minus");
+        assertNotEquals(minus, new Union(subQuery));
     }
 }

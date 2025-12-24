@@ -176,6 +176,14 @@ public class Join2025Test extends TestBase {
     }
 
     @Test
+    public void testNot() {
+        Join join = new Join("orders");
+        Not result = join.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
+
+    @Test
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", (Object) 100)));
         Join join = new Join("orders o", andCondition);

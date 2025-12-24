@@ -19,6 +19,7 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
@@ -35,6 +36,16 @@ public class IsNotNull2025Test extends TestBase {
         IsNotNull condition = new IsNotNull("email");
         assertEquals("email", condition.getPropName());
         assertEquals(Operator.IS_NOT, condition.getOperator());
+    }
+
+    @Test
+    public void testConstructor_NullPropertyName() {
+        assertThrows(IllegalArgumentException.class, () -> new IsNotNull(null));
+    }
+
+    @Test
+    public void testConstructor_EmptyPropertyName() {
+        assertThrows(IllegalArgumentException.class, () -> new IsNotNull(""));
     }
 
     @Test
@@ -98,5 +109,96 @@ public class IsNotNull2025Test extends TestBase {
     public void testUseCaseScenario_ValidatedFields() {
         IsNotNull nameCheck = new IsNotNull("customer_name");
         assertEquals("customer_name", nameCheck.getPropName());
+    }
+
+    @Test
+    public void testGetOperator() {
+        IsNotNull condition = new IsNotNull("field");
+        assertEquals(Operator.IS_NOT, condition.getOperator());
+    }
+
+    @Test
+    public void testGetPropValue() {
+        IsNotNull condition = new IsNotNull("field");
+        Expression value = condition.getPropValue();
+        assertNotNull(value);
+        assertEquals(IsNull.NULL, value);
+    }
+
+    @Test
+    public void testGetParameters() {
+        IsNotNull condition = new IsNotNull("field");
+        assertTrue(condition.getParameters().isEmpty() || condition.getParameters().size() == 1);
+    }
+
+    @Test
+    public void testClearParameters() {
+        IsNotNull condition = new IsNotNull("field");
+        condition.clearParameters();
+        assertNotNull(condition);
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        IsNotNull condition = new IsNotNull("email");
+        String result = condition.toString();
+        assertNotNull(result);
+        assertTrue(result.contains("email"));
+    }
+
+    @Test
+    public void testAnd() {
+        IsNotNull cond1 = new IsNotNull("email");
+        IsNotNull cond2 = new IsNotNull("phone");
+        And result = cond1.and(cond2);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testOr() {
+        IsNotNull cond1 = new IsNotNull("email");
+        IsNotNull cond2 = new IsNotNull("phone");
+        Or result = cond1.or(cond2);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testNot() {
+        IsNotNull condition = new IsNotNull("email");
+        Not result = condition.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        IsNotNull condition = new IsNotNull("field");
+        assertNotEquals(condition, "string");
+    }
+
+    @Test
+    public void testEquals_Null() {
+        IsNotNull condition = new IsNotNull("field");
+        assertNotEquals(null, condition);
+    }
+
+    @Test
+    public void testEquals_SameObject() {
+        IsNotNull condition = new IsNotNull("field");
+        assertEquals(condition, condition);
+    }
+
+    @Test
+    public void testHashCode_DifferentPropName() {
+        IsNotNull c1 = new IsNotNull("field1");
+        IsNotNull c2 = new IsNotNull("field2");
+        assertNotEquals(c1.hashCode(), c2.hashCode());
+    }
+
+    @Test
+    public void testEquals_DifferentOperatorIsNull() {
+        IsNotNull isNotNull = new IsNotNull("field");
+        IsNull isNull = new IsNull("field");
+        assertNotEquals(isNotNull, isNull);
     }
 }

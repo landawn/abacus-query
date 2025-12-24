@@ -315,4 +315,30 @@ public class In2025Test extends TestBase {
 
         assertEquals(10, condition.getParameters().size());
     }
+
+    @Test
+    public void testAnd() {
+        In cond1 = new In("status", Arrays.asList("active", "pending"));
+        In cond2 = new In("type", Arrays.asList("premium", "gold"));
+        And result = cond1.and(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testOr() {
+        In cond1 = new In("status", Arrays.asList("active"));
+        In cond2 = new In("status", Arrays.asList("pending"));
+        Or result = cond1.or(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testNot() {
+        In condition = new In("status", Arrays.asList("active", "pending"));
+        Not result = condition.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
 }

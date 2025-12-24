@@ -276,4 +276,136 @@ public class Or2025Test extends TestBase {
         List<Object> params = outer.getParameters();
         assertEquals(3, (int) params.size());
     }
+
+    @Test
+    public void testAndMethod() {
+        Or or = new Or(new Equal("a", 1));
+        Equal cond = new Equal("b", 2);
+        And result = or.and(cond);
+
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Operator.AND, result.getOperator());
+    }
+
+    @Test
+    public void testNotMethod() {
+        Or or = new Or(new Equal("a", 1), new Equal("b", 2));
+        Not result = or.not();
+
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+        Or innerCondition = result.getCondition();
+        assertEquals(2, (int) innerCondition.getConditions().size());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        Or or = new Or(new Equal("status", "active"), new Equal("status", "pending"));
+        String result = or.toString();
+
+        assertTrue(result.contains("OR"));
+        assertTrue(result.contains("status"));
+    }
+
+    @Test
+    public void testConstructor_NullConditionInArray() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Or(new Equal("a", 1), null, new Equal("b", 2));
+        });
+    }
+
+    @Test
+    public void testAdd_NullConditionInArray() {
+        Or or = new Or();
+        assertThrows(IllegalArgumentException.class, () -> {
+            or.add(new Equal("a", 1), null);
+        });
+    }
+
+    @Test
+    public void testSet_NullConditionInArray() {
+        Or or = new Or(new Equal("old", 1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            or.set(new Equal("a", 1), null);
+        });
+    }
+
+    @Test
+    public void testGetOperator() {
+        Or or = new Or(new Equal("a", 1));
+        assertEquals(Operator.OR, or.getOperator());
+    }
+
+    @Test
+    public void testGetOperator_EmptyConstructor() {
+        // Empty constructor doesn't set operator (for Kryo serialization)
+        Or or = new Or();
+        assertNull(or.getOperator());
+    }
+
+    @Test
+    public void testConstructor_NullConditionInCollection() {
+        List<Condition> conditions = new java.util.ArrayList<>();
+        conditions.add(new Equal("a", 1));
+        conditions.add(null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Or(conditions);
+        });
+    }
+
+    @Test
+    public void testAdd_NullConditionInCollection() {
+        Or or = new Or();
+        List<Condition> conditions = new java.util.ArrayList<>();
+        conditions.add(new Equal("a", 1));
+        conditions.add(null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            or.add(conditions);
+        });
+    }
+
+    @Test
+    public void testAdd_NullCollection() {
+        Or or = new Or();
+        or.add((java.util.Collection<Condition>) null);
+        assertEquals(0, (int) or.getConditions().size());
+    }
+
+    @Test
+    public void testSet_NullConditionInCollection() {
+        Or or = new Or(new Equal("old", 1));
+        List<Condition> conditions = new java.util.ArrayList<>();
+        conditions.add(null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            or.set(conditions);
+        });
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testRemove_VarArgs() {
+        Equal cond1 = new Equal("a", 1);
+        Equal cond2 = new Equal("b", 2);
+        Equal cond3 = new Equal("c", 3);
+        Or or = new Or(cond1, cond2, cond3);
+
+        or.remove(cond1, cond3);
+        assertEquals(1, (int) or.getConditions().size());
+        assertEquals(cond2, or.getConditions().get(0));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testRemove_Collection() {
+        Equal cond1 = new Equal("a", 1);
+        Equal cond2 = new Equal("b", 2);
+        Equal cond3 = new Equal("c", 3);
+        Or or = new Or(cond1, cond2, cond3);
+
+        List<Condition> toRemove = Arrays.asList(cond1, cond2);
+        or.remove(toRemove);
+        assertEquals(1, (int) or.getConditions().size());
+        assertEquals(cond3, or.getConditions().get(0));
+    }
 }

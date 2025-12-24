@@ -321,4 +321,35 @@ public class InSubQuery2025Test extends TestBase {
 
         assertNotNull(condition.getParameters());
     }
+
+    @Test
+    public void testAnd() {
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM active_users");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM premium_users");
+        InSubQuery cond1 = new InSubQuery("userId", subQuery1);
+        InSubQuery cond2 = new InSubQuery("userId", subQuery2);
+        And result = cond1.and(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testOr() {
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM active_users");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM pending_users");
+        InSubQuery cond1 = new InSubQuery("userId", subQuery1);
+        InSubQuery cond2 = new InSubQuery("userId", subQuery2);
+        Or result = cond1.or(cond2);
+        assertNotNull(result);
+        assertEquals(Integer.valueOf(2), result.getConditions().size());
+    }
+
+    @Test
+    public void testNot() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM premium_users");
+        InSubQuery condition = new InSubQuery("userId", subQuery);
+        Not result = condition.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
 }

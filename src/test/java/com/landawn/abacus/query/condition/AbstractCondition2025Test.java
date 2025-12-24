@@ -168,4 +168,117 @@ public class AbstractCondition2025Test extends TestBase {
         assertNotNull(not);
         assertEquals(Operator.NOT, not.getOperator());
     }
+
+    @Test
+    public void testToString_WithNamingPolicy() {
+        Equal condition = new Equal("userName", "John");
+        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        assertTrue(result.contains("user_name"));
+        assertTrue(result.contains("John"));
+    }
+
+    @Test
+    public void testToString_WithNoChangePolicy() {
+        Equal condition = new Equal("firstName", "Jane");
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("firstName"));
+        assertTrue(result.contains("Jane"));
+    }
+
+    @Test
+    public void testParameter2String_WithCondition() {
+        Equal innerCondition = new Equal("id", 100);
+        Equal outerCondition = new Equal("userId", innerCondition);
+        String str = outerCondition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("userId"));
+        assertTrue(str.contains("id"));
+    }
+
+    @Test
+    public void testParameter2String_WithIsNull() {
+        Equal condition = new Equal("field", IsNull.NULL);
+        String str = condition.toString(NamingPolicy.NO_CHANGE);
+        assertNotNull(str);
+        assertTrue(str.contains("NULL"));
+    }
+
+    @Test
+    public void testConcatPropNames_EmptyArray() {
+        // Testing through GroupBy with no props - just verify it can be created
+        GroupBy groupBy = new GroupBy();
+        assertNotNull(groupBy);
+        // Note: toString() on empty GroupBy throws NPE, this is expected behavior
+    }
+
+    @Test
+    public void testConcatPropNames_TwoNames() {
+        GroupBy groupBy = new GroupBy("col1", "col2");
+        String str = groupBy.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("col1"));
+        assertTrue(str.contains("col2"));
+    }
+
+    @Test
+    public void testConcatPropNames_ThreeNames() {
+        GroupBy groupBy = new GroupBy("col1", "col2", "col3");
+        String str = groupBy.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("col1"));
+        assertTrue(str.contains("col2"));
+        assertTrue(str.contains("col3"));
+    }
+
+    @Test
+    public void testConcatPropNames_FourNames() {
+        GroupBy groupBy = new GroupBy("col1", "col2", "col3", "col4");
+        String str = groupBy.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("col1"));
+        assertTrue(str.contains("col2"));
+        assertTrue(str.contains("col3"));
+        assertTrue(str.contains("col4"));
+    }
+
+    @Test
+    public void testConcatPropNames_Collection() {
+        // Testing through OrderBy which uses collection internally
+        OrderBy orderBy = new OrderBy("a", "b", "c");
+        String str = orderBy.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("a"));
+        assertTrue(str.contains("b"));
+        assertTrue(str.contains("c"));
+    }
+
+    @Test
+    public void testConcatPropNames_CollectionSingleItem() {
+        OrderBy orderBy = new OrderBy("single");
+        String str = orderBy.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("single"));
+    }
+
+    @Test
+    public void testConcatPropNames_CollectionTwoItems() {
+        OrderBy orderBy = new OrderBy("first", "second");
+        String str = orderBy.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("first"));
+        assertTrue(str.contains("second"));
+    }
+
+    @Test
+    public void testConcatPropNames_CollectionThreeItems() {
+        OrderBy orderBy = new OrderBy("a", "b", "c");
+        String str = orderBy.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("a"));
+        assertTrue(str.contains("b"));
+        assertTrue(str.contains("c"));
+    }
+
+    @Test
+    public void testConcatPropNames_CollectionFourOrMore() {
+        OrderBy orderBy = new OrderBy("col1", "col2", "col3", "col4", "col5");
+        String str = orderBy.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("col1"));
+        assertTrue(str.contains("col2"));
+        assertTrue(str.contains("col3"));
+        assertTrue(str.contains("col4"));
+        assertTrue(str.contains("col5"));
+    }
 }

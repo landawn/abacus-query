@@ -182,6 +182,14 @@ public class CrossJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testNot() {
+        CrossJoin join = new CrossJoin("colors");
+        Not result = join.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
+
+    @Test
     public void testCartesianProduct() {
         CrossJoin join = new CrossJoin("colors");
         assertNotNull(join);

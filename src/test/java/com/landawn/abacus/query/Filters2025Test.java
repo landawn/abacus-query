@@ -654,4 +654,537 @@ public class Filters2025Test extends TestBase {
         NotEqual ne = Filters.notEqual("status");
         assertNotNull(ne);
     }
+
+    @Test
+    public void testEqAndOrList() {
+        Map<String, Object> props1 = new HashMap<>();
+        props1.put("status", "active");
+        props1.put("type", "A");
+
+        Map<String, Object> props2 = new HashMap<>();
+        props2.put("status", "pending");
+        props2.put("type", "B");
+
+        Or or = Filters.eqAndOr(Arrays.asList(props1, props2));
+        assertNotNull(or);
+    }
+
+    @Test
+    public void testEqAndOrEntities() {
+        Account account1 = new Account();
+        Account account2 = new Account();
+
+        Or or = Filters.eqAndOr(Arrays.asList(account1, account2));
+        assertNotNull(or);
+    }
+
+    @Test
+    public void testEqAndOrEntitiesWithSelectPropNames() {
+        Account account1 = new Account();
+        Account account2 = new Account();
+
+        Or or = Filters.eqAndOr(Arrays.asList(account1, account2), Arrays.asList("id", "firstName"));
+        assertNotNull(or);
+    }
+
+    @Test
+    public void testOrderByVarargs() {
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", "age");
+        assertNotNull(orderBy);
+    }
+
+    @Test
+    public void testOrderByCollection() {
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(Arrays.asList("name", "age"));
+        assertNotNull(orderBy);
+    }
+
+    @Test
+    public void testOrderByWithDirection() {
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(Arrays.asList("name", "age"), SortDirection.DESC);
+        assertNotNull(orderBy);
+    }
+
+    @Test
+    public void testOrderByOneColumn() {
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC);
+        assertNotNull(orderBy);
+    }
+
+    @Test
+    public void testOrderByTwoColumns() {
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC, "age", SortDirection.DESC);
+        assertNotNull(orderBy);
+    }
+
+    @Test
+    public void testOrderByThreeColumns() {
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC, "age", SortDirection.DESC, "email",
+                SortDirection.ASC);
+        assertNotNull(orderBy);
+    }
+
+    @Test
+    public void testOrderByMap() {
+        Map<String, SortDirection> orders = new HashMap<>();
+        orders.put("name", SortDirection.ASC);
+        orders.put("age", SortDirection.DESC);
+
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(orders);
+        assertNotNull(orderBy);
+    }
+
+    @Test
+    public void testOrderByCondition() {
+        Condition condition = Filters.expr("name ASC");
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(condition);
+        assertNotNull(orderBy);
+    }
+
+    @Test
+    public void testHavingCondition() {
+        Condition condition = Filters.expr("COUNT(*) > 5");
+        com.landawn.abacus.query.condition.Having having = Filters.having(condition);
+        assertNotNull(having);
+    }
+
+    @Test
+    public void testOnCondition() {
+        Condition condition = Filters.expr("users.id = orders.user_id");
+        com.landawn.abacus.query.condition.On on = Filters.on(condition);
+        assertNotNull(on);
+    }
+
+    @Test
+    public void testOnString() {
+        com.landawn.abacus.query.condition.On on = Filters.on("users.id = orders.user_id");
+        assertNotNull(on);
+    }
+
+    @Test
+    public void testOnPropNames() {
+        com.landawn.abacus.query.condition.On on = Filters.on("id", "user_id");
+        assertNotNull(on);
+    }
+
+    @Test
+    public void testOnMap() {
+        Map<String, String> propNamePair = new HashMap<>();
+        propNamePair.put("id", "user_id");
+
+        com.landawn.abacus.query.condition.On on = Filters.on(propNamePair);
+        assertNotNull(on);
+    }
+
+    @Test
+    public void testUsingVarargs() {
+        com.landawn.abacus.query.condition.Using using = Filters.using("id", "name");
+        assertNotNull(using);
+    }
+
+    @Test
+    public void testUsingCollection() {
+        com.landawn.abacus.query.condition.Using using = Filters.using(Arrays.asList("id", "name"));
+        assertNotNull(using);
+    }
+
+    @Test
+    public void testJoinEntity() {
+        com.landawn.abacus.query.condition.Join join = Filters.join("orders");
+        assertNotNull(join);
+    }
+
+    @Test
+    public void testJoinEntityWithCondition() {
+        Condition condition = Filters.expr("users.id = orders.user_id");
+        com.landawn.abacus.query.condition.Join join = Filters.join("orders", condition);
+        assertNotNull(join);
+    }
+
+    @Test
+    public void testJoinEntitiesWithCondition() {
+        Condition condition = Filters.expr("id = user_id");
+        com.landawn.abacus.query.condition.Join join = Filters.join(Arrays.asList("orders", "payments"), condition);
+        assertNotNull(join);
+    }
+
+    @Test
+    public void testLeftJoinEntity() {
+        com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("orders");
+        assertNotNull(leftJoin);
+    }
+
+    @Test
+    public void testLeftJoinEntityWithCondition() {
+        Condition condition = Filters.expr("users.id = orders.user_id");
+        com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("orders", condition);
+        assertNotNull(leftJoin);
+    }
+
+    @Test
+    public void testLeftJoinEntitiesWithCondition() {
+        Condition condition = Filters.expr("id = user_id");
+        com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin(Arrays.asList("orders", "payments"), condition);
+        assertNotNull(leftJoin);
+    }
+
+    @Test
+    public void testRightJoinEntity() {
+        com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin("orders");
+        assertNotNull(rightJoin);
+    }
+
+    @Test
+    public void testRightJoinEntityWithCondition() {
+        Condition condition = Filters.expr("users.id = orders.user_id");
+        com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin("orders", condition);
+        assertNotNull(rightJoin);
+    }
+
+    @Test
+    public void testRightJoinEntitiesWithCondition() {
+        Condition condition = Filters.expr("id = user_id");
+        com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin(Arrays.asList("orders", "payments"), condition);
+        assertNotNull(rightJoin);
+    }
+
+    @Test
+    public void testCrossJoinEntity() {
+        com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin("orders");
+        assertNotNull(crossJoin);
+    }
+
+    @Test
+    public void testCrossJoinEntityWithCondition() {
+        Condition condition = Filters.expr("users.id = orders.user_id");
+        com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin("orders", condition);
+        assertNotNull(crossJoin);
+    }
+
+    @Test
+    public void testCrossJoinEntitiesWithCondition() {
+        Condition condition = Filters.expr("id = user_id");
+        com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin(Arrays.asList("orders", "payments"), condition);
+        assertNotNull(crossJoin);
+    }
+
+    @Test
+    public void testFullJoinEntity() {
+        com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin("orders");
+        assertNotNull(fullJoin);
+    }
+
+    @Test
+    public void testFullJoinEntityWithCondition() {
+        Condition condition = Filters.expr("users.id = orders.user_id");
+        com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin("orders", condition);
+        assertNotNull(fullJoin);
+    }
+
+    @Test
+    public void testFullJoinEntitiesWithCondition() {
+        Condition condition = Filters.expr("id = user_id");
+        com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin(Arrays.asList("orders", "payments"), condition);
+        assertNotNull(fullJoin);
+    }
+
+    @Test
+    public void testInnerJoinEntity() {
+        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders");
+        assertNotNull(innerJoin);
+    }
+
+    @Test
+    public void testInnerJoinEntityWithCondition() {
+        Condition condition = Filters.expr("users.id = orders.user_id");
+        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders", condition);
+        assertNotNull(innerJoin);
+    }
+
+    @Test
+    public void testInnerJoinEntitiesWithCondition() {
+        Condition condition = Filters.expr("id = user_id");
+        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin(Arrays.asList("orders", "payments"), condition);
+        assertNotNull(innerJoin);
+    }
+
+    @Test
+    public void testNaturalJoinEntity() {
+        com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin("orders");
+        assertNotNull(naturalJoin);
+    }
+
+    @Test
+    public void testNaturalJoinEntityWithCondition() {
+        Condition condition = Filters.expr("users.id = orders.user_id");
+        com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin("orders", condition);
+        assertNotNull(naturalJoin);
+    }
+
+    @Test
+    public void testNaturalJoinEntitiesWithCondition() {
+        Condition condition = Filters.expr("id = user_id");
+        com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin(Arrays.asList("orders", "payments"), condition);
+        assertNotNull(naturalJoin);
+    }
+
+    @Test
+    public void testInIntArray() {
+        com.landawn.abacus.query.condition.In in = Filters.in("id", new int[] { 1, 2, 3 });
+        assertNotNull(in);
+    }
+
+    @Test
+    public void testInLongArray() {
+        com.landawn.abacus.query.condition.In in = Filters.in("id", new long[] { 1L, 2L, 3L });
+        assertNotNull(in);
+    }
+
+    @Test
+    public void testInDoubleArray() {
+        com.landawn.abacus.query.condition.In in = Filters.in("score", new double[] { 1.5, 2.5, 3.5 });
+        assertNotNull(in);
+    }
+
+    @Test
+    public void testInObjectArray() {
+        com.landawn.abacus.query.condition.In in = Filters.in("status", new Object[] { "active", "pending" });
+        assertNotNull(in);
+    }
+
+    @Test
+    public void testInCollection() {
+        com.landawn.abacus.query.condition.In in = Filters.in("id", Arrays.asList(1, 2, 3));
+        assertNotNull(in);
+    }
+
+    @Test
+    public void testInSubQuery() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
+        com.landawn.abacus.query.condition.InSubQuery inSubQuery = Filters.in("user_id", subQuery);
+        assertNotNull(inSubQuery);
+    }
+
+    @Test
+    public void testInSubQueryMultipleProps() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id, name FROM users");
+        com.landawn.abacus.query.condition.InSubQuery inSubQuery = Filters.in(Arrays.asList("id", "name"), subQuery);
+        assertNotNull(inSubQuery);
+    }
+
+    @Test
+    public void testNotInIntArray() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("id", new int[] { 1, 2, 3 });
+        assertNotNull(notIn);
+    }
+
+    @Test
+    public void testNotInLongArray() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("id", new long[] { 1L, 2L, 3L });
+        assertNotNull(notIn);
+    }
+
+    @Test
+    public void testNotInDoubleArray() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("score", new double[] { 1.5, 2.5, 3.5 });
+        assertNotNull(notIn);
+    }
+
+    @Test
+    public void testNotInObjectArray() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("status", new Object[] { "deleted", "archived" });
+        assertNotNull(notIn);
+    }
+
+    @Test
+    public void testNotInCollection() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("id", Arrays.asList(1, 2, 3));
+        assertNotNull(notIn);
+    }
+
+    @Test
+    public void testNotInSubQuery() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id FROM blocked_users");
+        com.landawn.abacus.query.condition.NotInSubQuery notInSubQuery = Filters.notIn("user_id", subQuery);
+        assertNotNull(notInSubQuery);
+    }
+
+    @Test
+    public void testNotInSubQueryMultipleProps() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id, name FROM blocked");
+        com.landawn.abacus.query.condition.NotInSubQuery notInSubQuery = Filters.notIn(Arrays.asList("id", "name"), subQuery);
+        assertNotNull(notInSubQuery);
+    }
+
+    @Test
+    public void testAll() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
+        com.landawn.abacus.query.condition.All all = Filters.all(subQuery);
+        assertNotNull(all);
+    }
+
+    @Test
+    public void testAny() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
+        com.landawn.abacus.query.condition.Any any = Filters.any(subQuery);
+        assertNotNull(any);
+    }
+
+    @Test
+    public void testSome() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
+        com.landawn.abacus.query.condition.Some some = Filters.some(subQuery);
+        assertNotNull(some);
+    }
+
+    @Test
+    public void testExists() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE user_id = users.id");
+        com.landawn.abacus.query.condition.Exists exists = Filters.exists(subQuery);
+        assertNotNull(exists);
+    }
+
+    @Test
+    public void testNotExists() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE user_id = users.id");
+        com.landawn.abacus.query.condition.NotExists notExists = Filters.notExists(subQuery);
+        assertNotNull(notExists);
+    }
+
+    @Test
+    public void testUnion() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
+        com.landawn.abacus.query.condition.Union union = Filters.union(subQuery);
+        assertNotNull(union);
+    }
+
+    @Test
+    public void testUnionAll() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
+        com.landawn.abacus.query.condition.UnionAll unionAll = Filters.unionAll(subQuery);
+        assertNotNull(unionAll);
+    }
+
+    @Test
+    public void testExcept() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM blocked_users");
+        com.landawn.abacus.query.condition.Except except = Filters.except(subQuery);
+        assertNotNull(except);
+    }
+
+    @Test
+    public void testIntersect() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM premium_users");
+        com.landawn.abacus.query.condition.Intersect intersect = Filters.intersect(subQuery);
+        assertNotNull(intersect);
+    }
+
+    @Test
+    public void testMinus() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM inactive_users");
+        com.landawn.abacus.query.condition.Minus minus = Filters.minus(subQuery);
+        assertNotNull(minus);
+    }
+
+    @Test
+    public void testCell() {
+        Condition condition = Filters.equal("status", "active");
+        com.landawn.abacus.query.condition.Cell cell = Filters.cell(Operator.WHERE, condition);
+        assertNotNull(cell);
+    }
+
+    @Test
+    public void testSubQueryWithEntityClass() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), Filters.equal("active", true));
+        assertNotNull(subQuery);
+    }
+
+    @Test
+    public void testSubQueryWithEntityName() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), Filters.equal("active", true));
+        assertNotNull(subQuery);
+    }
+
+    @Test
+    public void testSubQueryWithEntityNameAndStringCondition() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), "active = true");
+        assertNotNull(subQuery);
+    }
+
+    @Test
+    public void testSubQueryWithEntityNameAndSql() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("users", "SELECT id FROM users WHERE active = true");
+        assertNotNull(subQuery);
+    }
+
+    @Test
+    public void testSubQueryWithSql() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM users WHERE active = true");
+        assertNotNull(subQuery);
+    }
+
+    @Test
+    public void testLimitInt() {
+        com.landawn.abacus.query.condition.Limit limit = Filters.limit(10);
+        assertNotNull(limit);
+    }
+
+    @Test
+    public void testLimitWithOffset() {
+        com.landawn.abacus.query.condition.Limit limit = Filters.limit(10, 20);
+        assertNotNull(limit);
+    }
+
+    @Test
+    public void testLimitExpr() {
+        com.landawn.abacus.query.condition.Limit limit = Filters.limit("10 OFFSET 20");
+        assertNotNull(limit);
+    }
+
+    @Test
+    public void testCriteria() {
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.criteria();
+        assertNotNull(criteria);
+    }
+
+    @Test
+    public void testCFClass() {
+        assertNotNull(Filters.CF.class);
+    }
+
+    @Test
+    public void testCBWhere() {
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.where(Filters.equal("status", "active"));
+        assertNotNull(criteria);
+    }
+
+    @Test
+    public void testCBWhereString() {
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.where("status = 'active'");
+        assertNotNull(criteria);
+    }
+
+    @Test
+    public void testCBGroupBy() {
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.groupBy("department");
+        assertNotNull(criteria);
+    }
+
+    @Test
+    public void testCBHaving() {
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.having(Filters.expr("COUNT(*) > 5"));
+        assertNotNull(criteria);
+    }
+
+    @Test
+    public void testCBOrderBy() {
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.orderBy("name");
+        assertNotNull(criteria);
+    }
+
+    @Test
+    public void testCBLimit() {
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.limit(10);
+        assertNotNull(criteria);
+    }
 }

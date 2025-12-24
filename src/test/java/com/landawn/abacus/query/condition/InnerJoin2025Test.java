@@ -182,6 +182,14 @@ public class InnerJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testNot() {
+        InnerJoin join = new InnerJoin("orders");
+        Not result = join.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
+
+    @Test
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", (Object) 100)));
         InnerJoin join = new InnerJoin("orders o", andCondition);

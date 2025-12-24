@@ -182,6 +182,14 @@ public class FullJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testNot() {
+        FullJoin join = new FullJoin("orders");
+        Not result = join.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.getOperator());
+    }
+
+    @Test
     public void testAllRowsFromBothTables() {
         FullJoin join = new FullJoin("orders", new Equal("users.id", "orders.user_id"));
         assertNotNull(join);

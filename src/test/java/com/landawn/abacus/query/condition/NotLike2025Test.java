@@ -210,4 +210,57 @@ public class NotLike2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.getOperator());
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue() {
+        NotLike condition = new NotLike("field", "%exclude%");
+        condition.setPropValue("%avoid%");
+        assertEquals("%avoid%", condition.getPropValue());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue_ChangeType() {
+        NotLike condition = new NotLike("field", "%pattern%");
+        condition.setPropValue(777);
+        assertEquals(Integer.valueOf(777), condition.getPropValue());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        NotLike condition = new NotLike("filename", "%.tmp");
+        String result = condition.toString();
+        assertNotNull(result);
+        assertTrue(result.contains("filename"));
+        assertTrue(result.contains(".tmp"));
+    }
+
+    @Test
+    public void testEquals_DifferentOperator() {
+        NotLike notLike = new NotLike("field", "%test%");
+        Like like = new Like("field", "%test%");
+        assertNotEquals(notLike, like);
+    }
+
+    @Test
+    public void testExcludePattern_StartsWith() {
+        NotLike condition = new NotLike("code", "TEST%");
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("TEST%"));
+    }
+
+    @Test
+    public void testExcludePattern_EndsWith() {
+        NotLike condition = new NotLike("filename", "%.tmp");
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains(".tmp"));
+    }
+
+    @Test
+    public void testExcludePattern_Contains() {
+        NotLike condition = new NotLike("productName", "%temp%");
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("temp"));
+    }
 }

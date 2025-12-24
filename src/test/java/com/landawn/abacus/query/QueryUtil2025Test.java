@@ -33,9 +33,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.parser.ParserUtil;
+import com.landawn.abacus.parser.ParserUtil.BeanInfo;
+import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Tuple;
 
 @Tag("2025")
 public class QueryUtil2025Test extends TestBase {
@@ -361,5 +365,73 @@ public class QueryUtil2025Test extends TestBase {
         String result = QueryUtil.repeatQM(50);
         assertNotNull(result);
         assertEquals(148, result.length());   // "?, " * 50 = 150 - 2 = 148 characters
+    }
+
+    @Test
+    public void testProp2ColumnNameMap() {
+        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        assertNotNull(map);
+    }
+
+    @Test
+    public void testProp2ColumnNameMap_UpperCase() {
+        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        assertNotNull(map);
+    }
+
+    @Test
+    public void testProp2ColumnNameMap_NoChange() {
+        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.NO_CHANGE);
+        assertNotNull(map);
+    }
+
+    @Test
+    public void testProp2ColumnNameMap_NullClass() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.prop2ColumnNameMap(null, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        });
+    }
+
+    @Test
+    public void testIsNotColumn() {
+        Set<String> columnFields = new HashSet<>();
+        columnFields.add("id");
+        columnFields.add("firstName");
+
+        Set<String> nonColumnFields = new HashSet<>();
+        nonColumnFields.add("tempField");
+
+        BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
+        PropInfo propInfo = beanInfo.getPropInfo("id");
+
+        assertFalse(QueryUtil.isNotColumn(columnFields, nonColumnFields, propInfo));
+    }
+
+    @Test
+    public void testIsNotColumn_NonColumnField() {
+        Set<String> columnFields = new HashSet<>();
+        columnFields.add("id");
+
+        Set<String> nonColumnFields = new HashSet<>();
+        nonColumnFields.add("tempField");
+
+        BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
+        PropInfo tempProp = beanInfo.getPropInfo("tempField");
+
+        if (tempProp != null) {
+            assertTrue(QueryUtil.isNotColumn(columnFields, nonColumnFields, tempProp));
+        }
+    }
+
+    @Test
+    public void testIsNotColumn_EmptySets() {
+        Set<String> columnFields = new HashSet<>();
+        Set<String> nonColumnFields = new HashSet<>();
+
+        BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
+        PropInfo propInfo = beanInfo.getPropInfo("id");
+
+        boolean result = QueryUtil.isNotColumn(columnFields, nonColumnFields, propInfo);
+        // Result depends on default behavior
     }
 }

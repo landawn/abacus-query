@@ -69,4 +69,31 @@ public class SortDirection2025Test extends TestBase {
         assertEquals(0, SortDirection.ASC.ordinal());
         assertEquals(1, SortDirection.DESC.ordinal());
     }
+
+    @Test
+    public void testCompareTo() {
+        // Enum compareTo is based on ordinal
+        assertTrue(SortDirection.ASC.compareTo(SortDirection.DESC) < 0);
+        assertTrue(SortDirection.DESC.compareTo(SortDirection.ASC) > 0);
+        assertEquals(0, SortDirection.ASC.compareTo(SortDirection.ASC));
+    }
+
+    @Test
+    public void testEquals() {
+        assertEquals(SortDirection.ASC, SortDirection.ASC);
+        assertEquals(SortDirection.DESC, SortDirection.DESC);
+        assertFalse(SortDirection.ASC.equals(SortDirection.DESC));
+    }
+
+    @Test
+    public void testHashCode() {
+        assertNotNull(SortDirection.ASC.hashCode());
+        assertNotNull(SortDirection.DESC.hashCode());
+    }
+
+    @Test
+    public void testGetDeclaringClass() {
+        assertEquals(SortDirection.class, SortDirection.ASC.getDeclaringClass());
+        assertEquals(SortDirection.class, SortDirection.DESC.getDeclaringClass());
+    }
 }

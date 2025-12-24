@@ -183,4 +183,93 @@ public class Operator2025Test extends TestBase {
         assertEquals("AND", Operator.AND.name());
         assertEquals("OR", Operator.OR.name());
     }
+
+    @Test
+    public void testGetOperator_NullInput() {
+        assertNull(Operator.getOperator(null));
+    }
+
+    @Test
+    public void testGetOperator_Caching() {
+        // First call initializes the cache
+        Operator first = Operator.getOperator("AND");
+        // Second call should use cache
+        Operator second = Operator.getOperator("AND");
+        assertEquals(first, second);
+        assertEquals(Operator.AND, first);
+    }
+
+    @Test
+    public void testGetOperator_ForUpdate() {
+        assertEquals(Operator.FOR_UPDATE, Operator.getOperator("FOR UPDATE"));
+    }
+
+    @Test
+    public void testGetOperator_Offset() {
+        assertEquals(Operator.OFFSET, Operator.getOperator("OFFSET"));
+    }
+
+    @Test
+    public void testAllOperators() {
+        // Test all comparison operators
+        assertNotNull(Operator.EQUAL);
+        assertNotNull(Operator.NOT_EQUAL);
+        assertNotNull(Operator.NOT_EQUAL2);
+        assertNotNull(Operator.GREATER_THAN);
+        assertNotNull(Operator.GREATER_EQUAL);
+        assertNotNull(Operator.LESS_THAN);
+        assertNotNull(Operator.LESS_EQUAL);
+
+        // Test all logical operators
+        assertNotNull(Operator.AND);
+        assertNotNull(Operator.AND_OP);
+        assertNotNull(Operator.OR);
+        assertNotNull(Operator.OR_OP);
+        assertNotNull(Operator.NOT);
+        assertNotNull(Operator.NOT_OP);
+        assertNotNull(Operator.XOR);
+
+        // Test all join types
+        assertNotNull(Operator.JOIN);
+        assertNotNull(Operator.LEFT_JOIN);
+        assertNotNull(Operator.RIGHT_JOIN);
+        assertNotNull(Operator.FULL_JOIN);
+        assertNotNull(Operator.CROSS_JOIN);
+        assertNotNull(Operator.INNER_JOIN);
+        assertNotNull(Operator.NATURAL_JOIN);
+
+        // Test clauses
+        assertNotNull(Operator.WHERE);
+        assertNotNull(Operator.HAVING);
+        assertNotNull(Operator.GROUP_BY);
+        assertNotNull(Operator.ORDER_BY);
+        assertNotNull(Operator.LIMIT);
+        assertNotNull(Operator.OFFSET);
+
+        // Test set operations
+        assertNotNull(Operator.UNION);
+        assertNotNull(Operator.UNION_ALL);
+        assertNotNull(Operator.INTERSECT);
+        assertNotNull(Operator.EXCEPT);
+        assertNotNull(Operator.MINUS);
+
+        // Test others
+        assertNotNull(Operator.BETWEEN);
+        assertNotNull(Operator.NOT_BETWEEN);
+        assertNotNull(Operator.IN);
+        assertNotNull(Operator.NOT_IN);
+        assertNotNull(Operator.LIKE);
+        assertNotNull(Operator.NOT_LIKE);
+        assertNotNull(Operator.IS);
+        assertNotNull(Operator.IS_NOT);
+        assertNotNull(Operator.EXISTS);
+        assertNotNull(Operator.NOT_EXISTS);
+        assertNotNull(Operator.ANY);
+        assertNotNull(Operator.SOME);
+        assertNotNull(Operator.ALL);
+        assertNotNull(Operator.ON);
+        assertNotNull(Operator.USING);
+        assertNotNull(Operator.FOR_UPDATE);
+        assertNotNull(Operator.EMPTY);
+    }
 }

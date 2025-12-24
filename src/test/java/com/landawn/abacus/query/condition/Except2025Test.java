@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -142,5 +143,83 @@ public class Except2025Test extends TestBase {
         SubQuery soldProducts = Filters.subQuery("order_items", List.of("product_id"), new GreaterThan("order_date", "2024-01-01"));
         Except except = new Except(soldProducts);
         assertEquals(1, (int) except.getParameters().size());
+    }
+
+    @Test
+    public void testAnd_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Except except = new Except(subQuery);
+        Condition otherCondition = Filters.eq("test", "value");
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            except.and(otherCondition);
+        });
+    }
+
+    @Test
+    public void testOr_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Except except = new Except(subQuery);
+        Condition otherCondition = Filters.eq("test", "value");
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            except.or(otherCondition);
+        });
+    }
+
+    @Test
+    public void testNot_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Except except = new Except(subQuery);
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            except.not();
+        });
+    }
+
+    @Test
+    public void testGetOperator() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Except except = new Except(subQuery);
+        assertEquals(Operator.EXCEPT, except.getOperator());
+    }
+
+    @Test
+    public void testSetCondition() {
+        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
+        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
+        Except except = new Except(subQuery1);
+        except.setCondition(subQuery2);
+        assertEquals(subQuery2, except.getCondition());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        SubQuery subQuery = Filters.subQuery("SELECT product_id FROM sales");
+        Except except = new Except(subQuery);
+        String result = except.toString();
+        assertTrue(result.contains("EXCEPT"));
+    }
+
+    @Test
+    public void testCopy_DeepCopy() {
+        SubQuery subQuery = Filters.subQuery("employees", List.of("employee_id"), new Equal("is_manager", "true"));
+        Except original = new Except(subQuery);
+        Except copy = original.copy();
+
+        // Modify original's subquery
+        original.clearParameters();
+
+        // Copy should not be affected
+        List<Object> copyParams = copy.getParameters();
+        assertEquals("true", copyParams.get(0));
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Except except = new Except(subQuery);
+        assertNotEquals(except, "not an Except");
+        assertNotEquals(except, new Union(subQuery));
     }
 }

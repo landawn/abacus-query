@@ -160,4 +160,72 @@ public class XOR2025Test extends TestBase {
         Not result = condition.not();
         assertNotNull(result);
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetPropValue() {
+        XOR condition = new XOR("flag", true);
+        assertEquals(true, condition.getPropValue());
+
+        condition.setPropValue(false);
+        assertEquals(false, condition.getPropValue());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        XOR condition = new XOR("isActive", true);
+        String result = condition.toString();
+
+        assertTrue(result.contains("isActive"));
+        assertTrue(result.contains("XOR"));
+    }
+
+    @Test
+    public void testEquals_DifferentPropValue() {
+        XOR cond1 = new XOR("field", "value1");
+        XOR cond2 = new XOR("field", "value2");
+        assertNotEquals(cond1, cond2);
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        XOR condition = new XOR("field", "value");
+        Equal equal = new Equal("field", "value");
+        assertNotEquals(condition, (Object) equal);
+    }
+
+    @Test
+    public void testGetParameters_WithNestedCondition() {
+        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        XOR condition = new XOR("userId", subQuery);
+
+        List<Object> params = condition.getParameters();
+        assertNotNull(params);
+        assertEquals(subQuery.getParameters(), params);
+    }
+
+    @Test
+    public void testCopy_DeepCopy() {
+        XOR original = new XOR("value", 100);
+        XOR copy = original.copy();
+
+        original.clearParameters();
+        assertNull(original.getPropValue());
+        assertEquals(100, (int) copy.getPropValue());
+    }
+
+    @Test
+    public void testToStringWithNamingPolicy() {
+        XOR condition = new XOR("userName", "john");
+        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+
+        assertTrue(result.contains("user_name") || result.contains("userName"));
+    }
+
+    @Test
+    public void testHashCode_DifferentValues() {
+        XOR cond1 = new XOR("field", "value1");
+        XOR cond2 = new XOR("field", "value2");
+        assertNotEquals(cond1.hashCode(), cond2.hashCode());
+    }
 }

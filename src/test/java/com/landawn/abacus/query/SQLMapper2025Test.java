@@ -399,4 +399,131 @@ public class SQLMapper2025Test extends TestBase {
         assertNotNull(copy.get("query2"));
         assertNull(original.get("query2"));
     }
+
+    @Test
+    public void testGetAttrsWithNullId() {
+        SQLMapper mapper = new SQLMapper();
+        ImmutableMap<String, String> attrs = mapper.getAttrs(null);
+        assertNull(attrs);
+    }
+
+    @Test
+    public void testRemoveTooLongId() {
+        SQLMapper mapper = new SQLMapper();
+        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        mapper.remove(longId);   // Should not throw
+    }
+
+    @Test
+    public void testAddSqlStringWithEmptyAttributes() {
+        SQLMapper mapper = new SQLMapper();
+        mapper.add("query1", "SELECT * FROM users", new HashMap<>());
+        ParsedSql sql = mapper.get("query1");
+        assertNotNull(sql);
+    }
+
+    @Test
+    public void testKeySetOrder() {
+        SQLMapper mapper = new SQLMapper();
+        mapper.add("query3", ParsedSql.parse("SELECT * FROM users"));
+        mapper.add("query1", ParsedSql.parse("SELECT * FROM orders"));
+        mapper.add("query2", ParsedSql.parse("SELECT * FROM products"));
+
+        // LinkedHashMap preserves insertion order
+        assertEquals(3, mapper.keySet().size());
+    }
+
+    @Test
+    public void testEqualsDifferentContent() {
+        SQLMapper mapper1 = new SQLMapper();
+        mapper1.add("query1", ParsedSql.parse("SELECT * FROM users"));
+
+        SQLMapper mapper2 = new SQLMapper();
+        mapper2.add("query1", ParsedSql.parse("SELECT * FROM orders"));
+
+        assertFalse(mapper1.equals(mapper2));
+    }
+
+    @Test
+    public void testHashCodeConsistency() {
+        SQLMapper mapper = new SQLMapper();
+        mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
+
+        int hash1 = mapper.hashCode();
+        int hash2 = mapper.hashCode();
+        assertEquals(hash1, hash2);
+    }
+
+    @Test
+    public void testToStringEmpty() {
+        SQLMapper mapper = new SQLMapper();
+        String str = mapper.toString();
+        assertNotNull(str);
+    }
+
+    @Test
+    public void testConstantsValues() {
+        assertEquals("sqlMapper", SQLMapper.SQL_MAPPER);
+        assertEquals("sql", SQLMapper.SQL);
+        assertEquals("id", SQLMapper.ID);
+        assertEquals("batchSize", SQLMapper.BATCH_SIZE);
+        assertEquals("fetchSize", SQLMapper.FETCH_SIZE);
+        assertEquals("resultSetType", SQLMapper.RESULT_SET_TYPE);
+        assertEquals("timeout", SQLMapper.TIMEOUT);
+        assertEquals(128, SQLMapper.MAX_ID_LENGTH);
+    }
+
+    @Test
+    public void testResultSetTypeMapValues() {
+        assertEquals(java.sql.ResultSet.TYPE_FORWARD_ONLY, SQLMapper.RESULT_SET_TYPE_MAP.get("FORWARD_ONLY").intValue());
+        assertEquals(java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE, SQLMapper.RESULT_SET_TYPE_MAP.get("SCROLL_INSENSITIVE").intValue());
+        assertEquals(java.sql.ResultSet.TYPE_SCROLL_SENSITIVE, SQLMapper.RESULT_SET_TYPE_MAP.get("SCROLL_SENSITIVE").intValue());
+    }
+
+    @Test
+    public void testGetTooLongIdBoundary() {
+        SQLMapper mapper = new SQLMapper();
+        String exactMaxId = "a".repeat(SQLMapper.MAX_ID_LENGTH);
+        mapper.add(exactMaxId, ParsedSql.parse("SELECT * FROM users"));
+
+        assertNotNull(mapper.get(exactMaxId));
+
+        String tooLongId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        assertNull(mapper.get(tooLongId));
+    }
+
+    @Test
+    public void testGetAttrsTooLongId() {
+        SQLMapper mapper = new SQLMapper();
+        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        ImmutableMap<String, String> attrs = mapper.getAttrs(longId);
+        assertNull(attrs);
+    }
+
+    @Test
+    public void testAddParsedSqlReturn() {
+        SQLMapper mapper = new SQLMapper();
+        ParsedSql sql1 = ParsedSql.parse("SELECT * FROM users");
+        ParsedSql result = mapper.add("query1", sql1);
+        assertNull(result);   // First add should return null
+
+        ParsedSql sql2 = ParsedSql.parse("SELECT * FROM orders");
+        // Cannot test second add as it will throw IllegalArgumentException for duplicate ID
+    }
+
+    @Test
+    public void testCopyPreservesAttributes() {
+        SQLMapper original = new SQLMapper();
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("batchSize", "100");
+        attrs.put("timeout", "30");
+        original.add("query1", "SELECT * FROM users", attrs);
+
+        SQLMapper copy = original.copy();
+
+        ImmutableMap<String, String> copiedAttrs = copy.getAttrs("query1");
+        assertNotNull(copiedAttrs);
+        assertEquals("100", copiedAttrs.get("batchSize"));
+        assertEquals("30", copiedAttrs.get("timeout"));
+    }
 }

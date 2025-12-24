@@ -220,4 +220,50 @@ public class Not2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.getOperator());
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetCondition() {
+        Equal originalCondition = new Equal("name", "John");
+        Not condition = new Not(originalCondition);
+
+        Equal newCondition = new Equal("age", 30);
+        condition.setCondition(newCondition);
+
+        Condition retrieved = condition.getCondition();
+        assertEquals(newCondition, retrieved);
+        assertEquals("age", ((Equal) retrieved).getPropName());
+    }
+
+    @Test
+    public void testToString_NoArgs() {
+        Not condition = new Not(new Equal("status", "active"));
+        String result = condition.toString();
+
+        assertTrue(result.contains("NOT"));
+        assertTrue(result.contains("status"));
+    }
+
+    @Test
+    public void testGetParameters_NullCondition() {
+        Not condition = new Not(new Equal("field", null));
+        List<Object> params = condition.getParameters();
+
+        assertEquals(1, (int) params.size());
+        assertNull(params.get(0));
+    }
+
+    @Test
+    public void testCopy_Independence() {
+        Equal innerCondition = new Equal("name", "Alice");
+        Not original = new Not(innerCondition);
+        Not copy = original.copy();
+
+        // Modify original's inner condition
+        innerCondition.clearParameters();
+
+        // Copy should still have the value
+        Equal copiedInner = copy.getCondition();
+        assertEquals("Alice", copiedInner.getPropValue());
+    }
 }
