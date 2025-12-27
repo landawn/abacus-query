@@ -270,15 +270,6 @@ public class SubQuery extends AbstractCondition {
      * Returns the raw SQL script if this is a raw SQL subquery.
      * For structured subqueries created with entity name/class and conditions, this returns {@code null}.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery rawSubQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
-     * String sql = rawSubQuery.getSql();   // Returns "SELECT id FROM users WHERE active = true"
-     *
-     * SubQuery structuredSubQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-     * String sql2 = structuredSubQuery.getSql();   // Returns null
-     * }</pre>
-     *
      * @return the SQL script, or {@code null} if this is a structured subquery
      */
     public String getSql() {
@@ -291,15 +282,6 @@ public class SubQuery extends AbstractCondition {
      * created with an entity name parameter. For raw SQL subqueries created without
      * an entity name, this may be empty.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), Filters.eq("status", "active"));
-     * String entityName = subQuery.getEntityName();   // Returns "users"
-     *
-     * SubQuery rawSubQuery = Filters.subQuery("SELECT * FROM products");
-     * String entityName2 = rawSubQuery.getEntityName();   // Returns empty string
-     * }</pre>
-     *
      * @return the entity/table name, or an empty string if not set
      */
     public String getEntityName() {
@@ -309,15 +291,6 @@ public class SubQuery extends AbstractCondition {
     /**
      * Gets the entity class if this subquery was created with a class reference.
      * This provides type information for subqueries constructed using the class-based constructor.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery(User.class, Arrays.asList("id", "email"), Filters.isNotNull("email"));
-     * Class<?> entityClass = subQuery.getEntityClass();   // Returns User.class
-     *
-     * SubQuery stringSubQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-     * Class<?> entityClass2 = stringSubQuery.getEntityClass();   // Returns null
-     * }</pre>
      *
      * @return the entity class, or {@code null} if created with entity name string or raw SQL
      */
@@ -330,16 +303,6 @@ public class SubQuery extends AbstractCondition {
      * These are the columns that will appear in the SELECT clause of the generated SQL.
      * For raw SQL subqueries, this returns {@code null}.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> props = Arrays.asList("id", "name", "email");
-     * SubQuery subQuery = Filters.subQuery("users", props, Filters.eq("active", true));
-     * Collection<String> selectProps = subQuery.getSelectPropNames();   // Returns ["id", "name", "email"]
-     *
-     * SubQuery rawSubQuery = Filters.subQuery("SELECT id, name FROM users");
-     * Collection<String> selectProps2 = rawSubQuery.getSelectPropNames();   // Returns null
-     * }</pre>
-     *
      * @return collection of property names to select, or {@code null} for raw SQL subqueries
      */
     public Collection<String> getSelectPropNames() {
@@ -351,16 +314,6 @@ public class SubQuery extends AbstractCondition {
      * This condition is applied when generating the SQL for structured subqueries.
      * For raw SQL subqueries or subqueries without conditions, this returns {@code null}.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition condition = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18));
-     * SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
-     * Condition retrieved = subQuery.getCondition();   // Returns the And condition
-     *
-     * SubQuery rawSubQuery = Filters.subQuery("SELECT * FROM users WHERE active = true");
-     * Condition retrieved2 = rawSubQuery.getCondition();   // Returns null
-     * }</pre>
-     *
      * @return the WHERE condition, or {@code null} if no condition or raw SQL subquery
      */
     public Condition getCondition() {
@@ -371,16 +324,6 @@ public class SubQuery extends AbstractCondition {
      * Gets the list of parameter values from the condition.
      * These are the parameter values that will be bound to the prepared statement placeholders
      * when the query is executed. For raw SQL subqueries, this returns an empty list.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition condition = Filters.gt("age", 18);
-     * SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
-     * List<Object> params = subQuery.getParameters();   // Returns [18]
-     *
-     * SubQuery rawSubQuery = Filters.subQuery("SELECT * FROM users");
-     * List<Object> params2 = rawSubQuery.getParameters();   // Returns empty list
-     * }</pre>
      *
      * @return list of parameter values, or an empty list if no condition or raw SQL subquery
      */
@@ -395,12 +338,6 @@ public class SubQuery extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<Object> parameters = condition.getParameters();          // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters();                                  // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters();   // Returns [null, null, null, null, null]
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -412,13 +349,6 @@ public class SubQuery extends AbstractCondition {
     /**
      * Creates a deep copy of this subquery.
      * The copy includes deep copies of property names and conditions to ensure complete independence.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery original = Filters.subQuery("users", Arrays.asList("id"), new Equal("active", true));
-     * SubQuery copy = original.copy();
-     * // Modifying copy doesn't affect original
-     * }</pre>
      *
      * @param <T> the type of condition to return
      * @return a new SubQuery instance with deeply copied values
@@ -444,12 +374,6 @@ public class SubQuery extends AbstractCondition {
      *
      * <p>For raw SQL subqueries, returns the SQL as-is.
      * For structured subqueries, generates the SELECT statement with proper formatting.</p>
-     *
-     * <p>Example output:</p>
-     * <pre>{@code
-     * // Raw SQL: returns the SQL string directly
-     * // Structured: "SELECT id, name FROM users WHERE status = 'active'"
-     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to column and table names. Can be null.
      * @return string representation of the subquery
@@ -505,13 +429,6 @@ public class SubQuery extends AbstractCondition {
      * of entity name, properties, and condition (for structured queries),
      * ensuring consistent hashing for equivalent subqueries.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery sq1 = Filters.subQuery("SELECT id FROM users WHERE active = true");
-     * SubQuery sq2 = Filters.subQuery("SELECT id FROM users WHERE active = true");
-     * assert sq1.hashCode() == sq2.hashCode();
-     * }</pre>
-     *
      * @return hash code based on sql, entity name, properties, and condition
      */
     @Override
@@ -527,16 +444,6 @@ public class SubQuery extends AbstractCondition {
      * Checks if this subquery is equal to another object.
      * Two subqueries are equal if they have the same SQL (for raw queries) or the same
      * entity name, properties, and condition (for structured queries).
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery sq1 = Filters.subQuery("SELECT id FROM users WHERE active = true");
-     * SubQuery sq2 = Filters.subQuery("SELECT id FROM users WHERE active = true");
-     * assert sq1.equals(sq2);   // true
-     *
-     * SubQuery sq3 = Filters.subQuery("SELECT id FROM users WHERE active = false");
-     * assert !sq1.equals(sq3);   // false - different SQL
-     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

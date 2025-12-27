@@ -77,18 +77,6 @@ public interface Condition {
      * For example, an Equal condition has the EQUAL operator, while an
      * And condition has the AND operator.</p>
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition eq = Filters.eq("name", "John");
-     * Operator op1 = eq.getOperator();   // Returns Operator.EQUAL
-     * 
-     * Condition gt = Filters.gt("age", 18);
-     * Operator op2 = gt.getOperator();   // Returns Operator.GREATER_THAN
-     * 
-     * Condition and = eq.and(gt);
-     * Operator op3 = and.getOperator();   // Returns Operator.AND
-     * }</pre>
-     * 
      * @return the operator for this condition
      */
     Operator getOperator();
@@ -186,13 +174,6 @@ public interface Condition {
      * Creates a deep copy of this condition.
      * The copy is independent of the original and can be modified without affecting it.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition original = Filters.eq("status", "active");
-     * Condition copy = original.copy();
-     * // copy is a new instance with the same values
-     * }</pre>
-     * 
      * @param <T> the type of condition to return
      * @return a deep copy of this condition
      */
@@ -201,13 +182,6 @@ public interface Condition {
     /**
      * Gets the list of parameter values associated with this condition.
      * Parameters are the actual values used in comparisons (e.g., the "John" in name = "John").
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition condition = Filters.between("age", 18, 65);
-     * List<Object> params = condition.getParameters();
-     * // Returns [18, 65]
-     * }</pre>
      * 
      * @return a list of parameter values, never null
      */
@@ -220,26 +194,12 @@ public interface Condition {
      * Use this method to release large objects when the condition is no longer needed.
      * This is the only mutating operation allowed on otherwise immutable conditions.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition condition = Filters.between("age", 18, 65);
-     * List<Object> parameters = condition.getParameters();          // Returns [18, 65]
-     * condition.clearParameters();                                  // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters();   // Returns [null, null]
-     * }</pre>
      */
     void clearParameters();
 
     /**
      * Returns a string representation of this condition using the specified naming policy.
      * The naming policy determines how property names are formatted in the output.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition condition = Filters.eq("firstName", "John");
-     * String sql = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-     * // Returns: "first_name = 'John'"
-     * }</pre>
      * 
      * @param namingPolicy the policy for formatting property names
      * @return a string representation of this condition

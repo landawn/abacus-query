@@ -223,15 +223,6 @@ public final class SQLMapper {
     /**
      * Retrieves the parsed SQL associated with the specified identifier.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
-     * ParsedSql sql = mapper.get("findAccountById");
-     * if (sql != null) {
-     *     String sqlString = sql.sql();
-     * }
-     * }</pre>
-     *
      * @param id the SQL identifier to look up
      * @return the ParsedSql object, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found
      */
@@ -246,16 +237,6 @@ public final class SQLMapper {
     /**
      * Retrieves the attributes associated with the specified SQL identifier.
      * Attributes may include batchSize, fetchSize, resultSetType, timeout, etc.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
-     * ImmutableMap<String, String> attrs = mapper.getAttrs("batchInsertAccounts");
-     * if (attrs != null) {
-     *     String batchSizeStr = attrs.get("batchSize");
-     *     int batchSize = batchSizeStr != null ? Integer.parseInt(batchSizeStr) : 100;
-     * }
-     * }</pre>
      *
      * @param id the SQL identifier to look up
      * @return an immutable map of attribute names to values, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found
@@ -371,14 +352,6 @@ public final class SQLMapper {
      * The copy contains references to the same ParsedSql objects and attribute maps from the original.
      * Modifications to one mapper (adding/removing entries) will not affect the other.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SQLMapper original = SQLMapper.fromFile("sql/queries.xml");
-     * SQLMapper copy = original.copy();
-     * copy.add("newQuery", "select * from new_table", Collections.emptyMap());
-     * // original does not contain "newQuery"
-     * }</pre>
-     *
      * @return a new SQLMapper instance with the same SQL definitions and attributes
      */
     public SQLMapper copy() {
@@ -456,14 +429,6 @@ public final class SQLMapper {
 
     /**
      * Checks if this mapper contains no SQL definitions.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SQLMapper mapper = new SQLMapper();
-     * if (mapper.isEmpty()) {
-     *     System.out.println("No SQL definitions loaded");
-     * }
-     * }</pre>
      *
      * @return {@code true} if the mapper contains no SQL definitions, {@code false} otherwise
      */

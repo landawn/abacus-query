@@ -163,15 +163,6 @@ public class Junction extends AbstractCondition {
      * The returned list is the internal representation and modifications to it
      * will affect the junction. Use with caution.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND);
-     * junction.add(new Equal("status", "active"));
-     * 
-     * List<Condition> conditions = junction.getConditions();
-     * System.out.println("Number of conditions: " + conditions.size());
-     * }</pre>
-     *
      * @return the list of conditions. Modifications to this list will affect the junction.
      */
     public List<Condition> getConditions() {
@@ -181,19 +172,6 @@ public class Junction extends AbstractCondition {
     /**
      * Replaces all conditions in this junction with the specified conditions.
      * This method clears existing conditions before adding the new ones.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND);
-     * junction.add(new Equal("old", true));
-     *
-     * // Replace with new conditions
-     * junction.set(
-     *     new Equal("status", "active"),
-     *     new IsNotNull("email"),
-     *     new GreaterThan("age", 18)
-     * );
-     * }</pre>
      *
      * @param conditions the new conditions to set. Existing conditions will be cleared.
      * @throws IllegalArgumentException if conditions array contains null elements
@@ -206,16 +184,6 @@ public class Junction extends AbstractCondition {
     /**
      * Replaces all conditions in this junction with the specified collection of conditions.
      * This method clears existing conditions before adding the new ones.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.OR);
-     * List<Condition> newConditions = Arrays.asList(
-     *     new Equal("type", "A"),
-     *     new Equal("type", "B")
-     * );
-     * junction.set(newConditions);
-     * }</pre>
      *
      * @param conditions the new collection of conditions to set. Existing conditions will be cleared.
      * @throws IllegalArgumentException if conditions collection contains null elements
@@ -343,12 +311,6 @@ public class Junction extends AbstractCondition {
      * Removes all conditions from this junction.
      * After this operation, the junction will be empty but can still accept new conditions.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND);
-     * junction.add(new Equal("status", "active"));
-     * junction.clear();   // Junction is now empty
-     * }</pre>
      */
     public void clear() {
         conditionList.clear();
@@ -360,18 +322,6 @@ public class Junction extends AbstractCondition {
      * including those in nested junctions. The order of parameters matches
      * the order they would appear in the generated SQL.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND,
-     *     new Equal("status", "active"),
-     *     new Between("age", 18, 65),
-     *     new In("city", Arrays.asList("NYC", "LA"))
-     * );
-     * 
-     * List<Object> params = junction.getParameters();
-     * // Returns: ["active", 18, 65, "NYC", "LA"]
-     * }</pre>
-     *
      * @return a list containing all parameters from all conditions
      */
     @Override
@@ -394,15 +344,6 @@ public class Junction extends AbstractCondition {
      * <p>Use this method to release large objects held by any condition in the junction tree
      * when the junction is no longer needed.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction and = new And(
-     *     new Equal("status", "active"),
-     *     new GreaterThan("age", 18),
-     *     new In("role", Arrays.asList("admin", "moderator"))
-     * );
-     * and.clearParameters();   // Recursively clears all child conditions
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -418,17 +359,6 @@ public class Junction extends AbstractCondition {
      * The copy includes copies of all contained conditions, ensuring that
      * modifications to the copy don't affect the original.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction original = new Junction(Operator.AND,
-     *     new Equal("status", "active"),
-     *     new GreaterThan("age", 18)
-     * );
-     * 
-     * Junction copy = original.copy();
-     * copy.add(new Equal("verified", true));   // Original is unaffected
-     * }</pre>
-     *
      * @param <T> the type of the condition
      * @return a new Junction instance with copies of all conditions
      */
@@ -451,17 +381,6 @@ public class Junction extends AbstractCondition {
      * The output format wraps each condition in parentheses and joins them with the operator.
      * This ensures proper precedence in complex logical expressions.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND,
-     *     new Equal("status", "active"),
-     *     new GreaterThan("age", 18)
-     * );
-     * 
-     * String sql = junction.toString(NamingPolicy.LOWER_CASE);
-     * // Returns: "((status = 'active') AND (age > 18))"
-     * }</pre>
-     *
      * @param namingPolicy the naming policy to apply to property names
      * @return the string representation with proper parentheses and spacing
      */
@@ -508,13 +427,6 @@ public class Junction extends AbstractCondition {
      * The hash code is consistent with equals() - junctions with the same operator
      * and conditions will have the same hash code.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction j1 = new Junction(Operator.AND, new Equal("a", 1));
-     * Junction j2 = new Junction(Operator.AND, new Equal("a", 1));
-     * assert j1.hashCode() == j2.hashCode();
-     * }</pre>
-     *
      * @return the hash code
      */
     @Override
@@ -529,21 +441,6 @@ public class Junction extends AbstractCondition {
      * Two junctions are considered equal if they have the same operator
      * and contain the same conditions in the same order.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction j1 = new Junction(Operator.AND,
-     *     new Equal("status", "active"),
-     *     new GreaterThan("age", 18)
-     * );
-     * 
-     * Junction j2 = new Junction(Operator.AND,
-     *     new Equal("status", "active"),
-     *     new GreaterThan("age", 18)
-     * );
-     * 
-     * assert j1.equals(j2);   // true
-     * }</pre>
-     *
      * @param obj the object to compare with
      * @return {@code true} if the object is a Junction with the same operator and conditions
      */

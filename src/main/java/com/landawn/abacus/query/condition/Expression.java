@@ -167,12 +167,6 @@ public class Expression extends AbstractCondition {
     /**
      * Gets the SQL literal string of this expression.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Expression expr = new Expression("UPPER(name)");
-     * String sql = expr.getLiteral();   // Returns "UPPER(name)"
-     * }</pre>
-     *
      * @return the SQL expression string
      */
     public String getLiteral() {
@@ -490,15 +484,6 @@ public class Expression extends AbstractCondition {
     /**
      * Creates an IS NULL expression for the specified literal.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String expr = Expression.isNull("middleName");
-     * // Returns: "middleName IS NULL"
-     * 
-     * String expr2 = Expression.isNull("deleted_date");
-     * // Returns: "deleted_date IS NULL"
-     * }</pre>
-     *
      * @param literal the literal to check for null
      * @return a string representation of the IS NULL expression
      */
@@ -508,12 +493,6 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an IS NOT NULL expression for the specified literal.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String expr = Expression.isNotNull("email");
-     * // Returns: "email IS NOT NULL"
-     * }</pre>
      *
      * @param literal the literal to check for not null
      * @return a string representation of the IS NOT NULL expression
@@ -526,12 +505,6 @@ public class Expression extends AbstractCondition {
      * Creates an IS EMPTY expression for the specified literal.
      * This checks if a value is empty (blank).
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String expr = Expression.isEmpty("description");
-     * // Returns: "description IS BLANK"
-     * }</pre>
-     *
      * @param literal the literal to check for emptiness
      * @return a string representation of the IS EMPTY expression
      */
@@ -542,12 +515,6 @@ public class Expression extends AbstractCondition {
     /**
      * Creates an IS NOT EMPTY expression for the specified literal.
      * This checks if a value is not empty (not blank).
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String expr = Expression.isNotEmpty("name");
-     * // Returns: "name IS NOT BLANK"
-     * }</pre>
      *
      * @param literal the literal to check for non-emptiness
      * @return a string representation of the IS NOT EMPTY expression
@@ -1539,12 +1506,6 @@ public class Expression extends AbstractCondition {
      * Returns an empty list as expressions have no parameters.
      * Expressions are literal SQL strings and don't have bindable parameters.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Expression expr = Expression.of("price * 1.1");
-     * List<Object> params = expr.getParameters();   // Always returns empty list
-     * }</pre>
-     *
      * @return an empty list
      */
     @Override
@@ -1558,12 +1519,6 @@ public class Expression extends AbstractCondition {
      * <p>Expressions are literal SQL strings and don't have bindable parameters,
      * so this method does nothing. It exists to satisfy the interface contract.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Expression expr = Expression.of("price * 1.1");
-     * expr.clearParameters();                       // Does nothing - Expression has no parameters
-     * List<Object> params = expr.getParameters();   // Still returns empty list
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -1606,17 +1561,6 @@ public class Expression extends AbstractCondition {
      * Returns the literal string of this expression.
      * The naming policy may be applied to property names within the expression
      * if they can be identified as simple column names.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Expression expr = Expression.of("userName = 'John'");
-     * String sql = expr.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-     * // Returns: "user_name = 'John'"
-     * 
-     * Expression complex = Expression.of("UPPER(firstName) || ' ' || UPPER(lastName)");
-     * String sql2 = complex.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-     * // Returns: "UPPER(first_name) || ' ' || UPPER(last_name)"
-     * }</pre>
      *
      * @param namingPolicy the naming policy to apply
      * @return the literal string of this expression with applied naming policy
@@ -1685,16 +1629,9 @@ public class Expression extends AbstractCondition {
      * Since this class inherits all methods and behavior from {@code Expression}, it can be
      * used in all the same contexts with identical functionality.
      * <p>
-     * Example usage:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Using the parent Expression class
-     * Expression expr1 = new Expression("price * quantity");
-     *
-     * // Using the Expr alias class
-     * Expr expr2 = new Expr("price * quantity");
-     *
-     * // Both objects function identically
-     * boolean same = expr1.getLiteral().equals(expr2.getLiteral());   // true
+     * Expr expr = new Expr("price * quantity");
      * }</pre>
      *
      * @see Expression
@@ -1706,13 +1643,9 @@ public class Expression extends AbstractCondition {
          * This constructor creates a new Expression instance using the shortened Expr alias.
          * It passes the provided literal directly to the parent Expression constructor.
          * <p>
-         * Example usage:
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * // Creating an expression with the alias class
          * Expr expr = new Expr("price * quantity");
-         *
-         * // The expression works exactly like a regular Expression
-         * String result = expr.getLiteral();   // returns "price * quantity"
          * }</pre>
          *
          * @param literal the SQL expression as a string

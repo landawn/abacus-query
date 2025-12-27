@@ -102,15 +102,6 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Gets the operator for this condition.
      * The operator defines the type of operation (e.g., EQUAL, GREATER_THAN, AND, OR).
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition condition = Filters.eq("status", "active");
-     * Operator op = condition.getOperator();   // Returns Operator.EQUAL
-     *
-     * Condition andCondition = Filters.and(c1, c2);
-     * Operator andOp = andCondition.getOperator();   // Returns Operator.AND
-     * }</pre>
-     *
      * @return the operator for this condition
      */
     @Override
@@ -207,25 +198,6 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * Subclasses should override this method to provide deep copying
      * of their specific fields to ensure complete independence between copies.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Using copy() on a condition
-     * Condition original = Filters.eq("status", "active");
-     * Condition copy = original.copy();
-     * copy.clearParameters();   // Doesn't affect original
-     *
-     * // Example implementation in a subclass:
-     * @Override
-     * public <T extends Condition> T copy() {
-     *     Binary copy = super.copy();   // Shallow copy
-     *     // Deep copy any mutable fields
-     *     if (propValue instanceof Condition) {
-     *         copy.propValue = ((Condition) propValue).copy();
-     *     }
-     *     return (T) copy;
-     * }
-     * }</pre>
-     *
      * @param <T> the type of condition to return
      * @return a copy of this condition
      */
@@ -246,13 +218,6 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     /**
      * Returns a string representation of this condition using the default naming policy.
      * This method delegates to {@link #toString(NamingPolicy)} with {@link NamingPolicy#NO_CHANGE}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition condition = Filters.eq("userName", "John");
-     * String str = condition.toString();
-     * // Returns: "userName = 'John'"
-     * }</pre>
      *
      * @return a string representation of this condition
      */

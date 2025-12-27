@@ -227,12 +227,6 @@ public final class ParsedSql {
      * Gets the parameterized SQL with all named parameters replaced by JDBC placeholders (?).
      * This SQL can be used directly with JDBC PreparedStatement.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-     * String sql = parsed.getParameterizedSql();   // Returns: "SELECT * FROM users WHERE id = ?"
-     * }</pre>
-     *
      * @return the parameterized SQL string with ? placeholders
      */
     public String getParameterizedSql() {
@@ -243,19 +237,6 @@ public final class ParsedSql {
      * Gets the parameterized SQL formatted for the specified database system.
      * When isForCouchbase is true, JDBC placeholders (?) are converted to Couchbase positional parameters ($1, $2, etc.).
      * When false, returns standard JDBC SQL with ? placeholders.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
-     *
-     * // Get standard JDBC format
-     * String jdbcSql = parsed.getParameterizedSql(false);
-     * // Returns: "SELECT * FROM users WHERE id = ? AND status = ?"
-     *
-     * // Get Couchbase format
-     * String couchbaseSql = parsed.getParameterizedSql(true);
-     * // Returns: "SELECT * FROM users WHERE id = $1 AND status = $2"
-     * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase-formatted SQL with $n parameters, {@code false} for standard JDBC format with ? placeholders
      * @return the parameterized SQL string in the requested format
@@ -280,12 +261,6 @@ public final class ParsedSql {
      * Gets the list of named parameters extracted from the SQL in order of appearance.
      * For SQL with no named parameters, returns an empty list.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE age > :minAge AND age < :maxAge");
-     * List<String> params = parsed.getNamedParameters();   // Returns: ["minAge", "maxAge"]
-     * }</pre>
-     *
      * @return an immutable list of parameter names
      */
     public ImmutableList<String> getNamedParameters() {
@@ -297,19 +272,6 @@ public final class ParsedSql {
      * When isForCouchbase is true, returns parameter names suitable for Couchbase N1QL positional binding.
      * For SQL with positional parameters only (using ?), Couchbase format returns an empty list since
      * parameters are bound by position.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("UPDATE users SET name = :name, email = :email WHERE id = :id");
-     *
-     * // Get standard named parameters
-     * List<String> jdbcParams = parsed.getNamedParameters(false);
-     * // Returns: ["name", "email", "id"]
-     *
-     * // Get Couchbase-formatted parameters
-     * List<String> couchbaseParams = parsed.getNamedParameters(true);
-     * // Returns: ["name", "email", "id"] (same in this case)
-     * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase-formatted parameter names, {@code false} for standard format
      * @return an immutable list of parameter names
@@ -334,12 +296,6 @@ public final class ParsedSql {
      * Gets the total number of parameters (named or positional) in the SQL.
      * This count includes all occurrences of ?, :paramName, or #{paramName}.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (?, ?, ?)");
-     * int count = parsed.getParameterCount();   // Returns: 3
-     * }</pre>
-     *
      * @return the number of parameters in the SQL
      */
     public int getParameterCount() {
@@ -348,13 +304,6 @@ public final class ParsedSql {
 
     /**
      * Gets the parameter count formatted for the specified database system.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("INSERT INTO orders (user_id, product_id, qty) VALUES (:userId, :productId, :qty)");
-     * int jdbcCount = parsed.getParameterCount(false);       // Returns: 3
-     * int couchbaseCount = parsed.getParameterCount(true);   // Returns: 3
-     * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase parameter count, {@code false} for standard count
      * @return the number of parameters
@@ -466,17 +415,6 @@ public final class ParsedSql {
     /**
      * Indicates whether some other object is "equal to" this one.
      * Two ParsedSql objects are equal if they have the same original SQL string.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql ps1 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-     * ParsedSql ps2 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-     * ParsedSql ps3 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-     *
-     * boolean result1 = ps1.equals(ps2);    // Returns: true (same SQL)
-     * boolean result2 = ps1.equals(ps3);    // Returns: false (different SQL)
-     * boolean result3 = ps1.equals(null);   // Returns: false
-     * }</pre>
      *
      * @param obj the reference object with which to compare
      * @return {@code true} if this object equals the obj argument; false otherwise

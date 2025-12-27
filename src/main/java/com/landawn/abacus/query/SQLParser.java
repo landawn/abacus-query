@@ -618,13 +618,6 @@ public final class SQLParser {
      *   <li>All registered separators are checked</li>
      * </ul>
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = "WHERE id = #{userId} AND age > 25";
-     * boolean isSep1 = SQLParser.isSeparator(sql, sql.length(), 9, '=');    // Returns: true
-     * boolean isSep2 = SQLParser.isSeparator(sql, sql.length(), 11, '#');   // Returns: false (part of #{userId})
-     * }</pre>
-     * 
      * @param str the SQL string being parsed
      * @param len the length of the SQL string
      * @param index the current position in the string
@@ -646,16 +639,6 @@ public final class SQLParser {
      * either immediately or after whitespace.
      * 
      * <p>This method is useful for identifying SQL function calls during parsing or analysis.</p>
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> words = SQLParser.parse("SELECT COUNT(*), MAX(age) FROM users");
-     * // Assuming words = ["SELECT", " ", "COUNT", "(", "*", ")", ",", " ", "MAX", "(", "age", ")", " ", "FROM", " ", "users"]
-     * int len = words.size();
-     * boolean isFunc1 = SQLParser.isFunctionName(words, len, 2);    // Returns: true (COUNT)
-     * boolean isFunc2 = SQLParser.isFunctionName(words, len, 8);    // Returns: true (MAX)
-     * boolean isFunc3 = SQLParser.isFunctionName(words, len, 15);   // Returns: false (users)
-     * }</pre>
      * 
      * @param words the list of parsed SQL words/tokens
      * @param len the total length of the words list

@@ -165,15 +165,6 @@ public class NotInSubQuery extends AbstractCondition {
      * Gets the property name for single-property NOT IN conditions.
      * Returns null if this is a multi-property condition.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
-     * String propName = condition.getPropName();   // Returns "userId"
-     *
-     * NotInSubQuery multiProp = new NotInSubQuery(Arrays.asList("a", "b"), subQuery);
-     * String name = multiProp.getPropName();   // Returns null
-     * }</pre>
-     *
      * @return the property name, or null if this is a multi-property condition
      */
     public String getPropName() {
@@ -184,16 +175,6 @@ public class NotInSubQuery extends AbstractCondition {
      * Gets the property names for multi-property NOT IN conditions.
      * Returns null if this is a single-property condition.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> props = Arrays.asList("country", "city");
-     * NotInSubQuery condition = new NotInSubQuery(props, subQuery);
-     * Collection<String> propNames = condition.getPropNames();   // Returns ["country", "city"]
-     *
-     * NotInSubQuery singleProp = new NotInSubQuery("userId", subQuery);
-     * Collection<String> names = singleProp.getPropNames();   // Returns null
-     * }</pre>
-     *
      * @return collection of property names, or null if this is a single-property condition
      */
     public Collection<String> getPropNames() {
@@ -203,13 +184,6 @@ public class NotInSubQuery extends AbstractCondition {
     /**
      * Gets the subquery used in this NOT IN condition.
      * The subquery defines the set of values to exclude from the results.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
-     * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
-     * SubQuery retrieved = condition.getSubQuery();   // Returns the subquery
-     * }</pre>
      *
      * @return the subquery
      */
@@ -231,19 +205,6 @@ public class NotInSubQuery extends AbstractCondition {
      *   <li>Shared conditions modified this way can cause race conditions</li>
      * </ul>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery subQuery1 = Filters.subQuery("SELECT id FROM inactive_users");
-     * NotInSubQuery condition = new NotInSubQuery("user_id", subQuery1);
-     *
-     * // Not recommended - breaks immutability
-     * SubQuery subQuery2 = Filters.subQuery("SELECT id FROM deleted_users");
-     * condition.setSubQuery(subQuery2);
-     *
-     * // Recommended approach - create a new condition
-     * NotInSubQuery newCondition = new NotInSubQuery("user_id", subQuery2);
-     * }</pre>
-     *
      * @param subQuery the new subquery to set. Must not be null.
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      *             Create a new NotInSubQuery instance instead of modifying existing conditions.
@@ -260,15 +221,6 @@ public class NotInSubQuery extends AbstractCondition {
      * These are the parameter values that will be bound to the prepared statement placeholders
      * when the query is executed.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Using a structured subquery with conditions that have parameters
-     * Condition ageCondition = Filters.gt("age", 18);
-     * SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), ageCondition);
-     * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
-     * List<Object> params = condition.getParameters();   // Returns [18]
-     * }</pre>
-     *
      * @return list of parameter values from the subquery
      */
     @Override
@@ -282,12 +234,6 @@ public class NotInSubQuery extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<Object> parameters = condition.getParameters();          // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters();                                  // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters();   // Returns [null, null, null, null, null]
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -297,14 +243,6 @@ public class NotInSubQuery extends AbstractCondition {
     /**
      * Creates a deep copy of this NOT IN subquery condition.
      * The copy includes a deep copy of the subquery to ensure complete independence.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
-     * NotInSubQuery original = new NotInSubQuery("userId", subQuery);
-     * NotInSubQuery copy = original.copy();
-     * // copy is independent of original
-     * }</pre>
      *
      * @param <T> the type of condition to return
      * @return a new instance with copied values
@@ -324,14 +262,6 @@ public class NotInSubQuery extends AbstractCondition {
      * The hash code is based on the property name(s), operator, and subquery,
      * ensuring consistent hashing for equivalent conditions.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
-     * NotInSubQuery c1 = new NotInSubQuery("userId", subQuery);
-     * NotInSubQuery c2 = new NotInSubQuery("userId", subQuery);
-     * assert c1.hashCode() == c2.hashCode();
-     * }</pre>
-     *
      * @return hash code based on property name(s), operator, and subquery
      */
     @Override
@@ -346,17 +276,6 @@ public class NotInSubQuery extends AbstractCondition {
      * Checks if this NOT IN subquery condition is equal to another object.
      * Two NotInSubQuery conditions are equal if they have the same property name(s),
      * operator, and subquery.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
-     * NotInSubQuery c1 = new NotInSubQuery("userId", subQuery);
-     * NotInSubQuery c2 = new NotInSubQuery("userId", subQuery);
-     * assert c1.equals(c2);   // true
-     *
-     * NotInSubQuery c3 = new NotInSubQuery("otherId", subQuery);
-     * assert !c1.equals(c3);   // false - different property
-     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
@@ -379,12 +298,6 @@ public class NotInSubQuery extends AbstractCondition {
      * Converts this NOT IN subquery condition to its string representation using the specified naming policy.
      * The output format depends on whether this is a single or multi-property condition.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Single property: "user_id NOT IN (SELECT id FROM inactive_users)"
-     * // Multiple properties: "(first_name, last_name) NOT IN (SELECT fname, lname FROM blacklist)"
-     * }</pre>
-     * 
      * @param namingPolicy the naming policy to apply to property names
      * @return string representation of the NOT IN subquery condition
      */

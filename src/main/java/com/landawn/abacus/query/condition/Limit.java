@@ -166,15 +166,6 @@ public class Limit extends AbstractCondition {
      * This method returns the raw expression string passed to the string constructor,
      * or {@code null} if the Limit was created with count/offset parameters.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Limit limit1 = new Limit("10 OFFSET 20");
-     * String expr = limit1.getExpr();   // Returns "10 OFFSET 20"
-     *
-     * Limit limit2 = new Limit(10, 20);
-     * String expr2 = limit2.getExpr();   // Returns null
-     * }</pre>
-     *
      * @return the custom expression string, or {@code null} if constructed with count/offset parameters
      */
     public String getExpr() {
@@ -184,15 +175,6 @@ public class Limit extends AbstractCondition {
     /**
      * Gets the maximum number of rows to return.
      * For Limit instances created with a custom expression, this returns {@link Integer#MAX_VALUE}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Limit limit = new Limit(50, 20);
-     * int maxRows = limit.getCount();   // Returns 20
-     *
-     * Limit customLimit = new Limit("10 OFFSET 20");
-     * int count = customLimit.getCount();   // Returns Integer.MAX_VALUE
-     * }</pre>
      *
      * @return the row count limit, or {@link Integer#MAX_VALUE} if constructed with a custom expression
      */
@@ -204,18 +186,6 @@ public class Limit extends AbstractCondition {
      * Gets the number of rows to skip before returning results.
      * For Limit instances created with only a count, this returns 0.
      * For Limit instances created with a custom expression, this also returns 0.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Limit limit = new Limit(50, 20);
-     * int skip = limit.getOffset();   // Returns 50
-     *
-     * Limit limitNoOffset = new Limit(10);
-     * int skip2 = limitNoOffset.getOffset();   // Returns 0
-     *
-     * Limit customLimit = new Limit("10 OFFSET 20");
-     * int skip3 = customLimit.getOffset();   // Returns 0
-     * }</pre>
      *
      * @return the offset value, or 0 if constructed with only count or with a custom expression
      */
@@ -229,12 +199,6 @@ public class Limit extends AbstractCondition {
      * are typically part of the SQL structure itself, not parameterized values.
      * This method always returns an empty list.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Limit limit = new Limit(10);
-     * List<Object> params = limit.getParameters();   // Returns empty list
-     * }</pre>
-     *
      * @return an empty list as LIMIT has no parameters
      */
     @Override
@@ -249,12 +213,6 @@ public class Limit extends AbstractCondition {
      *
      * <p>This method is a no-op to satisfy the Condition interface contract.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Limit limit = new Limit(10);
-     * limit.clearParameters();                           // Does nothing - no parameters to clear
-     * List<Object> parameters = limit.getParameters();   // Returns empty list
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -339,18 +297,6 @@ public class Limit extends AbstractCondition {
      * - Count only: returns "LIMIT count"
      * - Count with offset: returns "LIMIT count OFFSET offset"
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Limit limit1 = new Limit(10);
-     * String sql1 = limit1.toString(NamingPolicy.LOWER_CASE);   // "LIMIT 10"
-     * 
-     * Limit limit2 = new Limit(20, 10);
-     * String sql2 = limit2.toString(NamingPolicy.LOWER_CASE);   // "LIMIT 10 OFFSET 20"
-     * 
-     * Limit limit3 = new Limit("FIRST 5 ROWS");
-     * String sql3 = limit3.toString(NamingPolicy.LOWER_CASE);   // "FIRST 5 ROWS"
-     * }</pre>
-     *
      * @param namingPolicy the naming policy to apply (though LIMIT typically doesn't need name conversion)
      * @return the string representation of this LIMIT clause
      */
@@ -369,17 +315,6 @@ public class Limit extends AbstractCondition {
      * or the combination of count and offset values. This ensures that Limit instances
      * with the same logical content have the same hash code.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Limit limit1 = new Limit(10);
-     * Limit limit2 = new Limit(10);
-     * assert limit1.hashCode() == limit2.hashCode();
-     * 
-     * Limit limit3 = new Limit("LIMIT 10");
-     * Limit limit4 = new Limit("LIMIT 10");
-     * assert limit3.hashCode() == limit4.hashCode();
-     * }</pre>
-     *
      * @return the hash code based on expr if present, otherwise based on count and offset
      */
     @Override
@@ -399,17 +334,6 @@ public class Limit extends AbstractCondition {
      * - Both have the same custom expression, or
      * - Both have the same count and offset values
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Limit limit1 = new Limit(50, 20);
-     * Limit limit2 = new Limit(50, 20);
-     * assert limit1.equals(limit2);   // true
-     * 
-     * Limit limit3 = new Limit("LIMIT 20 OFFSET 50");
-     * Limit limit4 = new Limit("LIMIT 20 OFFSET 50");
-     * assert limit3.equals(limit4);   // true
-     * }</pre>
-     *
      * @param obj the object to compare with
      * @return {@code true} if the object is a Limit with the same expr or count/offset values
      */

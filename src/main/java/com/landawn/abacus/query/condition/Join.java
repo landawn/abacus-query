@@ -131,14 +131,6 @@ public class Join extends AbstractCondition {
      * Creates a JOIN clause with the specified operator and table/entity.
      * This protected constructor is used by subclasses to specify the join type
      * (INNER, LEFT, RIGHT, FULL) while reusing the common join logic.
-     * 
-     * <p>Example usage in subclasses:
-     * <pre>{@code
-     * // Used internally by InnerJoin
-     * protected InnerJoin(String joinEntity) {
-     *     super(Operator.INNER_JOIN, joinEntity);
-     * }
-     * }</pre>
      *
      * @param operator the join operator (INNER_JOIN, LEFT_JOIN, etc.)
      * @param joinEntity the table or entity to join with
@@ -189,6 +181,7 @@ public class Join extends AbstractCondition {
      * with conditions.
      * 
      * <p>Example usage in subclasses:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Used internally by LeftJoin
      * protected LeftJoin(String joinEntity, Condition condition) {
@@ -244,6 +237,7 @@ public class Join extends AbstractCondition {
      * allowing subclasses to specify their join type while reusing the common logic.
      * 
      * <p>Example usage in subclasses:
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Used internally by subclasses
      * protected RightJoin(Collection<String> joinEntities, Condition condition) {
@@ -268,12 +262,6 @@ public class Join extends AbstractCondition {
      * Gets the list of tables/entities involved in this join.
      * Returns a defensive copy of the tables that are being joined, including any aliases.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Join join = new Join(Arrays.asList("orders o", "customers c"), condition);
-     * List<String> entities = join.getJoinEntities();   // Returns ["orders o", "customers c"]
-     * }</pre>
-     *
      * @return a copy of the list of join entities
      */
     public List<String> getJoinEntities() {
@@ -284,19 +272,6 @@ public class Join extends AbstractCondition {
      * Gets the join condition.
      * Returns the condition that specifies how the tables are related.
      * May return null if no condition was specified (natural join or cross join).
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Create join with ON condition
-     * On onCondition = new On("a.id", "b.a_id");
-     * Join join = new Join("table_b b", onCondition);
-     * Condition retrieved = join.getCondition();   // Returns the On condition
-     *
-     * // Create join with Expression
-     * Condition exprCondition = Filters.expr("a.id = b.a_id");
-     * Join exprJoin = new Join("table_b b", exprCondition);
-     * Condition exprRetrieved = exprJoin.getCondition();   // Returns the Expression
-     * }</pre>
      *
      * @param <T> the type of the condition
      * @return the join condition, or null if no condition is specified
@@ -311,16 +286,6 @@ public class Join extends AbstractCondition {
      * Returns any bound parameters used in the join condition. Returns an empty
      * list if there's no condition or the condition has no parameters.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Join join = new Join("orders o",
-     *     new And(
-     *         new On("c.id", "o.customer_id"),
-     *         Filters.gt("o.amount", 1000)
-     *     ));
-     * List<Object> params = join.getParameters();   // Returns [1000]
-     * }</pre>
-     *
      * @return the list of parameters from the condition, or an empty list if no condition
      */
     @Override
@@ -334,12 +299,6 @@ public class Join extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<Object> parameters = condition.getParameters();          // e.g., [1, 2, 3, 4, 5]
-     * condition.clearParameters();                                  // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters();   // Returns [null, null, null, null, null]
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -353,13 +312,6 @@ public class Join extends AbstractCondition {
      * The copy includes copies of all join entities and the condition,
      * ensuring that modifications to the copy don't affect the original.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Join original = new Join("orders o", new On("c.id", "o.customer_id"));
-     * Join copy = original.copy();
-     * // copy is independent of original
-     * }</pre>
-     *
      * @param <T> the type of the condition
      * @return a new Join instance with copies of all entities and condition
      */
@@ -384,25 +336,6 @@ public class Join extends AbstractCondition {
      * The output format includes the join operator, tables, and optional join condition.
      * The condition's string representation depends on its type (On, Using, Expression, etc.).
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Simple join
-     * Join j1 = new Join("orders");
-     * j1.toString(policy);   // "JOIN orders"
-     *
-     * // Join with ON condition
-     * Join j2 = new Join("orders o", new On("c.id", "o.customer_id"));
-     * j2.toString(policy);   // "JOIN orders o ON c.id = o.customer_id"
-     *
-     * // Join with Expression condition
-     * Join j3 = new Join("orders o", Filters.expr("c.id = o.customer_id"));
-     * j3.toString(policy);   // "JOIN orders o c.id = o.customer_id"
-     *
-     * // Multiple tables
-     * Join j4 = new Join(Arrays.asList("t1", "t2"), new On("t1.id", "t2.t1_id"));
-     * j4.toString(policy);   // "JOIN (t1, t2) ON t1.id = t2.t1_id"
-     * }</pre>
-     *
      * @param namingPolicy the naming policy to apply
      * @return the string representation, e.g., "JOIN orders o ON customers.id = o.customer_id"
      */
@@ -417,14 +350,6 @@ public class Join extends AbstractCondition {
      * The hash code is based on the operator, join entities, and condition,
      * ensuring consistent hashing for equivalent joins.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition expr = Filters.expr("c.id = o.customer_id");
-     * Join j1 = new Join("orders o", expr);
-     * Join j2 = new Join("orders o", expr);
-     * assert j1.hashCode() == j2.hashCode();
-     * }</pre>
-     *
      * @return the hash code based on operator, join entities, and condition
      */
     @Override
@@ -445,16 +370,6 @@ public class Join extends AbstractCondition {
      * Two Join instances are equal if they have the same operator, join entities,
      * and condition.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Join j1 = new Join("orders o", new On("c.id", "o.customer_id"));
-     * Join j2 = new Join("orders o", new On("c.id", "o.customer_id"));
-     * assert j1.equals(j2);   // true
-     *
-     * Join j3 = new Join("products p", new On("c.id", "p.category_id"));
-     * assert !j1.equals(j3);   // false
-     * }</pre>
-     *
      * @param obj the object to compare with
      * @return {@code true} if the object is a Join with the same operator, entities, and condition
      */

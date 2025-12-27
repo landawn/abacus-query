@@ -127,12 +127,6 @@ public class NotBetween extends AbstractCondition {
      * Gets the property name for this NOT BETWEEN condition.
      * Returns the name of the column or field being tested against the range.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween condition = new NotBetween("age", 18, 65);
-     * String prop = condition.getPropName();   // Returns "age"
-     * }</pre>
-     *
      * @return the property name
      */
     public String getPropName() {
@@ -143,12 +137,6 @@ public class NotBetween extends AbstractCondition {
      * Gets the minimum value of the range to exclude.
      * Values less than this will match the condition (since they fall outside the range).
      * The type parameter allows the value to be cast to the expected type.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween condition = new NotBetween("temperature", 36.0, 37.5);
-     * Double min = condition.getMinValue();   // Returns 36.0
-     * }</pre>
      *
      * @param <T> the type of the minimum value
      * @return the minimum value of the excluded range
@@ -162,12 +150,6 @@ public class NotBetween extends AbstractCondition {
      * Sets a new minimum value for the range.
      * Note: Modifying conditions after creation is not recommended as they should be immutable.
      * This method exists for backward compatibility but should be avoided in new code.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween condition = new NotBetween("age", 18, 65);
-     * condition.setMinValue(21);   // Not recommended - creates mutable state
-     * }</pre>
      *
      * @param minValue the new minimum value to set
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -183,12 +165,6 @@ public class NotBetween extends AbstractCondition {
      * Values greater than this will match the condition (since they fall outside the range).
      * The type parameter allows the value to be cast to the expected type.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween condition = new NotBetween("temperature", 36.0, 37.5);
-     * Double max = condition.getMaxValue();   // Returns 37.5
-     * }</pre>
-     *
      * @param <T> the type of the maximum value
      * @return the maximum value of the excluded range
      */
@@ -201,12 +177,6 @@ public class NotBetween extends AbstractCondition {
      * Sets a new maximum value for the range.
      * Note: Modifying conditions after creation is not recommended as they should be immutable.
      * This method exists for backward compatibility but should be avoided in new code.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween condition = new NotBetween("age", 18, 65);
-     * condition.setMaxValue(70);   // Not recommended - creates mutable state
-     * }</pre>
      *
      * @param maxValue the new maximum value to set
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -221,12 +191,6 @@ public class NotBetween extends AbstractCondition {
      * Gets the list of parameters for this condition.
      * If min/max values are themselves conditions (like subqueries), their parameters are included.
      * Otherwise, the values themselves are returned as parameters.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween condition = new NotBetween("age", 18, 65);
-     * List<Object> params = condition.getParameters();   // Returns [18, 65]
-     * }</pre>
      *
      * @return list containing the min and max values or their parameters
      */
@@ -255,13 +219,6 @@ public class NotBetween extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween condition = new NotBetween("age", 18, 65);
-     * List<Object> parameters = condition.getParameters();          // Returns [18, 65]
-     * condition.clearParameters();                                  // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters();   // Returns [null, null]
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -282,13 +239,6 @@ public class NotBetween extends AbstractCondition {
      * Creates a deep copy of this NOT BETWEEN condition.
      * If min/max values are conditions themselves (like expressions or subqueries),
      * they are also copied to ensure complete independence.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween original = new NotBetween("score", 60, 80);
-     * NotBetween copy = original.copy();
-     * // copy is independent of original
-     * }</pre>
      *
      * @param <T> the type of condition to return
      * @return a new instance with copied values
@@ -313,13 +263,6 @@ public class NotBetween extends AbstractCondition {
      * Converts this NOT BETWEEN condition to its string representation.
      * The naming policy is applied to the property name to handle different naming conventions.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // With numeric values: "age NOT BETWEEN (18, 65)"
-     * // With string values: "grade NOT BETWEEN ('A', 'C')"
-     * // With date values: "order_date NOT BETWEEN ('2024-01-01', '2024-12-31')"
-     * }</pre>
-     *
      * @param namingPolicy the naming policy to apply to the property name
      * @return string representation of the NOT BETWEEN condition
      */
@@ -334,13 +277,6 @@ public class NotBetween extends AbstractCondition {
      * The hash code is computed based on the property name, operator, and both range values.
      * Two NotBetween instances with the same property, operator, and range values will have
      * the same hash code, ensuring correct behavior in hash-based collections.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween c1 = new NotBetween("age", 18, 65);
-     * NotBetween c2 = new NotBetween("age", 18, 65);
-     * assert c1.hashCode() == c2.hashCode();   // true
-     * }</pre>
      *
      * @return hash code based on property name, operator, and range values
      */
@@ -357,16 +293,6 @@ public class NotBetween extends AbstractCondition {
      * Checks if this NOT BETWEEN condition is equal to another object.
      * Two NOT BETWEEN conditions are equal if they have the same property name,
      * operator, and range boundaries (both min and max values).
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween c1 = new NotBetween("age", 18, 65);
-     * NotBetween c2 = new NotBetween("age", 18, 65);
-     * assert c1.equals(c2);   // true
-     *
-     * NotBetween c3 = new NotBetween("age", 20, 65);
-     * assert !c1.equals(c3);   // false - different minValue
-     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

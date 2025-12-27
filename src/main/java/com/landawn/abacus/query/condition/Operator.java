@@ -377,15 +377,6 @@ public enum Operator {
      * <p>This method performs case-insensitive lookup and caches results for performance.
      * It can handle both symbolic operators (like "=", ">") and word operators (like "AND", "OR").</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Operator eq = Operator.getOperator("=");          // Returns EQUAL
-     * Operator and = Operator.getOperator("AND");       // Returns AND
-     * Operator gt = Operator.getOperator(">");          // Returns GREATER_THAN
-     * Operator like = Operator.getOperator("like");     // Returns LIKE (case-insensitive)
-     * Operator unknown = Operator.getOperator("XYZ");   // Returns null (not found)
-     * }</pre>
-     *
      * @param name the string representation of the operator. Can be null.
      * @return the corresponding Operator enum value, or {@code null} if name is null or not found
      */
@@ -427,15 +418,6 @@ public enum Operator {
     /**
      * Gets the SQL string representation of this operator.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Operator eq = Operator.EQUAL;
-     * String opStr = eq.getName();   // Returns "="
-     *
-     * Operator and = Operator.AND;
-     * String andStr = and.getName();   // Returns "AND"
-     * }</pre>
-     *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */
     public String getName() {
@@ -445,14 +427,6 @@ public enum Operator {
     /**
      * Returns the SQL string representation of this operator.
      * This is equivalent to calling {@link #getName()}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Operator like = Operator.LIKE;
-     * System.out.println(like);   // Prints: LIKE
-     *
-     * String sql = "column " + Operator.EQUAL + " ?";  // "column = ?"
-     * }</pre>
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */

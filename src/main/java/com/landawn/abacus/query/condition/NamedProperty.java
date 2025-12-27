@@ -326,12 +326,6 @@ public final class NamedProperty {
      * Creates an IS NULL condition for this property.
      * This generates a condition that checks if the property value is NULL in the database.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty.of("deletedDate").isNull();   // deletedDate IS NULL
-     * NamedProperty.of("endDate").isNull();       // endDate IS NULL
-     * }</pre>
-     *
      * @return an IsNull condition for this property
      * @see IsNull
      * @see Filters#isNull(String)
@@ -343,12 +337,6 @@ public final class NamedProperty {
     /**
      * Creates an IS NOT NULL condition for this property.
      * This generates a condition that checks if the property value is not NULL in the database.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty.of("email").isNotNull();         // email IS NOT NULL
-     * NamedProperty.of("phoneNumber").isNotNull();   // phoneNumber IS NOT NULL
-     * }</pre>
      *
      * @return an IsNotNull condition for this property
      * @see IsNotNull
@@ -538,13 +526,6 @@ public final class NamedProperty {
      * Two NamedProperty instances with the same property name will have the same hash code,
      * ensuring correct behavior in hash-based collections.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty p1 = NamedProperty.of("age");
-     * NamedProperty p2 = NamedProperty.of("age");
-     * assert p1.hashCode() == p2.hashCode();   // true due to caching
-     * }</pre>
-     *
      * @return hash code of the property name
      */
     @Override
@@ -557,16 +538,6 @@ public final class NamedProperty {
      * Two NamedProperty instances are equal if they have the same property name.
      * The comparison is case-sensitive and requires exact match.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty p1 = NamedProperty.of("age");
-     * NamedProperty p2 = NamedProperty.of("age");
-     * assert p1.equals(p2);   // true
-     *
-     * NamedProperty p3 = NamedProperty.of("Age");
-     * assert !p1.equals(p3);   // false - case sensitive
-     * }</pre>
-     *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal (same property name), {@code false} otherwise
      */
@@ -578,12 +549,6 @@ public final class NamedProperty {
     /**
      * Returns the string representation of this NamedProperty.
      * The string representation is simply the property name itself.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty age = NamedProperty.of("age");
-     * String str = age.toString();   // Returns "age"
-     * }</pre>
      *
      * @return the property name
      */

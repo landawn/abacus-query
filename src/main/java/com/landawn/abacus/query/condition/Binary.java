@@ -109,15 +109,6 @@ public class Binary extends AbstractCondition {
      * Gets the property name being compared.
      * This is the left-hand side of the binary operation.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary condition = new Equal("userName", "John");
-     * String prop = condition.getPropName();   // Returns "userName"
-     * 
-     * Binary ageCheck = new GreaterThan("age", 18);
-     * String ageProp = ageCheck.getPropName();   // Returns "age"
-     * }</pre>
-     * 
      * @return the property name
      */
     public String getPropName() {
@@ -128,19 +119,6 @@ public class Binary extends AbstractCondition {
      * Gets the value being compared against.
      * The value can be a literal value or a Condition (for subqueries).
      * The returned value can be safely cast to its expected type.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary condition = new Equal("age", 25);
-     * Integer age = condition.getPropValue();   // Returns 25
-     * 
-     * Binary strCondition = new Like("name", "%John%");
-     * String pattern = strCondition.getPropValue();   // Returns "%John%"
-     * 
-     * // For subquery conditions
-     * Binary subCondition = new In("id", subQuery);
-     * SubQuery sq = subCondition.getPropValue();   // Returns the SubQuery
-     * }</pre>
      * 
      * @param <T> the expected type of the value
      * @return the property value, cast to the requested type
@@ -153,12 +131,6 @@ public class Binary extends AbstractCondition {
     /**
      * Sets the value being compared against.
      * This method should generally not be used as conditions should be immutable.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary condition = new Equal("status", "active");
-     * // Not recommended: condition.setPropValue("inactive");
-     * }</pre>
      *
      * @param propValue the new property value
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -175,19 +147,6 @@ public class Binary extends AbstractCondition {
      * Gets the parameters for this condition.
      * If the value is a Condition (subquery), returns its parameters.
      * Otherwise, returns a list containing the single value.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary condition = new Equal("status", "active");
-     * List<Object> params = condition.getParameters();   // Returns ["active"]
-     *
-     * Binary numCondition = new GreaterThan("age", 18);
-     * List<Object> numParams = numCondition.getParameters();   // Returns [18]
-     *
-     * // For subquery conditions
-     * Binary inSubquery = new InSubQuery("id", subQuery);
-     * List<Object> subParams = inSubquery.getParameters();   // Returns subquery's parameters
-     * }</pre>
      *
      * @return a list of parameter values
      */
@@ -207,15 +166,6 @@ public class Binary extends AbstractCondition {
      * <p>This method sets the propValue field to null unless it's a Condition,
      * in which case it recursively clears parameters in the nested condition.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary eq = new Binary("age", Operator.EQUAL, 25);
-     * eq.clearParameters();   // propValue becomes null
-     *
-     * // With nested condition
-     * Binary withSubquery = new Binary("id", Operator.IN, new SubQuery("SELECT id FROM users"));
-     * withSubquery.clearParameters();   // Delegates to SubQuery.clearParameters()
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -229,18 +179,6 @@ public class Binary extends AbstractCondition {
     /**
      * Creates a deep copy of this Binary condition.
      * If the value is a Condition, it is also copied to ensure complete independence.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary original = new Equal("name", "John");
-     * Binary copy = original.copy();
-     * // copy is a new instance with the same values
-     * 
-     * // For conditions with subqueries
-     * Binary originalSub = new InSubQuery("id", subQuery);
-     * Binary copySub = originalSub.copy();
-     * // The subquery is also deep copied
-     * }</pre>
      * 
      * @param <T> the type of condition to return
      * @return a new Binary instance with copied values
@@ -261,20 +199,6 @@ public class Binary extends AbstractCondition {
      * Returns a string representation of this Binary condition using the specified naming policy.
      * The format is: propertyName OPERATOR value
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary condition = new Equal("userName", "John");
-     * String str1 = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-     * // Returns: "user_name = 'John'"
-     * 
-     * String str2 = condition.toString(NamingPolicy.LOWER_CAMEL_CASE);
-     * // Returns: "userName = 'John'"
-     * 
-     * Binary numCondition = new GreaterThan("age", 18);
-     * String str3 = numCondition.toString(NamingPolicy.NO_CHANGE);
-     * // Returns: "age > 18"
-     * }</pre>
-     * 
      * @param namingPolicy the naming policy to apply to the property name
      * @return a string representation of this condition
      */
@@ -286,13 +210,6 @@ public class Binary extends AbstractCondition {
     /**
      * Returns the hash code of this Binary condition.
      * The hash code is computed based on the property name, operator, and value.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary c1 = new Equal("name", "John");
-     * Binary c2 = new Equal("name", "John");
-     * boolean sameHash = c1.hashCode() == c2.hashCode();   // true
-     * }</pre>
      * 
      * @return the hash code value
      */
@@ -307,19 +224,6 @@ public class Binary extends AbstractCondition {
     /**
      * Checks if this Binary condition is equal to another object.
      * Two Binary conditions are equal if they have the same property name, operator, and value.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary c1 = new Equal("name", "John");
-     * Binary c2 = new Equal("name", "John");
-     * boolean isEqual = c1.equals(c2);   // Returns true
-     * 
-     * Binary c3 = new Equal("name", "Jane");
-     * boolean isDifferent = c1.equals(c3);   // Returns false
-     * 
-     * Binary c4 = new GreaterThan("name", "John");
-     * boolean diffOperator = c1.equals(c4);   // Returns false
-     * }</pre>
      * 
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

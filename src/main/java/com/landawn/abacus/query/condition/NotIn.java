@@ -122,12 +122,6 @@ public class NotIn extends AbstractCondition {
     /**
      * Gets the property name for this NOT IN condition.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
-     * String propName = condition.getPropName();   // Returns "status"
-     * }</pre>
-     *
      * @return the property name
      */
     public String getPropName() {
@@ -138,19 +132,6 @@ public class NotIn extends AbstractCondition {
      * Gets the collection of values that the property should NOT match.
      * Returns the internal list of values used in the NOT IN condition. These are the
      * values that will be excluded when the query is executed.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> statuses = Arrays.asList("deleted", "archived", "suspended");
-     * NotIn condition = new NotIn("status", statuses);
-     * List<?> values = condition.getValues();   // Returns ["deleted", "archived", "suspended"]
-     *
-     * // Check how many values are being excluded
-     * int count = condition.getValues().size();   // Returns 3
-     *
-     * // Inspect the values (useful for debugging)
-     * System.out.println("Excluding values: " + condition.getValues());
-     * }</pre>
      *
      * @return list of values to exclude (may be null if cleared)
      */
@@ -172,17 +153,6 @@ public class NotIn extends AbstractCondition {
      *   <li>Shared conditions modified this way can cause race conditions</li>
      * </ul>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
-     *
-     * // Not recommended - breaks immutability
-     * condition.setValues(Arrays.asList("deleted", "archived", "suspended"));
-     *
-     * // Recommended approach - create a new condition
-     * NotIn newCondition = new NotIn("status", Arrays.asList("deleted", "archived", "suspended"));
-     * }</pre>
-     *
      * @param values the new collection of values to exclude. Must not be null or empty.
      * @throws IllegalArgumentException if values is null or empty
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -200,22 +170,6 @@ public class NotIn extends AbstractCondition {
      * Returns the values that should be excluded when the query is executed.
      * These values will be bound to the prepared statement placeholders.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived", "suspended"));
-     * List<Object> params = condition.getParameters();   // Returns ["deleted", "archived", "suspended"]
-     *
-     * // Check number of parameters
-     * int paramCount = condition.getParameters().size();   // Returns 3
-     *
-     * // Use in query preparation
-     * PreparedStatement stmt = connection.prepareStatement(sql);
-     * List<Object> params = condition.getParameters();
-     * for (int i = 0; i < params.size(); i++) {
-     *     stmt.setObject(i + 1, params.get(i));
-     * }
-     * }</pre>
-     *
      * @return an immutable list of parameter values, or empty list if values is null
      */
     @Override
@@ -229,13 +183,6 @@ public class NotIn extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived", "suspended"));
-     * List<Object> parameters = condition.getParameters();          // Returns [deleted, archived, suspended]
-     * condition.clearParameters();                                  // All parameters become null
-     * List<Object> updatedParameters = condition.getParameters();   // Returns [null, null, null]
-     * }</pre>
      */
     @SuppressWarnings("rawtypes")
     @Override
@@ -249,13 +196,6 @@ public class NotIn extends AbstractCondition {
      * Creates a deep copy of this NOT IN condition.
      * The copy includes a new list containing the same values, ensuring complete
      * independence from the original condition.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn original = new NotIn("status", Arrays.asList("inactive", "deleted"));
-     * NotIn copy = original.copy();
-     * // copy is independent of original
-     * }</pre>
      *
      * @param <T> the type of condition to return
      * @return a new instance with copied values
@@ -274,15 +214,6 @@ public class NotIn extends AbstractCondition {
      * Converts this NOT IN condition to its string representation using the specified naming policy.
      * The naming policy is applied to the property name to handle different naming conventions.
      * Values are formatted appropriately based on their types.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // With values ["A", "B", "C"] and snake_case naming:
-     * // "property_name NOT IN (A, B, C)"
-     * 
-     * // With numeric values [1, 2, 3]:
-     * // "property_name NOT IN (1, 2, 3)"
-     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to the property name
      * @return string representation of the NOT IN condition
@@ -310,13 +241,6 @@ public class NotIn extends AbstractCondition {
      * The hash code is computed based on the property name, operator, and values list,
      * ensuring consistent hashing for equivalent conditions.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn c1 = new NotIn("status", Arrays.asList("deleted", "archived"));
-     * NotIn c2 = new NotIn("status", Arrays.asList("deleted", "archived"));
-     * assert c1.hashCode() == c2.hashCode();
-     * }</pre>
-     *
      * @return hash code based on property name, operator, and values
      */
     @Override
@@ -331,16 +255,6 @@ public class NotIn extends AbstractCondition {
      * Checks if this NOT IN condition is equal to another object.
      * Two NOT IN conditions are equal if they have the same property name,
      * operator, and values list.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn c1 = new NotIn("status", Arrays.asList("deleted", "archived"));
-     * NotIn c2 = new NotIn("status", Arrays.asList("deleted", "archived"));
-     * assert c1.equals(c2);   // true
-     *
-     * NotIn c3 = new NotIn("type", Arrays.asList("deleted", "archived"));
-     * assert !c1.equals(c3);   // false - different property
-     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

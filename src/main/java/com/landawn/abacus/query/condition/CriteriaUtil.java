@@ -95,15 +95,6 @@ public final class CriteriaUtil {
      * Gets the set of all valid clause operators.
      * The set maintains the proper SQL clause ordering and is immutable.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Set<Operator> clauses = CriteriaUtil.getClauseOperators();
-     * // Contains: JOIN, LEFT_JOIN, WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.
-     * 
-     * // Check if a specific operator is a clause
-     * boolean hasWhere = clauses.contains(Operator.WHERE);   // true
-     * }</pre>
-     * 
      * @return an immutable set of clause operators in proper SQL order
      */
     public static Set<Operator> getClauseOperators() {
@@ -113,14 +104,6 @@ public final class CriteriaUtil {
     /**
      * Checks if the given operator is a valid clause operator.
      * Clause operators represent major SQL query components like WHERE, JOIN, GROUP BY, etc.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * boolean isClause = CriteriaUtil.isClause(Operator.WHERE);            // true
-     * boolean isClause2 = CriteriaUtil.isClause(Operator.GROUP_BY);        // true
-     * boolean notClause = CriteriaUtil.isClause(Operator.EQUAL);           // false
-     * boolean notClause2 = CriteriaUtil.isClause(Operator.GREATER_THAN);   // false
-     * }</pre>
      * 
      * @param operator the operator to check
      * @return {@code true} if the operator is a clause operator, {@code false} otherwise
@@ -133,14 +116,6 @@ public final class CriteriaUtil {
      * Checks if the given operator string represents a valid clause operator.
      * This method converts the string to an Operator and checks if it's a clause.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * boolean isClause = CriteriaUtil.isClause("WHERE");        // true
-     * boolean isClause2 = CriteriaUtil.isClause("LEFT JOIN");   // true
-     * boolean notClause = CriteriaUtil.isClause("=");           // false
-     * boolean notClause2 = CriteriaUtil.isClause("LIKE");       // false
-     * }</pre>
-     * 
      * @param operator the operator string to check
      * @return {@code true} if the operator string represents a clause operator, {@code false} otherwise
      */
@@ -151,18 +126,6 @@ public final class CriteriaUtil {
     /**
      * Checks if the given condition is a clause condition.
      * A condition is a clause if its operator is a clause operator.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition where = new Where(Filters.eq("status", "active"));
-     * boolean isClause = CriteriaUtil.isClause(where);   // true
-     * 
-     * Condition orderBy = new OrderBy("name", SortDirection.ASC);
-     * boolean isClause2 = CriteriaUtil.isClause(orderBy);   // true
-     * 
-     * Condition eq = Filters.eq("status", "active");
-     * boolean notClause = CriteriaUtil.isClause(eq);   // false
-     * }</pre>
      * 
      * @param condition the condition to check
      * @return {@code true} if the condition has a clause operator, {@code false} if null or not a clause

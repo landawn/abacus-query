@@ -82,17 +82,6 @@ public class Cell extends AbstractCondition {
      * Gets the wrapped condition.
      * The returned condition can be cast to its specific type if needed.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * Condition condition = cell.getCondition();   // Returns the Equal condition
-     *
-     * // For subqueries
-     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM products WHERE price > 100");
-     * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
-     * SubQuery sq = existsCell.getCondition();
-     * }</pre>
-     * 
      * @param <T> the type of condition to return
      * @return the wrapped condition, cast to the specified type
      */
@@ -105,12 +94,6 @@ public class Cell extends AbstractCondition {
      * Sets the wrapped condition.
      * This method should generally not be used as conditions should be immutable.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * // Not recommended: cell.setCondition(Filters.eq("status", "inactive"));
-     * }</pre>
-     * 
      * @param condition the new condition to wrap
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
@@ -122,16 +105,6 @@ public class Cell extends AbstractCondition {
     /**
      * Gets the parameters from the wrapped condition.
      * This method delegates to the wrapped condition's getParameters method.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, Filters.eq("name", "John"));
-     * List<Object> params = cell.getParameters();   // Returns ["John"]
-     * 
-     * // For complex conditions
-     * Cell notBetween = new Cell(Operator.NOT, Filters.between("age", 18, 65));
-     * List<Object> params2 = notBetween.getParameters();   // Returns [18, 65]
-     * }</pre>
      * 
      * @return a list of parameters from the wrapped condition, or an empty list if no condition is set
      */
@@ -147,13 +120,6 @@ public class Cell extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, Filters.between("age", 18, 65));
-     * List<Object> parameters = cell.getParameters();          // Returns [18, 65]
-     * cell.clearParameters();                                  // All parameters become null
-     * List<Object> updatedParameters = cell.getParameters();   // Returns [null, null]
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -166,17 +132,6 @@ public class Cell extends AbstractCondition {
      * Creates a deep copy of this Cell.
      * The wrapped condition is also copied if present, ensuring complete independence
      * between the original and the copy.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Cell original = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * Cell copy = original.copy();
-     * // copy is a deep copy of original, including the wrapped condition
-     * 
-     * // Modifying the copy doesn't affect the original
-     * copy.clearParameters();
-     * List<Object> originalParams = original.getParameters();   // Still contains ["active"]
-     * }</pre>
      * 
      * @param <T> the type of condition to return
      * @return a new Cell instance with copied values
@@ -197,17 +152,6 @@ public class Cell extends AbstractCondition {
      * Returns a string representation of this Cell using the specified naming policy.
      * The output format is: OPERATOR condition_string
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Cell cell = new Cell(Operator.NOT, Filters.eq("userName", "John"));
-     * String str = cell.toString(NamingPolicy.LOWER_CAMEL_CASE);
-     * // Returns: "NOT userName = 'John'"
-     * 
-     * Cell exists = new Cell(Operator.EXISTS, subQuery);
-     * String str2 = exists.toString(NamingPolicy.NO_CHANGE);
-     * // Returns: "EXISTS (SELECT ...)"
-     * }</pre>
-     * 
      * @param namingPolicy the naming policy to apply to property names
      * @return a string representation of this Cell
      */
@@ -219,13 +163,6 @@ public class Cell extends AbstractCondition {
     /**
      * Returns the hash code of this Cell.
      * The hash code is computed based on the operator and wrapped condition.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Cell cell1 = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * Cell cell2 = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * boolean sameHash = cell1.hashCode() == cell2.hashCode();   // true
-     * }</pre>
      * 
      * @return the hash code value
      */
@@ -239,16 +176,6 @@ public class Cell extends AbstractCondition {
     /**
      * Checks if this Cell is equal to another object.
      * Two Cells are equal if they have the same operator and wrapped condition.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Cell cell1 = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * Cell cell2 = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * boolean isEqual = cell1.equals(cell2);   // Returns true
-     * 
-     * Cell cell3 = new Cell(Operator.EXISTS, Filters.eq("status", "active"));
-     * boolean isNotEqual = cell1.equals(cell3);   // Returns false (different operator)
-     * }</pre>
      * 
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

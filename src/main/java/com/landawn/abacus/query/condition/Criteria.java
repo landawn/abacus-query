@@ -129,19 +129,6 @@ public class Criteria extends AbstractCondition {
      * Gets all JOIN clauses in this criteria.
      * Returns all types of joins (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) in the order they were added.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .join("orders", new On("users.id", "orders.user_id"))
-     *     .join(new LeftJoin("payments", new On("orders.id", "payments.order_id")));
-     * List<Join> joins = criteria.getJoins();   // Returns 2 joins
-     *
-     * // Iterate through joins
-     * for (Join join : criteria.getJoins()) {
-     *     System.out.println(join.getOperator());   // JOIN, LEFT_JOIN, etc.
-     * }
-     * }</pre>
-     *
      * @return a list of Join conditions, empty list if none exist
      */
     public List<Join> getJoins() {
@@ -160,13 +147,6 @@ public class Criteria extends AbstractCondition {
      * Gets the WHERE clause from this criteria.
      * Returns null if no WHERE clause has been set.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria().where(Filters.eq("status", "active"));
-     * Cell where = criteria.getWhere();             // Returns the WHERE clause
-     * Condition condition = where.getCondition();   // Gets the wrapped condition
-     * }</pre>
-     * 
      * @return the Where condition, or null if not set
      */
     public Cell getWhere() {
@@ -176,12 +156,6 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets the GROUP BY clause from this criteria.
      * Returns null if no GROUP BY clause has been set.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria().groupBy("department", "role");
-     * Cell groupBy = criteria.getGroupBy();   // Returns the GROUP BY clause
-     * }</pre>
      * 
      * @return the GroupBy condition, or null if not set
      */
@@ -193,14 +167,6 @@ public class Criteria extends AbstractCondition {
      * Gets the HAVING clause from this criteria.
      * Returns null if no HAVING clause has been set.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .groupBy("department")
-     *     .having(Filters.gt("COUNT(*)", 10));
-     * Cell having = criteria.getHaving();   // Returns the HAVING clause
-     * }</pre>
-     * 
      * @return the Having condition, or null if not set
      */
     public Cell getHaving() {
@@ -210,15 +176,6 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets all aggregation operations (UNION, UNION ALL, INTERSECT, EXCEPT, MINUS).
      * These are set operations that combine results from multiple queries.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("SELECT id FROM archived_users");
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.eq("active", true))
-     *     .union(subQuery);
-     * List<Cell> aggregations = criteria.getAggregation();   // Returns the UNION
-     * }</pre>
      * 
      * @return a list of aggregation conditions, empty if none exist
      */
@@ -246,12 +203,6 @@ public class Criteria extends AbstractCondition {
      * Gets the ORDER BY clause from this criteria.
      * Returns null if no ORDER BY clause has been set.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria().orderBy("name", SortDirection.DESC);
-     * Cell orderBy = criteria.getOrderBy();   // Returns the ORDER BY clause
-     * }</pre>
-     *
      * @return the OrderBy condition, or null if not set
      */
     public Cell getOrderBy() {
@@ -261,13 +212,6 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets the LIMIT clause from this criteria.
      * Returns null if no LIMIT clause has been set.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria().limit(10);
-     * Limit limit = criteria.getLimit();   // Returns the LIMIT clause
-     * int count = limit.getCount();        // Returns 10
-     * }</pre>
      * 
      * @return the Limit condition, or null if not set
      */
@@ -279,14 +223,6 @@ public class Criteria extends AbstractCondition {
      * Gets all conditions in this criteria.
      * Returns all conditions in the order they were added, including all clauses.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.eq("active", true))
-     *     .orderBy("name");
-     * List<Condition> conditions = criteria.getConditions();   // Returns all conditions
-     * }</pre>
-     * 
      * @return a list of all conditions
      */
     public List<Condition> getConditions() {
@@ -296,15 +232,6 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets all conditions with the specified operator.
      * Useful for retrieving all conditions of a specific type.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .join("orders", condition1)
-     *     .leftJoin("payments", condition2);
-     * List<Condition> allJoins = criteria.get(Operator.JOIN);
-     * List<Condition> leftJoins = criteria.get(Operator.LEFT_JOIN);
-     * }</pre>
      *
      * @param operator the operator to filter by (must not be null)
      * @return a list of conditions with the specified operator, empty list if none found
@@ -378,14 +305,6 @@ public class Criteria extends AbstractCondition {
      * Clears all conditions from this criteria.
      * After calling this method, the criteria will be empty and can be rebuilt.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.eq("active", true))
-     *     .orderBy("name");
-     * criteria.clear();
-     * // All conditions are removed
-     * }</pre>
      */
     public void clear() {
         conditionList.clear();
@@ -395,14 +314,6 @@ public class Criteria extends AbstractCondition {
      * Gets all parameters from all conditions in the proper order.
      * The order follows SQL clause precedence: JOIN, WHERE, HAVING, aggregations.
      * Parameters from GROUP BY, ORDER BY, and LIMIT are not included as they typically don't have parameters.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.eq("status", "active"))
-     *     .having(Filters.gt("COUNT(*)", 5));
-     * List<Object> params = criteria.getParameters();   // Returns ["active", 5]
-     * }</pre>
      * 
      * @return a list of all parameters from all conditions
      */
@@ -466,15 +377,6 @@ public class Criteria extends AbstractCondition {
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.eq("status", "active"))
-     *     .having(Filters.gt("COUNT(*)", 5));
-     * List<Object> parameters = criteria.getParameters();          // Returns ["active", 5]
-     * criteria.clearParameters();                                  // All parameters become null
-     * List<Object> updatedParameters = criteria.getParameters();   // Returns [null, null]
-     * }</pre>
      */
     @Override
     public void clearParameters() {
@@ -1421,16 +1323,6 @@ public class Criteria extends AbstractCondition {
      * All conditions are also copied, ensuring complete independence between
      * the original and the copy.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria original = new Criteria()
-     *     .where(Filters.eq("status", "active"))
-     *     .orderBy("name");
-     * Criteria copy = original.copy();
-     * // copy is independent of original
-     * copy.limit(10);   // Doesn't affect original
-     * }</pre>
-     * 
      * @param <T> the type of condition to return
      * @return a new Criteria instance with copied values
      */
@@ -1451,16 +1343,6 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns a string representation of this Criteria using the specified naming policy.
      * The output follows SQL clause ordering conventions and includes all conditions.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .distinct()
-     *     .where(Filters.eq("isActive", true))
-     *     .orderBy("createdDate", SortDirection.DESC);
-     * String sql = criteria.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-     * // Returns: " DISTINCT WHERE is_active = true ORDER BY created_date DESC"
-     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names
      * @return a string representation of this Criteria
@@ -1503,13 +1385,6 @@ public class Criteria extends AbstractCondition {
      * Returns the hash code of this Criteria.
      * The hash code is based on the preselect modifier and all conditions.
      * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria c1 = new Criteria().where(Filters.eq("status", "active"));
-     * Criteria c2 = new Criteria().where(Filters.eq("status", "active"));
-     * boolean sameHash = c1.hashCode() == c2.hashCode();   // true
-     * }</pre>
-     * 
      * @return the hash code value
      */
     @Override
@@ -1521,17 +1396,6 @@ public class Criteria extends AbstractCondition {
     /**
      * Checks if this Criteria is equal to another object.
      * Two Criteria are equal if they have the same preselect modifier and conditions.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria c1 = new Criteria()
-     *     .distinct()
-     *     .where(Filters.eq("status", "active"));
-     * Criteria c2 = new Criteria()
-     *     .distinct()
-     *     .where(Filters.eq("status", "active"));
-     * boolean isEqual = c1.equals(c2);   // Returns true
-     * }</pre>
      * 
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
