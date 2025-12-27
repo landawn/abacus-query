@@ -340,26 +340,33 @@ public final class ParsedSql {
         if (isOpSqlPrefix) {
             final StringBuilder sb = Objectory.createStringBuilder();
             int countOfParameter = 0;
+            int type = 0;
+            final int QUESTION_MARK_TYPE = 1;
+            final int NAMED_PARAMETER_TYPE = 2;
+            final int IBATIS_PARAMETER_TYPE = 4;
 
             for (String word : words) {
                 if (word.equals(SK.QUESTION_MARK)) {
-                    if (couchbaseNamedParameterList.size() > 0) {
-                        throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
-                    }
-
+                    type |= QUESTION_MARK_TYPE;
                     countOfParameter++;
                     word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
                 } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() > 3) {
                     couchbaseNamedParameterList.add(word.substring(2, word.length() - 1));
 
+                    type |= IBATIS_PARAMETER_TYPE;
                     countOfParameter++;
                     word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
                 } else if (word.length() >= 2 && (word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER || word.charAt(0) == _PREFIX_OF_COUCHBASE_NAMED_PARAMETER)
                         && isValidNamedParameterChar(word.charAt(1))) {
                     couchbaseNamedParameterList.add(word.substring(1));
 
+                    type |= NAMED_PARAMETER_TYPE;
                     countOfParameter++;
                     word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
+                }
+
+                if (Integer.bitCount(type) > 1) {
+                    throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
                 }
 
                 sb.append(word);

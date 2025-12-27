@@ -345,6 +345,7 @@ public final class SQLMapper {
         }
 
         sqlMap.remove(id);
+        attrsMap.remove(id);
     }
 
     /**
