@@ -82,15 +82,15 @@ public final class ParsedSql {
 
     private final String parameterizedSql;
 
-    private String couchbaseParameterizedSql;
+    private volatile String couchbaseParameterizedSql;
 
     private final ImmutableList<String> namedParameters;
 
-    private ImmutableList<String> couchbaseNamedParameters;
+    private volatile ImmutableList<String> couchbaseNamedParameters;
 
     private int parameterCount;
 
-    private int couchbaseParameterCount;
+    private volatile int couchbaseParameterCount;
 
     private ParsedSql(final String sql) {
         this.sql = sql.trim();
@@ -391,15 +391,15 @@ public final class ParsedSql {
                 couchbaseNamedParameterList.clear();
             }
 
-            couchbaseParameterizedSql = sb.toString();
             couchbaseNamedParameters = ImmutableList.wrap(couchbaseNamedParameterList);
             couchbaseParameterCount = countOfParameter;
+            couchbaseParameterizedSql = sb.toString();
 
             Objectory.recycle(sb);
         } else {
-            couchbaseParameterizedSql = sql;
             couchbaseNamedParameters = ImmutableList.empty();
             couchbaseParameterCount = 0;
+            couchbaseParameterizedSql = sql;
         }
     }
 
