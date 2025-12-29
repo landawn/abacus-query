@@ -555,68 +555,84 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
             if (Strings.isNotEmpty(subQuery.getSql())) {
                 _sb.append(subQuery.getSql());
-            } else if (subQuery.getEntityClass() != null) {
-                if (this instanceof SCSB) {
-                    _sb.append(SCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+            } else {
+                final SQLBuilder subBuilder;
+
+                if (subQuery.getEntityClass() != null) {
+                    if (this instanceof SCSB) {
+                        subBuilder = SCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof PSC) {
+                        subBuilder = PSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof MSC) {
+                        subBuilder = MSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof NSC) {
+                        subBuilder = NSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof ACSB) {
+                        subBuilder = ACSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof PAC) {
+                        subBuilder = PAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof MAC) {
+                        subBuilder = MAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof NAC) {
+                        subBuilder = NAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof LCSB) {
+                        subBuilder = LCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof PLC) {
+                        subBuilder = PLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof MLC) {
+                        subBuilder = MLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof NLC) {
+                        subBuilder = NLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof PSB) {
+                        subBuilder = PSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof NSB) {
+                        subBuilder = NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else {
+                        throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
+                    }
+                } else if (this instanceof SCSB) {
+                    subBuilder = SCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof PSC) {
-                    _sb.append(PSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = PSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof MSC) {
-                    _sb.append(MSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = MSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof NSC) {
-                    _sb.append(NSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = NSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof ACSB) {
-                    _sb.append(ACSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = ACSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof PAC) {
-                    _sb.append(PAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = PAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof MAC) {
-                    _sb.append(MAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = MAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof NAC) {
-                    _sb.append(NAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = NAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof LCSB) {
-                    _sb.append(LCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = LCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof PLC) {
-                    _sb.append(PLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = PLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof MLC) {
-                    _sb.append(MLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = MLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof NLC) {
-                    _sb.append(NLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = NLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof PSB) {
-                    _sb.append(PSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = PSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof NSB) {
-                    _sb.append(NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass()).append(subCond).sql());
+                    subBuilder = NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else {
                     throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
                 }
-            } else if (this instanceof SCSB) {
-                _sb.append(SCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof PSC) {
-                _sb.append(PSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof MSC) {
-                _sb.append(MSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof NSC) {
-                _sb.append(NSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof ACSB) {
-                _sb.append(ACSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof PAC) {
-                _sb.append(PAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof MAC) {
-                _sb.append(MAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof NAC) {
-                _sb.append(NAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof LCSB) {
-                _sb.append(LCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof PLC) {
-                _sb.append(PLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof MLC) {
-                _sb.append(MLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof NLC) {
-                _sb.append(NLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof PSB) {
-                _sb.append(PSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else if (this instanceof NSB) {
-                _sb.append(NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName()).append(subCond).sql());
-            } else {
-                throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
+
+                if (subCond != null) {
+                    subBuilder.append(subCond);
+                }
+
+                final SP subSP = subBuilder.build();
+
+                _sb.append(subSP.query);
+
+                if (N.notEmpty(subSP.parameters)) {
+                    _parameters.addAll(subSP.parameters);
+                }
             }
         } else if (cond instanceof Expression) {
             // ==== version 1
