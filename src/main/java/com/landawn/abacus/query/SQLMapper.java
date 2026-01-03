@@ -389,6 +389,11 @@ public final class SQLMapper {
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void saveTo(final File file) {
+        final File parent = file.getParentFile();
+
+        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            throw new UncheckedIOException(new IOException("Failed to create parent directories for file: " + file.getAbsolutePath()));
+        }
 
         try (OutputStream os = new FileOutputStream(file)) {
             final Document doc = XmlUtil.createDOMParser(true, true).newDocument();
@@ -412,13 +417,6 @@ public final class SQLMapper {
             }
 
             doc.appendChild(sqlMapperNode);
-
-            // Create parent directories if they don't exist
-            if (file.getParentFile() != null && !file.getParentFile().exists()) {
-                if (!file.getParentFile().mkdirs()) {
-                    throw new IOException("Failed to create parent directories for file: " + file.getAbsolutePath());
-                }
-            }
 
             XmlUtil.transform(doc, os);
 

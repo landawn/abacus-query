@@ -158,7 +158,17 @@ public class Limit extends AbstractCondition {
             throw new IllegalArgumentException("Limit expression cannot be null or empty");
         }
 
-        this.expr = expr;
+        final String trimmed = expr.trim();
+
+        if (Strings.isEmpty(trimmed)) {
+            throw new IllegalArgumentException("Limit expression cannot be null or empty");
+        }
+
+        if (Character.isLetter(trimmed.charAt(0))) {
+            this.expr = trimmed;
+        } else {
+            this.expr = SK.LIMIT + _SPACE + trimmed;
+        }
     }
 
     /**

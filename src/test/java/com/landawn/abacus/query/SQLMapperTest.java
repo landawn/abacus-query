@@ -301,6 +301,22 @@ public class SQLMapperTest extends TestBase {
     }
 
     @Test
+    public void testSaveToCreatesParentDirectories() {
+        SQLMapper mapper = new SQLMapper();
+        mapper.add("findUser", "SELECT 1", new HashMap<>());
+
+        File nestedDir = new File(tempDir, "nested/dir");
+        File outputFile = new File(nestedDir, "output.xml");
+        assertFalse(nestedDir.exists());
+
+        mapper.saveTo(outputFile);
+
+        assertTrue(outputFile.exists());
+        SQLMapper loaded = SQLMapper.fromFile(outputFile.getAbsolutePath());
+        assertNotNull(loaded.get("findUser"));
+    }
+
+    @Test
     public void testIsEmpty() {
         SQLMapper mapper = new SQLMapper();
         assertTrue(mapper.isEmpty());

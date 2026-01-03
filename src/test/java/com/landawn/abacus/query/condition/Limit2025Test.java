@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.SK;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -60,7 +61,7 @@ public class Limit2025Test extends TestBase {
         Limit limit = new Limit("10 OFFSET 20");
 
         assertNotNull(limit);
-        assertEquals("10 OFFSET 20", limit.getExpr());
+        assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getExpr());
         assertEquals(Integer.MAX_VALUE, limit.getCount());
         assertEquals(0, limit.getOffset());
     }
@@ -327,10 +328,10 @@ public class Limit2025Test extends TestBase {
     @Test
     public void testCustomExpressionFormats() {
         Limit mysqlStyle = new Limit("10, 20");
-        assertEquals("10, 20", mysqlStyle.getExpr());
+        assertEquals(SK.LIMIT + SK.SPACE + "10, 20", mysqlStyle.getExpr());
 
         Limit standardStyle = new Limit("20 OFFSET 10");
-        assertEquals("20 OFFSET 10", standardStyle.getExpr());
+        assertEquals(SK.LIMIT + SK.SPACE + "20 OFFSET 10", standardStyle.getExpr());
     }
 
     @Test

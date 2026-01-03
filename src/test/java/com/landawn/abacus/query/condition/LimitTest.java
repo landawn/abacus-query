@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.SK;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class LimitTest extends TestBase {
@@ -31,9 +32,21 @@ public class LimitTest extends TestBase {
     public void testConstructorWithExpression() {
         String expr = "10 OFFSET 20";
         Limit limit = Filters.limit(expr);
-        Assertions.assertEquals(expr, limit.getExpr());
+        Assertions.assertEquals(SK.LIMIT + SK.SPACE + expr, limit.getExpr());
         Assertions.assertEquals(Integer.MAX_VALUE, limit.getCount());
         Assertions.assertEquals(0, limit.getOffset());
+    }
+
+    @Test
+    public void testConstructorWithExpressionTrims() {
+        String expr = "  10 OFFSET 20  ";
+        Limit limit = Filters.limit(expr);
+        Assertions.assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getExpr());
+    }
+
+    @Test
+    public void testConstructorWithWhitespaceExpressionThrows() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.limit("   "));
     }
 
     @Test
