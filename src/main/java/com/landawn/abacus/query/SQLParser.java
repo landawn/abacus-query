@@ -528,7 +528,7 @@ public final class SQLParser {
                 sb.append(c);
 
                 // end in quote.
-                if (c == quoteChar && (index == fromIndex || sql.charAt(index - 1) != '\\')) {
+                if (c == quoteChar && sql.charAt(index - 1) != '\\') {
                     break;
                 }
             } else if (isSeparator(sql, sqlLength, index, c)) {
