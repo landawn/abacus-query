@@ -85,10 +85,10 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // In a subclass constructor
-     * public Equal(String propName, Object propValue) {
-     *     super(Operator.EQUAL);   // Sets the operator
-     *     this.propName = propName;
-     *     this.propValue = propValue;
+     * class CustomCondition extends AbstractCondition {
+     *     CustomCondition() {
+     *         super(Operator.EQUAL);   // Sets the operator
+     *     }
      * }
      * }</pre>
      *

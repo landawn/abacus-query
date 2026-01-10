@@ -405,7 +405,7 @@ public final class ParsedSql {
 
     private static boolean isValidNamedParameterChar(final char ch) {
         // https://www.cs.cmu.edu/~pattis/15-1XX/common/handouts/ascii.html
-        return !(ch < '0' || (ch > '9' && ch < 'A') || (ch > 'Z' && ch < 'a') || (ch > 'z' && ch < 128));
+        return ch == '_' || !(ch < '0' || (ch > '9' && ch < 'A') || (ch > 'Z' && ch < 'a') || (ch > 'z' && ch < 128));
     }
 
     /**

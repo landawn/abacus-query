@@ -8641,8 +8641,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * // Can be used to prepare statements
          * String template = PLC.insert(UserProfile.class).into("userProfile").sql();
-         * PreparedStatement ps = connection.prepareStatement(template);
-         * // Then set values: ps.setString(1, "John"); etc.
+         * // Then bind values with your JDBC framework as needed.
          * }</pre>
          * 
          * @param entityClass The entity class to generate INSERT for

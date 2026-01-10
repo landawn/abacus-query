@@ -201,7 +201,9 @@ public final class CriteriaUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = // ... existing criteria with WHERE and ORDER BY
+     * Criteria criteria = new Criteria()
+     *     .where(Filters.eq("status", "active"))
+     *     .orderBy("name", SortDirection.ASC);
      * CriteriaUtil.remove(criteria, Operator.WHERE);
      * // Removes the WHERE clause from the criteria
      * 
@@ -224,7 +226,9 @@ public final class CriteriaUtil {
      * <pre>{@code
      * Where whereClause = new Where(Filters.eq("status", "active"));
      * OrderBy orderByClause = new OrderBy("name");
-     * Criteria criteria = // ... contains these conditions
+     * Criteria criteria = new Criteria()
+     *     .where(whereClause)
+     *     .orderBy(orderByClause);
      * 
      * CriteriaUtil.remove(criteria, whereClause, orderByClause);
      * // Removes both specific conditions
@@ -246,7 +250,9 @@ public final class CriteriaUtil {
      * List<Condition> conditionsToRemove = new ArrayList<>();
      * conditionsToRemove.add(whereClause);
      * conditionsToRemove.add(limitClause);
-     * Criteria criteria = // ... contains these conditions
+     * Criteria criteria = new Criteria()
+     *     .where(whereClause)
+     *     .limit(10);
      *
      * CriteriaUtil.remove(criteria, conditionsToRemove);
      * // Removes all conditions in the list

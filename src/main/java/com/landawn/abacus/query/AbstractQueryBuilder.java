@@ -4009,7 +4009,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * SQLBuilder builder = PSC.select("*")
      *                        .from("account")
      *                        .where(Filters.eq("name", "John"))
-     *                        .where(Filters.gt("age", 25));
+     *                        .and(Filters.gt("age", 25));
      * List<Object> params = builder.parameters();
      * // params contains: ["John", 25]
      * }</pre>
@@ -4122,8 +4122,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Example usage:
-     * PSC.insert("account")
-     *    .values("name", "email", "status")
+     * PSC.insert("name", "email", "status")
+     *    .into("account")
      *    .accept(sp -> jdbcTemplate.update(sp.query, sp.parameters.toArray()));
      * }</pre>
      *
@@ -4143,8 +4143,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Example usage:
-     * PSC.delete()
-     *    .from("account")
+     * PSC.deleteFrom("account")
      *    .where(Filters.eq("status", "DELETED"))
      *    .accept((sql, params) -> {
      *        logger.info("Executing: {} with params: {}", sql, params);
@@ -5222,7 +5221,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * SP sqlPair = PSC.select("firstName", "lastName")
      *                 .from("users")
      *                 .where(Filters.eq("id", 123))
-     *                 .pair();
+     *                 .build();
      *
      * // Access SQL and parameters
      * String sql = sqlPair.query;
@@ -5230,14 +5229,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * List<Object> params = sqlPair.parameters;
      * // [123]
-     *
-     * // Use with JDBC PreparedStatement
-     * try (PreparedStatement stmt = conn.prepareStatement(sqlPair.query)) {
-     *     for (int i = 0; i < sqlPair.parameters.size(); i++) {
-     *         stmt.setObject(i + 1, sqlPair.parameters.get(i));
-     *     }
-     *     ResultSet rs = stmt.executeQuery();
-     * }
      * }</pre>
      */
     public static final class SP {

@@ -217,6 +217,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder limit(final String limitCond) {
+        N.checkArgNotNull(limitCond, "limitCond");
+
         getStringBuilderForMoreParts().append(" ").append(limitCond);
 
         return this;
@@ -239,6 +241,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder limit(final int count) {
+        N.checkArgNotNegative(count, "count");
+
         getStringBuilderForMoreParts().append(" LIMIT ").append(count);
 
         return this;
@@ -268,6 +272,9 @@ public class DynamicSQLBuilder {
      * @see #fetchFirstNRowsOnly(int)
      */
     public DynamicSQLBuilder limit(final int offset, final int count) {
+        N.checkArgNotNegative(offset, "offset");
+        N.checkArgNotNegative(count, "count");
+
         getStringBuilderForMoreParts().append(" LIMIT ").append(offset).append(", ").append(count);
 
         return this;
@@ -287,7 +294,16 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder limitByRowNum(final int count) {
-        getStringBuilderForMoreParts().append(" ROWNUM <= ").append(count);
+        N.checkArgNotNegative(count, "count");
+
+        if (where == null) {
+            where = new Where(Objectory.createStringBuilder());
+            where.append("ROWNUM <= " + count);
+        } else if (where.sb.isEmpty()) {
+            where.append("ROWNUM <= " + count);
+        } else {
+            where.and("ROWNUM <= " + count);
+        }
 
         return this;
     }
@@ -306,6 +322,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder offsetRows(final int offset) {
+        N.checkArgNotNegative(offset, "offset");
+
         getStringBuilderForMoreParts().append(" OFFSET ").append(offset).append(" ROWS");
 
         return this;
@@ -325,6 +343,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder fetchNextNRowsOnly(final int n) {
+        N.checkArgNotNegative(n, "n");
+
         getStringBuilderForMoreParts().append(" FETCH NEXT ").append(n).append(" ROWS ONLY");
 
         return this;
@@ -344,6 +364,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder fetchFirstNRowsOnly(final int n) {
+        N.checkArgNotNegative(n, "n");
+
         getStringBuilderForMoreParts().append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
 
         return this;
