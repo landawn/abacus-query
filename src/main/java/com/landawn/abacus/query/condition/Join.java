@@ -184,8 +184,10 @@ public class Join extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Used internally by LeftJoin
-     * protected LeftJoin(String joinEntity, Condition condition) {
-     *     super(Operator.LEFT_JOIN, joinEntity, condition);
+     * class LeftJoin extends Join {
+     *     LeftJoin(String joinEntity, Condition condition) {
+     *         super(Operator.LEFT_JOIN, joinEntity, condition);
+     *     }
      * }
      * }</pre>
      *
@@ -240,8 +242,10 @@ public class Join extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Used internally by subclasses
-     * protected RightJoin(Collection<String> joinEntities, Condition condition) {
-     *     super(Operator.RIGHT_JOIN, joinEntities, condition);
+     * class RightJoin extends Join {
+     *     RightJoin(Collection<String> joinEntities, Condition condition) {
+     *         super(Operator.RIGHT_JOIN, joinEntities, condition);
+     *     }
      * }
      * }</pre>
      *

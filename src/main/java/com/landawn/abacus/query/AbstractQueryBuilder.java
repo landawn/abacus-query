@@ -4008,8 +4008,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Example usage:
      * SQLBuilder builder = PSC.select("*")
      *                        .from("account")
-     *                        .where(Filters.eq("name", "John"))
-     *                        .and(Filters.gt("age", 25));
+     *                        .where(Filters.and(
+     *                            Filters.eq("name", "John"),
+     *                            Filters.gt("age", 25)
+     *                        ));
      * List<Object> params = builder.parameters();
      * // params contains: ["John", 25]
      * }</pre>

@@ -91,7 +91,7 @@ import com.landawn.abacus.util.Strings;
  * Expression expr = Expression.of("price * 0.9");
  * 
  * // Using in a condition
- * Condition discountPrice = Filters.lt(expr, 100);
+ * Condition discountPrice = Filters.expr("price * 0.9 < 100");
  * 
  * // SQL functions
  * String upperName = Expression.upper("name");
@@ -1629,10 +1629,10 @@ public class Expression extends AbstractCondition {
      * Since this class inherits all methods and behavior from {@code Expression}, it can be
      * used in all the same contexts with identical functionality.
      * <p>
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Expr expr = new Expr("price * quantity");
-     * }</pre>
+ * <p><b>Usage Examples:</b></p>
+ * <pre>{@code
+ * Expression.Expr expr = new Expression.Expr("price * quantity");
+ * }</pre>
      *
      * @see Expression
      */
@@ -1645,7 +1645,7 @@ public class Expression extends AbstractCondition {
          * <p>
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Expr expr = new Expr("price * quantity");
+         * Expression.Expr expr = new Expression.Expr("price * quantity");
          * }</pre>
          *
          * @param literal the SQL expression as a string

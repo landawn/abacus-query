@@ -247,6 +247,8 @@ public final class CriteriaUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * Where whereClause = new Where(Filters.eq("status", "active"));
+     * Limit limitClause = new Limit(10);
      * List<Condition> conditionsToRemove = new ArrayList<>();
      * conditionsToRemove.add(whereClause);
      * conditionsToRemove.add(limitClause);

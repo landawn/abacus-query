@@ -72,7 +72,7 @@ import com.landawn.abacus.util.Strings;
  * // Results in: age > 18 AND status = 'active'
  *
  * // Use in query building
- * Query query = QB.select()
+ * SQLBuilder builder = PSC.select("*")
  *     .from("users")
  *     .where(age.ge(21).and(status.in("active", "pending")));
  * }</pre>
@@ -154,8 +154,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("status").eq("active")   = 'active'
-     * NamedProperty.of("count").eq(5)           = 5
+     * NamedProperty.of("status").eq("active");   // status = 'active'
+     * NamedProperty.of("count").eq(5);           // count = 5
      * }</pre>
      *
      * @param values the value to compare against. Can be of any type compatible with the property.
@@ -233,8 +233,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("status").ne("deleted")   = 'deleted'
-     * NamedProperty.of("count").ne(0)            = 0
+     * NamedProperty.of("status").ne("deleted");   // status <> 'deleted'
+     * NamedProperty.of("count").ne(0);            // count <> 0
      * }</pre>
      *
      * @param values the value to compare against. Can be of any type compatible with the property.
@@ -271,8 +271,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("score").ge(60)   = 60
-     * NamedProperty.of("age").ge(21)     = 21
+     * NamedProperty.of("score").ge(60);   // score >= 60
+     * NamedProperty.of("age").ge(21);     // age >= 21
      * }</pre>
      *
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
@@ -309,8 +309,8 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("quantity").le(10)   = 10
-     * NamedProperty.of("age").le(65)        = 65
+     * NamedProperty.of("quantity").le(10);   // quantity <= 10
+     * NamedProperty.of("age").le(65);        // age <= 65
      * }</pre>
      *
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.

@@ -59,7 +59,9 @@ import com.landawn.abacus.util.NamingPolicy;
  * Condition notActive = statusCondition.not();
  * 
  * // Use in queries
- * query.where(combined);
+ * SQLBuilder builder = PSC.select("*")
+ *     .from("users")
+ *     .where(combined);
  * 
  * // Get parameters for prepared statements
  * List<Object> params = combined.getParameters();   // [18, "active"]
