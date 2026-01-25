@@ -205,7 +205,7 @@ public class Cell2025Test extends TestBase {
         Condition condition = Filters.eq("userName", "John");
         Cell cell = new Cell(Operator.NOT, condition);
 
-        String result = cell.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = cell.toString(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("user_name") || result.contains("userName"));
     }

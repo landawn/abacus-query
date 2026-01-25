@@ -122,7 +122,7 @@ import com.landawn.abacus.util.u.Optional;
  *   <tr>
  *     <td>PLC</td>
  *     <td>Parameterized (?)</td>
- *     <td>lowerCamelCase</td>
+ *     <td>camelCase</td>
  *     <td>Modern ORM frameworks</td>
  *     <td>SELECT firstName FROM users WHERE id = ?</td>
  *   </tr>
@@ -143,7 +143,7 @@ import com.landawn.abacus.util.u.Optional;
  *   <tr>
  *     <td>NLC</td>
  *     <td>Named (:name)</td>
- *     <td>lowerCamelCase</td>
+ *     <td>camelCase</td>
  *     <td>Modern web applications</td>
  *     <td>SELECT firstName FROM users WHERE id = :id</td>
  *   </tr>
@@ -315,7 +315,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     /**
      * Constructs a new SQLBuilder with the specified naming policy and SQL policy.
      * 
-     * @param namingPolicy the naming policy for column names, defaults to LOWER_CASE_WITH_UNDERSCORE if null
+     * @param namingPolicy the naming policy for column names, defaults to SNAKE_CASE if null
      * @param sqlPolicy the SQL generation policy, defaults to SQL if null
      */
     protected SQLBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
@@ -696,7 +696,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         SCSB() {
-            super(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, SQLPolicy.SQL);
+            super(NamingPolicy.SNAKE_CASE, SQLPolicy.SQL);
         }
 
         /**
@@ -1648,7 +1648,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.SNAKE_CASE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -1855,7 +1855,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.SNAKE_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -1949,7 +1949,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * Un-parameterized SQL builder with all capital case (upper case with underscore) field/column naming strategy.
      * 
      * <p>This builder generates SQL with actual values embedded directly in the SQL string. Property names
-     * are automatically converted from camelCase to UPPER_CASE_WITH_UNDERSCORE for database column names.</p>
+     * are automatically converted from camelCase to SCREAMING_SNAKE_CASE for database column names.</p>
      * 
      * <p>Features:</p>
      * <ul>
@@ -1971,13 +1971,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class ACSB extends SQLBuilder {
 
         /**
-         * Constructs a new ACSB instance with UPPER_CASE_WITH_UNDERSCORE naming policy and non-parameterized SQL policy.
+         * Constructs a new ACSB instance with SCREAMING_SNAKE_CASE naming policy and non-parameterized SQL policy.
          * 
          * <p>This constructor is package-private and should not be called directly. Use the static
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         ACSB() {
-            super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.SQL);
+            super(NamingPolicy.SCREAMING_SNAKE_CASE, SQLPolicy.SQL);
         }
 
         /**
@@ -1996,7 +1996,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder for a single column.
          * 
          * <p>This method initializes an INSERT statement for one column. The column name will be
-         * converted to UPPER_CASE_WITH_UNDERSCORE according to the naming policy.</p>
+         * converted to SCREAMING_SNAKE_CASE according to the naming policy.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2021,7 +2021,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder for multiple columns.
          * 
          * <p>This method initializes an INSERT statement for multiple columns. All column names
-         * will be converted to UPPER_CASE_WITH_UNDERSCORE according to the naming policy.</p>
+         * will be converted to SCREAMING_SNAKE_CASE according to the naming policy.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2546,7 +2546,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates a SELECT SQL builder for the specified columns.
          * 
          * <p>This method builds a SELECT statement with the specified columns. Property names
-         * are converted to uppercase column names using the UPPER_CASE_WITH_UNDERSCORE naming policy.</p>
+         * are converted to uppercase column names using the SCREAMING_SNAKE_CASE naming policy.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2932,7 +2932,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.SCREAMING_SNAKE_CASE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -3137,7 +3137,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.SCREAMING_SNAKE_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -3227,7 +3227,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * SQL builder implementation with lower camel case naming policy.
      * 
      * <p>This builder generates SQL with actual values embedded directly in the SQL string.
-     * Property names are preserved in lowerCamelCase format without conversion. This is useful
+     * Property names are preserved in camelCase format without conversion. This is useful
      * for databases that use camelCase column naming conventions.</p>
      * 
      * <p>Features:</p>
@@ -3250,13 +3250,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class LCSB extends SQLBuilder {
 
         /**
-         * Constructs a new LCSB instance with LOWER_CAMEL_CASE naming policy and non-parameterized SQL policy.
+         * Constructs a new LCSB instance with CAMEL_CASE naming policy and non-parameterized SQL policy.
          * 
          * <p>This constructor is package-private and should not be called directly. Use the static
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         LCSB() {
-            super(NamingPolicy.LOWER_CAMEL_CASE, SQLPolicy.SQL);
+            super(NamingPolicy.CAMEL_CASE, SQLPolicy.SQL);
         }
 
         /**
@@ -4225,7 +4225,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.CAMEL_CASE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -4442,7 +4442,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
+            final NamingPolicy namingPolicy = NamingPolicy.CAMEL_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -5814,7 +5814,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         PSC() {
-            super(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, SQLPolicy.PARAMETERIZED_SQL);
+            super(NamingPolicy.SNAKE_CASE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
         /**
@@ -6800,7 +6800,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.SNAKE_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -7011,7 +7011,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.SNAKE_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -7103,14 +7103,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     }
 
     /**
-     * Parameterized SQL builder with UPPER_CASE_WITH_UNDERSCORE naming policy.
+     * Parameterized SQL builder with SCREAMING_SNAKE_CASE naming policy.
      * 
      * <p>This builder generates parameterized SQL statements (using '?' placeholders) with column names 
      * converted to uppercase with underscores. This follows the traditional database naming convention.</p>
      * 
      * <p>Key features:</p>
      * <ul>
-     *   <li>Converts camelCase property names to UPPER_CASE_WITH_UNDERSCORE column names</li>
+     *   <li>Converts camelCase property names to SCREAMING_SNAKE_CASE column names</li>
      *   <li>Uses '?' placeholders for parameter binding</li>
      *   <li>Maintains property name aliases in result sets for proper object mapping</li>
      * </ul>
@@ -7128,13 +7128,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class PAC extends SQLBuilder {
 
         /**
-         * Constructs a new PAC instance with UPPER_CASE_WITH_UNDERSCORE naming policy and parameterized SQL policy.
+         * Constructs a new PAC instance with SCREAMING_SNAKE_CASE naming policy and parameterized SQL policy.
          * 
          * <p>This constructor is package-private and should not be called directly. Use the static
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         PAC() {
-            super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.PARAMETERIZED_SQL);
+            super(NamingPolicy.SCREAMING_SNAKE_CASE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
         /**
@@ -7174,7 +7174,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT statement for specified columns.
          * 
-         * <p>The column names will be converted according to the UPPER_CASE_WITH_UNDERSCORE naming policy.
+         * <p>The column names will be converted according to the SCREAMING_SNAKE_CASE naming policy.
          * Use {@link #into(String)} to specify the target table.</p>
          * 
          * <p><b>Usage Examples:</b></p>
@@ -7686,7 +7686,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a SELECT statement with multiple columns.
          * 
-         * <p>Column names will be converted according to the UPPER_CASE_WITH_UNDERSCORE 
+         * <p>Column names will be converted according to the SCREAMING_SNAKE_CASE 
          * naming policy and aliased back to their original property names.</p>
          * 
          * <p><b>Usage Examples:</b></p>
@@ -8048,7 +8048,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.SCREAMING_SNAKE_CASE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -8245,7 +8245,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.SCREAMING_SNAKE_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -8328,7 +8328,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     }
 
     /**
-     * Parameterized SQL builder with lowerCamelCase field/column naming strategy.
+     * Parameterized SQL builder with camelCase field/column naming strategy.
      * 
      * <p>PLC (Parameterized Lower Camel Case) generates SQL with placeholder parameters (?) 
      * while maintaining camelCase naming for both properties and columns. This is useful when 
@@ -8394,13 +8394,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class PLC extends SQLBuilder {
 
         /**
-         * Constructs a new PLC instance with lowerCamelCase naming policy and parameterized SQL policy.
+         * Constructs a new PLC instance with camelCase naming policy and parameterized SQL policy.
          * 
          * <p>This constructor is package-private and should not be called directly. Use the static
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         PLC() {
-            super(NamingPolicy.LOWER_CAMEL_CASE, SQLPolicy.PARAMETERIZED_SQL);
+            super(NamingPolicy.CAMEL_CASE, SQLPolicy.PARAMETERIZED_SQL);
         }
 
         /**
@@ -9666,7 +9666,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -9865,7 +9865,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
+            final NamingPolicy namingPolicy = NamingPolicy.CAMEL_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -11257,7 +11257,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         NSC() {
-            super(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, SQLPolicy.NAMED_SQL);
+            super(NamingPolicy.SNAKE_CASE, SQLPolicy.NAMED_SQL);
         }
 
         /**
@@ -12104,7 +12104,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.SNAKE_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -12299,7 +12299,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.SNAKE_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -12386,7 +12386,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     /**
      * Named SQL builder with all capital case (upper case with underscore) field/column naming strategy.
      * This builder generates SQL with named parameters (e.g., :paramName) and converts property names
-     * to UPPER_CASE_WITH_UNDERSCORE format.
+     * to SCREAMING_SNAKE_CASE format.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -12405,13 +12405,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class NAC extends SQLBuilder {
 
         /**
-         * Constructs a new NAC instance with UPPER_CASE_WITH_UNDERSCORE naming policy and named SQL policy.
+         * Constructs a new NAC instance with SCREAMING_SNAKE_CASE naming policy and named SQL policy.
          * 
          * <p>This constructor is package-private and should not be called directly. Use the static
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         NAC() {
-            super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.NAMED_SQL);
+            super(NamingPolicy.SCREAMING_SNAKE_CASE, SQLPolicy.NAMED_SQL);
         }
 
         /**
@@ -12457,7 +12457,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for the specified property or column names.
-         * Property names will be converted to UPPER_CASE_WITH_UNDERSCORE format.
+         * Property names will be converted to SCREAMING_SNAKE_CASE format.
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -12482,7 +12482,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for the specified collection of property or column names.
-         * Property names will be converted to UPPER_CASE_WITH_UNDERSCORE format.
+         * Property names will be converted to SCREAMING_SNAKE_CASE format.
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -12508,7 +12508,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for the specified property-value map.
-         * Property names will be converted to UPPER_CASE_WITH_UNDERSCORE format.
+         * Property names will be converted to SCREAMING_SNAKE_CASE format.
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -12935,7 +12935,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for the specified property or column names.
-         * Property names will be converted to UPPER_CASE_WITH_UNDERSCORE format.
+         * Property names will be converted to SCREAMING_SNAKE_CASE format.
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -12964,7 +12964,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for the specified collection of property or column names.
-         * Property names will be converted to UPPER_CASE_WITH_UNDERSCORE format.
+         * Property names will be converted to SCREAMING_SNAKE_CASE format.
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -13288,7 +13288,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.SCREAMING_SNAKE_CASE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -13484,7 +13484,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.UPPER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.SCREAMING_SNAKE_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -13574,7 +13574,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     /**
      * Named SQL builder with lower camel case field/column naming strategy.
      * This builder generates SQL with named parameters (e.g., :paramName) and preserves
-     * property names in lowerCamelCase format.
+     * property names in camelCase format.
      * 
      * <p>The NLC builder is ideal for applications that use camelCase naming conventions
      * in their Java code and want to maintain this convention in their SQL queries.
@@ -13583,7 +13583,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * <p>Key features:</p>
      * <ul>
      *   <li>Generates named parameters instead of positional parameters (?)</li>
-     *   <li>Preserves lowerCamelCase property names without conversion</li>
+     *   <li>Preserves camelCase property names without conversion</li>
      *   <li>Supports all standard SQL operations (SELECT, INSERT, UPDATE, DELETE)</li>
      *   <li>Integrates with entity classes using annotations</li>
      * </ul>
@@ -13605,13 +13605,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     public static class NLC extends SQLBuilder {
 
         /**
-         * Constructs a new NLC instance with lowerCamelCase naming policy and named SQL policy.
+         * Constructs a new NLC instance with camelCase naming policy and named SQL policy.
          *
          * <p>This constructor is package-private and should not be called directly. Use the static
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         NLC() {
-            super(NamingPolicy.LOWER_CAMEL_CASE, SQLPolicy.NAMED_SQL);
+            super(NamingPolicy.CAMEL_CASE, SQLPolicy.NAMED_SQL);
         }
 
         /**
@@ -13657,7 +13657,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for the specified property or column names.
-         * Property names will be preserved in lowerCamelCase format without any naming conversion.
+         * Property names will be preserved in camelCase format without any naming conversion.
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -14165,7 +14165,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for the specified property or column names.
-         * Property names will be preserved in lowerCamelCase format without any conversion.
+         * Property names will be preserved in camelCase format without any conversion.
          * This is the most common way to start building a SELECT query.
          * 
          * <p><b>Usage Examples:</b></p>
@@ -14565,7 +14565,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.CAMEL_CASE);
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -14804,7 +14804,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
+            final NamingPolicy namingPolicy = NamingPolicy.CAMEL_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -16194,7 +16194,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates a new MSC instance with snake_case naming policy and MyBatis SQL format.
          */
         MSC() {
-            super(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, SQLPolicy.IBATIS_SQL);
+            super(NamingPolicy.SNAKE_CASE, SQLPolicy.IBATIS_SQL);
         }
 
         /**
@@ -17103,7 +17103,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.SNAKE_CASE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -17304,7 +17304,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CASE_WITH_UNDERSCORE;
+            final NamingPolicy namingPolicy = NamingPolicy.SNAKE_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -17397,7 +17397,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * MyBatis-style SQL builder with all capital case (upper case with underscore) field/column naming strategy.
      * 
      * <p>This builder generates SQL with MyBatis-style parameter placeholders (#{paramName}) and converts
-     * property names to UPPER_CASE_WITH_UNDERSCORE format. For example, a property named "firstName" 
+     * property names to SCREAMING_SNAKE_CASE format. For example, a property named "firstName" 
      * will be converted to "FIRST_NAME" in the SQL.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -17427,7 +17427,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Internal constructor - use static factory methods instead.
          */
         MAC() {
-            super(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE, SQLPolicy.IBATIS_SQL);
+            super(NamingPolicy.SCREAMING_SNAKE_CASE, SQLPolicy.IBATIS_SQL);
         }
 
         /**
@@ -17443,7 +17443,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT SQL builder for a single column expression.
          * 
-         * <p>The column name will be converted to UPPER_CASE_WITH_UNDERSCORE format.</p>
+         * <p>The column name will be converted to SCREAMING_SNAKE_CASE format.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -17464,7 +17464,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT SQL builder for the specified columns.
          * 
-         * <p>Column names will be converted to UPPER_CASE_WITH_UNDERSCORE format.</p>
+         * <p>Column names will be converted to SCREAMING_SNAKE_CASE format.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -17493,7 +17493,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder for the specified collection of columns.
          * 
          * <p>Useful when column names are determined at runtime. Column names will be 
-         * converted to UPPER_CASE_WITH_UNDERSCORE format.</p>
+         * converted to SCREAMING_SNAKE_CASE format.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -17520,7 +17520,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an INSERT SQL builder using a map of property names to values.
          * 
-         * <p>Map keys will be converted to UPPER_CASE_WITH_UNDERSCORE format for column names.</p>
+         * <p>Map keys will be converted to SCREAMING_SNAKE_CASE format for column names.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -17550,7 +17550,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Creates an INSERT SQL builder for the given entity object.
          * All non-null properties of the entity will be included in the INSERT statement.
          * 
-         * <p>Property names will be converted to UPPER_CASE_WITH_UNDERSCORE format for column names.</p>
+         * <p>Property names will be converted to SCREAMING_SNAKE_CASE format for column names.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -18263,7 +18263,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.CAMEL_CASE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -18450,7 +18450,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
+            final NamingPolicy namingPolicy = NamingPolicy.CAMEL_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -18535,7 +18535,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * MyBatis-style SQL builder with lower camel case field/column naming strategy.
      * 
      * <p>This builder generates SQL with MyBatis-style parameter placeholders (#{paramName}) and uses
-     * lowerCamelCase naming convention. Property names are used as-is without transformation to 
+     * camelCase naming convention. Property names are used as-is without transformation to 
      * snake_case or upper case.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -18564,7 +18564,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * Internal constructor - use static factory methods instead.
          */
         MLC() {
-            super(NamingPolicy.LOWER_CAMEL_CASE, SQLPolicy.IBATIS_SQL);
+            super(NamingPolicy.CAMEL_CASE, SQLPolicy.IBATIS_SQL);
         }
 
         /**
@@ -19444,7 +19444,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.LOWER_CAMEL_CASE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.CAMEL_CASE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -19636,7 +19636,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.LOWER_CAMEL_CASE;
+            final NamingPolicy namingPolicy = NamingPolicy.CAMEL_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);

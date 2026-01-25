@@ -92,7 +92,7 @@ public class IntersectTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT userId FROM userTable");
         Intersect intersect = new Intersect(subQuery);
 
-        String result = intersect.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = intersect.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("INTERSECT"));
         // The SubQuery content might not be affected by naming policy,

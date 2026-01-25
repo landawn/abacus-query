@@ -46,7 +46,7 @@ public class AnyTest extends TestBase {
         Any any = Filters.any(subQuery);
 
         // Naming policy should be applied to the subquery
-        String result = any.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = any.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("ANY"));
     }
 

@@ -231,9 +231,9 @@ public class NotBetween2025Test extends TestBase {
     }
 
     @Test
-    public void testToString_LowerCaseWithUnderscore() {
+    public void testToString_SnakeCase() {
         NotBetween condition = new NotBetween("maxAge", 18, 65);
-        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("max_age"));
         assertTrue(result.contains("NOT BETWEEN"));

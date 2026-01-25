@@ -76,7 +76,7 @@ public class IsNotInfiniteTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNotInfinite condition = new IsNotInfinite("growthRate");
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("GROWTH_RATE"));
         Assertions.assertTrue(result.contains("IS NOT"));

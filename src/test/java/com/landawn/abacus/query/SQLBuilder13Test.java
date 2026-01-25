@@ -1456,7 +1456,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testNamingPolicySnakeCase() {
-            // NSC uses LOWER_CASE_WITH_UNDERSCORE naming policy
+            // NSC uses SNAKE_CASE naming policy
             String sql = NSC.select("firstName", "lastName").from("userAccounts").sql();
 
             Assertions.assertTrue(sql.contains("first_name"));
@@ -2154,7 +2154,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testNamingPolicyUpperCase() {
-            // NAC uses UPPER_CASE_WITH_UNDERSCORE naming policy
+            // NAC uses SCREAMING_SNAKE_CASE naming policy
             String sql = NAC.select("firstName", "lastName").from("userAccounts").sql();
 
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
@@ -2235,7 +2235,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testColumnNameTransformation() {
-            // Test that camelCase property names are converted to UPPER_CASE_WITH_UNDERSCORE
+            // Test that camelCase property names are converted to SCREAMING_SNAKE_CASE
             Account account = new Account();
             account.setFirstName("John");
             account.setLastName("Doe");
@@ -2927,8 +2927,8 @@ public class SQLBuilder13Test extends TestBase {
         }
 
         @Test
-        public void testNamingPolicyLowerCamelCase() {
-            // NLC uses LOWER_CAMEL_CASE naming policy
+        public void testNamingPolicyCamelCase() {
+            // NLC uses CAMEL_CASE naming policy
             String sql = NLC.select("firstName", "lastName").from("userAccounts").sql();
 
             // Should preserve camelCase
@@ -3878,7 +3878,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testNamingPolicySnakeCase() {
-            // PSC uses LOWER_CASE_WITH_UNDERSCORE naming policy
+            // PSC uses SNAKE_CASE naming policy
             String sql = PSC.select("firstName", "lastName").from("userAccounts").sql();
 
             Assertions.assertTrue(sql.contains("first_name"));

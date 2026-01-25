@@ -155,7 +155,7 @@ public class InnerJoinTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Condition condition = Filters.eq("productId", Filters.expr("categoryId"));
         InnerJoin join = new InnerJoin("productCategory", condition);
-        String result = join.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = join.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("INNER JOIN"));
         Assertions.assertTrue(result.contains("productCategory"));

@@ -79,7 +79,7 @@ public class IsNotTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNot condition = new IsNot("firstName", null);
-        String result = condition.toString(NamingPolicy.LOWER_CAMEL_CASE);
+        String result = condition.toString(NamingPolicy.CAMEL_CASE);
         Assertions.assertTrue(result.contains("firstName"));
         Assertions.assertTrue(result.contains("IS NOT"));
     }

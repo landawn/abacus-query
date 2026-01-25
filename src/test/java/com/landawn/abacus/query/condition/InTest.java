@@ -130,7 +130,7 @@ public class InTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         In condition = new In("productId", Arrays.asList(101, 102, 103));
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("PRODUCT_ID"));
         Assertions.assertTrue(result.contains("IN"));

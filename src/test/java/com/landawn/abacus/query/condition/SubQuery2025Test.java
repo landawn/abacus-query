@@ -298,7 +298,7 @@ public class SubQuery2025Test extends TestBase {
 
         SubQuery subQuery = Filters.subQuery("users", props, condition);
 
-        String result = subQuery.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = subQuery.toString(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("first_name") || result.contains("firstName"));
     }

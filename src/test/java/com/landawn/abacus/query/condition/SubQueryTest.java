@@ -191,7 +191,7 @@ public class SubQueryTest extends TestBase {
         Equal condition = Filters.eq("is_active", true);
         SubQuery subQuery = Filters.subQuery("user_table", props, condition);
 
-        String result = subQuery.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = subQuery.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("user_id, user_name"));
         Assertions.assertTrue(result.contains("user_table"));
         Assertions.assertTrue(result.contains("IS_ACTIVE"));

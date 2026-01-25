@@ -1864,7 +1864,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testNamingPolicy() {
-            // Test that PLC uses lowerCamelCase naming (no transformation)
+            // Test that PLC uses camelCase naming (no transformation)
             SQLBuilder builder = PLC.select("firstName", "lastName", "emailAddress", "isActive");
             String sql = builder.from("userProfile").sql();
 

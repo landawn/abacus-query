@@ -45,7 +45,7 @@ public class ExistsTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orderItems WHERE orderId = orders.id");
         Exists exists = Filters.exists(subQuery);
 
-        String result = exists.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = exists.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("EXISTS"));
     }
 

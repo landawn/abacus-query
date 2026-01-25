@@ -57,7 +57,7 @@ public class Having2025Test extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Having having = new Having(Filters.gt("COUNT(*)", 5));
-        String result = having.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = having.toString(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.contains("HAVING"));
@@ -146,7 +146,7 @@ public class Having2025Test extends TestBase {
     @Test
     public void testWithAggregateFunction() {
         Having having = new Having(Filters.gt("MAX(salary)", 100000));
-        String result = having.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = having.toString(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("HAVING"));
         assertTrue(result.contains("max") || result.contains("MAX"));

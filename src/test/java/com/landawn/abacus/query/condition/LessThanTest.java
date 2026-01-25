@@ -93,7 +93,7 @@ public class LessThanTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         LessThan condition = new LessThan("totalAmount", 5000);
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("TOTAL_AMOUNT"));
         Assertions.assertTrue(result.contains("<"));

@@ -46,7 +46,7 @@ public class ExceptTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT userId FROM bannedUsers");
         Except except = Filters.except(subQuery);
 
-        String result = except.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = except.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("EXCEPT"));
     }
 

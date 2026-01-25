@@ -128,9 +128,9 @@ public class GreaterEqual2025Test extends TestBase {
     }
 
     @Test
-    public void testToString_LowerCaseWithUnderscore() {
+    public void testToString_SnakeCase() {
         GreaterEqual condition = new GreaterEqual("userName", "Bob");
-        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 

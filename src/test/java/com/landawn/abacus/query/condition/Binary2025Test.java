@@ -148,9 +148,9 @@ public class Binary2025Test extends TestBase {
     }
 
     @Test
-    public void testToString_LowerCaseWithUnderscore() {
+    public void testToString_SnakeCase() {
         Binary condition = new Binary("userName", Operator.GREATER_THAN, "Bob");
-        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 

@@ -143,7 +143,7 @@ public class Clause2025Test extends TestBase {
         Condition condition = Filters.eq("userName", "John");
         TestClause clause = new TestClause(Operator.WHERE, condition);
 
-        String result = clause.toString(com.landawn.abacus.util.NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = clause.toString(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.contains("WHERE"));

@@ -75,7 +75,7 @@ public class NotLikeTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         NotLike notLike = Filters.notLike("user_name", "admin%");
 
-        String result = notLike.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = notLike.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("USER_NAME"));
         Assertions.assertTrue(result.contains("NOT LIKE"));
         Assertions.assertTrue(result.contains("admin%"));

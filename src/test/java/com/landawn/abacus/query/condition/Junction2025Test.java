@@ -276,7 +276,7 @@ public class Junction2025Test extends TestBase {
     public void testToStringWithNamingPolicy() {
         Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
 
-        String sql = junction.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String sql = junction.toString(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(sql);
         assertTrue(sql.contains("AND"));

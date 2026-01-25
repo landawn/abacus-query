@@ -76,7 +76,7 @@ public class IsInfiniteTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsInfinite condition = new IsInfinite("interestRate");
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("INTEREST_RATE"));
         Assertions.assertTrue(result.contains("IS"));

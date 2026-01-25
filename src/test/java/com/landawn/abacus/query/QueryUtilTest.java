@@ -159,7 +159,7 @@ public class QueryUtilTest extends TestBase {
     @Test
     public void testProp2ColumnNameMap() {
         // Test with valid entity class
-        ImmutableMap<String, Tuple2<String, Boolean>> result = QueryUtil.prop2ColumnNameMap(TestUser.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, Tuple2<String, Boolean>> result = QueryUtil.prop2ColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.containsKey("id"));
@@ -178,11 +178,11 @@ public class QueryUtilTest extends TestBase {
         assertFalse(result.containsKey("notColumnField"));
 
         // Test caching - should return same instance
-        ImmutableMap<String, Tuple2<String, Boolean>> result2 = QueryUtil.prop2ColumnNameMap(TestUser.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, Tuple2<String, Boolean>> result2 = QueryUtil.prop2ColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE);
         assertSame(result, result2);
 
         // Test with different naming policy
-        ImmutableMap<String, Tuple2<String, Boolean>> result3 = QueryUtil.prop2ColumnNameMap(TestUser.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, Tuple2<String, Boolean>> result3 = QueryUtil.prop2ColumnNameMap(TestUser.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         assertNotSame(result, result3);
     }
 
@@ -207,15 +207,15 @@ public class QueryUtilTest extends TestBase {
     @Test
     public void testGetProp2ColumnNameMap() {
         // Test with null entity class
-        ImmutableMap<String, String> nullResult = QueryUtil.getProp2ColumnNameMap(null, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, String> nullResult = QueryUtil.getProp2ColumnNameMap(null, NamingPolicy.SNAKE_CASE);
         assertTrue(nullResult.isEmpty());
 
         // Test with Map class
-        ImmutableMap<String, String> mapResult = QueryUtil.getProp2ColumnNameMap(Map.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, String> mapResult = QueryUtil.getProp2ColumnNameMap(Map.class, NamingPolicy.SNAKE_CASE);
         assertTrue(mapResult.isEmpty());
 
         // Test with regular entity class
-        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(TestUser.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE);
         assertNotNull(result);
         assertEquals("id", result.get("id"));
         assertEquals("user_name", result.get("name"));
@@ -224,7 +224,7 @@ public class QueryUtilTest extends TestBase {
         assertFalse(result.containsKey("notColumnField"));
 
         // Test caching
-        ImmutableMap<String, String> result2 = QueryUtil.getProp2ColumnNameMap(TestUser.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, String> result2 = QueryUtil.getProp2ColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE);
         assertSame(result, result2);
     }
 
@@ -427,7 +427,7 @@ public class QueryUtilTest extends TestBase {
         assertEquals("test_user tu", tableInfo);
 
         // Test with specific naming policy
-        tableInfo = QueryUtil.getTableNameAndAlias(TestUser.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        tableInfo = QueryUtil.getTableNameAndAlias(TestUser.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         assertEquals("test_user tu", tableInfo);
 
         // Test with class without @Table annotation
@@ -435,7 +435,7 @@ public class QueryUtilTest extends TestBase {
         assertEquals("simple_entity", tableInfo);
 
         // Test with different naming policy
-        tableInfo = QueryUtil.getTableNameAndAlias(SimpleEntity.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        tableInfo = QueryUtil.getTableNameAndAlias(SimpleEntity.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         assertEquals("SIMPLE_ENTITY", tableInfo);
     }
 
@@ -447,7 +447,7 @@ public class QueryUtilTest extends TestBase {
 
         // Should throw exception when trying to register same class again
         assertThrows(RuntimeException.class, () -> {
-            QueryUtil.registerEntityPropColumnNameMap(TestUser.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE, registeringClasses);
+            QueryUtil.registerEntityPropColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE, registeringClasses);
         });
     }
 }

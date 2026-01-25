@@ -66,7 +66,7 @@ public class QueryUtil2025Test extends TestBase {
 
     @Test
     public void testGetProp2ColumnNameMap() {
-        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
         assertNotNull(map);
     }
 
@@ -78,19 +78,19 @@ public class QueryUtil2025Test extends TestBase {
 
     @Test
     public void testGetProp2ColumnNameMap_UpperCase() {
-        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         assertNotNull(map);
     }
 
     @Test
     public void testGetProp2ColumnNameMap_NullClass() {
-        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(null, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(null, NamingPolicy.SNAKE_CASE);
         assertTrue(map.isEmpty());
     }
 
     @Test
     public void testGetProp2ColumnNameMap_MapClass() {
-        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(HashMap.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(HashMap.class, NamingPolicy.SNAKE_CASE);
         assertTrue(map.isEmpty());
     }
 
@@ -286,13 +286,13 @@ public class QueryUtil2025Test extends TestBase {
 
     @Test
     public void testGetTableNameAndAlias_WithNamingPolicy() {
-        String tableName = QueryUtil.getTableNameAndAlias(Account.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String tableName = QueryUtil.getTableNameAndAlias(Account.class, NamingPolicy.SNAKE_CASE);
         assertNotNull(tableName);
     }
 
     @Test
     public void testGetTableNameAndAlias_UpperCase() {
-        String tableName = QueryUtil.getTableNameAndAlias(Account.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String tableName = QueryUtil.getTableNameAndAlias(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         assertNotNull(tableName);
     }
 
@@ -312,14 +312,14 @@ public class QueryUtil2025Test extends TestBase {
     @Test
     public void testGetTableNameAndAlias_NullCheckWithPolicy() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getTableNameAndAlias(null, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            QueryUtil.getTableNameAndAlias(null, NamingPolicy.SNAKE_CASE);
         });
     }
 
     @Test
     public void testGetProp2ColumnNameMap_DifferentPolicies() {
-        ImmutableMap<String, String> lower = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-        ImmutableMap<String, String> upper = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, String> lower = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> upper = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         ImmutableMap<String, String> noChange = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.NO_CHANGE);
 
         assertNotNull(lower);
@@ -369,13 +369,13 @@ public class QueryUtil2025Test extends TestBase {
 
     @Test
     public void testProp2ColumnNameMap() {
-        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
         assertNotNull(map);
     }
 
     @Test
     public void testProp2ColumnNameMap_UpperCase() {
-        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         assertNotNull(map);
     }
 
@@ -388,7 +388,7 @@ public class QueryUtil2025Test extends TestBase {
     @Test
     public void testProp2ColumnNameMap_NullClass() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.prop2ColumnNameMap(null, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+            QueryUtil.prop2ColumnNameMap(null, NamingPolicy.SNAKE_CASE);
         });
     }
 

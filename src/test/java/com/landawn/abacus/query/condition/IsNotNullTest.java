@@ -76,7 +76,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNotNull condition = new IsNotNull("firstName");
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("FIRST_NAME"));
         Assertions.assertTrue(result.contains("IS NOT"));
@@ -86,7 +86,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testToStringWithCamelCase() {
         IsNotNull condition = new IsNotNull("phoneNumber");
-        String result = condition.toString(NamingPolicy.LOWER_CAMEL_CASE);
+        String result = condition.toString(NamingPolicy.CAMEL_CASE);
 
         Assertions.assertTrue(result.contains("phoneNumber"));
         Assertions.assertTrue(result.contains("IS NOT"));

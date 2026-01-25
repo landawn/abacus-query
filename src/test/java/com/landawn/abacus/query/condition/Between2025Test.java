@@ -128,9 +128,9 @@ public class Between2025Test extends TestBase {
     }
 
     @Test
-    public void testToString_LowerCaseWithUnderscore() {
+    public void testToString_SnakeCase() {
         Between condition = new Between("userAge", 18, 65);
-        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_age"));
     }
 

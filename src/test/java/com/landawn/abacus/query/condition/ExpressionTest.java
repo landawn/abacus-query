@@ -449,7 +449,7 @@ public class ExpressionTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Expression expr = Expression.of("firstName = 'John'");
         // Naming policy is ignored for expressions
-        Assertions.assertEquals("first_name = 'John'", expr.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
+        Assertions.assertEquals("first_name = 'John'", expr.toString(NamingPolicy.SNAKE_CASE));
     }
 
     @Test

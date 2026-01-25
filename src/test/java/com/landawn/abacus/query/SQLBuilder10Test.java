@@ -199,12 +199,12 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testGetTableName() {
-        assertEquals("test_account", AbstractQueryBuilder.getTableName(Account.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
-        assertEquals("test_account", AbstractQueryBuilder.getTableName(Account.class, NamingPolicy.UPPER_CASE_WITH_UNDERSCORE));
-        assertEquals("test_account", AbstractQueryBuilder.getTableName(Account.class, NamingPolicy.LOWER_CAMEL_CASE));
+        assertEquals("test_account", AbstractQueryBuilder.getTableName(Account.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("test_account", AbstractQueryBuilder.getTableName(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("test_account", AbstractQueryBuilder.getTableName(Account.class, NamingPolicy.CAMEL_CASE));
         assertEquals("test_account", AbstractQueryBuilder.getTableName(Account.class, NamingPolicy.NO_CHANGE));
 
-        assertEquals("user_order", AbstractQueryBuilder.getTableName(Order.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
+        assertEquals("user_order", AbstractQueryBuilder.getTableName(Order.class, NamingPolicy.SNAKE_CASE));
     }
 
     @Test
@@ -222,11 +222,11 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testGetTableAliasOrName() {
-        assertEquals("test_account", AbstractQueryBuilder.getTableAliasOrName(Account.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
-        assertEquals("o", AbstractQueryBuilder.getTableAliasOrName(Order.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
+        assertEquals("test_account", AbstractQueryBuilder.getTableAliasOrName(Account.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("o", AbstractQueryBuilder.getTableAliasOrName(Order.class, NamingPolicy.SNAKE_CASE));
 
-        assertEquals("custom", AbstractQueryBuilder.getTableAliasOrName("custom", Account.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
-        assertEquals("o", AbstractQueryBuilder.getTableAliasOrName("", Order.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
+        assertEquals("custom", AbstractQueryBuilder.getTableAliasOrName("custom", Account.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("o", AbstractQueryBuilder.getTableAliasOrName("", Order.class, NamingPolicy.SNAKE_CASE));
     }
 
     @Test
@@ -1186,19 +1186,19 @@ public class SQLBuilder10Test extends TestBase {
     @Test
     public void testNamingPolicyConversion() {
         // Test formalize column name
-        assertEquals("first_name", AbstractQueryBuilder.formalizeColumnName("firstName", NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
-        assertEquals("FIRST_NAME", AbstractQueryBuilder.formalizeColumnName("firstName", NamingPolicy.UPPER_CASE_WITH_UNDERSCORE));
-        assertEquals("firstName", AbstractQueryBuilder.formalizeColumnName("first_name", NamingPolicy.LOWER_CAMEL_CASE));
+        assertEquals("first_name", AbstractQueryBuilder.formalizeColumnName("firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("FIRST_NAME", AbstractQueryBuilder.formalizeColumnName("firstName", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("firstName", AbstractQueryBuilder.formalizeColumnName("first_name", NamingPolicy.CAMEL_CASE));
         assertEquals("firstName", AbstractQueryBuilder.formalizeColumnName("firstName", NamingPolicy.NO_CHANGE));
 
         // SQL keywords should not be converted
-        assertEquals("SELECT", AbstractQueryBuilder.formalizeColumnName("SELECT", NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
-        assertEquals("FROM", AbstractQueryBuilder.formalizeColumnName("FROM", NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
+        assertEquals("SELECT", AbstractQueryBuilder.formalizeColumnName("SELECT", NamingPolicy.SNAKE_CASE));
+        assertEquals("FROM", AbstractQueryBuilder.formalizeColumnName("FROM", NamingPolicy.SNAKE_CASE));
     }
 
     @Test
     public void testProp2ColumnNameMap() {
-        ImmutableMap<String, Tuple2<String, Boolean>> map = AbstractQueryBuilder.prop2ColumnNameMap(Account.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        ImmutableMap<String, Tuple2<String, Boolean>> map = AbstractQueryBuilder.prop2ColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
 
         assertNotNull(map);
         assertTrue(map.containsKey("firstName"));
@@ -1540,10 +1540,10 @@ public class SQLBuilder10Test extends TestBase {
     @Test
     public void testFormatColumnNameEdgeCases() {
         // Test edge cases for column name formatting
-        assertEquals("id", AbstractQueryBuilder.formalizeColumnName("id", NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
-        assertEquals("ID", AbstractQueryBuilder.formalizeColumnName("id", NamingPolicy.UPPER_CASE_WITH_UNDERSCORE));
-        assertEquals("user_name123", AbstractQueryBuilder.formalizeColumnName("userName123", NamingPolicy.LOWER_CASE_WITH_UNDERSCORE));
-        assertEquals("USER_NAME123", AbstractQueryBuilder.formalizeColumnName("userName123", NamingPolicy.UPPER_CASE_WITH_UNDERSCORE));
+        assertEquals("id", AbstractQueryBuilder.formalizeColumnName("id", NamingPolicy.SNAKE_CASE));
+        assertEquals("ID", AbstractQueryBuilder.formalizeColumnName("id", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("user_name123", AbstractQueryBuilder.formalizeColumnName("userName123", NamingPolicy.SNAKE_CASE));
+        assertEquals("USER_NAME123", AbstractQueryBuilder.formalizeColumnName("userName123", NamingPolicy.SCREAMING_SNAKE_CASE));
     }
 
     @Test
@@ -1658,7 +1658,7 @@ public class SQLBuilder10Test extends TestBase {
             }
         }
 
-        String tableName = AbstractQueryBuilder.getTableName(SimpleEntity.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String tableName = AbstractQueryBuilder.getTableName(SimpleEntity.class, NamingPolicy.SNAKE_CASE);
         assertEquals("simple_entity", tableName);
     }
 

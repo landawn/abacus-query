@@ -86,7 +86,7 @@ public class CellTest extends TestBase {
         Equal eq = Filters.eq("userName", "test");
         Cell cell = new Cell(Operator.NOT, eq);
 
-        String result = cell.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = cell.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("user_name = 'test'"));
     }
 

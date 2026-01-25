@@ -76,7 +76,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNull condition = new IsNull("birthDate");
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("BIRTH_DATE"));
         Assertions.assertTrue(result.contains("IS"));

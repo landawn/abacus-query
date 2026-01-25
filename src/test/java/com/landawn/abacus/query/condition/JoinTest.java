@@ -181,7 +181,7 @@ public class JoinTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Condition condition = Filters.eq("customerId", Filters.expr("orderId"));
         Join join = new Join("orderTable", condition);
-        String result = join.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = join.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("JOIN"));
         Assertions.assertTrue(result.contains("orderTable"));

@@ -158,9 +158,9 @@ public class NotIn2025Test extends TestBase {
     }
 
     @Test
-    public void testToString_LowerCaseWithUnderscore() {
+    public void testToString_SnakeCase() {
         NotIn condition = new NotIn("orderStatus", Arrays.asList("deleted"));
-        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("order_status"));
         assertTrue(result.contains("NOT IN"));

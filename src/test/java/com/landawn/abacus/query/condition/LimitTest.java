@@ -91,14 +91,14 @@ public class LimitTest extends TestBase {
     @Test
     public void testToStringWithCountOnly() {
         Limit limit = Filters.limit(10);
-        String result = limit.toString(NamingPolicy.LOWER_CAMEL_CASE);
+        String result = limit.toString(NamingPolicy.CAMEL_CASE);
         Assertions.assertEquals("LIMIT 10", result);
     }
 
     @Test
     public void testToStringWithOffsetAndCount() {
         Limit limit = Filters.limit(20, 50);
-        String result = limit.toString(NamingPolicy.LOWER_CAMEL_CASE);
+        String result = limit.toString(NamingPolicy.CAMEL_CASE);
         Assertions.assertEquals("LIMIT 50 OFFSET 20", result);
     }
 

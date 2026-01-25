@@ -316,7 +316,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testToStringWithNamingPolicy() {
-        String result = simpleCondition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = simpleCondition.toString(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -327,8 +327,8 @@ public class ConditionTest extends TestBase {
     void testToStringWithDifferentNamingPolicies() {
         Condition camelCaseCondition = Filters.eq("firstName", "John");
 
-        String snakeCase = camelCaseCondition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-        String upperCase = camelCaseCondition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String snakeCase = camelCaseCondition.toString(NamingPolicy.SNAKE_CASE);
+        String upperCase = camelCaseCondition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
         String noChange = camelCaseCondition.toString(NamingPolicy.NO_CHANGE);
 
         assertNotNull(snakeCase);
@@ -347,7 +347,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testToStringWithComplexCondition() {
-        String result = complexCondition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = complexCondition.toString(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());

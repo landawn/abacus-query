@@ -72,7 +72,7 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNotNaN condition = new IsNotNaN("computedValue");
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("COMPUTED_VALUE"));
         Assertions.assertTrue(result.contains("IS NOT"));

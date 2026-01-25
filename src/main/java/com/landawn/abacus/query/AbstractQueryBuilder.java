@@ -112,10 +112,10 @@ import com.landawn.abacus.util.stream.Stream;
  * <ul>
  *   <li>{@link PSC} - Parameterized SQL with snake_case naming</li>
  *   <li>{@link PAC} - Parameterized SQL with UPPER_CASE naming</li>
- *   <li>{@link PLC} - Parameterized SQL with lowerCamelCase naming</li>
+ *   <li>{@link PLC} - Parameterized SQL with camelCase naming</li>
  *   <li>{@link NSC} - Named SQL with snake_case naming</li>
  *   <li>{@link NAC} - Named SQL with UPPER_CASE naming</li>
- *   <li>{@link NLC} - Named SQL with lowerCamelCase naming</li>
+ *   <li>{@link NLC} - Named SQL with camelCase naming</li>
  * </ul>
  * 
  * @see com.landawn.abacus.annotation.ReadOnly
@@ -391,7 +391,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Constructs a new SQLBuilder with the specified naming policy and SQL policy.
      * 
-     * @param namingPolicy the naming policy for column names, defaults to LOWER_CASE_WITH_UNDERSCORE if null
+     * @param namingPolicy the naming policy for column names, defaults to SNAKE_CASE if null
      * @param sqlPolicy the SQL generation policy, defaults to SQL if null
      */
     protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
@@ -402,7 +402,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _sb = Objectory.createStringBuilder();
 
-        _namingPolicy = namingPolicy == null ? NamingPolicy.LOWER_CASE_WITH_UNDERSCORE : namingPolicy;
+        _namingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
         _sqlPolicy = sqlPolicy == null ? SQLPolicy.SQL : sqlPolicy;
 
         _handlerForNamedParameter = handlerForNamedParameter_TL.get();
@@ -436,7 +436,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 entityTableNames = Array.repeat(entityInfo.tableName.get(), 4);
             } else {
                 final String simpleClassName = ClassUtil.getSimpleClassName(entityClass);
-                entityTableNames = new String[] { Beans.toLowerCaseWithUnderscore(simpleClassName), Beans.toUpperCaseWithUnderscore(simpleClassName),
+                entityTableNames = new String[] { Beans.toSnakeCase(simpleClassName), Beans.toScreamingSnakeCase(simpleClassName),
                         Beans.toCamelCase(simpleClassName), simpleClassName };
             }
 
@@ -444,13 +444,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         switch (namingPolicy) {
-            case LOWER_CASE_WITH_UNDERSCORE:
+            case SNAKE_CASE:
                 return entityTableNames[0];
 
-            case UPPER_CASE_WITH_UNDERSCORE:
+            case SCREAMING_SNAKE_CASE:
                 return entityTableNames[1];
 
-            case LOWER_CAMEL_CASE:
+            case CAMEL_CASE:
                 return entityTableNames[2];
 
             default:
@@ -631,7 +631,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 for (final String idPropName : QueryUtil.getIdFieldNames(entityClass)) {
                     val[3].remove(idPropName);
-                    val[3].remove(Beans.getPropNameByMethod(Beans.getPropGetMethod(entityClass, idPropName)));
+                    val[3].remove(Beans.getPropNameByMethod(Beans.getPropGetter(entityClass, idPropName)));
                 }
 
                 val[0] = ImmutableSet.wrap(val[0]); // for select, including sub entity properties.
@@ -753,7 +753,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //                propNameList = classPropNameListPool.get(entityClass);
     //
     //                if (propNameList == null) {
-    //                    propNameList = N.asImmutableList(new ArrayList<>(N.getPropGetMethodList(entityClass).keySet()));
+    //                    propNameList = N.asImmutableList(new ArrayList<>(N.getPropGetterList(entityClass).keySet()));
     //                    classPropNameListPool.put(entityClass, propNameList);
     //                }
     //            }
@@ -776,7 +776,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //                propNameSet = classPropNameSetPool.get(entityClass);
     //
     //                if (propNameSet == null) {
-    //                    propNameSet = N.asImmutableSet(N.newLinkedHashSet(N.getPropGetMethodList(entityClass).keySet()));
+    //                    propNameSet = N.asImmutableSet(N.newLinkedHashSet(N.getPropGetterList(entityClass).keySet()));
     //                    classPropNameSetPool.put(entityClass, propNameSet);
     //                }
     //            }
@@ -1232,7 +1232,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                         sb.append(formalizeColumnName(_propColumnNameMap, columnName));
 
-                        if ((_namingPolicy != NamingPolicy.LOWER_CAMEL_CASE && _namingPolicy != NamingPolicy.NO_CHANGE) && !SK.ASTERISK.equals(columnName)) {
+                        if ((_namingPolicy != NamingPolicy.CAMEL_CASE && _namingPolicy != NamingPolicy.NO_CHANGE) && !SK.ASTERISK.equals(columnName)) {
                             sb.append(SPACE_AS_SPACE).append(SK.QUOTATION_D).append(columnName).append(SK.QUOTATION_D);
                         }
                     }
@@ -4992,7 +4992,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (sqlKeyWords.contains(word) || namingPolicy == NamingPolicy.NO_CHANGE) {
             return word;
         }
-        if (namingPolicy == NamingPolicy.LOWER_CAMEL_CASE) {
+        if (namingPolicy == NamingPolicy.CAMEL_CASE) {
             return Beans.formalizePropName(word);
         }
         return namingPolicy.convert(word);

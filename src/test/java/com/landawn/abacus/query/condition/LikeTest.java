@@ -100,7 +100,7 @@ public class LikeTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Like condition = new Like("firstName", "J%");
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("FIRST_NAME"));
         Assertions.assertTrue(result.contains("LIKE"));

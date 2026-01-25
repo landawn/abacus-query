@@ -282,7 +282,7 @@ public class Limit2025Test extends TestBase {
     @Test
     public void testToStringFormat() {
         Limit limit = new Limit(100);
-        String result = limit.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = limit.toString(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.contains("100"));
@@ -385,7 +385,7 @@ public class Limit2025Test extends TestBase {
     public void testToStringWithDifferentNamingPolicy() {
         Limit limit = new Limit(10);
         String result1 = limit.toString(NamingPolicy.NO_CHANGE);
-        String result2 = limit.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result2 = limit.toString(NamingPolicy.SNAKE_CASE);
 
         // Naming policy shouldn't affect LIMIT clause output significantly
         assertNotNull(result1);

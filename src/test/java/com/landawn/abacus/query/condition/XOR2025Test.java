@@ -217,7 +217,7 @@ public class XOR2025Test extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         XOR condition = new XOR("userName", "john");
-        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("user_name") || result.contains("userName"));
     }

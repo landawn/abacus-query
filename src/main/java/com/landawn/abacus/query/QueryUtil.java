@@ -92,7 +92,7 @@ public final class QueryUtil {
      * <pre>{@code
      * // Get property to column mapping with simple property flag
      * ImmutableMap<String, Tuple2<String, Boolean>> propMap =
-     *     QueryUtil.prop2ColumnNameMap(User.class, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+     *     QueryUtil.prop2ColumnNameMap(User.class, NamingPolicy.SNAKE_CASE);
      *
      * Tuple2<String, Boolean> result = propMap.get("firstName");
      * String columnName = result._1;  // "first_name"
@@ -559,7 +559,7 @@ public final class QueryUtil {
     /**
      * Gets the table name and optional alias for the entity class using the default naming policy.
      * If @Table annotation is present, uses its values; otherwise derives the table name from the class name
-     * using LOWER_CASE_WITH_UNDERSCORE naming policy.
+     * using SNAKE_CASE naming policy.
      *
      * <p>The returned string is formatted as "tableName" or "tableName alias" depending on whether
      * an alias is defined.</p>
@@ -569,7 +569,7 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if entityClass is null
      */
     public static String getTableNameAndAlias(final Class<?> entityClass) {
-        return getTableNameAndAlias(entityClass, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        return getTableNameAndAlias(entityClass, NamingPolicy.SNAKE_CASE);
     }
 
     /**

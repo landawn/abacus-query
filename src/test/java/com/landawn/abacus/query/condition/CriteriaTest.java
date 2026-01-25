@@ -444,7 +444,7 @@ public class CriteriaTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Criteria criteria = Filters.criteria().where(Filters.eq("firstName", "John")).orderBy("lastName");
 
-        String result = criteria.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = criteria.toString(NamingPolicy.SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("first_name = 'John'"));
         Assertions.assertTrue(result.contains("last_name"));

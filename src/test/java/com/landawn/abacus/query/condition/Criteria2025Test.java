@@ -569,7 +569,7 @@ public class Criteria2025Test extends TestBase {
         Criteria criteria = new Criteria();
         criteria.distinct().where(Filters.equal("isActive", true)).orderBy("createdDate", SortDirection.DESC);
 
-        String sql = criteria.toString(com.landawn.abacus.util.NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String sql = criteria.toString(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
         assertNotNull(sql);
         assertTrue(sql.contains("DISTINCT"));
     }
@@ -787,7 +787,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testToStringEmptyCriteria() {
         Criteria criteria = new Criteria();
-        String sql = criteria.toString(com.landawn.abacus.util.NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String sql = criteria.toString(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
         assertNotNull(sql);
     }
 

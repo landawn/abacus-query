@@ -195,7 +195,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
         InSubQuery condition = new InSubQuery("userId", subQuery);
 
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("USER_ID"));
         Assertions.assertTrue(result.contains("IN"));

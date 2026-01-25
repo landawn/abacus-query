@@ -200,7 +200,7 @@ public class BetweenTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Between between = Filters.between("orderDate", "2023-01-01", "2023-12-31");
-        String result = between.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = between.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("order_date BETWEEN ('2023-01-01', '2023-12-31')", result);
     }
 

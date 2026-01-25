@@ -95,7 +95,7 @@ public class HavingTest extends TestBase {
         Condition innerCondition = Filters.eq("totalAmount", 1000);
         Having having = new Having(innerCondition);
 
-        String result = having.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = having.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("HAVING"));
         Assertions.assertTrue(result.contains("TOTAL_AMOUNT"));
     }

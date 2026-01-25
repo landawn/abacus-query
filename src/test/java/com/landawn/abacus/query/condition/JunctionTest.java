@@ -196,7 +196,7 @@ public class JunctionTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Junction junction = new Junction(Operator.OR, Filters.eq("firstName", "John"), Filters.eq("lastName", "Doe"));
 
-        String result = junction.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = junction.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("FIRST_NAME"));
         Assertions.assertTrue(result.contains("LAST_NAME"));

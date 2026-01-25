@@ -79,7 +79,7 @@ public class GreaterThanTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         GreaterThan gt = Filters.gt("yearOfBirth", 1990);
-        String result = gt.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = gt.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("year_of_birth > 1990", result);
     }
 

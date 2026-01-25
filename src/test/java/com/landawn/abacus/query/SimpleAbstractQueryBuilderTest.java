@@ -46,8 +46,8 @@ public class SimpleAbstractQueryBuilderTest extends TestBase {
     void testNamingPolicyEnum() {
         // Test that NamingPolicy enum values exist and are accessible
         assertNotNull(NamingPolicy.NO_CHANGE);
-        assertNotNull(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
-        assertNotNull(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
-        assertNotNull(NamingPolicy.LOWER_CAMEL_CASE);
+        assertNotNull(NamingPolicy.SNAKE_CASE);
+        assertNotNull(NamingPolicy.SCREAMING_SNAKE_CASE);
+        assertNotNull(NamingPolicy.CAMEL_CASE);
     }
 }

@@ -121,7 +121,7 @@ public class GroupBy2025Test extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         GroupBy groupBy = new GroupBy("productCategory");
-        String result = groupBy.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = groupBy.toString(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.contains("product_category") || result.contains("productCategory"));

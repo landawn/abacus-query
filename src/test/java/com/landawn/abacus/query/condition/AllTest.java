@@ -45,7 +45,7 @@ public class AllTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT minPrice FROM priceRanges");
         All all = Filters.all(subQuery);
 
-        String result = all.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = all.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("ALL"));
     }
 

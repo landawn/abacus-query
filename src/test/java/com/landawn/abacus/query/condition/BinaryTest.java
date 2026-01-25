@@ -150,7 +150,7 @@ public class BinaryTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Binary binary = Filters.binary("firstName", Operator.LIKE, "John%");
-        String result = binary.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = binary.toString(NamingPolicy.SNAKE_CASE);
 
         Assertions.assertEquals("first_name LIKE 'John%'", result);
     }

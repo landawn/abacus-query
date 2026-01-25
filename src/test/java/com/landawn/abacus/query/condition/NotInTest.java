@@ -122,7 +122,7 @@ public class NotInTest extends TestBase {
         List<String> values = Arrays.asList("active", "pending");
         NotIn notIn = Filters.notIn("user_status", values);
 
-        String result = notIn.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = notIn.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("USER_STATUS"));
         Assertions.assertTrue(result.contains("NOT IN"));
         Assertions.assertTrue(result.contains("USER_STATUS NOT IN ('active', 'pending')"));

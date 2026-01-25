@@ -82,16 +82,16 @@ public class IsNaN2025Test extends TestBase {
     }
 
     @Test
-    public void testToString_LowerCaseWithUnderscore() {
+    public void testToString_SnakeCase() {
         IsNaN condition = new IsNaN("myValue");
-        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("my_value"));
     }
 
     @Test
-    public void testToString_UpperCaseWithUnderscore() {
+    public void testToString_ScreamingSnakeCase() {
         IsNaN condition = new IsNaN("myValue");
-        String result = condition.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
         assertTrue(result.contains("MY_VALUE"));
     }
 

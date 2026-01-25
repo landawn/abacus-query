@@ -84,7 +84,7 @@ public class NotEqualTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         NotEqual notEqual = Filters.ne("user_status", "banned");
 
-        String result = notEqual.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = notEqual.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("USER_STATUS"));
         Assertions.assertTrue(result.contains("!="));
         Assertions.assertTrue(result.contains("banned"));

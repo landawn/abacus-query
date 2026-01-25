@@ -675,7 +675,7 @@ public class Expression2025Test extends TestBase {
     public void testToStringWithNamingPolicy() {
         Expression expr = new Expression("firstName");
 
-        String result = expr.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = expr.toString(NamingPolicy.SNAKE_CASE);
 
         assertEquals("first_name", result);
     }

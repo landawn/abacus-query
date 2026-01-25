@@ -146,7 +146,7 @@ public class NotBetweenTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         NotBetween notBetween = Filters.notBetween("user_age", 18, 65);
 
-        String result = notBetween.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = notBetween.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("USER_AGE"));
         Assertions.assertTrue(result.contains("NOT BETWEEN"));
     }

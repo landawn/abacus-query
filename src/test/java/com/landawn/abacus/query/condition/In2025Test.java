@@ -190,9 +190,9 @@ public class In2025Test extends TestBase {
     }
 
     @Test
-    public void testToString_LowerCaseWithUnderscore() {
+    public void testToString_SnakeCase() {
         In condition = new In("orderStatus", Arrays.asList("active"));
-        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("order_status"));
         assertTrue(result.contains("IN"));

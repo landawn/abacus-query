@@ -90,7 +90,7 @@ public class AndTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         And and = Filters.and(Filters.eq("firstName", "Jane"), Filters.le("yearOfBirth", 2000));
 
-        String result = and.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = and.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("first_name = 'Jane'"));
         Assertions.assertTrue(result.contains("year_of_birth <= 2000"));
     }

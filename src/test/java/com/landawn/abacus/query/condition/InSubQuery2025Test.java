@@ -210,11 +210,11 @@ public class InSubQuery2025Test extends TestBase {
     }
 
     @Test
-    public void testToString_LowerCaseWithUnderscore() {
+    public void testToString_SnakeCase() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         InSubQuery condition = new InSubQuery("userId", subQuery);
 
-        String result = condition.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = condition.toString(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_id"));
     }
 

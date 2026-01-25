@@ -50,7 +50,7 @@ public class GreaterEqualTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         GreaterEqual ge = Filters.ge("firstName", "John");
-        String result = ge.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = ge.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("first_name >= 'John'", result);
     }
 

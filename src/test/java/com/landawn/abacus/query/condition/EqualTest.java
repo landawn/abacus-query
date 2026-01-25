@@ -90,7 +90,7 @@ public class EqualTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Equal eq = Filters.eq("firstName", "Jane");
-        String result = eq.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = eq.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("first_name = 'Jane'", result);
     }
 

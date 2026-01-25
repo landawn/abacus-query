@@ -158,7 +158,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testParameter2StringWithConditionAndNamingPolicy() {
         Equal eq = Filters.eq("firstName", "John");
-        String result = AbstractCondition.parameter2String(eq, NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = AbstractCondition.parameter2String(eq, NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("first_name = 'John'", result);
     }
 

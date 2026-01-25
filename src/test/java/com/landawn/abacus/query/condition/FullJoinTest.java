@@ -164,7 +164,7 @@ public class FullJoinTest extends TestBase {
         Equal eq = Filters.eq("departmentId", Filters.expr("employeeDeptId"));
         FullJoin join = Filters.fullJoin("employees", eq);
 
-        String result = join.toString(NamingPolicy.LOWER_CASE_WITH_UNDERSCORE);
+        String result = join.toString(NamingPolicy.SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("FULL JOIN"));
         Assertions.assertTrue(result.contains("employees"));

@@ -154,7 +154,7 @@ public class LeftJoinTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Condition condition = Filters.eq("customerId", Filters.expr("orderId"));
         LeftJoin join = new LeftJoin("orderTable", condition);
-        String result = join.toString(NamingPolicy.UPPER_CASE_WITH_UNDERSCORE);
+        String result = join.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("LEFT JOIN"));
         Assertions.assertTrue(result.contains("orderTable"));
