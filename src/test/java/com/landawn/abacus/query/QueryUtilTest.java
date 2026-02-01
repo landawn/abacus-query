@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.annotation.Column;
 import com.landawn.abacus.annotation.Id;
-import com.landawn.abacus.annotation.NotColumn;
+import com.landawn.abacus.annotation.NonColumn;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
@@ -43,8 +43,8 @@ public class QueryUtilTest extends TestBase {
 
         private String email;
 
-        @NotColumn
-        private String notColumnField;
+        @NonColumn
+        private String nonColumnField;
 
         @Column
         private String tempData;
@@ -76,12 +76,12 @@ public class QueryUtilTest extends TestBase {
             this.email = email;
         }
 
-        public String getNotColumnField() {
-            return notColumnField;
+        public String getNonColumnField() {
+            return nonColumnField;
         }
 
-        public void setNotColumnField(String notColumnField) {
-            this.notColumnField = notColumnField;
+        public void setNonColumnField(String notColumnField) {
+            this.nonColumnField = notColumnField;
         }
 
         public String getTempData() {
@@ -342,25 +342,25 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testIsNotColumn() {
-        PropInfo propInfo = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("notColumnField");
+    public void testIsNonColumn() {
+        PropInfo propInfo = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("nonColumnField");
         Set<String> columnFields = new HashSet<>(Arrays.asList("id", "name"));
         Set<String> nonColumnFields = new HashSet<>(Arrays.asList("tempData"));
 
-        // Test with @NotColumn annotation
-        assertTrue(QueryUtil.isNotColumn(Collections.emptySet(), Collections.emptySet(), propInfo));
+        // Test with @NonColumn annotation
+        assertTrue(QueryUtil.isNonColumn(Collections.emptySet(), Collections.emptySet(), propInfo));
 
         // Test with columnFields restriction
         PropInfo emailProp = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("email");
-        assertTrue(QueryUtil.isNotColumn(columnFields, Collections.emptySet(), emailProp));
+        assertTrue(QueryUtil.isNonColumn(columnFields, Collections.emptySet(), emailProp));
 
         // Test with nonColumnFields
         PropInfo tempDataProp = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("tempData");
-        assertTrue(QueryUtil.isNotColumn(Collections.emptySet(), nonColumnFields, tempDataProp));
+        assertTrue(QueryUtil.isNonColumn(Collections.emptySet(), nonColumnFields, tempDataProp));
 
         // Test normal column
         PropInfo nameProp = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("name");
-        assertFalse(QueryUtil.isNotColumn(columnFields, Collections.emptySet(), nameProp));
+        assertFalse(QueryUtil.isNonColumn(columnFields, Collections.emptySet(), nameProp));
     }
 
     @Test

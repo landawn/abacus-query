@@ -21,6 +21,7 @@ import java.util.Set;
 
 import com.landawn.abacus.pool.KeyedObjectPool;
 import com.landawn.abacus.pool.PoolFactory;
+import com.landawn.abacus.pool.Poolable;
 import com.landawn.abacus.pool.PoolableWrapper;
 import com.landawn.abacus.util.IOUtil;
 import com.landawn.abacus.util.ImmutableList;
@@ -195,7 +196,7 @@ public final class ParsedSql {
                 w = pool.get(sql);
                 if ((w == null) || (w.value() == null)) {
                     result = new ParsedSql(sql);
-                    pool.put(sql, PoolableWrapper.of(result, LIVE_TIME, MAX_IDLE_TIME));
+                    pool.put(sql, Poolable.wrap(result, LIVE_TIME, MAX_IDLE_TIME));
                 } else {
                     result = w.value();
                 }

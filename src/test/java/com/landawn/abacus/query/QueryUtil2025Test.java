@@ -393,7 +393,7 @@ public class QueryUtil2025Test extends TestBase {
     }
 
     @Test
-    public void testIsNotColumn() {
+    public void testIsNonColumn() {
         Set<String> columnFields = new HashSet<>();
         columnFields.add("id");
         columnFields.add("firstName");
@@ -404,11 +404,11 @@ public class QueryUtil2025Test extends TestBase {
         BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
         PropInfo propInfo = beanInfo.getPropInfo("id");
 
-        assertFalse(QueryUtil.isNotColumn(columnFields, nonColumnFields, propInfo));
+        assertFalse(QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo));
     }
 
     @Test
-    public void testIsNotColumn_NonColumnField() {
+    public void testIsNonColumn_NonColumnField() {
         Set<String> columnFields = new HashSet<>();
         columnFields.add("id");
 
@@ -419,19 +419,19 @@ public class QueryUtil2025Test extends TestBase {
         PropInfo tempProp = beanInfo.getPropInfo("tempField");
 
         if (tempProp != null) {
-            assertTrue(QueryUtil.isNotColumn(columnFields, nonColumnFields, tempProp));
+            assertTrue(QueryUtil.isNonColumn(columnFields, nonColumnFields, tempProp));
         }
     }
 
     @Test
-    public void testIsNotColumn_EmptySets() {
+    public void testIsNonColumn_EmptySets() {
         Set<String> columnFields = new HashSet<>();
         Set<String> nonColumnFields = new HashSet<>();
 
         BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
         PropInfo propInfo = beanInfo.getPropInfo("id");
 
-        boolean result = QueryUtil.isNotColumn(columnFields, nonColumnFields, propInfo);
+        boolean result = QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo);
         // Result depends on default behavior
     }
 }

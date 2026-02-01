@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.Immutable;
 import com.landawn.abacus.annotation.Internal;
-import com.landawn.abacus.annotation.NotColumn;
+import com.landawn.abacus.annotation.NonColumn;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
@@ -229,7 +229,7 @@ public final class QueryUtil {
         Map<String, String> propColumnNameMap = N.newHashMap(entityInfo.propInfoList.size() * 2);
 
         for (final PropInfo propInfo : entityInfo.propInfoList) {
-            if (isNotColumn(columnFields, nonColumnFields, propInfo)) {
+            if (isNonColumn(columnFields, nonColumnFields, propInfo)) {
                 continue;
             }
 
@@ -465,15 +465,15 @@ public final class QueryUtil {
 
     /**
      * Determines whether a property should be excluded from database column mapping.
-     * A property is not a column if it's transient, annotated with @NotColumn, or excluded by @Table configuration.
+     * A property is not a column if it's transient, annotated with @NonColumn, or excluded by @Table configuration.
      *
      * @param columnFields set of field names explicitly included as columns (from @Table annotation, can be null or empty)
      * @param nonColumnFields set of field names explicitly excluded as columns (from @Table annotation, can be null or empty)
      * @param propInfo the property information to check (must not be null)
      * @return {@code true} if the property should not be mapped to a database column
      */
-    public static boolean isNotColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
-        return propInfo.isTransient || propInfo.isAnnotationPresent(NotColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
+    public static boolean isNonColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
+        return propInfo.isTransient || propInfo.isAnnotationPresent(NonColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
                 || (N.notEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
     }
 

@@ -615,7 +615,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         nonUpdatablePropNames.add(propInfo.name);
                     }
 
-                    if (QueryUtil.isNotColumn(columnFields, nonColumnFields, propInfo)) {
+                    if (QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo)) {
                         nonUpdatableNonWritablePropNames.add(propInfo.name);
                         transientPropNames.add(propInfo.name);
                     }
@@ -4993,7 +4993,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return word;
         }
         if (namingPolicy == NamingPolicy.CAMEL_CASE) {
-            return Beans.formalizePropName(word);
+            return Beans.normalizePropName(word);
         }
         return namingPolicy.convert(word);
     }

@@ -259,24 +259,24 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        SQLMapper mapper1 = new SQLMapper();
-        mapper1.add("query1", ParsedSql.parse("SELECT * FROM users"));
+        SQLMapper firstMapper = new SQLMapper();
+        firstMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
-        SQLMapper mapper2 = new SQLMapper();
-        mapper2.add("query1", ParsedSql.parse("SELECT * FROM users"));
+        SQLMapper secondMapper = new SQLMapper();
+        secondMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
-        assertEquals(mapper1.hashCode(), mapper2.hashCode());
+        assertEquals(firstMapper.hashCode(), secondMapper.hashCode());
     }
 
     @Test
     public void testEquals() {
-        SQLMapper mapper1 = new SQLMapper();
-        mapper1.add("query1", ParsedSql.parse("SELECT * FROM users"));
+        SQLMapper firstMapper = new SQLMapper();
+        firstMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
-        SQLMapper mapper2 = new SQLMapper();
-        mapper2.add("query1", ParsedSql.parse("SELECT * FROM users"));
+        SQLMapper secondMapper = new SQLMapper();
+        secondMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
-        assertEquals(mapper1, mapper2);
+        assertEquals(firstMapper, secondMapper);
     }
 
     @Test
@@ -435,13 +435,13 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testEqualsDifferentContent() {
-        SQLMapper mapper1 = new SQLMapper();
-        mapper1.add("query1", ParsedSql.parse("SELECT * FROM users"));
+        SQLMapper firstMapper = new SQLMapper();
+        firstMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
-        SQLMapper mapper2 = new SQLMapper();
-        mapper2.add("query1", ParsedSql.parse("SELECT * FROM orders"));
+        SQLMapper secondMapper = new SQLMapper();
+        secondMapper.add("query1", ParsedSql.parse("SELECT * FROM orders"));
 
-        assertFalse(mapper1.equals(mapper2));
+        assertFalse(firstMapper.equals(secondMapper));
     }
 
     @Test

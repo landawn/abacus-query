@@ -330,44 +330,44 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        SQLMapper mapper1 = new SQLMapper();
-        SQLMapper mapper2 = new SQLMapper();
+        SQLMapper firstMapper = new SQLMapper();
+        SQLMapper secondMapper = new SQLMapper();
 
         // Empty mappers should have same hashCode
-        assertEquals(mapper1.hashCode(), mapper2.hashCode());
+        assertEquals(firstMapper.hashCode(), secondMapper.hashCode());
 
         // Add same content
-        mapper1.add("query1", ParsedSql.parse("SELECT 1"));
-        mapper2.add("query1", ParsedSql.parse("SELECT 1"));
+        firstMapper.add("query1", ParsedSql.parse("SELECT 1"));
+        secondMapper.add("query1", ParsedSql.parse("SELECT 1"));
 
-        assertEquals(mapper1.hashCode(), mapper2.hashCode());
+        assertEquals(firstMapper.hashCode(), secondMapper.hashCode());
     }
 
     @Test
     public void testEquals() {
-        SQLMapper mapper1 = new SQLMapper();
-        SQLMapper mapper2 = new SQLMapper();
+        SQLMapper firstMapper = new SQLMapper();
+        SQLMapper secondMapper = new SQLMapper();
 
         // Test equals with same instance
-        assertEquals(mapper1, mapper1);
+        assertEquals(firstMapper, firstMapper);
 
         // Test equals with null
-        assertNotEquals(mapper1, null);
+        assertNotEquals(firstMapper, null);
 
         // Test equals with different type
-        assertNotEquals(mapper1, "string");
+        assertNotEquals(firstMapper, "string");
 
         // Test equals with empty mappers
-        assertEquals(mapper1, mapper2);
+        assertEquals(firstMapper, secondMapper);
 
         // Add same content
-        mapper1.add("query1", ParsedSql.parse("SELECT 1"));
-        mapper2.add("query1", ParsedSql.parse("SELECT 1"));
-        assertEquals(mapper1, mapper2);
+        firstMapper.add("query1", ParsedSql.parse("SELECT 1"));
+        secondMapper.add("query1", ParsedSql.parse("SELECT 1"));
+        assertEquals(firstMapper, secondMapper);
 
         // Add different content
-        mapper2.add("query2", ParsedSql.parse("SELECT 2"));
-        assertNotEquals(mapper1, mapper2);
+        secondMapper.add("query2", ParsedSql.parse("SELECT 2"));
+        assertNotEquals(firstMapper, secondMapper);
     }
 
     @Test
