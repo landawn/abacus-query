@@ -301,10 +301,9 @@ public class OrderBy extends Clause {
                 }
 
                 sb.append(propName);
+                sb.append(SPACE);
+                sb.append(direction);
             }
-
-            sb.append(SPACE);
-            sb.append(direction);
 
             return sb.toString();
         } finally {

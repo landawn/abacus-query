@@ -2221,10 +2221,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
-        groupBy(propOrColumnNames);
+        checkIfAlreadyCalled(SK.GROUP_BY);
 
-        _sb.append(_SPACE);
-        _sb.append(direction.toString());
+        _sb.append(_SPACE_GROUP_BY_SPACE);
+
+        int i = 0;
+        for (final String columnName : propOrColumnNames) {
+            if (i++ > 0) {
+                _sb.append(_COMMA_SPACE);
+            }
+
+            appendColumnName(columnName);
+            _sb.append(_SPACE);
+            _sb.append(direction.toString());
+        }
 
         return (This) this;
     }
@@ -2453,10 +2463,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
-        orderBy(propOrColumnNames);
+        checkIfAlreadyCalled(SK.ORDER_BY);
 
-        _sb.append(_SPACE);
-        _sb.append(direction.toString());
+        _sb.append(_SPACE_ORDER_BY_SPACE);
+
+        int i = 0;
+        for (final String columnName : propOrColumnNames) {
+            if (i++ > 0) {
+                _sb.append(_COMMA_SPACE);
+            }
+
+            appendColumnName(columnName);
+            _sb.append(_SPACE);
+            _sb.append(direction.toString());
+        }
 
         return (This) this;
     }

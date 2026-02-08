@@ -583,11 +583,11 @@ public class SQLBuilder10Test extends TestBase {
 
         sql = PSC.select("*").from("users").orderByAsc("lastName", "firstName").sql();
 
-        assertEquals("SELECT * FROM users ORDER BY last_name, first_name ASC", sql);
+        assertEquals("SELECT * FROM users ORDER BY last_name ASC, first_name ASC", sql);
 
         sql = PSC.select("*").from("users").orderByAsc(Arrays.asList("lastName", "firstName")).sql();
 
-        assertEquals("SELECT * FROM users ORDER BY last_name, first_name ASC", sql);
+        assertEquals("SELECT * FROM users ORDER BY last_name ASC, first_name ASC", sql);
     }
 
     @Test
@@ -598,11 +598,11 @@ public class SQLBuilder10Test extends TestBase {
 
         sql = PSC.select("*").from("users").orderByDesc("lastName", "firstName").sql();
 
-        assertEquals("SELECT * FROM users ORDER BY last_name, first_name DESC", sql);
+        assertEquals("SELECT * FROM users ORDER BY last_name DESC, first_name DESC", sql);
 
         sql = PSC.select("*").from("users").orderByDesc(Arrays.asList("lastName", "firstName")).sql();
 
-        assertEquals("SELECT * FROM users ORDER BY last_name, first_name DESC", sql);
+        assertEquals("SELECT * FROM users ORDER BY last_name DESC, first_name DESC", sql);
     }
 
     @Test

@@ -57,7 +57,7 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy = Filters.orderBy(dateFields, SortDirection.DESC);
 
         String result = orderBy.toString();
-        Assertions.assertTrue(result.contains("created, updated, published DESC"));
+        Assertions.assertTrue(result.contains("created DESC, updated DESC, published DESC"));
     }
 
     @Test
@@ -96,7 +96,7 @@ public class OrderByTest extends TestBase {
     public void testCreateConditionWithCollectionAndDirection() {
         List<String> props = Arrays.asList("year", "month", "day");
         String result = OrderBy.createCondition(props, SortDirection.ASC);
-        Assertions.assertEquals("year, month, day ASC", result);
+        Assertions.assertEquals("year ASC, month ASC, day ASC", result);
     }
 
     @Test
@@ -203,6 +203,6 @@ public class OrderByTest extends TestBase {
 
         // Multiple columns with same direction
         OrderBy orderBy3 = Filters.orderBy(Arrays.asList("created", "modified"), SortDirection.DESC);
-        Assertions.assertTrue(orderBy3.toString().contains("created, modified DESC"));
+        Assertions.assertTrue(orderBy3.toString().contains("created DESC, modified DESC"));
     }
 }
