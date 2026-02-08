@@ -105,7 +105,7 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Creates a simple JOIN clause for the specified table/entity.
+     * Creates a simple JOIN clause for the specified table or entity.
      * Uses the default JOIN operator without any ON condition. This form is rarely used
      * in practice as it relies on implicit join conditions or results in a cross join.
      * 
@@ -128,7 +128,7 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Creates a JOIN clause with the specified operator and table/entity.
+     * Creates a JOIN clause with the specified operator and table or entity.
      * This protected constructor is used by subclasses to specify the join type
      * (INNER, LEFT, RIGHT, FULL) while reusing the common join logic.
      *
@@ -168,7 +168,7 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param condition the join condition, typically an On condition or Expression comparing columns from both tables.
+     * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public Join(final String joinEntity, final Condition condition) {
@@ -176,7 +176,7 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Creates a JOIN clause with the specified operator, table/entity, and condition.
+     * Creates a JOIN clause with the specified operator, table or entity, and condition.
      * This protected constructor is used by subclasses to create specific join types
      * with conditions.
      * 
@@ -193,14 +193,14 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator
      * @param joinEntity the table or entity to join with
-     * @param condition the join condition (can be null)
+     * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
      */
     protected Join(final Operator operator, final String joinEntity, final Condition condition) {
         this(operator, Array.asList(joinEntity), condition);
     }
 
     /**
-     * Creates a JOIN clause with multiple tables/entities and a condition.
+     * Creates a JOIN clause with multiple tables or entities and a condition.
      * Uses the default JOIN operator. This form allows joining multiple tables
      * in a single join clause, though chaining individual joins is often clearer.
      *
@@ -226,7 +226,7 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with
-     * @param condition the join condition, typically On conditions or Expressions
+     * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public Join(final Collection<String> joinEntities, final Condition condition) {
@@ -234,7 +234,7 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Creates a JOIN clause with the specified operator, multiple tables/entities, and condition.
+     * Creates a JOIN clause with the specified operator, multiple tables or entities, and condition.
      * This protected constructor provides the base implementation for all join operations,
      * allowing subclasses to specify their join type while reusing the common logic.
      * 
@@ -251,7 +251,7 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator
      * @param joinEntities the collection of tables or entities to join with
-     * @param condition the join condition (can be null)
+     * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition condition) {
         super(operator);
@@ -263,7 +263,7 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Gets the list of tables/entities involved in this join.
+     * Gets the list of tables or entities involved in this join.
      * Returns a defensive copy of the tables that are being joined, including any aliases.
      *
      * @return a copy of the list of join entities

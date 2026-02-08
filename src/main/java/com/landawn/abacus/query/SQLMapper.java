@@ -34,7 +34,7 @@ import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
 import com.landawn.abacus.annotation.SuppressFBWarnings;
-import com.landawn.abacus.exception.ParseException;
+import com.landawn.abacus.exception.ParsingException;
 import com.landawn.abacus.exception.UncheckedIOException;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.N;
@@ -196,7 +196,7 @@ public final class SQLMapper {
             } catch (final IOException e) {
                 throw new UncheckedIOException(e);
             } catch (final SAXException e) {
-                throw new ParseException(e);
+                throw new ParsingException(e);
             }
         }
 

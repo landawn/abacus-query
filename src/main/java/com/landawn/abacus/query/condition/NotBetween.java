@@ -89,7 +89,7 @@ public class NotBetween extends AbstractCondition {
     }
 
     /**
-     * Constructs a NOT BETWEEN condition for the specified property and range.
+     * Creates a NOT BETWEEN condition for the specified property and range.
      * The condition will match values that are less than minValue OR greater than maxValue.
      * Both boundaries are excluded from the match (opposite of BETWEEN's inclusive behavior).
      *

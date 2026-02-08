@@ -88,7 +88,7 @@ public final class NamedProperty {
     final String propName;
 
     /**
-     * Constructs a NamedProperty with the specified property name.
+     * Creates a NamedProperty with the specified property name.
      * This constructor is primarily used internally by the {@link #of(String)} factory method.
      *
      * <p><b>Usage Examples:</b></p>

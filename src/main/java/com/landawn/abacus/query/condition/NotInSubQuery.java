@@ -85,7 +85,7 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     * Constructs a NOT IN subquery condition for a single property.
+     * Creates a NOT IN subquery condition for a single property.
      * This checks if the property value is not present in the subquery results.
      *
      * <p>Use this constructor when comparing a single column against a subquery
@@ -107,7 +107,7 @@ public class NotInSubQuery extends AbstractCondition {
      *
      * @param propName the property/column name. Must not be null or empty.
      * @param subQuery the subquery that returns the values to check against. Must not be null.
-     * @throws IllegalArgumentException if subQuery is null
+     * @throws IllegalArgumentException if propName is null or empty, or if subQuery is null
      */
     public NotInSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.NOT_IN);
@@ -121,7 +121,7 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     * Constructs a NOT IN subquery condition for multiple properties.
+     * Creates a NOT IN subquery condition for multiple properties.
      * Used for composite key comparisons where multiple columns need to be
      * checked against a subquery returning multiple columns.
      *

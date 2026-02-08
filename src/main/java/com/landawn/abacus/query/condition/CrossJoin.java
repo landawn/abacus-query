@@ -83,7 +83,7 @@ public class CrossJoin extends Join {
     }
 
     /**
-     * Creates a CROSS JOIN clause for the specified table/entity.
+     * Creates a CROSS JOIN clause for the specified table or entity.
      * This creates a Cartesian product join without an ON condition,
      * combining every row from the first table with every row from the second table.
      *

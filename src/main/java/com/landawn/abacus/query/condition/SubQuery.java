@@ -103,7 +103,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Constructs a subquery with raw SQL.
+     * Creates a subquery with raw SQL.
      * This provides maximum flexibility for complex subqueries that cannot be easily
      * expressed using the structured approach.
      * 
@@ -136,7 +136,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Constructs a subquery with an entity name and raw SQL.
+     * Creates a subquery with an entity name and raw SQL.
      * The entity name is for reference only when using raw SQL and doesn't affect the query.
      * 
      * <p>This constructor allows associating a logical entity name with a raw SQL subquery,
@@ -167,7 +167,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Constructs a structured subquery with entity name, selected properties, and condition.
+     * Creates a structured subquery with entity name, selected properties, and condition.
      * This approach provides type safety and automatic SQL generation.
      *
      * <p>The generated SQL follows the pattern: SELECT [properties] FROM [entity] WHERE [condition].
@@ -214,7 +214,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Constructs a structured subquery with entity class, selected properties, and condition.
+     * Creates a structured subquery with entity class, selected properties, and condition.
      * The entity name is derived from the class's simple name.
      *
      * <p>This constructor provides the strongest type safety by using the entity class.

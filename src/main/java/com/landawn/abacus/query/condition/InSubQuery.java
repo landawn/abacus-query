@@ -105,7 +105,7 @@ public class InSubQuery extends AbstractCondition {
      *
      * @param propName the property/column name. Must not be null or empty.
      * @param subQuery the subquery that returns the values to check against. Must not be null.
-     * @throws IllegalArgumentException if subQuery is null
+     * @throws IllegalArgumentException if propName is null or empty, or if subQuery is null
      */
     public InSubQuery(final String propName, final SubQuery subQuery) {
         super(Operator.IN);

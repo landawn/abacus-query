@@ -158,7 +158,7 @@ public class Using extends Cell {
     }
 
     /**
-     * Creates a USING condition from an array of column names.
+     * Creates a condition expression for the USING clause from an array of column names.
      * This static factory method constructs the appropriate condition expression
      * for the USING clause from the provided column names.
      *
@@ -184,7 +184,7 @@ public class Using extends Cell {
     }
 
     /**
-     * Creates a USING condition from a collection of column names.
+     * Creates a condition expression for the USING clause from a collection of column names.
      * This static factory method constructs the appropriate condition expression
      * for the USING clause from the provided column collection.
      *

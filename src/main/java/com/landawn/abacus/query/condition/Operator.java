@@ -363,7 +363,7 @@ public enum Operator {
     private static final Map<String, Operator> operatorMap = new ConcurrentHashMap<>();
 
     /**
-     * Constructs an Operator with the specified string representation.
+     * Creates an Operator with the specified string representation.
      *
      * @param name the SQL string representation of this operator
      */

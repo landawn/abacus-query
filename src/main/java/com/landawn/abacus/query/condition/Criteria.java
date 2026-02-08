@@ -547,7 +547,7 @@ public class Criteria extends AbstractCondition {
      * // Results in: JOIN orders WHERE users.id = orders.user_id
      * }</pre>
      * 
-     * @param joinEntity the table/entity to join
+     * @param joinEntity the table or entity to join
      * @return this Criteria instance for method chaining
      */
     public Criteria join(final String joinEntity) {
@@ -568,7 +568,7 @@ public class Criteria extends AbstractCondition {
      * // Results in: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
      * }</pre>
      * 
-     * @param joinEntity the table/entity to join
+     * @param joinEntity the table or entity to join
      * @param condition the join condition
      * @return this Criteria instance for method chaining
      */
@@ -1408,7 +1408,7 @@ public class Criteria extends AbstractCondition {
 
     /**
      *
-     * @param conditions
+     * @param conditions the conditions to validate
      */
     private void checkConditions(final Collection<? extends Condition> conditions) {
         for (final Condition cond : conditions) {
@@ -1418,7 +1418,7 @@ public class Criteria extends AbstractCondition {
 
     /**
      *
-     * @param conditions
+     * @param conditions the conditions to validate
      */
     private void checkConditions(final Condition... conditions) {
         for (final Condition cond : conditions) {
@@ -1444,7 +1444,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Adds the conditions.
      *
-     * @param conditions
+     * @param conditions the conditions to add
      */
     private void addConditions(final Collection<? extends Condition> conditions) {
         checkConditions(conditions);
@@ -1457,7 +1457,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Adds the conditions.
      *
-     * @param conditions
+     * @param conditions the conditions to add
      */
     private void addConditions(final Condition... conditions) {
         checkConditions(conditions);

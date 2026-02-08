@@ -87,7 +87,7 @@ public class NotIn extends AbstractCondition {
     }
 
     /**
-     * Constructs a NOT IN condition for the specified property and collection of values.
+     * Creates a NOT IN condition for the specified property and collection of values.
      * The condition will match records where the property value is not equal to any of the
      * provided values. A defensive copy of the values collection is made to ensure immutability.
      *

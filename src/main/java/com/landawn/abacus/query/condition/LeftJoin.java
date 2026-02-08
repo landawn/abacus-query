@@ -93,7 +93,7 @@ public class LeftJoin extends Join {
     }
 
     /**
-     * Creates a LEFT JOIN clause for the specified table/entity.
+     * Creates a LEFT JOIN clause for the specified table or entity.
      * This creates a join without an ON condition, which may need to be
      * specified separately or will use implicit join conditions based on
      * foreign key relationships (if supported by the database).

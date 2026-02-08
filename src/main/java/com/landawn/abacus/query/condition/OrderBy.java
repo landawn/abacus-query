@@ -82,7 +82,7 @@ public class OrderBy extends Clause {
     }
 
     /**
-     * Constructs an ORDER BY clause with a custom condition.
+     * Creates an ORDER BY clause with a custom condition.
      * This allows for complex ordering expressions beyond simple column names.
      *
      * <p>Use this constructor when you need to order by calculated values,
@@ -102,14 +102,14 @@ public class OrderBy extends Clause {
      * }</pre>
      *
      * @param condition the ordering condition. Must not be null.
-     * @throws IllegalArgumentException if condition is null (validated by parent constructor)
+     * @throws NullPointerException if condition is null
      */
     public OrderBy(final Condition condition) {
         super(Operator.ORDER_BY, condition);
     }
 
     /**
-     * Constructs an ORDER BY clause with multiple property names.
+     * Creates an ORDER BY clause with multiple property names.
      * All properties will be sorted in ascending order by default.
      *
      * <p>The order of properties in the parameter list determines the sort priority.
@@ -134,7 +134,7 @@ public class OrderBy extends Clause {
     }
 
     /**
-     * Constructs an ORDER BY clause with a single property and sort direction.
+     * Creates an ORDER BY clause with a single property and sort direction.
      * This is the most common use case for ordering query results.
      *
      * <p><b>Usage Examples:</b></p>
@@ -157,7 +157,7 @@ public class OrderBy extends Clause {
     }
 
     /**
-     * Constructs an ORDER BY clause with multiple properties and a single sort direction.
+     * Creates an ORDER BY clause with multiple properties and a single sort direction.
      * All properties will use the same sort direction.
      *
      * <p>This is useful when you want to sort by multiple columns in the same direction,
@@ -185,7 +185,7 @@ public class OrderBy extends Clause {
     }
 
     /**
-     * Constructs an ORDER BY clause with properties having different sort directions.
+     * Creates an ORDER BY clause with properties having different sort directions.
      * This provides maximum flexibility for complex sorting requirements.
      *
      * <p>The map should maintain insertion order (use LinkedHashMap) to ensure

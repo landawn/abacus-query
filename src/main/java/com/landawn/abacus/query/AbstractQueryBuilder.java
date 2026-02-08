@@ -4304,12 +4304,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //     */
     //    @SuppressWarnings("rawtypes")
     //    @Beta
-    //    public <Q extends com.landawn.abacus.jdbc.AbstractQuery> Q toPreparedQueryForBigResult(final javax.sql.DataSource dataSource) throws SQLException {
+    //    public <Q extends com.landawn.abacus.jdbc.AbstractQuery> Q toPreparedQueryForLargeResult(final javax.sql.DataSource dataSource) throws SQLException {
     //        final SP sp = this.build();
     //
     //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql()
-    //                ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.query)
-    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForBigResult(dataSource, sp.query);
+    //                ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForLargeResult(dataSource, sp.query)
+    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForLargeResult(dataSource, sp.query);
     //
     //        boolean noException = false;
     //
@@ -4337,11 +4337,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //     */
     //    @SuppressWarnings("rawtypes")
     //    @Beta
-    //    public <Q extends com.landawn.abacus.jdbc.AbstractQuery> Q toPreparedQueryForBigResult(final java.sql.Connection conn) throws SQLException {
+    //    public <Q extends com.landawn.abacus.jdbc.AbstractQuery> Q toPreparedQueryForLargeResult(final java.sql.Connection conn) throws SQLException {
     //        final SP sp = this.build();
     //
-    //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForBigResult(conn, sp.query)
-    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForBigResult(conn, sp.query);
+    //        final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? com.landawn.abacus.jdbc.JdbcUtil.prepareNamedQueryForLargeResult(conn, sp.query)
+    //                : com.landawn.abacus.jdbc.JdbcUtil.prepareQueryForLargeResult(conn, sp.query);
     //
     //        boolean noException = false;
     //
@@ -4475,12 +4475,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //     */
     //    @SuppressWarnings("rawtypes")
     //    @Beta
-    //    public <R> R executeQueryForBigResult(final javax.sql.DataSource dataSource, final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryCall)
+    //    public <R> R executeQueryForLargeResult(final javax.sql.DataSource dataSource, final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryCall)
     //            throws SQLException {
     //        final SP sp = this.build();
     //
-    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(dataSource, sp.query)
-    //                : JdbcUtil.prepareQueryForBigResult(dataSource, sp.query)) {
+    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForLargeResult(dataSource, sp.query)
+    //                : JdbcUtil.prepareQueryForLargeResult(dataSource, sp.query)) {
     //
     //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
@@ -4500,12 +4500,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //     */
     //    @SuppressWarnings("rawtypes")
     //    @Beta
-    //    public <R> R executeQueryForBigResult(final java.sql.Connection conn, final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryOrUpdateCall)
+    //    public <R> R executeQueryForLargeResult(final java.sql.Connection conn, final Throwables.Function<com.landawn.abacus.jdbc.AbstractQuery, R, SQLException> queryOrUpdateCall)
     //            throws SQLException {
     //        final SP sp = this.build();
     //
-    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForBigResult(conn, sp.query)
-    //                : JdbcUtil.prepareQueryForBigResult(conn, sp.query)) {
+    //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQueryForLargeResult(conn, sp.query)
+    //                : JdbcUtil.prepareQueryForLargeResult(conn, sp.query)) {
     //
     //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);

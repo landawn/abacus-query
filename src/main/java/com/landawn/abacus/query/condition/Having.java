@@ -138,7 +138,7 @@ public class Having extends Clause {
      *                  Typically contains aggregate function expressions that operate on
      *                  grouped data. Can use comparison operators (gt, lt, eq, etc.) and
      *                  logical operators (and, or, not) to build complex filtering logic.
-     * @throws IllegalArgumentException if condition is null (validated by parent constructor)
+     * @throws NullPointerException if condition is null
      */
     public Having(final Condition condition) {
         super(Operator.HAVING, condition);

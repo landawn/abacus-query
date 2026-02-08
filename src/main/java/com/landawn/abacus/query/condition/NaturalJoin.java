@@ -88,7 +88,7 @@ public class NaturalJoin extends Join {
     }
 
     /**
-     * Creates a NATURAL JOIN clause for the specified table/entity.
+     * Creates a NATURAL JOIN clause for the specified table or entity.
      * The join will automatically use all columns with matching names between the tables.
      *
      * <p>This constructor creates a pure natural join without additional conditions.
