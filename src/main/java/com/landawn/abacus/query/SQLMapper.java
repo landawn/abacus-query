@@ -162,7 +162,7 @@ public final class SQLMapper {
      * @param filePath one or more file paths separated by ',' or ';'
      * @return a new SQLMapper instance loaded with SQL definitions from the specified files
      * @throws UncheckedIOException if an I/O error occurs reading the files
-     * @throws ParseException if the XML content is invalid
+     * @throws ParsingException if the XML content is invalid
      * @throws RuntimeException if no 'sqlMapper' element is found in any file
      */
     public static SQLMapper fromFile(final String filePath) {

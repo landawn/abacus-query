@@ -1628,11 +1628,11 @@ public class Expression extends AbstractCondition {
      * <p>
      * Since this class inherits all methods and behavior from {@code Expression}, it can be
      * used in all the same contexts with identical functionality.
-     * <p>
- * <p><b>Usage Examples:</b></p>
- * <pre>{@code
- * Expression.Expr expr = new Expression.Expr("price * quantity");
- * }</pre>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Expression.Expr expr = new Expression.Expr("price * quantity");
+     * }</pre>
      *
      * @see Expression
      */
