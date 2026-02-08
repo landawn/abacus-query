@@ -132,15 +132,15 @@ public class UnionAll extends Clause {
      * // Efficiently combines quarterly data without duplicate check
      * }</pre>
      *
-     * @param condition the subquery to perform the UNION ALL operation with. Must not be null.
+     * @param subQuery the subquery to perform the UNION ALL operation with. Must not be null.
      *                  The subquery must have the same number of columns with compatible types as the main query.
-     * @throws NullPointerException if condition is null
+     * @throws NullPointerException if subQuery is null
      * @see Union
      * @see Intersect
      * @see Except
      * @see Minus
      */
-    public UnionAll(final SubQuery condition) {
-        super(Operator.UNION_ALL, condition);
+    public UnionAll(final SubQuery subQuery) {
+        super(Operator.UNION_ALL, subQuery);
     }
 }

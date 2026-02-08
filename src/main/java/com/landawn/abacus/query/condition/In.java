@@ -125,21 +125,18 @@ public class In extends AbstractCondition {
 
     /**
      * Gets the property name being checked in this IN condition.
-     * Returns the name of the column or property that is being compared against
-     * the collection of values in this condition.
      *
-     * @return the property name (never null)
+     * @return the property name, or {@code null} for an uninitialized instance created by serialization frameworks
      */
     public String getPropName() {
         return propName;
     }
 
     /**
-     * Gets the collection of values to check against in this IN condition.
-     * Returns the internal list of values used in the IN condition. These are the
-     * values that the property will be compared against when the query is executed.
+     * Gets the values used by this IN condition.
+     * The returned list is the internal storage and may be mutable.
      *
-     * @return the list of values to check against (may be null if cleared)
+     * @return the internal values list, or {@code null} for an uninitialized instance
      */
     public List<?> getValues() { //NOSONAR
         return values;
@@ -155,11 +152,12 @@ public class In extends AbstractCondition {
      * <ul>
      *   <li>This method exists for backward compatibility only</li>
      *   <li>Using this method breaks the immutability contract of conditions</li>
+     *   <li>The provided list is stored directly (no defensive copy)</li>
      *   <li>Instead of modifying, create a new In instance with the desired values</li>
      *   <li>Shared conditions modified this way can cause race conditions</li>
      * </ul>
      *
-     * @param values the new collection of values. Must not be null or empty.
+     * @param values the new list of values. Must not be null or empty.
      * @throws IllegalArgumentException if values is null or empty
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      *             Create a new In instance instead of modifying existing conditions.

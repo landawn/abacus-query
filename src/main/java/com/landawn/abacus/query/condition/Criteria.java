@@ -626,8 +626,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the WHERE clause using a string expression.
+     * Sets or replaces the WHERE clause using a string expression.
      * Useful for complex conditions that are easier to express as SQL.
+     * If a WHERE clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -671,8 +672,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the GROUP BY clause with property names.
+     * Sets or replaces the GROUP BY clause with property names.
      * Groups results by the specified columns in ascending order.
+     * If a GROUP BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -691,7 +693,8 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the GROUP BY clause with a property and sort direction.
+     * Sets or replaces the GROUP BY clause with a property and sort direction.
+     * If a GROUP BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -711,7 +714,8 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the GROUP BY clause with two properties and their sort directions.
+     * Sets or replaces the GROUP BY clause with two properties and their sort directions.
+     * If a GROUP BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -733,7 +737,8 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the GROUP BY clause with three properties and their sort directions.
+     * Sets or replaces the GROUP BY clause with three properties and their sort directions.
+     * If a GROUP BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -758,8 +763,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the GROUP BY clause with multiple properties.
+     * Sets or replaces the GROUP BY clause with multiple properties.
      * All properties will be sorted in ascending order.
+     * If a GROUP BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -777,8 +783,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the GROUP BY clause with multiple properties and sort direction.
+     * Sets or replaces the GROUP BY clause with multiple properties and sort direction.
      * All properties will use the same sort direction.
+     * If a GROUP BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -799,8 +806,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the GROUP BY clause with custom sort directions per property.
+     * Sets or replaces the GROUP BY clause with custom sort directions per property.
      * The map should be a LinkedHashMap to preserve order.
+     * If a GROUP BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -850,8 +858,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the HAVING clause using a string expression.
+     * Sets or replaces the HAVING clause using a string expression.
      * Useful for aggregate function conditions.
+     * If a HAVING clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -870,8 +879,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with ascending order.
+     * Sets or replaces the ORDER BY clause with ascending order.
      * Convenience method that sorts all specified columns in ascending order.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -890,7 +900,8 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with ascending order.
+     * Sets or replaces the ORDER BY clause with ascending order.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -909,8 +920,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with descending order.
+     * Sets or replaces the ORDER BY clause with descending order.
      * Convenience method that sorts all specified columns in descending order.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -929,7 +941,8 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with descending order.
+     * Sets or replaces the ORDER BY clause with descending order.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -972,8 +985,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with property names.
+     * Sets or replaces the ORDER BY clause with property names.
      * Orders by the specified columns in ascending order.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -992,7 +1006,8 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with a property and sort direction.
+     * Sets or replaces the ORDER BY clause with a property and sort direction.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1012,7 +1027,8 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with two properties and their sort directions.
+     * Sets or replaces the ORDER BY clause with two properties and their sort directions.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1034,7 +1050,8 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with three properties and their sort directions.
+     * Sets or replaces the ORDER BY clause with three properties and their sort directions.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1059,8 +1076,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with multiple properties.
+     * Sets or replaces the ORDER BY clause with multiple properties.
      * All properties will be sorted in ascending order.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1078,8 +1096,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with multiple properties and sort direction.
+     * Sets or replaces the ORDER BY clause with multiple properties and sort direction.
      * All properties will use the same sort direction.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1100,8 +1119,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the ORDER BY clause with custom sort directions per property.
+     * Sets or replaces the ORDER BY clause with custom sort directions per property.
      * The map should be a LinkedHashMap to preserve order.
+     * If an ORDER BY clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1143,8 +1163,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the LIMIT clause with a count.
+     * Sets or replaces the LIMIT clause with a count.
      * Limits the number of rows returned by the query.
+     * If a LIMIT clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1164,8 +1185,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the LIMIT clause with offset and count.
+     * Sets or replaces the LIMIT clause with offset and count.
      * Used for pagination - skips 'offset' rows and returns up to 'count' rows.
+     * If a LIMIT clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1187,8 +1209,9 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the LIMIT clause using a string expression.
+     * Sets or replaces the LIMIT clause using a string expression.
      * Allows for database-specific limit syntax.
+     * If a LIMIT clause already exists, it will be replaced.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

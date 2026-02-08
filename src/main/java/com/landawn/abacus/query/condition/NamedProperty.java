@@ -158,13 +158,13 @@ public final class NamedProperty {
      * NamedProperty.of("count").eq(5);           // count = 5
      * }</pre>
      *
-     * @param values the value to compare against. Can be of any type compatible with the property.
+     * @param value the value to compare against. Can be of any type compatible with the property.
      * @return an Equal condition for this property
      * @see Equal
      * @see Filters#eq(String, Object)
      */
-    public Equal eq(final Object values) {
-        return Filters.eq(propName, values);
+    public Equal eq(final Object value) {
+        return Filters.eq(propName, value);
     }
 
     /**
@@ -237,13 +237,13 @@ public final class NamedProperty {
      * NamedProperty.of("count").ne(0);            // count <> 0
      * }</pre>
      *
-     * @param values the value to compare against. Can be of any type compatible with the property.
+     * @param value the value to compare against. Can be of any type compatible with the property.
      * @return a NotEqual condition for this property
      * @see NotEqual
      * @see Filters#ne(String, Object)
      */
-    public NotEqual ne(final Object values) {
-        return Filters.ne(propName, values);
+    public NotEqual ne(final Object value) {
+        return Filters.ne(propName, value);
     }
 
     /**

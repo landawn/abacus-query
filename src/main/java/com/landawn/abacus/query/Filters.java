@@ -535,7 +535,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Equal condition = Filters.equal("user_id");
-     * // Results in SQL like: WHERE user_id = ?
+     * // SQL fragment: user_id = ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -570,7 +570,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Equal condition = Filters.eq("email");
-     * // Results in SQL like: WHERE email = ?
+     * // SQL fragment: email = ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -588,7 +588,7 @@ public class Filters {
     //     * <p><b>Usage Examples:</b></p>
     //     * <pre>{@code
     //     * Or condition = Filters.eqOr("status", "active", "pending", "approved");
-    //     * // Results in SQL like: WHERE status = 'active' OR status = 'pending' OR status = 'approved'
+    //     * // SQL fragment: status = 'active' OR status = 'pending' OR status = 'approved'
     //     * }</pre>
     //     *
     //     * @param propName the property/column name
@@ -650,7 +650,7 @@ public class Filters {
      * props.put("name", "John");
      * props.put("email", "john@example.com");
      * Or condition = Filters.eqOr(props);
-     * // Results in SQL like: WHERE name = 'John' OR email = 'john@example.com'
+     * // SQL fragment: name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
      * @param props map of property names to values (must not be empty)
@@ -690,7 +690,7 @@ public class Filters {
      * <pre>{@code
      * User user = new User("John", "john@example.com");
      * Or condition = Filters.eqOr(user);
-     * // Results in SQL like: WHERE name = 'John' OR email = 'john@example.com'
+     * // SQL fragment: name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
      * @param entity the entity object whose properties will be used
@@ -748,7 +748,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.eqOr("name", "John", "email", "john@example.com");
-     * // Results in SQL like: WHERE name = 'John' OR email = 'john@example.com'
+     * // SQL fragment: name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
      * @param propName1 first property name
@@ -791,7 +791,7 @@ public class Filters {
      * props.put("status", "active");
      * props.put("type", "premium");
      * And condition = Filters.eqAnd(props);
-     * // Results in SQL like: WHERE status = 'active' AND type = 'premium'
+     * // SQL fragment: status = 'active' AND type = 'premium'
      * }</pre>
      *
      * @param props map of property names to values (must not be empty)
@@ -832,7 +832,7 @@ public class Filters {
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
      * And condition = Filters.eqAnd(user);
-     * // Results in SQL like: WHERE name = 'John' AND email = 'john@example.com' AND age = 25
+     * // SQL fragment: name = 'John' AND email = 'john@example.com' AND age = 25
      * }</pre>
      *
      * @param entity the entity object whose properties will be used
@@ -890,7 +890,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.eqAnd("status", "active", "type", "premium");
-     * // Results in SQL like: WHERE status = 'active' AND type = 'premium'
+     * // SQL fragment: status = 'active' AND type = 'premium'
      * }</pre>
      *
      * @param propName1 first property name
@@ -1018,7 +1018,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLt("age", 18, 65);
-     * // Results in SQL like: WHERE age &gt; 18 AND age &lt; 65
+     * // SQL fragment: age &gt; 18 AND age &lt; 65
      * }</pre>
      *
      * @param propName the property/column name
@@ -1037,7 +1037,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLt("price");
-     * // Results in SQL like: WHERE price &gt; ? AND price &lt; ?
+     * // SQL fragment: price &gt; ? AND price &lt; ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1054,7 +1054,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLt("price", 100, 500);
-     * // Results in SQL like: WHERE price &gt;= 100 AND price &lt; 500
+     * // SQL fragment: price &gt;= 100 AND price &lt; 500
      * }</pre>
      *
      * @param propName the property/column name
@@ -1073,7 +1073,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLt("score");
-     * // Results in SQL like: WHERE score &gt;= ? AND score &lt; ?
+     * // SQL fragment: score &gt;= ? AND score &lt; ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1090,7 +1090,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLe("date", startDate, endDate);
-     * // Results in SQL like: WHERE date &gt;= '2023-01-01' AND date &lt;= '2023-12-31'
+     * // SQL fragment: date &gt;= '2023-01-01' AND date &lt;= '2023-12-31'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1109,7 +1109,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLe("amount");
-     * // Results in SQL like: WHERE amount &gt;= ? AND amount &lt;= ?
+     * // SQL fragment: amount &gt;= ? AND amount &lt;= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1126,7 +1126,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLe("score", 0, 100);
-     * // Results in SQL like: WHERE score &gt; 0 AND score &lt;= 100
+     * // SQL fragment: score &gt; 0 AND score &lt;= 100
      * }</pre>
      *
      * @param propName the property/column name
@@ -1145,7 +1145,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLe("temperature");
-     * // Results in SQL like: WHERE temperature &gt; ? AND temperature &lt;= ?
+     * // SQL fragment: temperature &gt; ? AND temperature &lt;= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1163,7 +1163,7 @@ public class Filters {
      * <pre>{@code
      * EntityId id = EntityId.of("userId", 123, "orderId", 456);
      * And condition = Filters.id2Cond(id);
-     * // Results in SQL like: WHERE userId = 123 AND orderId = 456
+     * // SQL fragment: userId = 123 AND orderId = 456
      * }</pre>
      *
      * @param entityId the EntityId containing key-value pairs (must not be null)
@@ -1233,7 +1233,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotEqual condition = Filters.notEqual("status", "deleted");
-     * // Results in SQL like: WHERE status != 'deleted'
+     * // SQL fragment: status != 'deleted'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1251,7 +1251,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotEqual condition = Filters.notEqual("user_type");
-     * // Results in SQL like: WHERE user_type != ?
+     * // SQL fragment: user_type != ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1286,7 +1286,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotEqual condition = Filters.ne("category");
-     * // Results in SQL like: WHERE category != ?
+     * // SQL fragment: category != ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1303,7 +1303,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThan condition = Filters.greaterThan("age", 18);
-     * // Results in SQL like: WHERE age > 18
+     * // SQL fragment: age > 18
      * }</pre>
      *
      * @param propName the property/column name
@@ -1320,7 +1320,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThan condition = Filters.greaterThan("salary");
-     * // Results in SQL like: WHERE salary > ?
+     * // SQL fragment: salary > ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1355,7 +1355,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThan condition = Filters.gt("quantity");
-     * // Results in SQL like: WHERE quantity > ?
+     * // SQL fragment: quantity > ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1372,7 +1372,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterEqual condition = Filters.greaterEqual("score", 60);
-     * // Results in SQL like: WHERE score >= 60
+     * // SQL fragment: score >= 60
      * }</pre>
      *
      * @param propName the property/column name
@@ -1389,7 +1389,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterEqual condition = Filters.greaterEqual("min_age");
-     * // Results in SQL like: WHERE min_age >= ?
+     * // SQL fragment: min_age >= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1424,7 +1424,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterEqual condition = Filters.ge("rating");
-     * // Results in SQL like: WHERE rating >= ?
+     * // SQL fragment: rating >= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1441,7 +1441,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lessThan("age", 65);
-     * // Results in SQL like: WHERE age &lt; 65
+     * // SQL fragment: age &lt; 65
      * }</pre>
      *
      * @param propName the property/column name
@@ -1458,7 +1458,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lessThan("max_price");
-     * // Results in SQL like: WHERE max_price &lt; ?
+     * // SQL fragment: max_price &lt; ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1493,7 +1493,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lt("expiry_date");
-     * // Results in SQL like: WHERE expiry_date < ?
+     * // SQL fragment: expiry_date < ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1510,7 +1510,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessEqual condition = Filters.lessEqual("discount", 50);
-     * // Results in SQL like: WHERE discount &lt;= 50
+     * // SQL fragment: discount &lt;= 50
      * }</pre>
      *
      * @param propName the property/column name
@@ -1527,7 +1527,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessEqual condition = Filters.lessEqual("max_attempts");
-     * // Results in SQL like: WHERE max_attempts &lt;= ?
+     * // SQL fragment: max_attempts &lt;= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1562,7 +1562,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessEqual condition = Filters.le("weight");
-     * // Results in SQL like: WHERE weight <= ?
+     * // SQL fragment: weight <= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1580,7 +1580,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = Filters.between("age", 18, 65);
-     * // Results in SQL like: WHERE age BETWEEN 18 AND 65
+     * // SQL fragment: age BETWEEN 18 AND 65
      * }</pre>
      *
      * @param propName the property/column name
@@ -1598,7 +1598,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = Filters.between("price");
-     * // Results in SQL like: WHERE price BETWEEN ? AND ?
+     * // SQL fragment: price BETWEEN ? AND ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1644,7 +1644,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = Filters.notBetween("temperature", -10, 40);
-     * // Results in SQL like: WHERE temperature NOT BETWEEN -10 AND 40
+     * // SQL fragment: temperature NOT BETWEEN -10 AND 40
      * // True when temperature < -10 OR temperature > 40
      * }</pre>
      *
@@ -1663,7 +1663,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = Filters.notBetween("score");
-     * // Results in SQL like: WHERE score NOT BETWEEN ? AND ?
+     * // SQL fragment: score NOT BETWEEN ? AND ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1680,7 +1680,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.like("email", "%@gmail.com");
-     * // Results in SQL like: WHERE email LIKE '%@gmail.com'
+     * // SQL fragment: email LIKE '%@gmail.com'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1697,7 +1697,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.like("name");
-     * // Results in SQL like: WHERE name LIKE ?
+     * // SQL fragment: name LIKE ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1714,7 +1714,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notLike("filename", "%.tmp");
-     * // Results in SQL like: WHERE filename NOT LIKE '%.tmp'
+     * // SQL fragment: filename NOT LIKE '%.tmp'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1731,7 +1731,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notLike("description");
-     * // Results in SQL like: WHERE description NOT LIKE ?
+     * // SQL fragment: description NOT LIKE ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1748,7 +1748,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.contains("description", "java");
-     * // Results in SQL like: WHERE description LIKE '%java%'
+     * // SQL fragment: description LIKE '%java%'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1766,7 +1766,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notContains("tags", "deprecated");
-     * // Results in SQL like: WHERE tags NOT LIKE '%deprecated%'
+     * // SQL fragment: tags NOT LIKE '%deprecated%'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1784,7 +1784,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.startsWith("name", "John");
-     * // Results in SQL like: WHERE name LIKE 'John%'
+     * // SQL fragment: name LIKE 'John%'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1802,7 +1802,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notStartsWith("code", "TEST");
-     * // Results in SQL like: WHERE code NOT LIKE 'TEST%'
+     * // SQL fragment: code NOT LIKE 'TEST%'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1820,7 +1820,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.endsWith("email", "@company.com");
-     * // Results in SQL like: WHERE email LIKE '%@company.com'
+     * // SQL fragment: email LIKE '%@company.com'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1838,7 +1838,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notEndsWith("filename", ".tmp");
-     * // Results in SQL like: WHERE filename NOT LIKE '%.tmp'
+     * // SQL fragment: filename NOT LIKE '%.tmp'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1855,7 +1855,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNull condition = Filters.isNull("deleted_at");
-     * // Results in SQL like: WHERE deleted_at IS NULL
+     * // SQL fragment: deleted_at IS NULL
      * }</pre>
      *
      * @param propName the property/column name
@@ -1872,7 +1872,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.isEmpty("description");
-     * // Results in SQL like: WHERE description IS NULL OR description = ''
+     * // SQL fragment: description IS NULL OR description = ''
      * }</pre>
      *
      * @param propName the property/column name
@@ -1890,7 +1890,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.isNullOrZero("quantity");
-     * // Results in SQL like: WHERE quantity IS NULL OR quantity = 0
+     * // SQL fragment: quantity IS NULL OR quantity = 0
      * }</pre>
      *
      * @param propName the property/column name
@@ -1907,7 +1907,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNotNull condition = Filters.isNotNull("created_at");
-     * // Results in SQL like: WHERE created_at IS NOT NULL
+     * // SQL fragment: created_at IS NOT NULL
      * }</pre>
      *
      * @param propName the property/column name
@@ -1924,7 +1924,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNaN condition = Filters.isNaN("calculation_result");
-     * // Results in SQL like: WHERE calculation_result IS NAN
+     * // SQL fragment: calculation_result IS NAN
      * }</pre>
      *
      * @param propName the property/column name
@@ -1941,7 +1941,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNotNaN condition = Filters.isNotNaN("temperature");
-     * // Results in SQL like: WHERE temperature IS NOT NAN
+     * // SQL fragment: temperature IS NOT NAN
      * }</pre>
      *
      * @param propName the property/column name
@@ -1958,7 +1958,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsInfinite condition = Filters.isInfinite("ratio");
-     * // Results in SQL like: WHERE ratio IS INFINITE
+     * // SQL fragment: ratio IS INFINITE
      * }</pre>
      *
      * @param propName the property/column name
@@ -1975,7 +1975,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNotInfinite condition = Filters.isNotInfinite("percentage");
-     * // Results in SQL like: WHERE percentage IS NOT INFINITE
+     * // SQL fragment: percentage IS NOT INFINITE
      * }</pre>
      *
      * @param propName the property/column name
@@ -1992,7 +1992,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Is condition = Filters.is("is_active", true);
-     * // Results in SQL like: WHERE is_active IS TRUE
+     * // SQL fragment: is_active IS TRUE
      * }</pre>
      *
      * @param propName the property/column name
@@ -2010,7 +2010,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNot condition = Filters.isNot("is_deleted", true);
-     * // Results in SQL like: WHERE is_deleted IS NOT TRUE
+     * // SQL fragment: is_deleted IS NOT TRUE
      * }</pre>
      *
      * @param propName the property/column name
@@ -2028,7 +2028,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * XOR condition = Filters.xor("is_premium", true);
-     * // Results in SQL like: WHERE is_premium XOR TRUE
+     * // SQL fragment: is_premium XOR TRUE
      * }</pre>
      *
      * @param propName the property/column name
@@ -3041,7 +3041,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = Filters.in("user_id", new int[] {1, 2, 3, 4});
-     * // Results in SQL like: WHERE user_id IN (1, 2, 3, 4)
+     * // SQL fragment: user_id IN (1, 2, 3, 4)
      * }</pre>
      *
      * @param propName the property/column name
@@ -3058,7 +3058,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = Filters.in("order_id", new long[] {1001L, 1002L, 1003L});
-     * // Results in SQL like: WHERE order_id IN (1001, 1002, 1003)
+     * // SQL fragment: order_id IN (1001, 1002, 1003)
      * }</pre>
      *
      * @param propName the property/column name
@@ -3075,7 +3075,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = Filters.in("price", new double[] {9.99, 19.99, 29.99});
-     * // Results in SQL like: WHERE price IN (9.99, 19.99, 29.99)
+     * // SQL fragment: price IN (9.99, 19.99, 29.99)
      * }</pre>
      *
      * @param propName the property/column name
@@ -3092,7 +3092,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = Filters.in("status", new String[] {"active", "pending", "approved"});
-     * // Results in SQL like: WHERE status IN ('active', 'pending', 'approved')
+     * // SQL fragment: status IN ('active', 'pending', 'approved')
      * }</pre>
      *
      * @param propName the property/column name
@@ -3110,7 +3110,7 @@ public class Filters {
      * <pre>{@code
      * List<String> categories = Arrays.asList("electronics", "books", "toys");
      * In condition = Filters.in("category", categories);
-     * // Results in SQL like: WHERE category IN ('electronics', 'books', 'toys')
+     * // SQL fragment: category IN ('electronics', 'books', 'toys')
      * }</pre>
      *
      * @param propName the property/column name
@@ -3129,7 +3129,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
      * InSubQuery condition = Filters.in("user_id", subQuery);
-     * // Results in SQL like: WHERE user_id IN (SELECT id FROM active_users)
+     * // SQL fragment: user_id IN (SELECT id FROM active_users)
      * }</pre>
      *
      * @param propName the property/column name
@@ -3148,7 +3148,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT user_id, order_id FROM recent_orders");
      * InSubQuery condition = Filters.in(Arrays.asList("user_id", "order_id"), subQuery);
-     * // Results in SQL like: WHERE (user_id, order_id) IN (SELECT user_id, order_id FROM recent_orders)
+     * // SQL fragment: (user_id, order_id) IN (SELECT user_id, order_id FROM recent_orders)
      * }</pre>
      *
      * @param propNames collection of property/column names
@@ -3165,7 +3165,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = Filters.notIn("status_code", new int[] {404, 500, 503});
-     * // Results in SQL like: WHERE status_code NOT IN (404, 500, 503)
+     * // SQL fragment: status_code NOT IN (404, 500, 503)
      * }</pre>
      *
      * @param propName the property/column name
@@ -3182,7 +3182,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = Filters.notIn("excluded_ids", new long[] {110L, 120L, 130L});
-     * // Results in SQL like: WHERE excluded_ids NOT IN (110, 120, 130)
+     * // SQL fragment: excluded_ids NOT IN (110, 120, 130)
      * }</pre>
      *
      * @param propName the property/column name
@@ -3199,7 +3199,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = Filters.notIn("discount", new double[] {0.0, 100.0});
-     * // Results in SQL like: WHERE discount NOT IN (0.0, 100.0)
+     * // SQL fragment: discount NOT IN (0.0, 100.0)
      * }</pre>
      *
      * @param propName the property/column name
@@ -3216,7 +3216,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = Filters.notIn("role", new String[] {"guest", "banned"});
-     * // Results in SQL like: WHERE role NOT IN ('guest', 'banned')
+     * // SQL fragment: role NOT IN ('guest', 'banned')
      * }</pre>
      *
      * @param propName the property/column name
@@ -3234,7 +3234,7 @@ public class Filters {
      * <pre>{@code
      * Set<String> excludedCountries = new HashSet<>(Arrays.asList("XX", "YY"));
      * NotIn condition = Filters.notIn("country_code", excludedCountries);
-     * // Results in SQL like: WHERE country_code NOT IN ('XX', 'YY')
+     * // SQL fragment: country_code NOT IN ('XX', 'YY')
      * }</pre>
      *
      * @param propName the property/column name
@@ -3253,7 +3253,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM blacklisted_users");
      * NotInSubQuery condition = Filters.notIn("user_id", subQuery);
-     * // Results in SQL like: WHERE user_id NOT IN (SELECT id FROM blacklisted_users)
+     * // SQL fragment: user_id NOT IN (SELECT id FROM blacklisted_users)
      * }</pre>
      *
      * @param propName the property/column name
@@ -3272,7 +3272,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT user_id, product_id FROM returns");
      * NotInSubQuery condition = Filters.notIn(Arrays.asList("user_id", "product_id"), subQuery);
-     * // Results in SQL like: WHERE (user_id, product_id) NOT IN (SELECT user_id, product_id FROM returns)
+     * // SQL fragment: (user_id, product_id) NOT IN (SELECT user_id, product_id FROM returns)
      * }</pre>
      *
      * @param propNames collection of property/column names
@@ -3291,7 +3291,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE dept = 'IT'");
      * All condition = Filters.all(subQuery);
-     * // Used in: WHERE salary > ALL (SELECT salary FROM employees WHERE dept = 'IT')
+     * // SQL fragment: salary > ALL (SELECT salary FROM employees WHERE dept = 'IT')
      * }</pre>
      *
      * @param condition the subquery condition
@@ -3309,7 +3309,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'electronics'");
      * Any condition = Filters.any(subQuery);
-     * // Used in: WHERE price < ANY (SELECT price FROM products WHERE category = 'electronics')
+     * // SQL fragment: price < ANY (SELECT price FROM products WHERE category = 'electronics')
      * }</pre>
      *
      * @param condition the subquery condition
@@ -3327,7 +3327,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT score FROM exams WHERE student_id = 123");
      * Some condition = Filters.some(subQuery);
-     * // Used in: WHERE passing_score <= SOME (SELECT score FROM exams WHERE student_id = 123)
+     * // SQL fragment: passing_score <= SOME (SELECT score FROM exams WHERE student_id = 123)
      * }</pre>
      *
      * @param condition the subquery condition
@@ -3344,7 +3344,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
      * Exists condition = Filters.exists(subQuery);
-     * // Results in SQL like: WHERE EXISTS (SELECT 1 FROM orders WHERE orders.user_id = users.id)
+     * // SQL fragment: EXISTS (SELECT 1 FROM orders WHERE orders.user_id = users.id)
      * }</pre>
      *
      * @param condition the subquery to check
@@ -3361,7 +3361,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM archived_users WHERE archived_users.id = users.id");
      * NotExists condition = Filters.notExists(subQuery);
-     * // Results in SQL like: WHERE NOT EXISTS (SELECT 1 FROM archived_users WHERE archived_users.id = users.id)
+     * // SQL fragment: NOT EXISTS (SELECT 1 FROM archived_users WHERE archived_users.id = users.id)
      * }</pre>
      *
      * @param condition the subquery to check

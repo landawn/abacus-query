@@ -157,8 +157,8 @@ public class InnerJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param condition the join condition (typically an On condition for column equality).
-     *                  Can be a complex condition using And/Or for multiple criteria.
+     * @param condition the join condition, typically an {@link On} condition for column equality;
+     *            any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public InnerJoin(final String joinEntity, final Condition condition) {
@@ -195,7 +195,8 @@ public class InnerJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param condition the join condition to apply across all tables.
+     * @param condition the join condition, typically an {@link On} condition for column equality;
+     *            any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public InnerJoin(final Collection<String> joinEntities, final Condition condition) {

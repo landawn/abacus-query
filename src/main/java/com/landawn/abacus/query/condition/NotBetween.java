@@ -52,19 +52,19 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * // Exclude normal temperature range
  * NotBetween abnormalTemp = new NotBetween("temperature", 36.0, 37.5);
- * // SQL: temperature NOT BETWEEN 36.0 AND 37.5
+ * // Renders as: temperature NOT BETWEEN (36.0, 37.5)
  *
  * // Find orders outside business hours (before 9 AM or after 5 PM)
  * NotBetween outsideHours = new NotBetween("order_hour", 9, 17);
- * // SQL: order_hour NOT BETWEEN 9 AND 17
+ * // Renders as: order_hour NOT BETWEEN (9, 17)
  *
  * // Exclude mid-range salaries
  * NotBetween salaryRange = new NotBetween("salary", 50000, 100000);
- * // SQL: salary NOT BETWEEN 50000 AND 100000
+ * // Renders as: salary NOT BETWEEN (50000, 100000)
  *
  * // Using with date strings
  * NotBetween dateRange = new NotBetween("order_date", "2024-01-01", "2024-12-31");
- * // SQL: order_date NOT BETWEEN '2024-01-01' AND '2024-12-31'
+ * // Renders as: order_date NOT BETWEEN ('2024-01-01', '2024-12-31')
  * }</pre>
  * 
  * @see AbstractCondition
@@ -97,12 +97,12 @@ public class NotBetween extends AbstractCondition {
      * <pre>{@code
      * // Find products with extreme prices (very cheap or very expensive)
      * NotBetween priceRange = new NotBetween("price", 10.0, 1000.0);
-     * // SQL: price NOT BETWEEN 10.0 AND 1000.0
+     * // Renders as: price NOT BETWEEN (10.0, 1000.0)
      * // Matches: price < 10.0 OR price > 1000.0
      *
      * // Find events outside regular working days
      * NotBetween workdays = new NotBetween("day_of_week", 2, 6);   // Monday = 2, Friday = 6
-     * // SQL: day_of_week NOT BETWEEN 2 AND 6
+     * // Renders as: day_of_week NOT BETWEEN (2, 6)
      * // Matches: Sunday (1) and Saturday (7)
      * }</pre>
      *
@@ -261,6 +261,7 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Converts this NOT BETWEEN condition to its string representation.
+     * The rendered format is {@code <prop> NOT BETWEEN (<min>, <max>)}.
      * The naming policy is applied to the property name to handle different naming conventions.
      *
      * @param namingPolicy the naming policy to apply to the property name

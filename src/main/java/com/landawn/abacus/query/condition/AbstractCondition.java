@@ -126,8 +126,9 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
      * }</pre>
      *
-     * @param condition the condition to AND with this condition
+     * @param condition the condition to AND with this condition (must not be null)
      * @return a new And condition containing both conditions
+     * @throws IllegalArgumentException if {@code condition} is null
      */
     @Override
     public And and(final Condition condition) {
@@ -199,7 +200,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * of their specific fields to ensure complete independence between copies.
      *
      * @param <T> the type of condition to return
-     * @return a copy of this condition
+     * @return a shallow copy of this condition
      */
     @SuppressWarnings("unchecked")
     @Override

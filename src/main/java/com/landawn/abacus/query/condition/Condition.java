@@ -108,8 +108,9 @@ public interface Condition {
      * // Equivalent to: age > 18 AND status = 'active' AND verified = true
      * }</pre>
      * 
-     * @param condition the condition to AND with this condition
+     * @param condition the condition to AND with this condition (must not be null)
      * @return a new And condition containing both conditions
+     * @throws IllegalArgumentException if {@code condition} is null
      */
     And and(Condition condition);
 
@@ -173,11 +174,13 @@ public interface Condition {
     Not not();
 
     /**
-     * Creates a deep copy of this condition.
-     * The copy is independent of the original and can be modified without affecting it.
-     * 
+     * Creates a copy of this condition.
+     *
+     * <p>The exact copy depth depends on the concrete implementation. Implementations should
+     * ensure copied instances are safe to use independently for query construction.</p>
+     *
      * @param <T> the type of condition to return
-     * @return a deep copy of this condition
+     * @return a copy of this condition
      */
     <T extends Condition> T copy();
 

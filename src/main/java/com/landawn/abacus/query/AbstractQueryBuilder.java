@@ -2217,7 +2217,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to group by
-     * @param direction the sort direction for all columns
+     * @param direction the direction appended after the grouped column list (affecting the trailing expression in the generated SQL)
      * @return this SQLBuilder instance for method chaining
      */
     public This groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
@@ -2449,7 +2449,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to order by
-     * @param direction the sort direction for all columns
+     * @param direction the direction appended after the ordered column list (affecting the trailing expression in the generated SQL)
      * @return this SQLBuilder instance for method chaining
      */
     public This orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {

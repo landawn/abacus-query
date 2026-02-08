@@ -300,8 +300,8 @@ public class Join extends AbstractCondition {
     /**
      * Clears all parameter values by setting them to null to free memory.
      * 
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
+     * <p>This method delegates to the join condition, if present. Join entities are unchanged.
+     * If this join has no condition, this method is a no-op.</p>
      * 
      */
     @Override

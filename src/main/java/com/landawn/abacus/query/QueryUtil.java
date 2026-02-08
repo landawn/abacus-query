@@ -450,6 +450,7 @@ public final class QueryUtil {
      * @param targetClass the entity class to analyze
      * @param fakeIdForEmpty if true, returns a fake ID when no ID fields are found
      * @return an immutable list of ID field names or fake ID if requested and none found
+     * @throws IllegalArgumentException if targetClass is null
      * @deprecated for internal only.
      */
     @Deprecated
