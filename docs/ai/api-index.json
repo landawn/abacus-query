@@ -2,7 +2,7 @@
   "library": {
     "name": "abacus-query",
     "version": "4.3.1",
-    "generated_at": "2026-02-08",
+    "generated_at": "2026-02-09",
     "java_target": "17",
     "source": {
       "git_sha": "unknown"
