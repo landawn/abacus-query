@@ -122,6 +122,51 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
+    static class NestedLeaf {
+        private String value;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+    }
+
+    static class NestedBranch {
+        private NestedLeaf firstLeaf;
+        private NestedLeaf secondLeaf;
+
+        public NestedLeaf getFirstLeaf() {
+            return firstLeaf;
+        }
+
+        public void setFirstLeaf(NestedLeaf firstLeaf) {
+            this.firstLeaf = firstLeaf;
+        }
+
+        public NestedLeaf getSecondLeaf() {
+            return secondLeaf;
+        }
+
+        public void setSecondLeaf(NestedLeaf secondLeaf) {
+            this.secondLeaf = secondLeaf;
+        }
+    }
+
+    static class NestedRoot {
+        private NestedBranch branch;
+
+        public NestedBranch getBranch() {
+            return branch;
+        }
+
+        public void setBranch(NestedBranch branch) {
+            this.branch = branch;
+        }
+    }
+
     static class SimpleEntity {
         @Id
         private Integer id;
@@ -226,6 +271,14 @@ public class QueryUtilTest extends TestBase {
         // Test caching
         ImmutableMap<String, String> result2 = QueryUtil.getProp2ColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE);
         assertSame(result, result2);
+    }
+
+    @Test
+    public void testGetProp2ColumnNameMapWithRepeatedNestedType() {
+        final ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
+
+        assertTrue(result.containsKey("branch.firstLeaf.value"));
+        assertTrue(result.containsKey("branch.secondLeaf.value"));
     }
 
     @Test

@@ -220,15 +220,16 @@ public class NotIn extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final StringBuilder sb = new StringBuilder();
-        sb.append(namingPolicy.convert(propName)).append(SK._SPACE).append(getOperator().toString()).append(SK.SPACE_PARENTHESES_L);
+        sb.append(effectiveNamingPolicy.convert(propName)).append(SK._SPACE).append(getOperator().toString()).append(SK.SPACE_PARENTHESES_L);
 
         if (values != null) {
             for (int i = 0; i < values.size(); i++) {
                 if (i > 0) {
                     sb.append(SK.COMMA_SPACE);
                 }
-                sb.append(parameter2String(values.get(i), namingPolicy));
+                sb.append(parameter2String(values.get(i), effectiveNamingPolicy));
             }
         }
 

@@ -292,14 +292,16 @@ public class InSubQuery extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+
         if (Strings.isNotEmpty(propName)) {
-            return namingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L + subQuery.toString(namingPolicy)
-                    + SK.PARENTHESES_R;
+            return effectiveNamingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L
+                    + subQuery.toString(effectiveNamingPolicy) + SK.PARENTHESES_R;
         } else {
-            final Function<String, String> converter = namingPolicy::convert;
+            final Function<String, String> converter = effectiveNamingPolicy::convert;
 
             return "(" + Strings.join(N.map(propNames, converter), ", ") + ") " + getOperator().toString() + SK.SPACE_PARENTHESES_L
-                    + subQuery.toString(namingPolicy) + SK.PARENTHESES_R;
+                    + subQuery.toString(effectiveNamingPolicy) + SK.PARENTHESES_R;
         }
     }
 }

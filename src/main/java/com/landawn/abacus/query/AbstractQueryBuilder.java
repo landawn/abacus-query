@@ -428,6 +428,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected static String getTableName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         String[] entityTableNames = classTableNameMap.get(entityClass);
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
         if (entityTableNames == null) {
             final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
@@ -443,7 +444,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             classTableNameMap.put(entityClass, entityTableNames);
         }
 
-        switch (namingPolicy) {
+        switch (effectiveNamingPolicy) {
             case SNAKE_CASE:
                 return entityTableNames[0];
 

@@ -214,11 +214,15 @@ public final class SQLParser {
                 sb.append(c);
 
                 // end in quote.
-                if (c == quoteChar && (index == 0 || sql.charAt(index - 1) != '\\')) {
-                    words.add(sb.toString());
-                    sb.setLength(0);
+                if (c == quoteChar) {
+                    if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                        sb.append(sql.charAt(++index));
+                    } else if (index == 0 || sql.charAt(index - 1) != '\\') {
+                        words.add(sb.toString());
+                        sb.setLength(0);
 
-                    quoteChar = 0;
+                        quoteChar = 0;
+                    }
                 }
             } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
                 if (!sb.isEmpty()) {
@@ -396,16 +400,20 @@ public final class SQLParser {
 
                     // end in quote.
                     if (c == quoteChar) {
-                        temp = sb.toString();
+                        if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                            sb.append(sql.charAt(++index));
+                        } else if (index == 0 || sql.charAt(index - 1) != '\\') {
+                            temp = sb.toString();
 
-                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                            result = index - word.length() + 1;
+                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                result = index - word.length() + 1;
 
-                            break;
+                                break;
+                            }
+
+                            sb.setLength(0);
+                            quoteChar = 0;
                         }
-
-                        sb.setLength(0);
-                        quoteChar = 0;
                     }
                 } else if (isSeparator(sql, sqlLength, index, c)) {
                     if (!sb.isEmpty()) {
@@ -528,8 +536,12 @@ public final class SQLParser {
                 sb.append(c);
 
                 // end in quote.
-                if (c == quoteChar && sql.charAt(index - 1) != '\\') {
-                    break;
+                if (c == quoteChar) {
+                    if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                        sb.append(sql.charAt(++index));
+                    } else if (index == 0 || sql.charAt(index - 1) != '\\') {
+                        break;
+                    }
                 }
             } else if (isSeparator(sql, sqlLength, index, c)) {
                 if (!sb.isEmpty()) {

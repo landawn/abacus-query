@@ -1567,6 +1567,8 @@ public class Expression extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+
         if (literal == null) {
             return NULL_STRING;
         } else if (literal.isEmpty()) {
@@ -1574,7 +1576,7 @@ public class Expression extends AbstractCondition {
         }
 
         if (literal.length() < 16 && QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).find()) {
-            return namingPolicy.convert(literal);
+            return effectiveNamingPolicy.convert(literal);
         }
 
         final List<String> words = SQLParser.parse(literal);
@@ -1588,7 +1590,7 @@ public class Expression extends AbstractCondition {
                 if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
                     sb.append(word);
                 } else {
-                    sb.append(namingPolicy.convert(word));
+                    sb.append(effectiveNamingPolicy.convert(word));
                 }
             }
             return sb.toString();

@@ -204,7 +204,8 @@ public class Binary extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        return namingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK._SPACE + parameter2String(propValue, namingPolicy);
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+        return effectiveNamingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK._SPACE + parameter2String(propValue, effectiveNamingPolicy);
     }
 
     /**

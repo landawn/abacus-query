@@ -269,8 +269,9 @@ public class NotBetween extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        return namingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L + parameter2String(minValue, namingPolicy)
-                + SK.COMMA_SPACE + parameter2String(maxValue, namingPolicy) + SK._PARENTHESES_R;
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+        return effectiveNamingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L
+                + parameter2String(minValue, effectiveNamingPolicy) + SK.COMMA_SPACE + parameter2String(maxValue, effectiveNamingPolicy) + SK._PARENTHESES_R;
     }
 
     /**

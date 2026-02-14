@@ -58,6 +58,12 @@ public class SQLParserTest extends TestBase {
         words = SQLParser.parse(sql);
 
         assertTrue(words.stream().anyMatch(w -> w.contains("John\\'s")));
+
+        // Test SQL-standard escaped quote by doubling delimiter
+        sql = "SELECT * FROM users WHERE name = 'it''s me'";
+        words = SQLParser.parse(sql);
+
+        assertTrue(words.contains("'it''s me'"));
     }
 
     @Test
@@ -211,6 +217,10 @@ public class SQLParserTest extends TestBase {
         int firstSelect = SQLParser.indexWord(sql, "SELECT", 0, false);
         int secondSelect = SQLParser.indexWord(sql, "SELECT", firstSelect + 1, false);
         assertEquals(-1, secondSelect);
+
+        // Test escaped quote in SQL-standard form (two single quotes) inside a string literal
+        sql = "SELECT * FROM users WHERE note = 'it''s SELECT here'";
+        assertEquals(-1, SQLParser.indexWord(sql, "SELECT", 1, false));
     }
 
     @Test
@@ -248,6 +258,10 @@ public class SQLParserTest extends TestBase {
         // Test with double quotes
         sql = "SELECT \"quoted string\" FROM table";
         assertEquals("\"quoted string\"", SQLParser.nextWord(sql, 6));
+
+        // Test SQL-standard escaped quote by doubling delimiter
+        sql = "SELECT 'it''s done' FROM table";
+        assertEquals("'it''s done'", SQLParser.nextWord(sql, 6));
     }
 
     @Test

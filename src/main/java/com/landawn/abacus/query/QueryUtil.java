@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,12 +114,13 @@ public final class QueryUtil {
     @Beta
     public static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
         Map<NamingPolicy, ImmutableMap<String, Tuple2<String, Boolean>>> namingPropColumnNameMap = entityTablePropColumnNameMap2.get(entityClass);
         ImmutableMap<String, Tuple2<String, Boolean>> result = null;
 
-        if (namingPropColumnNameMap == null || (result = namingPropColumnNameMap.get(namingPolicy)) == null) {
-            final ImmutableMap<String, String> prop2ColumnNameMap = getProp2ColumnNameMap(entityClass, namingPolicy);
+        if (namingPropColumnNameMap == null || (result = namingPropColumnNameMap.get(effectiveNamingPolicy)) == null) {
+            final ImmutableMap<String, String> prop2ColumnNameMap = getProp2ColumnNameMap(entityClass, effectiveNamingPolicy);
             final Map<String, Tuple2<String, Boolean>> newProp2ColumnNameMap = N.newHashMap(prop2ColumnNameMap.size() * 2);
 
             for (final Map.Entry<String, String> entry : prop2ColumnNameMap.entrySet()) {
@@ -138,7 +140,7 @@ public final class QueryUtil {
                 entityTablePropColumnNameMap2.put(entityClass, namingPropColumnNameMap);
             }
 
-            namingPropColumnNameMap.put(namingPolicy, result);
+            namingPropColumnNameMap.put(effectiveNamingPolicy, result);
         }
 
         return result;
@@ -196,6 +198,7 @@ public final class QueryUtil {
      * @return an immutable map of property names to column names, or empty map if entityClass is null or Map
      */
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
         if (entityClass == null || Map.class.isAssignableFrom(entityClass)) {
             return ImmutableMap.empty();
         }
@@ -203,8 +206,8 @@ public final class QueryUtil {
         final Map<NamingPolicy, ImmutableMap<String, String>> namingColumnNameMap = entityTablePropColumnNameMap.get(entityClass);
         ImmutableMap<String, String> result = null;
 
-        if (namingColumnNameMap == null || (result = namingColumnNameMap.get(namingPolicy)) == null) {
-            result = registerEntityPropColumnNameMap(entityClass, namingPolicy, null);
+        if (namingColumnNameMap == null || (result = namingColumnNameMap.get(effectiveNamingPolicy)) == null) {
+            result = registerEntityPropColumnNameMap(entityClass, effectiveNamingPolicy, null);
         }
 
         return result;
@@ -241,7 +244,7 @@ public final class QueryUtil {
                 final Type<?> propType = propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type;
 
                 if (propType.isBean() && (registeringClasses == null || !registeringClasses.contains(propType.clazz()))) {
-                    final Set<Class<?>> newRegisteringClasses = registeringClasses == null ? N.newLinkedHashSet() : registeringClasses;
+                    final Set<Class<?>> newRegisteringClasses = registeringClasses == null ? N.newLinkedHashSet() : new LinkedHashSet<>(registeringClasses);
                     newRegisteringClasses.add(entityClass);
 
                     final Map<String, String> subPropColumnNameMap = registerEntityPropColumnNameMap(propType.clazz(), namingPolicy, newRegisteringClasses);
@@ -588,11 +591,12 @@ public final class QueryUtil {
      */
     public static String getTableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
         final Table anno = entityClass.getAnnotation(Table.class);
 
         if (anno == null) {
-            return namingPolicy.convert(ClassUtil.getSimpleClassName(entityClass));
+            return effectiveNamingPolicy.convert(ClassUtil.getSimpleClassName(entityClass));
         } else {
             final String tableName = anno.name();
             final String alias = anno.alias();

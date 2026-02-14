@@ -341,11 +341,6 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
-    void testToStringWithNullNamingPolicy() {
-        assertThrows(NullPointerException.class, () -> simpleCondition.toString((NamingPolicy) null));
-    }
-
-    @Test
     void testToStringWithComplexCondition() {
         String result = complexCondition.toString(NamingPolicy.SNAKE_CASE);
 
