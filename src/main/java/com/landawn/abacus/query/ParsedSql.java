@@ -17,6 +17,7 @@ package com.landawn.abacus.query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Locale;
 import java.util.Set;
 
 import com.landawn.abacus.pool.KeyedObjectPool;
@@ -101,7 +102,7 @@ public final class ParsedSql {
         boolean isOpSqlPrefix = false;
         for (final String word : words) {
             if (Strings.isNotEmpty(word) && !(word.equals(" ") || word.startsWith("--") || word.startsWith("/*"))) {
-                isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase());
+                isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase(Locale.ROOT));
                 break;
             }
         }
@@ -333,7 +334,7 @@ public final class ParsedSql {
         boolean isOpSqlPrefix = false;
         for (final String word : words) {
             if (Strings.isNotEmpty(word) && !(word.equals(" ") || word.startsWith("--") || word.startsWith("/*"))) {
-                isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase());
+                isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase(Locale.ROOT));
                 break;
             }
         }

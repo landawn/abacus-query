@@ -495,7 +495,23 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         } else if (cond instanceof final NotInSubQuery notInSubQuery) {
             final String propName = notInSubQuery.getPropName();
 
-            appendColumnName(propName);
+            if (Strings.isNotEmpty(propName)) {
+                appendColumnName(propName);
+            } else {
+                _sb.append(SK._PARENTHESES_L);
+
+                int idx = 0;
+
+                for (final String e : notInSubQuery.getPropNames()) {
+                    if (idx++ > 0) {
+                        _sb.append(_COMMA_SPACE);
+                    }
+
+                    appendColumnName(e);
+                }
+
+                _sb.append(SK._PARENTHESES_R);
+            }
 
             _sb.append(_SPACE);
             _sb.append(notInSubQuery.getOperator().toString());
@@ -587,6 +603,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
                         subBuilder = PSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
                     } else if (this instanceof NSB) {
                         subBuilder = NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
+                    } else if (this instanceof MSB) {
+                        subBuilder = MSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
                     } else {
                         throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
                     }
@@ -618,6 +636,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
                     subBuilder = PSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else if (this instanceof NSB) {
                     subBuilder = NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
+                } else if (this instanceof MSB) {
+                    subBuilder = MSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
                 } else {
                     throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
                 }
@@ -18263,7 +18283,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.CAMEL_CASE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.SCREAMING_SNAKE_CASE);
                 //noinspection ConstantValue
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
@@ -18273,10 +18293,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for joining two entity classes.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.select(Order.class, "o", "order", 
+         * String sql = MLC.select(Order.class, "o", "order",
          *                        Customer.class, "c", "customer")
          *                 .from("orders o")
          *                 .innerJoin("customers c").on("o.customerId = c.id")
@@ -18450,7 +18470,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.CAMEL_CASE;
+            final NamingPolicy namingPolicy = NamingPolicy.SCREAMING_SNAKE_CASE;
             final String fromClause = getFromClause(multiSelects, namingPolicy);
 
             return select(multiSelects).from(fromClause);
@@ -18458,7 +18478,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a COUNT(*) SQL builder for the specified table.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.count("account").where(Filters.eq("isActive", true)).sql();

@@ -42,13 +42,13 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * // Numeric range
  * Between ageRange = new Between("age", 18, 65);
- * // SQL: age BETWEEN 18 AND 65
+ * // SQL: age BETWEEN (18, 65)
  *
  * // Date range for current year
  * Between yearRange = new Between("orderDate",
  *     LocalDate.of(2024, 1, 1),
  *     LocalDate.of(2024, 12, 31));
- * // SQL: orderDate BETWEEN '2024-01-01' AND '2024-12-31'
+ * // SQL: orderDate BETWEEN ('2024-01-01', '2024-12-31')
  *
  * // Price range with subqueries
  * SubQuery minPrice = Filters.subQuery("SELECT MIN(price) FROM products");
@@ -58,7 +58,7 @@ import com.landawn.abacus.util.Strings;
  *
  * // String range (alphabetical)
  * Between nameRange = new Between("lastName", "A", "M");
- * // SQL: lastName BETWEEN 'A' AND 'M'
+ * // SQL: lastName BETWEEN ('A', 'M')
  * }</pre>
  * 
  * @see AbstractCondition

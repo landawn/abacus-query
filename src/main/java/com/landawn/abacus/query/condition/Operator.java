@@ -15,6 +15,7 @@
 package com.landawn.abacus.query.condition;
 
 import java.util.Map;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.query.SK;
@@ -392,10 +393,10 @@ public enum Operator {
             return operator;
         }
 
-        // Initialize map if empty (thread-safe due to ConcurrentHashMap)
-        if (operatorMap.isEmpty()) {
-            final Operator[] values = Operator.values();
+        // Initialize map if not fully populated yet
+        final Operator[] values = Operator.values();
 
+        if (operatorMap.size() < values.length) {
             for (final Operator value : values) {
                 operatorMap.putIfAbsent(value.name, value);
             }
@@ -405,7 +406,7 @@ public enum Operator {
         operator = operatorMap.get(name);
 
         if (operator == null) {
-            operator = operatorMap.get(name.toUpperCase());
+            operator = operatorMap.get(name.toUpperCase(Locale.ROOT));
 
             if (operator != null) {
                 operatorMap.putIfAbsent(name, operator);

@@ -16,6 +16,7 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -163,13 +164,13 @@ public final class SQLParser {
         final List<String> list = new ArrayList<>(compositeWords.keySet());
 
         for (String e : list) {
-            e = e.toLowerCase();
+            e = e.toLowerCase(Locale.ROOT);
 
             if (!compositeWords.containsKey(e)) {
                 compositeWords.put(e, Splitter.with(SK.SPACE).trimResults().splitToArray(e));
             }
 
-            e = e.toUpperCase();
+            e = e.toUpperCase(Locale.ROOT);
 
             if (!compositeWords.containsKey(e)) {
                 compositeWords.put(e, Splitter.with(SK.SPACE).trimResults().splitToArray(e));
@@ -475,21 +476,28 @@ public final class SQLParser {
         } else {
             int result = indexWord(sql, subWords[0], fromIndex, caseSensitive);
 
-            if (result >= 0) {
+            while (result >= 0) {
                 int tmpIndex = result + subWords[0].length();
-                String nextWord = null;
+                boolean matched = true;
 
                 for (int i = 1; i < subWords.length; i++) {
-                    nextWord = nextWord(sql, tmpIndex);
+                    final String nextWord = nextWord(sql, tmpIndex);
 
                     if (Strings.isNotEmpty(nextWord) && (nextWord.equals(subWords[i]) || (!caseSensitive && nextWord.equalsIgnoreCase(subWords[i])))) {
                         tmpIndex += (subWords[i].length() + 1);
                     } else {
-                        result = -1;
+                        matched = false;
 
                         break;
                     }
                 }
+
+                if (matched) {
+                    return result;
+                }
+
+                // First sub-word matched but subsequent words didn't; continue searching from after the current match
+                result = indexWord(sql, subWords[0], result + subWords[0].length(), caseSensitive);
             }
 
             return result;

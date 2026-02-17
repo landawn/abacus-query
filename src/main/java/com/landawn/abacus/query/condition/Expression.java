@@ -785,8 +785,7 @@ public class Expression extends AbstractCondition {
             sb.append(literal);
             sb.append(SK._SPACE);
             sb.append(operator.getName());
-            sb.append(SK._SPACE);
-            sb.append(SK._PARENTHESES_L);
+            sb.append(SK.SPACE_PARENTHESES_L);
             sb.append(formalize(min));
             sb.append(SK.COMMA_SPACE);
             sb.append(formalize(max));

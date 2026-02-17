@@ -19,6 +19,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -105,7 +106,7 @@ public final class QueryUtil {
      * boolean isNestedSimple = nested._2;  // false (contains dot)
      * }</pre>
      *
-     * @param entityClass the entity class to analyze
+     * @param entityClass the entity class to analyze (must not be null)
      * @param namingPolicy the naming policy to use for column name conversion
      * @return an immutable map where keys are property names and values are tuples of (column name, isSimpleProperty)
      * @deprecated for internal use only.
@@ -172,8 +173,8 @@ public final class QueryUtil {
                 if (propInfo.columnName.isPresent()) {
                     final String columnName = propInfo.columnName.get();
                     map.put(columnName, propInfo.name);
-                    map.put(columnName.toLowerCase(), propInfo.name);
-                    map.put(columnName.toUpperCase(), propInfo.name);
+                    map.put(columnName.toLowerCase(Locale.ROOT), propInfo.name);
+                    map.put(columnName.toUpperCase(Locale.ROOT), propInfo.name);
                 }
             }
 
@@ -300,7 +301,7 @@ public final class QueryUtil {
      * </ul>
      *
      * @param entity the entity instance to analyze (must not be null)
-     * @param excludedPropNames set of property names to exclude from the result (can be empty, must not be null)
+     * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
      * @return collection of property names suitable for INSERT operations
      * @deprecated for internal use only
      */
@@ -345,7 +346,7 @@ public final class QueryUtil {
      * entity instance is provided. It returns all insertable properties including IDs.</p>
      *
      * @param entityClass the entity class to analyze (must not be null)
-     * @param excludedPropNames set of property names to exclude from the result (can be empty, must not be null)
+     * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
      * @return collection of property names suitable for INSERT operations
      * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal use only
@@ -375,7 +376,7 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be null)
      * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
-     * @param excludedPropNames set of property names to exclude from the result (can be empty, must not be null)
+     * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
      * @return collection of property names suitable for SELECT operations
      * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal use only
@@ -407,7 +408,7 @@ public final class QueryUtil {
      * </ul>
      *
      * @param entityClass the entity class to analyze (must not be null)
-     * @param excludedPropNames set of property names to exclude from the result (can be empty, must not be null)
+     * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
      * @return collection of property names suitable for UPDATE operations
      * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal use only

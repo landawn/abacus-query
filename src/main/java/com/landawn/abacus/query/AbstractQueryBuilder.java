@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -245,7 +246,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected static final char[] _SPACE_ORDER_BY_SPACE = (SK.SPACE + SK.ORDER_BY + SK.SPACE).toCharArray();
 
-    protected static final char[] _LIMIT = (SK.SPACE + SK.LIMIT + SK.SPACE).toCharArray();
+    protected static final char[] _LIMIT = SK.LIMIT.toCharArray();
 
     protected static final char[] _SPACE_LIMIT_SPACE = (SK.SPACE + SK.LIMIT + SK.SPACE).toCharArray();
 
@@ -315,8 +316,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     for (final String e : Strings.split(value, ' ', true)) {
                         sqlKeyWords.add(e);
-                        sqlKeyWords.add(e.toUpperCase());
-                        sqlKeyWords.add(e.toLowerCase());
+                        sqlKeyWords.add(e.toUpperCase(Locale.ROOT));
+                        sqlKeyWords.add(e.toLowerCase(Locale.ROOT));
                     }
                 } catch (final Exception e) {
                     // ignore, should never happen.
@@ -1233,7 +1234,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                         sb.append(formalizeColumnName(_propColumnNameMap, columnName));
 
-                        if ((_namingPolicy != NamingPolicy.CAMEL_CASE && _namingPolicy != NamingPolicy.NO_CHANGE) && !SK.ASTERISK.equals(columnName)) {
+                        if (_namingPolicy != NamingPolicy.NO_CHANGE && !SK.ASTERISK.equals(columnName)) {
                             sb.append(SPACE_AS_SPACE).append(SK.QUOTATION_D).append(columnName).append(SK.QUOTATION_D);
                         }
                     }
@@ -2475,6 +2476,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             appendColumnName(columnName);
+
             _sb.append(_SPACE);
             _sb.append(direction.toString());
         }
@@ -5081,7 +5083,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     continue; // skip null or zero id values
                 }
 
-                map.put(propName, beanInfo.getPropValue(entity, propName));
+                map.put(propName, propValue);
             }
 
             instance._props = map;
@@ -5092,25 +5094,33 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final Optional<?> first = N.firstNonNull(propsList);
 
         if (first.isPresent() && first.get() instanceof Map) {
-            return (List<Map<String, Object>>) propsList;
+            if (propsList instanceof List) {
+                return (List<Map<String, Object>>) propsList;
+            }
+            return new ArrayList<>((Collection<Map<String, Object>>) propsList);
         }
+
+        N.checkArgument(first.isPresent(), "All elements in propsList are null");
 
         final Class<?> entityClass = first.get().getClass();
         final Collection<String> propNames = QueryUtil.getInsertPropNames(entityClass, null);
+        final BeanInfo beanInfo = ParserUtil.getBeanInfo(entityClass);
         final List<Map<String, Object>> newPropsList = new ArrayList<>(propsList.size());
 
         for (final Object entity : propsList) {
+            if (entity == null) {
+                continue;
+            }
+
             final Map<String, Object> props = N.newHashMap(propNames.size());
-            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
 
             for (final String propName : propNames) {
-                props.put(propName, entityInfo.getPropValue(entity, propName));
+                props.put(propName, beanInfo.getPropValue(entity, propName));
             }
 
             newPropsList.add(props);
         }
 
-        final BeanInfo beanInfo = ParserUtil.getBeanInfo(entityClass);
         final ImmutableList<String> idPropNameList = beanInfo.idPropNameList;
 
         final List<String> nullPropToRemove = Stream.of(propNames).filter(propName -> Stream.of(newPropsList).allMatch(map -> {
@@ -5219,6 +5229,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
 
                     sb.append(_COMMA_SPACE).append(getTableName(subEntityClass, namingPolicy));
+
+                    final String subEntityTableAlias = getTableAlias(subEntityClass);
+                    if (Strings.isNotEmpty(subEntityTableAlias)) {
+                        sb.append(' ').append(subEntityTableAlias);
+                    }
                 }
             }
         }
