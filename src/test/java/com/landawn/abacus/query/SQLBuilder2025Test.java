@@ -21,8 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Tag;
@@ -292,6 +295,66 @@ public class SQLBuilder2025Test extends TestBase {
     public void testDeleteFromWithEntityClass() {
         String sql = SQLBuilder.PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).sql();
         assertNotNull(sql);
+    }
+
+    @Test
+    public void testBatchInsertWithDifferentMapKeyOrder() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("lastName", "Smith");
+        row2.put("firstName", "Jane");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(row2);
+
+        AbstractQueryBuilder.SP sp = SQLBuilder.PSC.batchInsert(rows).into("users").build();
+
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sp.query);
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters);
+    }
+
+    @Test
+    public void testBatchInsertWithDifferentMapKeyOrder_NamedSnakeCase() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("lastName", "Smith");
+        row2.put("firstName", "Jane");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(row2);
+
+        AbstractQueryBuilder.SP sp = SQLBuilder.NSC.batchInsert(rows).into("users").build();
+
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (:firstName, :lastName), (:firstName, :lastName)", sp.query);
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters);
+    }
+
+    @Test
+    public void testBatchInsertWithDifferentMapKeyOrder_NamedLowerCamelCase() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("lastName", "Smith");
+        row2.put("firstName", "Jane");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(row2);
+
+        AbstractQueryBuilder.SP sp = SQLBuilder.NLC.batchInsert(rows).into("users").build();
+
+        assertEquals("INSERT INTO users (firstName, lastName) VALUES (:firstName, :lastName), (:firstName, :lastName)", sp.query);
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters);
     }
 
     // Complex query tests

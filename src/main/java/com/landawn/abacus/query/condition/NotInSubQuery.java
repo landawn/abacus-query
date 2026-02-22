@@ -14,6 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
@@ -156,7 +157,7 @@ public class NotInSubQuery extends AbstractCondition {
         N.checkArgNotEmpty(propNames, "propNames");
         N.checkArgNotNull(subQuery, "subQuery");
 
-        this.propNames = propNames;
+        this.propNames = new ArrayList<>(propNames);
         this.subQuery = subQuery;
         propName = null;
     }

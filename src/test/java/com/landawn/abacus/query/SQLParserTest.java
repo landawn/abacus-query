@@ -86,6 +86,39 @@ public class SQLParserTest extends TestBase {
     }
 
     @Test
+    public void testParseHashComments() {
+        String sql = "SELECT * FROM users WHERE id = :userId # ignore :fake ?\nAND status = :status";
+        List<String> words = SQLParser.parse(sql);
+
+        assertTrue(words.contains("SELECT"));
+        assertTrue(words.contains("AND"));
+        assertFalse(words.stream().anyMatch(w -> w.contains("fake")));
+        assertFalse(words.contains("?"));
+    }
+
+    @Test
+    public void testParseHashCommentsWithoutSpace() {
+        String sql = "SELECT * FROM users WHERE id = :userId#ignore :fake ?\nAND status = :status";
+        List<String> words = SQLParser.parse(sql);
+
+        assertTrue(words.contains("SELECT"));
+        assertTrue(words.contains("AND"));
+        assertFalse(words.stream().anyMatch(w -> w.contains("fake")));
+        assertFalse(words.contains("?"));
+    }
+
+    @Test
+    public void testParseHashCommentAtLineStartWithoutSpace() {
+        String sql = "#ignore :fake ?\nSELECT * FROM users WHERE id = :userId";
+        List<String> words = SQLParser.parse(sql);
+
+        assertTrue(words.contains("SELECT"));
+        assertTrue(words.contains(":userId"));
+        assertFalse(words.stream().anyMatch(w -> w.contains("fake")));
+        assertFalse(words.contains("?"));
+    }
+
+    @Test
     public void testParseOperators() {
         // Test various operators
         String sql = "SELECT * FROM users WHERE age >= 18 AND status != 'inactive' OR role IN ('admin', 'user')";
@@ -139,13 +172,6 @@ public class SQLParserTest extends TestBase {
         // # should not be separated when followed by {
         assertTrue(words.contains("#{userId}"));
         assertTrue(words.contains("#{userName}"));
-
-        // Test regular # separator
-        sql = "SELECT * FROM users WHERE id = #123";
-        words = SQLParser.parse(sql);
-
-        assertTrue(words.contains("#"));
-        assertTrue(words.contains("123"));
     }
 
     @Test

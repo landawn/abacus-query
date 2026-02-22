@@ -872,26 +872,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(_SPACE);
         _sb.append(SK._PARENTHESES_L);
 
-        if (N.notEmpty(_propOrColumnNames)) {
-            int i = 0;
-            for (final String columnName : _propOrColumnNames) {
-                if (i++ > 0) {
-                    _sb.append(_COMMA_SPACE);
-                }
+        final Collection<String> insertColumnNames;
 
-                appendColumnName(columnName);
-            }
+        if (N.notEmpty(_propOrColumnNames)) {
+            insertColumnNames = _propOrColumnNames;
         } else {
             final Map<String, Object> localProps = N.isEmpty(_props) ? _propsList.iterator().next() : _props;
+            insertColumnNames = localProps.keySet();
+        }
 
-            int i = 0;
-            for (final String columnName : localProps.keySet()) {
-                if (i++ > 0) {
-                    _sb.append(_COMMA_SPACE);
-                }
-
-                appendColumnName(columnName);
+        int colIdx = 0;
+        for (final String columnName : insertColumnNames) {
+            if (colIdx++ > 0) {
+                _sb.append(_COMMA_SPACE);
             }
+
+            appendColumnName(columnName);
         }
 
         _sb.append(SK._PARENTHESES_R);
@@ -904,7 +900,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             switch (_sqlPolicy) {
                 case SQL:
                 case PARAMETERIZED_SQL: {
-                    for (int i = 0, size = _propOrColumnNames.size(); i < size; i++) {
+                    for (int i = 0, size = insertColumnNames.size(); i < size; i++) {
                         if (i > 0) {
                             _sb.append(_COMMA_SPACE);
                         }
@@ -917,7 +913,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 case NAMED_SQL: {
                     int i = 0;
-                    for (final String columnName : _propOrColumnNames) {
+                    for (final String columnName : insertColumnNames) {
                         if (i++ > 0) {
                             _sb.append(_COMMA_SPACE);
                         }
@@ -930,7 +926,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 case IBATIS_SQL: {
                     int i = 0;
-                    for (final String columnName : _propOrColumnNames) {
+                    for (final String columnName : insertColumnNames) {
                         if (i++ > 0) {
                             _sb.append(_COMMA_SPACE);
                         }
@@ -947,7 +943,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy); //NOSONAR
             }
         } else if (N.notEmpty(_props)) {
-            appendInsertProps(_props);
+            appendInsertProps(_props, insertColumnNames);
         } else {
             int i = 0;
             for (final Map<String, Object> localProps : _propsList) {
@@ -957,7 +953,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     _sb.append(SK._PARENTHESES_L);
                 }
 
-                appendInsertProps(localProps);
+                appendInsertProps(localProps, insertColumnNames);
             }
         }
 
@@ -4703,14 +4699,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param props a map of property names to values to be inserted
      */
     protected void appendInsertProps(final Map<String, Object> props) {
+        appendInsertProps(props, props.keySet());
+    }
+
+    /**
+     * Appends the values for an INSERT operation in the specified column order.
+     *
+     * @param props a map of property names to values to be inserted
+     * @param propNames the ordered column names
+     */
+    protected void appendInsertProps(final Map<String, Object> props, final Collection<String> propNames) {
         switch (_sqlPolicy) {
             case SQL: {
                 int i = 0;
-                for (final Object propValue : props.values()) {
+                for (final String propName : propNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
 
+                    final Object propValue = props.get(propName);
                     setParameterForSQL(propValue);
                 }
 
@@ -4719,11 +4726,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             case PARAMETERIZED_SQL: {
                 int i = 0;
-                for (final Object propValue : props.values()) {
+                for (final String propName : propNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
 
+                    final Object propValue = props.get(propName);
                     setParameterForRawSQL(propValue);
                 }
 
@@ -4732,12 +4740,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             case NAMED_SQL: {
                 int i = 0;
-                for (final Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final String propName : propNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
 
-                    setParameterForNamedSQL(entry.getKey(), entry.getValue());
+                    setParameterForNamedSQL(propName, props.get(propName));
                 }
 
                 break;
@@ -4745,12 +4753,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             case IBATIS_SQL: {
                 int i = 0;
-                for (final Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final String propName : propNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
 
-                    setParameterForIbatisNamedSQL(entry.getKey(), entry.getValue());
+                    setParameterForIbatisNamedSQL(propName, props.get(propName));
                 }
 
                 break;

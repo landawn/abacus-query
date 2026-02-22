@@ -97,6 +97,15 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
+    public void testExpressionConditionWrappedInWhere() {
+        List<String> props = Arrays.asList("id");
+        Expression expression = Filters.expr("status = 'active'");
+        SubQuery subQuery = Filters.subQuery("users", props, expression);
+
+        Assertions.assertTrue(subQuery.toString().contains("WHERE status = 'active'"));
+    }
+
+    @Test
     public void testGetParameters() {
         List<String> props = Arrays.asList("id", "name");
         And condition = Filters.and(Filters.eq("active", true), Filters.gt("age", 18));

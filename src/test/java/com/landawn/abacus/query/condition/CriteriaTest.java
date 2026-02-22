@@ -366,6 +366,7 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testClear() {
         Criteria criteria = Filters.criteria()
+                .distinct()
                 .join("orders")
                 .where(Filters.eq("active", true))
                 .groupBy("department")
@@ -382,6 +383,7 @@ public class CriteriaTest extends TestBase {
         Assertions.assertNull(criteria.getOrderBy());
         Assertions.assertNull(criteria.getLimit());
         Assertions.assertTrue(criteria.getJoins().isEmpty());
+        Assertions.assertNull(criteria.preselect());
     }
 
     @Test

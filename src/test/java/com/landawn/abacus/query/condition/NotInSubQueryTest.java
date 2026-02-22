@@ -1,5 +1,6 @@
 package com.landawn.abacus.query.condition;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,6 +39,17 @@ public class NotInSubQueryTest extends TestBase {
         Assertions.assertNull(condition.getPropName());
         Assertions.assertEquals(propNames, condition.getPropNames());
         Assertions.assertEquals(subQuery, condition.getSubQuery());
+    }
+
+    @Test
+    public void testConstructorWithMultiplePropertiesDefensiveCopy() {
+        List<String> propNames = new ArrayList<>(Arrays.asList("firstName", "lastName"));
+        SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
+        NotInSubQuery condition = Filters.notIn(propNames, subQuery);
+
+        propNames.add("middleName");
+
+        Assertions.assertEquals(Arrays.asList("firstName", "lastName"), condition.getPropNames().stream().toList());
     }
 
     @Test

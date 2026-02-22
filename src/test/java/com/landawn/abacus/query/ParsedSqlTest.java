@@ -129,6 +129,39 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
+    public void testParse_withHashComments() {
+        String sql = "SELECT * FROM users WHERE id = :userId # ignore :fake ?";
+        ParsedSql parsed = ParsedSql.parse(sql);
+
+        Assertions.assertNotNull(parsed);
+        List<String> namedParams = parsed.getNamedParameters();
+        Assertions.assertEquals(1, namedParams.size());
+        Assertions.assertEquals("userId", namedParams.get(0));
+    }
+
+    @Test
+    public void testParse_withHashCommentsWithoutSpace() {
+        String sql = "SELECT * FROM users WHERE id = :userId#ignore :fake ?";
+        ParsedSql parsed = ParsedSql.parse(sql);
+
+        Assertions.assertNotNull(parsed);
+        List<String> namedParams = parsed.getNamedParameters();
+        Assertions.assertEquals(1, namedParams.size());
+        Assertions.assertEquals("userId", namedParams.get(0));
+    }
+
+    @Test
+    public void testParse_withHashCommentAtLineStartWithoutSpace() {
+        String sql = "#ignore :fake ?\nSELECT * FROM users WHERE id = :userId";
+        ParsedSql parsed = ParsedSql.parse(sql);
+
+        Assertions.assertNotNull(parsed);
+        List<String> namedParams = parsed.getNamedParameters();
+        Assertions.assertEquals(1, namedParams.size());
+        Assertions.assertEquals("userId", namedParams.get(0));
+    }
+
+    @Test
     public void testParse_nonOperationSql() {
         String sql = "SET @variable = :value";
         ParsedSql parsed = ParsedSql.parse(sql);

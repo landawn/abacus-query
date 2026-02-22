@@ -439,10 +439,9 @@ public class NamedProperty2025Test extends TestBase {
     public void testEqOrWithEmptyCollection() {
         NamedProperty status = NamedProperty.of("status");
 
-        Or or = status.eqOr(Arrays.asList());
-
-        assertNotNull(or);
-        assertEquals(0, or.getConditions().size());
+        assertThrows(IllegalArgumentException.class, () -> {
+            status.eqOr(Arrays.asList());
+        });
     }
 
     @Test

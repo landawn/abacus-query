@@ -204,7 +204,7 @@ public class SubQuery extends AbstractCondition {
         this.entityClass = null;
         this.propNames = new ArrayList<>(propNames);
 
-        if (condition == null || CriteriaUtil.isClause(condition) || condition instanceof Expression) {
+        if (condition == null || CriteriaUtil.isClause(condition)) {
             this.condition = condition;
         } else {
             this.condition = Filters.where(condition);
@@ -257,7 +257,7 @@ public class SubQuery extends AbstractCondition {
         this.entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
         this.propNames = new ArrayList<>(propNames);
-        if (condition == null || CriteriaUtil.isClause(condition) || condition instanceof Expression) {
+        if (condition == null || CriteriaUtil.isClause(condition)) {
             this.condition = condition;
         } else {
             this.condition = Filters.where(condition);

@@ -225,7 +225,7 @@ public final class SQLParser {
                         quoteChar = 0;
                     }
                 }
-            } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+            } else if (c == '-' && index < sqlLength - 2 && sql.charAt(index + 1) == '-' && sql.charAt(index + 2) == ' ') {
                 if (!sb.isEmpty()) {
                     words.add(sb.toString());
                     sb.setLength(0);
@@ -263,6 +263,32 @@ public final class SQLParser {
                 //            }
                 //        }
                 //    }
+
+                while (++index < sqlLength) {
+                    c = sql.charAt(index);
+
+                    if (c == ENTER || c == ENTER_2) {
+                        break;
+                    }
+                }
+            } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
+                if (!sb.isEmpty()) {
+                    words.add(sb.toString());
+                    sb.setLength(0);
+                }
+
+                while (++index < sqlLength) {
+                    c = sql.charAt(index);
+
+                    if (c == ENTER || c == ENTER_2) {
+                        break;
+                    }
+                }
+            } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
+                if (!sb.isEmpty()) {
+                    words.add(sb.toString());
+                    sb.setLength(0);
+                }
 
                 while (++index < sqlLength) {
                     c = sql.charAt(index);

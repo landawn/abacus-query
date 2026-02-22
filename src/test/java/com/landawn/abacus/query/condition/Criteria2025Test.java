@@ -124,9 +124,11 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testClear() {
         Criteria criteria = new Criteria();
+        criteria.distinct();
         criteria.where(Filters.equal("name", "John"));
         criteria.clear();
         assertTrue(criteria.getConditions().isEmpty());
+        assertNull(criteria.preselect());
     }
 
     @Test

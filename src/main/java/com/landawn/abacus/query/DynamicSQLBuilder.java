@@ -296,7 +296,13 @@ public class DynamicSQLBuilder {
     public DynamicSQLBuilder limitByRowNum(final int count) {
         N.checkArgNotNegative(count, "count");
 
-        getStringBuilderForMoreParts().append(" ROWNUM <= ").append(count);
+        final String rowNumCondition = "ROWNUM <= " + count;
+
+        if (where == null || where.sb.isEmpty()) {
+            where().append(rowNumCondition);
+        } else {
+            where.and(rowNumCondition);
+        }
 
         return this;
     }

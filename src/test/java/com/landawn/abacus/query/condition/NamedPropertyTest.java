@@ -82,6 +82,24 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
+    public void testEqOrWithEmptyArray() {
+        NamedProperty prop = NamedProperty.of("city");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            prop.eqOr();
+        });
+    }
+
+    @Test
+    public void testEqOrWithEmptyCollection() {
+        NamedProperty prop = NamedProperty.of("city");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            prop.eqOr(Arrays.asList());
+        });
+    }
+
+    @Test
     public void testNe() {
         NamedProperty prop = NamedProperty.of("status");
         NotEqual condition = prop.ne("deleted");

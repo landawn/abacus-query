@@ -307,6 +307,7 @@ public class Criteria extends AbstractCondition {
      * 
      */
     public void clear() {
+        preselect = null;
         conditionList.clear();
     }
 

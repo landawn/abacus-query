@@ -187,6 +187,8 @@ public final class NamedProperty {
      * @see Equal
      */
     public Or eqOr(final Object... values) {
+        N.checkArgNotEmpty(values, "values");
+
         final Or or = Filters.or();
 
         for (final Object propValue : values) {
@@ -218,6 +220,8 @@ public final class NamedProperty {
      * @see Equal
      */
     public Or eqOr(final Collection<?> values) {
+        N.checkArgNotEmpty(values, "values");
+
         final Or or = Filters.or();
 
         for (final Object propValue : values) {
