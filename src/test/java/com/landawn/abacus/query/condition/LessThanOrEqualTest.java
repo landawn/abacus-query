@@ -10,11 +10,11 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.util.NamingPolicy;
 
-public class LessEqualTest extends TestBase {
+public class LessThanOrEqualTest extends TestBase {
 
     @Test
     public void testConstructorWithNumber() {
-        LessEqual condition = new LessEqual("age", 18);
+        LessThanOrEqual condition = new LessThanOrEqual("age", 18);
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("age", condition.getPropName());
@@ -24,7 +24,7 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testConstructorWithDouble() {
-        LessEqual condition = new LessEqual("price", 99.99);
+        LessThanOrEqual condition = new LessThanOrEqual("price", 99.99);
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("price", condition.getPropName());
@@ -33,7 +33,7 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testConstructorWithString() {
-        LessEqual condition = new LessEqual("name", "Z");
+        LessThanOrEqual condition = new LessThanOrEqual("name", "Z");
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("name", condition.getPropName());
@@ -43,7 +43,7 @@ public class LessEqualTest extends TestBase {
     @Test
     public void testConstructorWithDate() {
         Date date = new Date();
-        LessEqual condition = new LessEqual("submit_date", date);
+        LessThanOrEqual condition = new LessThanOrEqual("submit_date", date);
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("submit_date", condition.getPropName());
@@ -53,7 +53,7 @@ public class LessEqualTest extends TestBase {
     @Test
     public void testConstructorWithLocalDate() {
         LocalDate date = LocalDate.now();
-        LessEqual condition = new LessEqual("order_date", date);
+        LessThanOrEqual condition = new LessThanOrEqual("order_date", date);
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("order_date", condition.getPropName());
@@ -62,7 +62,7 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        LessEqual condition = new LessEqual("quantity", 100);
+        LessThanOrEqual condition = new LessThanOrEqual("quantity", 100);
         List<Object> params = condition.getParameters();
 
         Assertions.assertNotNull(params);
@@ -72,7 +72,7 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        LessEqual condition = new LessEqual("stock", 50);
+        LessThanOrEqual condition = new LessThanOrEqual("stock", 50);
         condition.clearParameters();
 
         List<Object> params = condition.getParameters();
@@ -82,8 +82,8 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testCopy() {
-        LessEqual original = new LessEqual("score", 85.5);
-        LessEqual copy = original.copy();
+        LessThanOrEqual original = new LessThanOrEqual("score", 85.5);
+        LessThanOrEqual copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
@@ -93,7 +93,7 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testToString() {
-        LessEqual condition = new LessEqual("amount", 1000);
+        LessThanOrEqual condition = new LessThanOrEqual("amount", 1000);
         String result = condition.toString();
 
         Assertions.assertTrue(result.contains("amount"));
@@ -103,7 +103,7 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        LessEqual condition = new LessEqual("totalAmount", 5000);
+        LessThanOrEqual condition = new LessThanOrEqual("totalAmount", 5000);
         String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("TOTAL_AMOUNT"));
@@ -113,10 +113,10 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        LessEqual condition1 = new LessEqual("age", 30);
-        LessEqual condition2 = new LessEqual("age", 30);
-        LessEqual condition3 = new LessEqual("age", 40);
-        LessEqual condition4 = new LessEqual("weight", 30);
+        LessThanOrEqual condition1 = new LessThanOrEqual("age", 30);
+        LessThanOrEqual condition2 = new LessThanOrEqual("age", 30);
+        LessThanOrEqual condition3 = new LessThanOrEqual("age", 40);
+        LessThanOrEqual condition4 = new LessThanOrEqual("weight", 30);
 
         Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
         Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
@@ -125,10 +125,10 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testEquals() {
-        LessEqual condition1 = new LessEqual("age", 30);
-        LessEqual condition2 = new LessEqual("age", 30);
-        LessEqual condition3 = new LessEqual("age", 40);
-        LessEqual condition4 = new LessEqual("weight", 30);
+        LessThanOrEqual condition1 = new LessThanOrEqual("age", 30);
+        LessThanOrEqual condition2 = new LessThanOrEqual("age", 30);
+        LessThanOrEqual condition3 = new LessThanOrEqual("age", 40);
+        LessThanOrEqual condition4 = new LessThanOrEqual("weight", 30);
 
         Assertions.assertEquals(condition1, condition1);
         Assertions.assertEquals(condition1, condition2);
@@ -140,7 +140,7 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testWithNullValue() {
-        LessEqual condition = new LessEqual("field", null);
+        LessThanOrEqual condition = new LessThanOrEqual("field", null);
 
         Assertions.assertNotNull(condition);
         Assertions.assertNull(condition.getPropValue());
@@ -153,9 +153,9 @@ public class LessEqualTest extends TestBase {
     @Test
     public void testUpperBoundScenarios() {
         // Test common upper bound scenarios
-        LessEqual maxStock = new LessEqual("quantity", 100);
-        LessEqual maxPrice = new LessEqual("price", 999.99);
-        LessEqual deadline = new LessEqual("submit_date", "2023-12-31");
+        LessThanOrEqual maxStock = new LessThanOrEqual("quantity", 100);
+        LessThanOrEqual maxPrice = new LessThanOrEqual("price", 999.99);
+        LessThanOrEqual deadline = new LessThanOrEqual("submit_date", "2023-12-31");
 
         Assertions.assertEquals(100, (Integer) maxStock.getPropValue());
         Assertions.assertEquals(999.99, maxPrice.getPropValue());
@@ -164,8 +164,8 @@ public class LessEqualTest extends TestBase {
 
     @Test
     public void testRangeQueryScenario() {
-        // Common scenario: using LessEqual as part of a range query
-        LessEqual upperBound = new LessEqual("salary", 100000);
+        // Common scenario: using LessThanOrEqual as part of a range query
+        LessThanOrEqual upperBound = new LessThanOrEqual("salary", 100000);
 
         Assertions.assertEquals("salary", upperBound.getPropName());
         Assertions.assertEquals(100000, (Integer) upperBound.getPropValue());

@@ -38,8 +38,8 @@ import com.landawn.abacus.query.condition.Exists;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Expression.Expr;
 import com.landawn.abacus.query.condition.FullJoin;
-import com.landawn.abacus.query.condition.GreaterEqual;
 import com.landawn.abacus.query.condition.GreaterThan;
+import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GroupBy;
 import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.In;
@@ -57,7 +57,7 @@ import com.landawn.abacus.query.condition.IsNull;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Junction;
 import com.landawn.abacus.query.condition.LeftJoin;
-import com.landawn.abacus.query.condition.LessEqual;
+import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.LessThan;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.Limit;
@@ -1377,16 +1377,16 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = Filters.greaterThanOrEqual("score", 60);
+     * GreaterThanOrEqual condition = Filters.greaterThanOrEqual("score", 60);
      * // SQL fragment: score >= 60
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a GreaterEqual condition
+     * @return a GreaterThanOrEqual condition
      */
-    public static GreaterEqual greaterThanOrEqual(final String propName, final Object propValue) {
-        return new GreaterEqual(propName, propValue);
+    public static GreaterThanOrEqual greaterThanOrEqual(final String propName, final Object propValue) {
+        return new GreaterThanOrEqual(propName, propValue);
     }
 
     /**
@@ -1394,15 +1394,15 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = Filters.greaterThanOrEqual("min_age");
+     * GreaterThanOrEqual condition = Filters.greaterThanOrEqual("min_age");
      * // SQL fragment: min_age >= ?
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a GreaterEqual condition with a parameter placeholder
+     * @return a GreaterThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    public static GreaterEqual greaterThanOrEqual(final String propName) {
+    public static GreaterThanOrEqual greaterThanOrEqual(final String propName) {
         return greaterThanOrEqual(propName, QME);
     }
 
@@ -1412,15 +1412,15 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = Filters.ge("level", 5);
+     * GreaterThanOrEqual condition = Filters.ge("level", 5);
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a GreaterEqual condition
+     * @return a GreaterThanOrEqual condition
      */
-    public static GreaterEqual ge(final String propName, final Object propValue) {
-        return new GreaterEqual(propName, propValue);
+    public static GreaterThanOrEqual ge(final String propName, final Object propValue) {
+        return new GreaterThanOrEqual(propName, propValue);
     }
 
     /**
@@ -1429,15 +1429,15 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = Filters.ge("rating");
+     * GreaterThanOrEqual condition = Filters.ge("rating");
      * // SQL fragment: rating >= ?
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a GreaterEqual condition with a parameter placeholder
+     * @return a GreaterThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    public static GreaterEqual ge(final String propName) {
+    public static GreaterThanOrEqual ge(final String propName) {
         return ge(propName, QME);
     }
 
@@ -1515,16 +1515,16 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = Filters.lessThanOrEqual("discount", 50);
+     * LessThanOrEqual condition = Filters.lessThanOrEqual("discount", 50);
      * // SQL fragment: discount &lt;= 50
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a LessEqual condition
+     * @return a LessThanOrEqual condition
      */
-    public static LessEqual lessThanOrEqual(final String propName, final Object propValue) {
-        return new LessEqual(propName, propValue);
+    public static LessThanOrEqual lessThanOrEqual(final String propName, final Object propValue) {
+        return new LessThanOrEqual(propName, propValue);
     }
 
     /**
@@ -1532,15 +1532,15 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = Filters.lessThanOrEqual("max_attempts");
+     * LessThanOrEqual condition = Filters.lessThanOrEqual("max_attempts");
      * // SQL fragment: max_attempts &lt;= ?
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a LessEqual condition with a parameter placeholder
+     * @return a LessThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    public static LessEqual lessThanOrEqual(final String propName) {
+    public static LessThanOrEqual lessThanOrEqual(final String propName) {
         return lessThanOrEqual(propName, QME);
     }
 
@@ -1550,15 +1550,15 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = Filters.le("priority", 3);
+     * LessThanOrEqual condition = Filters.le("priority", 3);
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a LessEqual condition
+     * @return a LessThanOrEqual condition
      */
-    public static LessEqual le(final String propName, final Object propValue) {
-        return new LessEqual(propName, propValue);
+    public static LessThanOrEqual le(final String propName, final Object propValue) {
+        return new LessThanOrEqual(propName, propValue);
     }
 
     /**
@@ -1567,15 +1567,15 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = Filters.le("weight");
+     * LessThanOrEqual condition = Filters.le("weight");
      * // SQL fragment: weight <= ?
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a LessEqual condition with a parameter placeholder
+     * @return a LessThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    public static LessEqual le(final String propName) {
+    public static LessThanOrEqual le(final String propName) {
         return le(propName, QME);
     }
 

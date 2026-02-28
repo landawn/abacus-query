@@ -132,7 +132,7 @@ public class NamedProperty2025Test extends TestBase {
     @Test
     public void testGe() {
         NamedProperty np = NamedProperty.of("score");
-        GreaterEqual ge = np.ge(60);
+        GreaterThanOrEqual ge = np.ge(60);
 
         assertNotNull(ge);
         assertEquals("score", ge.getPropName());
@@ -152,7 +152,7 @@ public class NamedProperty2025Test extends TestBase {
     @Test
     public void testLe() {
         NamedProperty np = NamedProperty.of("quantity");
-        LessEqual le = np.le(10);
+        LessThanOrEqual le = np.le(10);
 
         assertNotNull(le);
         assertEquals("quantity", le.getPropName());
@@ -393,9 +393,9 @@ public class NamedProperty2025Test extends TestBase {
         Equal eq = value.eq(100);
         NotEqual ne = value.ne(0);
         GreaterThan gt = value.gt(50);
-        GreaterEqual ge = value.ge(50);
+        GreaterThanOrEqual ge = value.ge(50);
         LessThan lt = value.lt(150);
-        LessEqual le = value.le(150);
+        LessThanOrEqual le = value.le(150);
 
         assertNotNull(eq);
         assertNotNull(ne);

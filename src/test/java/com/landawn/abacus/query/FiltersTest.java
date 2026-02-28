@@ -25,7 +25,7 @@ import com.landawn.abacus.query.condition.Except;
 import com.landawn.abacus.query.condition.Exists;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.FullJoin;
-import com.landawn.abacus.query.condition.GreaterEqual;
+import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.GroupBy;
 import com.landawn.abacus.query.condition.Having;
@@ -44,7 +44,7 @@ import com.landawn.abacus.query.condition.IsNull;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Junction;
 import com.landawn.abacus.query.condition.LeftJoin;
-import com.landawn.abacus.query.condition.LessEqual;
+import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.LessThan;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.Limit;
@@ -313,15 +313,15 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testGreaterEqual() {
+    public void testGreaterThanOrEqual() {
         // With value
-        GreaterEqual ge1 = Filters.greaterThanOrEqual("level", 5);
+        GreaterThanOrEqual ge1 = Filters.greaterThanOrEqual("level", 5);
         Assertions.assertNotNull(ge1);
         Assertions.assertEquals("level", ge1.getPropName());
         Assertions.assertEquals(5, (Integer) ge1.getPropValue());
 
         // Without value
-        GreaterEqual ge2 = Filters.greaterThanOrEqual("level");
+        GreaterThanOrEqual ge2 = Filters.greaterThanOrEqual("level");
         Assertions.assertNotNull(ge2);
         Assertions.assertEquals(Filters.QME, ge2.getPropValue());
     }
@@ -329,13 +329,13 @@ public class FiltersTest extends TestBase {
     @Test
     public void testGe() {
         // With value
-        GreaterEqual ge1 = Filters.ge("rating", 4.0);
+        GreaterThanOrEqual ge1 = Filters.ge("rating", 4.0);
         Assertions.assertNotNull(ge1);
         Assertions.assertEquals("rating", ge1.getPropName());
         Assertions.assertEquals(4.0, ge1.getPropValue());
 
         // Without value
-        GreaterEqual ge2 = Filters.ge("rating");
+        GreaterThanOrEqual ge2 = Filters.ge("rating");
         Assertions.assertNotNull(ge2);
         Assertions.assertEquals(Filters.QME, ge2.getPropValue());
     }
@@ -369,15 +369,15 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testLessEqual() {
+    public void testLessThanOrEqual() {
         // With value
-        LessEqual le1 = Filters.lessThanOrEqual("discount", 50);
+        LessThanOrEqual le1 = Filters.lessThanOrEqual("discount", 50);
         Assertions.assertNotNull(le1);
         Assertions.assertEquals("discount", le1.getPropName());
         Assertions.assertEquals(50, (Integer) le1.getPropValue());
 
         // Without value
-        LessEqual le2 = Filters.lessThanOrEqual("discount");
+        LessThanOrEqual le2 = Filters.lessThanOrEqual("discount");
         Assertions.assertNotNull(le2);
         Assertions.assertEquals(Filters.QME, le2.getPropValue());
     }
@@ -385,13 +385,13 @@ public class FiltersTest extends TestBase {
     @Test
     public void testLe() {
         // With value
-        LessEqual le1 = Filters.le("temperature", 30);
+        LessThanOrEqual le1 = Filters.le("temperature", 30);
         Assertions.assertNotNull(le1);
         Assertions.assertEquals("temperature", le1.getPropName());
         Assertions.assertEquals(30, (Integer) le1.getPropValue());
 
         // Without value
-        LessEqual le2 = Filters.le("temperature");
+        LessThanOrEqual le2 = Filters.le("temperature");
         Assertions.assertNotNull(le2);
         Assertions.assertEquals(Filters.QME, le2.getPropValue());
     }

@@ -390,7 +390,7 @@ public class CriteriaTest extends TestBase {
         criteria.clearParameters();
 
         List<Object> params = criteria.getParameters();
-        Assertions.assertNull(params.get(0));   // In condition should clear parameters));
+        Assertions.assertNull(params.get(0)); // In condition should clear parameters));
     }
 
     @Test
@@ -498,8 +498,8 @@ public class CriteriaTest extends TestBase {
 
         Assertions.assertEquals(criteria1, criteria1);
         Assertions.assertEquals(criteria1, criteria2);
-        Assertions.assertNotEquals(criteria1, criteria3);   // Different preselect
-        Assertions.assertNotEquals(criteria1, criteria4);   // Different condition
+        Assertions.assertNotEquals(criteria1, criteria3); // Different preselect
+        Assertions.assertNotEquals(criteria1, criteria4); // Different condition
         Assertions.assertNotEquals(criteria1, null);
         Assertions.assertNotEquals(criteria1, "string");
     }
@@ -547,7 +547,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testReplaceClause() {
-        Criteria criteria = Filters.criteria().where(Filters.eq("id", 1)).where(Filters.eq("id", 2));   // Should replace the first where
+        Criteria criteria = Filters.criteria().where(Filters.eq("id", 1)).where(Filters.eq("id", 2)); // Should replace the first where
 
         Cell where = criteria.getWhere();
         Equal eq = where.getCondition();

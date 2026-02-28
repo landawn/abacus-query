@@ -20,7 +20,7 @@ import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Exists;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.FullJoin;
-import com.landawn.abacus.query.condition.GreaterEqual;
+import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.GroupBy;
 import com.landawn.abacus.query.condition.In;
@@ -30,7 +30,7 @@ import com.landawn.abacus.query.condition.IsNotNull;
 import com.landawn.abacus.query.condition.IsNull;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.LeftJoin;
-import com.landawn.abacus.query.condition.LessEqual;
+import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.LessThan;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.Limit;
@@ -447,9 +447,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSelection_simpleSelection() {
-        Selection userSelection = new Selection()
-            .entityClass(String.class)
-            .selectPropNames(Arrays.asList("id", "name", "email"));
+        Selection userSelection = new Selection().entityClass(String.class).selectPropNames(Arrays.asList("id", "name", "email"));
         assertNotNull(userSelection);
         assertEquals(String.class, userSelection.entityClass());
         assertEquals(Arrays.asList("id", "name", "email"), userSelection.selectPropNames());
@@ -457,12 +455,11 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSelection_withAliases() {
-        Selection orderSelection = new Selection()
-            .entityClass(Object.class)
-            .tableAlias("o")
-            .classAlias("order")
-            .includeSubEntityProperties(true)
-            .excludedPropNames(Set.of("internalNotes"));
+        Selection orderSelection = new Selection().entityClass(Object.class)
+                .tableAlias("o")
+                .classAlias("order")
+                .includeSubEntityProperties(true)
+                .excludedPropNames(Set.of("internalNotes"));
         assertEquals("o", orderSelection.tableAlias());
         assertEquals("order", orderSelection.classAlias());
         assertTrue(orderSelection.includeSubEntityProperties());
@@ -471,10 +468,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSelection_multiSelectionBuilder() {
-        List<Selection> selections = Selection.multiSelectionBuilder()
-            .add(Object.class, "u", "user")
-            .add(Object.class, "a", "address")
-            .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(Object.class, "u", "user").add(Object.class, "a", "address").build();
         assertEquals(2, selections.size());
         assertEquals("u", selections.get(0).tableAlias());
         assertEquals("user", selections.get(0).classAlias());
@@ -484,27 +478,21 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSelection_multiSelectionBuilderWithProps() {
-        List<Selection> selections = Selection.multiSelectionBuilder()
-            .add(Object.class, "u", "user", Arrays.asList("id", "name"))
-            .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(Object.class, "u", "user", Arrays.asList("id", "name")).build();
         assertEquals(1, selections.size());
         assertEquals(Arrays.asList("id", "name"), selections.get(0).selectPropNames());
     }
 
     @Test
     public void testSelection_multiSelectionBuilderSimple() {
-        List<Selection> selections = Selection.multiSelectionBuilder()
-            .add(Object.class)
-            .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(Object.class).build();
         assertEquals(1, selections.size());
         assertNull(selections.get(0).tableAlias());
     }
 
     @Test
     public void testSelection_multiSelectionBuilderWithExcluded() {
-        List<Selection> selections = Selection.multiSelectionBuilder()
-            .add(Object.class, true, Set.of("password", "internalNotes"))
-            .build();
+        List<Selection> selections = Selection.multiSelectionBuilder().add(Object.class, true, Set.of("password", "internalNotes")).build();
         assertEquals(1, selections.size());
         assertTrue(selections.get(0).includeSubEntityProperties());
         assertTrue(selections.get(0).excludedPropNames().contains("password"));
@@ -530,11 +518,7 @@ public class JavadocExamplesQueryTest {
         Not notBetween = Filters.not(Filters.between("age", 18, 65));
         assertNotNull(notBetween);
 
-        Not complexNot = Filters.not(Filters.and(
-            Filters.eq("status", "active"),
-            Filters.gt("age", 18),
-            Filters.like("email", "%@company.com")
-        ));
+        Not complexNot = Filters.not(Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.like("email", "%@company.com")));
         assertNotNull(complexNot);
     }
 
@@ -680,13 +664,13 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testFilters_greaterThanOrEqual() {
-        GreaterEqual condition = Filters.greaterThanOrEqual("score", 60);
+        GreaterThanOrEqual condition = Filters.greaterThanOrEqual("score", 60);
         assertNotNull(condition);
     }
 
     @Test
     public void testFilters_ge() {
-        GreaterEqual condition = Filters.ge("age", 18);
+        GreaterThanOrEqual condition = Filters.ge("age", 18);
         assertNotNull(condition);
     }
 
@@ -698,7 +682,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testFilters_lessThanOrEqual() {
-        LessEqual condition = Filters.le("age", 65);
+        LessThanOrEqual condition = Filters.le("age", 65);
         assertNotNull(condition);
     }
 
@@ -752,23 +736,14 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testFilters_and() {
-        And condition = Filters.and(
-            Filters.eq("department", "Engineering"),
-            Filters.or(
-                Filters.gt("salary", 75000),
-                Filters.eq("level", "Senior")
-            ),
-            Filters.isNotNull("manager_id")
-        );
+        And condition = Filters.and(Filters.eq("department", "Engineering"), Filters.or(Filters.gt("salary", 75000), Filters.eq("level", "Senior")),
+                Filters.isNotNull("manager_id"));
         assertNotNull(condition);
     }
 
     @Test
     public void testFilters_or() {
-        Or condition = Filters.or(
-            Filters.eq("status", "active"),
-            Filters.eq("status", "pending")
-        );
+        Or condition = Filters.or(Filters.eq("status", "active"), Filters.eq("status", "pending"));
         assertNotNull(condition);
     }
 
@@ -1128,17 +1103,13 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_selectAppendIfOrElse() {
         DynamicSQLBuilder b1 = DynamicSQLBuilder.create();
-        b1.select().appendIfOrElse(true,
-            "first_name || ' ' || last_name AS full_name",
-            "first_name");
+        b1.select().appendIfOrElse(true, "first_name || ' ' || last_name AS full_name", "first_name");
         b1.from().append("users");
         String sql1 = b1.build();
         assertTrue(sql1.contains("first_name || ' ' || last_name AS full_name"));
 
         DynamicSQLBuilder b2 = DynamicSQLBuilder.create();
-        b2.select().appendIfOrElse(false,
-            "first_name || ' ' || last_name AS full_name",
-            "first_name");
+        b2.select().appendIfOrElse(false, "first_name || ' ' || last_name AS full_name", "first_name");
         b2.from().append("users");
         String sql2 = b2.build();
         assertTrue(sql2.contains("SELECT first_name FROM"));
@@ -1172,10 +1143,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSQLBuilder_PSC_simpleSelect() {
-        String sql = PSC.select("id", "name")
-                        .from("account")
-                        .where(Filters.eq("id", 1))
-                        .sql();
+        String sql = PSC.select("id", "name").from("account").where(Filters.eq("id", 1)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("SELECT"));
         assertTrue(sql.contains("FROM account"));
@@ -1183,10 +1151,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSQLBuilder_PSC_updateWithConditions() {
-        String sql = PSC.update("account")
-                        .set("name", "status")
-                        .where(Filters.eq("id", 1))
-                        .sql();
+        String sql = PSC.update("account").set("name", "status").where(Filters.eq("id", 1)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("UPDATE account"));
         assertTrue(sql.contains("SET"));
@@ -1194,99 +1159,70 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSQLBuilder_PSC_deleteFrom() {
-        String sql = PSC.deleteFrom("account")
-                        .where(Filters.eq("id", 1))
-                        .sql();
+        String sql = PSC.deleteFrom("account").where(Filters.eq("id", 1)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("DELETE FROM account"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithWhere() {
-        String sql = PSC.select("id", "name")
-                        .from("users")
-                        .where(Filters.gt("age", 18))
-                        .sql();
+        String sql = PSC.select("id", "name").from("users").where(Filters.gt("age", 18)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("FROM users"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithJoin() {
-        String sql = PSC.select("u.id", "u.name", "o.total")
-                        .from("users u")
-                        .leftJoin("orders o").on("u.id = o.user_id")
-                        .sql();
+        String sql = PSC.select("u.id", "u.name", "o.total").from("users u").leftJoin("orders o").on("u.id = o.user_id").sql();
         assertNotNull(sql);
         assertTrue(sql.contains("LEFT JOIN"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithGroupBy() {
-        String sql = PSC.select("department", "COUNT(*) AS cnt")
-                        .from("employees")
-                        .groupBy("department")
-                        .sql();
+        String sql = PSC.select("department", "COUNT(*) AS cnt").from("employees").groupBy("department").sql();
         assertNotNull(sql);
         assertTrue(sql.contains("GROUP BY"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithOrderBy() {
-        String sql = PSC.select("id", "name")
-                        .from("users")
-                        .orderBy("name")
-                        .sql();
+        String sql = PSC.select("id", "name").from("users").orderBy("name").sql();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithLimit() {
-        String sql = PSC.select("id", "name")
-                        .from("users")
-                        .limit(10)
-                        .sql();
+        String sql = PSC.select("id", "name").from("users").limit(10).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("LIMIT"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithBetween() {
-        String sql = PSC.select("id", "name", "age")
-                        .from("users")
-                        .where(Filters.between("age", 18, 65))
-                        .sql();
+        String sql = PSC.select("id", "name", "age").from("users").where(Filters.between("age", 18, 65)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("BETWEEN"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithIn() {
-        String sql = PSC.select("id", "name")
-                        .from("users")
-                        .where(Filters.in("status", Arrays.asList("active", "pending")))
-                        .sql();
+        String sql = PSC.select("id", "name").from("users").where(Filters.in("status", Arrays.asList("active", "pending"))).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("IN"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithLike() {
-        String sql = PSC.select("id", "name", "email")
-                        .from("users")
-                        .where(Filters.like("email", "%@company.com"))
-                        .sql();
+        String sql = PSC.select("id", "name", "email").from("users").where(Filters.like("email", "%@company.com")).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("LIKE"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithIsNull() {
-        String sql = PSC.select("id", "name")
-                        .from("users")
-                        .where(Filters.isNull("deleted_at"))
-                        .sql();
+        String sql = PSC.select("id", "name").from("users").where(Filters.isNull("deleted_at")).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("IS NULL"));
     }
@@ -1294,96 +1230,65 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testSQLBuilder_PSC_selectWithAndOr() {
         String sql = PSC.select("id", "name")
-                        .from("users")
-                        .where(Filters.and(
-                            Filters.eq("status", "active"),
-                            Filters.or(
-                                Filters.gt("age", 18),
-                                Filters.eq("verified", true)
-                            )
-                        ))
-                        .sql();
+                .from("users")
+                .where(Filters.and(Filters.eq("status", "active"), Filters.or(Filters.gt("age", 18), Filters.eq("verified", true))))
+                .sql();
         assertNotNull(sql);
         assertTrue(sql.contains("AND"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithRightJoin() {
-        String sql = PSC.select("u.id", "o.total")
-                        .from("users u")
-                        .rightJoin("orders o").on("u.id = o.user_id")
-                        .sql();
+        String sql = PSC.select("u.id", "o.total").from("users u").rightJoin("orders o").on("u.id = o.user_id").sql();
         assertNotNull(sql);
         assertTrue(sql.contains("RIGHT JOIN"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithFullJoin() {
-        String sql = PSC.select("u.id", "o.total")
-                        .from("users u")
-                        .fullJoin("orders o").on("u.id = o.user_id")
-                        .sql();
+        String sql = PSC.select("u.id", "o.total").from("users u").fullJoin("orders o").on("u.id = o.user_id").sql();
         assertNotNull(sql);
         assertTrue(sql.contains("FULL JOIN"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithInnerJoin() {
-        String sql = PSC.select("u.id", "o.total")
-                        .from("users u")
-                        .innerJoin("orders o").on("u.id = o.user_id")
-                        .sql();
+        String sql = PSC.select("u.id", "o.total").from("users u").innerJoin("orders o").on("u.id = o.user_id").sql();
         assertNotNull(sql);
         assertTrue(sql.contains("INNER JOIN"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithCrossJoin() {
-        String sql = PSC.select("u.id", "p.name")
-                        .from("users u")
-                        .crossJoin("products p")
-                        .sql();
+        String sql = PSC.select("u.id", "p.name").from("users u").crossJoin("products p").sql();
         assertNotNull(sql);
         assertTrue(sql.contains("CROSS JOIN"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithHaving() {
-        String sql = PSC.select("department", "COUNT(*) AS cnt")
-                        .from("employees")
-                        .groupBy("department")
-                        .having(Filters.expr("COUNT(*) > 5"))
-                        .sql();
+        String sql = PSC.select("department", "COUNT(*) AS cnt").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("HAVING"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithUnion() {
-        String sql = PSC.select("id", "name")
-                        .from("active_users")
-                        .union(PSC.select("id", "name").from("archived_users"))
-                        .sql();
+        String sql = PSC.select("id", "name").from("active_users").union(PSC.select("id", "name").from("archived_users")).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("UNION"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithUnionAll() {
-        String sql = PSC.select("id", "name")
-                        .from("active_users")
-                        .unionAll(PSC.select("id", "name").from("temp_users"))
-                        .sql();
+        String sql = PSC.select("id", "name").from("active_users").unionAll(PSC.select("id", "name").from("temp_users")).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("UNION ALL"));
     }
 
     @Test
     public void testSQLBuilder_NSC_simpleSelect() {
-        String sql = NSC.select("id", "name")
-                        .from("account")
-                        .where(Filters.eq("id", 1))
-                        .sql();
+        String sql = NSC.select("id", "name").from("account").where(Filters.eq("id", 1)).sql();
         assertNotNull(sql);
         assertTrue(sql.contains("SELECT"));
         assertTrue(sql.contains("FROM account"));
@@ -1391,9 +1296,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSQLBuilder_PSC_insertIntoValues() {
-        String sql = PSC.insert("id", "name", "email")
-                        .into("users")
-                        .sql();
+        String sql = PSC.insert("id", "name", "email").into("users").sql();
         assertNotNull(sql);
         assertTrue(sql.contains("INSERT INTO users"));
         assertTrue(sql.contains("VALUES"));
@@ -1401,20 +1304,14 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSQLBuilder_PSC_selectDistinct() {
-        String sql = PSC.select("DISTINCT department")
-                        .from("employees")
-                        .sql();
+        String sql = PSC.select("DISTINCT department").from("employees").sql();
         assertNotNull(sql);
         assertTrue(sql.contains("DISTINCT"));
     }
 
     @Test
     public void testSQLBuilder_PSC_selectWithOffsetAndLimit() {
-        String sql = PSC.select("id", "name")
-                        .from("users")
-                        .offset(10)
-                        .limit(5)
-                        .sql();
+        String sql = PSC.select("id", "name").from("users").offset(10).limit(5).sql();
         assertNotNull(sql);
     }
 }

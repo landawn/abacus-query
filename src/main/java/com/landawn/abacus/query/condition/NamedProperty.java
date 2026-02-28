@@ -280,11 +280,11 @@ public final class NamedProperty {
      * }</pre>
      *
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
-     * @return a GreaterEqual condition for this property
-     * @see GreaterEqual
+     * @return a GreaterThanOrEqual condition for this property
+     * @see GreaterThanOrEqual
      * @see Filters#ge(String, Object)
      */
-    public GreaterEqual ge(final Object value) {
+    public GreaterThanOrEqual ge(final Object value) {
         return Filters.ge(propName, value);
     }
 
@@ -318,11 +318,11 @@ public final class NamedProperty {
      * }</pre>
      *
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
-     * @return a LessEqual condition for this property
-     * @see LessEqual
+     * @return a LessThanOrEqual condition for this property
+     * @see LessThanOrEqual
      * @see Filters#le(String, Object)
      */
-    public LessEqual le(final Object value) {
+    public LessThanOrEqual le(final Object value) {
         return Filters.le(propName, value);
     }
 

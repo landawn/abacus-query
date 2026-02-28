@@ -488,13 +488,13 @@ public class SQLBuilder2025Test extends TestBase {
     }
 
     @Test
-    public void testWhereGreaterEqual() {
+    public void testWhereGreaterThanOrEqual() {
         String sql = SQLBuilder.PSC.select("*").from("users").where(Filters.ge("age", 21)).sql();
         assertTrue(sql.contains(">="));
     }
 
     @Test
-    public void testWhereLessEqual() {
+    public void testWhereLessThanOrEqual() {
         String sql = SQLBuilder.PSC.select("*").from("users").where(Filters.le("age", 60)).sql();
         assertTrue(sql.contains("<="));
     }

@@ -112,7 +112,7 @@ public class Expression2025Test extends TestBase {
     }
 
     @Test
-    public void testGreaterEqual() {
+    public void testGreaterThanOrEqual() {
         String result = Expression.greaterThanOrEqual("score", 60);
 
         assertTrue(result.contains("score"));
@@ -148,7 +148,7 @@ public class Expression2025Test extends TestBase {
     }
 
     @Test
-    public void testLessEqual() {
+    public void testLessThanOrEqual() {
         String result = Expression.lessThanOrEqual("discount", 50);
 
         assertTrue(result.contains("discount"));

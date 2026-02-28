@@ -25,7 +25,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Setting inclusive upper bounds on numeric values (maximum limits)</li>
  *   <li>Date comparisons (on or before a certain date)</li>
  *   <li>String comparisons using lexicographical ordering</li>
- *   <li>Implementing inclusive range queries when combined with GreaterEqual</li>
+ *   <li>Implementing inclusive range queries when combined with GreaterThanOrEqual</li>
  *   <li>Price caps, age limits, and deadline checks</li>
  * </ul>
  *
@@ -40,73 +40,73 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if age is 18 or younger
- * LessEqual ageLimit = new LessEqual("age", 18);
+ * LessThanOrEqual ageLimit = new LessThanOrEqual("age", 18);
  * // SQL: age <= 18
  * 
  * // Check if price is at most $99.99
- * LessEqual priceLimit = new LessEqual("price", 99.99);
+ * LessThanOrEqual priceLimit = new LessThanOrEqual("price", 99.99);
  * // SQL: price <= 99.99
  * 
  * // Check if date is on or before a deadline
- * LessEqual deadline = new LessEqual("submit_date", "2023-12-31");
+ * LessThanOrEqual deadline = new LessThanOrEqual("submit_date", "2023-12-31");
  * // SQL: submit_date <= '2023-12-31'
  * 
- * // Combine with GreaterEqual for inclusive range
+ * // Combine with GreaterThanOrEqual for inclusive range
  * And priceRange = new And(
- *     new GreaterEqual("price", 10.00),
- *     new LessEqual("price", 100.00)
+ *     new GreaterThanOrEqual("price", 10.00),
+ *     new LessThanOrEqual("price", 100.00)
  * );
  * // SQL: (price >= 10.00) AND (price <= 100.00)
  * }</pre>
  * 
  * @see Binary
  * @see LessThan
- * @see GreaterEqual
+ * @see GreaterThanOrEqual
  * @see Condition
  */
-public class LessEqual extends Binary {
+public class LessThanOrEqual extends Binary {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor creates an uninitialized LessEqual instance and should not be used 
+     * This constructor creates an uninitialized LessThanOrEqual instance and should not be used 
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
-    LessEqual() {
+    LessThanOrEqual() {
     }
 
     /**
-     * Creates a new LessEqual condition.
+     * Creates a new LessThanOrEqual condition.
      * This condition checks if the property value is less than or equal to the specified value,
      * providing an inclusive upper bound check.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Limit quantity to maximum stock
-     * LessEqual stockLimit = new LessEqual("quantity", 100);
+     * LessThanOrEqual stockLimit = new LessThanOrEqual("quantity", 100);
      * // SQL: quantity <= 100
      *
      * // Find all orders on or before today
-     * LessEqual todayOrEarlier = new LessEqual("order_date", LocalDate.now());
+     * LessThanOrEqual todayOrEarlier = new LessThanOrEqual("order_date", LocalDate.now());
      * // SQL: order_date <= '2023-10-15' (assuming today's date)
      *
      * // Set maximum allowed discount
-     * LessEqual maxDiscount = new LessEqual("discount_percent", 50);
+     * LessThanOrEqual maxDiscount = new LessThanOrEqual("discount_percent", 50);
      * // SQL: discount_percent <= 50
      *
      * // Check temperature threshold
-     * LessEqual tempThreshold = new LessEqual("temperature", 25.5);
+     * LessThanOrEqual tempThreshold = new LessThanOrEqual("temperature", 25.5);
      * // SQL: temperature <= 25.5
      *
      * // Use with subquery - find products priced at or below average
      * SubQuery avgPrice = Filters.subQuery("SELECT AVG(price) FROM products");
-     * LessEqual atOrBelowAverage = new LessEqual("price", avgPrice);
+     * LessThanOrEqual atOrBelowAverage = new LessThanOrEqual("price", avgPrice);
      * }</pre>
      *
      * @param propName the property/column name (must not be null or empty)
      * @param propValue the value to compare against (can be null, literal value, or subquery)
      * @throws IllegalArgumentException if propName is null or empty
      */
-    public LessEqual(final String propName, final Object propValue) {
+    public LessThanOrEqual(final String propName, final Object propValue) {
         super(propName, Operator.LESS_EQUAL, propValue);
     }
 }

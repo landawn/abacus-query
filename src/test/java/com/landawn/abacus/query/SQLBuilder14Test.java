@@ -144,8 +144,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
             Assertions.assertTrue(sql.contains("email"));
-            Assertions.assertFalse(sql.contains("tempData"));   // @Transient field should be excluded
-            Assertions.assertFalse(sql.contains("readOnlyField"));   // @ReadOnly field should be excluded
+            Assertions.assertFalse(sql.contains("tempData")); // @Transient field should be excluded
+            Assertions.assertFalse(sql.contains("readOnlyField")); // @ReadOnly field should be excluded
         }
 
         @Test
@@ -169,8 +169,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
             Assertions.assertTrue(sql.contains("email"));
-            Assertions.assertFalse(sql.contains("tempData"));   // @Transient
-            Assertions.assertFalse(sql.contains("readOnlyField"));   // @ReadOnly
+            Assertions.assertFalse(sql.contains("tempData")); // @Transient
+            Assertions.assertFalse(sql.contains("readOnlyField")); // @ReadOnly
         }
 
         @Test
@@ -242,8 +242,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("UPDATE test_account"));
             Assertions.assertTrue(sql.contains("firstName = #{firstName}"));
             Assertions.assertTrue(sql.contains("lastName = #{lastName}"));
-            Assertions.assertFalse(sql.contains("readOnlyField"));   // @ReadOnly
-            Assertions.assertFalse(sql.contains("nonUpdatableField"));   // @NonUpdatable
+            Assertions.assertFalse(sql.contains("readOnlyField")); // @ReadOnly
+            Assertions.assertFalse(sql.contains("nonUpdatableField")); // @NonUpdatable
         }
 
         @Test
@@ -316,7 +316,7 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
-            Assertions.assertFalse(sql.contains("tempData"));   // @Transient
+            Assertions.assertFalse(sql.contains("tempData")); // @Transient
         }
 
         @Test
@@ -502,8 +502,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
-            Assertions.assertFalse(sql.contains("temp_data"));   // @Transient
-            Assertions.assertFalse(sql.contains("read_only_field"));   // @ReadOnly
+            Assertions.assertFalse(sql.contains("temp_data")); // @Transient
+            Assertions.assertFalse(sql.contains("read_only_field")); // @ReadOnly
         }
 
         @Test
@@ -527,8 +527,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
             Assertions.assertTrue(sql.contains("email_address"));
-            Assertions.assertFalse(sql.contains("temp_data"));   // @Transient
-            Assertions.assertFalse(sql.contains("read_only_field"));   // @ReadOnly
+            Assertions.assertFalse(sql.contains("temp_data")); // @Transient
+            Assertions.assertFalse(sql.contains("read_only_field")); // @ReadOnly
         }
 
         @Test
@@ -600,8 +600,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("UPDATE test_users"));
             Assertions.assertTrue(sql.contains("first_name = #{firstName}"));
             Assertions.assertTrue(sql.contains("last_name = #{lastName}"));
-            Assertions.assertFalse(sql.contains("read_only_field"));   // @ReadOnly
-            Assertions.assertFalse(sql.contains("non_updatable_field"));   // @NonUpdatable
+            Assertions.assertFalse(sql.contains("read_only_field")); // @ReadOnly
+            Assertions.assertFalse(sql.contains("non_updatable_field")); // @NonUpdatable
         }
 
         @Test
@@ -675,7 +675,7 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("AS \"firstName\""));
             Assertions.assertTrue(sql.contains("AS \"lastName\""));
-            Assertions.assertFalse(sql.contains("temp_data"));   // @Transient
+            Assertions.assertFalse(sql.contains("temp_data")); // @Transient
         }
 
         @Test
@@ -935,8 +935,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
             Assertions.assertTrue(sql.contains("LAST_NAME"));
             Assertions.assertTrue(sql.contains("EMAIL"));
-            Assertions.assertFalse(sql.contains("TEMP_DATA"));   // @Transient
-            Assertions.assertFalse(sql.contains("READ_ONLY_FIELD"));   // @ReadOnly
+            Assertions.assertFalse(sql.contains("TEMP_DATA")); // @Transient
+            Assertions.assertFalse(sql.contains("READ_ONLY_FIELD")); // @ReadOnly
         }
 
         @Test
@@ -960,8 +960,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
             Assertions.assertTrue(sql.contains("LAST_NAME"));
             Assertions.assertTrue(sql.contains("EMAIL"));
-            Assertions.assertFalse(sql.contains("TEMP_DATA"));   // @Transient
-            Assertions.assertFalse(sql.contains("READ_ONLY_FIELD"));   // @ReadOnly
+            Assertions.assertFalse(sql.contains("TEMP_DATA")); // @Transient
+            Assertions.assertFalse(sql.contains("READ_ONLY_FIELD")); // @ReadOnly
         }
 
         @Test
@@ -1140,7 +1140,7 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("AS \"id\""));
             Assertions.assertTrue(sql.contains("AS \"firstName\""));
             Assertions.assertTrue(sql.contains("AS \"lastName\""));
-            Assertions.assertFalse(sql.contains("TEMP_DATA"));   // @Transient
+            Assertions.assertFalse(sql.contains("TEMP_DATA")); // @Transient
         }
 
         @Test
@@ -1405,8 +1405,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
             Assertions.assertTrue(sql.contains("createdDate"));
-            Assertions.assertFalse(sql.contains("tempData"));   // @Transient
-            Assertions.assertFalse(sql.contains("readOnlyField"));   // @ReadOnly
+            Assertions.assertFalse(sql.contains("tempData")); // @Transient
+            Assertions.assertFalse(sql.contains("readOnlyField")); // @ReadOnly
         }
 
         @Test
@@ -1430,8 +1430,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
             Assertions.assertTrue(sql.contains("emailAddress"));
-            Assertions.assertFalse(sql.contains("tempData"));   // @Transient
-            Assertions.assertFalse(sql.contains("readOnlyField"));   // @ReadOnly
+            Assertions.assertFalse(sql.contains("tempData")); // @Transient
+            Assertions.assertFalse(sql.contains("readOnlyField")); // @ReadOnly
         }
 
         @Test
@@ -1596,7 +1596,7 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("lastName"));
             Assertions.assertTrue(sql.contains("emailAddress"));
             Assertions.assertTrue(sql.contains("isActive"));
-            Assertions.assertFalse(sql.contains("tempData"));   // @Transient
+            Assertions.assertFalse(sql.contains("tempData")); // @Transient
         }
 
         @Test

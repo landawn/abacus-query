@@ -20,7 +20,7 @@ public class SimpleDynamicSQLBuilderTest extends TestBase {
 
         assertNotNull(builder1);
         assertNotNull(builder2);
-        assertNotSame(builder1, builder2);   // Should return different instances
+        assertNotSame(builder1, builder2); // Should return different instances
     }
 
     @Test

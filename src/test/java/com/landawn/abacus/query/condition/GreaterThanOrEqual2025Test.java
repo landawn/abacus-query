@@ -33,11 +33,11 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
-public class GreaterEqual2025Test extends TestBase {
+public class GreaterThanOrEqual2025Test extends TestBase {
 
     @Test
     public void testConstructor() {
-        GreaterEqual condition = new GreaterEqual("age", 25);
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("age", 25);
         assertEquals("age", condition.getPropName());
         assertEquals(25, (int) condition.getPropValue());
         assertEquals(Operator.GREATER_EQUAL, condition.getOperator());
@@ -45,49 +45,49 @@ public class GreaterEqual2025Test extends TestBase {
 
     @Test
     public void testConstructor_NullPropertyName() {
-        assertThrows(IllegalArgumentException.class, () -> new GreaterEqual(null, 25));
+        assertThrows(IllegalArgumentException.class, () -> new GreaterThanOrEqual(null, 25));
     }
 
     @Test
     public void testConstructor_EmptyPropertyName() {
-        assertThrows(IllegalArgumentException.class, () -> new GreaterEqual("", 25));
+        assertThrows(IllegalArgumentException.class, () -> new GreaterThanOrEqual("", 25));
     }
 
     @Test
     public void testGetPropName() {
-        GreaterEqual condition = new GreaterEqual("userName", "John");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("userName", "John");
         assertEquals("userName", condition.getPropName());
     }
 
     @Test
     public void testGetPropValue() {
-        GreaterEqual condition = new GreaterEqual("age", 30);
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("age", 30);
         Integer value = condition.getPropValue();
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
-        GreaterEqual condition = new GreaterEqual("name", "Alice");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("name", "Alice");
         String value = condition.getPropValue();
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
-        GreaterEqual condition = new GreaterEqual("field", null);
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", null);
         assertNull(condition.getPropValue());
     }
 
     @Test
     public void testGetOperator() {
-        GreaterEqual condition = new GreaterEqual("field", "value");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", "value");
         assertEquals(Operator.GREATER_EQUAL, condition.getOperator());
     }
 
     @Test
     public void testGetParameters() {
-        GreaterEqual condition = new GreaterEqual("status", "active");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("status", "active");
         List<Object> params = condition.getParameters();
         assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
@@ -95,7 +95,7 @@ public class GreaterEqual2025Test extends TestBase {
 
     @Test
     public void testGetParameters_MultipleValues() {
-        GreaterEqual condition = new GreaterEqual("count", 42);
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("count", 42);
         List<Object> params = condition.getParameters();
         assertEquals(1, (int) params.size());
         assertEquals(42, (int) params.get(0));
@@ -103,15 +103,15 @@ public class GreaterEqual2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        GreaterEqual condition = new GreaterEqual("field", "value");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", "value");
         condition.clearParameters();
         assertNull(condition.getPropValue());
     }
 
     @Test
     public void testCopy() {
-        GreaterEqual original = new GreaterEqual("name", "John");
-        GreaterEqual copy = original.copy();
+        GreaterThanOrEqual original = new GreaterThanOrEqual("name", "John");
+        GreaterThanOrEqual copy = original.copy();
 
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
@@ -121,7 +121,7 @@ public class GreaterEqual2025Test extends TestBase {
 
     @Test
     public void testToString_NoChange() {
-        GreaterEqual condition = new GreaterEqual("userName", "Alice");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
@@ -129,83 +129,83 @@ public class GreaterEqual2025Test extends TestBase {
 
     @Test
     public void testToString_SnakeCase() {
-        GreaterEqual condition = new GreaterEqual("userName", "Bob");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("userName", "Bob");
         String result = condition.toString(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
     @Test
     public void testHashCode() {
-        GreaterEqual cond1 = new GreaterEqual("age", 25);
-        GreaterEqual cond2 = new GreaterEqual("age", 25);
+        GreaterThanOrEqual cond1 = new GreaterThanOrEqual("age", 25);
+        GreaterThanOrEqual cond2 = new GreaterThanOrEqual("age", 25);
         assertEquals(cond1.hashCode(), cond2.hashCode());
     }
 
     @Test
     public void testHashCode_DifferentValues() {
-        GreaterEqual cond1 = new GreaterEqual("age", 25);
-        GreaterEqual cond2 = new GreaterEqual("age", 30);
+        GreaterThanOrEqual cond1 = new GreaterThanOrEqual("age", 25);
+        GreaterThanOrEqual cond2 = new GreaterThanOrEqual("age", 30);
         assertNotEquals(cond1.hashCode(), cond2.hashCode());
     }
 
     @Test
     public void testEquals_SameObject() {
-        GreaterEqual condition = new GreaterEqual("field", "value");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", "value");
         assertEquals(condition, condition);
     }
 
     @Test
     public void testEquals_EqualObjects() {
-        GreaterEqual cond1 = new GreaterEqual("status", "active");
-        GreaterEqual cond2 = new GreaterEqual("status", "active");
+        GreaterThanOrEqual cond1 = new GreaterThanOrEqual("status", "active");
+        GreaterThanOrEqual cond2 = new GreaterThanOrEqual("status", "active");
         assertEquals(cond1, cond2);
     }
 
     @Test
     public void testEquals_DifferentPropName() {
-        GreaterEqual cond1 = new GreaterEqual("field1", "value");
-        GreaterEqual cond2 = new GreaterEqual("field2", "value");
+        GreaterThanOrEqual cond1 = new GreaterThanOrEqual("field1", "value");
+        GreaterThanOrEqual cond2 = new GreaterThanOrEqual("field2", "value");
         assertNotEquals(cond1, cond2);
     }
 
     @Test
     public void testEquals_DifferentPropValue() {
-        GreaterEqual cond1 = new GreaterEqual("field", "value1");
-        GreaterEqual cond2 = new GreaterEqual("field", "value2");
+        GreaterThanOrEqual cond1 = new GreaterThanOrEqual("field", "value1");
+        GreaterThanOrEqual cond2 = new GreaterThanOrEqual("field", "value2");
         assertNotEquals(cond1, cond2);
     }
 
     @Test
     public void testEquals_Null() {
-        GreaterEqual condition = new GreaterEqual("field", "value");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", "value");
         assertNotEquals(null, condition);
     }
 
     @Test
     public void testEquals_DifferentClass() {
-        GreaterEqual condition = new GreaterEqual("field", "value");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", "value");
         assertNotEquals(condition, "string");
     }
 
     @Test
     public void testAnd() {
-        GreaterEqual cond1 = new GreaterEqual("a", 1);
-        GreaterEqual cond2 = new GreaterEqual("b", 2);
+        GreaterThanOrEqual cond1 = new GreaterThanOrEqual("a", 1);
+        GreaterThanOrEqual cond2 = new GreaterThanOrEqual("b", 2);
         And result = cond1.and(cond2);
         assertEquals(Integer.valueOf(2), result.getConditions().size());
     }
 
     @Test
     public void testOr() {
-        GreaterEqual cond1 = new GreaterEqual("a", 1);
-        GreaterEqual cond2 = new GreaterEqual("b", 2);
+        GreaterThanOrEqual cond1 = new GreaterThanOrEqual("a", 1);
+        GreaterThanOrEqual cond2 = new GreaterThanOrEqual("b", 2);
         Or result = cond1.or(cond2);
         assertEquals(Integer.valueOf(2), result.getConditions().size());
     }
 
     @Test
     public void testNot() {
-        GreaterEqual condition = new GreaterEqual("field", "value");
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", "value");
         Not result = condition.not();
         assertNotNull(result);
         assertEquals(Operator.NOT, result.getOperator());
@@ -214,7 +214,7 @@ public class GreaterEqual2025Test extends TestBase {
     @Test
     @SuppressWarnings("deprecation")
     public void testSetPropValue() {
-        GreaterEqual condition = new GreaterEqual("field", 50);
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", 50);
         condition.setPropValue(75);
         assertEquals(Integer.valueOf(75), condition.getPropValue());
     }
@@ -222,14 +222,14 @@ public class GreaterEqual2025Test extends TestBase {
     @Test
     @SuppressWarnings("deprecation")
     public void testSetPropValue_ChangeType() {
-        GreaterEqual condition = new GreaterEqual("field", 50);
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", 50);
         condition.setPropValue("updatedValue");
         assertEquals("updatedValue", condition.getPropValue());
     }
 
     @Test
     public void testToString_NoArgs() {
-        GreaterEqual condition = new GreaterEqual("score", 60);
+        GreaterThanOrEqual condition = new GreaterThanOrEqual("score", 60);
         String result = condition.toString();
         assertNotNull(result);
         assertTrue(result.contains("score"));
@@ -238,8 +238,8 @@ public class GreaterEqual2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentOperator() {
-        GreaterEqual greaterThanOrEqual = new GreaterEqual("field", 20);
-        LessEqual lessThanOrEqual = new LessEqual("field", 20);
+        GreaterThanOrEqual greaterThanOrEqual = new GreaterThanOrEqual("field", 20);
+        LessThanOrEqual lessThanOrEqual = new LessThanOrEqual("field", 20);
         assertNotEquals(greaterThanOrEqual, lessThanOrEqual);
     }
 }

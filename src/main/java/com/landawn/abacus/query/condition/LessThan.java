@@ -60,7 +60,7 @@ package com.landawn.abacus.query.condition;
  * }</pre>
  * 
  * @see Binary
- * @see LessEqual
+ * @see LessThanOrEqual
  * @see GreaterThan
  * @see Condition
  */

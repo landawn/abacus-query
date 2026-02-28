@@ -1073,8 +1073,8 @@ public class SQLBuilder13Test extends TestBase {
             user.setFirstName("John");
             user.setLastName("Doe");
             user.setEmail("john@example.com");
-            user.setCreatedDate(new Date());   // Should be excluded (ReadOnly)
-            user.setTempField("temp");   // Should be excluded (Transient)
+            user.setCreatedDate(new Date()); // Should be excluded (ReadOnly)
+            user.setTempField("temp"); // Should be excluded (Transient)
 
             String sql = NSC.insert(user).into("users").sql();
             Assertions.assertNotNull(sql);
@@ -1774,8 +1774,8 @@ public class SQLBuilder13Test extends TestBase {
             Account account = new Account();
             account.setFirstName("John");
             account.setLastName("Doe");
-            account.setCreatedTime(new Date());   // Should be excluded
-            account.setSessionId("123");   // Should be excluded
+            account.setCreatedTime(new Date()); // Should be excluded
+            account.setSessionId("123"); // Should be excluded
 
             String sql = NAC.insert(account).into("ACCOUNT").sql();
             Assertions.assertNotNull(sql);
@@ -2546,8 +2546,8 @@ public class SQLBuilder13Test extends TestBase {
             Account account = new Account();
             account.setFirstName("John");
             account.setLastName("Doe");
-            account.setCreatedTime(new Date());   // Should be excluded
-            account.setSessionToken("123");   // Should be excluded
+            account.setCreatedTime(new Date()); // Should be excluded
+            account.setSessionToken("123"); // Should be excluded
 
             String sql = NLC.insert(account).into("account").sql();
             Assertions.assertNotNull(sql);
@@ -3303,7 +3303,7 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains(":email"));
 
             Date startDate = new Date();
-            Date endDate = new Date(startDate.getTime() + 86400000);   // 1 day later
+            Date endDate = new Date(startDate.getTime() + 86400000); // 1 day later
 
             sql = NLC.selectFrom(Order.class, "ord", true).where(Filters.between("ord.orderDate", startDate, endDate)).sql();
             // Output: SELECT ord.id, ord.orderNumber, ord.amount, ord.status,
@@ -3439,8 +3439,8 @@ public class SQLBuilder13Test extends TestBase {
             user.setFirstName("John");
             user.setLastName("Doe");
             user.setEmail("john@example.com");
-            user.setCreated_date(new Date());   // Should be excluded (ReadOnly)
-            user.setTempData("temp");   // Should be excluded (Transient)
+            user.setCreated_date(new Date()); // Should be excluded (ReadOnly)
+            user.setTempData("temp"); // Should be excluded (Transient)
 
             String sql = PSC.insert(user).into("users").sql();
             Assertions.assertNotNull(sql);

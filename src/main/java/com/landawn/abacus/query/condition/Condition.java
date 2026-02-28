@@ -36,7 +36,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * <p>Common implementations include:</p>
  * <ul>
  *   <li><b>Comparison conditions:</b> {@code Equal}, {@code NotEqual}, {@code GreaterThan}, 
- *       {@code LessThan}, {@code GreaterEqual}, {@code LessEqual}</li>
+ *       {@code LessThan}, {@code GreaterThanOrEqual}, {@code LessThanOrEqual}</li>
  *   <li><b>Range conditions:</b> {@code Between}, {@code NotBetween}</li>
  *   <li><b>Pattern matching:</b> {@code Like}, {@code NotLike}</li>
  *   <li><b>Null checks:</b> {@code IsNull}, {@code IsNotNull}</li>

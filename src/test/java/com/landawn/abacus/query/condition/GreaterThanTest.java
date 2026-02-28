@@ -121,8 +121,8 @@ public class GreaterThanTest extends TestBase {
 
         Assertions.assertEquals(gt1, gt1);
         Assertions.assertEquals(gt1, gt2);
-        Assertions.assertNotEquals(gt1, gt3);   // Different value
-        Assertions.assertNotEquals(gt1, gt4);   // Different property
+        Assertions.assertNotEquals(gt1, gt3); // Different value
+        Assertions.assertNotEquals(gt1, gt4); // Different property
         Assertions.assertNotEquals(gt1, null);
         Assertions.assertNotEquals(gt1, "string");
     }
@@ -197,7 +197,7 @@ public class GreaterThanTest extends TestBase {
     public void testComplexComparison() {
         // Test chaining multiple conditions
         GreaterThan salary = Filters.gt("salary", 50000);
-        GreaterEqual experience = Filters.ge("yearsExperience", 5);
+        GreaterThanOrEqual experience = Filters.ge("yearsExperience", 5);
         LessThan age = Filters.lt("age", 50);
 
         And qualified = salary.and(experience).and(age);

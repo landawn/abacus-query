@@ -7,11 +7,11 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
-public class GreaterEqualTest extends TestBase {
+public class GreaterThanOrEqualTest extends TestBase {
 
     @Test
     public void testConstructor() {
-        GreaterEqual ge = Filters.ge("age", 18);
+        GreaterThanOrEqual ge = Filters.ge("age", 18);
         Assertions.assertNotNull(ge);
         Assertions.assertEquals("age", ge.getPropName());
         Assertions.assertEquals(18, (Integer) (Integer) ge.getPropValue());
@@ -20,7 +20,7 @@ public class GreaterEqualTest extends TestBase {
 
     @Test
     public void testConstructorWithNullValue() {
-        GreaterEqual ge = Filters.ge("name", null);
+        GreaterThanOrEqual ge = Filters.ge("name", null);
         Assertions.assertNotNull(ge);
         Assertions.assertEquals("name", ge.getPropName());
         Assertions.assertNull(ge.getPropValue());
@@ -29,37 +29,37 @@ public class GreaterEqualTest extends TestBase {
     @Test
     public void testConstructorWithEmptyPropName() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new GreaterEqual("", 10);
+            new GreaterThanOrEqual("", 10);
         });
     }
 
     @Test
     public void testConstructorWithNullPropName() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new GreaterEqual(null, 10);
+            new GreaterThanOrEqual(null, 10);
         });
     }
 
     @Test
     public void testToString() {
-        GreaterEqual ge = Filters.ge("salary", 50000);
+        GreaterThanOrEqual ge = Filters.ge("salary", 50000);
         String result = ge.toString();
         Assertions.assertEquals("salary >= 50000", result);
     }
 
     @Test
     public void testToStringWithNamingPolicy() {
-        GreaterEqual ge = Filters.ge("firstName", "John");
+        GreaterThanOrEqual ge = Filters.ge("firstName", "John");
         String result = ge.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("first_name >= 'John'", result);
     }
 
     @Test
     public void testEquals() {
-        GreaterEqual ge1 = Filters.ge("age", 25);
-        GreaterEqual ge2 = Filters.ge("age", 25);
-        GreaterEqual ge3 = Filters.ge("age", 30);
-        GreaterEqual ge4 = Filters.ge("name", 25);
+        GreaterThanOrEqual ge1 = Filters.ge("age", 25);
+        GreaterThanOrEqual ge2 = Filters.ge("age", 25);
+        GreaterThanOrEqual ge3 = Filters.ge("age", 30);
+        GreaterThanOrEqual ge4 = Filters.ge("name", 25);
 
         Assertions.assertEquals(ge1, ge2);
         Assertions.assertNotEquals(ge1, ge3);
@@ -70,16 +70,16 @@ public class GreaterEqualTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        GreaterEqual ge1 = Filters.ge("age", 25);
-        GreaterEqual ge2 = Filters.ge("age", 25);
+        GreaterThanOrEqual ge1 = Filters.ge("age", 25);
+        GreaterThanOrEqual ge2 = Filters.ge("age", 25);
 
         Assertions.assertEquals(ge1.hashCode(), ge2.hashCode());
     }
 
     @Test
     public void testCopy() {
-        GreaterEqual original = Filters.ge("score", 80.5);
-        GreaterEqual copy = original.copy();
+        GreaterThanOrEqual original = Filters.ge("score", 80.5);
+        GreaterThanOrEqual copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original, copy);
@@ -89,7 +89,7 @@ public class GreaterEqualTest extends TestBase {
 
     @Test
     public void testGetParameters() {
-        GreaterEqual ge = Filters.ge("price", 100.0);
+        GreaterThanOrEqual ge = Filters.ge("price", 100.0);
         var params = ge.getParameters();
 
         Assertions.assertEquals(1, params.size());
@@ -98,7 +98,7 @@ public class GreaterEqualTest extends TestBase {
 
     @Test
     public void testClearParameters() {
-        GreaterEqual ge = Filters.ge("amount", 500);
+        GreaterThanOrEqual ge = Filters.ge("amount", 500);
         ge.clearParameters();
 
         Assertions.assertNull(ge.getPropValue());
@@ -106,7 +106,7 @@ public class GreaterEqualTest extends TestBase {
 
     @Test
     public void testAnd() {
-        GreaterEqual ge = Filters.ge("age", 18);
+        GreaterThanOrEqual ge = Filters.ge("age", 18);
         LessThan lt = Filters.lt("age", 65);
         And and = ge.and(lt);
 
@@ -117,7 +117,7 @@ public class GreaterEqualTest extends TestBase {
 
     @Test
     public void testOr() {
-        GreaterEqual ge = Filters.ge("score", 90);
+        GreaterThanOrEqual ge = Filters.ge("score", 90);
         Equal eq = Filters.eq("grade", "A");
         Or or = ge.or(eq);
 
@@ -128,7 +128,7 @@ public class GreaterEqualTest extends TestBase {
 
     @Test
     public void testNot() {
-        GreaterEqual ge = Filters.ge("temperature", 0);
+        GreaterThanOrEqual ge = Filters.ge("temperature", 0);
         Not not = ge.not();
 
         Assertions.assertNotNull(not);

@@ -109,7 +109,7 @@ public class Junction extends AbstractCondition {
      * // Create an AND junction with multiple conditions
      * Junction activeAdults = new Junction(Operator.AND,
      *     new Equal("active", true),
-     *     new GreaterEqual("age", 18),
+     *     new GreaterThanOrEqual("age", 18),
      *     new IsNotNull("email")
      * );
      *
@@ -142,7 +142,7 @@ public class Junction extends AbstractCondition {
      * conditions.add(new Equal("status", "active"));
      * conditions.add(new GreaterThan("score", 80));
      * if (includeDateCheck) {
-     *     conditions.add(new LessEqual("date", today));
+     *     conditions.add(new LessThanOrEqual("date", today));
      * }
      *
      * Junction junction = new Junction(Operator.AND, conditions);

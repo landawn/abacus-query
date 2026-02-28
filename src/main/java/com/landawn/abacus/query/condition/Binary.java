@@ -35,9 +35,9 @@ import com.landawn.abacus.util.Strings;
  *   <li>{@link Equal} - property = value</li>
  *   <li>{@link NotEqual} - property != or &lt;&gt; value</li>
  *   <li>{@link GreaterThan} - property &gt; value</li>
- *   <li>{@link GreaterEqual} - property &gt;= value</li>
+ *   <li>{@link GreaterThanOrEqual} - property &gt;= value</li>
  *   <li>{@link LessThan} - property &lt; value</li>
- *   <li>{@link LessEqual} - property &lt;= value</li>
+ *   <li>{@link LessThanOrEqual} - property &lt;= value</li>
  *   <li>{@link Like} - property LIKE value</li>
  *   <li>{@link NotLike} - property NOT LIKE value</li>
  * </ul>

@@ -25,7 +25,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Setting inclusive lower bounds on numeric values (minimum thresholds)</li>
  *   <li>Date comparisons (on or after a certain date)</li>
  *   <li>String comparisons using lexicographical ordering</li>
- *   <li>Implementing inclusive range queries when combined with LessEqual</li>
+ *   <li>Implementing inclusive range queries when combined with LessThanOrEqual</li>
  *   <li>Minimum requirements, start dates, and eligibility checks</li>
  * </ul>
  *
@@ -40,65 +40,65 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if age is 18 or older
- * GreaterEqual ageLimit = new GreaterEqual("age", 18);
+ * GreaterThanOrEqual ageLimit = new GreaterThanOrEqual("age", 18);
  * // SQL: age >= 18
  *
  * // Check if price is at least $99.99
- * GreaterEqual priceMin = new GreaterEqual("price", 99.99);
+ * GreaterThanOrEqual priceMin = new GreaterThanOrEqual("price", 99.99);
  * // SQL: price >= 99.99
  *
  * // Check if date is on or after a start date
- * GreaterEqual startDate = new GreaterEqual("start_date", "2023-01-01");
+ * GreaterThanOrEqual startDate = new GreaterThanOrEqual("start_date", "2023-01-01");
  * // SQL: start_date >= '2023-01-01'
  *
- * // Combine with LessEqual for inclusive range
+ * // Combine with LessThanOrEqual for inclusive range
  * And priceRange = new And(
- *     new GreaterEqual("price", 10.00),
- *     new LessEqual("price", 100.00)
+ *     new GreaterThanOrEqual("price", 10.00),
+ *     new LessThanOrEqual("price", 100.00)
  * );
  * // SQL: (price >= 10.00) AND (price <= 100.00)
  * }</pre>
  *
  * @see Binary
  * @see GreaterThan
- * @see LessEqual
+ * @see LessThanOrEqual
  * @see Condition
  */
-public class GreaterEqual extends Binary {
+public class GreaterThanOrEqual extends Binary {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor creates an uninitialized GreaterEqual instance and should not be used
+     * This constructor creates an uninitialized GreaterThanOrEqual instance and should not be used
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
-    GreaterEqual() {
+    GreaterThanOrEqual() {
     }
 
     /**
-     * Creates a new GreaterEqual condition.
+     * Creates a new GreaterThanOrEqual condition.
      * The condition evaluates to true when the property value is greater than or equal to the specified value.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if salary is at least 50000
-     * GreaterEqual salaryCondition = new GreaterEqual("salary", 50000);
+     * GreaterThanOrEqual salaryCondition = new GreaterThanOrEqual("salary", 50000);
      *
      * // Check if score meets minimum requirement
-     * GreaterEqual scoreCondition = new GreaterEqual("score", 60);
+     * GreaterThanOrEqual scoreCondition = new GreaterThanOrEqual("score", 60);
      *
      * // Check if date is on or after a specific date
-     * GreaterEqual dateCondition = new GreaterEqual("expiryDate", LocalDate.now());
+     * GreaterThanOrEqual dateCondition = new GreaterThanOrEqual("expiryDate", LocalDate.now());
      *
      * // Use with subquery - find products priced at or above average
      * SubQuery avgPrice = Filters.subQuery("SELECT AVG(price) FROM products");
-     * GreaterEqual atOrAboveAverage = new GreaterEqual("price", avgPrice);
+     * GreaterThanOrEqual atOrAboveAverage = new GreaterThanOrEqual("price", avgPrice);
      * }</pre>
      *
      * @param propName the property/column name (must not be null or empty)
      * @param propValue the value to compare against (can be null, literal value, or subquery)
      * @throws IllegalArgumentException if propName is null or empty
      */
-    public GreaterEqual(final String propName, final Object propValue) {
+    public GreaterThanOrEqual(final String propName, final Object propValue) {
         super(propName, Operator.GREATER_EQUAL, propValue);
     }
 }

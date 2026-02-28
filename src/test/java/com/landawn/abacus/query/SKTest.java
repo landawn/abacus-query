@@ -180,7 +180,7 @@ public class SKTest extends TestBase {
         assertEquals("JOIN", SK.JOIN);
         assertEquals("NATURAL", SK.NATURAL);
         assertEquals("INNER", SK.INNER);
-        assertEquals("OUTER ", SK.OUTER);   // Note: has trailing space
+        assertEquals("OUTER ", SK.OUTER); // Note: has trailing space
         assertEquals("LEFT", SK.LEFT);
         assertEquals("RIGHT", SK.RIGHT);
         assertEquals("FULL", SK.FULL);
@@ -472,7 +472,7 @@ public class SKTest extends TestBase {
     @Test
     void testSpecialConstants() {
         // Test special constants that might have unique characteristics
-        assertEquals("ALL", SK.ALL);   // ALL is represented as asterisk
+        assertEquals("ALL", SK.ALL); // ALL is represented as asterisk
 
         // Test question mark constant for prepared statements
         assertEquals("?", SK.QUESTION_MARK);
@@ -502,7 +502,7 @@ public class SKTest extends TestBase {
         assertEquals(1, SK.ORDER_BY.split(" ").length - 1);
         assertEquals(1, SK.UNION_ALL.split(" ").length - 1);
         assertEquals(1, SK.IS_NULL.split(" ").length - 1);
-        assertEquals(2, SK.IS_NOT_NULL.split(" ").length - 1);   // "IS NOT NULL" has 2 spaces
+        assertEquals(2, SK.IS_NOT_NULL.split(" ").length - 1); // "IS NOT NULL" has 2 spaces
     }
 
     // Tests for Character Encoding
@@ -511,26 +511,26 @@ public class SKTest extends TestBase {
     void testCharacterEncodingCorrectness() {
         // Test special characters are correctly encoded
         assertEquals(0, SK.CHAR_ZERO);
-        assertEquals(10, SK.CHAR_LF);   // Line feed
-        assertEquals(13, SK.CHAR_CR);   // Carriage return
+        assertEquals(10, SK.CHAR_LF); // Line feed
+        assertEquals(13, SK.CHAR_CR); // Carriage return
 
         // Test printable ASCII characters
-        assertEquals(32, SK._SPACE);   // Space
-        assertEquals(33, SK._EXCLAMATION);   // !
-        assertEquals(34, SK._QUOTATION_D);   // "
-        assertEquals(35, SK._SHARP);   // #
-        assertEquals(36, SK._DOLLAR);   // $
-        assertEquals(37, SK._PERCENT);   // %
-        assertEquals(38, SK._AMPERSAND);   // &
-        assertEquals(39, SK._QUOTATION_S);   // '
-        assertEquals(40, SK._PARENTHESES_L);   // (
-        assertEquals(41, SK._PARENTHESES_R);   // )
-        assertEquals(42, SK._ASTERISK);   // *
-        assertEquals(43, SK._PLUS);   // +
-        assertEquals(44, SK._COMMA);   // ,
-        assertEquals(45, SK._MINUS);   // -
-        assertEquals(46, SK._PERIOD);   // .
-        assertEquals(47, SK._SLASH);   // /
+        assertEquals(32, SK._SPACE); // Space
+        assertEquals(33, SK._EXCLAMATION); // !
+        assertEquals(34, SK._QUOTATION_D); // "
+        assertEquals(35, SK._SHARP); // #
+        assertEquals(36, SK._DOLLAR); // $
+        assertEquals(37, SK._PERCENT); // %
+        assertEquals(38, SK._AMPERSAND); // &
+        assertEquals(39, SK._QUOTATION_S); // '
+        assertEquals(40, SK._PARENTHESES_L); // (
+        assertEquals(41, SK._PARENTHESES_R); // )
+        assertEquals(42, SK._ASTERISK); // *
+        assertEquals(43, SK._PLUS); // +
+        assertEquals(44, SK._COMMA); // ,
+        assertEquals(45, SK._MINUS); // -
+        assertEquals(46, SK._PERIOD); // .
+        assertEquals(47, SK._SLASH); // /
     }
 
     // Performance and Memory Tests

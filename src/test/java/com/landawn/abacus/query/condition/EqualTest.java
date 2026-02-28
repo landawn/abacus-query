@@ -132,8 +132,8 @@ public class EqualTest extends TestBase {
 
         Assertions.assertEquals(eq1, eq1);
         Assertions.assertEquals(eq1, eq2);
-        Assertions.assertNotEquals(eq1, eq3);   // Different value
-        Assertions.assertNotEquals(eq1, eq4);   // Different property
+        Assertions.assertNotEquals(eq1, eq3); // Different value
+        Assertions.assertNotEquals(eq1, eq4); // Different property
         Assertions.assertNotEquals(eq1, null);
         Assertions.assertNotEquals(eq1, "string");
     }
@@ -237,7 +237,7 @@ public class EqualTest extends TestBase {
     public void testComplexEqualityChain() {
         Equal status = Filters.eq("status", "active");
         GreaterThan age = Filters.gt("age", 18);
-        LessEqual salary = Filters.le("salary", 100000);
+        LessThanOrEqual salary = Filters.le("salary", 100000);
         NotEqual type = Filters.ne("type", "temporary");
 
         And complex = status.and(age).and(salary).and(type);

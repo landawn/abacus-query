@@ -264,10 +264,10 @@ public class SQLParserTest extends TestBase {
         String sql = "SELECT   name,   age FROM users";
 
         // Test skipping whitespace
-        assertEquals("name", SQLParser.nextWord(sql, 6));   // After "SELECT"
-        assertEquals(",", SQLParser.nextWord(sql, 13));   // After "name"
-        assertEquals("age", SQLParser.nextWord(sql, 14));   // After ","
-        assertEquals("FROM", SQLParser.nextWord(sql, 20));   // After "age"
+        assertEquals("name", SQLParser.nextWord(sql, 6)); // After "SELECT"
+        assertEquals(",", SQLParser.nextWord(sql, 13)); // After "name"
+        assertEquals("age", SQLParser.nextWord(sql, 14)); // After ","
+        assertEquals("FROM", SQLParser.nextWord(sql, 20)); // After "age"
 
         // Test at end of string
         assertEquals("users", SQLParser.nextWord(sql, 26));
@@ -360,12 +360,12 @@ public class SQLParserTest extends TestBase {
         int len = str.length();
 
         // Test regular separators
-        assertTrue(SQLParser.isSeparator(str, len, 6, ' '));   // Space after SELECT
-        assertTrue(SQLParser.isSeparator(str, len, 7, '*'));   // *
-        assertTrue(SQLParser.isSeparator(str, len, 29, '='));   // =
+        assertTrue(SQLParser.isSeparator(str, len, 6, ' ')); // Space after SELECT
+        assertTrue(SQLParser.isSeparator(str, len, 7, '*')); // *
+        assertTrue(SQLParser.isSeparator(str, len, 29, '=')); // =
 
         // Test MyBatis special case
-        assertFalse(SQLParser.isSeparator(str, len, 31, '#'));   // # before {userId}
+        assertFalse(SQLParser.isSeparator(str, len, 31, '#')); // # before {userId}
 
         // Test regular # (not followed by {)
         str = "SELECT #comment";

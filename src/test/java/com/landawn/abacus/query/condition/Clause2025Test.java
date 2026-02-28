@@ -219,11 +219,7 @@ public class Clause2025Test extends TestBase {
 
     @Test
     public void testWithComplexCondition() {
-        Condition complex = Filters.and(
-            Filters.eq("status", "active"),
-            Filters.gt("age", 18),
-            Filters.isNotNull("email")
-        );
+        Condition complex = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.isNotNull("email"));
         TestClause clause = new TestClause(Operator.WHERE, complex);
 
         java.util.List<Object> params = clause.getParameters();

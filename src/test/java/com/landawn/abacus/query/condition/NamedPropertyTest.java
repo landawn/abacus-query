@@ -120,7 +120,7 @@ public class NamedPropertyTest extends TestBase {
     @Test
     public void testGe() {
         NamedProperty prop = NamedProperty.of("score");
-        GreaterEqual condition = prop.ge(60);
+        GreaterThanOrEqual condition = prop.ge(60);
 
         Assertions.assertEquals("score", condition.getPropName());
         Assertions.assertEquals(60, (Integer) condition.getPropValue());
@@ -138,7 +138,7 @@ public class NamedPropertyTest extends TestBase {
     @Test
     public void testLe() {
         NamedProperty prop = NamedProperty.of("quantity");
-        LessEqual condition = prop.le(10);
+        LessThanOrEqual condition = prop.le(10);
 
         Assertions.assertEquals("quantity", condition.getPropName());
         Assertions.assertEquals(10, (Integer) condition.getPropValue());

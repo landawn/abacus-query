@@ -36,7 +36,7 @@ import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Expression;
-import com.landawn.abacus.query.condition.GreaterEqual;
+import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.GroupBy;
 import com.landawn.abacus.query.condition.Is;
@@ -48,7 +48,7 @@ import com.landawn.abacus.query.condition.IsNotNaN;
 import com.landawn.abacus.query.condition.IsNotNull;
 import com.landawn.abacus.query.condition.IsNull;
 import com.landawn.abacus.query.condition.Junction;
-import com.landawn.abacus.query.condition.LessEqual;
+import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.LessThan;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.NamedProperty;
@@ -266,15 +266,15 @@ public class Filters2025Test extends TestBase {
     }
 
     @Test
-    public void testGreaterEqual() {
-        GreaterEqual ge = Filters.greaterThanOrEqual("age", 21);
+    public void testGreaterThanOrEqual() {
+        GreaterThanOrEqual ge = Filters.greaterThanOrEqual("age", 21);
         assertNotNull(ge);
         assertEquals("age", ge.getPropName());
     }
 
     @Test
     public void testGe() {
-        GreaterEqual ge = Filters.ge("score", 80);
+        GreaterThanOrEqual ge = Filters.ge("score", 80);
         assertNotNull(ge);
     }
 
@@ -292,15 +292,15 @@ public class Filters2025Test extends TestBase {
     }
 
     @Test
-    public void testLessEqual() {
-        LessEqual le = Filters.lessThanOrEqual("age", 60);
+    public void testLessThanOrEqual() {
+        LessThanOrEqual le = Filters.lessThanOrEqual("age", 60);
         assertNotNull(le);
         assertEquals("age", le.getPropName());
     }
 
     @Test
     public void testLe() {
-        LessEqual le = Filters.le("price", 1000);
+        LessThanOrEqual le = Filters.le("price", 1000);
         assertNotNull(le);
     }
 
@@ -630,8 +630,8 @@ public class Filters2025Test extends TestBase {
     }
 
     @Test
-    public void testGreaterEqualWithoutValue() {
-        GreaterEqual ge = Filters.greaterThanOrEqual("count");
+    public void testGreaterThanOrEqualWithoutValue() {
+        GreaterThanOrEqual ge = Filters.greaterThanOrEqual("count");
         assertNotNull(ge);
     }
 
@@ -642,8 +642,8 @@ public class Filters2025Test extends TestBase {
     }
 
     @Test
-    public void testLessEqualWithoutValue() {
-        LessEqual le = Filters.lessThanOrEqual("maximum");
+    public void testLessThanOrEqualWithoutValue() {
+        LessThanOrEqual le = Filters.lessThanOrEqual("maximum");
         assertNotNull(le);
     }
 

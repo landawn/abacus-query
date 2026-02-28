@@ -736,7 +736,7 @@ public class SQLBuilder12Test extends TestBase {
             assertTrue(pair.query.contains("first_name"));
             assertTrue(pair.query.contains("last_name"));
             assertTrue(pair.query.contains("email"));
-            assertFalse(pair.query.contains("created_date"));   // ReadOnly field should be excluded
+            assertFalse(pair.query.contains("created_date")); // ReadOnly field should be excluded
         }
 
         @Test
@@ -763,8 +763,8 @@ public class SQLBuilder12Test extends TestBase {
             assertTrue(sql.contains("first_name"));
             assertTrue(sql.contains("last_name"));
             assertTrue(sql.contains("email"));
-            assertFalse(sql.contains("created_date"));   // ReadOnly
-            assertFalse(sql.contains("transient_field"));   // Transient
+            assertFalse(sql.contains("created_date")); // ReadOnly
+            assertFalse(sql.contains("transient_field")); // Transient
         }
 
         @Test
@@ -814,7 +814,7 @@ public class SQLBuilder12Test extends TestBase {
             assertTrue(pair.query.contains("VALUES"));
             assertTrue(pair.query.contains("(?, ?)"));
             assertTrue(pair.query.contains(", (?, ?)"));
-            assertEquals(4, pair.parameters.size());   // 2 accounts * 2 fields each
+            assertEquals(4, pair.parameters.size()); // 2 accounts * 2 fields each
         }
 
         @Test
@@ -1220,7 +1220,7 @@ public class SQLBuilder12Test extends TestBase {
             assertTrue(pair.query.contains("FIRST_NAME"));
             assertTrue(pair.query.contains("LAST_NAME"));
             assertTrue(pair.query.contains("EMAIL_ADDRESS"));
-            assertFalse(pair.query.contains("CREATED_DATE"));   // ReadOnly
+            assertFalse(pair.query.contains("CREATED_DATE")); // ReadOnly
         }
 
         @Test
@@ -1247,8 +1247,8 @@ public class SQLBuilder12Test extends TestBase {
             assertTrue(sql.contains("FIRST_NAME"));
             assertTrue(sql.contains("LAST_NAME"));
             assertTrue(sql.contains("EMAIL_ADDRESS"));
-            assertFalse(sql.contains("CREATED_DATE"));   // ReadOnly
-            assertFalse(sql.contains("TEMP_DATA"));   // Transient
+            assertFalse(sql.contains("CREATED_DATE")); // ReadOnly
+            assertFalse(sql.contains("TEMP_DATA")); // Transient
         }
 
         @Test
@@ -1646,7 +1646,7 @@ public class SQLBuilder12Test extends TestBase {
             assertTrue(pair.query.contains("lastName"));
             assertTrue(pair.query.contains("emailAddress"));
             assertTrue(pair.query.contains("isActive"));
-            assertFalse(pair.query.contains("lastLoginDate"));   // ReadOnly
+            assertFalse(pair.query.contains("lastLoginDate")); // ReadOnly
         }
 
         @Test
@@ -1674,8 +1674,8 @@ public class SQLBuilder12Test extends TestBase {
             assertTrue(sql.contains("lastName"));
             assertTrue(sql.contains("emailAddress"));
             assertTrue(sql.contains("isActive"));
-            assertFalse(sql.contains("lastLoginDate"));   // ReadOnly
-            assertFalse(sql.contains("sessionData"));   // Transient
+            assertFalse(sql.contains("lastLoginDate")); // ReadOnly
+            assertFalse(sql.contains("sessionData")); // Transient
         }
 
         @Test
@@ -1785,7 +1785,7 @@ public class SQLBuilder12Test extends TestBase {
             assertTrue(sql.contains("lastName"));
             assertTrue(sql.contains("emailAddress"));
             assertTrue(sql.contains("isActive"));
-            assertFalse(sql.contains("sessionData"));   // Transient
+            assertFalse(sql.contains("sessionData")); // Transient
         }
 
         @Test
