@@ -164,10 +164,10 @@ public class Limit extends AbstractCondition {
             throw new IllegalArgumentException("Limit expression cannot be null or empty");
         }
 
-        if (Character.isLetter(trimmed.charAt(0))) {
-            this.expr = trimmed;
-        } else {
+        if (Character.isDigit(trimmed.charAt(0))) {
             this.expr = SK.LIMIT + _SPACE + trimmed;
+        } else {
+            this.expr = trimmed;
         }
     }
 

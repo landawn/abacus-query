@@ -490,28 +490,47 @@ public class DynamicSQLBuilder {
      * @return the complete SQL query string
      */
     public String build() {
-        select.sb.append(" ").append(from.sb);
+        if (from != null) {
+            if (!from.sb.isEmpty()) {
+                select.sb.append(" ").append(from.sb);
+            }
+
+            Objectory.recycle(from.sb);
+            from = null;
+        }
 
         if (where != null) {
-            select.sb.append(" ").append(where.sb);
+            if (!where.sb.isEmpty()) {
+                select.sb.append(" ").append(where.sb);
+            }
+
             Objectory.recycle(where.sb);
             where = null;
         }
 
         if (groupBy != null) {
-            select.sb.append(" ").append(groupBy.sb);
+            if (!groupBy.sb.isEmpty()) {
+                select.sb.append(" ").append(groupBy.sb);
+            }
+
             Objectory.recycle(groupBy.sb);
             groupBy = null;
         }
 
         if (having != null) {
-            select.sb.append(" ").append(having.sb);
+            if (!having.sb.isEmpty()) {
+                select.sb.append(" ").append(having.sb);
+            }
+
             Objectory.recycle(having.sb);
             having = null;
         }
 
         if (orderBy != null) {
-            select.sb.append(" ").append(orderBy.sb);
+            if (!orderBy.sb.isEmpty()) {
+                select.sb.append(" ").append(orderBy.sb);
+            }
+
             Objectory.recycle(orderBy.sb);
             orderBy = null;
         }
@@ -523,11 +542,9 @@ public class DynamicSQLBuilder {
         }
 
         final String sql = select.sb.toString();
-        Objectory.recycle(from.sb);
         Objectory.recycle(select.sb);
 
         select = null;
-        from = null;
 
         return sql;
     }
@@ -1055,17 +1072,19 @@ public class DynamicSQLBuilder {
         public Where repeatQM(final int n, final String prefix, final String postfix) {
             N.checkArgNotNegative(n, "n");
 
-            sb.append(prefix);
+            if (n > 0) {
+                sb.append(prefix);
 
-            for (int i = 0; i < n; i++) {
-                if (i > 0) {
-                    sb.append(", ?");
-                } else {
-                    sb.append('?');
+                for (int i = 0; i < n; i++) {
+                    if (i > 0) {
+                        sb.append(", ?");
+                    } else {
+                        sb.append('?');
+                    }
                 }
-            }
 
-            sb.append(postfix);
+                sb.append(postfix);
+            }
 
             return this;
         }

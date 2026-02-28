@@ -267,7 +267,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
         }
 
         if (parameter instanceof Condition) {
-            if (parameter.equals(IsNull.NULL) || parameter.equals(IsNaN.NAN) || parameter.equals(IsInfinite.INFINITE)) {
+            if (parameter == IsNull.NULL || parameter == IsNaN.NAN || parameter == IsInfinite.INFINITE) { //NOSONAR
                 return parameter.toString();
             } else {
                 return ((Condition) parameter).toString(namingPolicy);

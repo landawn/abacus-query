@@ -305,16 +305,14 @@ public final class SQLMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier
-     * @return always {@code null} since duplicate IDs are not allowed (the method throws if the ID already exists)
      * @throws IllegalArgumentException if the id is empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
      */
-    public ParsedSql add(final String id, final ParsedSql sql) {
-        checkId(id);
+    public void add(final String id, final ParsedSql sql) {
         N.checkArgNotNull(sql, "sql");
+        checkId(id);
 
+        sqlMap.put(id, sql);
         attrsMap.put(id, ImmutableMap.empty());
-
-        return sqlMap.put(id, sql);
     }
 
     /**
@@ -336,10 +334,11 @@ public final class SQLMapper {
      * @throws IllegalArgumentException if the id is empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
      */
     public void add(final String id, final String sql, final Map<String, String> attrs) {
-        checkId(id);
         N.checkArgNotNull(sql, "sql");
+        checkId(id);
 
-        sqlMap.put(id, ParsedSql.parse(sql));
+        final ParsedSql parsedSql = ParsedSql.parse(sql);
+        sqlMap.put(id, parsedSql);
         attrsMap.put(id, attrs == null || attrs.isEmpty() ? ImmutableMap.empty() : ImmutableMap.copyOf(attrs));
     }
 

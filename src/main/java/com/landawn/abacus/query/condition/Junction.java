@@ -202,6 +202,14 @@ public class Junction extends AbstractCondition {
      * @throws IllegalArgumentException if conditions array contains null elements
      */
     public final void set(final Condition... conditions) {
+        if (conditions != null) {
+            for (final Condition condition : conditions) {
+                if (condition == null) {
+                    throw new IllegalArgumentException("Condition cannot be null");
+                }
+            }
+        }
+
         conditionList.clear();
         add(conditions);
     }
@@ -229,6 +237,14 @@ public class Junction extends AbstractCondition {
      * @throws IllegalArgumentException if conditions collection contains null elements
      */
     public void set(final Collection<? extends Condition> conditions) {
+        if (conditions != null) {
+            for (final Condition condition : conditions) {
+                if (condition == null) {
+                    throw new IllegalArgumentException("Condition cannot be null");
+                }
+            }
+        }
+
         conditionList.clear();
         add(conditions);
     }
@@ -424,7 +440,9 @@ public class Junction extends AbstractCondition {
         result.conditionList = new ArrayList<>();
 
         for (final Condition cond : conditionList) {
-            result.conditionList.add(cond.copy());
+            if (cond != null) {
+                result.conditionList.add(cond.copy());
+            }
         }
 
         return (T) result;

@@ -1144,8 +1144,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This from(String expr) {
         expr = expr.trim();
 
-        final int idx = expr.indexOf(SK._COMMA);
-        final String localTableName = idx > 0 ? expr.substring(0, idx) : expr;
+        int depth = 0;
+        int commaIdx = -1;
+
+        for (int i = 0; i < expr.length(); i++) {
+            final char c = expr.charAt(i);
+
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+            } else if (c == SK._COMMA && depth == 0) {
+                commaIdx = i;
+                break;
+            }
+        }
+
+        final String localTableName = commaIdx > 0 ? expr.substring(0, commaIdx) : expr;
 
         return from(localTableName.trim(), expr);
     }

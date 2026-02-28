@@ -697,6 +697,8 @@ public class Filters {
      */
     @SuppressWarnings("deprecation")
     public static Or eqOr(final Object entity) {
+        N.checkArgNotNull(entity, "entity");
+
         return eqOr(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
     }
 
@@ -839,6 +841,8 @@ public class Filters {
      */
     @SuppressWarnings("deprecation")
     public static And eqAnd(final Object entity) {
+        N.checkArgNotNull(entity, "entity");
+
         return eqAnd(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
     }
 

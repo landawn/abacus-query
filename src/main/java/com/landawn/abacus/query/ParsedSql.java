@@ -468,7 +468,7 @@ public final class ParsedSql {
                 }
             }
 
-            if (isNamedParametersByNum) {
+            if (isNamedParametersByNum && couchbaseNamedParameterList.size() == countOfParameter) {
                 couchbaseNamedParameterList.clear();
             }
 
