@@ -404,7 +404,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb = Objectory.createStringBuilder();
 
         _namingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
-        _sqlPolicy = sqlPolicy == null ? SQLPolicy.SQL : sqlPolicy;
+        _sqlPolicy = sqlPolicy == null ? SQLPolicy.RAW_SQL : sqlPolicy;
 
         _handlerForNamedParameter = handlerForNamedParameter_TL.get();
     }
@@ -920,7 +920,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (N.notEmpty(_propOrColumnNames)) {
                 switch (_sqlPolicy) {
-                    case SQL:
+                    case RAW_SQL:
                     case PARAMETERIZED_SQL: {
                         for (int i = 0, size = insertColumnNames.size(); i < size; i++) {
                             if (i > 0) {
@@ -3829,7 +3829,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         init(false);
 
         switch (_sqlPolicy) {
-            case SQL:
+            case RAW_SQL:
             case PARAMETERIZED_SQL: {
                 int i = 0;
                 for (final String columnName : propOrColumnNames) {
@@ -3916,7 +3916,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         init(false);
 
         switch (_sqlPolicy) {
-            case SQL: {
+            case RAW_SQL: {
                 int i = 0;
                 for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
@@ -4248,9 +4248,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> func) throws E {
-        final SP sp = build();
+        final SP sP = build();
 
-        return func.apply(sp.query, sp.parameters);
+        return func.apply(sP.query, sP.parameters);
     }
 
     /**
@@ -4293,9 +4293,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E {
-        final SP sp = build();
+        final SP sP = build();
 
-        consumer.accept(sp.query, sp.parameters);
+        consumer.accept(sP.query, sP.parameters);
     }
 
     /**
@@ -4315,16 +4315,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.println(query());
     }
 
-    /**
-     * Returns the generated SQL string representation of this builder.
-     * Note: This method finalizes the builder and it cannot be used afterwards.
-     *
-     * @return the generated SQL string
-     */
-    @Override
-    public String toString() {
-        return query();
-    }
+    //    4. toString() Finalizes the Builder (Design Issue)
+    //
+    //    - Problem: AbstractQueryBuilder.toString() calls internal finalization
+    //     logic (generateSql()), making it destructive. Calling toString() for
+    //    debugging can alter builder state.
+    //    - Suggestion: Make toString() read-only (return a preview without
+    //    mutating state), or rename the finalizing method to build() / toSql()
+    //    and have toString() delegate without side effects.
+    //    /**
+    //     * Returns the generated SQL string representation of this builder.
+    //     * Note: This method finalizes the builder and it cannot be used afterwards.
+    //     *
+    //     * @return the generated SQL string
+    //     */
+    //    @Override
+    //    public String toString() {
+    //        return query();
+    //    }
 
     //    /**
     //     *
@@ -4778,7 +4786,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected void setParameter(final String propName, final Object propValue) {
         switch (_sqlPolicy) {
-            case SQL: {
+            case RAW_SQL: {
                 setParameterForSQL(propValue);
 
                 break;
@@ -4824,7 +4832,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected void appendInsertProps(final Map<String, Object> props, final Collection<String> propNames) {
         switch (_sqlPolicy) {
-            case SQL: {
+            case RAW_SQL: {
                 int i = 0;
                 for (final String propName : propNames) {
                     if (i++ > 0) {
@@ -5377,7 +5385,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     protected enum SQLPolicy {
-        SQL, PARAMETERIZED_SQL, NAMED_SQL, IBATIS_SQL
+        RAW_SQL, PARAMETERIZED_SQL, NAMED_SQL, IBATIS_SQL
     }
 
     /**

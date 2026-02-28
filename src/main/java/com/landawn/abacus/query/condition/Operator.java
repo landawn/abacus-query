@@ -14,8 +14,8 @@
 
 package com.landawn.abacus.query.condition;
 
-import java.util.Map;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.query.SK;
@@ -27,7 +27,7 @@ import com.landawn.abacus.util.Strings;
  * <p>This enum defines all the operators that can be used in SQL conditions,
  * including comparison operators, logical operators, join types, and SQL clauses.
  * Each operator has a string representation that corresponds to its SQL syntax.
- * The {@link #getOperator(String)} method provides case-insensitive lookup with caching.</p>
+ * The {@link #of(String)} method provides case-insensitive lookup with caching.</p>
  *
  * <p>Categories of operators:</p>
  * <ul>
@@ -48,8 +48,8 @@ import com.landawn.abacus.util.Strings;
  * String sql = propertyName + " " + op.toString() + " ?";
  *
  * // Get operator by name
- * Operator gtOp = Operator.getOperator(">");
- * Operator andOp = Operator.getOperator("AND");
+ * Operator gtOp = Operator.of(">");
+ * Operator andOp = Operator.of("AND");
  *
  * // Check operator type
  * if (operator == Operator.BETWEEN) {
@@ -381,24 +381,24 @@ public enum Operator {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Look up symbolic operators
-     * Operator eq = Operator.getOperator("=");       // Operator.EQUAL
-     * Operator gt = Operator.getOperator(">");       // Operator.GREATER_THAN
-     * Operator gte = Operator.getOperator(">=");     // Operator.GREATER_EQUAL
+     * Operator eq = Operator.of("=");       // Operator.EQUAL
+     * Operator gt = Operator.of(">");       // Operator.GREATER_THAN
+     * Operator gte = Operator.of(">=");     // Operator.GREATER_EQUAL
      *
      * // Look up word operators (case-insensitive)
-     * Operator and = Operator.getOperator("AND");    // Operator.AND
-     * Operator or = Operator.getOperator("or");      // Operator.OR
-     * Operator like = Operator.getOperator("LIKE");  // Operator.LIKE
+     * Operator and = Operator.of("AND");    // Operator.AND
+     * Operator or = Operator.of("or");      // Operator.OR
+     * Operator like = Operator.of("LIKE");  // Operator.LIKE
      *
      * // Returns null for unknown operators
-     * Operator unknown = Operator.getOperator("UNKNOWN");   // null
-     * Operator nullOp = Operator.getOperator(null);         // null
+     * Operator unknown = Operator.of("UNKNOWN");   // null
+     * Operator nullOp = Operator.of(null);         // null
      * }</pre>
      *
      * @param name the string representation of the operator. Can be null.
      * @return the corresponding Operator enum value, or {@code null} if name is null or not found
      */
-    public static Operator getOperator(final String name) {
+    public static Operator of(final String name) {
         if (name == null) {
             return null;
         }
@@ -432,6 +432,18 @@ public enum Operator {
 
         return operator;
     }
+
+    //    /**
+    //     * Gets an Operator by its string representation.
+    //     *
+    //     * @param name the string representation of the operator. Can be null.
+    //     * @return the corresponding Operator enum value, or {@code null} if name is null or not found
+    //     * @deprecated Use {@link #of(String)} instead
+    //     */
+    //    @Deprecated
+    //    public static Operator getOperator(final String name) {
+    //        return of(name);
+    //    }
 
     /**
      * Gets the SQL string representation of this operator.

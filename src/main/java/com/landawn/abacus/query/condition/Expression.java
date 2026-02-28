@@ -661,7 +661,7 @@ public class Expression extends AbstractCondition {
      * @param objects the values to multiply
      * @return a string representation of the multiplication expression
      */
-    public static String multi(final Object... objects) {
+    public static String multiply(final Object... objects) {
         return link(ASTERISK, objects);
     }
 

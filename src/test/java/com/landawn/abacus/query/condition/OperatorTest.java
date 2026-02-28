@@ -28,65 +28,65 @@ public class OperatorTest extends TestBase {
 
     @Test
     public void testGetOperatorWithExactMatch() {
-        Assertions.assertEquals(Operator.EQUAL, Operator.getOperator("="));
-        Assertions.assertEquals(Operator.NOT_EQUAL, Operator.getOperator("!="));
-        Assertions.assertEquals(Operator.AND, Operator.getOperator("AND"));
-        Assertions.assertEquals(Operator.OR, Operator.getOperator("OR"));
-        Assertions.assertEquals(Operator.LIKE, Operator.getOperator("LIKE"));
+        Assertions.assertEquals(Operator.EQUAL, Operator.of("="));
+        Assertions.assertEquals(Operator.NOT_EQUAL, Operator.of("!="));
+        Assertions.assertEquals(Operator.AND, Operator.of("AND"));
+        Assertions.assertEquals(Operator.OR, Operator.of("OR"));
+        Assertions.assertEquals(Operator.LIKE, Operator.of("LIKE"));
     }
 
     @Test
     public void testGetOperatorCaseInsensitive() {
-        Assertions.assertEquals(Operator.AND, Operator.getOperator("and"));
-        Assertions.assertEquals(Operator.OR, Operator.getOperator("or"));
-        Assertions.assertEquals(Operator.LIKE, Operator.getOperator("like"));
-        Assertions.assertEquals(Operator.BETWEEN, Operator.getOperator("between"));
-        Assertions.assertEquals(Operator.NOT_IN, Operator.getOperator("not in"));
+        Assertions.assertEquals(Operator.AND, Operator.of("and"));
+        Assertions.assertEquals(Operator.OR, Operator.of("or"));
+        Assertions.assertEquals(Operator.LIKE, Operator.of("like"));
+        Assertions.assertEquals(Operator.BETWEEN, Operator.of("between"));
+        Assertions.assertEquals(Operator.NOT_IN, Operator.of("not in"));
     }
 
     @Test
     public void testGetOperatorWithSymbols() {
-        Assertions.assertEquals(Operator.GREATER_THAN, Operator.getOperator(">"));
-        Assertions.assertEquals(Operator.LESS_THAN, Operator.getOperator("<"));
-        Assertions.assertEquals(Operator.GREATER_EQUAL, Operator.getOperator(">="));
-        Assertions.assertEquals(Operator.LESS_EQUAL, Operator.getOperator("<="));
-        Assertions.assertEquals(Operator.NOT_EQUAL2, Operator.getOperator("<>"));
+        Assertions.assertEquals(Operator.GREATER_THAN, Operator.of(">"));
+        Assertions.assertEquals(Operator.LESS_THAN, Operator.of("<"));
+        Assertions.assertEquals(Operator.GREATER_EQUAL, Operator.of(">="));
+        Assertions.assertEquals(Operator.LESS_EQUAL, Operator.of("<="));
+        Assertions.assertEquals(Operator.NOT_EQUAL2, Operator.of("<>"));
     }
 
     @Test
     public void testGetOperatorWithAlternativeSymbols() {
-        Assertions.assertEquals(Operator.AND_OP, Operator.getOperator("&&"));
-        Assertions.assertEquals(Operator.OR_OP, Operator.getOperator("||"));
-        Assertions.assertEquals(Operator.NOT_OP, Operator.getOperator("!"));
+        Assertions.assertEquals(Operator.AND_OP, Operator.of("&&"));
+        Assertions.assertEquals(Operator.OR_OP, Operator.of("||"));
+        Assertions.assertEquals(Operator.NOT_OP, Operator.of("!"));
     }
 
     @Test
     public void testGetOperatorWithCompoundOperators() {
-        Assertions.assertEquals(Operator.NOT_LIKE, Operator.getOperator("NOT LIKE"));
-        Assertions.assertEquals(Operator.NOT_BETWEEN, Operator.getOperator("NOT BETWEEN"));
-        Assertions.assertEquals(Operator.IS_NOT, Operator.getOperator("IS NOT"));
-        Assertions.assertEquals(Operator.LEFT_JOIN, Operator.getOperator("LEFT JOIN"));
-        Assertions.assertEquals(Operator.UNION_ALL, Operator.getOperator("UNION ALL"));
+        Assertions.assertEquals(Operator.NOT_LIKE, Operator.of("NOT LIKE"));
+        Assertions.assertEquals(Operator.NOT_BETWEEN, Operator.of("NOT BETWEEN"));
+        Assertions.assertEquals(Operator.IS_NOT, Operator.of("IS NOT"));
+        Assertions.assertEquals(Operator.LEFT_JOIN, Operator.of("LEFT JOIN"));
+        Assertions.assertEquals(Operator.UNION_ALL, Operator.of("UNION ALL"));
     }
 
     @Test
     public void testGetOperatorWithUnknown() {
-        Assertions.assertNull(Operator.getOperator("UNKNOWN_OPERATOR"));
-        Assertions.assertNull(Operator.getOperator("???"));
+        Assertions.assertNull(Operator.of("UNKNOWN_OPERATOR"));
+        Assertions.assertNull(Operator.of("???"));
     }
 
     @Test
     public void testGetOperatorCaching() {
         // First call should cache the result
-        Operator op1 = Operator.getOperator("and");
+        Operator op1 = Operator.of("and");
         Assertions.assertEquals(Operator.AND, op1);
 
         // Second call should return cached result
-        Operator op2 = Operator.getOperator("and");
+        Operator op2 = Operator.of("and");
         Assertions.assertEquals(Operator.AND, op2);
 
         // Verify caching works for different cases
-        Operator op3 = Operator.getOperator("AND");
+        Operator op3 = Operator.of("AND");
         Assertions.assertEquals(Operator.AND, op3);
     }
 

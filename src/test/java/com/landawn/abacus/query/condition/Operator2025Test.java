@@ -29,100 +29,100 @@ public class Operator2025Test extends TestBase {
 
     @Test
     public void testGetOperator_Comparison() {
-        assertEquals(Operator.EQUAL, Operator.getOperator("="));
-        assertEquals(Operator.NOT_EQUAL, Operator.getOperator("!="));
-        assertEquals(Operator.NOT_EQUAL2, Operator.getOperator("<>"));
-        assertEquals(Operator.GREATER_THAN, Operator.getOperator(">"));
-        assertEquals(Operator.GREATER_EQUAL, Operator.getOperator(">="));
-        assertEquals(Operator.LESS_THAN, Operator.getOperator("<"));
-        assertEquals(Operator.LESS_EQUAL, Operator.getOperator("<="));
+        assertEquals(Operator.EQUAL, Operator.of("="));
+        assertEquals(Operator.NOT_EQUAL, Operator.of("!="));
+        assertEquals(Operator.NOT_EQUAL2, Operator.of("<>"));
+        assertEquals(Operator.GREATER_THAN, Operator.of(">"));
+        assertEquals(Operator.GREATER_EQUAL, Operator.of(">="));
+        assertEquals(Operator.LESS_THAN, Operator.of("<"));
+        assertEquals(Operator.LESS_EQUAL, Operator.of("<="));
     }
 
     @Test
     public void testGetOperator_Logical() {
-        assertEquals(Operator.AND, Operator.getOperator("AND"));
-        assertEquals(Operator.AND_OP, Operator.getOperator("&&"));
-        assertEquals(Operator.OR, Operator.getOperator("OR"));
-        assertEquals(Operator.OR_OP, Operator.getOperator("||"));
-        assertEquals(Operator.NOT, Operator.getOperator("NOT"));
-        assertEquals(Operator.NOT_OP, Operator.getOperator("!"));
-        assertEquals(Operator.XOR, Operator.getOperator("XOR"));
+        assertEquals(Operator.AND, Operator.of("AND"));
+        assertEquals(Operator.AND_OP, Operator.of("&&"));
+        assertEquals(Operator.OR, Operator.of("OR"));
+        assertEquals(Operator.OR_OP, Operator.of("||"));
+        assertEquals(Operator.NOT, Operator.of("NOT"));
+        assertEquals(Operator.NOT_OP, Operator.of("!"));
+        assertEquals(Operator.XOR, Operator.of("XOR"));
     }
 
     @Test
     public void testGetOperator_Range() {
-        assertEquals(Operator.BETWEEN, Operator.getOperator("BETWEEN"));
-        assertEquals(Operator.NOT_BETWEEN, Operator.getOperator("NOT BETWEEN"));
-        assertEquals(Operator.IN, Operator.getOperator("IN"));
-        assertEquals(Operator.NOT_IN, Operator.getOperator("NOT IN"));
+        assertEquals(Operator.BETWEEN, Operator.of("BETWEEN"));
+        assertEquals(Operator.NOT_BETWEEN, Operator.of("NOT BETWEEN"));
+        assertEquals(Operator.IN, Operator.of("IN"));
+        assertEquals(Operator.NOT_IN, Operator.of("NOT IN"));
     }
 
     @Test
     public void testGetOperator_Pattern() {
-        assertEquals(Operator.LIKE, Operator.getOperator("LIKE"));
-        assertEquals(Operator.NOT_LIKE, Operator.getOperator("NOT LIKE"));
+        assertEquals(Operator.LIKE, Operator.of("LIKE"));
+        assertEquals(Operator.NOT_LIKE, Operator.of("NOT LIKE"));
     }
 
     @Test
     public void testGetOperator_Null() {
-        assertEquals(Operator.IS, Operator.getOperator("IS"));
-        assertEquals(Operator.IS_NOT, Operator.getOperator("IS NOT"));
+        assertEquals(Operator.IS, Operator.of("IS"));
+        assertEquals(Operator.IS_NOT, Operator.of("IS NOT"));
     }
 
     @Test
     public void testGetOperator_Subquery() {
-        assertEquals(Operator.EXISTS, Operator.getOperator("EXISTS"));
-        assertEquals(Operator.NOT_EXISTS, Operator.getOperator("NOT EXISTS"));
-        assertEquals(Operator.ANY, Operator.getOperator("ANY"));
-        assertEquals(Operator.SOME, Operator.getOperator("SOME"));
-        assertEquals(Operator.ALL, Operator.getOperator("ALL"));
+        assertEquals(Operator.EXISTS, Operator.of("EXISTS"));
+        assertEquals(Operator.NOT_EXISTS, Operator.of("NOT EXISTS"));
+        assertEquals(Operator.ANY, Operator.of("ANY"));
+        assertEquals(Operator.SOME, Operator.of("SOME"));
+        assertEquals(Operator.ALL, Operator.of("ALL"));
     }
 
     @Test
     public void testGetOperator_Join() {
-        assertEquals(Operator.JOIN, Operator.getOperator("JOIN"));
-        assertEquals(Operator.LEFT_JOIN, Operator.getOperator("LEFT JOIN"));
-        assertEquals(Operator.RIGHT_JOIN, Operator.getOperator("RIGHT JOIN"));
-        assertEquals(Operator.FULL_JOIN, Operator.getOperator("FULL JOIN"));
-        assertEquals(Operator.CROSS_JOIN, Operator.getOperator("CROSS JOIN"));
-        assertEquals(Operator.INNER_JOIN, Operator.getOperator("INNER JOIN"));
-        assertEquals(Operator.NATURAL_JOIN, Operator.getOperator("NATURAL JOIN"));
-        assertEquals(Operator.ON, Operator.getOperator("ON"));
-        assertEquals(Operator.USING, Operator.getOperator("USING"));
+        assertEquals(Operator.JOIN, Operator.of("JOIN"));
+        assertEquals(Operator.LEFT_JOIN, Operator.of("LEFT JOIN"));
+        assertEquals(Operator.RIGHT_JOIN, Operator.of("RIGHT JOIN"));
+        assertEquals(Operator.FULL_JOIN, Operator.of("FULL JOIN"));
+        assertEquals(Operator.CROSS_JOIN, Operator.of("CROSS JOIN"));
+        assertEquals(Operator.INNER_JOIN, Operator.of("INNER JOIN"));
+        assertEquals(Operator.NATURAL_JOIN, Operator.of("NATURAL JOIN"));
+        assertEquals(Operator.ON, Operator.of("ON"));
+        assertEquals(Operator.USING, Operator.of("USING"));
     }
 
     @Test
     public void testGetOperator_Clause() {
-        assertEquals(Operator.WHERE, Operator.getOperator("WHERE"));
-        assertEquals(Operator.HAVING, Operator.getOperator("HAVING"));
-        assertEquals(Operator.GROUP_BY, Operator.getOperator("GROUP BY"));
-        assertEquals(Operator.ORDER_BY, Operator.getOperator("ORDER BY"));
-        assertEquals(Operator.LIMIT, Operator.getOperator("LIMIT"));
-        assertEquals(Operator.OFFSET, Operator.getOperator("OFFSET"));
+        assertEquals(Operator.WHERE, Operator.of("WHERE"));
+        assertEquals(Operator.HAVING, Operator.of("HAVING"));
+        assertEquals(Operator.GROUP_BY, Operator.of("GROUP BY"));
+        assertEquals(Operator.ORDER_BY, Operator.of("ORDER BY"));
+        assertEquals(Operator.LIMIT, Operator.of("LIMIT"));
+        assertEquals(Operator.OFFSET, Operator.of("OFFSET"));
     }
 
     @Test
     public void testGetOperator_SetOperations() {
-        assertEquals(Operator.UNION, Operator.getOperator("UNION"));
-        assertEquals(Operator.UNION_ALL, Operator.getOperator("UNION ALL"));
-        assertEquals(Operator.INTERSECT, Operator.getOperator("INTERSECT"));
-        assertEquals(Operator.EXCEPT, Operator.getOperator("EXCEPT"));
-        assertEquals(Operator.MINUS, Operator.getOperator("MINUS"));
+        assertEquals(Operator.UNION, Operator.of("UNION"));
+        assertEquals(Operator.UNION_ALL, Operator.of("UNION ALL"));
+        assertEquals(Operator.INTERSECT, Operator.of("INTERSECT"));
+        assertEquals(Operator.EXCEPT, Operator.of("EXCEPT"));
+        assertEquals(Operator.MINUS, Operator.of("MINUS"));
     }
 
     @Test
     public void testGetOperator_CaseInsensitive() {
-        assertEquals(Operator.AND, Operator.getOperator("and"));
-        assertEquals(Operator.OR, Operator.getOperator("or"));
-        assertEquals(Operator.LIKE, Operator.getOperator("like"));
-        assertEquals(Operator.BETWEEN, Operator.getOperator("between"));
-        assertEquals(Operator.WHERE, Operator.getOperator("where"));
+        assertEquals(Operator.AND, Operator.of("and"));
+        assertEquals(Operator.OR, Operator.of("or"));
+        assertEquals(Operator.LIKE, Operator.of("like"));
+        assertEquals(Operator.BETWEEN, Operator.of("between"));
+        assertEquals(Operator.WHERE, Operator.of("where"));
     }
 
     @Test
     public void testGetOperator_Invalid() {
-        assertNull(Operator.getOperator("INVALID"));
-        assertNull(Operator.getOperator("UNKNOWN"));
+        assertNull(Operator.of("INVALID"));
+        assertNull(Operator.of("UNKNOWN"));
     }
 
     @Test
@@ -167,7 +167,7 @@ public class Operator2025Test extends TestBase {
 
     @Test
     public void testGetOperator_Empty() {
-        assertEquals(Operator.EMPTY, Operator.getOperator(""));
+        assertEquals(Operator.EMPTY, Operator.of(""));
     }
 
     @Test
@@ -186,27 +186,27 @@ public class Operator2025Test extends TestBase {
 
     @Test
     public void testGetOperator_NullInput() {
-        assertNull(Operator.getOperator(null));
+        assertNull(Operator.of(null));
     }
 
     @Test
     public void testGetOperator_Caching() {
         // First call initializes the cache
-        Operator first = Operator.getOperator("AND");
+        Operator first = Operator.of("AND");
         // Second call should use cache
-        Operator second = Operator.getOperator("AND");
+        Operator second = Operator.of("AND");
         assertEquals(first, second);
         assertEquals(Operator.AND, first);
     }
 
     @Test
     public void testGetOperator_ForUpdate() {
-        assertEquals(Operator.FOR_UPDATE, Operator.getOperator("FOR UPDATE"));
+        assertEquals(Operator.FOR_UPDATE, Operator.of("FOR UPDATE"));
     }
 
     @Test
     public void testGetOperator_Offset() {
-        assertEquals(Operator.OFFSET, Operator.getOperator("OFFSET"));
+        assertEquals(Operator.OFFSET, Operator.of("OFFSET"));
     }
 
     @Test

@@ -151,7 +151,7 @@ public final class CriteriaUtil {
      * @return {@code true} if the operator string represents a clause operator, {@code false} otherwise
      */
     public static boolean isClause(final String operator) {
-        return isClause(Operator.getOperator(operator));
+        return isClause(Operator.of(operator));
     }
 
     /**

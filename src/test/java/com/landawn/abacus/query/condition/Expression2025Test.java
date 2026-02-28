@@ -261,7 +261,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testMulti() {
-        String result = Expression.multi("price", "quantity");
+        String result = Expression.multiply("price", "quantity");
 
         assertTrue(result.contains("price"));
         assertTrue(result.contains("*"));
@@ -819,7 +819,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testMultiWithMultipleValues() {
-        String result = Expression.multi("price", "quantity", "rate");
+        String result = Expression.multiply("price", "quantity", "rate");
 
         assertTrue(result.contains("price"));
         assertTrue(result.contains("*"));

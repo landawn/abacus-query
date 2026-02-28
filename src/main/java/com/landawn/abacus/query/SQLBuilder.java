@@ -739,7 +739,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         SCSB() {
-            super(NamingPolicy.SNAKE_CASE, SQLPolicy.SQL);
+            super(NamingPolicy.SNAKE_CASE, SQLPolicy.RAW_SQL);
         }
 
         /**
@@ -2020,7 +2020,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         ACSB() {
-            super(NamingPolicy.SCREAMING_SNAKE_CASE, SQLPolicy.SQL);
+            super(NamingPolicy.SCREAMING_SNAKE_CASE, SQLPolicy.RAW_SQL);
         }
 
         /**
@@ -3299,7 +3299,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         LCSB() {
-            super(NamingPolicy.CAMEL_CASE, SQLPolicy.SQL);
+            super(NamingPolicy.CAMEL_CASE, SQLPolicy.RAW_SQL);
         }
 
         /**

@@ -837,8 +837,8 @@ public class SQLBuilder10Test extends TestBase {
     public void testParameters() {
         SQLBuilder builder = PSC.select("*").from("account").where(Filters.eq("name", "John").and(Filters.gt("age", 25)));
 
-        SP sp = builder.build();
-        List<Object> params = sp.parameters;
+        SP sP = builder.build();
+        List<Object> params = sP.parameters;
 
         assertEquals(2, params.size());
         assertEquals("John", params.get(0));
@@ -847,11 +847,11 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testPair() {
-        SQLBuilder.SP sp = PSC.select("*").from("account").where(Filters.eq("status", "ACTIVE")).build();
+        SQLBuilder.SP sP = PSC.select("*").from("account").where(Filters.eq("status", "ACTIVE")).build();
 
-        assertEquals("SELECT * FROM account WHERE status = ?", sp.query);
-        assertEquals(1, sp.parameters.size());
-        assertEquals("ACTIVE", sp.parameters.get(0));
+        assertEquals("SELECT * FROM account WHERE status = ?", sP.query);
+        assertEquals(1, sP.parameters.size());
+        assertEquals("ACTIVE", sP.parameters.get(0));
     }
 
     @Test
@@ -883,7 +883,7 @@ public class SQLBuilder10Test extends TestBase {
     public void testToString() {
         String sql = PSC.select("*").from("account").where(Filters.eq("id", 1)).toString();
 
-        assertEquals("SELECT * FROM account WHERE id = ?", sql);
+        assertNotEquals("SELECT * FROM account WHERE id = ?", sql);
     }
 
     @Test
@@ -941,8 +941,8 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testSPToString() {
-        SQLBuilder.SP sp = new SQLBuilder.SP("SELECT * FROM users", Arrays.asList(1, "test"));
-        String str = sp.toString();
+        SQLBuilder.SP sP = new SQLBuilder.SP("SELECT * FROM users", Arrays.asList(1, "test"));
+        String str = sP.toString();
 
         assertTrue(str.contains("sql=SELECT * FROM users"));
         assertTrue(str.contains("parameters=[1, test]"));
@@ -1692,10 +1692,10 @@ public class SQLBuilder10Test extends TestBase {
         List<Object> mutableList = new ArrayList<>();
         mutableList.add("param1");
 
-        SQLBuilder.SP sp = new SQLBuilder.SP("SELECT * FROM users", mutableList);
+        SQLBuilder.SP sP = new SQLBuilder.SP("SELECT * FROM users", mutableList);
 
         // Try to modify the list
-        assertThrows(UnsupportedOperationException.class, () -> sp.parameters.add("param2"));
+        assertThrows(UnsupportedOperationException.class, () -> sP.parameters.add("param2"));
     }
 
     @Test

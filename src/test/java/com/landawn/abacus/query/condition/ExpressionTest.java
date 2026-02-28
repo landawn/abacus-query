@@ -168,7 +168,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testMulti() {
-        String result = Expression.multi(Filters.expr("quantity"), Filters.expr("price"));
+        String result = Expression.multiply(Filters.expr("quantity"), Filters.expr("price"));
         Assertions.assertEquals("quantity * price", result);
     }
 

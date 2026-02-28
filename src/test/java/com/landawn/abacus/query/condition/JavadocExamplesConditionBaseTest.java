@@ -221,10 +221,10 @@ public class JavadocExamplesConditionBaseTest {
         assertEquals("age = ?", sql);
 
         // Get operator by name
-        Operator gtOp = Operator.getOperator(">");
+        Operator gtOp = Operator.of(">");
         assertEquals(Operator.GREATER_THAN, gtOp);
 
-        Operator andOp = Operator.getOperator("AND");
+        Operator andOp = Operator.of("AND");
         assertEquals(Operator.AND, andOp);
 
         // Check operator type
@@ -238,34 +238,34 @@ public class JavadocExamplesConditionBaseTest {
 
     @Test
     void operator_getOperator_symbolicOperators() {
-        Operator eq = Operator.getOperator("=");
+        Operator eq = Operator.of("=");
         assertEquals(Operator.EQUAL, eq);
 
-        Operator gt = Operator.getOperator(">");
+        Operator gt = Operator.of(">");
         assertEquals(Operator.GREATER_THAN, gt);
 
-        Operator gte = Operator.getOperator(">=");
+        Operator gte = Operator.of(">=");
         assertEquals(Operator.GREATER_EQUAL, gte);
     }
 
     @Test
     void operator_getOperator_wordOperators() {
-        Operator andOp = Operator.getOperator("AND");
+        Operator andOp = Operator.of("AND");
         assertEquals(Operator.AND, andOp);
 
-        Operator orOp = Operator.getOperator("OR");
+        Operator orOp = Operator.of("OR");
         assertEquals(Operator.OR, orOp);
 
-        Operator likeOp = Operator.getOperator("LIKE");
+        Operator likeOp = Operator.of("LIKE");
         assertEquals(Operator.LIKE, likeOp);
     }
 
     @Test
     void operator_getOperator_unknownAndNull() {
-        Operator unknown = Operator.getOperator("UNKNOWN");
+        Operator unknown = Operator.of("UNKNOWN");
         assertNull(unknown);
 
-        Operator nullOp = Operator.getOperator(null);
+        Operator nullOp = Operator.of(null);
         assertNull(nullOp);
     }
 
@@ -960,10 +960,10 @@ public class JavadocExamplesConditionBaseTest {
     @Test
     void expression_multi_examples() {
         // Use Expression.of() for column references to avoid single-quote wrapping
-        String expr = Expression.multi(Expression.of("price"), Expression.of("quantity"), Expression.of("tax_rate"));
+        String expr = Expression.multiply(Expression.of("price"), Expression.of("quantity"), Expression.of("tax_rate"));
         assertEquals("price * quantity * tax_rate", expr);
 
-        String expr2 = Expression.multi(Expression.of("hours"), 60);
+        String expr2 = Expression.multiply(Expression.of("hours"), 60);
         assertEquals("hours * 60", expr2);
     }
 
