@@ -290,9 +290,8 @@ public class NotInSubQuery extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * This method delegates to the wrapped subquery's clearParameters method.
-     *
+     * Clears parameters in the underlying subquery.
+     * This method delegates to {@link SubQuery#clearParameters()}.
      */
     @Override
     public void clearParameters() {
@@ -306,7 +305,7 @@ public class NotInSubQuery extends AbstractCondition {
      * The copy includes a deep copy of the subquery to ensure complete independence.
      *
      * @param <T> the type of condition to return
-     * @return a new instance with copied values
+     * @return a new NotInSubQuery instance with a deep copy of the subquery
      */
     @SuppressWarnings("unchecked")
     @Override

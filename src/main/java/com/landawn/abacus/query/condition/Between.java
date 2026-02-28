@@ -305,7 +305,7 @@ public class Between extends AbstractCondition {
     }
 
     /**
-     * Returns a string representation of this BETWEEN condition using the specified naming policy.
+     * Converts this Between condition to its string representation using the specified naming policy.
      * The format is: propertyName BETWEEN minValue AND maxValue
      * 
      * @param namingPolicy the naming policy to apply to the property name
@@ -323,7 +323,7 @@ public class Between extends AbstractCondition {
      * Returns the hash code of this BETWEEN condition.
      * The hash code is computed based on property name, operator, minValue, and maxValue.
      * 
-     * @return the hash code value
+     * @return hash code based on property name, operator, and range values
      */
     @Override
     public int hashCode() {

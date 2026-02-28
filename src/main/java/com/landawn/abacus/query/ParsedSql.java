@@ -210,16 +210,16 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the original SQL string as provided to the parse method.
-     * This is the SQL before any parameter conversion or processing.
+     * Gets the SQL string (trimmed of leading and trailing whitespace).
+     * This is the SQL before any parameter conversion or processing, but after trimming.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-     * String original = parsed.sql();   // Returns: "SELECT * FROM users WHERE id = :userId"
+     * ParsedSql parsed = ParsedSql.parse("  SELECT * FROM users WHERE id = :userId  ");
+     * String sql = parsed.sql();   // Returns: "SELECT * FROM users WHERE id = :userId"
      * }</pre>
      *
-     * @return the original SQL string
+     * @return the trimmed SQL string
      */
     public String sql() {
         return sql;

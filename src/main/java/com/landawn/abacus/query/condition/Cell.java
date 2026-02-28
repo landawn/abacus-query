@@ -168,7 +168,7 @@ public class Cell extends AbstractCondition {
     }
 
     /**
-     * Returns a string representation of this Cell using the specified naming policy.
+     * Converts this Cell condition to its string representation using the specified naming policy.
      * The output format is: OPERATOR condition_string
      * 
      * @param namingPolicy the naming policy to apply to property names
@@ -183,7 +183,7 @@ public class Cell extends AbstractCondition {
      * Returns the hash code of this Cell.
      * The hash code is computed based on the operator and wrapped condition.
      * 
-     * @return the hash code value
+     * @return hash code based on operator and wrapped condition
      */
     @Override
     public int hashCode() {

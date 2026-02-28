@@ -151,15 +151,15 @@ public class Except extends Clause {
      * // SELECT product_id FROM sales
      * }</pre>
      *
-     * @param condition the subquery to perform the EXCEPT operation with. Must not be null.
+     * @param subQuery the subquery to perform the EXCEPT operation with. Must not be null.
      *                  The subquery must have the same number of columns with compatible types as the main query.
-     * @throws NullPointerException if condition is null
+     * @throws NullPointerException if subQuery is null
      * @see Minus
      * @see Union
      * @see UnionAll
      * @see Intersect
      */
-    public Except(final SubQuery condition) {
-        super(Operator.EXCEPT, condition);
+    public Except(final SubQuery subQuery) {
+        super(Operator.EXCEPT, subQuery);
     }
 }

@@ -419,11 +419,12 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * 
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     * Clears parameters in the underlying condition.
+     * This method delegates to the wrapped condition's clearParameters method.
+     *
+     * <p>Use this method to release large objects when the subquery is no longer needed.
+     * If this is a raw SQL subquery with no condition, this method is a no-op.</p>
+     *
      */
     @Override
     public void clearParameters() {

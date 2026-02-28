@@ -481,7 +481,7 @@ public class Junction extends AbstractCondition {
      * The hash code is consistent with equals() - junctions with the same operator
      * and conditions will have the same hash code.
      * 
-     * @return the hash code
+     * @return hash code based on operator and condition list
      */
     @Override
     public int hashCode() {

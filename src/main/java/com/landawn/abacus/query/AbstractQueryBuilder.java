@@ -849,7 +849,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param tableName the name of the table to insert into
      * @return this SQLBuilder instance for method chaining
-     * @throws RuntimeException if called on non-INSERT/SELECT operation or if columns/values not set
+     * @throws IllegalStateException if called on non-INSERT/SELECT operation or if columns/values not set
      */
     public This into(final String tableName) {
         if (!(_op == OperationType.ADD || _op == OperationType.QUERY)) {
@@ -3933,7 +3933,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * String sql = PSC.update("account")
      *                 .set(accountEntity)
      *                 .where(Filters.eq("id", 1))
@@ -3953,7 +3952,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * Set<String> excluded = N.asSet("createdDate", "version");
      * String sql = PSC.update("account")
      *                 .set(accountEntity, excluded)
@@ -3996,7 +3994,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * String sql = PSC.update("account")
      *                 .set(Account.class)
      *                 .where(Filters.eq("id", 1))
@@ -4018,7 +4015,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * Set<String> excluded = N.asSet("lastModified");
      * String sql = PSC.update("account")
      *                 .set(Account.class, excluded)
@@ -4042,7 +4038,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .where(Filters.eq("status", "ACTIVE"))
@@ -4084,7 +4079,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * SQLBuilder builder = PSC.select("*")
      *                        .from("account")
      *                        .where(Filters.and(
@@ -4107,7 +4101,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * SP sqlPair = PSC.select("*")
      *                 .from("account")
      *                 .where(Filters.eq("status", "ACTIVE"))
@@ -4152,7 +4145,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * List<Account> accounts = PSC.select("*")
      *     .from("account")
      *     .where(Filters.eq("status", "ACTIVE"))
@@ -4176,7 +4168,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * int count = PSC.update("account")
      *     .set("status", "INACTIVE")
      *     .where(Filters.lt("lastLogin", oneYearAgo))
@@ -4202,7 +4193,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * PSC.insert("name", "email", "status")
      *    .into("account")
      *    .accept(sp -> jdbcTemplate.update(sp.query, sp.parameters.toArray()));
@@ -4223,7 +4213,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * PSC.deleteFrom("account")
      *    .where(Filters.eq("status", "DELETED"))
      *    .accept((sql, params) -> {
@@ -4249,7 +4238,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Example usage:
      * PSC.select("*")
      *    .from("account")
      *    .where(Filters.between("age", 18, 65))

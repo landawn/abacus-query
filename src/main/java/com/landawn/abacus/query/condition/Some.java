@@ -97,11 +97,11 @@ public class Some extends Cell {
      * // Returns orders matching at least one threshold value
      * }</pre>
      *
-     * @param subQuery the subquery that returns values to compare against. Must not be null.
-     * @throws NullPointerException if subQuery is null
+     * @param condition the subquery that returns values to compare against. Must not be null.
+     * @throws NullPointerException if condition is null
      */
-    public Some(final SubQuery subQuery) {
-        super(Operator.SOME, subQuery);
+    public Some(final SubQuery condition) {
+        super(Operator.SOME, condition);
     }
 
     @Override

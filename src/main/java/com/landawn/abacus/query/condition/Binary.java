@@ -229,7 +229,7 @@ public class Binary extends AbstractCondition {
     }
 
     /**
-     * Returns a string representation of this Binary condition using the specified naming policy.
+     * Converts this Binary condition to its string representation using the specified naming policy.
      * The format is: propertyName OPERATOR value
      * 
      * @param namingPolicy the naming policy to apply to the property name
@@ -245,7 +245,7 @@ public class Binary extends AbstractCondition {
      * Returns the hash code of this Binary condition.
      * The hash code is computed based on the property name, operator, and value.
      * 
-     * @return the hash code value
+     * @return hash code based on property name, operator, and value
      */
     @Override
     public int hashCode() {

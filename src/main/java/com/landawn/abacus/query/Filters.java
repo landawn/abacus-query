@@ -456,7 +456,6 @@ public class Filters {
      * @return a Not condition that wraps and negates the provided condition
      * @see Not
      * @see Condition
-     * @see Filters
      */
     public static Not not(final Condition condition) {
         return condition.not();
@@ -3655,10 +3654,10 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Instead of Filters.eq("name", "John")
-     * Condition c = Filters.eq("name", "John");
+     * Condition c = CF.eq("name", "John");
      * }</pre>
-     * 
-     * <p>All methods in Filters are available through Filters.</p>
+     *
+     * <p>All methods in Filters are available through CF.</p>
      */
     @Beta
     public static final class CF extends Filters {

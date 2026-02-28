@@ -295,8 +295,8 @@ public class InSubQuery extends AbstractCondition {
      * The copy includes a deep copy of the subquery, ensuring complete independence
      * from the original condition.
      *
-     * @param <T> the type of the condition
-     * @return a new InSubQuery instance with a copy of the subquery
+     * @param <T> the type of condition to return
+     * @return a new InSubQuery instance with a deep copy of the subquery
      */
     @SuppressWarnings("unchecked")
     @Override

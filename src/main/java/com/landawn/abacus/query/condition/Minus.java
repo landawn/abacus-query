@@ -160,15 +160,15 @@ public class Minus extends Clause {
      * // SELECT skill_id FROM position_requirements WHERE position_id = 5
      * }</pre>
      *
-     * @param condition the subquery to perform the MINUS operation with. Must not be null.
+     * @param subQuery the subquery to perform the MINUS operation with. Must not be null.
      *                  The subquery must have the same number of columns with compatible types as the main query.
-     * @throws NullPointerException if condition is null
+     * @throws NullPointerException if subQuery is null
      * @see Except
      * @see Union
      * @see UnionAll
      * @see Intersect
      */
-    public Minus(final SubQuery condition) {
-        super(Operator.MINUS, condition);
+    public Minus(final SubQuery subQuery) {
+        super(Operator.MINUS, subQuery);
     }
 }

@@ -305,7 +305,7 @@ public final class SQLMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier
-     * @return the previous ParsedSql associated with the id, or {@code null} if there was no mapping
+     * @return always {@code null} since duplicate IDs are not allowed (the method throws if the ID already exists)
      * @throws IllegalArgumentException if the id is empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
      */
     public ParsedSql add(final String id, final ParsedSql sql) {

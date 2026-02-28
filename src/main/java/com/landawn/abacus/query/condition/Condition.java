@@ -151,7 +151,7 @@ public interface Condition {
      * // Equivalent to: memberType = 'premium' OR memberType = 'vip' OR memberType = 'gold'
      * }</pre>
      * 
-     * @param condition the condition to OR with this condition
+     * @param condition the condition to OR with this condition (must not be null)
      * @return a new Or condition containing both conditions
      * @throws IllegalArgumentException if {@code condition} is null
      */

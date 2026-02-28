@@ -86,7 +86,7 @@ public class Limit extends AbstractCondition {
      * }</pre>
      *
      * @param count the maximum number of rows to return. Should be non-negative (typically positive).
-     * @throws IllegalArgumentException if count is negative (implementation-dependent)
+     * @throws IllegalArgumentException if count is negative
      */
     public Limit(final int count) {
         this(0, count);
@@ -352,9 +352,11 @@ public class Limit extends AbstractCondition {
     /**
      * Converts this LIMIT clause to its string representation according to the specified naming policy.
      * The output format depends on how the Limit was constructed:
-     * - Custom expression: returns the expression as-is
-     * - Count only: returns "LIMIT count"
-     * - Count with offset: returns "LIMIT count OFFSET offset"
+     * <ul>
+     *   <li>Custom expression: returns the expression as-is</li>
+     *   <li>Count only: returns "LIMIT count"</li>
+     *   <li>Count with offset: returns "LIMIT count OFFSET offset"</li>
+     * </ul>
      *
      * @param namingPolicy the naming policy to apply (though LIMIT typically doesn't need name conversion)
      * @return the string representation of this LIMIT clause

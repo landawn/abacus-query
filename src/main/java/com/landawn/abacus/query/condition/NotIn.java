@@ -129,7 +129,7 @@ public class NotIn extends AbstractCondition {
      * // Returns: "status"
      * }</pre>
      *
-     * @return the property name
+     * @return the property name, or {@code null} for an uninitialized instance created by serialization frameworks
      */
     public String getPropName() {
         return propName;

@@ -170,7 +170,7 @@ public class In extends AbstractCondition {
      * <ul>
      *   <li>This method exists for backward compatibility only</li>
      *   <li>Using this method breaks the immutability contract of conditions</li>
-     *   <li>The provided list is stored directly (no defensive copy)</li>
+     *   <li>The provided collection is defensively copied into a new list</li>
      *   <li>Instead of modifying, create a new In instance with the desired values</li>
      *   <li>Shared conditions modified this way can cause race conditions</li>
      * </ul>
@@ -199,7 +199,7 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * Gets all parameter values from this IN condition.
+     * Gets the parameter values for this condition.
      * The returned list contains all the values that the property is being checked against.
      * These values will be bound to the prepared statement placeholders when the query is executed.
      *
@@ -244,7 +244,7 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * Converts this IN condition to its string representation according to the specified naming policy.
+     * Converts this IN condition to its string representation using the specified naming policy.
      * The naming policy is applied to the property name to handle different naming conventions.
      * Values are formatted appropriately based on their types.
      *
@@ -271,7 +271,7 @@ public class In extends AbstractCondition {
     }
 
     /**
-     * Computes the hash code for this IN condition.
+     * Generates the hash code for this IN condition.
      * The hash code is computed based on the property name, operator, and values list,
      * ensuring consistent hashing for equivalent conditions.
      *
@@ -291,7 +291,7 @@ public class In extends AbstractCondition {
      * operator, and values list.
      *
      * @param obj the object to compare with
-     * @return {@code true} if the object is an IN condition with the same property name, operator, and values
+     * @return {@code true} if the objects are equal, {@code false} otherwise
      */
     @Override
     public boolean equals(final Object obj) {

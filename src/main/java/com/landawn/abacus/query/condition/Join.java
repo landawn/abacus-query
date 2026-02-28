@@ -393,7 +393,7 @@ public class Join extends AbstractCondition {
      * The hash code is based on the operator, join entities, and condition,
      * ensuring consistent hashing for equivalent joins.
      * 
-     * @return the hash code based on operator, join entities, and condition
+     * @return hash code based on operator, join entities, and condition
      */
     @Override
     public int hashCode() {

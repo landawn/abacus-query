@@ -502,9 +502,9 @@ public final class SK {
 
     // --------------------SQL key words----------------------------
     /**
-     * SQL WITH keyword: {@code "CALL"}.
-     * Used for common table expressions (CTEs).
-     * 
+     * SQL CALL keyword: {@code "CALL"}.
+     * Used for calling stored procedures.
+     *
      */
     public static final String CALL = "CALL";
 

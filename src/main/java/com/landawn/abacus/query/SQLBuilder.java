@@ -5884,8 +5884,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: INSERT INTO account (first_name) VALUES (?)
          * }</pre>
          * 
-         * @param expr The column name or expression to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param expr the column name or expression to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if expr is null or empty
          */
         public static SQLBuilder insert(final String expr) {
@@ -5909,8 +5909,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          * 
-         * @param propOrColumnNames The property or column names to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNames the property or column names to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
@@ -5937,8 +5937,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          * 
-         * @param propOrColumnNames Collection of property or column names to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNames collection of property or column names to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
@@ -5969,8 +5969,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // sqlPair.parameters: ["John", "Doe"]
          * }</pre>
          * 
-         * @param props Map of property names to their values
-         * @return A new SQLBuilder instance for method chaining
+         * @param props map of property names to their values
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if props is null or empty
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
@@ -6003,8 +6003,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com"]
          * }</pre>
          * 
-         * @param entity The entity object to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param entity the entity object to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity) {
@@ -6032,9 +6032,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com"]
          * }</pre>
          * 
-         * @param entity The entity object to insert
-         * @param excludedPropNames Set of property names to exclude from the insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param entity the entity object to insert
+         * @param excludedPropNames set of property names to exclude from the insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
@@ -6063,8 +6063,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: INSERT INTO account (first_name, last_name, email, created_date) VALUES (?, ?, ?, ?)
          * }</pre>
          * 
-         * @param entityClass The entity class to generate INSERT for
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to generate INSERT for
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass) {
@@ -6085,9 +6085,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          * 
-         * @param entityClass The entity class to generate INSERT for
-         * @param excludedPropNames Set of property names to exclude from the insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to generate INSERT for
+         * @param excludedPropNames set of property names to exclude from the insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -6115,8 +6115,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          * 
-         * @param entityClass The entity class to generate INSERT INTO for
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to generate INSERT INTO for
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass) {
@@ -6136,9 +6136,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          * 
-         * @param entityClass The entity class to generate INSERT INTO for
-         * @param excludedPropNames Set of property names to exclude from the insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to generate INSERT INTO for
+         * @param excludedPropNames set of property names to exclude from the insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -6165,8 +6165,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // sqlPair.parameters: ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
          * }</pre>
          * 
-         * @param propsList List of entities or property maps to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param propsList list of entities or property maps to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propsList is null or empty
          * @deprecated This feature is in beta and may change in future versions
          */
@@ -6205,8 +6205,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = ?
          * }</pre>
          * 
-         * @param tableName The name of the table to update
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the name of the table to update
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder update(final String tableName) {
@@ -6237,9 +6237,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: UPDATE account SET first_name = ?, last_modified = ? WHERE id = ?
          * }</pre>
          * 
-         * @param tableName The name of the table to update
-         * @param entityClass The entity class for property mapping
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the name of the table to update
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
@@ -6271,8 +6271,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: UPDATE account SET status = ? WHERE id = ?
          * }</pre>
          * 
-         * @param entityClass The entity class to update
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to update
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass) {
@@ -6295,9 +6295,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * }</pre>
          * 
-         * @param entityClass The entity class to update
-         * @param excludedPropNames Set of property names to exclude from the update
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to update
+         * @param excludedPropNames set of property names to exclude from the update
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -6328,8 +6328,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: DELETE FROM account WHERE status = ?
          * }</pre>
          * 
-         * @param tableName The name of the table to delete from
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the name of the table to delete from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder deleteFrom(final String tableName) {
@@ -6358,9 +6358,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: DELETE FROM account WHERE last_login_date < ?
          * }</pre>
          * 
-         * @param tableName The name of the table to delete from
-         * @param entityClass The entity class for property mapping
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the name of the table to delete from
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
@@ -6391,8 +6391,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: DELETE FROM account WHERE id = ?
          * }</pre>
          * 
-         * @param entityClass The entity class to delete from
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to delete from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder deleteFrom(final Class<?> entityClass) {
@@ -6427,8 +6427,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT firstName || ' ' || lastName AS fullName FROM account
          * }</pre>
          * 
-         * @param selectPart The select expression
-         * @return A new SQLBuilder instance for method chaining
+         * @param selectPart the select expression
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if selectPart is null or empty
          */
         public static SQLBuilder select(final String selectPart) {
@@ -6457,8 +6457,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = ?
          * }</pre>
          * 
-         * @param propOrColumnNames The property or column names to select
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNames the property or column names to select
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final String... propOrColumnNames) {
@@ -6487,8 +6487,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName" FROM account
          * }</pre>
          * 
-         * @param propOrColumnNames Collection of property or column names to select
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNames collection of property or column names to select
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
@@ -6522,8 +6522,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT first_name AS "fname", last_name AS "lname", email_address AS "email" FROM account
          * }</pre>
          * 
-         * @param propOrColumnNameAliases Map of property/column names to their aliases
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNameAliases map of property/column names to their aliases
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNameAliases is null or empty
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
@@ -6552,8 +6552,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email, created_date AS "createdDate" FROM account
          * }</pre>
          * 
-         * @param entityClass The entity class to select properties from
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select properties from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass) {
@@ -6580,9 +6580,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param entityClass The entity class to select properties from
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select properties from
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
@@ -6604,9 +6604,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Selects all Account properties except password and secretKey
          * }</pre>
          * 
-         * @param entityClass The entity class to select properties from
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select properties from
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -6628,10 +6628,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Selects all Order properties including sub-entities, except excluded ones
          * }</pre>
          * 
-         * @param entityClass The entity class to select properties from
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select properties from
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
@@ -6661,8 +6661,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = ?
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass) {
@@ -6683,9 +6683,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT a.id, a.first_name AS "firstName", a.last_name AS "lastName", a.email FROM account a WHERE a.status = ?
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param alias The table alias to use
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param alias the table alias to use
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
@@ -6707,9 +6707,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Includes properties from nested entities like customer, items, etc.
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
@@ -6730,10 +6730,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Selects from orders with alias 'o' including sub-entity properties
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param alias The table alias to use
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param alias the table alias to use
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
@@ -6755,9 +6755,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Selects all properties except password and secretKey
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -6779,10 +6779,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Selects from account with alias 'a', excluding password
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param alias The table alias to use
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param alias the table alias to use
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
@@ -6804,10 +6804,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Includes sub-entities but excludes internalData
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
@@ -6831,11 +6831,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Complex query with full control over selection
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param alias The table alias to use
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param alias the table alias to use
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
@@ -6868,13 +6868,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * //                o.id AS "order.id", o.order_date AS "order.orderDate", ...
          * }</pre>
          * 
-         * @param entityClassA First entity class
-         * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity results
-         * @param entityClassB Second entity class
-         * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity results
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity results
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity results
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
@@ -6901,15 +6901,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * }</pre>
          * 
-         * @param entityClassA First entity class
-         * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity results
-         * @param excludedPropNamesA Excluded properties for first entity
-         * @param entityClassB Second entity class
-         * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity results
-         * @param excludedPropNamesB Excluded properties for second entity
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity results
+         * @param excludedPropNamesA excluded properties for first entity
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity results
+         * @param excludedPropNamesB excluded properties for second entity
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
@@ -6945,8 +6945,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * }</pre>
          * 
-         * @param multiSelects List of Selection objects defining what to select from each entity
-         * @return A new SQLBuilder instance for method chaining
+         * @param multiSelects list of Selection objects defining what to select from each entity
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if multiSelects is null or empty
          */
         public static SQLBuilder select(final List<Selection> multiSelects) {
@@ -6977,13 +6977,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Automatically generates appropriate FROM clause
          * }</pre>
          * 
-         * @param entityClassA First entity class
-         * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity
-         * @param entityClassB Second entity class
-         * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity
-         * @return A new SQLBuilder instance with SELECT and FROM configured
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity
+         * @return a new SQLBuilder instance with SELECT and FROM configured
          * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
@@ -7006,15 +7006,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * }</pre>
          * 
-         * @param entityClassA First entity class
-         * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity
-         * @param excludedPropNamesA Excluded properties for first entity
-         * @param entityClassB Second entity class
-         * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity
-         * @param excludedPropNamesB Excluded properties for second entity
-         * @return A new SQLBuilder instance with SELECT and FROM configured
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity
+         * @param excludedPropNamesA excluded properties for first entity
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity
+         * @param excludedPropNamesB excluded properties for second entity
+         * @return a new SQLBuilder instance with SELECT and FROM configured
          * @throws IllegalArgumentException if entityClassA is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
@@ -7047,8 +7047,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * }</pre>
          * 
-         * @param multiSelects List of Selection objects defining what to select from each entity
-         * @return A new SQLBuilder instance with SELECT and FROM configured
+         * @param multiSelects list of Selection objects defining what to select from each entity
+         * @return a new SQLBuilder instance with SELECT and FROM configured
          * @throws IllegalArgumentException if multiSelects is null or empty
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
@@ -7074,8 +7074,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT count(*) FROM account WHERE status = ?
          * }</pre>
          * 
-         * @param tableName The table to count rows from
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the table to count rows from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder count(final String tableName) {
@@ -7099,8 +7099,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT count(*) FROM account WHERE email IS NOT NULL
          * }</pre>
          * 
-         * @param entityClass The entity class to count
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to count
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder count(final Class<?> entityClass) {
@@ -7126,9 +7126,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: first_name = ? AND email LIKE ?
          * }</pre>
          * 
-         * @param cond The condition to parse
-         * @param entityClass The entity class for property mapping
-         * @return A new SQLBuilder instance containing just the condition SQL
+         * @param cond the condition to parse
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance containing just the condition SQL
          * @throws IllegalArgumentException if cond is null
          */
         public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
@@ -8470,8 +8470,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: INSERT INTO account (firstName) VALUES (?)
          * }</pre>
          * 
-         * @param expr The column name or expression to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param expr the column name or expression to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if expr is null or empty
          */
         public static SQLBuilder insert(final String expr) {
@@ -8502,8 +8502,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // sqlPair.parameters: ["John", "Doe", "john@example.com"]
          * }</pre>
          * 
-         * @param propOrColumnNames The property or column names to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNames the property or column names to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final String... propOrColumnNames) {
@@ -8534,8 +8534,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = PLC.insert(requiredFields).into("userProfile").sql();
          * }</pre>
          * 
-         * @param propOrColumnNames Collection of property or column names to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNames collection of property or column names to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder insert(final Collection<String> propOrColumnNames) {
@@ -8573,8 +8573,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Includes middleName with NULL value
          * }</pre>
          * 
-         * @param props Map of property names to their values
-         * @return A new SQLBuilder instance for method chaining
+         * @param props map of property names to their values
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if props is null or empty
          */
         public static SQLBuilder insert(final Map<String, Object> props) {
@@ -8619,8 +8619,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * }
          * }</pre>
          * 
-         * @param entity The entity object to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param entity the entity object to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity) {
@@ -8652,9 +8652,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * SP sqlPair2 = PLC.insert(account, auditFields).into("account").build();
          * }</pre>
          * 
-         * @param entity The entity object to insert
-         * @param excludedPropNames Set of property names to exclude from the insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param entity the entity object to insert
+         * @param excludedPropNames set of property names to exclude from the insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entity is null
          */
         public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames) {
@@ -8687,8 +8687,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Then bind values with your JDBC framework as needed.
          * }</pre>
          * 
-         * @param entityClass The entity class to generate INSERT for
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to generate INSERT for
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass) {
@@ -8713,9 +8713,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql2 = PLC.insert(Customer.class, computed).into("customer").sql();
          * }</pre>
          * 
-         * @param entityClass The entity class to generate INSERT for
-         * @param excludedPropNames Set of property names to exclude from the insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to generate INSERT for
+         * @param excludedPropNames set of property names to exclude from the insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -8751,8 +8751,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: INSERT INTO user_accounts (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
          * 
-         * @param entityClass The entity class to generate INSERT INTO for
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to generate INSERT INTO for
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass) {
@@ -8776,9 +8776,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Use template for bulk inserts
          * }</pre>
          * 
-         * @param entityClass The entity class to generate INSERT INTO for
-         * @param excludedPropNames Set of property names to exclude from the insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to generate INSERT INTO for
+         * @param excludedPropNames set of property names to exclude from the insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -8812,8 +8812,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * SP sqlPair2 = PLC.batchInsert(data).into("account").build();
          * }</pre>
          * 
-         * @param propsList List of entities or property maps to insert
-         * @return A new SQLBuilder instance for method chaining
+         * @param propsList list of entities or property maps to insert
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propsList is null or empty
          * @deprecated This feature is in beta and may change in future versions
          */
@@ -8858,8 +8858,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param tableName The name of the table to update
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the name of the table to update
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder update(final String tableName) {
@@ -8893,9 +8893,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // sqlPair.sql: UPDATE account SET firstName = ?, lastName = ?, modifiedDate = ? WHERE id = ?
          * }</pre>
          * 
-         * @param tableName The name of the table to update
-         * @param entityClass The entity class for property mapping
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the name of the table to update
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder update(final String tableName, final Class<?> entityClass) {
@@ -8936,8 +8936,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .build();
          * }</pre>
          * 
-         * @param entityClass The entity class to update
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to update
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass) {
@@ -8974,9 +8974,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .sql();
          * }</pre>
          * 
-         * @param entityClass The entity class to update
-         * @param excludedPropNames Set of property names to exclude from the update
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to update
+         * @param excludedPropNames set of property names to exclude from the update
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -9021,8 +9021,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param tableName The name of the table to delete from
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the name of the table to delete from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder deleteFrom(final String tableName) {
@@ -9059,9 +9059,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param tableName The name of the table to delete from
-         * @param entityClass The entity class for property mapping
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the name of the table to delete from
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
@@ -9109,8 +9109,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: DELETE FROM user_sessions WHERE expiryTime < ?
          * }</pre>
          * 
-         * @param entityClass The entity class to delete from
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to delete from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder deleteFrom(final Class<?> entityClass) {
@@ -9154,8 +9154,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param selectPart The select expression
-         * @return A new SQLBuilder instance for method chaining
+         * @param selectPart the select expression
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if selectPart is null or empty
          */
         public static SQLBuilder select(final String selectPart) {
@@ -9196,8 +9196,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param propOrColumnNames The property or column names to select
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNames the property or column names to select
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final String... propOrColumnNames) {
@@ -9239,8 +9239,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql3 = PLC.select(entityColumns).from("account").sql();
          * }</pre>
          * 
-         * @param propOrColumnNames Collection of property or column names to select
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNames collection of property or column names to select
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
          */
         public static SQLBuilder select(final Collection<String> propOrColumnNames) {
@@ -9286,8 +9286,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql3 = PLC.select(aliases).from("account").sql();
          * }</pre>
          * 
-         * @param propOrColumnNameAliases Map of property/column names to their aliases
-         * @return A new SQLBuilder instance for method chaining
+         * @param propOrColumnNameAliases map of property/column names to their aliases
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propOrColumnNameAliases is null or empty
          */
         public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases) {
@@ -9330,8 +9330,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * }
          * }</pre>
          * 
-         * @param entityClass The entity class to select properties from
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select properties from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass) {
@@ -9367,9 +9367,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Includes customer properties as well
          * }</pre>
          * 
-         * @param entityClass The entity class to select properties from
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select properties from
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
@@ -9398,9 +9398,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param entityClass The entity class to select properties from
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select properties from
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -9433,10 +9433,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Includes invoice and customer fields, but not pdfData or items
          * }</pre>
          * 
-         * @param entityClass The entity class to select properties from
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select properties from
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
@@ -9477,8 +9477,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT ... FROM user_accounts ORDER BY createdDate DESC LIMIT 10
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass) {
@@ -9511,9 +9511,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param alias The table alias to use
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param alias the table alias to use
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias) {
@@ -9547,9 +9547,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Includes author properties in selection
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
@@ -9572,10 +9572,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Includes order and related entity properties with proper aliases
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param alias The table alias to use
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param alias the table alias to use
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
@@ -9602,9 +9602,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -9634,10 +9634,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param alias The table alias to use
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param alias the table alias to use
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
@@ -9659,10 +9659,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Includes order and customer fields except the excluded ones
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
@@ -9697,11 +9697,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                  .sql();
          * }</pre>
          * 
-         * @param entityClass The entity class to select from
-         * @param alias The table alias to use
-         * @param includeSubEntityProperties Whether to include properties of nested entity objects
-         * @param excludedPropNames Set of property names to exclude from selection
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to select from
+         * @param alias the table alias to use
+         * @param includeSubEntityProperties whether to include properties of nested entity objects
+         * @param excludedPropNames set of property names to exclude from selection
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
@@ -9731,12 +9731,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT a.firstName AS "account.firstName", o.totalAmount AS "order.totalAmount" ... FROM account a INNER JOIN orders o ON a.id = o.accountId
          * }</pre>
          *
-         * @param entityClassA First entity class
-         * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity
-         * @param entityClassB Second entity class
-         * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity
          * @return a new SQLBuilder instance for method chaining
          */
         public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
@@ -9762,14 +9762,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT a.firstName AS "account.firstName", a.email AS "account.email", o.totalAmount AS "order.totalAmount" ... FROM account a INNER JOIN orders o ON a.id = o.accountId
          * }</pre>
          *
-         * @param entityClassA First entity class
-         * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity
-         * @param excludedPropNamesA Excluded properties for first entity
-         * @param entityClassB Second entity class
-         * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity
-         * @param excludedPropNamesB Excluded properties for second entity
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity
+         * @param excludedPropNamesA excluded properties for first entity
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity
+         * @param excludedPropNamesB excluded properties for second entity
          * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClassA is null
          */
@@ -9802,7 +9802,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT a.firstName AS "account.firstName", a.lastName AS "account.lastName", o.totalAmount AS "order.totalAmount" ... FROM account a INNER JOIN orders o ON a.id = o.accountId
          * }</pre>
          *
-         * @param multiSelects List of Selection objects defining what to select from each entity
+         * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if multiSelects is null or empty
          */
@@ -9832,12 +9832,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT a.firstName AS "account.firstName", o.totalAmount AS "order.totalAmount" ... FROM account a, orders o WHERE a.id = o.accountId
          * }</pre>
          *
-         * @param entityClassA First entity class
-         * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity
-         * @param entityClassB Second entity class
-         * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity
          * @return a new SQLBuilder instance for method chaining
          */
         public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
@@ -9862,14 +9862,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT a.firstName AS "account.firstName", a.email AS "account.email", o.totalAmount AS "order.totalAmount" ... FROM account a, orders o WHERE a.id = o.accountId
          * }</pre>
          *
-         * @param entityClassA First entity class
-         * @param tableAliasA Table alias for first entity
-         * @param classAliasA Property prefix for first entity
-         * @param excludedPropNamesA Excluded properties for first entity
-         * @param entityClassB Second entity class
-         * @param tableAliasB Table alias for second entity
-         * @param classAliasB Property prefix for second entity
-         * @param excludedPropNamesB Excluded properties for second entity
+         * @param entityClassA first entity class
+         * @param tableAliasA table alias for first entity
+         * @param classAliasA property prefix for first entity
+         * @param excludedPropNamesA excluded properties for first entity
+         * @param entityClassB second entity class
+         * @param tableAliasB table alias for second entity
+         * @param classAliasB property prefix for second entity
+         * @param excludedPropNamesB excluded properties for second entity
          * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClassA is null
          */
@@ -9902,7 +9902,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT a.firstName AS "account.firstName", a.email AS "account.email", o.totalAmount AS "order.totalAmount" FROM account a, orders o WHERE a.id = o.accountId
          * }</pre>
          *
-         * @param multiSelects List of Selection objects defining what to select from each entity
+         * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SQLBuilder instance for method chaining
          */
         public static SQLBuilder selectFrom(final List<Selection> multiSelects) {
@@ -9925,8 +9925,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT count(*) FROM account WHERE status = ?
          * }</pre>
          *
-         * @param tableName The table to count rows from
-         * @return A new SQLBuilder instance for method chaining
+         * @param tableName the table to count rows from
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SQLBuilder count(final String tableName) {
@@ -9948,8 +9948,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: SELECT count(*) FROM account WHERE email IS NOT NULL
          * }</pre>
          *
-         * @param entityClass The entity class to count
-         * @return A new SQLBuilder instance for method chaining
+         * @param entityClass the entity class to count
+         * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SQLBuilder count(final Class<?> entityClass) {
@@ -9975,9 +9975,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * // Output: firstName = ? AND emailAddress LIKE ?
          * }</pre>
          * 
-         * @param cond The condition to parse
-         * @param entityClass The entity class for property mapping
-         * @return A new SQLBuilder instance containing just the condition SQL
+         * @param cond the condition to parse
+         * @param entityClass the entity class for property mapping
+         * @return a new SQLBuilder instance containing just the condition SQL
          * @throws IllegalArgumentException if cond is null
          */
         public static SQLBuilder parse(final Condition cond, final Class<?> entityClass) {
@@ -15237,7 +15237,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excluded = N.asSet("id", "createdDate");
-         * String sql = MSC.insertInto(Account.class, excluded)
+         * String sql = MSB.insertInto(Account.class, excluded)
          *                 .values("John", "john@email.com", "ACTIVE")
          *                 .sql();
          * // Output: INSERT INTO ACCOUNT (FIRST_NAME, EMAIL, STATUS) VALUES (?, ?, ?)
@@ -15453,7 +15453,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MSC.deleteFrom("ACCOUNT_ARCHIVE", Account.class)
+         * String sql = MSB.deleteFrom("ACCOUNT_ARCHIVE", Account.class)
          *                 .where(Filters.lt("lastLogin", "2020-01-01"))
          *                 .sql();
          * // Output: DELETE FROM ACCOUNT_ARCHIVE WHERE LAST_LOGIN < ?
@@ -17733,7 +17733,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Account("John", "Doe"),
          *     new Account("Jane", "Smith")
          * );
-         * String sql = MLC.batchInsert(accounts).into("account").sql();
+         * String sql = MAC.batchInsert(accounts).into("account").sql();
          * // Output: INSERT INTO account (firstName, lastName) VALUES (#{firstName_0}, #{lastName_0}), (#{firstName_1}, #{lastName_1})
          * }</pre>
          *
@@ -17765,7 +17765,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.update("account")
+         * String sql = MAC.update("account")
          *                 .set("firstName", "John")
          *                 .set("lastName", "Doe")
          *                 .set("modifiedDate", new Date())
@@ -17792,10 +17792,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates an UPDATE SQL builder for the specified table with entity class mapping.
          * The entity class is used for property name validation and type checking.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.update("account", Account.class)
+         * String sql = MAC.update("account", Account.class)
          *                 .set("isActive", false)
          *                 .set("deactivatedDate", new Date())
          *                 .where(Filters.eq("id", 1))
@@ -17827,7 +17827,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.update(Account.class)
+         * String sql = MAC.update(Account.class)
          *                 .set("status", "ACTIVE")
          *                 .set("lastLoginDate", new Date())
          *                 .where(Filters.eq("id", 1))
@@ -17849,7 +17849,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("id", "createdDate", "createdBy"));
-         * String sql = MLC.update(Account.class, excludes)
+         * String sql = MAC.update(Account.class, excludes)
          *                 .set("firstName", "John")
          *                 .set("modifiedDate", new Date())
          *                 .where(Filters.eq("id", 1))
@@ -17877,10 +17877,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a DELETE SQL builder for the specified table.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.deleteFrom("account")
+         * String sql = MAC.deleteFrom("account")
          *                 .where(Filters.eq("status", "INACTIVE"))
          *                 .sql();
          * // Output: DELETE FROM account WHERE status = #{status}
@@ -17906,7 +17906,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.deleteFrom("account", Account.class)
+         * String sql = MAC.deleteFrom("account", Account.class)
          *                 .where(Filters.and(
          *                     Filters.eq("isActive", false),
          *                     Filters.lt("lastLoginDate", lastYear)
@@ -17938,7 +17938,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.deleteFrom(Account.class)
+         * String sql = MAC.deleteFrom(Account.class)
          *                 .where(Filters.in("id", Arrays.asList(1, 2, 3)))
          *                 .sql();
          * // Output: DELETE FROM account WHERE id IN (#{id_0}, #{id_1}, #{id_2})
@@ -17964,10 +17964,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.select("COUNT(*)").from("account").sql();
+         * String sql = MAC.select("COUNT(*)").from("account").sql();
          * // Output: SELECT count(*) FROM account
-         * 
-         * String sql2 = MLC.select("firstName").from("account").sql();
+         *
+         * String sql2 = MAC.select("firstName").from("account").sql();
          * // Output: SELECT firstName FROM account
          * }</pre>
          *
@@ -17990,7 +17990,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.select("firstName", "lastName", "emailAddress")
+         * String sql = MAC.select("firstName", "lastName", "emailAddress")
          *                 .from("account")
          *                 .sql();
          * // Output: SELECT firstName, lastName, emailAddress FROM account
@@ -18016,7 +18016,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "phoneNumber");
-         * String sql = MLC.select(columns).from("account").sql();
+         * String sql = MAC.select(columns).from("account").sql();
          * // Output: SELECT firstName, lastName, phoneNumber FROM account
          * }</pre>
          *
@@ -18043,7 +18043,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * aliases.put("firstName", "fname");
          * aliases.put("lastName", "lname");
          * aliases.put("emailAddress", "email");
-         * String sql = MLC.select(aliases).from("account").sql();
+         * String sql = MAC.select(aliases).from("account").sql();
          * // Output: SELECT firstName AS fname, lastName AS lname, emailAddress AS email FROM account
          * }</pre>
          *
@@ -18066,7 +18066,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.select(Account.class).from("account").sql();
+         * String sql = MAC.select(Account.class).from("account").sql();
          * // Output: SELECT id, firstName, lastName, emailAddress, createdDate FROM account
          * }</pre>
          *
@@ -18079,15 +18079,15 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for the specified entity class with optional sub-entity properties.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * // Without sub-entities
-         * String sql = MLC.select(Order.class, false).from("orders").sql();
+         * String sql = MAC.select(Order.class, false).from("orders").sql();
          * // Output: SELECT id, customerId, orderDate, totalAmount FROM orders
-         * 
+         *
          * // With sub-entities (includes properties from related entities)
-         * String sql = MLC.select(Order.class, true).from("orders").sql();
+         * String sql = MAC.select(Order.class, true).from("orders").sql();
          * }</pre>
          *
          * @param entityClass the entity class to select properties from
@@ -18104,7 +18104,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("passwordHash", "securityToken"));
-         * String sql = MLC.select(Account.class, excludes).from("account").sql();
+         * String sql = MAC.select(Account.class, excludes).from("account").sql();
          * // Output: SELECT id, firstName, lastName, emailAddress FROM account
          * }</pre>
          *
@@ -18118,11 +18118,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for the specified entity class with full control over included properties.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("internalNotes", "debugInfo"));
-         * String sql = MLC.select(Customer.class, true, excludes)
+         * String sql = MAC.select(Customer.class, true, excludes)
          *                 .from("customer")
          *                 .sql();
          * // Selects all Customer properties and sub-entity properties, except excluded ones
@@ -18148,10 +18148,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a complete SELECT FROM SQL builder for the specified entity class.
          * Automatically determines the table name from the entity class.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.selectFrom(Account.class).where(Filters.eq("isActive", true)).sql();
+         * String sql = MAC.selectFrom(Account.class).where(Filters.eq("isActive", true)).sql();
          * // Output: SELECT id, firstName, lastName, emailAddress FROM account WHERE isActive = #{isActive}
          * }</pre>
          *
@@ -18164,10 +18164,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder with a table alias.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.selectFrom(Account.class, "a")
+         * String sql = MAC.selectFrom(Account.class, "a")
          *                 .where(Filters.like("a.emailAddress", "%@example.com"))
          *                 .sql();
          * // Output: SELECT a.id, a.firstName, a.lastName, a.emailAddress FROM account a WHERE a.emailAddress LIKE #{emailAddress}
@@ -18183,10 +18183,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder with optional sub-entity properties.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.selectFrom(Order.class, true)
+         * String sql = MAC.selectFrom(Order.class, true)
          *                 .where(Filters.between("orderDate", startDate, endDate))
          *                 .sql();
          * // Includes Order properties and related sub-entity properties
@@ -18202,10 +18202,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder with table alias and sub-entity control.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.selectFrom(Product.class, "p", true)
+         * String sql = MAC.selectFrom(Product.class, "p", true)
          *                 .innerJoin("category", "c").on("p.categoryId = c.id")
          *                 .where(Filters.eq("c.isActive", true))
          *                 .sql();
@@ -18222,11 +18222,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder with property exclusions.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("largeJsonData", "binaryContent"));
-         * String sql = MLC.selectFrom(Document.class, excludes)
+         * String sql = MAC.selectFrom(Document.class, excludes)
          *                 .where(Filters.eq("documentType", "PDF"))
          *                 .sql();
          * }</pre>
@@ -18241,11 +18241,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder with table alias and property exclusions.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("encryptedData"));
-         * String sql = MLC.selectFrom(User.class, "u", excludes)
+         * String sql = MAC.selectFrom(User.class, "u", excludes)
          *                 .leftJoin("user_roles", "ur").on("u.id = ur.userId")
          *                 .sql();
          * }</pre>
@@ -18261,11 +18261,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder with sub-entity control and property exclusions.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("auditLog"));
-         * String sql = MLC.selectFrom(Invoice.class, true, excludes)
+         * String sql = MAC.selectFrom(Invoice.class, true, excludes)
          *                 .where(Filters.eq("isPaid", false))
          *                 .orderBy("dueDate")
          *                 .sql();
@@ -18282,11 +18282,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder with full control over all options.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("tempData"));
-         * String sql = MLC.selectFrom(Transaction.class, "t", true, excludes)
+         * String sql = MAC.selectFrom(Transaction.class, "t", true, excludes)
          *                 .innerJoin("account", "a").on("t.accountId = a.id")
          *                 .where(Filters.and(
          *                     Filters.eq("a.isActive", true),
@@ -18319,7 +18319,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.select(Order.class, "o", "order",
+         * String sql = MAC.select(Order.class, "o", "order",
          *                        Customer.class, "c", "customer")
          *                 .from("orders o")
          *                 .innerJoin("customers c").on("o.customerId = c.id")
@@ -18342,12 +18342,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for joining two entity classes with property exclusions.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> orderExcludes = new HashSet<>(Arrays.asList("internalNotes"));
          * Set<String> customerExcludes = new HashSet<>(Arrays.asList("creditCardInfo"));
-         * String sql = MLC.select(Order.class, "o", "order", orderExcludes,
+         * String sql = MAC.select(Order.class, "o", "order", orderExcludes,
          *                        Customer.class, "c", "customer", customerExcludes)
          *                 .from("orders o")
          *                 .innerJoin("customers c").on("o.customerId = c.id")
@@ -18377,7 +18377,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder for multiple entity selections with custom configurations.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<Selection> selections = Arrays.asList(
@@ -18385,7 +18385,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Selection(Customer.class, "c", "customer", null, false, excludedProps),
          *     new Selection(Product.class, "p", "product", null, false, null)
          * );
-         * String sql = MLC.select(selections)
+         * String sql = MAC.select(selections)
          *                 .from("orders o")
          *                 .innerJoin("customers c").on("o.customerId = c.id")
          *                 .innerJoin("order_items oi").on("o.id = oi.orderId")
@@ -18411,10 +18411,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a complete SELECT FROM SQL builder for joining two entity classes.
          * Automatically generates the FROM clause with proper table names.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.selectFrom(Order.class, "o", "order",
+         * String sql = MAC.selectFrom(Order.class, "o", "order",
          *                            Customer.class, "c", "customer")
          *                 .on("o.customerId = c.id")
          *                 .where(Filters.eq("c.country", "USA"))
@@ -18436,12 +18436,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates a complete SELECT FROM SQL builder for joining two entity classes with property exclusions.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> orderExcludes = new HashSet<>(Arrays.asList("tempData"));
          * Set<String> productExcludes = new HashSet<>(Arrays.asList("warehouseNotes"));
-         * String sql = MLC.selectFrom(Order.class, "o", "order", orderExcludes,
+         * String sql = MAC.selectFrom(Order.class, "o", "order", orderExcludes,
          *                            Product.class, "p", "product", productExcludes)
          *                 .innerJoin("order_items", "oi").on("o.id = oi.orderId")
          *                 .on("oi.productId = p.id")
@@ -18472,7 +18472,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a complete SELECT FROM SQL builder for multiple entity selections.
          * Automatically generates the FROM clause based on the Selection configurations.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<Selection> selections = Arrays.asList(
@@ -18480,7 +18480,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     new Selection(Employee.class, "e", null, null, true, excludedProps),
          *     new Selection(Project.class, "p", null, null, false, null)
          * );
-         * String sql = MLC.selectFrom(selections)
+         * String sql = MAC.selectFrom(selections)
          *                 .on("d.id = e.departmentId")
          *                 .leftJoin("employee_projects", "ep").on("e.id = ep.employeeId")
          *                 .on("ep.projectId = p.id")
@@ -18504,7 +18504,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.count("account").where(Filters.eq("isActive", true)).sql();
+         * String sql = MAC.count("account").where(Filters.eq("isActive", true)).sql();
          * // Output: SELECT count(*) FROM account WHERE isActive = #{isActive}
          * }</pre>
          *
@@ -18520,10 +18520,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Creates a COUNT(*) SQL builder for the specified entity class.
          * The table name is derived from the entity class.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = MLC.count(Account.class)
+         * String sql = MAC.count(Account.class)
          *                 .where(Filters.or(
          *                     Filters.isNull("emailAddress"),
          *                     Filters.eq("emailVerified", false)
@@ -18544,7 +18544,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         /**
          * Parses a condition into SQL format using the specified entity class for property mapping.
          * This is useful for generating WHERE clause fragments with camelCase naming.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Condition cond = Filters.and(
@@ -18552,7 +18552,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *     Filters.like("emailAddress", "%@company.com"),
          *     Filters.gt("accountBalance", 0)
          * );
-         * String sql = MLC.parse(cond, Account.class).sql();
+         * String sql = MAC.parse(cond, Account.class).sql();
          * // Output: isActive = #{isActive} AND emailAddress LIKE #{emailAddress} AND accountBalance > #{accountBalance}
          * }</pre>
          *
