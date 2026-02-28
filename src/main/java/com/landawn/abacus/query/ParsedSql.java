@@ -16,8 +16,8 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 import com.landawn.abacus.pool.KeyedObjectPool;
@@ -62,7 +62,7 @@ public final class ParsedSql {
 
     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
 
-    private static final Set<String> opSqlPrefixSet = N.asSet(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, "CALL");
+    private static final Set<String> opSqlPrefixSet = N.asSet(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, SK.CALL);
 
     private static final int factor = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 

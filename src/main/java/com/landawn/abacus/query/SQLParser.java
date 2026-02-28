@@ -285,7 +285,8 @@ public final class SQLParser {
                 while (++index < sqlLength) {
                     c = sql.charAt(index);
 
-                    if (c == ENTER || (c == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                    if (c == ENTER || c == ENTER_2) {
+                        index--; // back up so the newline is reprocessed by the outer loop as whitespace
                         break;
                     }
                 }
@@ -298,7 +299,8 @@ public final class SQLParser {
                 while (++index < sqlLength) {
                     c = sql.charAt(index);
 
-                    if (c == ENTER || (c == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                    if (c == ENTER || c == ENTER_2) {
+                        index--; // back up so the newline is reprocessed by the outer loop as whitespace
                         break;
                     }
                 }
@@ -468,7 +470,7 @@ public final class SQLParser {
                     }
                     while (++index < sqlLength) {
                         final char cc = sql.charAt(index);
-                        if (cc == ENTER || (cc == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                        if (cc == ENTER || cc == ENTER_2) {
                             break;
                         }
                     }
@@ -484,7 +486,7 @@ public final class SQLParser {
                     }
                     while (++index < sqlLength) {
                         final char cc = sql.charAt(index);
-                        if (cc == ENTER || (cc == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                        if (cc == ENTER || cc == ENTER_2) {
                             break;
                         }
                     }
@@ -656,7 +658,7 @@ public final class SQLParser {
                 }
                 while (++index < sqlLength) {
                     final char cc = sql.charAt(index);
-                    if (cc == ENTER || (cc == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                    if (cc == ENTER || cc == ENTER_2) {
                         break;
                     }
                 }
@@ -667,7 +669,7 @@ public final class SQLParser {
                 }
                 while (++index < sqlLength) {
                     final char cc = sql.charAt(index);
-                    if (cc == ENTER || (cc == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                    if (cc == ENTER || cc == ENTER_2) {
                         break;
                     }
                 }

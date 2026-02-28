@@ -1,7 +1,7 @@
-# abacus-query API Index (v4.3.1)
+# abacus-query API Index (v4.6.0)
 - Build: unknown
 - Java: 17
-- Generated: 2026-02-09
+- Generated: 2026-02-27
 
 ## Packages
 - com.landawn.abacus.query
@@ -21,8 +21,10 @@ A fluent SQL builder for constructing SQL statements programmatically.
 ##### setHandlerForNamedParameter(...) -> void
 - **Signature:** `public static void setHandlerForNamedParameter(final BiConsumer<StringBuilder, String> handlerForNamedParameter)`
 - **Summary:** Sets a custom handler for formatting named parameters in SQL strings.
+- **Contract:**
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Use MyBatis-style named parameters: #{paramName} AbstractQueryBuilder.setHandlerForNamedParameter( (sb, propName) -> sb.append("#{").append(propName).append("}")); // Reset to default when done AbstractQueryBuilder.resetHandlerForNamedParameter(); } </pre>
 - **Parameters:**
-  - `handlerForNamedParameter` (`BiConsumer<StringBuilder, String>`) — the handler to format named parameters
+  - `handlerForNamedParameter` (`BiConsumer<StringBuilder, String>`) — the handler to format named parameters; must not be null
 ##### resetHandlerForNamedParameter(...) -> void
 - **Signature:** `public static void resetHandlerForNamedParameter()`
 - **Summary:** Resets the named parameter handler to the default format.
@@ -603,7 +605,9 @@ A fluent SQL builder for constructing SQL statements programmatically.
   - `propOrColumnNames` (`String[]`) — the columns to update
 - **Returns:** this SQLBuilder instance for method chaining
 - **Signature:** `public This set(final Collection<String> propOrColumnNames)`
-- **Summary:** Sets columns for UPDATE operation with a collection.
+- **Summary:** Sets columns for UPDATE operation with a collection of property or column names.
+- **Contract:**
+  - If a column name already contains an {@code =} sign, it is treated as a raw SET expression and no placeholder is appended.
 - **Parameters:**
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns to update
 - **Returns:** this SQLBuilder instance for method chaining
@@ -2631,7 +2635,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Contract:**
   - Returns a mapping of property names to their corresponding column names and a flag indicating if it's a simple property.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — the entity class to analyze
+  - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
   - `namingPolicy` (`NamingPolicy`) — the naming policy to use for column name conversion
 - **Returns:** an immutable map where keys are property names and values are tuples of (column name, isSimpleProperty)
 ##### getColumn2PropNameMap(...) -> ImmutableMap<String, String>
@@ -2639,6 +2643,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Summary:** Gets a mapping of column names to property names for the specified entity class.
 - **Contract:**
   - <p> This method is useful when you need to map database result set columns back to entity properties, especially when dealing with case-insensitive database systems or when column names don't match the exact case in your code.
+  - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given an entity class with @Column annotations ImmutableMap<String, String> columnToProp = QueryUtil.getColumn2PropNameMap(User.class); // If User has @Column("user_name") on property "userName": String propName = columnToProp.get("user_name"); // "userName" String propName2 = columnToProp.get("USER_NAME"); // "userName" (uppercase variant) String propName3 = columnToProp.get("user_name"); // "userName" (lowercase variant) } </pre>
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
 - **Returns:** an immutable map of column names (including case variations) to property names
@@ -2647,6 +2652,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Summary:** Gets a mapping of property names to column names for the specified entity class using the given naming policy.
 - **Contract:**
   - <p> The naming policy determines how property names are converted to column names when no explicit {@code @Column} annotation is present.
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Get property-to-column mapping with SNAKE_CASE naming policy ImmutableMap<String, String> propToColumn = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SNAKE_CASE); // If User has property "firstName" without @Column annotation: String columnName = propToColumn.get("firstName"); // "first_name" // With SCREAMING_SNAKE_CASE naming policy ImmutableMap<String, String> propToColumnUpper = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SCREAMING_SNAKE_CASE); String upperColumn = propToColumnUpper.get("firstName"); // "FIRST_NAME" } </pre>
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze
   - `namingPolicy` (`NamingPolicy`) — the naming policy to use for column name conversion
@@ -2655,16 +2661,16 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Signature:** `@Internal public static Collection<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames)`
 - **Summary:** Gets the property names to be used for INSERT operations on the given entity instance.
 - **Contract:**
-  - <p> The method intelligently handles ID fields: </p> <ul> <li> If all ID fields have default values (0 for numbers, null for objects), they are excluded from the result </li> <li> If any ID field has a non-default value, all insertable properties including IDs are returned </li> <li> This allows both auto-generated IDs and manually-assigned IDs to work correctly </li> </ul>
+  - <p> The method intelligently handles ID fields: </p> <ul> <li> If all ID fields have default values (0 for numbers, null for objects), they are excluded from the result </li> <li> If any ID field has a non-default value, all insertable properties including IDs are returned </li> <li> This allows both auto-generated IDs and manually-assigned IDs to work correctly </li> </ul> <p> <b> Usage Examples: </b> </p> <pre> {@code User user = new User(); user.setName("John"); user.setEmail("john@example.com"); // user.id is 0 (default) so ID field will be excluded Collection<String> insertProps = QueryUtil.getInsertPropNames(user, null); // Returns: \["name", "email", ...\] (excludes "id" since it has default value) // With excluded properties Set<String> excluded = N.asSet("email"); Collection<String> filteredProps = QueryUtil.getInsertPropNames(user, excluded); // Returns: \["name", ...\] (excludes both "id" and "email") } </pre>
 - **Parameters:**
   - `entity` (`Object`) — the entity instance to analyze (must not be null)
-  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (can be empty, must not be null)
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; null or empty means no exclusions)
 - **Returns:** collection of property names suitable for INSERT operations
 - **Signature:** `@Internal public static Collection<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Gets the property names to be used for INSERT operations on the given entity class.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
-  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (can be empty, must not be null)
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; null or empty means no exclusions)
 - **Returns:** collection of property names suitable for INSERT operations
 ##### getSelectPropNames(...) -> Collection<String>
 - **Signature:** `@Internal public static Collection<String> getSelectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
@@ -2674,16 +2680,16 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
   - `includeSubEntityProperties` (`boolean`) — {@code true} to include nested entity properties, {@code false} for top-level only
-  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (can be empty, must not be null)
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; null or empty means no exclusions)
 - **Returns:** collection of property names suitable for SELECT operations
 ##### getUpdatePropNames(...) -> Collection<String>
 - **Signature:** `@Internal public static Collection<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Gets the property names to be used for UPDATE operations on the given entity class.
 - **Contract:**
-  - <p> Properties are considered non-updatable if they are: </p> <ul> <li> Annotated with @Id </li> <li> Marked as insertable=false, updatable=false in @Column </li> <li> Listed in the excludedPropNames parameter </li> </ul>
+  - <p> Properties are considered non-updatable if they are: </p> <ul> <li> Annotated with @Id </li> <li> Marked as insertable=false, updatable=false in @Column </li> <li> Listed in the excludedPropNames parameter </li> </ul> <p> <b> Usage Examples: </b> </p> <pre> {@code // Get all updatable property names (excludes ID fields automatically) Collection<String> updateProps = QueryUtil.getUpdatePropNames(User.class, null); // Returns: \["name", "email", "status", ...\] (excludes "id") // Exclude additional properties Set<String> excluded = N.asSet("createdDate"); Collection<String> filteredProps = QueryUtil.getUpdatePropNames(User.class, excluded); // Returns: \["name", "email", "status", ...\] (excludes "id" and "createdDate") } </pre>
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
-  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (can be empty, must not be null)
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; null or empty means no exclusions)
 - **Returns:** collection of property names suitable for UPDATE operations
 ##### getIdFieldNames(...) -> List<String>
 - **Signature:** `@Deprecated @Internal @Immutable public static List<String> getIdFieldNames(final Class<?> targetClass)`
@@ -2695,6 +2701,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Summary:** Gets the ID field names for the specified entity class with option to return fake ID if none found.
 - **Contract:**
   - Gets the ID field names for the specified entity class with option to return fake ID if none found.
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Without fake ID - returns empty list when no @Id is found List<String> idFields = QueryUtil.getIdFieldNames(LogEntry.class, false); // Returns: \[\] // With fake ID - returns a synthetic ID when no @Id is found List<String> fakeIdFields = QueryUtil.getIdFieldNames(LogEntry.class, true); // Returns: \["not_defined_fake_id_in_abacus_<uuid>"\] boolean isFake = QueryUtil.isFakeId(fakeIdFields); // true // Entity with @Id returns actual IDs regardless of fakeIdForEmpty List<String> realIds = QueryUtil.getIdFieldNames(User.class, true); // Returns: \["id"\] } </pre>
 - **Parameters:**
   - `targetClass` (`Class<?>`) — the entity class to analyze
   - `fakeIdForEmpty` (`boolean`) — if true, returns a fake ID when no ID fields are found
@@ -2705,6 +2712,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Contract:**
   - Determines whether a property should be excluded from database column mapping.
   - A property is not a column if it's transient, annotated with @NonColumn, or excluded by @Table configuration.
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code BeanInfo beanInfo = ParserUtil.getBeanInfo(User.class); PropInfo propInfo = beanInfo.getPropInfo("tempField"); // Check if a property is excluded from column mapping Set<String> columnFields = N.asSet("id", "name", "email"); Set<String> nonColumnFields = N.emptySet(); boolean excluded = QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo); // Returns true if "tempField" is not in columnFields // Check with nonColumnFields Set<String> nonColumns = N.asSet("tempField", "transientData"); boolean excluded2 = QueryUtil.isNonColumn(N.emptySet(), nonColumns, propInfo); // Returns true if "tempField" is in nonColumnFields } </pre>
 - **Parameters:**
   - `columnFields` (`Set<String>`) — set of field names explicitly included as columns (from @Table annotation, can be null or empty)
   - `nonColumnFields` (`Set<String>`) — set of field names explicitly excluded as columns (from @Table annotation, can be null or empty)
@@ -2716,6 +2724,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Contract:**
   - Checks if the given ID property names represent a fake/synthetic ID.
   - Fake IDs are used internally when entities have no defined ID fields.
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Check if ID fields are real or synthetic List<String> idFields = QueryUtil.getIdFieldNames(User.class, true); boolean fake = QueryUtil.isFakeId(idFields); // Returns false for entities with real @Id annotations List<String> fakeFields = QueryUtil.getIdFieldNames(LogEntry.class, true); boolean isFake = QueryUtil.isFakeId(fakeFields); // Returns true for entities without @Id when fakeIdForEmpty was true } </pre>
 - **Parameters:**
   - `idPropNames` (`List<String>`) — the list of ID property names to check
 - **Returns:** {@code true} if this is a fake ID
@@ -2730,6 +2739,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Summary:** Gets the table alias from the @Table annotation on the entity class.
 - **Contract:**
   - <p> If no @Table annotation exists or if the alias is not specified in the annotation, this method returns null.
+  - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given: @Table(name = "users", alias = "u") on User class String alias = QueryUtil.getTableAlias(User.class); // Returns: "u" // Given: @Table(name = "orders") on Order class (no alias) String alias2 = QueryUtil.getTableAlias(Order.class); // Returns: "" (empty string when alias is not specified) // Given: no @Table annotation on LogEntry class String alias3 = QueryUtil.getTableAlias(LogEntry.class); // Returns: null } </pre>
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to check (must not be null)
 - **Returns:** the table alias if defined in @Table annotation, null otherwise
@@ -2791,7 +2801,16 @@ A comprehensive, enterprise-grade fluent SQL builder providing type-safe, progra
 - **Parameters:**
   - (none)
 - **Returns:** the generated SQL string
-- **See also:** #query(), #build()
+- **See also:** #sql(), #build()
+##### query(...) -> String
+- **Signature:** `@Override public String query()`
+- **Summary:** Generates the final SQL query string and releases resources.
+- **Contract:**
+  - This method should be called only once.
+- **Parameters:**
+  - (none)
+- **Returns:** the generated SQL query string
+- **See also:** #sql()
 
 ### Class SCSB (com.landawn.abacus.query.SQLBuilder.SCSB)
 Un-parameterized SQL builder with snake case (lower case with underscore) field/column naming strategy.
@@ -7323,12 +7342,16 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 ##### get(...) -> ParsedSql
 - **Signature:** `public ParsedSql get(final String id)`
 - **Summary:** Retrieves the parsed SQL associated with the specified identifier.
+- **Contract:**
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml"); ParsedSql sql = mapper.get("findAccountById"); if (sql != null) { String parameterizedSql = sql.getParameterizedSql(); // Use with PreparedStatement PreparedStatement stmt = connection.prepareStatement(parameterizedSql); } // Returns null for unknown ids ParsedSql unknown = mapper.get("nonExistentId"); // unknown is null } </pre>
 - **Parameters:**
   - `id` (`String`) — the SQL identifier to look up
 - **Returns:** the ParsedSql object, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH} , or not found
 ##### getAttrs(...) -> ImmutableMap<String, String>
 - **Signature:** `public ImmutableMap<String, String> getAttrs(final String id)`
 - **Summary:** Retrieves the attributes associated with the specified SQL identifier.
+- **Contract:**
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql> SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml"); ImmutableMap<String, String> attrs = mapper.getAttrs("batchInsert"); if (attrs != null) { String batchSize = attrs.get("batchSize"); // "100" String timeout = attrs.get("timeout"); // "30" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttrs("nonExistentId"); // unknown is null } </pre>
 - **Parameters:**
   - `id` (`String`) — the SQL identifier to look up
 - **Returns:** an immutable map of attribute names to values, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH} , or not found
@@ -7346,7 +7369,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Parameters:**
   - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
   - `sql` (`String`) — the SQL string to parse and store
-  - `attrs` (`Map<String, String>`) — additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be empty but not null
+  - `attrs` (`Map<String, String>`) — additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty
 ##### remove(...) -> void
 - **Signature:** `public void remove(final String id)`
 - **Summary:** Removes the SQL and its attributes associated with the specified identifier.
@@ -7610,6 +7633,7 @@ Enumeration representing the sort direction for database queries and collections
 - **Contract:**
   - Checks if this sort direction is ascending.
   - This is a convenience method equivalent to checking if the direction equals ASC.
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code SortDirection direction = SortDirection.ASC; boolean ascending = direction.isAscending(); // true SortDirection descDirection = SortDirection.DESC; boolean descAscending = descDirection.isAscending(); // false // Conditional logic based on sort direction if (direction.isAscending()) { // Apply ascending sort logic } else { // Apply descending sort logic } } </pre>
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if this sort direction is ASC, {@code false} if it is DESC
@@ -7691,6 +7715,11 @@ Represents the SQL ALL operator for use with subqueries.
 - **Summary:** Creates a new ALL condition with the specified subquery.
 - **Parameters:**
   - `condition` (`SubQuery`) — the subquery that returns values to compare against. Must not be null.
+##### toString(...) -> String
+- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
+- **Parameters:**
+  - `namingPolicy` (`NamingPolicy`)
+- **Returns:** unspecified
 
 ### Class And (com.landawn.abacus.query.condition.And)
 Represents a logical AND condition that combines multiple conditions.
@@ -7746,6 +7775,11 @@ Represents the SQL ANY operator for use with subqueries.
   - The ANY operator is used in conjunction with comparison operators to test if the comparison is true for any value returned by the subquery.
 - **Parameters:**
   - `condition` (`SubQuery`) — the subquery that returns values to compare against. Must not be null.
+##### toString(...) -> String
+- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
+- **Parameters:**
+  - `namingPolicy` (`NamingPolicy`)
+- **Returns:** unspecified
 
 ### Class Between (com.landawn.abacus.query.condition.Between)
 Represents a BETWEEN condition in SQL queries.
@@ -7830,7 +7864,7 @@ Represents a BETWEEN condition in SQL queries.
 - **Summary:** Returns a string representation of this BETWEEN condition using the specified naming policy.
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply to the property name
-- **Returns:** a string representation like "propertyName BETWEEN (minValue, maxValue)"
+- **Returns:** a string representation like "propertyName BETWEEN minValue AND maxValue"
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
 - **Summary:** Returns the hash code of this BETWEEN condition.
@@ -7974,8 +8008,6 @@ Represents a condition cell that wraps another condition with an operator.
 ##### clearParameters(...) -> void
 - **Signature:** `@Override public void clearParameters()`
 - **Summary:** Clears all parameter values by setting them to null to free memory.
-- **Contract:**
-  - Use this method to release large objects when the condition is no longer needed.
 - **Parameters:**
   - (none)
 ##### copy(...) -> T
@@ -8108,6 +8140,7 @@ The base interface for all query conditions.
 - **Summary:** Clears all parameter values by setting them to null to free memory.
 - **Contract:**
   - Use this method to release large objects when the condition is no longer needed.
+  - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code Condition eq = Filters.eq("name", "John"); List<Object> params = eq.getParameters(); // \["John"\] // Release parameter memory when the condition is no longer needed eq.clearParameters(); List<Object> cleared = eq.getParameters(); // \[null\] // For compound conditions, clears parameters recursively Condition combined = Filters.and(Filters.gt("age", 18), Filters.eq("status", "active")); combined.clearParameters(); // Clears parameters in both child conditions } </pre>
 - **Parameters:**
   - (none)
 ##### toString(...) -> String
@@ -8735,6 +8768,11 @@ Represents the SQL EXISTS operator for use with subqueries.
   - <p> <b> Usage Examples: </b> </p> <pre> {@code // Check if employee has any subordinates SubQuery subordinatesQuery = Filters.subQuery( "SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id" ); Exists hasSubordinates = new Exists(subordinatesQuery); // Generates: EXISTS (SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id) // Check if product is in any active order SubQuery activeOrderQuery = Filters.subQuery( "SELECT 1 FROM order_items oi " + "JOIN orders o ON oi.order_id = o.id " + "WHERE oi.product_id = products.id " + "AND o.status = 'active'" ); Exists inActiveOrder = new Exists(activeOrderQuery); // Generates: EXISTS (SELECT 1 FROM order_items oi JOIN orders o ...) // Find users with specific permissions SubQuery permissionQuery = Filters.subQuery( "SELECT 1 FROM user_permissions up " + "WHERE up.user_id = users.id " + "AND up.permission = 'admin'" ); Exists isAdmin = new Exists(permissionQuery); // Generates: EXISTS (SELECT 1 FROM user_permissions up WHERE ...) // Find departments with employees SubQuery hasEmployees = Filters.subQuery("SELECT 1 FROM employees WHERE dept_id = departments.id"); Exists deptHasEmployees = new Exists(hasEmployees); // Generates: EXISTS (SELECT 1 FROM employees WHERE dept_id = departments.id) } </pre>
 - **Parameters:**
   - `condition` (`SubQuery`) — the subquery to check for existence of rows (must not be null)
+##### toString(...) -> String
+- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
+- **Parameters:**
+  - `namingPolicy` (`NamingPolicy`)
+- **Returns:** unspecified
 
 ### Class Expression (com.landawn.abacus.query.condition.Expression)
 Represents a raw SQL expression that can be used in queries.
@@ -10541,8 +10579,6 @@ Represents a NOT BETWEEN condition in SQL queries.
 ##### clearParameters(...) -> void
 - **Signature:** `@Override public void clearParameters()`
 - **Summary:** Clears all parameter values by setting them to null to free memory.
-- **Contract:**
-  - Use this method to release large objects when the condition is no longer needed.
 - **Parameters:**
   - (none)
 ##### copy(...) -> T
@@ -10617,6 +10653,11 @@ Represents the SQL NOT EXISTS operator for use with subqueries.
   - The condition evaluates to true when the subquery returns no rows.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to check for non-existence of rows (must not be null)
+##### toString(...) -> String
+- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
+- **Parameters:**
+  - `namingPolicy` (`NamingPolicy`)
+- **Returns:** unspecified
 
 ### Class NotIn (com.landawn.abacus.query.condition.NotIn)
 Represents a NOT IN condition in SQL queries.
@@ -10771,8 +10812,6 @@ Represents a NOT IN subquery condition used in SQL WHERE clauses.
 ##### clearParameters(...) -> void
 - **Signature:** `@Override public void clearParameters()`
 - **Summary:** Clears all parameter values by setting them to null to free memory.
-- **Contract:**
-  - Use this method to release large objects when the condition is no longer needed.
 - **Parameters:**
   - (none)
 ##### copy(...) -> T
@@ -11014,6 +11053,11 @@ Represents the SQL SOME operator for use with subqueries.
   - The SOME operator must be used with a comparison operator in the containing condition.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery that returns values to compare against. Must not be null.
+##### toString(...) -> String
+- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
+- **Parameters:**
+  - `namingPolicy` (`NamingPolicy`)
+- **Returns:** unspecified
 
 ### Class SubQuery (com.landawn.abacus.query.condition.SubQuery)
 Represents a subquery that can be used within SQL conditions.
@@ -11081,7 +11125,7 @@ Represents a subquery that can be used within SQL conditions.
 - **Summary:** Gets the collection of property names to select in this subquery.
 - **Parameters:**
   - (none)
-- **Returns:** collection of property names to select, or {@code null} for raw SQL subqueries
+- **Returns:** unmodifiable collection of property names to select, or {@code null} for raw SQL subqueries
 ##### getCondition(...) -> Condition
 - **Signature:** `public Condition getCondition()`
 - **Summary:** Gets the WHERE condition for this subquery.
@@ -11122,13 +11166,13 @@ Represents a subquery that can be used within SQL conditions.
 - **Summary:** Generates the hash code for this subquery.
 - **Parameters:**
   - (none)
-- **Returns:** hash code based on sql, entity name, properties, and condition
+- **Returns:** hash code based on sql, entity name/class, properties, and condition
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this subquery is equal to another object.
 - **Contract:**
   - Checks if this subquery is equal to another object.
-  - Two subqueries are equal if they have the same SQL (for raw queries) or the same entity name, properties, and condition (for structured queries).
+  - Two subqueries are equal if they have the same SQL (for raw queries) or the same entity name/class, properties, and condition (for structured queries).
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
 - **Returns:** {@code true} if the objects are equal, {@code false} otherwise

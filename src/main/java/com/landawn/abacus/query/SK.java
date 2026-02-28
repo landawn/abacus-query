@@ -502,6 +502,13 @@ public final class SK {
 
     // --------------------SQL key words----------------------------
     /**
+     * SQL WITH keyword: {@code "CALL"}.
+     * Used for common table expressions (CTEs).
+     * 
+     */
+    public static final String CALL = "CALL";
+
+    /**
      * SQL WITH keyword: {@code "WITH"}.
      * Used for common table expressions (CTEs).
      * 

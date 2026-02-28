@@ -1,8 +1,8 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.3.1",
-    "generated_at": "2026-02-09",
+    "version": "4.6.0",
+    "generated_at": "2026-02-27",
     "java_target": "17",
     "source": {
       "git_sha": "unknown"
@@ -2523,8 +2523,10 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Sets columns for UPDATE operation with a collection.",
-              "contract": [],
+              "javadoc_summary": "Sets columns for UPDATE operation with a collection of property or column names.",
+              "contract": [
+                "If a column name already contains an {@code =} sign, it is treated as a raw SET expression and no placeholder is appended."
+              ],
               "examples": [],
               "see_also": []
             },
@@ -2911,13 +2913,15 @@
                 {
                   "name": "handlerForNamedParameter",
                   "type": "BiConsumer<StringBuilder, String>",
-                  "javadoc": "the handler to format named parameters",
+                  "javadoc": "the handler to format named parameters; must not be null",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [],
               "javadoc_summary": "Sets a custom handler for formatting named parameters in SQL strings.",
-              "contract": [],
+              "contract": [
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Use MyBatis-style named parameters: #{paramName} AbstractQueryBuilder.setHandlerForNamedParameter( (sb, propName) -> sb.append(\"#{\").append(propName).append(\"}\")); // Reset to default when done AbstractQueryBuilder.resetHandlerForNamedParameter(); } </pre>"
+              ],
               "examples": [],
               "see_also": []
             },
@@ -10546,7 +10550,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "the entity class to analyze",
+                  "javadoc": "the entity class to analyze (must not be null)",
                   "nullability": "unspecified"
                 },
                 {
@@ -10590,7 +10594,8 @@
               "throws": [],
               "javadoc_summary": "Gets a mapping of column names to property names for the specified entity class.",
               "contract": [
-                "<p> This method is useful when you need to map database result set columns back to entity properties, especially when dealing with case-insensitive database systems or when column names don't match the exact case in your code."
+                "<p> This method is useful when you need to map database result set columns back to entity properties, especially when dealing with case-insensitive database systems or when column names don't match the exact case in your code.",
+                "</p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given an entity class with @Column annotations ImmutableMap<String, String> columnToProp = QueryUtil.getColumn2PropNameMap(User.class); // If User has @Column(\"user_name\") on property \"userName\": String propName = columnToProp.get(\"user_name\"); // \"userName\" String propName2 = columnToProp.get(\"USER_NAME\"); // \"userName\" (uppercase variant) String propName3 = columnToProp.get(\"user_name\"); // \"userName\" (lowercase variant) } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -10622,7 +10627,8 @@
               "throws": [],
               "javadoc_summary": "Gets a mapping of property names to column names for the specified entity class using the given naming policy.",
               "contract": [
-                "<p> The naming policy determines how property names are converted to column names when no explicit {@code @Column} annotation is present."
+                "<p> The naming policy determines how property names are converted to column names when no explicit {@code @Column} annotation is present.",
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Get property-to-column mapping with SNAKE_CASE naming policy ImmutableMap<String, String> propToColumn = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SNAKE_CASE); // If User has property \"firstName\" without @Column annotation: String columnName = propToColumn.get(\"firstName\"); // \"first_name\" // With SCREAMING_SNAKE_CASE naming policy ImmutableMap<String, String> propToColumnUpper = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SCREAMING_SNAKE_CASE); String upperColumn = propToColumnUpper.get(\"firstName\"); // \"FIRST_NAME\" } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -10647,7 +10653,7 @@
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "set of property names to exclude from the result (can be empty, must not be null)",
+                  "javadoc": "set of property names to exclude from the result (nullable; null or empty means no exclusions)",
                   "nullability": "unspecified"
                 }
               ],
@@ -10659,7 +10665,7 @@
               },
               "javadoc_summary": "Gets the property names to be used for INSERT operations on the given entity instance.",
               "contract": [
-                "<p> The method intelligently handles ID fields: </p> <ul> <li> If all ID fields have default values (0 for numbers, null for objects), they are excluded from the result </li> <li> If any ID field has a non-default value, all insertable properties including IDs are returned </li> <li> This allows both auto-generated IDs and manually-assigned IDs to work correctly </li> </ul>"
+                "<p> The method intelligently handles ID fields: </p> <ul> <li> If all ID fields have default values (0 for numbers, null for objects), they are excluded from the result </li> <li> If any ID field has a non-default value, all insertable properties including IDs are returned </li> <li> This allows both auto-generated IDs and manually-assigned IDs to work correctly </li> </ul> <p> <b> Usage Examples: </b> </p> <pre> {@code User user = new User(); user.setName(\"John\"); user.setEmail(\"john@example.com\"); // user.id is 0 (default) so ID field will be excluded Collection<String> insertProps = QueryUtil.getInsertPropNames(user, null); // Returns: [\"name\", \"email\", ...] (excludes \"id\" since it has default value) // With excluded properties Set<String> excluded = N.asSet(\"email\"); Collection<String> filteredProps = QueryUtil.getInsertPropNames(user, excluded); // Returns: [\"name\", ...] (excludes both \"id\" and \"email\") } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -10684,7 +10690,7 @@
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "set of property names to exclude from the result (can be empty, must not be null)",
+                  "javadoc": "set of property names to exclude from the result (nullable; null or empty means no exclusions)",
                   "nullability": "unspecified"
                 }
               ],
@@ -10725,7 +10731,7 @@
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "set of property names to exclude from the result (can be empty, must not be null)",
+                  "javadoc": "set of property names to exclude from the result (nullable; null or empty means no exclusions)",
                   "nullability": "unspecified"
                 }
               ],
@@ -10762,7 +10768,7 @@
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "set of property names to exclude from the result (can be empty, must not be null)",
+                  "javadoc": "set of property names to exclude from the result (nullable; null or empty means no exclusions)",
                   "nullability": "unspecified"
                 }
               ],
@@ -10774,7 +10780,7 @@
               },
               "javadoc_summary": "Gets the property names to be used for UPDATE operations on the given entity class.",
               "contract": [
-                "<p> Properties are considered non-updatable if they are: </p> <ul> <li> Annotated with @Id </li> <li> Marked as insertable=false, updatable=false in @Column </li> <li> Listed in the excludedPropNames parameter </li> </ul>"
+                "<p> Properties are considered non-updatable if they are: </p> <ul> <li> Annotated with @Id </li> <li> Marked as insertable=false, updatable=false in @Column </li> <li> Listed in the excludedPropNames parameter </li> </ul> <p> <b> Usage Examples: </b> </p> <pre> {@code // Get all updatable property names (excludes ID fields automatically) Collection<String> updateProps = QueryUtil.getUpdatePropNames(User.class, null); // Returns: [\"name\", \"email\", \"status\", ...] (excludes \"id\") // Exclude additional properties Set<String> excluded = N.asSet(\"createdDate\"); Collection<String> filteredProps = QueryUtil.getUpdatePropNames(User.class, excluded); // Returns: [\"name\", \"email\", \"status\", ...] (excludes \"id\" and \"createdDate\") } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -10840,7 +10846,8 @@
               },
               "javadoc_summary": "Gets the ID field names for the specified entity class with option to return fake ID if none found.",
               "contract": [
-                "Gets the ID field names for the specified entity class with option to return fake ID if none found."
+                "Gets the ID field names for the specified entity class with option to return fake ID if none found.",
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Without fake ID - returns empty list when no @Id is found List<String> idFields = QueryUtil.getIdFieldNames(LogEntry.class, false); // Returns: [] // With fake ID - returns a synthetic ID when no @Id is found List<String> fakeIdFields = QueryUtil.getIdFieldNames(LogEntry.class, true); // Returns: [\"not_defined_fake_id_in_abacus_<uuid>\"] boolean isFake = QueryUtil.isFakeId(fakeIdFields); // true // Entity with @Id returns actual IDs regardless of fakeIdForEmpty List<String> realIds = QueryUtil.getIdFieldNames(User.class, true); // Returns: [\"id\"] } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -10879,7 +10886,8 @@
               "javadoc_summary": "Determines whether a property should be excluded from database column mapping.",
               "contract": [
                 "Determines whether a property should be excluded from database column mapping.",
-                "A property is not a column if it's transient, annotated with @NonColumn, or excluded by @Table configuration."
+                "A property is not a column if it's transient, annotated with @NonColumn, or excluded by @Table configuration.",
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code BeanInfo beanInfo = ParserUtil.getBeanInfo(User.class); PropInfo propInfo = beanInfo.getPropInfo(\"tempField\"); // Check if a property is excluded from column mapping Set<String> columnFields = N.asSet(\"id\", \"name\", \"email\"); Set<String> nonColumnFields = N.emptySet(); boolean excluded = QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo); // Returns true if \"tempField\" is not in columnFields // Check with nonColumnFields Set<String> nonColumns = N.asSet(\"tempField\", \"transientData\"); boolean excluded2 = QueryUtil.isNonColumn(N.emptySet(), nonColumns, propInfo); // Returns true if \"tempField\" is in nonColumnFields } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -10911,7 +10919,8 @@
               "javadoc_summary": "Checks if the given ID property names represent a fake/synthetic ID.",
               "contract": [
                 "Checks if the given ID property names represent a fake/synthetic ID.",
-                "Fake IDs are used internally when entities have no defined ID fields."
+                "Fake IDs are used internally when entities have no defined ID fields.",
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Check if ID fields are real or synthetic List<String> idFields = QueryUtil.getIdFieldNames(User.class, true); boolean fake = QueryUtil.isFakeId(idFields); // Returns false for entities with real @Id annotations List<String> fakeFields = QueryUtil.getIdFieldNames(LogEntry.class, true); boolean isFake = QueryUtil.isFakeId(fakeFields); // Returns true for entities without @Id when fakeIdForEmpty was true } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -10961,7 +10970,8 @@
               "throws": [],
               "javadoc_summary": "Gets the table alias from the @Table annotation on the entity class.",
               "contract": [
-                "<p> If no @Table annotation exists or if the alias is not specified in the annotation, this method returns null."
+                "<p> If no @Table annotation exists or if the alias is not specified in the annotation, this method returns null.",
+                "</p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given: @Table(name = \"users\", alias = \"u\") on User class String alias = QueryUtil.getTableAlias(User.class); // Returns: \"u\" // Given: @Table(name = \"orders\") on Order class (no alias) String alias2 = QueryUtil.getTableAlias(Order.class); // Returns: \"\" (empty string when alias is not specified) // Given: no @Table annotation on LogEntry class String alias3 = QueryUtil.getTableAlias(LogEntry.class); // Returns: null } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -11924,6 +11934,17 @@
               "type": "String",
               "value": "\"<=\"",
               "javadoc_summary": "Represents the less than or equal operator: {@code \"<=\"} ."
+            },
+            {
+              "name": "CALL",
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "type": "String",
+              "value": "\"CALL\"",
+              "javadoc_summary": "SQL WITH keyword: {@code \"CALL\"} ."
             },
             {
               "name": "WITH",
@@ -13355,8 +13376,33 @@
               ],
               "examples": [],
               "see_also": [
-                "#query()",
+                "#sql()",
                 "#build()"
+              ]
+            },
+            {
+              "name": "query",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Override public String query()",
+              "return_type": "String",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "replaced by {@code sql()}",
+                "for_removal": false
+              },
+              "javadoc_summary": "Generates the final SQL query string and releases resources.",
+              "contract": [
+                "This method should be called only once."
+              ],
+              "examples": [],
+              "see_also": [
+                "#sql()"
               ]
             }
           ],
@@ -33698,7 +33744,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Retrieves the parsed SQL associated with the specified identifier.",
-              "contract": [],
+              "contract": [
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code SQLMapper mapper = SQLMapper.fromFile(\"sql/queries.xml\"); ParsedSql sql = mapper.get(\"findAccountById\"); if (sql != null) { String parameterizedSql = sql.getParameterizedSql(); // Use with PreparedStatement PreparedStatement stmt = connection.prepareStatement(parameterizedSql); } // Returns null for unknown ids ParsedSql unknown = mapper.get(\"nonExistentId\"); // unknown is null } </pre>"
+              ],
               "examples": [],
               "see_also": []
             },
@@ -33721,7 +33769,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Retrieves the attributes associated with the specified SQL identifier.",
-              "contract": [],
+              "contract": [
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id=\"batchInsert\" batchSize=\"100\" timeout=\"30\">...</sql> SQLMapper mapper = SQLMapper.fromFile(\"sql/queries.xml\"); ImmutableMap<String, String> attrs = mapper.getAttrs(\"batchInsert\"); if (attrs != null) { String batchSize = attrs.get(\"batchSize\"); // \"100\" String timeout = attrs.get(\"timeout\"); // \"30\" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttrs(\"nonExistentId\"); // unknown is null } </pre>"
+              ],
               "examples": [],
               "see_also": []
             },
@@ -33781,7 +33831,7 @@
                 {
                   "name": "attrs",
                   "type": "Map<String, String>",
-                  "javadoc": "additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be empty but not null",
+                  "javadoc": "additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty",
                   "nullability": "unspecified"
                 }
               ],
@@ -34891,7 +34941,8 @@
               "javadoc_summary": "Checks if this sort direction is ascending.",
               "contract": [
                 "Checks if this sort direction is ascending.",
-                "This is a convenience method equivalent to checking if the direction equals ASC."
+                "This is a convenience method equivalent to checking if the direction equals ASC.",
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code SortDirection direction = SortDirection.ASC; boolean ascending = direction.isAscending(); // true SortDirection descDirection = SortDirection.DESC; boolean descAscending = descDirection.isAscending(); // false // Conditional logic based on sort direction if (direction.isAscending()) { // Apply ascending sort logic } else { // Apply descending sort logic } } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -35104,6 +35155,27 @@
               "contract": [],
               "examples": [],
               "see_also": []
+            },
+            {
+              "name": "toString",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
+              "return_type": "String",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "namingPolicy",
+                  "type": "NamingPolicy",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "contract": [],
+              "examples": [],
+              "see_also": []
             }
           ],
           "fields": []
@@ -35233,6 +35305,27 @@
               "contract": [
                 "The ANY operator is used in conjunction with comparison operators to test if the comparison is true for any value returned by the subquery."
               ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "toString",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
+              "return_type": "String",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "namingPolicy",
+                  "type": "NamingPolicy",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "contract": [],
               "examples": [],
               "see_also": []
             }
@@ -35912,9 +36005,7 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
-              "contract": [
-                "Use this method to release large objects when the condition is no longer needed."
-              ],
+              "contract": [],
               "examples": [],
               "see_also": []
             },
@@ -36256,7 +36347,8 @@
               "throws": [],
               "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
               "contract": [
-                "Use this method to release large objects when the condition is no longer needed."
+                "Use this method to release large objects when the condition is no longer needed.",
+                "</p> <p> <b> Usage Examples: </b> </p> <pre> {@code Condition eq = Filters.eq(\"name\", \"John\"); List<Object> params = eq.getParameters(); // [\"John\"] // Release parameter memory when the condition is no longer needed eq.clearParameters(); List<Object> cleared = eq.getParameters(); // [null] // For compound conditions, clears parameters recursively Condition combined = Filters.and(Filters.gt(\"age\", 18), Filters.eq(\"status\", \"active\")); combined.clearParameters(); // Clears parameters in both child conditions } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -38304,6 +38396,27 @@
                 "The condition evaluates to true if the subquery returns at least one row.",
                 "<p> <b> Usage Examples: </b> </p> <pre> {@code // Check if employee has any subordinates SubQuery subordinatesQuery = Filters.subQuery( \"SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id\" ); Exists hasSubordinates = new Exists(subordinatesQuery); // Generates: EXISTS (SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id) // Check if product is in any active order SubQuery activeOrderQuery = Filters.subQuery( \"SELECT 1 FROM order_items oi \" + \"JOIN orders o ON oi.order_id = o.id \" + \"WHERE oi.product_id = products.id \" + \"AND o.status = 'active'\" ); Exists inActiveOrder = new Exists(activeOrderQuery); // Generates: EXISTS (SELECT 1 FROM order_items oi JOIN orders o ...) // Find users with specific permissions SubQuery permissionQuery = Filters.subQuery( \"SELECT 1 FROM user_permissions up \" + \"WHERE up.user_id = users.id \" + \"AND up.permission = 'admin'\" ); Exists isAdmin = new Exists(permissionQuery); // Generates: EXISTS (SELECT 1 FROM user_permissions up WHERE ...) // Find departments with employees SubQuery hasEmployees = Filters.subQuery(\"SELECT 1 FROM employees WHERE dept_id = departments.id\"); Exists deptHasEmployees = new Exists(hasEmployees); // Generates: EXISTS (SELECT 1 FROM employees WHERE dept_id = departments.id) } </pre>"
               ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "toString",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
+              "return_type": "String",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "namingPolicy",
+                  "type": "NamingPolicy",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "contract": [],
               "examples": [],
               "see_also": []
             }
@@ -43901,9 +44014,7 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
-              "contract": [
-                "Use this method to release large objects when the condition is no longer needed."
-              ],
+              "contract": [],
               "examples": [],
               "see_also": []
             },
@@ -44082,6 +44193,27 @@
               "contract": [
                 "The condition evaluates to true when the subquery returns no rows."
               ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "toString",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
+              "return_type": "String",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "namingPolicy",
+                  "type": "NamingPolicy",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "contract": [],
               "examples": [],
               "see_also": []
             }
@@ -44510,9 +44642,7 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
-              "contract": [
-                "Use this method to release large objects when the condition is no longer needed."
-              ],
+              "contract": [],
               "examples": [],
               "see_also": []
             },
@@ -45734,6 +45864,27 @@
               ],
               "examples": [],
               "see_also": []
+            },
+            {
+              "name": "toString",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
+              "return_type": "String",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "namingPolicy",
+                  "type": "NamingPolicy",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "contract": [],
+              "examples": [],
+              "see_also": []
             }
           ],
           "fields": []
@@ -46082,7 +46233,7 @@
               "javadoc_summary": "Checks if this subquery is equal to another object.",
               "contract": [
                 "Checks if this subquery is equal to another object.",
-                "Two subqueries are equal if they have the same SQL (for raw queries) or the same entity name, properties, and condition (for structured queries)."
+                "Two subqueries are equal if they have the same SQL (for raw queries) or the same entity name/class, properties, and condition (for structured queries)."
               ],
               "examples": [],
               "see_also": []

@@ -325,7 +325,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
     /**
      * Generates the final SQL string from this builder.
      * 
-     * <p>This method is identical to {@link #query()} and returns the constructed SQL statement
+     * <p>This method is identical to {@link #sql()} and returns the constructed SQL statement
      * as a String. After calling this method, the builder instance should not be reused as it
      * may be in a closed state.</p>
      * 
@@ -341,11 +341,34 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      *
      * @return the generated SQL string
      * @throws RuntimeException if the builder has already been closed or is in an invalid state
-     * @see #query()
+     * @see #sql()
      * @see #build()
      */
     public String sql() {
-        return query();
+        return super.query();
+    }
+
+    /**
+     * Generates the final SQL query string and releases resources.
+     * This method should be called only once. After calling this method, the SQLBuilder instance cannot be used again.
+     * 
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Example usage:
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .where(Filters.eq("status", "ACTIVE"))
+     *                 .query();
+     * // sql contains: "SELECT * FROM users WHERE status = ?"
+     * }</pre>
+     *
+     * @return the generated SQL query string
+     * @see #sql()
+     * @deprecated replaced by {@code sql()}
+     */
+    @Override
+    public String query() {
+        return super.query();
     }
 
     @Override

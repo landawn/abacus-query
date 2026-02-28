@@ -320,7 +320,8 @@ public class InSubQuery extends AbstractCondition {
     @Override
     public int hashCode() {
         int h = 17;
-        h = (h * 31) + (Strings.isNotEmpty(propName) ? N.hashCode(propName) : N.hashCode(propNames));
+        h = (h * 31) + N.hashCode(propName);
+        h = (h * 31) + N.hashCode(propNames);
         h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         return (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
     }
