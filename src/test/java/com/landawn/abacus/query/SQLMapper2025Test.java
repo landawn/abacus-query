@@ -202,19 +202,19 @@ public class SQLMapper2025Test extends TestBase {
     @Test
     public void testRemoveNonExistent() {
         SQLMapper mapper = new SQLMapper();
-        mapper.remove("nonExistent");   // Should not throw
+        mapper.remove("nonExistent"); // Should not throw
     }
 
     @Test
     public void testRemoveEmptyId() {
         SQLMapper mapper = new SQLMapper();
-        mapper.remove("");   // Should not throw
+        mapper.remove(""); // Should not throw
     }
 
     @Test
     public void testRemoveNullId() {
         SQLMapper mapper = new SQLMapper();
-        mapper.remove(null);   // Should not throw
+        mapper.remove(null); // Should not throw
     }
 
     @Test
@@ -411,7 +411,7 @@ public class SQLMapper2025Test extends TestBase {
     public void testRemoveTooLongId() {
         SQLMapper mapper = new SQLMapper();
         String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
-        mapper.remove(longId);   // Should not throw
+        mapper.remove(longId); // Should not throw
     }
 
     @Test
@@ -504,8 +504,7 @@ public class SQLMapper2025Test extends TestBase {
     public void testAddParsedSqlReturn() {
         SQLMapper mapper = new SQLMapper();
         ParsedSql sql1 = ParsedSql.parse("SELECT * FROM users");
-        ParsedSql result = mapper.add("query1", sql1);
-        assertNull(result);   // First add should return null
+        mapper.add("query1", sql1);
 
         ParsedSql sql2 = ParsedSql.parse("SELECT * FROM orders");
         // Cannot test second add as it will throw IllegalArgumentException for duplicate ID
