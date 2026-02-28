@@ -391,6 +391,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder union(final String query) {
+        N.checkArgNotNull(query, "query");
+
         getStringBuilderForMoreParts().append(" UNION ").append(query);
 
         return this;
@@ -409,6 +411,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder unionAll(final String query) {
+        N.checkArgNotNull(query, "query");
+
         getStringBuilderForMoreParts().append(" UNION ALL ").append(query);
 
         return this;
@@ -427,6 +431,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder intersect(final String query) {
+        N.checkArgNotNull(query, "query");
+
         getStringBuilderForMoreParts().append(" INTERSECT ").append(query);
 
         return this;
@@ -445,6 +451,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder except(final String query) {
+        N.checkArgNotNull(query, "query");
+
         getStringBuilderForMoreParts().append(" EXCEPT ").append(query);
 
         return this;
@@ -463,6 +471,8 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      */
     public DynamicSQLBuilder minus(final String query) {
+        N.checkArgNotNull(query, "query");
+
         getStringBuilderForMoreParts().append(" MINUS ").append(query);
 
         return this;
@@ -496,7 +506,11 @@ public class DynamicSQLBuilder {
 
         if (from != null) {
             if (!from.sb.isEmpty()) {
-                select.sb.append(" ").append(from.sb);
+                if (!select.sb.isEmpty()) {
+                    select.sb.append(" ");
+                }
+
+                select.sb.append(from.sb);
             }
 
             Objectory.recycle(from.sb);
@@ -505,7 +519,11 @@ public class DynamicSQLBuilder {
 
         if (where != null) {
             if (!where.sb.isEmpty()) {
-                select.sb.append(" ").append(where.sb);
+                if (!select.sb.isEmpty()) {
+                    select.sb.append(" ");
+                }
+
+                select.sb.append(where.sb);
             }
 
             Objectory.recycle(where.sb);
@@ -514,7 +532,11 @@ public class DynamicSQLBuilder {
 
         if (groupBy != null) {
             if (!groupBy.sb.isEmpty()) {
-                select.sb.append(" ").append(groupBy.sb);
+                if (!select.sb.isEmpty()) {
+                    select.sb.append(" ");
+                }
+
+                select.sb.append(groupBy.sb);
             }
 
             Objectory.recycle(groupBy.sb);
@@ -523,7 +545,11 @@ public class DynamicSQLBuilder {
 
         if (having != null) {
             if (!having.sb.isEmpty()) {
-                select.sb.append(" ").append(having.sb);
+                if (!select.sb.isEmpty()) {
+                    select.sb.append(" ");
+                }
+
+                select.sb.append(having.sb);
             }
 
             Objectory.recycle(having.sb);
@@ -532,7 +558,11 @@ public class DynamicSQLBuilder {
 
         if (orderBy != null) {
             if (!orderBy.sb.isEmpty()) {
-                select.sb.append(" ").append(orderBy.sb);
+                if (!select.sb.isEmpty()) {
+                    select.sb.append(" ");
+                }
+
+                select.sb.append(orderBy.sb);
             }
 
             Objectory.recycle(orderBy.sb);

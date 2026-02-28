@@ -130,7 +130,7 @@ public enum SQLOperation {
     /**
      * CALL operation for executing stored procedures.
      */
-    CALL("CALL"),
+    CALL(SK.CALL),
 
     /**
      * UNKNOWN operation for unrecognized SQL commands.

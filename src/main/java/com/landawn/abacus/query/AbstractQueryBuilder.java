@@ -637,7 +637,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 for (final String idPropName : QueryUtil.getIdFieldNames(entityClass)) {
                     val[3].remove(idPropName);
-                    val[3].remove(Beans.getPropNameByMethod(Beans.getPropGetter(entityClass, idPropName)));
+
+                    final java.lang.reflect.Method getter = Beans.getPropGetter(entityClass, idPropName);
+
+                    if (getter != null) {
+                        val[3].remove(Beans.getPropNameByMethod(getter));
+                    }
                 }
 
                 val[0] = ImmutableSet.wrap(val[0]); // for select, including sub entity properties.
@@ -1095,6 +1100,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This from(final String... tableNames) {
+        N.checkArgNotEmpty(tableNames, "tableNames");
+
         if (tableNames.length == 1) {
             return from(tableNames[0].trim());
         }
@@ -2919,7 +2926,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         _sb.append(SK._PARENTHESES_R);
                     }
 
-                    appendCondition(join.getCondition());
+                    if (join.getCondition() != null) {
+                        appendCondition(join.getCondition());
+                    }
                 }
             }
 
@@ -3215,6 +3224,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _propOrColumnNames = Array.asList(propOrColumnNames);
         _propOrColumnNameAliases = null;
 
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
+
         _sb.append(_SPACE_UNION_SPACE);
 
         // it's subquery
@@ -3252,6 +3265,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _propOrColumnNames = propOrColumnNames;
         _propOrColumnNameAliases = null;
+
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
 
         _sb.append(_SPACE_UNION_SPACE);
 
@@ -3325,6 +3342,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _propOrColumnNames = Array.asList(propOrColumnNames);
         _propOrColumnNameAliases = null;
 
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
+
         _sb.append(_SPACE_UNION_ALL_SPACE);
 
         // it's subquery
@@ -3362,6 +3383,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _propOrColumnNames = propOrColumnNames;
         _propOrColumnNameAliases = null;
+
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
 
         _sb.append(_SPACE_UNION_ALL_SPACE);
 
@@ -3435,6 +3460,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _propOrColumnNames = Array.asList(propOrColumnNames);
         _propOrColumnNameAliases = null;
 
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
+
         _sb.append(_SPACE_INTERSECT_SPACE);
 
         // it's subquery
@@ -3472,6 +3501,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _propOrColumnNames = propOrColumnNames;
         _propOrColumnNameAliases = null;
+
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
 
         _sb.append(_SPACE_INTERSECT_SPACE);
 
@@ -3545,6 +3578,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _propOrColumnNames = Array.asList(propOrColumnNames);
         _propOrColumnNameAliases = null;
 
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
+
         _sb.append(_SPACE_EXCEPT_SPACE);
 
         // it's subquery
@@ -3582,6 +3619,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _propOrColumnNames = propOrColumnNames;
         _propOrColumnNameAliases = null;
+
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
 
         _sb.append(_SPACE_EXCEPT_SPACE);
 
@@ -3656,6 +3697,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _propOrColumnNames = Array.asList(propOrColumnNames);
         _propOrColumnNameAliases = null;
 
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
+
         _sb.append(_SPACE_EXCEPT2_SPACE);
 
         // it's subquery
@@ -3693,6 +3738,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _propOrColumnNames = propOrColumnNames;
         _propOrColumnNameAliases = null;
+
+        calledOpSet.clear();
+        _hasFromBeenSet = false;
+        _tableAlias = null;
 
         _sb.append(_SPACE_EXCEPT2_SPACE);
 
