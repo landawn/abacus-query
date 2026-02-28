@@ -1,8 +1,8 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.6.0",
-    "generated_at": "2026-02-27",
+    "version": "4.6.1",
+    "generated_at": "2026-02-28",
     "java_target": "17",
     "source": {
       "git_sha": "unknown"
@@ -4745,8 +4745,7 @@
               "examples": [],
               "see_also": [
                 "Not",
-                "Condition",
-                "Filters"
+                "Condition"
               ]
             },
             {
@@ -10335,7 +10334,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the original SQL string as provided to the parse method.",
+              "javadoc_summary": "Gets the SQL string (trimmed of leading and trailing whitespace).",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -11944,7 +11943,7 @@
               ],
               "type": "String",
               "value": "\"CALL\"",
-              "javadoc_summary": "SQL WITH keyword: {@code \"CALL\"} ."
+              "javadoc_summary": "SQL CALL keyword: {@code \"CALL\"} ."
             },
             {
               "name": "WITH",
@@ -18867,7 +18866,7 @@
                 {
                   "name": "expr",
                   "type": "String",
-                  "javadoc": "The column name or expression to insert",
+                  "javadoc": "the column name or expression to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -18893,7 +18892,7 @@
                 {
                   "name": "propOrColumnNames",
                   "type": "String[]",
-                  "javadoc": "The property or column names to insert",
+                  "javadoc": "the property or column names to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -18919,7 +18918,7 @@
                 {
                   "name": "propOrColumnNames",
                   "type": "Collection<String>",
-                  "javadoc": "Collection of property or column names to insert",
+                  "javadoc": "collection of property or column names to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -18945,7 +18944,7 @@
                 {
                   "name": "props",
                   "type": "Map<String, Object>",
-                  "javadoc": "Map of property names to their values",
+                  "javadoc": "map of property names to their values",
                   "nullability": "unspecified"
                 }
               ],
@@ -18969,7 +18968,7 @@
                 {
                   "name": "entity",
                   "type": "Object",
-                  "javadoc": "The entity object to insert",
+                  "javadoc": "the entity object to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -18993,13 +18992,13 @@
                 {
                   "name": "entity",
                   "type": "Object",
-                  "javadoc": "The entity object to insert",
+                  "javadoc": "the entity object to insert",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from the insert",
+                  "javadoc": "set of property names to exclude from the insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -19025,7 +19024,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to generate INSERT for",
+                  "javadoc": "the entity class to generate INSERT for",
                   "nullability": "unspecified"
                 }
               ],
@@ -19049,13 +19048,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to generate INSERT for",
+                  "javadoc": "the entity class to generate INSERT for",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from the insert",
+                  "javadoc": "set of property names to exclude from the insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -19079,7 +19078,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to generate INSERT INTO for",
+                  "javadoc": "the entity class to generate INSERT INTO for",
                   "nullability": "unspecified"
                 }
               ],
@@ -19103,13 +19102,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to generate INSERT INTO for",
+                  "javadoc": "the entity class to generate INSERT INTO for",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from the insert",
+                  "javadoc": "set of property names to exclude from the insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -19133,7 +19132,7 @@
                 {
                   "name": "propsList",
                   "type": "Collection<?>",
-                  "javadoc": "List of entities or property maps to insert",
+                  "javadoc": "list of entities or property maps to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -19162,7 +19161,7 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The name of the table to update",
+                  "javadoc": "the name of the table to update",
                   "nullability": "unspecified"
                 }
               ],
@@ -19186,13 +19185,13 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The name of the table to update",
+                  "javadoc": "the name of the table to update",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class for property mapping",
+                  "javadoc": "the entity class for property mapping",
                   "nullability": "unspecified"
                 }
               ],
@@ -19216,7 +19215,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to update",
+                  "javadoc": "the entity class to update",
                   "nullability": "unspecified"
                 }
               ],
@@ -19240,13 +19239,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to update",
+                  "javadoc": "the entity class to update",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from the update",
+                  "javadoc": "set of property names to exclude from the update",
                   "nullability": "unspecified"
                 }
               ],
@@ -19272,7 +19271,7 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The name of the table to delete from",
+                  "javadoc": "the name of the table to delete from",
                   "nullability": "unspecified"
                 }
               ],
@@ -19298,13 +19297,13 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The name of the table to delete from",
+                  "javadoc": "the name of the table to delete from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class for property mapping",
+                  "javadoc": "the entity class for property mapping",
                   "nullability": "unspecified"
                 }
               ],
@@ -19328,7 +19327,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to delete from",
+                  "javadoc": "the entity class to delete from",
                   "nullability": "unspecified"
                 }
               ],
@@ -19352,7 +19351,7 @@
                 {
                   "name": "selectPart",
                   "type": "String",
-                  "javadoc": "The select expression",
+                  "javadoc": "the select expression",
                   "nullability": "unspecified"
                 }
               ],
@@ -19378,7 +19377,7 @@
                 {
                   "name": "propOrColumnNames",
                   "type": "String[]",
-                  "javadoc": "The property or column names to select",
+                  "javadoc": "the property or column names to select",
                   "nullability": "unspecified"
                 }
               ],
@@ -19402,7 +19401,7 @@
                 {
                   "name": "propOrColumnNames",
                   "type": "Collection<String>",
-                  "javadoc": "Collection of property or column names to select",
+                  "javadoc": "collection of property or column names to select",
                   "nullability": "unspecified"
                 }
               ],
@@ -19428,7 +19427,7 @@
                 {
                   "name": "propOrColumnNameAliases",
                   "type": "Map<String, String>",
-                  "javadoc": "Map of property/column names to their aliases",
+                  "javadoc": "map of property/column names to their aliases",
                   "nullability": "unspecified"
                 }
               ],
@@ -19452,7 +19451,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select properties from",
+                  "javadoc": "the entity class to select properties from",
                   "nullability": "unspecified"
                 }
               ],
@@ -19476,13 +19475,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select properties from",
+                  "javadoc": "the entity class to select properties from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 }
               ],
@@ -19508,13 +19507,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select properties from",
+                  "javadoc": "the entity class to select properties from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -19538,19 +19537,19 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select properties from",
+                  "javadoc": "the entity class to select properties from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -19574,7 +19573,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 }
               ],
@@ -19598,13 +19597,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "The table alias to use",
+                  "javadoc": "the table alias to use",
                   "nullability": "unspecified"
                 }
               ],
@@ -19628,13 +19627,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 }
               ],
@@ -19660,19 +19659,19 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "The table alias to use",
+                  "javadoc": "the table alias to use",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 }
               ],
@@ -19696,13 +19695,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -19726,19 +19725,19 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "The table alias to use",
+                  "javadoc": "the table alias to use",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -19762,19 +19761,19 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -19798,25 +19797,25 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "The table alias to use",
+                  "javadoc": "the table alias to use",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -19840,37 +19839,37 @@
                 {
                   "name": "entityClassA",
                   "type": "Class<?>",
-                  "javadoc": "First entity class",
+                  "javadoc": "first entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasA",
                   "type": "String",
-                  "javadoc": "Table alias for first entity",
+                  "javadoc": "table alias for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasA",
                   "type": "String",
-                  "javadoc": "Property prefix for first entity results",
+                  "javadoc": "property prefix for first entity results",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClassB",
                   "type": "Class<?>",
-                  "javadoc": "Second entity class",
+                  "javadoc": "second entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasB",
                   "type": "String",
-                  "javadoc": "Table alias for second entity",
+                  "javadoc": "table alias for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasB",
                   "type": "String",
-                  "javadoc": "Property prefix for second entity results",
+                  "javadoc": "property prefix for second entity results",
                   "nullability": "unspecified"
                 }
               ],
@@ -19894,49 +19893,49 @@
                 {
                   "name": "entityClassA",
                   "type": "Class<?>",
-                  "javadoc": "First entity class",
+                  "javadoc": "first entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasA",
                   "type": "String",
-                  "javadoc": "Table alias for first entity",
+                  "javadoc": "table alias for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasA",
                   "type": "String",
-                  "javadoc": "Property prefix for first entity results",
+                  "javadoc": "property prefix for first entity results",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNamesA",
                   "type": "Set<String>",
-                  "javadoc": "Excluded properties for first entity",
+                  "javadoc": "excluded properties for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClassB",
                   "type": "Class<?>",
-                  "javadoc": "Second entity class",
+                  "javadoc": "second entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasB",
                   "type": "String",
-                  "javadoc": "Table alias for second entity",
+                  "javadoc": "table alias for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasB",
                   "type": "String",
-                  "javadoc": "Property prefix for second entity results",
+                  "javadoc": "property prefix for second entity results",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNamesB",
                   "type": "Set<String>",
-                  "javadoc": "Excluded properties for second entity",
+                  "javadoc": "excluded properties for second entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -19960,7 +19959,7 @@
                 {
                   "name": "multiSelects",
                   "type": "List<Selection>",
-                  "javadoc": "List of Selection objects defining what to select from each entity",
+                  "javadoc": "list of Selection objects defining what to select from each entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -19984,37 +19983,37 @@
                 {
                   "name": "entityClassA",
                   "type": "Class<?>",
-                  "javadoc": "First entity class",
+                  "javadoc": "first entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasA",
                   "type": "String",
-                  "javadoc": "Table alias for first entity",
+                  "javadoc": "table alias for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasA",
                   "type": "String",
-                  "javadoc": "Property prefix for first entity",
+                  "javadoc": "property prefix for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClassB",
                   "type": "Class<?>",
-                  "javadoc": "Second entity class",
+                  "javadoc": "second entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasB",
                   "type": "String",
-                  "javadoc": "Table alias for second entity",
+                  "javadoc": "table alias for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasB",
                   "type": "String",
-                  "javadoc": "Property prefix for second entity",
+                  "javadoc": "property prefix for second entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -20038,49 +20037,49 @@
                 {
                   "name": "entityClassA",
                   "type": "Class<?>",
-                  "javadoc": "First entity class",
+                  "javadoc": "first entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasA",
                   "type": "String",
-                  "javadoc": "Table alias for first entity",
+                  "javadoc": "table alias for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasA",
                   "type": "String",
-                  "javadoc": "Property prefix for first entity",
+                  "javadoc": "property prefix for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNamesA",
                   "type": "Set<String>",
-                  "javadoc": "Excluded properties for first entity",
+                  "javadoc": "excluded properties for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClassB",
                   "type": "Class<?>",
-                  "javadoc": "Second entity class",
+                  "javadoc": "second entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasB",
                   "type": "String",
-                  "javadoc": "Table alias for second entity",
+                  "javadoc": "table alias for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasB",
                   "type": "String",
-                  "javadoc": "Property prefix for second entity",
+                  "javadoc": "property prefix for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNamesB",
                   "type": "Set<String>",
-                  "javadoc": "Excluded properties for second entity",
+                  "javadoc": "excluded properties for second entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -20104,7 +20103,7 @@
                 {
                   "name": "multiSelects",
                   "type": "List<Selection>",
-                  "javadoc": "List of Selection objects defining what to select from each entity",
+                  "javadoc": "list of Selection objects defining what to select from each entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -20128,7 +20127,7 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The table to count rows from",
+                  "javadoc": "the table to count rows from",
                   "nullability": "unspecified"
                 }
               ],
@@ -20152,7 +20151,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to count",
+                  "javadoc": "the entity class to count",
                   "nullability": "unspecified"
                 }
               ],
@@ -20176,13 +20175,13 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "The condition to parse",
+                  "javadoc": "the condition to parse",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class for property mapping",
+                  "javadoc": "the entity class for property mapping",
                   "nullability": "unspecified"
                 }
               ],
@@ -21566,7 +21565,7 @@
                 {
                   "name": "expr",
                   "type": "String",
-                  "javadoc": "The column name or expression to insert",
+                  "javadoc": "the column name or expression to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -21590,7 +21589,7 @@
                 {
                   "name": "propOrColumnNames",
                   "type": "String[]",
-                  "javadoc": "The property or column names to insert",
+                  "javadoc": "the property or column names to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -21614,7 +21613,7 @@
                 {
                   "name": "propOrColumnNames",
                   "type": "Collection<String>",
-                  "javadoc": "Collection of property or column names to insert",
+                  "javadoc": "collection of property or column names to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -21640,7 +21639,7 @@
                 {
                   "name": "props",
                   "type": "Map<String, Object>",
-                  "javadoc": "Map of property names to their values",
+                  "javadoc": "map of property names to their values",
                   "nullability": "unspecified"
                 }
               ],
@@ -21666,7 +21665,7 @@
                 {
                   "name": "entity",
                   "type": "Object",
-                  "javadoc": "The entity object to insert",
+                  "javadoc": "the entity object to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -21692,13 +21691,13 @@
                 {
                   "name": "entity",
                   "type": "Object",
-                  "javadoc": "The entity object to insert",
+                  "javadoc": "the entity object to insert",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from the insert",
+                  "javadoc": "set of property names to exclude from the insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -21722,7 +21721,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to generate INSERT for",
+                  "javadoc": "the entity class to generate INSERT for",
                   "nullability": "unspecified"
                 }
               ],
@@ -21748,13 +21747,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to generate INSERT for",
+                  "javadoc": "the entity class to generate INSERT for",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from the insert",
+                  "javadoc": "set of property names to exclude from the insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -21780,7 +21779,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to generate INSERT INTO for",
+                  "javadoc": "the entity class to generate INSERT INTO for",
                   "nullability": "unspecified"
                 }
               ],
@@ -21804,13 +21803,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to generate INSERT INTO for",
+                  "javadoc": "the entity class to generate INSERT INTO for",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from the insert",
+                  "javadoc": "set of property names to exclude from the insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -21834,7 +21833,7 @@
                 {
                   "name": "propsList",
                   "type": "Collection<?>",
-                  "javadoc": "List of entities or property maps to insert",
+                  "javadoc": "list of entities or property maps to insert",
                   "nullability": "unspecified"
                 }
               ],
@@ -21863,7 +21862,7 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The name of the table to update",
+                  "javadoc": "the name of the table to update",
                   "nullability": "unspecified"
                 }
               ],
@@ -21887,13 +21886,13 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The name of the table to update",
+                  "javadoc": "the name of the table to update",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class for property mapping",
+                  "javadoc": "the entity class for property mapping",
                   "nullability": "unspecified"
                 }
               ],
@@ -21919,7 +21918,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to update",
+                  "javadoc": "the entity class to update",
                   "nullability": "unspecified"
                 }
               ],
@@ -21945,13 +21944,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to update",
+                  "javadoc": "the entity class to update",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from the update",
+                  "javadoc": "set of property names to exclude from the update",
                   "nullability": "unspecified"
                 }
               ],
@@ -21975,7 +21974,7 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The name of the table to delete from",
+                  "javadoc": "the name of the table to delete from",
                   "nullability": "unspecified"
                 }
               ],
@@ -21999,13 +21998,13 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The name of the table to delete from",
+                  "javadoc": "the name of the table to delete from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class for property mapping",
+                  "javadoc": "the entity class for property mapping",
                   "nullability": "unspecified"
                 }
               ],
@@ -22029,7 +22028,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to delete from",
+                  "javadoc": "the entity class to delete from",
                   "nullability": "unspecified"
                 }
               ],
@@ -22053,7 +22052,7 @@
                 {
                   "name": "selectPart",
                   "type": "String",
-                  "javadoc": "The select expression",
+                  "javadoc": "the select expression",
                   "nullability": "unspecified"
                 }
               ],
@@ -22079,7 +22078,7 @@
                 {
                   "name": "propOrColumnNames",
                   "type": "String[]",
-                  "javadoc": "The property or column names to select",
+                  "javadoc": "the property or column names to select",
                   "nullability": "unspecified"
                 }
               ],
@@ -22105,7 +22104,7 @@
                 {
                   "name": "propOrColumnNames",
                   "type": "Collection<String>",
-                  "javadoc": "Collection of property or column names to select",
+                  "javadoc": "collection of property or column names to select",
                   "nullability": "unspecified"
                 }
               ],
@@ -22132,7 +22131,7 @@
                 {
                   "name": "propOrColumnNameAliases",
                   "type": "Map<String, String>",
-                  "javadoc": "Map of property/column names to their aliases",
+                  "javadoc": "map of property/column names to their aliases",
                   "nullability": "unspecified"
                 }
               ],
@@ -22156,7 +22155,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select properties from",
+                  "javadoc": "the entity class to select properties from",
                   "nullability": "unspecified"
                 }
               ],
@@ -22180,13 +22179,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select properties from",
+                  "javadoc": "the entity class to select properties from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 }
               ],
@@ -22212,13 +22211,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select properties from",
+                  "javadoc": "the entity class to select properties from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -22242,19 +22241,19 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select properties from",
+                  "javadoc": "the entity class to select properties from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -22278,7 +22277,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 }
               ],
@@ -22302,13 +22301,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "The table alias to use",
+                  "javadoc": "the table alias to use",
                   "nullability": "unspecified"
                 }
               ],
@@ -22334,13 +22333,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 }
               ],
@@ -22364,19 +22363,19 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "The table alias to use",
+                  "javadoc": "the table alias to use",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 }
               ],
@@ -22400,13 +22399,13 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -22430,19 +22429,19 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "The table alias to use",
+                  "javadoc": "the table alias to use",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -22466,19 +22465,19 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -22502,25 +22501,25 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to select from",
+                  "javadoc": "the entity class to select from",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "The table alias to use",
+                  "javadoc": "the table alias to use",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "includeSubEntityProperties",
                   "type": "boolean",
-                  "javadoc": "Whether to include properties of nested entity objects",
+                  "javadoc": "whether to include properties of nested entity objects",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "Set of property names to exclude from selection",
+                  "javadoc": "set of property names to exclude from selection",
                   "nullability": "unspecified"
                 }
               ],
@@ -22544,37 +22543,37 @@
                 {
                   "name": "entityClassA",
                   "type": "Class<?>",
-                  "javadoc": "First entity class",
+                  "javadoc": "first entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasA",
                   "type": "String",
-                  "javadoc": "Table alias for first entity",
+                  "javadoc": "table alias for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasA",
                   "type": "String",
-                  "javadoc": "Property prefix for first entity",
+                  "javadoc": "property prefix for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClassB",
                   "type": "Class<?>",
-                  "javadoc": "Second entity class",
+                  "javadoc": "second entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasB",
                   "type": "String",
-                  "javadoc": "Table alias for second entity",
+                  "javadoc": "table alias for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasB",
                   "type": "String",
-                  "javadoc": "Property prefix for second entity",
+                  "javadoc": "property prefix for second entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -22598,49 +22597,49 @@
                 {
                   "name": "entityClassA",
                   "type": "Class<?>",
-                  "javadoc": "First entity class",
+                  "javadoc": "first entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasA",
                   "type": "String",
-                  "javadoc": "Table alias for first entity",
+                  "javadoc": "table alias for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasA",
                   "type": "String",
-                  "javadoc": "Property prefix for first entity",
+                  "javadoc": "property prefix for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNamesA",
                   "type": "Set<String>",
-                  "javadoc": "Excluded properties for first entity",
+                  "javadoc": "excluded properties for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClassB",
                   "type": "Class<?>",
-                  "javadoc": "Second entity class",
+                  "javadoc": "second entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasB",
                   "type": "String",
-                  "javadoc": "Table alias for second entity",
+                  "javadoc": "table alias for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasB",
                   "type": "String",
-                  "javadoc": "Property prefix for second entity",
+                  "javadoc": "property prefix for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNamesB",
                   "type": "Set<String>",
-                  "javadoc": "Excluded properties for second entity",
+                  "javadoc": "excluded properties for second entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -22664,7 +22663,7 @@
                 {
                   "name": "multiSelects",
                   "type": "List<Selection>",
-                  "javadoc": "List of Selection objects defining what to select from each entity",
+                  "javadoc": "list of Selection objects defining what to select from each entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -22688,37 +22687,37 @@
                 {
                   "name": "entityClassA",
                   "type": "Class<?>",
-                  "javadoc": "First entity class",
+                  "javadoc": "first entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasA",
                   "type": "String",
-                  "javadoc": "Table alias for first entity",
+                  "javadoc": "table alias for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasA",
                   "type": "String",
-                  "javadoc": "Property prefix for first entity",
+                  "javadoc": "property prefix for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClassB",
                   "type": "Class<?>",
-                  "javadoc": "Second entity class",
+                  "javadoc": "second entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasB",
                   "type": "String",
-                  "javadoc": "Table alias for second entity",
+                  "javadoc": "table alias for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasB",
                   "type": "String",
-                  "javadoc": "Property prefix for second entity",
+                  "javadoc": "property prefix for second entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -22742,49 +22741,49 @@
                 {
                   "name": "entityClassA",
                   "type": "Class<?>",
-                  "javadoc": "First entity class",
+                  "javadoc": "first entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasA",
                   "type": "String",
-                  "javadoc": "Table alias for first entity",
+                  "javadoc": "table alias for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasA",
                   "type": "String",
-                  "javadoc": "Property prefix for first entity",
+                  "javadoc": "property prefix for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNamesA",
                   "type": "Set<String>",
-                  "javadoc": "Excluded properties for first entity",
+                  "javadoc": "excluded properties for first entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClassB",
                   "type": "Class<?>",
-                  "javadoc": "Second entity class",
+                  "javadoc": "second entity class",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "tableAliasB",
                   "type": "String",
-                  "javadoc": "Table alias for second entity",
+                  "javadoc": "table alias for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "classAliasB",
                   "type": "String",
-                  "javadoc": "Property prefix for second entity",
+                  "javadoc": "property prefix for second entity",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "excludedPropNamesB",
                   "type": "Set<String>",
-                  "javadoc": "Excluded properties for second entity",
+                  "javadoc": "excluded properties for second entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -22808,7 +22807,7 @@
                 {
                   "name": "multiSelects",
                   "type": "List<Selection>",
-                  "javadoc": "List of Selection objects defining what to select from each entity",
+                  "javadoc": "list of Selection objects defining what to select from each entity",
                   "nullability": "unspecified"
                 }
               ],
@@ -22832,7 +22831,7 @@
                 {
                   "name": "tableName",
                   "type": "String",
-                  "javadoc": "The table to count rows from",
+                  "javadoc": "the table to count rows from",
                   "nullability": "unspecified"
                 }
               ],
@@ -22856,7 +22855,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class to count",
+                  "javadoc": "the entity class to count",
                   "nullability": "unspecified"
                 }
               ],
@@ -22880,13 +22879,13 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "The condition to parse",
+                  "javadoc": "the condition to parse",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "The entity class for property mapping",
+                  "javadoc": "the entity class for property mapping",
                   "nullability": "unspecified"
                 }
               ],
@@ -35584,7 +35583,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Returns a string representation of this BETWEEN condition using the specified naming policy.",
+              "javadoc_summary": "Converts this Between condition to its string representation using the specified naming policy.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -35830,7 +35829,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Returns a string representation of this Binary condition using the specified naming policy.",
+              "javadoc_summary": "Converts this Binary condition to its string representation using the specified naming policy.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -36052,7 +36051,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Returns a string representation of this Cell using the specified naming policy.",
+              "javadoc_summary": "Converts this Cell condition to its string representation using the specified naming policy.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -36265,7 +36264,7 @@
                 {
                   "name": "condition",
                   "type": "Condition",
-                  "javadoc": "the condition to OR with this condition",
+                  "javadoc": "the condition to OR with this condition (must not be null)",
                   "nullability": "unspecified"
                 }
               ],
@@ -38332,12 +38331,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Except(final SubQuery condition)",
+              "signature": "public Except(final SubQuery subQuery)",
               "return_type": "void",
               "type_params": [],
               "params": [
                 {
-                  "name": "condition",
+                  "name": "subQuery",
                   "type": "SubQuery",
                   "javadoc": "the subquery to perform the EXCEPT operation with. Must not be null. The subquery must have the same number of columns with compatible types as the main query.",
                   "nullability": "unspecified"
@@ -40742,7 +40741,7 @@
                 {
                   "name": "condition",
                   "type": "Condition",
-                  "javadoc": "the condition to apply in the HAVING clause. Must not be null. Typically contains aggregate function expressions that operate on grouped data. Can use comparison operators (gt, lt, eq, etc.) and logical operators (and, or, not) to build complex filtering logic.",
+                  "javadoc": "the condition to apply in the HAVING clause. Must not be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -40872,7 +40871,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets all parameter values from this IN condition.",
+              "javadoc_summary": "Gets the parameter values for this condition.",
               "contract": [
                 "These values will be bound to the prepared statement placeholders when the query is executed."
               ],
@@ -40938,7 +40937,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Converts this IN condition to its string representation according to the specified naming policy.",
+              "javadoc_summary": "Converts this IN condition to its string representation using the specified naming policy.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -40954,7 +40953,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Computes the hash code for this IN condition.",
+              "javadoc_summary": "Generates the hash code for this IN condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -41390,12 +41389,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Intersect(final SubQuery condition)",
+              "signature": "public Intersect(final SubQuery subQuery)",
               "return_type": "void",
               "type_params": [],
               "params": [
                 {
-                  "name": "condition",
+                  "name": "subQuery",
                   "type": "SubQuery",
                   "javadoc": "the subquery to perform the INTERSECT operation with. Must not be null. The subquery should return the same number of columns with compatible types as the main query.",
                   "nullability": "unspecified"
@@ -42985,12 +42984,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Minus(final SubQuery condition)",
+              "signature": "public Minus(final SubQuery subQuery)",
               "return_type": "void",
               "type_params": [],
               "params": [
                 {
-                  "name": "condition",
+                  "name": "subQuery",
                   "type": "SubQuery",
                   "javadoc": "the subquery to perform the MINUS operation with. Must not be null. The subquery must have the same number of columns with compatible types as the main query.",
                   "nullability": "unspecified"
@@ -44177,12 +44176,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public NotExists(final SubQuery subQuery)",
+              "signature": "public NotExists(final SubQuery condition)",
               "return_type": "void",
               "type_params": [],
               "params": [
                 {
-                  "name": "subQuery",
+                  "name": "condition",
                   "type": "SubQuery",
                   "javadoc": "the subquery to check for non-existence of rows (must not be null)",
                   "nullability": "unspecified"
@@ -44641,7 +44640,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
+              "javadoc_summary": "Clears parameters in the underlying subquery.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -45846,12 +45845,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Some(final SubQuery subQuery)",
+              "signature": "public Some(final SubQuery condition)",
               "return_type": "void",
               "type_params": [],
               "params": [
                 {
-                  "name": "subQuery",
+                  "name": "condition",
                   "type": "SubQuery",
                   "javadoc": "the subquery that returns values to compare against. Must not be null.",
                   "nullability": "unspecified"
@@ -46143,9 +46142,10 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
+              "javadoc_summary": "Clears parameters in the underlying condition.",
               "contract": [
-                "Use this method to release large objects when the condition is no longer needed."
+                "<p> Use this method to release large objects when the subquery is no longer needed.",
+                "If this is a raw SQL subquery with no condition, this method is a no-op."
               ],
               "examples": [],
               "see_also": []

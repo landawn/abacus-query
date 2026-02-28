@@ -1,7 +1,7 @@
-# abacus-query API Index (v4.6.0)
+# abacus-query API Index (v4.6.1)
 - Build: unknown
 - Java: 17
-- Generated: 2026-02-27
+- Generated: 2026-02-28
 
 ## Packages
 - com.landawn.abacus.query
@@ -1252,7 +1252,7 @@ A comprehensive, enterprise-grade factory class providing a complete suite of SQ
 - **Parameters:**
   - `condition` (`Condition`) — the condition to negate
 - **Returns:** a Not condition that wraps and negates the provided condition
-- **See also:** Not, Condition, Filters
+- **See also:** Not, Condition
 ##### namedProperty(...) -> NamedProperty
 - **Signature:** `public static NamedProperty namedProperty(final String propName)`
 - **Summary:** Creates a NamedProperty instance representing a property/column name.
@@ -2556,10 +2556,10 @@ Represents a parsed SQL statement with support for named parameters and paramete
 #### Public Instance Methods
 ##### sql(...) -> String
 - **Signature:** `public String sql()`
-- **Summary:** Gets the original SQL string as provided to the parse method.
+- **Summary:** Gets the SQL string (trimmed of leading and trailing whitespace).
 - **Parameters:**
   - (none)
-- **Returns:** the original SQL string
+- **Returns:** the trimmed SQL string
 ##### getParameterizedSql(...) -> String
 - **Signature:** `public String getParameterizedSql()`
 - **Summary:** Gets the parameterized SQL with all named parameters replaced by JDBC placeholders (?).
@@ -4051,291 +4051,291 @@ Parameterized SQL builder with snake_case (lower case with underscore) field/col
 - **Contract:**
   - The actual value will be provided as a parameter when executing the query.
 - **Parameters:**
-  - `expr` (`String`) — The column name or expression to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `expr` (`String`) — the column name or expression to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final String... propOrColumnNames)`
 - **Summary:** Creates an INSERT statement for multiple columns.
 - **Contract:**
   - Values will be provided as parameters when executing the query.
 - **Parameters:**
-  - `propOrColumnNames` (`String[]`) — The property or column names to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNames` (`String[]`) — the property or column names to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Collection<String> propOrColumnNames)`
 - **Summary:** Creates an INSERT statement for a collection of columns.
 - **Contract:**
   - <p> This method provides flexibility when column names are dynamically generated or come from a collection.
 - **Parameters:**
-  - `propOrColumnNames` (`Collection<String>`) — Collection of property or column names to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNames` (`Collection<String>`) — collection of property or column names to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Map<String, Object> props)`
 - **Summary:** Creates an INSERT statement from a map of property names and values.
 - **Parameters:**
-  - `props` (`Map<String, Object>`) — Map of property names to their values
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `props` (`Map<String, Object>`) — map of property names to their values
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Object entity)`
 - **Summary:** Creates an INSERT statement from an entity object.
 - **Parameters:**
-  - `entity` (`Object`) — The entity object to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entity` (`Object`) — the entity object to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames)`
 - **Summary:** Creates an INSERT statement from an entity object with excluded properties.
 - **Contract:**
   - Properties in the exclusion set will not be included even if they have values and are normally insertable.
 - **Parameters:**
-  - `entity` (`Object`) — The entity object to insert
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from the insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entity` (`Object`) — the entity object to insert
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Class<?> entityClass)`
 - **Summary:** Creates an INSERT statement for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to generate INSERT for
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to generate INSERT for
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates an INSERT statement for an entity class with excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to generate INSERT for
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from the insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to generate INSERT for
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### insertInto(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder insertInto(final Class<?> entityClass)`
 - **Summary:** Creates an INSERT INTO statement for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to generate INSERT INTO for
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to generate INSERT INTO for
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates an INSERT INTO statement for an entity class with excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to generate INSERT INTO for
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from the insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to generate INSERT INTO for
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### batchInsert(...) -> SQLBuilder
 - **Signature:** `@Beta public static SQLBuilder batchInsert(final Collection<?> propsList)`
 - **Summary:** Generates a MySQL-style batch INSERT statement.
 - **Parameters:**
-  - `propsList` (`Collection<?>`) — List of entities or property maps to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propsList` (`Collection<?>`) — list of entities or property maps to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### update(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder update(final String tableName)`
 - **Summary:** Creates an UPDATE statement for a table.
 - **Parameters:**
-  - `tableName` (`String`) — The name of the table to update
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the name of the table to update
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder update(final String tableName, final Class<?> entityClass)`
 - **Summary:** Creates an UPDATE statement for a table with entity class mapping.
 - **Parameters:**
-  - `tableName` (`String`) — The name of the table to update
-  - `entityClass` (`Class<?>`) — The entity class for property mapping
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the name of the table to update
+  - `entityClass` (`Class<?>`) — the entity class for property mapping
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder update(final Class<?> entityClass)`
 - **Summary:** Creates an UPDATE statement for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to update
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to update
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates an UPDATE statement for an entity class with excluded properties.
 - **Contract:**
   - This is useful for partial updates or when certain fields should never be updated.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to update
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from the update
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to update
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the update
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### deleteFrom(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder deleteFrom(final String tableName)`
 - **Summary:** Creates a DELETE FROM statement for a table.
 - **Contract:**
   - Property names in WHERE conditions will be converted to snake_case format if an entity class is associated.
 - **Parameters:**
-  - `tableName` (`String`) — The name of the table to delete from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the name of the table to delete from
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass)`
 - **Summary:** Creates a DELETE FROM statement for a table with entity class mapping.
 - **Parameters:**
-  - `tableName` (`String`) — The name of the table to delete from
-  - `entityClass` (`Class<?>`) — The entity class for property mapping
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the name of the table to delete from
+  - `entityClass` (`Class<?>`) — the entity class for property mapping
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder deleteFrom(final Class<?> entityClass)`
 - **Summary:** Creates a DELETE FROM statement for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to delete from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to delete from
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### select(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder select(final String selectPart)`
 - **Summary:** Creates a SELECT statement with a single expression.
 - **Contract:**
   - <p> This method is useful for complex select expressions, aggregate functions, or when selecting computed values.
 - **Parameters:**
-  - `selectPart` (`String`) — The select expression
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `selectPart` (`String`) — the select expression
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final String... propOrColumnNames)`
 - **Summary:** Creates a SELECT statement with multiple columns.
 - **Parameters:**
-  - `propOrColumnNames` (`String[]`) — The property or column names to select
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNames` (`String[]`) — the property or column names to select
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Collection<String> propOrColumnNames)`
 - **Summary:** Creates a SELECT statement with a collection of columns.
 - **Contract:**
   - <p> This method provides flexibility when column names are dynamically generated.
 - **Parameters:**
-  - `propOrColumnNames` (`Collection<String>`) — Collection of property or column names to select
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNames` (`Collection<String>`) — collection of property or column names to select
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases)`
 - **Summary:** Creates a SELECT statement with column aliases.
 - **Parameters:**
-  - `propOrColumnNameAliases` (`Map<String, String>`) — Map of property/column names to their aliases
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNameAliases` (`Map<String, String>`) — map of property/column names to their aliases
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClass)`
 - **Summary:** Creates a SELECT statement for all properties of an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select properties from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select properties from
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties)`
 - **Summary:** Creates a SELECT statement for an entity class with optional sub-entity properties.
 - **Contract:**
   - <p> When includeSubEntityProperties is true, properties of nested entity objects are also included in the selection with appropriate prefixes.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select properties from
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select properties from
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT statement for an entity class with excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select properties from
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select properties from
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT statement for an entity class with sub-entities and exclusions.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select properties from
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select properties from
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB)`
 - **Summary:** Creates a SELECT statement for multiple entity classes (for joins).
 - **Parameters:**
-  - `entityClassA` (`Class<?>`) — First entity class
-  - `tableAliasA` (`String`) — Table alias for first entity
-  - `classAliasA` (`String`) — Property prefix for first entity results
-  - `entityClassB` (`Class<?>`) — Second entity class
-  - `tableAliasB` (`String`) — Table alias for second entity
-  - `classAliasB` (`String`) — Property prefix for second entity results
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClassA` (`Class<?>`) — first entity class
+  - `tableAliasA` (`String`) — table alias for first entity
+  - `classAliasA` (`String`) — property prefix for first entity results
+  - `entityClassB` (`Class<?>`) — second entity class
+  - `tableAliasB` (`String`) — table alias for second entity
+  - `classAliasB` (`String`) — property prefix for second entity results
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB)`
 - **Summary:** Creates a SELECT statement for multiple entity classes with exclusions.
 - **Parameters:**
-  - `entityClassA` (`Class<?>`) — First entity class
-  - `tableAliasA` (`String`) — Table alias for first entity
-  - `classAliasA` (`String`) — Property prefix for first entity results
-  - `excludedPropNamesA` (`Set<String>`) — Excluded properties for first entity
-  - `entityClassB` (`Class<?>`) — Second entity class
-  - `tableAliasB` (`String`) — Table alias for second entity
-  - `classAliasB` (`String`) — Property prefix for second entity results
-  - `excludedPropNamesB` (`Set<String>`) — Excluded properties for second entity
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClassA` (`Class<?>`) — first entity class
+  - `tableAliasA` (`String`) — table alias for first entity
+  - `classAliasA` (`String`) — property prefix for first entity results
+  - `excludedPropNamesA` (`Set<String>`) — excluded properties for first entity
+  - `entityClassB` (`Class<?>`) — second entity class
+  - `tableAliasB` (`String`) — table alias for second entity
+  - `classAliasB` (`String`) — property prefix for second entity results
+  - `excludedPropNamesB` (`Set<String>`) — excluded properties for second entity
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final List<Selection> multiSelects)`
 - **Summary:** Creates a SELECT statement for multiple entities using Selection descriptors.
 - **Parameters:**
-  - `multiSelects` (`List<Selection>`) — List of Selection objects defining what to select from each entity
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `multiSelects` (`List<Selection>`) — list of Selection objects defining what to select from each entity
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### selectFrom(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass)`
 - **Summary:** Creates a complete SELECT FROM statement for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias)`
 - **Summary:** Creates a SELECT FROM statement for an entity class with table alias.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `alias` (`String`) — The table alias to use
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `alias` (`String`) — the table alias to use
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties)`
 - **Summary:** Creates a SELECT FROM statement with optional sub-entity properties.
 - **Contract:**
   - When sub-entities are included, appropriate joins may be generated automatically.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties)`
 - **Summary:** Creates a SELECT FROM statement with alias and sub-entity option.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `alias` (`String`) — The table alias to use
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `alias` (`String`) — the table alias to use
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT FROM statement with excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT FROM statement with alias and excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `alias` (`String`) — The table alias to use
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `alias` (`String`) — the table alias to use
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT FROM statement with sub-entities and exclusions.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
 - **Summary:** Creates a complete SELECT FROM statement with all options.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `alias` (`String`) — The table alias to use
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `alias` (`String`) — the table alias to use
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB)`
 - **Summary:** Creates a SELECT FROM statement for multiple entity classes.
 - **Parameters:**
-  - `entityClassA` (`Class<?>`) — First entity class
-  - `tableAliasA` (`String`) — Table alias for first entity
-  - `classAliasA` (`String`) — Property prefix for first entity
-  - `entityClassB` (`Class<?>`) — Second entity class
-  - `tableAliasB` (`String`) — Table alias for second entity
-  - `classAliasB` (`String`) — Property prefix for second entity
-- **Returns:** A new SQLBuilder instance with SELECT and FROM configured
+  - `entityClassA` (`Class<?>`) — first entity class
+  - `tableAliasA` (`String`) — table alias for first entity
+  - `classAliasA` (`String`) — property prefix for first entity
+  - `entityClassB` (`Class<?>`) — second entity class
+  - `tableAliasB` (`String`) — table alias for second entity
+  - `classAliasB` (`String`) — property prefix for second entity
+- **Returns:** a new SQLBuilder instance with SELECT and FROM configured
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB)`
 - **Summary:** Creates a SELECT FROM statement for multiple entity classes with exclusions.
 - **Parameters:**
-  - `entityClassA` (`Class<?>`) — First entity class
-  - `tableAliasA` (`String`) — Table alias for first entity
-  - `classAliasA` (`String`) — Property prefix for first entity
-  - `excludedPropNamesA` (`Set<String>`) — Excluded properties for first entity
-  - `entityClassB` (`Class<?>`) — Second entity class
-  - `tableAliasB` (`String`) — Table alias for second entity
-  - `classAliasB` (`String`) — Property prefix for second entity
-  - `excludedPropNamesB` (`Set<String>`) — Excluded properties for second entity
-- **Returns:** A new SQLBuilder instance with SELECT and FROM configured
+  - `entityClassA` (`Class<?>`) — first entity class
+  - `tableAliasA` (`String`) — table alias for first entity
+  - `classAliasA` (`String`) — property prefix for first entity
+  - `excludedPropNamesA` (`Set<String>`) — excluded properties for first entity
+  - `entityClassB` (`Class<?>`) — second entity class
+  - `tableAliasB` (`String`) — table alias for second entity
+  - `classAliasB` (`String`) — property prefix for second entity
+  - `excludedPropNamesB` (`Set<String>`) — excluded properties for second entity
+- **Returns:** a new SQLBuilder instance with SELECT and FROM configured
 - **Signature:** `public static SQLBuilder selectFrom(final List<Selection> multiSelects)`
 - **Summary:** Creates a SELECT FROM statement for multiple entity selections.
 - **Parameters:**
-  - `multiSelects` (`List<Selection>`) — List of Selection objects defining what to select from each entity
-- **Returns:** A new SQLBuilder instance with SELECT and FROM configured
+  - `multiSelects` (`List<Selection>`) — list of Selection objects defining what to select from each entity
+- **Returns:** a new SQLBuilder instance with SELECT and FROM configured
 ##### count(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder count(final String tableName)`
 - **Summary:** Creates a COUNT(*) query for a table.
 - **Parameters:**
-  - `tableName` (`String`) — The table to count rows from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the table to count rows from
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder count(final Class<?> entityClass)`
 - **Summary:** Creates a COUNT(*) query for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to count
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to count
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### parse(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder parse(final Condition cond, final Class<?> entityClass)`
 - **Summary:** Parses a condition into SQL with entity class mapping.
 - **Parameters:**
-  - `cond` (`Condition`) — The condition to parse
-  - `entityClass` (`Class<?>`) — The entity class for property mapping
-- **Returns:** A new SQLBuilder instance containing just the condition SQL
+  - `cond` (`Condition`) — the condition to parse
+  - `entityClass` (`Class<?>`) — the entity class for property mapping
+- **Returns:** a new SQLBuilder instance containing just the condition SQL
 
 #### Public Instance Methods
 - (none)
@@ -4651,298 +4651,298 @@ Parameterized SQL builder with camelCase field/column naming strategy.
 - **Signature:** `public static SQLBuilder insert(final String expr)`
 - **Summary:** Creates an INSERT statement for a single column expression.
 - **Parameters:**
-  - `expr` (`String`) — The column name or expression to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `expr` (`String`) — the column name or expression to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final String... propOrColumnNames)`
 - **Summary:** Creates an INSERT statement for multiple columns.
 - **Parameters:**
-  - `propOrColumnNames` (`String[]`) — The property or column names to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNames` (`String[]`) — the property or column names to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Collection<String> propOrColumnNames)`
 - **Summary:** Creates an INSERT statement for a collection of columns.
 - **Contract:**
   - <p> This method is useful when the column list is dynamically generated or comes from another source.
 - **Parameters:**
-  - `propOrColumnNames` (`Collection<String>`) — Collection of property or column names to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNames` (`Collection<String>`) — collection of property or column names to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Map<String, Object> props)`
 - **Summary:** Creates an INSERT statement from a map of property names and values.
 - **Contract:**
   - <p> This method is particularly useful when you have a dynamic set of fields to insert.
 - **Parameters:**
-  - `props` (`Map<String, Object>`) — Map of property names to their values
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `props` (`Map<String, Object>`) — map of property names to their values
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Object entity)`
 - **Summary:** Creates an INSERT statement from an entity object.
 - **Contract:**
   - This is the most convenient way to insert data when working with entity objects.
 - **Parameters:**
-  - `entity` (`Object`) — The entity object to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entity` (`Object`) — the entity object to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Object entity, final Set<String> excludedPropNames)`
 - **Summary:** Creates an INSERT statement from an entity object with excluded properties.
 - **Parameters:**
-  - `entity` (`Object`) — The entity object to insert
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from the insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entity` (`Object`) — the entity object to insert
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Class<?> entityClass)`
 - **Summary:** Creates an INSERT statement for an entity class.
 - **Contract:**
   - This is useful when you want to generate the INSERT structure without having an actual entity instance.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to generate INSERT for
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to generate INSERT for
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates an INSERT statement for an entity class with excluded properties.
 - **Contract:**
   - <p> This method provides control over which properties to include when generating the INSERT statement from a class definition.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to generate INSERT for
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from the insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to generate INSERT for
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### insertInto(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder insertInto(final Class<?> entityClass)`
 - **Summary:** Creates an INSERT INTO statement for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to generate INSERT INTO for
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to generate INSERT INTO for
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates an INSERT INTO statement for an entity class with excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to generate INSERT INTO for
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from the insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to generate INSERT INTO for
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### batchInsert(...) -> SQLBuilder
 - **Signature:** `@Beta public static SQLBuilder batchInsert(final Collection<?> propsList)`
 - **Summary:** Generates a MySQL-style batch INSERT statement.
 - **Parameters:**
-  - `propsList` (`Collection<?>`) — List of entities or property maps to insert
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propsList` (`Collection<?>`) — list of entities or property maps to insert
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### update(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder update(final String tableName)`
 - **Summary:** Creates an UPDATE statement for a table.
 - **Parameters:**
-  - `tableName` (`String`) — The name of the table to update
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the name of the table to update
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder update(final String tableName, final Class<?> entityClass)`
 - **Summary:** Creates an UPDATE statement for a table with entity class mapping.
 - **Contract:**
   - <p> The entity class provides property-to-column name mapping information, which is useful when using the set() method with entity objects.
 - **Parameters:**
-  - `tableName` (`String`) — The name of the table to update
-  - `entityClass` (`Class<?>`) — The entity class for property mapping
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the name of the table to update
+  - `entityClass` (`Class<?>`) — the entity class for property mapping
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder update(final Class<?> entityClass)`
 - **Summary:** Creates an UPDATE statement for an entity class.
 - **Contract:**
   - All updatable properties are included by default when using set() with an entity object.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to update
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to update
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates an UPDATE statement for an entity class with excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to update
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from the update
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to update
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the update
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### deleteFrom(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder deleteFrom(final String tableName)`
 - **Summary:** Creates a DELETE FROM statement for a table.
 - **Parameters:**
-  - `tableName` (`String`) — The name of the table to delete from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the name of the table to delete from
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder deleteFrom(final String tableName, final Class<?> entityClass)`
 - **Summary:** Creates a DELETE FROM statement for a table with entity class mapping.
 - **Parameters:**
-  - `tableName` (`String`) — The name of the table to delete from
-  - `entityClass` (`Class<?>`) — The entity class for property mapping
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the name of the table to delete from
+  - `entityClass` (`Class<?>`) — the entity class for property mapping
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder deleteFrom(final Class<?> entityClass)`
 - **Summary:** Creates a DELETE FROM statement for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to delete from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to delete from
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### select(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder select(final String selectPart)`
 - **Summary:** Creates a SELECT statement with a single expression.
 - **Contract:**
   - <p> This method is useful for complex select expressions, aggregate functions, or when selecting computed values.
 - **Parameters:**
-  - `selectPart` (`String`) — The select expression
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `selectPart` (`String`) — the select expression
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final String... propOrColumnNames)`
 - **Summary:** Creates a SELECT statement with multiple columns.
 - **Contract:**
   - This is the most common way to create SELECT statements when you know the specific columns needed.
 - **Parameters:**
-  - `propOrColumnNames` (`String[]`) — The property or column names to select
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNames` (`String[]`) — the property or column names to select
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Collection<String> propOrColumnNames)`
 - **Summary:** Creates a SELECT statement with a collection of columns.
 - **Contract:**
   - <p> This method is useful when the column list is dynamically generated or comes from another source.
   - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Dynamic column selection List<String> columns = getUserSelectedColumns(); String sql = PLC.select(columns) .from("account") .sql(); // Programmatically built column list List<String> cols = new ArrayList<>(); cols.add("id"); cols.add("firstName"); if (includeEmail) { cols.add("emailAddress"); } String sql2 = PLC.select(cols).from("account").sql(); // From entity metadata List<String> entityColumns = getEntityColumns(Account.class); String sql3 = PLC.select(entityColumns).from("account").sql(); } </pre>
 - **Parameters:**
-  - `propOrColumnNames` (`Collection<String>`) — Collection of property or column names to select
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNames` (`Collection<String>`) — collection of property or column names to select
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Map<String, String> propOrColumnNameAliases)`
 - **Summary:** Creates a SELECT statement with column aliases.
 - **Parameters:**
-  - `propOrColumnNameAliases` (`Map<String, String>`) — Map of property/column names to their aliases
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `propOrColumnNameAliases` (`Map<String, String>`) — map of property/column names to their aliases
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClass)`
 - **Summary:** Creates a SELECT statement for all properties of an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select properties from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select properties from
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties)`
 - **Summary:** Creates a SELECT statement for an entity class with optional sub-entity properties.
 - **Contract:**
   - <p> When includeSubEntityProperties is true, properties of nested entity objects are also included in the selection, which is useful for fetching related data.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select properties from
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select properties from
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT statement for an entity class with excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select properties from
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select properties from
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT statement for an entity class with all options.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select properties from
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select properties from
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB)`
 - **Summary:** Creates a SELECT statement for multiple entity classes (for joins).
 - **Parameters:**
-  - `entityClassA` (`Class<?>`) — First entity class
-  - `tableAliasA` (`String`) — Table alias for first entity
-  - `classAliasA` (`String`) — Property prefix for first entity
-  - `entityClassB` (`Class<?>`) — Second entity class
-  - `tableAliasB` (`String`) — Table alias for second entity
-  - `classAliasB` (`String`) — Property prefix for second entity
+  - `entityClassA` (`Class<?>`) — first entity class
+  - `tableAliasA` (`String`) — table alias for first entity
+  - `classAliasA` (`String`) — property prefix for first entity
+  - `entityClassB` (`Class<?>`) — second entity class
+  - `tableAliasB` (`String`) — table alias for second entity
+  - `classAliasB` (`String`) — property prefix for second entity
 - **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB)`
 - **Summary:** Creates a SELECT statement for multiple entity classes with exclusions.
 - **Parameters:**
-  - `entityClassA` (`Class<?>`) — First entity class
-  - `tableAliasA` (`String`) — Table alias for first entity
-  - `classAliasA` (`String`) — Property prefix for first entity
-  - `excludedPropNamesA` (`Set<String>`) — Excluded properties for first entity
-  - `entityClassB` (`Class<?>`) — Second entity class
-  - `tableAliasB` (`String`) — Table alias for second entity
-  - `classAliasB` (`String`) — Property prefix for second entity
-  - `excludedPropNamesB` (`Set<String>`) — Excluded properties for second entity
+  - `entityClassA` (`Class<?>`) — first entity class
+  - `tableAliasA` (`String`) — table alias for first entity
+  - `classAliasA` (`String`) — property prefix for first entity
+  - `excludedPropNamesA` (`Set<String>`) — excluded properties for first entity
+  - `entityClassB` (`Class<?>`) — second entity class
+  - `tableAliasB` (`String`) — table alias for second entity
+  - `classAliasB` (`String`) — property prefix for second entity
+  - `excludedPropNamesB` (`Set<String>`) — excluded properties for second entity
 - **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder select(final List<Selection> multiSelects)`
 - **Summary:** Creates a SELECT statement for multiple entity selections.
 - **Parameters:**
-  - `multiSelects` (`List<Selection>`) — List of Selection objects defining what to select from each entity
+  - `multiSelects` (`List<Selection>`) — list of Selection objects defining what to select from each entity
 - **Returns:** a new SQLBuilder instance for method chaining
 ##### selectFrom(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass)`
 - **Summary:** Creates a complete SELECT FROM statement for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias)`
 - **Summary:** Creates a SELECT FROM statement for an entity class with table alias.
 - **Contract:**
   - <p> Table aliases are essential for joins and disambiguating column names when multiple tables are involved in the query.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `alias` (`String`) — The table alias to use
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `alias` (`String`) — the table alias to use
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties)`
 - **Summary:** Creates a SELECT FROM statement with optional sub-entity properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties)`
 - **Summary:** Creates a SELECT FROM statement with alias and sub-entity option.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `alias` (`String`) — The table alias to use
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `alias` (`String`) — the table alias to use
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT FROM statement with excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT FROM statement with alias and excluded properties.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `alias` (`String`) — The table alias to use
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `alias` (`String`) — the table alias to use
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT FROM statement with sub-entities and exclusions.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
 - **Summary:** Creates a complete SELECT FROM statement with all options.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to select from
-  - `alias` (`String`) — The table alias to use
-  - `includeSubEntityProperties` (`boolean`) — Whether to include properties of nested entity objects
-  - `excludedPropNames` (`Set<String>`) — Set of property names to exclude from selection
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to select from
+  - `alias` (`String`) — the table alias to use
+  - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB)`
 - **Summary:** Creates a SELECT FROM statement for multiple entity classes.
 - **Parameters:**
-  - `entityClassA` (`Class<?>`) — First entity class
-  - `tableAliasA` (`String`) — Table alias for first entity
-  - `classAliasA` (`String`) — Property prefix for first entity
-  - `entityClassB` (`Class<?>`) — Second entity class
-  - `tableAliasB` (`String`) — Table alias for second entity
-  - `classAliasB` (`String`) — Property prefix for second entity
+  - `entityClassA` (`Class<?>`) — first entity class
+  - `tableAliasA` (`String`) — table alias for first entity
+  - `classAliasA` (`String`) — property prefix for first entity
+  - `entityClassB` (`Class<?>`) — second entity class
+  - `tableAliasB` (`String`) — table alias for second entity
+  - `classAliasB` (`String`) — property prefix for second entity
 - **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB)`
 - **Summary:** Creates a SELECT FROM statement for multiple entity classes with exclusions.
 - **Parameters:**
-  - `entityClassA` (`Class<?>`) — First entity class
-  - `tableAliasA` (`String`) — Table alias for first entity
-  - `classAliasA` (`String`) — Property prefix for first entity
-  - `excludedPropNamesA` (`Set<String>`) — Excluded properties for first entity
-  - `entityClassB` (`Class<?>`) — Second entity class
-  - `tableAliasB` (`String`) — Table alias for second entity
-  - `classAliasB` (`String`) — Property prefix for second entity
-  - `excludedPropNamesB` (`Set<String>`) — Excluded properties for second entity
+  - `entityClassA` (`Class<?>`) — first entity class
+  - `tableAliasA` (`String`) — table alias for first entity
+  - `classAliasA` (`String`) — property prefix for first entity
+  - `excludedPropNamesA` (`Set<String>`) — excluded properties for first entity
+  - `entityClassB` (`Class<?>`) — second entity class
+  - `tableAliasB` (`String`) — table alias for second entity
+  - `classAliasB` (`String`) — property prefix for second entity
+  - `excludedPropNamesB` (`Set<String>`) — excluded properties for second entity
 - **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder selectFrom(final List<Selection> multiSelects)`
 - **Summary:** Creates a SELECT FROM statement for multiple entity selections.
 - **Parameters:**
-  - `multiSelects` (`List<Selection>`) — List of Selection objects defining what to select from each entity
+  - `multiSelects` (`List<Selection>`) — list of Selection objects defining what to select from each entity
 - **Returns:** a new SQLBuilder instance for method chaining
 ##### count(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder count(final String tableName)`
 - **Summary:** Creates a COUNT(*) query for a table.
 - **Parameters:**
-  - `tableName` (`String`) — The table to count rows from
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `tableName` (`String`) — the table to count rows from
+- **Returns:** a new SQLBuilder instance for method chaining
 - **Signature:** `public static SQLBuilder count(final Class<?> entityClass)`
 - **Summary:** Creates a COUNT(*) query for an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — The entity class to count
-- **Returns:** A new SQLBuilder instance for method chaining
+  - `entityClass` (`Class<?>`) — the entity class to count
+- **Returns:** a new SQLBuilder instance for method chaining
 ##### parse(...) -> SQLBuilder
 - **Signature:** `public static SQLBuilder parse(final Condition cond, final Class<?> entityClass)`
 - **Summary:** Parses a condition into SQL with entity class mapping.
 - **Parameters:**
-  - `cond` (`Condition`) — The condition to parse
-  - `entityClass` (`Class<?>`) — The entity class for property mapping
-- **Returns:** A new SQLBuilder instance containing just the condition SQL
+  - `cond` (`Condition`) — the condition to parse
+  - `entityClass` (`Class<?>`) — the entity class for property mapping
+- **Returns:** a new SQLBuilder instance containing just the condition SQL
 
 #### Public Instance Methods
 - (none)
@@ -7363,7 +7363,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Parameters:**
   - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
   - `sql` (`ParsedSql`) — the parsed SQL to associate with the identifier
-- **Returns:** the previous ParsedSql associated with the id, or {@code null} if there was no mapping
+- **Returns:** always {@code null} since duplicate IDs are not allowed (the method throws if the ID already exists)
 - **Signature:** `public void add(final String id, final String sql, final Map<String, String> attrs)`
 - **Summary:** Adds a SQL string with the specified identifier and attributes.
 - **Parameters:**
@@ -7861,7 +7861,7 @@ Represents a BETWEEN condition in SQL queries.
 - **Returns:** a new Between instance with copied values
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
-- **Summary:** Returns a string representation of this BETWEEN condition using the specified naming policy.
+- **Summary:** Converts this Between condition to its string representation using the specified naming policy.
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply to the property name
 - **Returns:** a string representation like "propertyName BETWEEN minValue AND maxValue"
@@ -7870,7 +7870,7 @@ Represents a BETWEEN condition in SQL queries.
 - **Summary:** Returns the hash code of this BETWEEN condition.
 - **Parameters:**
   - (none)
-- **Returns:** the hash code value
+- **Returns:** hash code based on property name, operator, and range values
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this BETWEEN condition is equal to another object.
@@ -7945,7 +7945,7 @@ Abstract base class for binary conditions that compare a property with a value.
 - **Returns:** a new Binary instance with copied values
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
-- **Summary:** Returns a string representation of this Binary condition using the specified naming policy.
+- **Summary:** Converts this Binary condition to its string representation using the specified naming policy.
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply to the property name
 - **Returns:** a string representation of this condition
@@ -7954,7 +7954,7 @@ Abstract base class for binary conditions that compare a property with a value.
 - **Summary:** Returns the hash code of this Binary condition.
 - **Parameters:**
   - (none)
-- **Returns:** the hash code value
+- **Returns:** hash code based on property name, operator, and value
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this Binary condition is equal to another object.
@@ -8020,7 +8020,7 @@ Represents a condition cell that wraps another condition with an operator.
 - **Returns:** a new Cell instance with copied values
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
-- **Summary:** Returns a string representation of this Cell using the specified naming policy.
+- **Summary:** Converts this Cell condition to its string representation using the specified naming policy.
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply to property names
 - **Returns:** a string representation of this Cell
@@ -8029,7 +8029,7 @@ Represents a condition cell that wraps another condition with an operator.
 - **Summary:** Returns the hash code of this Cell.
 - **Parameters:**
   - (none)
-- **Returns:** the hash code value
+- **Returns:** hash code based on operator and wrapped condition
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this Cell is equal to another object.
@@ -8111,7 +8111,7 @@ The base interface for all query conditions.
 - **Signature:** `Or or(Condition condition)`
 - **Summary:** Creates a new OR condition combining this condition with another.
 - **Parameters:**
-  - `condition` (`Condition`) — the condition to OR with this condition
+  - `condition` (`Condition`) — the condition to OR with this condition (must not be null)
 - **Returns:** a new Or condition containing both conditions
 ##### not(...) -> Not
 - **Signature:** `Not not()`
@@ -8738,13 +8738,13 @@ Represents an EXCEPT set operation in SQL queries.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public Except(final SubQuery condition)`
+- **Signature:** `public Except(final SubQuery subQuery)`
 - **Summary:** Creates a new EXCEPT clause with the specified subquery.
 - **Contract:**
   - Both queries must have the same number of columns with compatible data types.
   - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Find employees who are not managers SubQuery managers = Filters.subQuery("SELECT employee_id FROM employees WHERE is_manager = true"); Except notManagers = new Except(managers); // When combined with all employees query: // SELECT employee_id FROM employees WHERE department = 'Sales' // EXCEPT // SELECT employee_id FROM employees WHERE is_manager = true // Returns Sales employees who are not managers // Find customers who haven't placed orders SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders"); Except customersWithoutOrders = new Except(customersWithOrders); // SELECT customer_id FROM customers // EXCEPT // SELECT DISTINCT customer_id FROM orders // Returns customers with no orders // Find skills not required for a specific job SubQuery requiredSkills = Filters.subQuery("SELECT skill_id FROM job_requirements WHERE job_id = 123"); Except otherSkills = new Except(requiredSkills); // SELECT skill_id FROM skills // EXCEPT // SELECT skill_id FROM job_requirements WHERE job_id = 123 // Returns all skills except those required for job 123 // Find products in inventory but never sold SubQuery soldProducts = Filters.subQuery("SELECT product_id FROM sales"); Except unsoldProducts = new Except(soldProducts); // SELECT product_id FROM inventory // EXCEPT // SELECT product_id FROM sales } </pre>
 - **Parameters:**
-  - `condition` (`SubQuery`) — the subquery to perform the EXCEPT operation with. Must not be null. The subquery must have the same number of columns with compatible types as the main query.
+  - `subQuery` (`SubQuery`) — the subquery to perform the EXCEPT operation with. Must not be null. The subquery must have the same number of columns with compatible types as the main query.
 - **See also:** Minus, Union, UnionAll, Intersect
 
 ### Class Exists (com.landawn.abacus.query.condition.Exists)
@@ -9419,7 +9419,7 @@ Represents a HAVING clause in SQL queries.
 - **Signature:** `public Having(final Condition condition)`
 - **Summary:** Creates a new HAVING clause with the specified condition.
 - **Parameters:**
-  - `condition` (`Condition`) — the condition to apply in the HAVING clause. Must not be null. Typically contains aggregate function expressions that operate on grouped data. Can use comparison operators (gt, lt, eq, etc.) and logical operators (and, or, not) to build complex filtering logic.
+  - `condition` (`Condition`) — the condition to apply in the HAVING clause. Must not be null.
 
 ### Class In (com.landawn.abacus.query.condition.In)
 Represents an IN condition in SQL-like queries.
@@ -9463,7 +9463,7 @@ Represents an IN condition in SQL-like queries.
   - `values` (`List<?>`) — the new list of values. Must not be null or empty.
 ##### getParameters(...) -> List<Object>
 - **Signature:** `@Override public List<Object> getParameters()`
-- **Summary:** Gets all parameter values from this IN condition.
+- **Summary:** Gets the parameter values for this condition.
 - **Contract:**
   - These values will be bound to the prepared statement placeholders when the query is executed.
 - **Parameters:**
@@ -9484,13 +9484,13 @@ Represents an IN condition in SQL-like queries.
 - **Returns:** a new IN instance with a copy of all values
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
-- **Summary:** Converts this IN condition to its string representation according to the specified naming policy.
+- **Summary:** Converts this IN condition to its string representation using the specified naming policy.
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply to the property name
 - **Returns:** the string representation, e.g., "status IN ('active', 'pending')"
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
-- **Summary:** Computes the hash code for this IN condition.
+- **Summary:** Generates the hash code for this IN condition.
 - **Parameters:**
   - (none)
 - **Returns:** the hash code based on property name, operator, and values
@@ -9502,7 +9502,7 @@ Represents an IN condition in SQL-like queries.
   - Two IN conditions are equal if they have the same property name, operator, and values list.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
-- **Returns:** {@code true} if the object is an IN condition with the same property name, operator, and values
+- **Returns:** {@code true} if the objects are equal, {@code false} otherwise
 
 ### Class InSubQuery (com.landawn.abacus.query.condition.InSubQuery)
 Represents an IN condition with a subquery in SQL-like queries.
@@ -9581,7 +9581,7 @@ Represents an IN condition with a subquery in SQL-like queries.
 - **Summary:** Creates a deep copy of this InSubQuery condition.
 - **Parameters:**
   - (none)
-- **Returns:** a new InSubQuery instance with a copy of the subquery
+- **Returns:** a new InSubQuery instance with a deep copy of the subquery
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
 - **Summary:** Generates the hash code for this InSubQuery condition.
@@ -9649,13 +9649,13 @@ Represents an INTERSECT clause in SQL queries.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public Intersect(final SubQuery condition)`
+- **Signature:** `public Intersect(final SubQuery subQuery)`
 - **Summary:** Creates a new INTERSECT clause with the specified subquery.
 - **Contract:**
   - Both queries must have the same number of columns with compatible data types.
   - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Find users who are both premium AND active in the last 30 days SubQuery activeUsers = Filters.subQuery("SELECT user_id FROM activity WHERE last_login > CURRENT_DATE - 30"); Intersect premiumActive = new Intersect(activeUsers); // When combined with premium users query: // SELECT user_id FROM users WHERE plan = 'premium' // INTERSECT // SELECT user_id FROM activity WHERE last_login > CURRENT_DATE - 30 // Returns only user_id values present in both result sets // Find employees who work in both projects SubQuery projectB = Filters.subQuery("SELECT employee_id FROM assignments WHERE project = 'B'"); Intersect bothProjects = new Intersect(projectB); // Use with project A query to find employees assigned to both projects // Find common skills between two job positions SubQuery position2Skills = Filters.subQuery("SELECT skill_id FROM position_skills WHERE position_id = 2"); Intersect commonSkills = new Intersect(position2Skills); // Identifies skills required by both positions // Find products in stock AND on promotion SubQuery onPromotion = Filters.subQuery("SELECT product_id FROM promotions WHERE active = true"); Intersect availablePromotions = new Intersect(onPromotion); // SELECT product_id FROM inventory WHERE quantity > 0 // INTERSECT // SELECT product_id FROM promotions WHERE active = true } </pre>
 - **Parameters:**
-  - `condition` (`SubQuery`) — the subquery to perform the INTERSECT operation with. Must not be null. The subquery should return the same number of columns with compatible types as the main query.
+  - `subQuery` (`SubQuery`) — the subquery to perform the INTERSECT operation with. Must not be null. The subquery should return the same number of columns with compatible types as the main query.
 - **See also:** Union, UnionAll, Except, Minus
 
 ### Class Is (com.landawn.abacus.query.condition.Is)
@@ -9907,7 +9907,7 @@ Base class for SQL JOIN operations.
 - **Summary:** Computes the hash code for this JOIN clause.
 - **Parameters:**
   - (none)
-- **Returns:** the hash code based on operator, join entities, and condition
+- **Returns:** hash code based on operator, join entities, and condition
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this JOIN clause is equal to another object.
@@ -10013,7 +10013,7 @@ Base class for logical junction conditions that combine multiple conditions.
 - **Summary:** Computes the hash code for this junction based on its operator and conditions.
 - **Parameters:**
   - (none)
-- **Returns:** the hash code
+- **Returns:** hash code based on operator and condition list
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this junction is equal to another object.
@@ -10243,13 +10243,13 @@ Represents a MINUS clause in SQL queries (also known as EXCEPT in some databases
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public Minus(final SubQuery condition)`
+- **Signature:** `public Minus(final SubQuery subQuery)`
 - **Summary:** Creates a new MINUS clause with the specified subquery.
 - **Contract:**
   - Both queries must have compatible column structures (same number of columns with compatible types).
   - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Find products that are in inventory but have never been sold SubQuery soldProducts = Filters.subQuery("SELECT product_id FROM sales"); Minus unsoldProducts = new Minus(soldProducts); // When used with a query selecting from inventory: // SELECT product_id FROM inventory // MINUS // SELECT product_id FROM sales // Returns product_id values in inventory but not in sales // Find active employees not assigned to any project SubQuery assignedEmployees = Filters.subQuery("SELECT employee_id FROM project_assignments"); Minus unassigned = new Minus(assignedEmployees); // SELECT employee_id FROM employees WHERE status = 'ACTIVE' // MINUS // SELECT employee_id FROM project_assignments // Returns active employees with no project assignments // Find customers who have never placed an order SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders"); Minus customersWithoutOrders = new Minus(customersWithOrders); // SELECT customer_id FROM customers // MINUS // SELECT DISTINCT customer_id FROM orders // Returns customers who have never ordered // Find skills not required for a position SubQuery requiredSkills = Filters.subQuery("SELECT skill_id FROM position_requirements WHERE position_id = 5"); Minus optionalSkills = new Minus(requiredSkills); // SELECT skill_id FROM all_skills // MINUS // SELECT skill_id FROM position_requirements WHERE position_id = 5 } </pre>
 - **Parameters:**
-  - `condition` (`SubQuery`) — the subquery to perform the MINUS operation with. Must not be null. The subquery must have the same number of columns with compatible types as the main query.
+  - `subQuery` (`SubQuery`) — the subquery to perform the MINUS operation with. Must not be null. The subquery must have the same number of columns with compatible types as the main query.
 - **See also:** Except, Union, UnionAll, Intersect
 
 ### Class NamedProperty (com.landawn.abacus.query.condition.NamedProperty)
@@ -10647,12 +10647,12 @@ Represents the SQL NOT EXISTS operator for use with subqueries.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public NotExists(final SubQuery subQuery)`
+- **Signature:** `public NotExists(final SubQuery condition)`
 - **Summary:** Creates a new NOT EXISTS condition with the specified subquery.
 - **Contract:**
   - The condition evaluates to true when the subquery returns no rows.
 - **Parameters:**
-  - `subQuery` (`SubQuery`) — the subquery to check for non-existence of rows (must not be null)
+  - `condition` (`SubQuery`) — the subquery to check for non-existence of rows (must not be null)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Parameters:**
@@ -10683,7 +10683,7 @@ Represents a NOT IN condition in SQL queries.
 - **Summary:** Gets the property name for this NOT IN condition.
 - **Parameters:**
   - (none)
-- **Returns:** the property name
+- **Returns:** the property name, or {@code null} for an uninitialized instance created by serialization frameworks
 ##### getValues(...) -> List<?>
 - **Signature:** `public List<?> getValues()`
 - **Summary:** Gets the collection of values that the property should NOT match.
@@ -10811,7 +10811,7 @@ Represents a NOT IN subquery condition used in SQL WHERE clauses.
 - **Returns:** list of parameter values from the subquery
 ##### clearParameters(...) -> void
 - **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears all parameter values by setting them to null to free memory.
+- **Summary:** Clears parameters in the underlying subquery.
 - **Parameters:**
   - (none)
 ##### copy(...) -> T
@@ -10819,7 +10819,7 @@ Represents a NOT IN subquery condition used in SQL WHERE clauses.
 - **Summary:** Creates a deep copy of this NOT IN subquery condition.
 - **Parameters:**
   - (none)
-- **Returns:** a new instance with copied values
+- **Returns:** a new NotInSubQuery instance with a deep copy of the subquery
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
 - **Summary:** Generates the hash code for this NOT IN subquery condition.
@@ -11047,12 +11047,12 @@ Represents the SQL SOME operator for use with subqueries.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public Some(final SubQuery subQuery)`
+- **Signature:** `public Some(final SubQuery condition)`
 - **Summary:** Creates a new SOME condition with the specified subquery.
 - **Contract:**
   - The SOME operator must be used with a comparison operator in the containing condition.
 - **Parameters:**
-  - `subQuery` (`SubQuery`) — the subquery that returns values to compare against. Must not be null.
+  - `condition` (`SubQuery`) — the subquery that returns values to compare against. Must not be null.
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Parameters:**
@@ -11144,9 +11144,10 @@ Represents a subquery that can be used within SQL conditions.
 - **Returns:** list of parameter values, or an empty list if no condition or raw SQL subquery
 ##### clearParameters(...) -> void
 - **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears all parameter values by setting them to null to free memory.
+- **Summary:** Clears parameters in the underlying condition.
 - **Contract:**
-  - Use this method to release large objects when the condition is no longer needed.
+  - <p> Use this method to release large objects when the subquery is no longer needed.
+  - If this is a raw SQL subquery with no condition, this method is a no-op.
 - **Parameters:**
   - (none)
 ##### copy(...) -> T
