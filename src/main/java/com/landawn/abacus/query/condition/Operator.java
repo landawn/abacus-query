@@ -378,6 +378,23 @@ public enum Operator {
      * <p>This method performs case-insensitive lookup and caches results for performance.
      * It can handle both symbolic operators (like "=", ">") and word operators (like "AND", "OR").</p>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Look up symbolic operators
+     * Operator eq = Operator.getOperator("=");       // Operator.EQUAL
+     * Operator gt = Operator.getOperator(">");       // Operator.GREATER_THAN
+     * Operator gte = Operator.getOperator(">=");     // Operator.GREATER_EQUAL
+     *
+     * // Look up word operators (case-insensitive)
+     * Operator and = Operator.getOperator("AND");    // Operator.AND
+     * Operator or = Operator.getOperator("or");      // Operator.OR
+     * Operator like = Operator.getOperator("LIKE");  // Operator.LIKE
+     *
+     * // Returns null for unknown operators
+     * Operator unknown = Operator.getOperator("UNKNOWN");   // null
+     * Operator nullOp = Operator.getOperator(null);         // null
+     * }</pre>
+     *
      * @param name the string representation of the operator. Can be null.
      * @return the corresponding Operator enum value, or {@code null} if name is null or not found
      */
@@ -418,6 +435,15 @@ public enum Operator {
 
     /**
      * Gets the SQL string representation of this operator.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String eqName = Operator.EQUAL.getName();           // "="
+     * String andName = Operator.AND.getName();            // "AND"
+     * String betweenName = Operator.BETWEEN.getName();    // "BETWEEN"
+     * String likeName = Operator.LIKE.getName();          // "LIKE"
+     * String joinName = Operator.LEFT_JOIN.getName();     // "LEFT JOIN"
+     * }</pre>
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */

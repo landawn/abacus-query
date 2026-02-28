@@ -917,8 +917,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testOfMethodWithNull() {
-        // Expression.of(null) throws NullPointerException
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Expression.of(null);
         });
     }

@@ -146,7 +146,6 @@ public class Or extends Junction {
     /**
      * Creates a new Or condition by adding another condition to this OR.
      * This method returns a new Or instance containing all existing conditions plus the new one.
-     * The original Or condition remains unchanged (immutable).
      *
      * <p>This method provides a fluent interface for building OR conditions incrementally.
      * Each call returns a new OR instance, preserving immutability. The new condition

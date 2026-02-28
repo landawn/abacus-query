@@ -115,8 +115,7 @@ public class NotExists2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE status = 'cancelled'");
         NotExists condition = new NotExists(subQuery);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
-        assertTrue(result.contains("NOT EXISTS"));
-        assertTrue(result.contains("SELECT"));
+        assertEquals("NOT EXISTS (SELECT 1 FROM orders WHERE status = 'cancelled')", result);
     }
 
     @Test

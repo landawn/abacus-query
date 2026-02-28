@@ -62,7 +62,7 @@ public final class ParsedSql {
 
     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
 
-    private static final Set<String> opSqlPrefixSet = N.asSet(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE);
+    private static final Set<String> opSqlPrefixSet = N.asSet(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, "CALL");
 
     private static final int factor = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
@@ -228,7 +228,19 @@ public final class ParsedSql {
     /**
      * Gets the parameterized SQL with all named parameters replaced by JDBC placeholders (?).
      * This SQL can be used directly with JDBC PreparedStatement.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
+     * String sql = parsed.getParameterizedSql();
+     * // Returns: "SELECT * FROM users WHERE id = ? AND status = ?"
+     *
+     * // Use with PreparedStatement
+     * PreparedStatement stmt = connection.prepareStatement(parsed.getParameterizedSql());
+     * stmt.setLong(1, userId);
+     * stmt.setString(2, status);
+     * }</pre>
+     *
      * @return the parameterized SQL string with ? placeholders
      */
     public String getParameterizedSql() {
@@ -239,6 +251,19 @@ public final class ParsedSql {
      * Gets the parameterized SQL formatted for the specified database system.
      * When isForCouchbase is true, JDBC placeholders (?) are converted to Couchbase positional parameters ($1, $2, etc.).
      * When false, returns standard JDBC SQL with ? placeholders.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :name");
+     *
+     * // Standard JDBC format
+     * String jdbcSql = parsed.getParameterizedSql(false);
+     * // Returns: "SELECT * FROM users WHERE id = ? AND name = ?"
+     *
+     * // Couchbase N1QL format
+     * String couchbaseSql = parsed.getParameterizedSql(true);
+     * // Returns: "SELECT * FROM users WHERE id = $1 AND name = $2"
+     * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase-formatted SQL with $n parameters, {@code false} for standard JDBC format with ? placeholders
      * @return the parameterized SQL string in the requested format
@@ -262,7 +287,19 @@ public final class ParsedSql {
     /**
      * Gets the list of named parameters extracted from the SQL in order of appearance.
      * For SQL with no named parameters, returns an empty list.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
+     * ImmutableList<String> params = parsed.getNamedParameters();
+     * // Returns: ["name", "minAge"]
+     *
+     * // SQL with no named parameters returns empty list
+     * ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
+     * ImmutableList<String> params2 = parsed2.getNamedParameters();
+     * // Returns: []
+     * }</pre>
+     *
      * @return an immutable list of parameter names
      */
     public ImmutableList<String> getNamedParameters() {
@@ -274,6 +311,24 @@ public final class ParsedSql {
      * When isForCouchbase is true, returns parameter names suitable for Couchbase N1QL positional binding.
      * For SQL with positional parameters only (using ?), Couchbase format returns an empty list since
      * parameters are bound by position.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
+     *
+     * // Standard format
+     * ImmutableList<String> params = parsed.getNamedParameters(false);
+     * // Returns: ["name", "minAge"]
+     *
+     * // Couchbase format
+     * ImmutableList<String> cbParams = parsed.getNamedParameters(true);
+     * // Returns: ["name", "minAge"]
+     *
+     * // Positional parameters return empty list for Couchbase
+     * ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
+     * ImmutableList<String> cbParams2 = parsed2.getNamedParameters(true);
+     * // Returns: []
+     * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase-formatted parameter names, {@code false} for standard format
      * @return an immutable list of parameter names
@@ -297,7 +352,18 @@ public final class ParsedSql {
     /**
      * Gets the total number of parameters (named or positional) in the SQL.
      * This count includes all occurrences of ?, :paramName, or #{paramName}.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (:name, :email, :age)");
+     * int count = parsed.getParameterCount();
+     * // Returns: 3
+     *
+     * ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users");
+     * int count2 = parsed2.getParameterCount();
+     * // Returns: 0
+     * }</pre>
+     *
      * @return the number of parameters in the SQL
      */
     public int getParameterCount() {
@@ -306,6 +372,19 @@ public final class ParsedSql {
 
     /**
      * Gets the parameter count formatted for the specified database system.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
+     *
+     * // Standard parameter count
+     * int count = parsed.getParameterCount(false);
+     * // Returns: 2
+     *
+     * // Couchbase parameter count
+     * int cbCount = parsed.getParameterCount(true);
+     * // Returns: 2
+     * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase parameter count, {@code false} for standard count
      * @return the number of parameters
@@ -395,13 +474,17 @@ public final class ParsedSql {
 
             couchbaseNamedParameters = ImmutableList.wrap(couchbaseNamedParameterList);
             couchbaseParameterCount = countOfParameter;
-            couchbaseParameterizedSql = sb.toString();
+
+            final String tmpCouchbaseSql = Strings.stripToEmpty(sb.toString());
+            couchbaseParameterizedSql = tmpCouchbaseSql.endsWith(";") ? tmpCouchbaseSql.substring(0, tmpCouchbaseSql.length() - 1) : tmpCouchbaseSql;
 
             Objectory.recycle(sb);
         } else {
             couchbaseNamedParameters = ImmutableList.empty();
             couchbaseParameterCount = 0;
-            couchbaseParameterizedSql = sql;
+
+            final String tmpCouchbaseSql = Strings.stripToEmpty(sql);
+            couchbaseParameterizedSql = tmpCouchbaseSql.endsWith(";") ? tmpCouchbaseSql.substring(0, tmpCouchbaseSql.length() - 1) : tmpCouchbaseSql;
         }
     }
 

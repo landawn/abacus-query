@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Tag;
@@ -231,6 +232,20 @@ public class SQLParser2025Test extends TestBase {
     public void testRegisterSeparatorString() {
         SQLParser.registerSeparator(":::");
         // Test that it doesn't throw
+    }
+
+    @Test
+    public void testRegisterSeparatorStringWithNewLeadingChar() {
+        SQLParser.registerSeparator("$$");
+        List<String> words = SQLParser.parse("SELECT$$FROM$$users");
+        assertEquals(Arrays.asList("SELECT", "$$", "FROM", "$$", "users"), words);
+    }
+
+    @Test
+    public void testRegisterLongSeparatorString() {
+        SQLParser.registerSeparator("~~~~");
+        List<String> words = SQLParser.parse("SELECT~~~~FROM~~~~users");
+        assertEquals(Arrays.asList("SELECT", "~~~~", "FROM", "~~~~", "users"), words);
     }
 
     @Test

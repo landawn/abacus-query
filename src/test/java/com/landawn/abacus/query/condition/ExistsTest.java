@@ -36,8 +36,7 @@ public class ExistsTest extends TestBase {
         Exists exists = Filters.exists(subQuery);
 
         String result = exists.toString();
-        Assertions.assertTrue(result.contains("EXISTS"));
-        Assertions.assertTrue(result.contains("SELECT 1 FROM subordinates"));
+        Assertions.assertEquals("EXISTS (SELECT 1 FROM subordinates WHERE manager_id = emp.id)", result);
     }
 
     @Test

@@ -162,7 +162,18 @@ public class Junction extends AbstractCondition {
      * Gets the list of conditions contained in this junction.
      * The returned list is the internal representation and modifications to it
      * will affect the junction. Use with caution.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Junction and = new Junction(Operator.AND,
+     *     new Equal("status", "active"),
+     *     new GreaterThan("age", 18));
+     * List<Condition> conditions = and.getConditions();
+     * // Returns: [Equal("status", "active"), GreaterThan("age", 18)]
+     * int count = conditions.size();
+     * // Returns: 2
+     * }</pre>
+     *
      * @return the list of conditions. Modifications to this list will affect the junction.
      */
     public List<Condition> getConditions() {
@@ -172,6 +183,20 @@ public class Junction extends AbstractCondition {
     /**
      * Replaces all conditions in this junction with the specified conditions.
      * This method clears existing conditions before adding the new ones.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Junction junction = new Junction(Operator.AND,
+     *     new Equal("status", "active"));
+     *
+     * // Replace all conditions with new ones
+     * junction.set(
+     *     new Equal("status", "pending"),
+     *     new GreaterThan("priority", 5),
+     *     new IsNotNull("assignee")
+     * );
+     * // Junction now contains only the three new conditions
+     * }</pre>
      *
      * @param conditions the new conditions to set. Existing conditions will be cleared.
      * @throws IllegalArgumentException if conditions array contains null elements
@@ -184,6 +209,21 @@ public class Junction extends AbstractCondition {
     /**
      * Replaces all conditions in this junction with the specified collection of conditions.
      * This method clears existing conditions before adding the new ones.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Junction junction = new Junction(Operator.OR);
+     *
+     * // Build conditions dynamically
+     * List<Condition> newConditions = new ArrayList<>();
+     * newConditions.add(new Equal("region", "US"));
+     * newConditions.add(new Equal("region", "EU"));
+     * newConditions.add(new Equal("region", "APAC"));
+     *
+     * // Replace all existing conditions with the new collection
+     * junction.set(newConditions);
+     * // Junction now contains: region = 'US' OR region = 'EU' OR region = 'APAC'
+     * }</pre>
      *
      * @param conditions the new collection of conditions to set. Existing conditions will be cleared.
      * @throws IllegalArgumentException if conditions collection contains null elements
@@ -310,7 +350,21 @@ public class Junction extends AbstractCondition {
     /**
      * Removes all conditions from this junction.
      * After this operation, the junction will be empty but can still accept new conditions.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Junction junction = new Junction(Operator.AND,
+     *     new Equal("status", "active"),
+     *     new GreaterThan("age", 18));
+     *
+     * // Remove all conditions
+     * junction.clear();
+     * // junction.getConditions().size() returns 0
+     *
+     * // Junction can still accept new conditions after clearing
+     * junction.add(new Equal("role", "admin"));
+     * }</pre>
+     *
      */
     public void clear() {
         conditionList.clear();

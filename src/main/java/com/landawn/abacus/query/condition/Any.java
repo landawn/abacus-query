@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.NamingPolicy;
+
 /**
  * Represents the SQL ANY operator for use with subqueries.
  * The ANY operator returns {@code true} if the comparison is true for ANY of the values returned by the subquery.
@@ -109,5 +112,13 @@ public class Any extends Cell {
      */
     public Any(final SubQuery condition) {
         super(Operator.ANY, condition);
+    }
+
+    @Override
+    public String toString(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+        final Condition condition = getCondition();
+        final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
+        return getOperator().toString() + SK._SPACE + SK._PARENTHESES_L + conditionString + SK._PARENTHESES_R;
     }
 }

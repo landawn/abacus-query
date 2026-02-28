@@ -62,7 +62,23 @@ public enum SortDirection {
     /**
      * Checks if this sort direction is ascending.
      * This is a convenience method equivalent to checking if the direction equals ASC.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SortDirection direction = SortDirection.ASC;
+     * boolean ascending = direction.isAscending();  // true
+     *
+     * SortDirection descDirection = SortDirection.DESC;
+     * boolean descAscending = descDirection.isAscending();  // false
+     *
+     * // Conditional logic based on sort direction
+     * if (direction.isAscending()) {
+     *     // Apply ascending sort logic
+     * } else {
+     *     // Apply descending sort logic
+     * }
+     * }</pre>
+     *
      * @return {@code true} if this sort direction is ASC, {@code false} if it is DESC
      */
     public boolean isAscending() {

@@ -122,6 +122,13 @@ public class NotIn extends AbstractCondition {
     /**
      * Gets the property name for this NOT IN condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn excludeFilter = new NotIn("status", Arrays.asList("deleted", "archived"));
+     * String propName = excludeFilter.getPropName();
+     * // Returns: "status"
+     * }</pre>
+     *
      * @return the property name
      */
     public String getPropName() {
@@ -132,6 +139,17 @@ public class NotIn extends AbstractCondition {
      * Gets the collection of values that the property should NOT match.
      * Returns the internal list of values used in the NOT IN condition. These are the
      * values that will be excluded when the query is executed.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn excludeFilter = new NotIn("department_id", Arrays.asList(10, 20, 30));
+     * List<?> values = excludeFilter.getValues();
+     * // Returns: [10, 20, 30]
+     *
+     * NotIn statusFilter = new NotIn("status", Arrays.asList("deleted", "archived"));
+     * List<?> excluded = statusFilter.getValues();
+     * // Returns: ["deleted", "archived"]
+     * }</pre>
      *
      * @return list of values to exclude (may be null if cleared)
      */
@@ -153,6 +171,17 @@ public class NotIn extends AbstractCondition {
      *   <li>Shared conditions modified this way can cause race conditions</li>
      * </ul>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn statusFilter = new NotIn("status", Arrays.asList("deleted", "archived"));
+     *
+     * // Replace values (deprecated - prefer creating a new NotIn instance instead)
+     * statusFilter.setValues(Arrays.asList("suspended", "banned"));
+     *
+     * // Preferred approach: create a new NotIn instance
+     * NotIn updatedFilter = new NotIn("status", Arrays.asList("suspended", "banned"));
+     * }</pre>
+     *
      * @param values the new collection of values to exclude. Must not be null or empty.
      * @throws IllegalArgumentException if values is null or empty
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -162,7 +191,7 @@ public class NotIn extends AbstractCondition {
     public void setValues(final List<?> values) {
         N.checkArgNotEmpty(values, "values");
 
-        this.values = values;
+        this.values = new ArrayList<>(values);
     }
 
     /**

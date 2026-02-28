@@ -330,6 +330,13 @@ public final class NamedProperty {
      * Creates an IS NULL condition for this property.
      * This generates a condition that checks if the property value is NULL in the database.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("email").isNull();          // email IS NULL
+     * NamedProperty.of("middle_name").isNull();    // middle_name IS NULL
+     * NamedProperty.of("deleted_at").isNull();     // deleted_at IS NULL
+     * }</pre>
+     *
      * @return an IsNull condition for this property
      * @see IsNull
      * @see Filters#isNull(String)
@@ -341,6 +348,13 @@ public final class NamedProperty {
     /**
      * Creates an IS NOT NULL condition for this property.
      * This generates a condition that checks if the property value is not NULL in the database.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("email").isNotNull();      // email IS NOT NULL
+     * NamedProperty.of("phone").isNotNull();      // phone IS NOT NULL
+     * NamedProperty.of("address").isNotNull();    // address IS NOT NULL
+     * }</pre>
      *
      * @return an IsNotNull condition for this property
      * @see IsNotNull

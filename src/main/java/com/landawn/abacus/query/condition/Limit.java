@@ -176,6 +176,19 @@ public class Limit extends AbstractCondition {
      * This method returns the raw expression string passed to the string constructor,
      * or {@code null} if the Limit was created with count/offset parameters.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Limit created with a custom expression
+     * Limit customLimit = new Limit("10 OFFSET 20");
+     * String expr = customLimit.getExpr();
+     * // Returns: "LIMIT 10 OFFSET 20"
+     *
+     * // Limit created with count/offset returns null
+     * Limit numericLimit = new Limit(20, 10);
+     * String noExpr = numericLimit.getExpr();
+     * // Returns: null
+     * }</pre>
+     *
      * @return the custom expression string, or {@code null} if constructed with count/offset parameters
      */
     public String getExpr() {
@@ -185,6 +198,24 @@ public class Limit extends AbstractCondition {
     /**
      * Gets the maximum number of rows to return.
      * For Limit instances created with a custom expression, this returns {@link Integer#MAX_VALUE}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Simple count limit
+     * Limit limit = new Limit(25);
+     * int count = limit.getCount();
+     * // Returns: 25
+     *
+     * // Limit with offset
+     * Limit paged = new Limit(100, 50);
+     * int pageCount = paged.getCount();
+     * // Returns: 50
+     *
+     * // Custom expression limit
+     * Limit custom = new Limit("10 OFFSET 20");
+     * int customCount = custom.getCount();
+     * // Returns: Integer.MAX_VALUE
+     * }</pre>
      *
      * @return the row count limit, or {@link Integer#MAX_VALUE} if constructed with a custom expression
      */
@@ -196,6 +227,24 @@ public class Limit extends AbstractCondition {
      * Gets the number of rows to skip before returning results.
      * For Limit instances created with only a count, this returns 0.
      * For Limit instances created with a custom expression, this also returns 0.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Limit with offset for pagination
+     * Limit page3 = new Limit(20, 10);
+     * int offset = page3.getOffset();
+     * // Returns: 20
+     *
+     * // Simple count-only limit
+     * Limit simple = new Limit(10);
+     * int noOffset = simple.getOffset();
+     * // Returns: 0
+     *
+     * // Custom expression limit
+     * Limit custom = new Limit("10 OFFSET 20");
+     * int customOffset = custom.getOffset();
+     * // Returns: 0
+     * }</pre>
      *
      * @return the offset value, or 0 if constructed with only count or with a custom expression
      */

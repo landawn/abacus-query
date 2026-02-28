@@ -52,19 +52,19 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * // Exclude normal temperature range
  * NotBetween abnormalTemp = new NotBetween("temperature", 36.0, 37.5);
- * // Renders as: temperature NOT BETWEEN (36.0, 37.5)
+ * // Renders as: temperature NOT BETWEEN 36.0 AND 37.5
  *
  * // Find orders outside business hours (before 9 AM or after 5 PM)
  * NotBetween outsideHours = new NotBetween("order_hour", 9, 17);
- * // Renders as: order_hour NOT BETWEEN (9, 17)
+ * // Renders as: order_hour NOT BETWEEN 9 AND 17
  *
  * // Exclude mid-range salaries
  * NotBetween salaryRange = new NotBetween("salary", 50000, 100000);
- * // Renders as: salary NOT BETWEEN (50000, 100000)
+ * // Renders as: salary NOT BETWEEN 50000 AND 100000
  *
  * // Using with date strings
  * NotBetween dateRange = new NotBetween("order_date", "2024-01-01", "2024-12-31");
- * // Renders as: order_date NOT BETWEEN ('2024-01-01', '2024-12-31')
+ * // Renders as: order_date NOT BETWEEN '2024-01-01' AND '2024-12-31'
  * }</pre>
  * 
  * @see AbstractCondition
@@ -97,12 +97,12 @@ public class NotBetween extends AbstractCondition {
      * <pre>{@code
      * // Find products with extreme prices (very cheap or very expensive)
      * NotBetween priceRange = new NotBetween("price", 10.0, 1000.0);
-     * // Renders as: price NOT BETWEEN (10.0, 1000.0)
+     * // Renders as: price NOT BETWEEN 10.0 AND 1000.0
      * // Matches: price < 10.0 OR price > 1000.0
      *
      * // Find events outside regular working days
      * NotBetween workdays = new NotBetween("day_of_week", 2, 6);   // Monday = 2, Friday = 6
-     * // Renders as: day_of_week NOT BETWEEN (2, 6)
+     * // Renders as: day_of_week NOT BETWEEN 2 AND 6
      * // Matches: Sunday (1) and Saturday (7)
      * }</pre>
      *
@@ -127,6 +127,15 @@ public class NotBetween extends AbstractCondition {
      * Gets the property name for this NOT BETWEEN condition.
      * Returns the name of the column or field being tested against the range.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotBetween tempRange = new NotBetween("temperature", 36.0, 37.5);
+     * String name = tempRange.getPropName();   // "temperature"
+     *
+     * NotBetween salaryRange = new NotBetween("salary", 50000, 100000);
+     * String salaryName = salaryRange.getPropName();   // "salary"
+     * }</pre>
+     *
      * @return the property name
      */
     public String getPropName() {
@@ -137,6 +146,15 @@ public class NotBetween extends AbstractCondition {
      * Gets the minimum value of the range to exclude.
      * Values less than this will match the condition (since they fall outside the range).
      * The type parameter allows the value to be cast to the expected type.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotBetween tempRange = new NotBetween("temperature", 36.0, 37.5);
+     * Double min = tempRange.getMinValue();   // 36.0
+     *
+     * NotBetween ageRange = new NotBetween("age", 18, 65);
+     * Integer minAge = ageRange.getMinValue();   // 18
+     * }</pre>
      *
      * @param <T> the type of the minimum value
      * @return the minimum value of the excluded range
@@ -150,6 +168,16 @@ public class NotBetween extends AbstractCondition {
      * Sets a new minimum value for the range.
      * Note: Modifying conditions after creation is not recommended as they should be immutable.
      * This method exists for backward compatibility but should be avoided in new code.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Deprecated: prefer creating a new NotBetween instead
+     * NotBetween range = new NotBetween("temperature", 36.0, 37.5);
+     * range.setMinValue(35.5);   // Not recommended
+     *
+     * // Preferred approach: create a new NotBetween
+     * NotBetween newRange = new NotBetween("temperature", 35.5, 37.5);
+     * }</pre>
      *
      * @param minValue the new minimum value to set
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -165,6 +193,15 @@ public class NotBetween extends AbstractCondition {
      * Values greater than this will match the condition (since they fall outside the range).
      * The type parameter allows the value to be cast to the expected type.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotBetween tempRange = new NotBetween("temperature", 36.0, 37.5);
+     * Double max = tempRange.getMaxValue();   // 37.5
+     *
+     * NotBetween ageRange = new NotBetween("age", 18, 65);
+     * Integer maxAge = ageRange.getMaxValue();   // 65
+     * }</pre>
+     *
      * @param <T> the type of the maximum value
      * @return the maximum value of the excluded range
      */
@@ -177,6 +214,16 @@ public class NotBetween extends AbstractCondition {
      * Sets a new maximum value for the range.
      * Note: Modifying conditions after creation is not recommended as they should be immutable.
      * This method exists for backward compatibility but should be avoided in new code.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Deprecated: prefer creating a new NotBetween instead
+     * NotBetween range = new NotBetween("temperature", 36.0, 37.5);
+     * range.setMaxValue(38.0);   // Not recommended
+     *
+     * // Preferred approach: create a new NotBetween
+     * NotBetween newRange = new NotBetween("temperature", 36.0, 38.0);
+     * }</pre>
      *
      * @param maxValue the new maximum value to set
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -215,9 +262,8 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Clears all parameter values by setting them to null to free memory.
-     *
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
+     * This method sets both minValue and maxValue fields to null unless they are Conditions,
+     * in which case it recursively clears parameters in the nested conditions.
      *
      */
     @Override
@@ -261,7 +307,7 @@ public class NotBetween extends AbstractCondition {
 
     /**
      * Converts this NOT BETWEEN condition to its string representation.
-     * The rendered format is {@code <prop> NOT BETWEEN (<min>, <max>)}.
+     * The rendered format is {@code <prop> NOT BETWEEN <min> AND <max>}.
      * The naming policy is applied to the property name to handle different naming conventions.
      *
      * @param namingPolicy the naming policy to apply to the property name
@@ -270,8 +316,8 @@ public class NotBetween extends AbstractCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        return effectiveNamingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L
-                + parameter2String(minValue, effectiveNamingPolicy) + SK.COMMA_SPACE + parameter2String(maxValue, effectiveNamingPolicy) + SK._PARENTHESES_R;
+        return effectiveNamingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK._SPACE + parameter2String(minValue, effectiveNamingPolicy)
+                + SK._SPACE + SK.AND + SK._SPACE + parameter2String(maxValue, effectiveNamingPolicy);
     }
 
     /**

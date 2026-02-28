@@ -73,6 +73,13 @@ public class InSubQuery2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructor_MultiplePropertiesRejectsInvalidElements() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+        assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("dept_id", null), subQuery));
+        assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("dept_id", ""), subQuery));
+    }
+
+    @Test
     public void testConstructor_NullPropNames() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         assertThrows(IllegalArgumentException.class, () -> new InSubQuery((Collection<String>) null, subQuery));
@@ -112,6 +119,15 @@ public class InSubQuery2025Test extends TestBase {
         Collection<String> propNames = condition.getPropNames();
         assertNotNull(propNames);
         assertEquals(2, propNames.size());
+    }
+
+    @Test
+    public void testGetPropNames_MultipleProperties_Unmodifiable() {
+        List<String> columns = Arrays.asList("dept_id", "loc_id");
+        SubQuery subQuery = Filters.subQuery("SELECT department_id, location_id FROM assignments");
+        InSubQuery condition = new InSubQuery(columns, subQuery);
+
+        assertThrows(UnsupportedOperationException.class, () -> condition.getPropNames().add("region_id"));
     }
 
     @Test

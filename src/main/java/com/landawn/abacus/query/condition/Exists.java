@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.NamingPolicy;
+
 /**
  * Represents the SQL EXISTS operator for use with subqueries.
  * The EXISTS operator returns {@code true} if the subquery returns at least one row, {@code false} otherwise.
@@ -114,5 +117,13 @@ public class Exists extends Cell {
      */
     public Exists(final SubQuery condition) {
         super(Operator.EXISTS, condition);
+    }
+
+    @Override
+    public String toString(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+        final Condition condition = getCondition();
+        final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
+        return getOperator().toString() + SK._SPACE + SK._PARENTHESES_L + conditionString + SK._PARENTHESES_R;
     }
 }

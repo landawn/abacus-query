@@ -244,21 +244,21 @@ public class Like2025Test extends TestBase {
     }
 
     @Test
-    public void testPatternMatching_StartsWith() {
+    public void testPattercountMatchBetweening_StartsWith() {
         Like condition = new Like("name", "John%");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("John%"));
     }
 
     @Test
-    public void testPatternMatching_EndsWith() {
+    public void testPattercountMatchBetweening_EndsWith() {
         Like condition = new Like("email", "%@example.com");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("@example.com"));
     }
 
     @Test
-    public void testPatternMatching_Contains() {
+    public void testPattercountMatchBetweening_Contains() {
         Like condition = new Like("description", "%important%");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("important"));

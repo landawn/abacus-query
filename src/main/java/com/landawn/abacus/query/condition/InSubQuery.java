@@ -14,7 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -138,15 +140,14 @@ public class InSubQuery extends AbstractCondition {
      *                  The order must match the column order in the subquery.
      * @param subQuery the subquery that returns the value combinations to check against. Must not be null.
      *                 Must return the same number of columns as propNames.size().
-     * @throws IllegalArgumentException if propNames is null or empty, or if subQuery is null
+     * @throws IllegalArgumentException if propNames is null/empty, if any element is null/empty, or if subQuery is null
      */
     public InSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.IN);
 
-        N.checkArgNotEmpty(propNames, "propNames");
         N.checkArgNotNull(subQuery, "subQuery");
 
-        this.propNames = propNames;
+        this.propNames = copyAndValidatePropNames(propNames);
         this.subQuery = subQuery;
         propName = null;
     }
@@ -154,6 +155,19 @@ public class InSubQuery extends AbstractCondition {
     /**
      * Gets the property name for single-column IN conditions.
      * Returns null if this is a multi-column condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
+     * InSubQuery condition = new InSubQuery("customer_id", subQuery);
+     * String propName = condition.getPropName();
+     * // Returns: "customer_id"
+     *
+     * // For multi-column conditions, getPropName() returns null
+     * InSubQuery multiCol = new InSubQuery(Arrays.asList("dept_id", "loc_id"), subQuery);
+     * String name = multiCol.getPropName();
+     * // Returns: null
+     * }</pre>
      *
      * @return the property name, or null if this is a multi-column condition
      */
@@ -165,15 +179,49 @@ public class InSubQuery extends AbstractCondition {
      * Gets the property names for multi-column IN conditions.
      * Returns null if this is a single-column condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = Filters.subQuery("SELECT dept_id, loc_id FROM dept_locations");
+     * InSubQuery multiCol = new InSubQuery(Arrays.asList("department_id", "location_id"), subQuery);
+     * Collection<String> propNames = multiCol.getPropNames();
+     * // Returns: ["department_id", "location_id"]
+     *
+     * // For single-column conditions, getPropNames() returns null
+     * InSubQuery singleCol = new InSubQuery("customer_id", subQuery);
+     * Collection<String> names = singleCol.getPropNames();
+     * // Returns: null
+     * }</pre>
+     *
      * @return collection of property names, or null if this is a single-column condition
      */
     public Collection<String> getPropNames() {
         return propNames;
     }
 
+    private static Collection<String> copyAndValidatePropNames(final Collection<String> propNames) {
+        N.checkArgNotEmpty(propNames, "propNames");
+
+        final List<String> copy = new ArrayList<>(propNames.size());
+
+        for (final String propName : propNames) {
+            N.checkArgNotEmpty(propName, "Property name in propNames");
+            copy.add(propName);
+        }
+
+        return Collections.unmodifiableList(copy);
+    }
+
     /**
      * Gets the subquery used in this IN condition.
      * The subquery defines the set of values to check against in the IN clause.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery activeCategories = Filters.subQuery("SELECT category_id FROM categories WHERE active = true");
+     * InSubQuery condition = new InSubQuery("category_id", activeCategories);
+     * SubQuery retrieved = condition.getSubQuery();
+     * // Returns the SubQuery: "SELECT category_id FROM categories WHERE active = true"
+     * }</pre>
      *
      * @return the subquery
      */
@@ -195,6 +243,19 @@ public class InSubQuery extends AbstractCondition {
      *   <li>Shared conditions modified this way can cause race conditions</li>
      * </ul>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery originalQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
+     * InSubQuery condition = new InSubQuery("user_id", originalQuery);
+     *
+     * // Replace subquery (deprecated - prefer creating a new InSubQuery instance instead)
+     * SubQuery newQuery = Filters.subQuery("SELECT id FROM users WHERE role = 'admin'");
+     * condition.setSubQuery(newQuery);
+     *
+     * // Preferred approach: create a new InSubQuery instance
+     * InSubQuery updatedCondition = new InSubQuery("user_id", newQuery);
+     * }</pre>
+     *
      * @param subQuery the new subquery to set. Must not be null.
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      *             Create a new InSubQuery instance instead of modifying existing conditions.
@@ -215,7 +276,7 @@ public class InSubQuery extends AbstractCondition {
      */
     @Override
     public List<Object> getParameters() {
-        return subQuery.getParameters();
+        return subQuery == null ? N.emptyList() : subQuery.getParameters();
     }
 
     /**
@@ -224,7 +285,9 @@ public class InSubQuery extends AbstractCondition {
      */
     @Override
     public void clearParameters() {
-        subQuery.clearParameters();
+        if (subQuery != null) {
+            subQuery.clearParameters();
+        }
     }
 
     /**
@@ -240,7 +303,9 @@ public class InSubQuery extends AbstractCondition {
     public <T extends Condition> T copy() {
         final InSubQuery copy = super.copy();
 
-        copy.subQuery = subQuery.copy();
+        if (subQuery != null) {
+            copy.subQuery = subQuery.copy();
+        }
 
         return (T) copy;
     }

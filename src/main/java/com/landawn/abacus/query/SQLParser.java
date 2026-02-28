@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.ObjectPool;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Splitter;
 import com.landawn.abacus.util.Strings;
@@ -49,7 +49,9 @@ public final class SQLParser {
 
     private static final char ENTER_2 = '\r';
 
-    private static final Set<Object> separators = N.newHashSet();
+    private static final Set<Object> separators = ConcurrentHashMap.newKeySet();
+
+    private static volatile int maxSeparatorLength = 1;
 
     static {
         separators.add(TAB);
@@ -131,9 +133,15 @@ public final class SQLParser {
         separators.add("!~*");
         separators.add("^-=");
         separators.add("|*=");
+
+        for (final Object separator : separators) {
+            if (separator instanceof final String separatorStr && separatorStr.length() > maxSeparatorLength) {
+                maxSeparatorLength = separatorStr.length();
+            }
+        }
     }
 
-    private static final Map<String, String[]> compositeWords = new ObjectPool<>(64);
+    private static final Map<String, String[]> compositeWords = new ConcurrentHashMap<>(64);
 
     static {
         compositeWords.put(SK.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
@@ -218,14 +226,24 @@ public final class SQLParser {
                 if (c == quoteChar) {
                     if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
                         sb.append(sql.charAt(++index));
-                    } else if (index == 0 || sql.charAt(index - 1) != '\\') {
-                        words.add(sb.toString());
-                        sb.setLength(0);
+                    } else {
+                        // Count consecutive backslashes before this quote.
+                        // Even count (including 0) means the quote is NOT escaped.
+                        int backslashCount = 0;
 
-                        quoteChar = 0;
+                        for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
+                            backslashCount++;
+                        }
+
+                        if (backslashCount % 2 == 0) {
+                            words.add(sb.toString());
+                            sb.setLength(0);
+
+                            quoteChar = 0;
+                        }
                     }
                 }
-            } else if (c == '-' && index < sqlLength - 2 && sql.charAt(index + 1) == '-' && sql.charAt(index + 2) == ' ') {
+            } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
                 if (!sb.isEmpty()) {
                     words.add(sb.toString());
                     sb.setLength(0);
@@ -267,11 +285,11 @@ public final class SQLParser {
                 while (++index < sqlLength) {
                     c = sql.charAt(index);
 
-                    if (c == ENTER || c == ENTER_2) {
+                    if (c == ENTER || (c == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
                         break;
                     }
                 }
-            } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
+            } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) { // for MySQL only
                 if (!sb.isEmpty()) {
                     words.add(sb.toString());
                     sb.setLength(0);
@@ -280,20 +298,7 @@ public final class SQLParser {
                 while (++index < sqlLength) {
                     c = sql.charAt(index);
 
-                    if (c == ENTER || c == ENTER_2) {
-                        break;
-                    }
-                }
-            } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
-                if (!sb.isEmpty()) {
-                    words.add(sb.toString());
-                    sb.setLength(0);
-                }
-
-                while (++index < sqlLength) {
-                    c = sql.charAt(index);
-
-                    if (c == ENTER || c == ENTER_2) {
+                    if (c == ENTER || (c == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
                         break;
                     }
                 }
@@ -339,12 +344,11 @@ public final class SQLParser {
                     sb.setLength(0);
                 }
 
-                if ((index < (sqlLength - 2)) && separators.contains(temp = sql.substring(index, index + 3))) {
+                temp = matchMultiCharSeparator(sql, sqlLength, index);
+
+                if (temp != null) {
                     words.add(temp);
-                    index += 2;
-                } else if ((index < (sqlLength - 1)) && separators.contains(temp = sql.substring(index, index + 2))) {
-                    words.add(temp);
-                    index += 1;
+                    index += temp.length() - 1;
                 } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
                     if (!words.isEmpty() && !words.get(words.size() - 1).equals(SK.SPACE)) {
                         words.add(SK.SPACE);
@@ -429,17 +433,76 @@ public final class SQLParser {
                     if (c == quoteChar) {
                         if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
                             sb.append(sql.charAt(++index));
-                        } else if (index == 0 || sql.charAt(index - 1) != '\\') {
-                            temp = sb.toString();
+                        } else {
+                            // Count consecutive backslashes before this quote.
+                            // Even count (including 0) means the quote is NOT escaped.
+                            int backslashCount = 0;
 
-                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                                result = index - word.length() + 1;
-
-                                break;
+                            for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
+                                backslashCount++;
                             }
 
-                            sb.setLength(0);
-                            quoteChar = 0;
+                            if (backslashCount % 2 == 0) {
+                                temp = sb.toString();
+
+                                if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                    result = index - word.length() + 1;
+
+                                    break;
+                                }
+
+                                sb.setLength(0);
+                                quoteChar = 0;
+                            }
+                        }
+                    }
+                } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                    // Skip single-line comment (-- ...)
+                    if (!sb.isEmpty()) {
+                        temp = sb.toString();
+                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                            result = index - word.length();
+                            break;
+                        }
+                        sb.setLength(0);
+                    }
+                    while (++index < sqlLength) {
+                        final char cc = sql.charAt(index);
+                        if (cc == ENTER || (cc == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                            break;
+                        }
+                    }
+                } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
+                    // Skip MySQL single-line comment (# ...)
+                    if (!sb.isEmpty()) {
+                        temp = sb.toString();
+                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                            result = index - word.length();
+                            break;
+                        }
+                        sb.setLength(0);
+                    }
+                    while (++index < sqlLength) {
+                        final char cc = sql.charAt(index);
+                        if (cc == ENTER || (cc == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                            break;
+                        }
+                    }
+                } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+                    // Skip block comment (/* ... */)
+                    if (!sb.isEmpty()) {
+                        temp = sb.toString();
+                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                            result = index - word.length();
+                            break;
+                        }
+                        sb.setLength(0);
+                    }
+                    while (++index < sqlLength) {
+                        final char cc = sql.charAt(index);
+                        if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+                            index++;
+                            break;
                         }
                     }
                 } else if (isSeparator(sql, sqlLength, index, c)) {
@@ -458,22 +521,16 @@ public final class SQLParser {
                         continue;
                     }
 
-                    if ((index < (sqlLength - 2)) && separators.contains(temp = sql.substring(index, index + 3))) {
+                    temp = matchMultiCharSeparator(sql, sqlLength, index);
+
+                    if (temp != null) {
                         if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
                             result = index;
 
                             break;
                         }
 
-                        index += 2;
-                    } else if ((index < (sqlLength - 1)) && separators.contains(temp = sql.substring(index, index + 2))) {
-                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                            result = index;
-
-                            break;
-                        }
-
-                        index += 1;
+                        index += temp.length() - 1;
                     } else if (word.equals(String.valueOf(c)) || (!caseSensitive && word.equalsIgnoreCase(String.valueOf(c)))) {
                         result = index;
 
@@ -510,7 +567,12 @@ public final class SQLParser {
                     final String nextWord = nextWord(sql, tmpIndex);
 
                     if (Strings.isNotEmpty(nextWord) && (nextWord.equals(subWords[i]) || (!caseSensitive && nextWord.equalsIgnoreCase(subWords[i])))) {
-                        tmpIndex += (subWords[i].length() + 1);
+                        // Skip whitespace to find where the matched word starts, then advance past it
+                        while (tmpIndex < sql.length() && Character.isWhitespace(sql.charAt(tmpIndex))) {
+                            tmpIndex++;
+                        }
+
+                        tmpIndex += subWords[i].length();
                     } else {
                         matched = false;
 
@@ -573,7 +635,51 @@ public final class SQLParser {
                 if (c == quoteChar) {
                     if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
                         sb.append(sql.charAt(++index));
-                    } else if (index == 0 || sql.charAt(index - 1) != '\\') {
+                    } else {
+                        // Count consecutive backslashes before this quote.
+                        // Even count (including 0) means the quote is NOT escaped.
+                        int backslashCount = 0;
+
+                        for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
+                            backslashCount++;
+                        }
+
+                        if (backslashCount % 2 == 0) {
+                            break;
+                        }
+                    }
+                }
+            } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                // Skip single-line comment (-- ...)
+                if (!sb.isEmpty()) {
+                    break;
+                }
+                while (++index < sqlLength) {
+                    final char cc = sql.charAt(index);
+                    if (cc == ENTER || (cc == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                        break;
+                    }
+                }
+            } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
+                // Skip MySQL single-line comment (# ...)
+                if (!sb.isEmpty()) {
+                    break;
+                }
+                while (++index < sqlLength) {
+                    final char cc = sql.charAt(index);
+                    if (cc == ENTER || (cc == ENTER_2 && index < sqlLength - 1 && sql.charAt(index + 1) == ENTER)) {
+                        break;
+                    }
+                }
+            } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+                // Skip block comment (/* ... */)
+                if (!sb.isEmpty()) {
+                    break;
+                }
+                while (++index < sqlLength) {
+                    final char cc = sql.charAt(index);
+                    if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+                        index++;
                         break;
                     }
                 }
@@ -585,8 +691,9 @@ public final class SQLParser {
                     continue;
                 }
 
-                if (((index < (sqlLength - 2)) && separators.contains(temp = sql.substring(index, index + 3)))
-                        || ((index < (sqlLength - 1)) && separators.contains(temp = sql.substring(index, index + 2)))) {
+                temp = matchMultiCharSeparator(sql, sqlLength, index);
+
+                if (temp != null) {
                     sb.append(temp);
                 } else {
                     sb.append(c);
@@ -651,6 +758,10 @@ public final class SQLParser {
         if (separator.length() == 1) {
             separators.add(separator.charAt(0));
         }
+
+        if (separator.length() > maxSeparatorLength) {
+            maxSeparatorLength = separator.length();
+        }
     }
 
     /**
@@ -676,7 +787,25 @@ public final class SQLParser {
             return false;
         }
 
-        return separators.contains(ch);
+        if (separators.contains(ch)) {
+            return true;
+        }
+
+        return matchMultiCharSeparator(str, len, index) != null;
+    }
+
+    private static String matchMultiCharSeparator(final String str, final int len, final int index) {
+        final int maxLen = Math.min(maxSeparatorLength, len - index);
+
+        for (int sepLen = maxLen; sepLen > 1; sepLen--) {
+            final String separator = str.substring(index, index + sepLen);
+
+            if (separators.contains(separator)) {
+                return separator;
+            }
+        }
+
+        return null;
     }
 
     /**

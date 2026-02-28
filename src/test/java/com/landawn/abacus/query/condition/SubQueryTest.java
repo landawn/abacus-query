@@ -1,6 +1,8 @@
 package com.landawn.abacus.query.condition;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -72,6 +74,27 @@ public class SubQueryTest extends TestBase {
         Assertions.assertEquals(TestEntity.class, subQuery.getEntityClass());
         Assertions.assertEquals(props, subQuery.getSelectPropNames());
         Assertions.assertNotNull(subQuery.getCondition());
+    }
+
+    @Test
+    public void testConstructorRejectsInvalidSelectPropNames() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id", null), (Condition) null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id", ""), (Condition) null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(TestEntity.class, Arrays.asList("id", null), (Condition) null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(TestEntity.class, Arrays.asList("id", ""), (Condition) null));
+    }
+
+    @Test
+    public void testSelectPropNamesAreDefensivelyCopiedAndUnmodifiable() {
+        List<String> props = new ArrayList<>(Arrays.asList("id", "name"));
+        SubQuery subQuery = Filters.subQuery("users", props, (Condition) null);
+
+        props.set(0, "mutated");
+
+        Collection<String> selectProps = subQuery.getSelectPropNames();
+        Assertions.assertEquals(Arrays.asList("id", "name"), selectProps);
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> selectProps.add("email"));
+        Assertions.assertEquals(Arrays.asList("id", "name"), subQuery.getSelectPropNames());
     }
 
     @Test
@@ -201,9 +224,20 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("user_table", props, condition);
 
         String result = subQuery.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
-        Assertions.assertTrue(result.contains("user_id, user_name"));
-        Assertions.assertTrue(result.contains("user_table"));
+        Assertions.assertTrue(result.contains("USER_ID, USER_NAME"));
+        Assertions.assertTrue(result.contains("FROM USER_TABLE"));
         Assertions.assertTrue(result.contains("IS_ACTIVE"));
+    }
+
+    @Test
+    public void testToStringWithNamingPolicyConvertsSelectPropsAndEntity() {
+        List<String> props = Arrays.asList("firstName", "lastName");
+        SubQuery subQuery = Filters.subQuery("userAccount", props, Filters.eq("isActive", true));
+
+        String result = subQuery.toString(NamingPolicy.SNAKE_CASE);
+        Assertions.assertTrue(result.contains("first_name, last_name"));
+        Assertions.assertTrue(result.contains("FROM user_account"));
+        Assertions.assertTrue(result.contains("is_active"));
     }
 
     @Test
@@ -233,6 +267,16 @@ public class SubQueryTest extends TestBase {
         Assertions.assertFalse(subQuery1.equals(subQuery4));
         Assertions.assertFalse(subQuery1.equals(null));
         Assertions.assertFalse(subQuery1.equals("not a SubQuery"));
+    }
+
+    @Test
+    public void testEqualsAndHashCodeIncludeEntityClass() {
+        List<String> props = Arrays.asList("id");
+        SubQuery classBased = Filters.subQuery(TestEntity.class, props, Filters.eq("active", true));
+        SubQuery nameBased = Filters.subQuery("TestEntity", props, Filters.eq("active", true));
+
+        Assertions.assertNotEquals(classBased, nameBased);
+        Assertions.assertNotEquals(classBased.hashCode(), nameBased.hashCode());
     }
 
     @Test

@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.NamingPolicy;
+
 /**
  * Represents the SQL SOME operator for use with subqueries.
  * The SOME operator returns {@code true} if the comparison is true for at least one
@@ -99,5 +102,13 @@ public class Some extends Cell {
      */
     public Some(final SubQuery subQuery) {
         super(Operator.SOME, subQuery);
+    }
+
+    @Override
+    public String toString(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+        final Condition condition = getCondition();
+        final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
+        return getOperator().toString() + SK._SPACE + SK._PARENTHESES_L + conditionString + SK._PARENTHESES_R;
     }
 }

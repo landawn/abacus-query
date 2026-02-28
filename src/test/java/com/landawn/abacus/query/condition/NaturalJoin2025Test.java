@@ -190,7 +190,7 @@ public class NaturalJoin2025Test extends TestBase {
     }
 
     @Test
-    public void testAutomaticColumnMatching() {
+    public void testAutomaticColumcountMatchBetweening() {
         NaturalJoin join = new NaturalJoin("customers");
         assertNotNull(join);
         assertNull(join.getCondition());

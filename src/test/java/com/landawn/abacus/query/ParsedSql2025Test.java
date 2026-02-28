@@ -254,6 +254,15 @@ public class ParsedSql2025Test extends TestBase {
     }
 
     @Test
+    public void testParse_Call() {
+        ParsedSql parsed = ParsedSql.parse("CALL refresh_user(:userId, :mode)");
+        assertEquals("CALL refresh_user(?, ?)", parsed.getParameterizedSql());
+        assertEquals(2, parsed.getParameterCount());
+        assertEquals("userId", parsed.getNamedParameters().get(0));
+        assertEquals("mode", parsed.getNamedParameters().get(1));
+    }
+
+    @Test
     public void testParse_NonQueryStatement() {
         ParsedSql parsed = ParsedSql.parse("CREATE TABLE users (id INT)");
         assertEquals("CREATE TABLE users (id INT)", parsed.getParameterizedSql());

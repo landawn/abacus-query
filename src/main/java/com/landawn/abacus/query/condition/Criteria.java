@@ -129,6 +129,21 @@ public class Criteria extends AbstractCondition {
      * Gets all JOIN clauses in this criteria.
      * Returns all types of joins (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) in the order they were added.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria()
+     *     .join("orders", new On("users.id", "orders.user_id"))
+     *     .join("payments", new On("orders.id", "payments.order_id"));
+     *
+     * List<Join> joins = criteria.getJoins();
+     * // Returns a list of 2 Join conditions
+     * System.out.println(joins.size());   // 2
+     *
+     * Criteria noJoins = new Criteria().where(Filters.eq("status", "active"));
+     * List<Join> empty = noJoins.getJoins();
+     * // Returns an empty list
+     * }</pre>
+     *
      * @return a list of Join conditions, empty list if none exist
      */
     public List<Join> getJoins() {
@@ -146,7 +161,19 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets the WHERE clause from this criteria.
      * Returns null if no WHERE clause has been set.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria()
+     *     .where(Filters.eq("status", "active"));
+     *
+     * Cell whereClause = criteria.getWhere();
+     * // Returns the Where condition wrapping: status = 'active'
+     *
+     * Criteria noWhere = new Criteria().orderBy("name");
+     * Cell result = noWhere.getWhere();   // Returns null
+     * }</pre>
+     *
      * @return the Where condition, or null if not set
      */
     public Cell getWhere() {
@@ -156,7 +183,19 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets the GROUP BY clause from this criteria.
      * Returns null if no GROUP BY clause has been set.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria()
+     *     .groupBy("department", "location");
+     *
+     * Cell groupByClause = criteria.getGroupBy();
+     * // Returns the GroupBy condition for: department, location
+     *
+     * Criteria noGroupBy = new Criteria().where(Filters.eq("active", true));
+     * Cell result = noGroupBy.getGroupBy();   // Returns null
+     * }</pre>
+     *
      * @return the GroupBy condition, or null if not set
      */
     public Cell getGroupBy() {
@@ -166,7 +205,20 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets the HAVING clause from this criteria.
      * Returns null if no HAVING clause has been set.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria()
+     *     .groupBy("department")
+     *     .having("COUNT(*) > 5");
+     *
+     * Cell havingClause = criteria.getHaving();
+     * // Returns the Having condition wrapping: COUNT(*) > 5
+     *
+     * Criteria noHaving = new Criteria().groupBy("category");
+     * Cell result = noHaving.getHaving();   // Returns null
+     * }</pre>
+     *
      * @return the Having condition, or null if not set
      */
     public Cell getHaving() {
@@ -176,7 +228,24 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets all aggregation operations (UNION, UNION ALL, INTERSECT, EXCEPT, MINUS).
      * These are set operations that combine results from multiple queries.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users");
+     * SubQuery tempUsers = Filters.subQuery("SELECT * FROM temp_users");
+     * Criteria criteria = new Criteria()
+     *     .where(Filters.eq("active", true))
+     *     .union(archivedUsers)
+     *     .unionAll(tempUsers);
+     *
+     * List<Cell> aggregations = criteria.getAggregation();
+     * // Returns a list of 2 aggregation conditions (UNION and UNION ALL)
+     *
+     * Criteria noAgg = new Criteria().where(Filters.eq("status", "active"));
+     * List<Cell> empty = noAgg.getAggregation();
+     * // Returns an empty list
+     * }</pre>
+     *
      * @return a list of aggregation conditions, empty if none exist
      */
     public List<Cell> getAggregation() {
@@ -203,6 +272,18 @@ public class Criteria extends AbstractCondition {
      * Gets the ORDER BY clause from this criteria.
      * Returns null if no ORDER BY clause has been set.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria()
+     *     .orderBy("name", SortDirection.ASC);
+     *
+     * Cell orderByClause = criteria.getOrderBy();
+     * // Returns the OrderBy condition for: name ASC
+     *
+     * Criteria noOrderBy = new Criteria().where(Filters.eq("active", true));
+     * Cell result = noOrderBy.getOrderBy();   // Returns null
+     * }</pre>
+     *
      * @return the OrderBy condition, or null if not set
      */
     public Cell getOrderBy() {
@@ -212,7 +293,20 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets the LIMIT clause from this criteria.
      * Returns null if no LIMIT clause has been set.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria()
+     *     .where(Filters.eq("active", true))
+     *     .limit(50);
+     *
+     * Limit limitClause = criteria.getLimit();
+     * // Returns the Limit condition for: LIMIT 50
+     *
+     * Criteria noLimit = new Criteria().where(Filters.eq("status", "active"));
+     * Limit result = noLimit.getLimit();   // Returns null
+     * }</pre>
+     *
      * @return the Limit condition, or null if not set
      */
     public Limit getLimit() {
@@ -222,7 +316,23 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets all conditions in this criteria.
      * Returns all conditions in the order they were added, including all clauses.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria()
+     *     .where(Filters.eq("status", "active"))
+     *     .orderBy("name")
+     *     .limit(10);
+     *
+     * List<Condition> conditions = criteria.getConditions();
+     * // Returns a list of 3 conditions: Where, OrderBy, Limit
+     * System.out.println(conditions.size());   // 3
+     *
+     * Criteria empty = new Criteria();
+     * List<Condition> none = empty.getConditions();
+     * // Returns an empty list
+     * }</pre>
+     *
      * @return a list of all conditions
      */
     public List<Condition> getConditions() {
@@ -232,6 +342,23 @@ public class Criteria extends AbstractCondition {
     /**
      * Gets all conditions with the specified operator.
      * Useful for retrieving all conditions of a specific type.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria()
+     *     .join("orders", new On("users.id", "orders.user_id"))
+     *     .join("payments", new On("orders.id", "payments.order_id"))
+     *     .where(Filters.eq("status", "active"));
+     *
+     * List<Condition> joins = criteria.get(Operator.JOIN);
+     * // Returns a list of 2 Join conditions
+     *
+     * List<Condition> wheres = criteria.get(Operator.WHERE);
+     * // Returns a list of 1 Where condition
+     *
+     * List<Condition> limits = criteria.get(Operator.LIMIT);
+     * // Returns an empty list (no LIMIT clause set)
+     * }</pre>
      *
      * @param operator the operator to filter by (must not be null)
      * @return a list of conditions with the specified operator, empty list if none found
@@ -304,7 +431,22 @@ public class Criteria extends AbstractCondition {
     /**
      * Clears all conditions from this criteria.
      * After calling this method, the criteria will be empty and can be rebuilt.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = new Criteria()
+     *     .where(Filters.eq("status", "active"))
+     *     .orderBy("name")
+     *     .limit(10);
+     *
+     * criteria.clear();
+     * // criteria is now empty; preselect is also reset to null
+     *
+     * // Rebuild the criteria with new conditions
+     * criteria.where(Filters.gt("age", 21))
+     *         .limit(20);
+     * }</pre>
+     *
      */
     public void clear() {
         preselect = null;
@@ -617,6 +759,10 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria where(final Condition condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition cannot be null");
+        }
+
         if (condition.getOperator() == Operator.WHERE) {
             add(condition);
         } else {
@@ -663,6 +809,10 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria groupBy(final Condition condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition cannot be null");
+        }
+
         if (condition.getOperator() == Operator.GROUP_BY) {
             add(condition);
         } else {
@@ -849,6 +999,10 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria having(final Condition condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition cannot be null");
+        }
+
         if (condition.getOperator() == Operator.HAVING) {
             add(condition);
         } else {
@@ -976,6 +1130,10 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria orderBy(final Condition condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition cannot be null");
+        }
+
         if (condition.getOperator() == Operator.ORDER_BY) {
             add(condition);
         } else {

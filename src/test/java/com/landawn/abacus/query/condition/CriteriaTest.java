@@ -139,6 +139,11 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
+    public void testWhereStringWithNullCondition() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.criteria().where((String) null));
+    }
+
+    @Test
     public void testWhereWithWhereCondition() {
         Where whereCondition = Filters.where(Filters.eq("id", 1));
         Criteria criteria = Filters.criteria().where(whereCondition);
@@ -146,6 +151,11 @@ public class CriteriaTest extends TestBase {
         Cell where = criteria.getWhere();
         Assertions.assertNotNull(where);
         Assertions.assertEquals(whereCondition, where);
+    }
+
+    @Test
+    public void testWhereWithNullCondition() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.criteria().where((Condition) null));
     }
 
     @Test
@@ -197,6 +207,11 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
+    public void testGroupByWithNullCondition() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.criteria().groupBy((Condition) null));
+    }
+
+    @Test
     public void testHaving() {
         GreaterThan gt = Filters.gt("COUNT(*)", 5);
         Criteria criteria = Filters.criteria().having(gt);
@@ -214,6 +229,16 @@ public class CriteriaTest extends TestBase {
         Cell having = criteria.getHaving();
         Assertions.assertNotNull(having);
         Assertions.assertTrue(having.getCondition() instanceof Expression);
+    }
+
+    @Test
+    public void testHavingStringWithNullCondition() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.criteria().having((String) null));
+    }
+
+    @Test
+    public void testHavingWithNullCondition() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.criteria().having((Condition) null));
     }
 
     @Test
@@ -259,6 +284,11 @@ public class CriteriaTest extends TestBase {
 
         Cell orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
+    }
+
+    @Test
+    public void testOrderByWithNullCondition() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.criteria().orderBy((Condition) null));
     }
 
     @Test

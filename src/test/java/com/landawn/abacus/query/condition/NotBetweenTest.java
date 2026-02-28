@@ -139,7 +139,7 @@ public class NotBetweenTest extends TestBase {
         String result = notBetween.toString();
         Assertions.assertTrue(result.contains("age"));
         Assertions.assertTrue(result.contains("NOT BETWEEN"));
-        Assertions.assertTrue(result.contains("(18, 65)"));
+        Assertions.assertTrue(result.contains("18 AND 65"));
     }
 
     @Test

@@ -115,8 +115,7 @@ public class Exists2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE status = 'active'");
         Exists condition = new Exists(subQuery);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
-        assertTrue(result.contains("EXISTS"));
-        assertTrue(result.contains("SELECT"));
+        assertEquals("EXISTS (SELECT 1 FROM orders WHERE status = 'active')", result);
     }
 
     @Test

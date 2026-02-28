@@ -80,8 +80,7 @@ public class SomeTest extends TestBase {
         Some some = Filters.some(subQuery);
 
         String result = some.toString();
-        Assertions.assertTrue(result.contains("SOME"));
-        Assertions.assertTrue(result.contains("SELECT level FROM requirements"));
+        Assertions.assertEquals("SOME (SELECT level FROM requirements)", result);
     }
 
     @Test

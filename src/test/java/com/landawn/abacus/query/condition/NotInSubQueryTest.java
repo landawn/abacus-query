@@ -53,6 +53,23 @@ public class NotInSubQueryTest extends TestBase {
     }
 
     @Test
+    public void testConstructorWithMultiplePropertiesRejectsInvalidElements() {
+        SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.notIn(Arrays.asList("firstName", null), subQuery));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.notIn(Arrays.asList("firstName", ""), subQuery));
+    }
+
+    @Test
+    public void testGetPropNamesIsUnmodifiable() {
+        List<String> propNames = Arrays.asList("firstName", "lastName");
+        SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
+        NotInSubQuery condition = Filters.notIn(propNames, subQuery);
+
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> condition.getPropNames().add("middleName"));
+    }
+
+    @Test
     public void testConstructorWithEmptyPropNames() {
         List<String> propNames = Arrays.asList();
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");

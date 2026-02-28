@@ -876,6 +876,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         if (N.notEmpty(_propOrColumnNames)) {
             insertColumnNames = _propOrColumnNames;
+        } else if (N.notEmpty(_propOrColumnNameAliases)) {
+            insertColumnNames = _propOrColumnNameAliases.keySet();
+        } else if (N.notEmpty(_multiSelects)) {
+            final List<String> allPropNames = new ArrayList<>();
+
+            for (final Selection selection : _multiSelects) {
+                final Collection<String> selectPropNames = N.notEmpty(selection.selectPropNames()) ? selection.selectPropNames()
+                        : QueryUtil.getSelectPropNames(selection.entityClass(), selection.includeSubEntityProperties(), selection.excludedPropNames());
+                allPropNames.addAll(selectPropNames);
+            }
+
+            insertColumnNames = allPropNames;
         } else {
             final Map<String, Object> localProps = N.isEmpty(_props) ? _propsList.iterator().next() : _props;
             insertColumnNames = localProps.keySet();
@@ -892,72 +904,77 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _sb.append(SK._PARENTHESES_R);
 
-        _sb.append(_SPACE_VALUES_SPACE);
+        if (_op == OperationType.ADD) {
+            _sb.append(_SPACE_VALUES_SPACE);
 
-        _sb.append(SK._PARENTHESES_L);
+            _sb.append(SK._PARENTHESES_L);
 
-        if (N.notEmpty(_propOrColumnNames)) {
-            switch (_sqlPolicy) {
-                case SQL:
-                case PARAMETERIZED_SQL: {
-                    for (int i = 0, size = insertColumnNames.size(); i < size; i++) {
-                        if (i > 0) {
-                            _sb.append(_COMMA_SPACE);
+            if (N.notEmpty(_propOrColumnNames)) {
+                switch (_sqlPolicy) {
+                    case SQL:
+                    case PARAMETERIZED_SQL: {
+                        for (int i = 0, size = insertColumnNames.size(); i < size; i++) {
+                            if (i > 0) {
+                                _sb.append(_COMMA_SPACE);
+                            }
+
+                            _sb.append(SK._QUESTION_MARK);
                         }
 
-                        _sb.append(SK._QUESTION_MARK);
+                        break;
                     }
 
-                    break;
-                }
+                    case NAMED_SQL: {
+                        int i = 0;
+                        for (final String columnName : insertColumnNames) {
+                            if (i++ > 0) {
+                                _sb.append(_COMMA_SPACE);
+                            }
 
-                case NAMED_SQL: {
-                    int i = 0;
-                    for (final String columnName : insertColumnNames) {
-                        if (i++ > 0) {
-                            _sb.append(_COMMA_SPACE);
+                            _handlerForNamedParameter.accept(_sb, columnName);
                         }
 
-                        _handlerForNamedParameter.accept(_sb, columnName);
+                        break;
                     }
 
-                    break;
-                }
+                    case IBATIS_SQL: {
+                        int i = 0;
+                        for (final String columnName : insertColumnNames) {
+                            if (i++ > 0) {
+                                _sb.append(_COMMA_SPACE);
+                            }
 
-                case IBATIS_SQL: {
-                    int i = 0;
-                    for (final String columnName : insertColumnNames) {
-                        if (i++ > 0) {
-                            _sb.append(_COMMA_SPACE);
+                            _sb.append("#{");
+                            _sb.append(columnName);
+                            _sb.append('}');
                         }
 
-                        _sb.append("#{");
-                        _sb.append(columnName);
-                        _sb.append('}');
+                        break;
                     }
 
-                    break;
+                    default:
+                        throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy); //NOSONAR
                 }
+            } else if (N.notEmpty(_props)) {
+                appendInsertProps(_props, insertColumnNames);
+            } else {
+                int i = 0;
+                for (final Map<String, Object> localProps : _propsList) {
+                    if (i++ > 0) {
+                        _sb.append(SK._PARENTHESES_R);
+                        _sb.append(_COMMA_SPACE);
+                        _sb.append(SK._PARENTHESES_L);
+                    }
 
-                default:
-                    throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy); //NOSONAR
+                    appendInsertProps(localProps, insertColumnNames);
+                }
             }
-        } else if (N.notEmpty(_props)) {
-            appendInsertProps(_props, insertColumnNames);
-        } else {
-            int i = 0;
-            for (final Map<String, Object> localProps : _propsList) {
-                if (i++ > 0) {
-                    _sb.append(SK._PARENTHESES_R);
-                    _sb.append(_COMMA_SPACE);
-                    _sb.append(SK._PARENTHESES_L);
-                }
 
-                appendInsertProps(localProps, insertColumnNames);
-            }
+            _sb.append(SK._PARENTHESES_R);
         }
-
-        _sb.append(SK._PARENTHESES_R);
+        // When _op is QUERY (i.e., select().into().from()), skip the VALUES clause.
+        // The subsequent from() call will append "SELECT ... FROM ..." to produce:
+        // INSERT INTO target (cols) SELECT cols FROM source
 
         return (This) this;
     }
@@ -1319,17 +1336,45 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             throw new IllegalStateException("Column names must be set by select() before calling from()");
         }
 
-        final int idx = tableName.indexOf(' ');
+        final String trimmedTableName = tableName.trim();
+        int idx = -1;
+
+        if (trimmedTableName.charAt(0) == '(') {
+            // For subquery expressions like "(SELECT * FROM users) t", find the closing parenthesis first
+            int depth = 0;
+            for (int i = 0; i < trimmedTableName.length(); i++) {
+                final char ch = trimmedTableName.charAt(i);
+                if (ch == '(') {
+                    depth++;
+                } else if (ch == ')') {
+                    depth--;
+                    if (depth == 0) {
+                        // Find the space after the closing parenthesis
+                        final int spaceIdx = trimmedTableName.indexOf(' ', i + 1);
+                        if (spaceIdx > 0) {
+                            idx = spaceIdx;
+                        }
+                        break;
+                    }
+                }
+            }
+        } else {
+            idx = trimmedTableName.indexOf(' ');
+        }
 
         if (idx > 0) {
-            _tableName = tableName.substring(0, idx).trim();
-            _tableAlias = tableName.substring(idx + 1).trim();
+            _tableName = trimmedTableName.substring(0, idx).trim();
+            _tableAlias = trimmedTableName.substring(idx + 1).trim();
         } else {
-            _tableName = tableName.trim();
+            _tableName = trimmedTableName;
         }
 
         if (_entityClass != null && Strings.isNotEmpty(_tableAlias)) {
             addPropColumnMapForAlias(_entityClass, _tableAlias);
+        }
+
+        if (!_sb.isEmpty() && _sb.charAt(_sb.length() - 1) != ' ') {
+            _sb.append(_SPACE);
         }
 
         _sb.append(_SELECT);
@@ -3693,8 +3738,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets columns for UPDATE operation with a collection.
-     * Generates parameterized placeholders (?, :name, or #{name}) based on SQL policy.
+     * Sets columns for UPDATE operation with a collection of property or column names.
+     * Generates parameterized placeholders ({@code ?}, {@code :name}, or {@code #{name}}) based on the SQL policy.
+     * If a column name already contains an {@code =} sign, it is treated as a raw SET expression and no placeholder is appended.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("firstName", "lastName", "email");
+     * String sql = PSC.update("users")
+     *                 .set(columns)
+     *                 .where("id = ?")
+     *                 .sql();
+     * // Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?
+     * }</pre>
      *
      * @param propOrColumnNames the collection of columns to update
      * @return this SQLBuilder instance for method chaining
@@ -4941,11 +4997,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
             }
         } else if (isForSelect) {
-            int index = propName.indexOf(" AS ");
-
-            if (index < 0) {
-                index = propName.indexOf(" as ");
-            }
+            int index = Strings.indexOfIgnoreCase(propName, " AS ");
 
             if (index > 0) {
                 //noinspection ConstantValue
@@ -5167,9 +5219,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets a custom handler for formatting named parameters in SQL strings.
-     * The default handler formats parameters as ":paramName".
-     * 
-     * @param handlerForNamedParameter the handler to format named parameters
+     * The default handler formats parameters as {@code :paramName}.
+     * This is a thread-local setting, so each thread can have its own handler.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Use MyBatis-style named parameters: #{paramName}
+     * AbstractQueryBuilder.setHandlerForNamedParameter(
+     *     (sb, propName) -> sb.append("#{").append(propName).append("}"));
+     *
+     * // Reset to default when done
+     * AbstractQueryBuilder.resetHandlerForNamedParameter();
+     * }</pre>
+     *
+     * @param handlerForNamedParameter the handler to format named parameters; must not be null
      * @throws IllegalArgumentException if handlerForNamedParameter is null
      */
     public static void setHandlerForNamedParameter(final BiConsumer<StringBuilder, String> handlerForNamedParameter) {

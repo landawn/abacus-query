@@ -156,6 +156,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * @param condition the condition to OR with this condition
      * @return a new Or condition containing both conditions
+     * @throws IllegalArgumentException if {@code condition} is null
      */
     @Override
     public Or or(final Condition condition) {

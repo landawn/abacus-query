@@ -103,13 +103,13 @@ public class ExpressionTest extends TestBase {
     @Test
     public void testBetween() {
         String result = Expression.between("age", 18, 65);
-        Assertions.assertEquals("age BETWEEN (18, 65)", result);
+        Assertions.assertEquals("age BETWEEN 18 AND 65", result);
     }
 
     @Test
     public void testBt() {
         String result = Expression.bt("price", 10.0, 50.0);
-        Assertions.assertEquals("price BETWEEN (10.0, 50.0)", result);
+        Assertions.assertEquals("price BETWEEN 10.0 AND 50.0", result);
     }
 
     @Test

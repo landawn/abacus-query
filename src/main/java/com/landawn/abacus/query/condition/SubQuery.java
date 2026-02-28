@@ -19,6 +19,7 @@ import static com.landawn.abacus.query.SK._SPACE;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import com.landawn.abacus.query.Filters;
@@ -81,7 +82,7 @@ public class SubQuery extends AbstractCondition {
     // For Kryo
     final Class<?> entityClass;
 
-    private Collection<String> propNames;
+    private List<String> propNames;
 
     // For Kryo
     final String sql;
@@ -188,7 +189,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityName the entity/table name
      * @param propNames collection of property names to select
      * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
-     * @throws IllegalArgumentException if entityName is null or empty, or if propNames is null
+     * @throws IllegalArgumentException if entityName is null or empty, if propNames is null,
+     *             or if propNames contains null/empty names
      */
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
@@ -196,13 +198,10 @@ public class SubQuery extends AbstractCondition {
         if (Strings.isEmpty(entityName)) {
             throw new IllegalArgumentException("Entity name cannot be null or empty");
         }
-        if (propNames == null) {
-            throw new IllegalArgumentException("Property names cannot be null");
-        }
 
         this.entityName = entityName;
         this.entityClass = null;
-        this.propNames = new ArrayList<>(propNames);
+        this.propNames = copyAndValidatePropNames(propNames);
 
         if (condition == null || CriteriaUtil.isClause(condition)) {
             this.condition = condition;
@@ -242,7 +241,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityClass the entity class
      * @param propNames collection of property names to select
      * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
-     * @throws IllegalArgumentException if entityClass is null, or if propNames is null
+     * @throws IllegalArgumentException if entityClass is null, if propNames is null,
+     *             or if propNames contains null/empty names
      */
     public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
@@ -250,13 +250,10 @@ public class SubQuery extends AbstractCondition {
         if (entityClass == null) {
             throw new IllegalArgumentException("Entity class cannot be null");
         }
-        if (propNames == null) {
-            throw new IllegalArgumentException("Property names cannot be null");
-        }
 
         this.entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
-        this.propNames = new ArrayList<>(propNames);
+        this.propNames = copyAndValidatePropNames(propNames);
         if (condition == null || CriteriaUtil.isClause(condition)) {
             this.condition = condition;
         } else {
@@ -270,6 +267,19 @@ public class SubQuery extends AbstractCondition {
      * Returns the raw SQL script if this is a raw SQL subquery.
      * For structured subqueries created with entity name/class and conditions, this returns {@code null}.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Raw SQL subquery
+     * SubQuery rawQuery = new SubQuery("SELECT id FROM users WHERE status = 'active'");
+     * String sql = rawQuery.getSql();
+     * // Returns: "SELECT id FROM users WHERE status = 'active'"
+     *
+     * // Structured subquery returns null for getSql()
+     * SubQuery structured = new SubQuery("users", Arrays.asList("id"), Filters.eq("status", "active"));
+     * String structuredSql = structured.getSql();
+     * // Returns: null
+     * }</pre>
+     *
      * @return the SQL script, or {@code null} if this is a structured subquery
      */
     public String getSql() {
@@ -282,6 +292,24 @@ public class SubQuery extends AbstractCondition {
      * created with an entity name parameter. For raw SQL subqueries created without
      * an entity name, this may be empty.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Structured subquery with entity name
+     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), Filters.eq("active", true));
+     * String entityName = subQuery.getEntityName();
+     * // Returns: "users"
+     *
+     * // Raw SQL subquery with entity name
+     * SubQuery rawQuery = new SubQuery("orders", "SELECT order_id FROM orders WHERE total > 1000");
+     * String name = rawQuery.getEntityName();
+     * // Returns: "orders"
+     *
+     * // Raw SQL subquery without entity name
+     * SubQuery simpleRaw = new SubQuery("SELECT id FROM users");
+     * String emptyName = simpleRaw.getEntityName();
+     * // Returns: "" (empty string)
+     * }</pre>
+     *
      * @return the entity/table name, or an empty string if not set
      */
     public String getEntityName() {
@@ -291,6 +319,19 @@ public class SubQuery extends AbstractCondition {
     /**
      * Gets the entity class if this subquery was created with a class reference.
      * This provides type information for subqueries constructed using the class-based constructor.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Subquery created with entity class
+     * SubQuery subQuery = new SubQuery(Product.class, Arrays.asList("id", "name"), Filters.eq("active", true));
+     * Class<?> entityClass = subQuery.getEntityClass();
+     * // Returns: Product.class
+     *
+     * // Subquery created with entity name string returns null
+     * SubQuery namedQuery = new SubQuery("products", Arrays.asList("id"), Filters.eq("active", true));
+     * Class<?> clazz = namedQuery.getEntityClass();
+     * // Returns: null
+     * }</pre>
      *
      * @return the entity class, or {@code null} if created with entity name string or raw SQL
      */
@@ -303,16 +344,61 @@ public class SubQuery extends AbstractCondition {
      * These are the columns that will appear in the SELECT clause of the generated SQL.
      * For raw SQL subqueries, this returns {@code null}.
      *
-     * @return collection of property names to select, or {@code null} for raw SQL subqueries
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Structured subquery with selected properties
+     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "email", "name"), Filters.eq("active", true));
+     * Collection<String> propNames = subQuery.getSelectPropNames();
+     * // Returns: ["id", "email", "name"]
+     *
+     * // Raw SQL subquery returns null
+     * SubQuery rawQuery = new SubQuery("SELECT id FROM users WHERE active = true");
+     * Collection<String> rawProps = rawQuery.getSelectPropNames();
+     * // Returns: null
+     * }</pre>
+     *
+     * @return unmodifiable collection of property names to select, or {@code null} for raw SQL subqueries
      */
     public Collection<String> getSelectPropNames() {
-        return propNames;
+        return propNames == null ? null : Collections.unmodifiableList(propNames);
+    }
+
+    private static List<String> copyAndValidatePropNames(final Collection<String> propNames) {
+        if (propNames == null) {
+            throw new IllegalArgumentException("Property names cannot be null");
+        }
+
+        final List<String> result = new ArrayList<>(propNames.size());
+
+        for (final String propName : propNames) {
+            if (Strings.isEmpty(propName)) {
+                throw new IllegalArgumentException("Property name in propNames cannot be null or empty");
+            }
+
+            result.add(propName);
+        }
+
+        return result;
     }
 
     /**
      * Gets the WHERE condition for this subquery.
      * This condition is applied when generating the SQL for structured subqueries.
      * For raw SQL subqueries or subqueries without conditions, this returns {@code null}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Structured subquery with condition
+     * Condition activeCondition = Filters.eq("active", true);
+     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), activeCondition);
+     * Condition condition = subQuery.getCondition();
+     * // Returns the wrapped WHERE condition: WHERE active = true
+     *
+     * // Raw SQL subquery returns null for getCondition()
+     * SubQuery rawQuery = new SubQuery("SELECT id FROM users WHERE active = true");
+     * Condition rawCondition = rawQuery.getCondition();
+     * // Returns: null
+     * }</pre>
      *
      * @return the WHERE condition, or {@code null} if no condition or raw SQL subquery
      */
@@ -381,6 +467,7 @@ public class SubQuery extends AbstractCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         if (sql == null) {
+            final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
@@ -395,7 +482,7 @@ public class SubQuery extends AbstractCondition {
                             sb.append(COMMA_SPACE);
                         }
 
-                        sb.append(propName);
+                        sb.append(effectiveNamingPolicy.convert(propName));
                     }
                 } else {
                     sb.append("*");
@@ -405,12 +492,12 @@ public class SubQuery extends AbstractCondition {
                 sb.append(SK.FROM);
 
                 sb.append(_SPACE);
-                sb.append(entityName);
+                sb.append(effectiveNamingPolicy.convert(entityName));
 
                 if (condition != null) {
                     sb.append(_SPACE);
 
-                    sb.append(condition.toString(namingPolicy));
+                    sb.append(condition.toString(effectiveNamingPolicy));
                 }
 
                 return sb.toString();
@@ -426,16 +513,17 @@ public class SubQuery extends AbstractCondition {
     /**
      * Generates the hash code for this subquery.
      * The hash code is based on the SQL string (for raw queries) or the combination
-     * of entity name, properties, and condition (for structured queries),
+     * of entity name/class, properties, and condition (for structured queries),
      * ensuring consistent hashing for equivalent subqueries.
      *
-     * @return hash code based on sql, entity name, properties, and condition
+     * @return hash code based on sql, entity name/class, properties, and condition
      */
     @Override
     public int hashCode() {
         int h = 17;
         h = (h * 31) + ((sql == null) ? 0 : sql.hashCode());
         h = (h * 31) + ((entityName == null) ? 0 : entityName.hashCode());
+        h = (h * 31) + ((entityClass == null) ? 0 : entityClass.hashCode());
         h = (h * 31) + ((propNames == null) ? 0 : propNames.hashCode());
         return (h * 31) + ((condition == null) ? 0 : condition.hashCode());
     }
@@ -443,7 +531,7 @@ public class SubQuery extends AbstractCondition {
     /**
      * Checks if this subquery is equal to another object.
      * Two subqueries are equal if they have the same SQL (for raw queries) or the same
-     * entity name, properties, and condition (for structured queries).
+     * entity name/class, properties, and condition (for structured queries).
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
@@ -455,8 +543,8 @@ public class SubQuery extends AbstractCondition {
         }
 
         if (obj instanceof final SubQuery other) {
-            return N.equals(sql, other.sql) && N.equals(entityName, other.entityName) && N.equals(propNames, other.propNames)
-                    && N.equals(condition, other.condition);
+            return N.equals(sql, other.sql) && N.equals(entityName, other.entityName) && N.equals(entityClass, other.entityClass)
+                    && N.equals(propNames, other.propNames) && N.equals(condition, other.condition);
         }
 
         return false;

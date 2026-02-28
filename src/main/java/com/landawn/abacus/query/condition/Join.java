@@ -18,9 +18,9 @@ import static com.landawn.abacus.query.SK._SPACE;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
-import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
@@ -196,7 +196,7 @@ public class Join extends AbstractCondition {
      * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
      */
     protected Join(final Operator operator, final String joinEntity, final Condition condition) {
-        this(operator, Array.asList(joinEntity), condition);
+        this(operator, Collections.singletonList(joinEntity), condition);
     }
 
     /**
@@ -227,7 +227,7 @@ public class Join extends AbstractCondition {
      *
      * @param joinEntities the collection of tables or entities to join with
      * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if joinEntities is null or empty
+     * @throws IllegalArgumentException if joinEntities is null/empty or contains null/empty elements
      */
     public Join(final Collection<String> joinEntities, final Condition condition) {
         this(Operator.JOIN, joinEntities, condition);
@@ -256,15 +256,40 @@ public class Join extends AbstractCondition {
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition condition) {
         super(operator);
 
+        this.joinEntities = copyAndValidateJoinEntities(joinEntities);
+        this.condition = condition;
+    }
+
+    private static List<String> copyAndValidateJoinEntities(final Collection<String> joinEntities) {
         N.checkArgNotEmpty(joinEntities, "joinEntities");
 
-        this.joinEntities = new ArrayList<>(joinEntities);
-        this.condition = condition;
+        final List<String> copy = new ArrayList<>(joinEntities.size());
+
+        for (final String joinEntity : joinEntities) {
+            N.checkArgNotEmpty(joinEntity, "joinEntity in joinEntities");
+            copy.add(joinEntity);
+        }
+
+        return copy;
     }
 
     /**
      * Gets the list of tables or entities involved in this join.
      * Returns a defensive copy of the tables that are being joined, including any aliases.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Single table join
+     * Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
+     * List<String> entities = join.getJoinEntities();
+     * // Returns: ["orders o"]
+     *
+     * // Multi-table join
+     * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
+     *     new On("o.id", "oi.order_id"));
+     * List<String> multiEntities = multiJoin.getJoinEntities();
+     * // Returns: ["orders o", "order_items oi"]
+     * }</pre>
      *
      * @return a copy of the list of join entities
      */
@@ -276,6 +301,20 @@ public class Join extends AbstractCondition {
      * Gets the join condition.
      * Returns the condition that specifies how the tables are related.
      * May return null if no condition was specified (natural join or cross join).
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Join with ON condition
+     * On onCondition = new On("customers.id", "o.customer_id");
+     * Join join = new Join("orders o", onCondition);
+     * Condition condition = join.getCondition();
+     * // Returns the On condition: ON customers.id = o.customer_id
+     *
+     * // Join without condition
+     * Join simpleJoin = new Join("products");
+     * Condition noCondition = simpleJoin.getCondition();
+     * // Returns: null
+     * }</pre>
      *
      * @param <T> the type of the condition
      * @return the join condition, or null if no condition is specified
@@ -361,10 +400,7 @@ public class Join extends AbstractCondition {
         int h = 17;
         h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         h = (h * 31) + ((joinEntities == null) ? 0 : joinEntities.hashCode());
-
-        if (condition != null) {
-            h = (h * 31) + condition.hashCode();
-        }
+        h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
 
         return h;
     }

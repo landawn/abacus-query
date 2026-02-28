@@ -138,7 +138,6 @@ public class And extends Junction {
     /**
      * Creates a new AND condition by adding another condition to this AND.
      * This method returns a new AND instance containing all existing conditions plus the new one.
-     * The original AND condition remains unchanged (immutable).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

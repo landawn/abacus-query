@@ -34,6 +34,14 @@ public class RightJoinTest extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsInvalidEntities() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin((String) null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin(""));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin(Arrays.asList("products", null), Filters.on("a", "b")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin(Arrays.asList("products", ""), Filters.on("a", "b")));
+    }
+
+    @Test
     public void testConstructorWithComplexCondition() {
         And complexCondition = Filters.and(Filters.on("orders.product_id", "products.id"), Filters.eq("products.active", true));
         RightJoin join = Filters.rightJoin("products", complexCondition);

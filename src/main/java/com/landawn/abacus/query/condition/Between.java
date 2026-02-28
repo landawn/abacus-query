@@ -42,13 +42,13 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * // Numeric range
  * Between ageRange = new Between("age", 18, 65);
- * // SQL: age BETWEEN (18, 65)
+ * // SQL: age BETWEEN 18 AND 65
  *
  * // Date range for current year
  * Between yearRange = new Between("orderDate",
  *     LocalDate.of(2024, 1, 1),
  *     LocalDate.of(2024, 12, 31));
- * // SQL: orderDate BETWEEN ('2024-01-01', '2024-12-31')
+ * // SQL: orderDate BETWEEN '2024-01-01' AND '2024-12-31'
  *
  * // Price range with subqueries
  * SubQuery minPrice = Filters.subQuery("SELECT MIN(price) FROM products");
@@ -58,7 +58,7 @@ import com.landawn.abacus.util.Strings;
  *
  * // String range (alphabetical)
  * Between nameRange = new Between("lastName", "A", "M");
- * // SQL: lastName BETWEEN ('A', 'M')
+ * // SQL: lastName BETWEEN 'A' AND 'M'
  * }</pre>
  * 
  * @see AbstractCondition
@@ -128,7 +128,16 @@ public class Between extends AbstractCondition {
 
     /**
      * Gets the property name being checked.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Between ageRange = new Between("age", 18, 65);
+     * String name = ageRange.getPropName();   // "age"
+     *
+     * Between dateRange = new Between("orderDate", "2024-01-01", "2024-12-31");
+     * String dateName = dateRange.getPropName();   // "orderDate"
+     * }</pre>
+     *
      * @return the property name
      */
     public String getPropName() {
@@ -138,7 +147,16 @@ public class Between extends AbstractCondition {
     /**
      * Gets the minimum value of the range.
      * The returned value can be safely cast to its expected type.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Between ageRange = new Between("age", 18, 65);
+     * Integer min = ageRange.getMinValue();   // 18
+     *
+     * Between priceRange = new Between("price", 9.99, 99.99);
+     * Double minPrice = priceRange.getMinValue();   // 9.99
+     * }</pre>
+     *
      * @param <T> the expected type of the minimum value
      * @return the minimum value (inclusive)
      */
@@ -150,6 +168,16 @@ public class Between extends AbstractCondition {
     /**
      * Sets the minimum value of the range.
      * This method should generally not be used as conditions should be immutable.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Deprecated: prefer creating a new Between instead
+     * Between range = new Between("age", 18, 65);
+     * range.setMinValue(21);   // Not recommended
+     *
+     * // Preferred approach: create a new Between
+     * Between newRange = new Between("age", 21, 65);
+     * }</pre>
      *
      * @param minValue the new minimum value
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -163,7 +191,16 @@ public class Between extends AbstractCondition {
     /**
      * Gets the maximum value of the range.
      * The returned value can be safely cast to its expected type.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Between ageRange = new Between("age", 18, 65);
+     * Integer max = ageRange.getMaxValue();   // 65
+     *
+     * Between priceRange = new Between("price", 9.99, 99.99);
+     * Double maxPrice = priceRange.getMaxValue();   // 99.99
+     * }</pre>
+     *
      * @param <T> the expected type of the maximum value
      * @return the maximum value (inclusive)
      */
@@ -175,6 +212,16 @@ public class Between extends AbstractCondition {
     /**
      * Sets the maximum value of the range.
      * This method should generally not be used as conditions should be immutable.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Deprecated: prefer creating a new Between instead
+     * Between range = new Between("age", 18, 65);
+     * range.setMaxValue(70);   // Not recommended
+     *
+     * // Preferred approach: create a new Between
+     * Between newRange = new Between("age", 18, 70);
+     * }</pre>
      *
      * @param maxValue the new maximum value
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -259,17 +306,17 @@ public class Between extends AbstractCondition {
 
     /**
      * Returns a string representation of this BETWEEN condition using the specified naming policy.
-     * The format is: propertyName BETWEEN (minValue, maxValue)
+     * The format is: propertyName BETWEEN minValue AND maxValue
      * 
      * @param namingPolicy the naming policy to apply to the property name
-     * @return a string representation like "propertyName BETWEEN (minValue, maxValue)"
+     * @return a string representation like "propertyName BETWEEN minValue AND maxValue"
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
 
-        return effectiveNamingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L
-                + parameter2String(minValue, effectiveNamingPolicy) + SK.COMMA_SPACE + parameter2String(maxValue, effectiveNamingPolicy) + SK._PARENTHESES_R;
+        return effectiveNamingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK._SPACE + parameter2String(minValue, effectiveNamingPolicy)
+                + SK._SPACE + SK.AND + SK._SPACE + parameter2String(maxValue, effectiveNamingPolicy);
     }
 
     /**

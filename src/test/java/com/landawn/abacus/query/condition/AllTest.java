@@ -36,8 +36,7 @@ public class AllTest extends TestBase {
         All all = Filters.all(subQuery);
 
         String result = all.toString();
-        Assertions.assertTrue(result.contains("ALL"));
-        Assertions.assertTrue(result.contains("SELECT price FROM competitor_products"));
+        Assertions.assertEquals("ALL (SELECT price FROM competitor_products)", result);
     }
 
     @Test

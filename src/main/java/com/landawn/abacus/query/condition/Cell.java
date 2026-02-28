@@ -82,6 +82,18 @@ public class Cell extends AbstractCondition {
      * Gets the wrapped condition.
      * The returned condition can be cast to its specific type if needed.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Create a NOT cell wrapping an equality condition
+     * Cell notCell = new Cell(Operator.NOT, Filters.eq("status", "active"));
+     * Condition inner = notCell.getCondition();   // the Equal condition for status = 'active'
+     *
+     * // Create an EXISTS cell with a subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
+     * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
+     * SubQuery sq = existsCell.getCondition();   // the SubQuery instance
+     * }</pre>
+     *
      * @param <T> the type of condition to return
      * @return the wrapped condition, cast to the specified type
      */
@@ -93,7 +105,17 @@ public class Cell extends AbstractCondition {
     /**
      * Sets the wrapped condition.
      * This method should generally not be used as conditions should be immutable.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Deprecated: prefer creating a new Cell instead
+     * Cell notCell = new Cell(Operator.NOT, Filters.eq("status", "active"));
+     * notCell.setCondition(Filters.eq("status", "inactive"));   // Not recommended
+     *
+     * // Preferred approach: create a new Cell
+     * Cell newNotCell = new Cell(Operator.NOT, Filters.eq("status", "inactive"));
+     * }</pre>
+     *
      * @param condition the new condition to wrap
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
@@ -116,9 +138,6 @@ public class Cell extends AbstractCondition {
     /**
      * Clears all parameter values by setting them to null to free memory.
      * This method delegates to the wrapped condition's clearParameters method.
-     *
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
      *
      */
     @Override

@@ -339,6 +339,22 @@ public class SQLParserTest extends TestBase {
     }
 
     @Test
+    public void testRegisterSeparatorStringWithNewLeadingChar() {
+        SQLParser.registerSeparator("$$");
+
+        List<String> words = SQLParser.parse("SELECT$$FROM$$users");
+        assertEquals(Arrays.asList("SELECT", "$$", "FROM", "$$", "users"), words);
+    }
+
+    @Test
+    public void testRegisterLongSeparatorString() {
+        SQLParser.registerSeparator("~~~~");
+
+        List<String> words = SQLParser.parse("SELECT~~~~FROM~~~~users");
+        assertEquals(Arrays.asList("SELECT", "~~~~", "FROM", "~~~~", "users"), words);
+    }
+
+    @Test
     public void testIsSeparator() {
         String str = "SELECT * FROM users WHERE id = #{userId}";
         int len = str.length();

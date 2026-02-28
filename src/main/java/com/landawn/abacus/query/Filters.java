@@ -182,7 +182,7 @@ import com.landawn.abacus.util.N;
  *     <td>Subquery Operations</td>
  *     <td>EXISTS, NOT EXISTS</td>
  *     <td>exists(), notExists()</td>
- *     <td>exists("SELECT 1 FROM orders WHERE ...")</td>
+ *     <td>exists(subQuery("SELECT 1 FROM orders WHERE ..."))</td>
  *   </tr>
  * </table>
  *
@@ -227,7 +227,7 @@ import com.landawn.abacus.util.N;
  *
  * // Subquery conditions for complex business logic
  * Condition hasOrders = Filters.exists(
- *     "SELECT 1 FROM orders WHERE customer_id = customers.id AND status = 'COMPLETED'"
+ *     Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = customers.id AND status = 'COMPLETED'")
  * );
  * }</pre>
  *
@@ -258,8 +258,8 @@ import com.landawn.abacus.util.N;
  *
  *         if (criteria.getSkills() != null && !criteria.getSkills().isEmpty()) {
  *             conditions.add(Filters.exists(
- *                 "SELECT 1 FROM user_skills WHERE user_id = users.id AND skill IN (" +
- *                 criteria.getSkills().stream().map(s -> "?").collect(Collectors.joining(",")) + ")"
+ *                 Filters.subQuery("SELECT 1 FROM user_skills WHERE user_id = users.id AND skill IN (" +
+ *                 criteria.getSkills().stream().map(s -> "?").collect(Collectors.joining(",")) + ")")
  *             ));
  *         }
  *
@@ -977,7 +977,10 @@ public class Filters {
     public static Or eqAndOr(final Collection<?> entities) {
         N.checkArgNotEmpty(entities, "entities");
 
-        return eqAndOr(entities, QueryUtil.getSelectPropNames(N.firstNonNull(entities).orElseNull().getClass(), false, null));
+        final Object firstNonNull = N.firstNonNull(entities)
+                .orElseThrow(() -> new IllegalArgumentException("All elements in the specified entities are null."));
+
+        return eqAndOr(entities, QueryUtil.getSelectPropNames(firstNonNull.getClass(), false, null));
     }
 
     /**

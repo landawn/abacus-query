@@ -36,6 +36,14 @@ public class JoinTest extends TestBase {
     }
 
     @Test
+    public void testConstructorWithInvalidJoinEntity() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join((String) null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(""));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join((String) null, Filters.eq("a", "b")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("", Filters.eq("a", "b")));
+    }
+
+    @Test
     public void testConstructorWithMultipleEntities() {
         List<String> entities = Arrays.asList("orders o", "customers c");
         Condition condition = Filters.eq("o.customer_id", "c.id");
@@ -45,6 +53,14 @@ public class JoinTest extends TestBase {
         Assertions.assertEquals(2, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().containsAll(entities));
         Assertions.assertEquals(condition, join.getCondition());
+    }
+
+    @Test
+    public void testConstructorWithMultipleEntitiesRejectsInvalidElements() {
+        Condition condition = Filters.eq("o.customer_id", "c.id");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders o", null), condition));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders o", ""), condition));
     }
 
     @Test

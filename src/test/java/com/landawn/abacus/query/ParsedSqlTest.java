@@ -221,6 +221,18 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
+    public void testParse_callStatement() {
+        String sql = "CALL refresh_user(:userId, :mode)";
+        ParsedSql parsed = ParsedSql.parse(sql);
+
+        Assertions.assertEquals("CALL refresh_user(?, ?)", parsed.getParameterizedSql());
+        List<String> namedParams = parsed.getNamedParameters();
+        Assertions.assertEquals(2, namedParams.size());
+        Assertions.assertEquals("userId", namedParams.get(0));
+        Assertions.assertEquals("mode", namedParams.get(1));
+    }
+
+    @Test
     public void testParse_nullSql_throwsException() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             ParsedSql.parse(null);

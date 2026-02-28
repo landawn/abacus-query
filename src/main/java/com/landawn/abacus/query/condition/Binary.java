@@ -39,7 +39,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>{@link LessThan} - property &lt; value</li>
  *   <li>{@link LessEqual} - property &lt;= value</li>
  *   <li>{@link Like} - property LIKE value</li>
- *   <li>{@link In} - property IN (values)</li>
+ *   <li>{@link NotLike} - property NOT LIKE value</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>
@@ -108,7 +108,16 @@ public class Binary extends AbstractCondition {
     /**
      * Gets the property name being compared.
      * This is the left-hand side of the binary operation.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Binary eq = new Equal("age", 25);
+     * String name = eq.getPropName();   // "age"
+     *
+     * Binary like = new Like("email", "%@example.com");
+     * String likeName = like.getPropName();   // "email"
+     * }</pre>
+     *
      * @return the property name
      */
     public String getPropName() {
@@ -119,7 +128,21 @@ public class Binary extends AbstractCondition {
      * Gets the value being compared against.
      * The value can be a literal value or a Condition (for subqueries).
      * The returned value can be safely cast to its expected type.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Binary eq = new Equal("age", 25);
+     * Integer value = eq.getPropValue();   // 25
+     *
+     * Binary like = new Like("name", "%John%");
+     * String pattern = like.getPropValue();   // "%John%"
+     *
+     * // With a subquery as value
+     * SubQuery subQuery = Filters.subQuery("SELECT MAX(salary) FROM employees");
+     * Binary gt = new GreaterThan("salary", subQuery);
+     * SubQuery sub = gt.getPropValue();   // the SubQuery instance
+     * }</pre>
+     *
      * @param <T> the expected type of the value
      * @return the property value, cast to the requested type
      */
@@ -131,6 +154,16 @@ public class Binary extends AbstractCondition {
     /**
      * Sets the value being compared against.
      * This method should generally not be used as conditions should be immutable.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Deprecated: prefer creating a new condition instead
+     * Binary eq = new Equal("status", "active");
+     * eq.setPropValue("inactive");   // Not recommended
+     *
+     * // Preferred approach: create a new condition
+     * Binary newEq = new Equal("status", "inactive");
+     * }</pre>
      *
      * @param propValue the new property value
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.

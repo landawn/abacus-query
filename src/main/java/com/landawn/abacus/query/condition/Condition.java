@@ -78,7 +78,19 @@ public interface Condition {
      * <p>Each condition has exactly one operator that defines its behavior.
      * For example, an Equal condition has the EQUAL operator, while an
      * And condition has the AND operator.</p>
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition eq = Filters.eq("status", "active");
+     * Operator op = eq.getOperator();   // Operator.EQUAL
+     *
+     * Condition between = Filters.between("age", 18, 65);
+     * Operator betweenOp = between.getOperator();   // Operator.BETWEEN
+     *
+     * Condition combined = eq.and(between);
+     * Operator andOp = combined.getOperator();   // Operator.AND
+     * }</pre>
+     *
      * @return the operator for this condition
      */
     Operator getOperator();
@@ -141,6 +153,7 @@ public interface Condition {
      * 
      * @param condition the condition to OR with this condition
      * @return a new Or condition containing both conditions
+     * @throws IllegalArgumentException if {@code condition} is null
      */
     Or or(Condition condition);
 
@@ -179,6 +192,20 @@ public interface Condition {
      * <p>The exact copy depth depends on the concrete implementation. Implementations should
      * ensure copied instances are safe to use independently for query construction.</p>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition original = Filters.eq("name", "John");
+     * Condition copied = original.copy();
+     *
+     * // The copy is independent of the original
+     * original.clearParameters();
+     * List<Object> copiedParams = copied.getParameters();   // ["John"] - still intact
+     *
+     * // Copy a complex condition
+     * Condition complex = Filters.and(Filters.gt("age", 18), Filters.eq("status", "active"));
+     * Condition complexCopy = complex.copy();
+     * }</pre>
+     *
      * @param <T> the type of condition to return
      * @return a copy of this condition
      */
@@ -187,7 +214,19 @@ public interface Condition {
     /**
      * Gets the list of parameter values associated with this condition.
      * Parameters are the actual values used in comparisons (e.g., the "John" in name = "John").
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition eq = Filters.eq("name", "John");
+     * List<Object> params = eq.getParameters();   // ["John"]
+     *
+     * Condition between = Filters.between("age", 18, 65);
+     * List<Object> rangeParams = between.getParameters();   // [18, 65]
+     *
+     * Condition combined = Filters.and(eq, between);
+     * List<Object> allParams = combined.getParameters();   // ["John", 18, 65]
+     * }</pre>
+     *
      * @return a list of parameter values, never null
      */
     List<Object> getParameters();
@@ -199,13 +238,41 @@ public interface Condition {
      * Use this method to release large objects when the condition is no longer needed.
      * This is the only mutating operation allowed on otherwise immutable conditions.</p>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition eq = Filters.eq("name", "John");
+     * List<Object> params = eq.getParameters();   // ["John"]
+     *
+     * // Release parameter memory when the condition is no longer needed
+     * eq.clearParameters();
+     * List<Object> cleared = eq.getParameters();   // [null]
+     *
+     * // For compound conditions, clears parameters recursively
+     * Condition combined = Filters.and(Filters.gt("age", 18), Filters.eq("status", "active"));
+     * combined.clearParameters();   // Clears parameters in both child conditions
+     * }</pre>
+     *
      */
     void clearParameters();
 
     /**
      * Returns a string representation of this condition using the specified naming policy.
      * The naming policy determines how property names are formatted in the output.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition eq = Filters.eq("firstName", "John");
+     *
+     * // No change to property names
+     * String noChange = eq.toString(NamingPolicy.NO_CHANGE);       // "firstName = 'John'"
+     *
+     * // Convert to lower case with underscores (snake_case)
+     * String lower = eq.toString(NamingPolicy.SNAKE_CASE);   // "first_name = 'John'"
+     *
+     * // Convert to upper case with underscores (SCREAMING_SNAKE_CASE)
+     * String upper = eq.toString(NamingPolicy.SCREAMING_SNAKE_CASE);   // "FIRST_NAME = 'John'"
+     * }</pre>
+     *
      * @param namingPolicy the policy for formatting property names
      * @return a string representation of this condition
      */

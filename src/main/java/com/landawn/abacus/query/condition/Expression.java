@@ -97,8 +97,9 @@ import com.landawn.abacus.util.Strings;
  * String upperName = Expression.upper("name");
  * String avgPrice = Expression.average("price");
  * 
- * // Complex expressions
- * String complex = Expression.plus("base_price", "tax", "shipping");
+ * // Complex expressions (use Expression.of() for column references to avoid quoting)
+ * String complex = Expression.plus(Expression.of("base_price"), Expression.of("tax"), Expression.of("shipping"));
+ * // Returns: "base_price + tax + shipping"
  * }</pre>
  *
  * @see AbstractCondition
@@ -167,6 +168,18 @@ public class Expression extends AbstractCondition {
     /**
      * Gets the SQL literal string of this expression.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Expression expr = new Expression("price * quantity");
+     * String literal = expr.getLiteral();   // Returns "price * quantity"
+     *
+     * Expression expr2 = Expression.of("CURRENT_TIMESTAMP");
+     * String literal2 = expr2.getLiteral();   // Returns "CURRENT_TIMESTAMP"
+     *
+     * Expression empty = new Expression(null);
+     * String literal3 = empty.getLiteral();   // Returns null
+     * }</pre>
+     *
      * @return the SQL expression string
      */
     public String getLiteral() {
@@ -190,8 +203,13 @@ public class Expression extends AbstractCondition {
      *
      * @param literal the SQL expression string
      * @return a cached or new Expression instance
+     * @throws IllegalArgumentException if literal is null
      */
     public static Expression of(final String literal) {
+        if (literal == null) {
+            throw new IllegalArgumentException("literal cannot be null");
+        }
+
         return cachedExpression.computeIfAbsent(literal, Expression::new);
     }
 
@@ -422,10 +440,10 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String expr = Expression.between("age", 18, 65);
-     * // Returns: "age BETWEEN (18, 65)"
+     * // Returns: "age BETWEEN 18 AND 65"
      * 
      * String expr2 = Expression.between("price", 10.0, 50.0);
-     * // Returns: "price BETWEEN (10.0, 50.0)"
+     * // Returns: "price BETWEEN 10.0 AND 50.0"
      * }</pre>
      *
      * @param literal the literal to test
@@ -443,7 +461,7 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String expr = Expression.bt("score", 60, 100);
-     * // Returns: "score BETWEEN (60, 100)"
+     * // Returns: "score BETWEEN 60 AND 100"
      * }</pre>
      *
      * @param literal the literal to test
@@ -484,6 +502,12 @@ public class Expression extends AbstractCondition {
     /**
      * Creates an IS NULL expression for the specified literal.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String expr = Expression.isNull("email");          // Returns: "email IS NULL"
+     * String expr2 = Expression.isNull("middle_name");   // Returns: "middle_name IS NULL"
+     * }</pre>
+     *
      * @param literal the literal to check for null
      * @return a string representation of the IS NULL expression
      */
@@ -493,6 +517,12 @@ public class Expression extends AbstractCondition {
 
     /**
      * Creates an IS NOT NULL expression for the specified literal.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String expr = Expression.isNotNull("email");    // Returns: "email IS NOT NULL"
+     * String expr2 = Expression.isNotNull("phone");   // Returns: "phone IS NOT NULL"
+     * }</pre>
      *
      * @param literal the literal to check for not null
      * @return a string representation of the IS NOT NULL expression
@@ -505,6 +535,12 @@ public class Expression extends AbstractCondition {
      * Creates an IS EMPTY expression for the specified literal.
      * This checks if a value is empty (blank).
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String expr = Expression.isEmpty("description");   // Returns: "description IS BLANK"
+     * String expr2 = Expression.isEmpty("address");      // Returns: "address IS BLANK"
+     * }</pre>
+     *
      * @param literal the literal to check for emptiness
      * @return a string representation of the IS EMPTY expression
      */
@@ -515,6 +551,12 @@ public class Expression extends AbstractCondition {
     /**
      * Creates an IS NOT EMPTY expression for the specified literal.
      * This checks if a value is not empty (not blank).
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String expr = Expression.isNotEmpty("name");      // Returns: "name IS NOT BLANK"
+     * String expr2 = Expression.isNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
+     * }</pre>
      *
      * @param literal the literal to check for non-emptiness
      * @return a string representation of the IS NOT EMPTY expression
@@ -566,10 +608,11 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.plus("price", "tax", "shipping");
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.plus(Expression.of("price"), Expression.of("tax"), Expression.of("shipping"));
      * // Returns: "price + tax + shipping"
-     * 
-     * String expr2 = Expression.plus("base_salary", 5000, "bonus");
+     *
+     * String expr2 = Expression.plus(Expression.of("base_salary"), 5000, Expression.of("bonus"));
      * // Returns: "base_salary + 5000 + bonus"
      * }</pre>
      *
@@ -586,10 +629,11 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.minus("total", "discount", "tax_credit");
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.minus(Expression.of("total"), Expression.of("discount"), Expression.of("tax_credit"));
      * // Returns: "total - discount - tax_credit"
-     * 
-     * String expr2 = Expression.minus("price", 10);
+     *
+     * String expr2 = Expression.minus(Expression.of("price"), 10);
      * // Returns: "price - 10"
      * }</pre>
      *
@@ -606,10 +650,11 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.multi("price", "quantity", "tax_rate");
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.multi(Expression.of("price"), Expression.of("quantity"), Expression.of("tax_rate"));
      * // Returns: "price * quantity * tax_rate"
-     * 
-     * String expr2 = Expression.multi("hours", 60);
+     *
+     * String expr2 = Expression.multi(Expression.of("hours"), 60);
      * // Returns: "hours * 60"
      * }</pre>
      *
@@ -626,10 +671,11 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.division("total", "count");
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.division(Expression.of("total"), Expression.of("count"));
      * // Returns: "total / count"
-     * 
-     * String expr2 = Expression.division("distance", "time", 60);
+     *
+     * String expr2 = Expression.division(Expression.of("distance"), Expression.of("time"), 60);
      * // Returns: "distance / time / 60"
      * }</pre>
      *
@@ -646,10 +692,11 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.modulus("value", 10);
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.modulus(Expression.of("value"), 10);
      * // Returns: "value % 10"
-     * 
-     * String expr2 = Expression.modulus("id", "batch_size");
+     *
+     * String expr2 = Expression.modulus(Expression.of("id"), Expression.of("batch_size"));
      * // Returns: "id % batch_size"
      * }</pre>
      *
@@ -666,7 +713,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lShift("flags", 2);
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.lShift(Expression.of("flags"), 2);
      * // Returns: "flags << 2"
      * }</pre>
      *
@@ -683,7 +731,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.rShift("value", 4);
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.rShift(Expression.of("value"), 4);
      * // Returns: "value >> 4"
      * }</pre>
      *
@@ -699,10 +748,11 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.bitwiseAnd("permissions", "mask");
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.bitwiseAnd(Expression.of("permissions"), Expression.of("mask"));
      * // Returns: "permissions & mask"
-     * 
-     * String expr2 = Expression.bitwiseAnd("flags", 0xFF);
+     *
+     * String expr2 = Expression.bitwiseAnd(Expression.of("flags"), 0xFF);
      * // Returns: "flags & 255"
      * }</pre>
      *
@@ -718,7 +768,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.bitwiseOr("flags1", "flags2");
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.bitwiseOr(Expression.of("flags1"), Expression.of("flags2"));
      * // Returns: "flags1 | flags2"
      * }</pre>
      *
@@ -734,7 +785,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.bitwiseXOr("value1", "value2");
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.bitwiseXOr(Expression.of("value1"), Expression.of("value2"));
      * // Returns: "value1 ^ value2"
      * }</pre>
      *
@@ -785,11 +837,12 @@ public class Expression extends AbstractCondition {
             sb.append(literal);
             sb.append(SK._SPACE);
             sb.append(operator.getName());
-            sb.append(SK.SPACE_PARENTHESES_L);
+            sb.append(SK._SPACE);
             sb.append(formalize(min));
-            sb.append(SK.COMMA_SPACE);
+            sb.append(SK._SPACE);
+            sb.append(SK.AND);
+            sb.append(SK._SPACE);
             sb.append(formalize(max));
-            sb.append(SK._PARENTHESES_R);
 
             return sb.toString();
         } finally {

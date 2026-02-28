@@ -180,28 +180,28 @@ public class BetweenTest extends TestBase {
     public void testToString() {
         Between between = Filters.between("age", 18, 65);
         String result = between.toString();
-        Assertions.assertEquals("age BETWEEN (18, 65)", result);
+        Assertions.assertEquals("age BETWEEN 18 AND 65", result);
     }
 
     @Test
     public void testToStringWithStrings() {
         Between between = Filters.between("grade", "A", "C");
         String result = between.toString();
-        Assertions.assertEquals("grade BETWEEN ('A', 'C')", result);
+        Assertions.assertEquals("grade BETWEEN 'A' AND 'C'", result);
     }
 
     @Test
     public void testToStringWithNulls() {
         Between between = Filters.between("value", null, 100);
         String result = between.toString();
-        Assertions.assertEquals("value BETWEEN (null, 100)", result);
+        Assertions.assertEquals("value BETWEEN null AND 100", result);
     }
 
     @Test
     public void testToStringWithNamingPolicy() {
         Between between = Filters.between("orderDate", "2023-01-01", "2023-12-31");
         String result = between.toString(NamingPolicy.SNAKE_CASE);
-        Assertions.assertEquals("order_date BETWEEN ('2023-01-01', '2023-12-31')", result);
+        Assertions.assertEquals("order_date BETWEEN '2023-01-01' AND '2023-12-31'", result);
     }
 
     @Test

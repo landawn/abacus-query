@@ -36,8 +36,7 @@ public class AnyTest extends TestBase {
         Any any = Filters.any(subQuery);
 
         String result = any.toString();
-        Assertions.assertTrue(result.contains("ANY"));
-        Assertions.assertTrue(result.contains("SELECT budget FROM departments"));
+        Assertions.assertEquals("ANY (SELECT budget FROM departments)", result);
     }
 
     @Test

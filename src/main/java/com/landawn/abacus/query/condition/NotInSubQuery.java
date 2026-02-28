@@ -16,6 +16,7 @@ package com.landawn.abacus.query.condition;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -149,15 +150,14 @@ public class NotInSubQuery extends AbstractCondition {
      *                  Must not be null or empty.
      * @param subQuery the subquery that returns the values to check against. Must not be null.
      *                 Must return the same number of columns as propNames.size().
-     * @throws IllegalArgumentException if propNames is null or empty, or if subQuery is null
+     * @throws IllegalArgumentException if propNames is null/empty, if any element is null/empty, or if subQuery is null
      */
     public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(Operator.NOT_IN);
 
-        N.checkArgNotEmpty(propNames, "propNames");
         N.checkArgNotNull(subQuery, "subQuery");
 
-        this.propNames = new ArrayList<>(propNames);
+        this.propNames = copyAndValidatePropNames(propNames);
         this.subQuery = subQuery;
         propName = null;
     }
@@ -165,6 +165,19 @@ public class NotInSubQuery extends AbstractCondition {
     /**
      * Gets the property name for single-property NOT IN conditions.
      * Returns null if this is a multi-property condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
+     * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
+     * String propName = condition.getPropName();
+     * // Returns: "userId"
+     *
+     * // For multi-property conditions, getPropName() returns null
+     * NotInSubQuery multiProp = new NotInSubQuery(Arrays.asList("country", "city"), subQuery);
+     * String name = multiProp.getPropName();
+     * // Returns: null
+     * }</pre>
      *
      * @return the property name, or null if this is a multi-property condition
      */
@@ -176,15 +189,49 @@ public class NotInSubQuery extends AbstractCondition {
      * Gets the property names for multi-property NOT IN conditions.
      * Returns null if this is a single-property condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery restricted = Filters.subQuery("SELECT country, city FROM restricted_locations");
+     * NotInSubQuery condition = new NotInSubQuery(Arrays.asList("country", "city"), restricted);
+     * Collection<String> propNames = condition.getPropNames();
+     * // Returns: ["country", "city"]
+     *
+     * // For single-property conditions, getPropNames() returns null
+     * NotInSubQuery singleProp = new NotInSubQuery("userId", restricted);
+     * Collection<String> names = singleProp.getPropNames();
+     * // Returns: null
+     * }</pre>
+     *
      * @return collection of property names, or null if this is a single-property condition
      */
     public Collection<String> getPropNames() {
         return propNames;
     }
 
+    private static Collection<String> copyAndValidatePropNames(final Collection<String> propNames) {
+        N.checkArgNotEmpty(propNames, "propNames");
+
+        final List<String> copy = new ArrayList<>(propNames.size());
+
+        for (final String propName : propNames) {
+            N.checkArgNotEmpty(propName, "Property name in propNames");
+            copy.add(propName);
+        }
+
+        return Collections.unmodifiableList(copy);
+    }
+
     /**
      * Gets the subquery used in this NOT IN condition.
      * The subquery defines the set of values to exclude from the results.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery deletedItems = Filters.subQuery("SELECT id FROM deleted_items");
+     * NotInSubQuery condition = new NotInSubQuery("itemId", deletedItems);
+     * SubQuery retrieved = condition.getSubQuery();
+     * // Returns the SubQuery: "SELECT id FROM deleted_items"
+     * }</pre>
      *
      * @return the subquery
      */
@@ -206,6 +253,19 @@ public class NotInSubQuery extends AbstractCondition {
      *   <li>Shared conditions modified this way can cause race conditions</li>
      * </ul>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery originalQuery = Filters.subQuery("SELECT id FROM blocked_users");
+     * NotInSubQuery condition = new NotInSubQuery("userId", originalQuery);
+     *
+     * // Replace subquery (deprecated - prefer creating a new NotInSubQuery instance instead)
+     * SubQuery newQuery = Filters.subQuery("SELECT id FROM suspended_users");
+     * condition.setSubQuery(newQuery);
+     *
+     * // Preferred approach: create a new NotInSubQuery instance
+     * NotInSubQuery updatedCondition = new NotInSubQuery("userId", newQuery);
+     * }</pre>
+     *
      * @param subQuery the new subquery to set. Must not be null.
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      *             Create a new NotInSubQuery instance instead of modifying existing conditions.
@@ -226,19 +286,19 @@ public class NotInSubQuery extends AbstractCondition {
      */
     @Override
     public List<Object> getParameters() {
-        return subQuery.getParameters();
+        return subQuery == null ? N.emptyList() : subQuery.getParameters();
     }
 
     /**
      * Clears all parameter values by setting them to null to free memory.
-     * 
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
-     * 
+     * This method delegates to the wrapped subquery's clearParameters method.
+     *
      */
     @Override
     public void clearParameters() {
-        subQuery.clearParameters();
+        if (subQuery != null) {
+            subQuery.clearParameters();
+        }
     }
 
     /**
@@ -253,7 +313,9 @@ public class NotInSubQuery extends AbstractCondition {
     public <T extends Condition> T copy() {
         final NotInSubQuery copy = super.copy();
 
-        copy.subQuery = subQuery.copy();
+        if (subQuery != null) {
+            copy.subQuery = subQuery.copy();
+        }
 
         return (T) copy;
     }

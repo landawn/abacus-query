@@ -72,6 +72,13 @@ public class NotInSubQuery2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructor_MultiplePropertiesRejectsInvalidElements() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+        assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery(Arrays.asList("firstName", null), subQuery));
+        assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery(Arrays.asList("firstName", ""), subQuery));
+    }
+
+    @Test
     public void testConstructor_NullPropNames() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery((Collection<String>) null, subQuery));
@@ -94,6 +101,15 @@ public class NotInSubQuery2025Test extends TestBase {
         Collection<String> propNames = condition.getPropNames();
         assertNotNull(propNames);
         assertEquals(2, propNames.size());
+    }
+
+    @Test
+    public void testGetPropNames_Unmodifiable() {
+        List<String> props = Arrays.asList("country", "city");
+        SubQuery subQuery = Filters.subQuery("SELECT country, city FROM restricted_locations");
+        NotInSubQuery condition = new NotInSubQuery(props, subQuery);
+
+        assertThrows(UnsupportedOperationException.class, () -> condition.getPropNames().add("zip"));
     }
 
     @Test

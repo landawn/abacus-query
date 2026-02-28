@@ -116,7 +116,7 @@ public class On extends Cell {
      * );
      * On on2 = new On(complexCondition);
      * LeftJoin join2 = new LeftJoin("customers", on2);
-     * // Generates: LEFT JOIN customers ON (orders.customer_id = customers.id) AND (orders.order_date BETWEEN '2024-01-01' AND '2024-12-31') AND (customers.status != 'DELETED')
+     * // Generates: LEFT JOIN customers ON ((orders.customer_id = customers.id) AND (orders.order_date BETWEEN ('2024-01-01', '2024-12-31')) AND (customers.status != 'DELETED'))
      *
      * // Range join for salary bands
      * Condition rangeJoin = Filters.and(

@@ -40,6 +40,26 @@ public class InSubQueryTest extends TestBase {
     }
 
     @Test
+    public void testConstructorWithMultiplePropNamesRejectsInvalidElements() {
+        SubQuery subQuery = Filters.subQuery("SELECT dept_id, loc_id FROM valid_assignments");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("department_id", null), subQuery));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("department_id", ""), subQuery));
+    }
+
+    @Test
+    public void testMultiplePropNamesAreDefensivelyCopiedAndUnmodifiable() {
+        List<String> propNames = new ArrayList<>(Arrays.asList("city", "state"));
+        SubQuery subQuery = Filters.subQuery("SELECT city, state FROM locations");
+        InSubQuery condition = new InSubQuery(propNames, subQuery);
+
+        propNames.add("country");
+
+        Assertions.assertEquals(Arrays.asList("city", "state"), condition.getPropNames().stream().toList());
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> condition.getPropNames().add("zip"));
+    }
+
+    @Test
     public void testGetPropName() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
         InSubQuery condition = new InSubQuery("user_id", subQuery);

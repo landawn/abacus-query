@@ -231,6 +231,22 @@ public final class SQLMapper {
     /**
      * Retrieves the parsed SQL associated with the specified identifier.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     *
+     * ParsedSql sql = mapper.get("findAccountById");
+     * if (sql != null) {
+     *     String parameterizedSql = sql.getParameterizedSql();
+     *     // Use with PreparedStatement
+     *     PreparedStatement stmt = connection.prepareStatement(parameterizedSql);
+     * }
+     *
+     * // Returns null for unknown ids
+     * ParsedSql unknown = mapper.get("nonExistentId");
+     * // unknown is null
+     * }</pre>
+     *
      * @param id the SQL identifier to look up
      * @return the ParsedSql object, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found
      */
@@ -245,6 +261,22 @@ public final class SQLMapper {
     /**
      * Retrieves the attributes associated with the specified SQL identifier.
      * Attributes may include batchSize, fetchSize, resultSetType, timeout, etc.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql>
+     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     *
+     * ImmutableMap<String, String> attrs = mapper.getAttrs("batchInsert");
+     * if (attrs != null) {
+     *     String batchSize = attrs.get("batchSize");   // "100"
+     *     String timeout = attrs.get("timeout");       // "30"
+     * }
+     *
+     * // Returns null for unknown ids
+     * ImmutableMap<String, String> unknown = mapper.getAttrs("nonExistentId");
+     * // unknown is null
+     * }</pre>
      *
      * @param id the SQL identifier to look up
      * @return an immutable map of attribute names to values, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found
@@ -279,6 +311,8 @@ public final class SQLMapper {
     public ParsedSql add(final String id, final ParsedSql sql) {
         checkId(id);
         N.checkArgNotNull(sql, "sql");
+
+        attrsMap.put(id, ImmutableMap.empty());
 
         return sqlMap.put(id, sql);
     }
@@ -363,6 +397,17 @@ public final class SQLMapper {
      * The copy contains references to the same ParsedSql objects and attribute maps from the original.
      * Modifications to one mapper (adding/removing entries) will not affect the other.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper original = SQLMapper.fromFile("sql/queries.xml");
+     * SQLMapper copy = original.copy();
+     *
+     * // Modifications to the copy do not affect the original
+     * copy.add("newQuery", ParsedSql.parse("SELECT 1"));
+     * boolean originalHasIt = original.get("newQuery") != null;  // false
+     * boolean copyHasIt = copy.get("newQuery") != null;          // true
+     * }</pre>
+     *
      * @return a new SQLMapper instance with the same SQL definitions and attributes
      */
     public SQLMapper copy() {
@@ -438,6 +483,15 @@ public final class SQLMapper {
 
     /**
      * Checks if this mapper contains no SQL definitions.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SQLMapper emptyMapper = new SQLMapper();
+     * boolean empty = emptyMapper.isEmpty();  // true
+     *
+     * SQLMapper loadedMapper = SQLMapper.fromFile("sql/queries.xml");
+     * boolean hasEntries = !loadedMapper.isEmpty();  // true (assuming file has SQL definitions)
+     * }</pre>
      *
      * @return {@code true} if the mapper contains no SQL definitions, {@code false} otherwise
      */

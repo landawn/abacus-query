@@ -126,6 +126,13 @@ public class In extends AbstractCondition {
     /**
      * Gets the property name being checked in this IN condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In statusFilter = new In("status", Arrays.asList("active", "pending"));
+     * String propName = statusFilter.getPropName();
+     * // Returns: "status"
+     * }</pre>
+     *
      * @return the property name, or {@code null} for an uninitialized instance created by serialization frameworks
      */
     public String getPropName() {
@@ -135,6 +142,17 @@ public class In extends AbstractCondition {
     /**
      * Gets the values used by this IN condition.
      * The returned list is the internal storage and may be mutable.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In idFilter = new In("user_id", Arrays.asList(1, 2, 3, 5, 8));
+     * List<?> values = idFilter.getValues();
+     * // Returns: [1, 2, 3, 5, 8]
+     *
+     * In statusFilter = new In("status", Arrays.asList("active", "pending"));
+     * List<?> statuses = statusFilter.getValues();
+     * // Returns: ["active", "pending"]
+     * }</pre>
      *
      * @return the internal values list, or {@code null} for an uninitialized instance
      */
@@ -157,6 +175,17 @@ public class In extends AbstractCondition {
      *   <li>Shared conditions modified this way can cause race conditions</li>
      * </ul>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In statusFilter = new In("status", Arrays.asList("active", "pending"));
+     *
+     * // Replace values (deprecated - prefer creating a new In instance instead)
+     * statusFilter.setValues(Arrays.asList("approved", "completed"));
+     *
+     * // Preferred approach: create a new In instance
+     * In updatedFilter = new In("status", Arrays.asList("approved", "completed"));
+     * }</pre>
+     *
      * @param values the new list of values. Must not be null or empty.
      * @throws IllegalArgumentException if values is null or empty
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
@@ -166,7 +195,7 @@ public class In extends AbstractCondition {
     public void setValues(final List<?> values) {
         N.checkArgNotEmpty(values, "values");
 
-        this.values = values;
+        this.values = new ArrayList<>(values);
     }
 
     /**
