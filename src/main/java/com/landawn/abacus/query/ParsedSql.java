@@ -147,7 +147,7 @@ public final class ParsedSql {
 
             Objectory.recycle(sb);
         } else {
-            final String tmpSql = Strings.stripToEmpty(sql);
+            final String tmpSql = Strings.stripToEmpty(this.sql);
             parameterizedSql = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
             namedParameters = ImmutableList.empty();
         }
@@ -483,7 +483,7 @@ public final class ParsedSql {
             couchbaseNamedParameters = ImmutableList.empty();
             couchbaseParameterCount = 0;
 
-            final String tmpCouchbaseSql = Strings.stripToEmpty(sql);
+            final String tmpCouchbaseSql = Strings.stripToEmpty(this.sql);
             couchbaseParameterizedSql = tmpCouchbaseSql.endsWith(";") ? tmpCouchbaseSql.substring(0, tmpCouchbaseSql.length() - 1) : tmpCouchbaseSql;
         }
     }

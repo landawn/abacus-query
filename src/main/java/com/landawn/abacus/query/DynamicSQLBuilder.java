@@ -490,6 +490,10 @@ public class DynamicSQLBuilder {
      * @return the complete SQL query string
      */
     public String build() {
+        if (select == null) {
+            throw new IllegalStateException("This DynamicSQLBuilder has already been closed after build() was called");
+        }
+
         if (from != null) {
             if (!from.sb.isEmpty()) {
                 select.sb.append(" ").append(from.sb);

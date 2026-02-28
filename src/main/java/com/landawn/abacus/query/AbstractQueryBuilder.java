@@ -1117,6 +1117,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This from(final Collection<String> tableNames) {
+        N.checkArgNotEmpty(tableNames, "tableNames");
+
         if (tableNames.size() == 1) {
             return from(tableNames.iterator().next().trim());
         }
@@ -1358,7 +1360,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final String trimmedTableName = tableName.trim();
         int idx = -1;
 
-        if (trimmedTableName.charAt(0) == '(') {
+        if (!trimmedTableName.isEmpty() && trimmedTableName.charAt(0) == '(') {
             // For subquery expressions like "(SELECT * FROM users) t", find the closing parenthesis first
             int depth = 0;
             for (int i = 0; i < trimmedTableName.length(); i++) {
@@ -2275,11 +2277,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("products")
      *                 .groupBy(columns, SortDirection.DESC)
      *                 .query();
-     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category, brand DESC
+     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category DESC, brand DESC
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to group by
-     * @param direction the direction appended after the grouped column list (affecting the trailing expression in the generated SQL)
+     * @param direction the direction appended after each column in the GROUP BY clause
      * @return this SQLBuilder instance for method chaining
      */
     public This groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
@@ -2517,11 +2519,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .orderBy(columns, SortDirection.DESC)
      *                 .query();
-     * // Output: SELECT * FROM users ORDER BY last_name, first_name DESC
+     * // Output: SELECT * FROM users ORDER BY last_name DESC, first_name DESC
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to order by
-     * @param direction the direction appended after the ordered column list (affecting the trailing expression in the generated SQL)
+     * @param direction the direction appended after each column in the ORDER BY clause
      * @return this SQLBuilder instance for method chaining
      */
     public This orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
@@ -2614,7 +2616,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .orderByAsc("lastName", "firstName")
      *                 .query();
-     * // Output: SELECT * FROM users ORDER BY last_name, first_name ASC
+     * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name ASC
      * }</pre>
      *
      * @param propOrColumnNames the columns to order by ascending
@@ -2636,7 +2638,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .orderByAsc(columns)
      *                 .query();
-     * // Output: SELECT * FROM users ORDER BY last_name, first_name ASC
+     * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name ASC
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to order by ascending
@@ -2678,7 +2680,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .orderByDesc("createdDate", "id")
      *                 .query();
-     * // Output: SELECT * FROM users ORDER BY created_date, id DESC
+     * // Output: SELECT * FROM users ORDER BY created_date DESC, id DESC
      * }</pre>
      *
      * @param propOrColumnNames the columns to order by descending
@@ -2700,7 +2702,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .orderByDesc(columns)
      *                 .query();
-     * // Output: SELECT * FROM users ORDER BY created_date, id DESC
+     * // Output: SELECT * FROM users ORDER BY created_date DESC, id DESC
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to order by descending
