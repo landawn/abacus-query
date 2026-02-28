@@ -503,7 +503,7 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         builder.select().append("*");
         builder.from().append("users");
         builder.offsetRows(20);
-        builder.fetchNextNRowsOnly(10);
+        builder.fetchNextRows(10);
         String sql = builder.build();
         assertEquals("SELECT * FROM users OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
     }

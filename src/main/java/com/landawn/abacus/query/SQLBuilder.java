@@ -696,7 +696,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             //                && (propColumnNameMap.containsKey(words.get(i - 2)) || propColumnNameMap.containsValue(words.get(i - 2)))) {
             //            sb.append(word);
             //        } else {
-            //            sb.append(formalizeColumnName(propColumnNameMap, word));
+            //            sb.append(normalizeColumnName(propColumnNameMap, word));
             //        }
             //    }
 

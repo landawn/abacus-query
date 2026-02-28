@@ -1377,7 +1377,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = Filters.greaterEqual("score", 60);
+     * GreaterEqual condition = Filters.greaterThanOrEqual("score", 60);
      * // SQL fragment: score >= 60
      * }</pre>
      *
@@ -1385,7 +1385,7 @@ public class Filters {
      * @param propValue the value to compare against
      * @return a GreaterEqual condition
      */
-    public static GreaterEqual greaterEqual(final String propName, final Object propValue) {
+    public static GreaterEqual greaterThanOrEqual(final String propName, final Object propValue) {
         return new GreaterEqual(propName, propValue);
     }
 
@@ -1394,7 +1394,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterEqual condition = Filters.greaterEqual("min_age");
+     * GreaterEqual condition = Filters.greaterThanOrEqual("min_age");
      * // SQL fragment: min_age >= ?
      * }</pre>
      *
@@ -1402,13 +1402,13 @@ public class Filters {
      * @return a GreaterEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    public static GreaterEqual greaterEqual(final String propName) {
-        return greaterEqual(propName, QME);
+    public static GreaterEqual greaterThanOrEqual(final String propName) {
+        return greaterThanOrEqual(propName, QME);
     }
 
     /**
      * Creates a greater-than-or-equal condition (>=) for the specified property and value.
-     * This is a shorthand alias for {@link #greaterEqual(String, Object)}.
+     * This is a shorthand alias for {@link #greaterThanOrEqual(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1425,7 +1425,7 @@ public class Filters {
 
     /**
      * Creates a parameterized greater-than-or-equal condition for use with prepared statements.
-     * This is a shorthand alias for {@link #greaterEqual(String)}.
+     * This is a shorthand alias for {@link #greaterThanOrEqual(String)}.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1515,7 +1515,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = Filters.lessEqual("discount", 50);
+     * LessEqual condition = Filters.lessThanOrEqual("discount", 50);
      * // SQL fragment: discount &lt;= 50
      * }</pre>
      *
@@ -1523,7 +1523,7 @@ public class Filters {
      * @param propValue the value to compare against
      * @return a LessEqual condition
      */
-    public static LessEqual lessEqual(final String propName, final Object propValue) {
+    public static LessEqual lessThanOrEqual(final String propName, final Object propValue) {
         return new LessEqual(propName, propValue);
     }
 
@@ -1532,7 +1532,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessEqual condition = Filters.lessEqual("max_attempts");
+     * LessEqual condition = Filters.lessThanOrEqual("max_attempts");
      * // SQL fragment: max_attempts &lt;= ?
      * }</pre>
      *
@@ -1540,13 +1540,13 @@ public class Filters {
      * @return a LessEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    public static LessEqual lessEqual(final String propName) {
-        return lessEqual(propName, QME);
+    public static LessEqual lessThanOrEqual(final String propName) {
+        return lessThanOrEqual(propName, QME);
     }
 
     /**
      * Creates a less-than-or-equal condition (&lt;=) for the specified property and value.
-     * This is a shorthand alias for {@link #lessEqual(String, Object)}.
+     * This is a shorthand alias for {@link #lessThanOrEqual(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1563,7 +1563,7 @@ public class Filters {
 
     /**
      * Creates a parameterized less-than-or-equal condition for use with prepared statements.
-     * This is a shorthand alias for {@link #lessEqual(String)}.
+     * This is a shorthand alias for {@link #lessThanOrEqual(String)}.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3651,25 +3651,25 @@ public class Filters {
         return new Criteria();
     }
 
-    /**
-     * A utility class providing static factory methods identical to Filters.
-     * CF serves as a shorter alias for Filters to reduce verbosity.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Instead of Filters.eq("name", "John")
-     * Condition c = CF.eq("name", "John");
-     * }</pre>
-     *
-     * <p>All methods in Filters are available through CF.</p>
-     */
-    @Beta
-    public static final class CF extends Filters {
-
-        private CF() {
-            // singleton for utility class.
-        }
-    }
+    //    /**
+    //     * A utility class providing static factory methods identical to Filters.
+    //     * CF serves as a shorter alias for Filters to reduce verbosity.
+    //     * 
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * // Instead of Filters.eq("name", "John")
+    //     * Condition c = CF.eq("name", "John");
+    //     * }</pre>
+    //     *
+    //     * <p>All methods in Filters are available through CF.</p>
+    //     */
+    //    @Beta
+    //    public static final class CF extends Filters {
+    //
+    //        private CF() {
+    //            // singleton for utility class.
+    //        }
+    //    }
 
     /**
      * A utility class for building Criteria objects with a fluent interface.

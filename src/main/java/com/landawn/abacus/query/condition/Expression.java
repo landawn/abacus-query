@@ -333,7 +333,7 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.greaterEqual("score", 60);
+     * String expr = Expression.greaterThanOrEqual("score", 60);
      * // Returns: "score >= 60"
      * }</pre>
      *
@@ -341,13 +341,13 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the greater-than-or-equal expression
      */
-    public static String greaterEqual(final String literal, final Object value) {
+    public static String greaterThanOrEqual(final String literal, final Object value) {
         return link(Operator.GREATER_EQUAL, literal, value);
     }
 
     /**
      * Creates a greater-than-or-equal expression between a literal and a value.
-     * Alias for {@link #greaterEqual(String, Object)}.
+     * Alias for {@link #greaterThanOrEqual(String, Object)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -403,7 +403,7 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lessEqual("discount", 50);
+     * String expr = Expression.lessThanOrEqual("discount", 50);
      * // Returns: "discount <= 50"
      * }</pre>
      *
@@ -411,13 +411,13 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the less-than-or-equal expression
      */
-    public static String lessEqual(final String literal, final Object value) {
+    public static String lessThanOrEqual(final String literal, final Object value) {
         return link(Operator.LESS_EQUAL, literal, value);
     }
 
     /**
      * Creates a less-than-or-equal expression between a literal and a value.
-     * Alias for {@link #lessEqual(String, Object)}.
+     * Alias for {@link #lessThanOrEqual(String, Object)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -786,14 +786,14 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.bitwiseXOr(Expression.of("value1"), Expression.of("value2"));
+     * String expr = Expression.bitwiseXor(Expression.of("value1"), Expression.of("value2"));
      * // Returns: "value1 ^ value2"
      * }</pre>
      *
      * @param objects the values for bitwise XOR operation
      * @return a string representation of the bitwise XOR expression
      */
-    public static String bitwiseXOr(final Object... objects) {
+    public static String bitwiseXor(final Object... objects) {
         return link(CIRCUMFLEX, objects);
     }
 
@@ -813,7 +813,7 @@ public class Expression extends AbstractCondition {
             sb.append(SK._SPACE);
             sb.append(operator.getName());
             sb.append(SK._SPACE);
-            sb.append(formalize(value));
+            sb.append(normalize(value));
 
             return sb.toString();
         } finally {
@@ -838,11 +838,11 @@ public class Expression extends AbstractCondition {
             sb.append(SK._SPACE);
             sb.append(operator.getName());
             sb.append(SK._SPACE);
-            sb.append(formalize(min));
+            sb.append(normalize(min));
             sb.append(SK._SPACE);
             sb.append(SK.AND);
             sb.append(SK._SPACE);
-            sb.append(formalize(max));
+            sb.append(normalize(max));
 
             return sb.toString();
         } finally {
@@ -921,7 +921,7 @@ public class Expression extends AbstractCondition {
                     sb.append(linkedSymbol);
                 }
 
-                sb.append(formalize(objects[i]));
+                sb.append(normalize(objects[i]));
             }
 
             return sb.toString();
@@ -943,21 +943,21 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression.formalize("text");      // Returns: "'text'"
-     * Expression.formalize("O'Brien");   // Returns: "'O\'Brien'" (escaped quote)
-     * Expression.formalize(123);         // Returns: "123"
-     * Expression.formalize(45.67);       // Returns: "45.67"
-     * Expression.formalize(null);        // Returns: "null"
-     * Expression.formalize(true);        // Returns: "true"
-     * Expression.formalize(false);       // Returns: "false"
+     * Expression.normalize("text");      // Returns: "'text'"
+     * Expression.normalize("O'Brien");   // Returns: "'O\'Brien'" (escaped quote)
+     * Expression.normalize(123);         // Returns: "123"
+     * Expression.normalize(45.67);       // Returns: "45.67"
+     * Expression.normalize(null);        // Returns: "null"
+     * Expression.normalize(true);        // Returns: "true"
+     * Expression.normalize(false);       // Returns: "false"
      * Expression expr = new Expression("COUNT(*)");
-     * Expression.formalize(expr);   // Returns: "COUNT(*)" (the expression's literal)
+     * Expression.normalize(expr);   // Returns: "COUNT(*)" (the expression's literal)
      * }</pre>
      *
-     * @param value the value to formalize
+     * @param value the value to normalize
      * @return the SQL representation of the value
      */
-    public static String formalize(final Object value) {
+    public static String normalize(final Object value) {
         if (value == null) {
             return NULL_STRING;
         }
@@ -1400,15 +1400,15 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.subString("phone", 1);   // Returns: "SUBSTR(phone, 1)"
-     * String expr2 = Expression.subString("code", 3);   // Returns: "SUBSTR(code, 3)"
+     * String expr = Expression.substring("phone", 1);   // Returns: "SUBSTR(phone, 1)"
+     * String expr2 = Expression.substring("code", 3);   // Returns: "SUBSTR(code, 3)"
      * }</pre>
      *
      * @param str the string to extract from
      * @param fromIndex the starting position (1-based)
      * @return a SUBSTR function string
      */
-    public static String subString(final String str, final int fromIndex) {
+    public static String substring(final String str, final int fromIndex) {
         return function(SUBSTR, str, fromIndex);
     }
 
@@ -1418,8 +1418,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.subString("phone", 1, 3);   // Returns: "SUBSTR(phone, 1, 3)"
-     * String expr2 = Expression.subString("zip", 1, 5);    // Returns: "SUBSTR(zip, 1, 5)"
+     * String expr = Expression.substring("phone", 1, 3);   // Returns: "SUBSTR(phone, 1, 3)"
+     * String expr2 = Expression.substring("zip", 1, 5);    // Returns: "SUBSTR(zip, 1, 5)"
      * }</pre>
      *
      * @param str the string to extract from
@@ -1427,7 +1427,7 @@ public class Expression extends AbstractCondition {
      * @param length the number of characters to extract
      * @return a SUBSTR function string
      */
-    public static String subString(final String str, final int fromIndex, final int length) {
+    public static String substring(final String str, final int fromIndex, final int length) {
         return function(SUBSTR, str, fromIndex, length);
     }
 

@@ -315,13 +315,13 @@ public class FiltersTest extends TestBase {
     @Test
     public void testGreaterEqual() {
         // With value
-        GreaterEqual ge1 = Filters.greaterEqual("level", 5);
+        GreaterEqual ge1 = Filters.greaterThanOrEqual("level", 5);
         Assertions.assertNotNull(ge1);
         Assertions.assertEquals("level", ge1.getPropName());
         Assertions.assertEquals(5, (Integer) ge1.getPropValue());
 
         // Without value
-        GreaterEqual ge2 = Filters.greaterEqual("level");
+        GreaterEqual ge2 = Filters.greaterThanOrEqual("level");
         Assertions.assertNotNull(ge2);
         Assertions.assertEquals(Filters.QME, ge2.getPropValue());
     }
@@ -371,13 +371,13 @@ public class FiltersTest extends TestBase {
     @Test
     public void testLessEqual() {
         // With value
-        LessEqual le1 = Filters.lessEqual("discount", 50);
+        LessEqual le1 = Filters.lessThanOrEqual("discount", 50);
         Assertions.assertNotNull(le1);
         Assertions.assertEquals("discount", le1.getPropName());
         Assertions.assertEquals(50, (Integer) le1.getPropValue());
 
         // Without value
-        LessEqual le2 = Filters.lessEqual("discount");
+        LessEqual le2 = Filters.lessThanOrEqual("discount");
         Assertions.assertNotNull(le2);
         Assertions.assertEquals(Filters.QME, le2.getPropValue());
     }

@@ -66,7 +66,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testGreaterEqual() {
-        String result = Expression.greaterEqual("age", 18);
+        String result = Expression.greaterThanOrEqual("age", 18);
         Assertions.assertEquals("age >= 18", result);
     }
 
@@ -90,7 +90,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLessEqual() {
-        String result = Expression.lessEqual("stock", 10);
+        String result = Expression.lessThanOrEqual("stock", 10);
         Assertions.assertEquals("stock <= 10", result);
     }
 
@@ -210,18 +210,18 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testBitwiseXOr() {
-        String result = Expression.bitwiseXOr(Filters.expr("value"), Filters.expr("mask"));
+        String result = Expression.bitwiseXor(Filters.expr("value"), Filters.expr("mask"));
         Assertions.assertEquals("value ^ mask", result);
     }
 
     @Test
     public void testFormalize() {
-        Assertions.assertEquals("'text'", Expression.formalize("text"));
-        Assertions.assertEquals("123", Expression.formalize(123));
-        Assertions.assertEquals("null", Expression.formalize(null));
+        Assertions.assertEquals("'text'", Expression.normalize("text"));
+        Assertions.assertEquals("123", Expression.normalize(123));
+        Assertions.assertEquals("null", Expression.normalize(null));
 
         Expression expr = Expression.of("CURRENT_DATE");
-        Assertions.assertEquals("CURRENT_DATE", Expression.formalize(expr));
+        Assertions.assertEquals("CURRENT_DATE", Expression.normalize(expr));
     }
 
     @Test
@@ -370,13 +370,13 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testSubString() {
-        String result = Expression.subString("text", 5);
+        String result = Expression.substring("text", 5);
         Assertions.assertEquals("SUBSTR(text, 5)", result);
     }
 
     @Test
     public void testSubStringWithLength() {
-        String result = Expression.subString("text", 5, 10);
+        String result = Expression.substring("text", 5, 10);
         Assertions.assertEquals("SUBSTR(text, 5, 10)", result);
     }
 

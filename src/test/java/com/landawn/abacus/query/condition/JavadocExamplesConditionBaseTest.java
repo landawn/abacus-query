@@ -788,12 +788,12 @@ public class JavadocExamplesConditionBaseTest {
     }
 
     // =====================================================================
-    // Expression.java - greaterEqual/ge examples
+    // Expression.java - greaterThanOrEqual/ge examples
     // =====================================================================
 
     @Test
-    void expression_greaterEqual_examples() {
-        String expr = Expression.greaterEqual("score", 60);
+    void expression_greaterThanOrEqual_examples() {
+        String expr = Expression.greaterThanOrEqual("score", 60);
         assertEquals("score >= 60", expr);
     }
 
@@ -820,12 +820,12 @@ public class JavadocExamplesConditionBaseTest {
     }
 
     // =====================================================================
-    // Expression.java - lessEqual/le examples
+    // Expression.java - lessThanOrEqual/le examples
     // =====================================================================
 
     @Test
-    void expression_lessEqual_examples() {
-        String expr = Expression.lessEqual("discount", 50);
+    void expression_lessThanOrEqual_examples() {
+        String expr = Expression.lessThanOrEqual("discount", 50);
         assertEquals("discount <= 50", expr);
     }
 
@@ -1023,33 +1023,33 @@ public class JavadocExamplesConditionBaseTest {
     }
 
     @Test
-    void expression_bitwiseXOr_examples() {
+    void expression_bitwiseXor_examples() {
         // Use Expression.of() for column references to avoid single-quote wrapping
-        String expr = Expression.bitwiseXOr(Expression.of("value1"), Expression.of("value2"));
+        String expr = Expression.bitwiseXor(Expression.of("value1"), Expression.of("value2"));
         assertEquals("value1 ^ value2", expr);
     }
 
     // =====================================================================
-    // Expression.java - formalize examples
+    // Expression.java - normalize examples
     // =====================================================================
 
     @Test
-    void expression_formalize_examples() {
-        assertEquals("'text'", Expression.formalize("text"));
-        assertEquals("123", Expression.formalize(123));
-        assertEquals("45.67", Expression.formalize(45.67));
-        assertEquals("null", Expression.formalize(null));
-        assertEquals("true", Expression.formalize(true));
-        assertEquals("false", Expression.formalize(false));
+    void expression_normalize_examples() {
+        assertEquals("'text'", Expression.normalize("text"));
+        assertEquals("123", Expression.normalize(123));
+        assertEquals("45.67", Expression.normalize(45.67));
+        assertEquals("null", Expression.normalize(null));
+        assertEquals("true", Expression.normalize(true));
+        assertEquals("false", Expression.normalize(false));
 
         Expression expr = new Expression("COUNT(*)");
-        assertEquals("COUNT(*)", Expression.formalize(expr));
+        assertEquals("COUNT(*)", Expression.normalize(expr));
     }
 
     @Test
-    void expression_formalize_escapedQuote() {
+    void expression_normalize_escapedQuote() {
         // Check O'Brien is escaped
-        String result = Expression.formalize("O'Brien");
+        String result = Expression.normalize("O'Brien");
         // The result should contain an escaped single quote
         assertNotNull(result);
         assertTrue(result.startsWith("'"));
@@ -1220,12 +1220,12 @@ public class JavadocExamplesConditionBaseTest {
     }
 
     @Test
-    void expression_subString_examples() {
-        assertEquals("SUBSTR(phone, 1)", Expression.subString("phone", 1));
-        assertEquals("SUBSTR(code, 3)", Expression.subString("code", 3));
+    void expression_substring_examples() {
+        assertEquals("SUBSTR(phone, 1)", Expression.substring("phone", 1));
+        assertEquals("SUBSTR(code, 3)", Expression.substring("code", 3));
 
-        assertEquals("SUBSTR(phone, 1, 3)", Expression.subString("phone", 1, 3));
-        assertEquals("SUBSTR(zip, 1, 5)", Expression.subString("zip", 1, 5));
+        assertEquals("SUBSTR(phone, 1, 3)", Expression.substring("phone", 1, 3));
+        assertEquals("SUBSTR(zip, 1, 5)", Expression.substring("zip", 1, 5));
     }
 
     @Test

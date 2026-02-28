@@ -1731,12 +1731,12 @@
               "see_also": []
             },
             {
-              "name": "fetchNextNRowsOnly",
+              "name": "fetchNextRows",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public This fetchNextNRowsOnly(final int n)",
+              "signature": "public This fetchNextRows(final int n)",
               "return_type": "This",
               "type_params": [],
               "params": [
@@ -3318,7 +3318,7 @@
               "examples": [],
               "see_also": [
                 "#offsetRows(int)",
-                "#fetchNextNRowsOnly(int)",
+                "#fetchNextRows(int)",
                 "#fetchFirstNRowsOnly(int)"
               ]
             },
@@ -3369,12 +3369,12 @@
               "see_also": []
             },
             {
-              "name": "fetchNextNRowsOnly",
+              "name": "fetchNextRows",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSQLBuilder fetchNextNRowsOnly(final int n)",
+              "signature": "public DynamicSQLBuilder fetchNextRows(final int n)",
               "return_type": "DynamicSQLBuilder",
               "type_params": [],
               "params": [
@@ -5918,13 +5918,13 @@
               ]
             },
             {
-              "name": "greaterEqual",
+              "name": "greaterThanOrEqual",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static GreaterEqual greaterEqual(final String propName, final Object propValue)",
+              "signature": "public static GreaterEqual greaterThanOrEqual(final String propName, final Object propValue)",
               "return_type": "GreaterEqual",
               "type_params": [],
               "params": [
@@ -5948,13 +5948,13 @@
               "see_also": []
             },
             {
-              "name": "greaterEqual",
+              "name": "greaterThanOrEqual",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static GreaterEqual greaterEqual(final String propName)",
+              "signature": "public static GreaterEqual greaterThanOrEqual(final String propName)",
               "return_type": "GreaterEqual",
               "type_params": [],
               "params": [
@@ -6142,13 +6142,13 @@
               ]
             },
             {
-              "name": "lessEqual",
+              "name": "lessThanOrEqual",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static LessEqual lessEqual(final String propName, final Object propValue)",
+              "signature": "public static LessEqual lessThanOrEqual(final String propName, final Object propValue)",
               "return_type": "LessEqual",
               "type_params": [],
               "params": [
@@ -6172,13 +6172,13 @@
               "see_also": []
             },
             {
-              "name": "lessEqual",
+              "name": "lessThanOrEqual",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static LessEqual lessEqual(final String propName)",
+              "signature": "public static LessEqual lessThanOrEqual(final String propName)",
               "return_type": "LessEqual",
               "type_params": [],
               "params": [
@@ -38681,13 +38681,13 @@
               "see_also": []
             },
             {
-              "name": "greaterEqual",
+              "name": "greaterThanOrEqual",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static String greaterEqual(final String literal, final Object value)",
+              "signature": "public static String greaterThanOrEqual(final String literal, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
@@ -38801,13 +38801,13 @@
               "see_also": []
             },
             {
-              "name": "lessEqual",
+              "name": "lessThanOrEqual",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static String lessEqual(final String literal, final Object value)",
+              "signature": "public static String lessThanOrEqual(final String literal, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
@@ -39336,13 +39336,13 @@
               "see_also": []
             },
             {
-              "name": "bitwiseXOr",
+              "name": "bitwiseXor",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static String bitwiseXOr(final Object... objects)",
+              "signature": "public static String bitwiseXor(final Object... objects)",
               "return_type": "String",
               "type_params": [],
               "params": [
@@ -39360,20 +39360,20 @@
               "see_also": []
             },
             {
-              "name": "formalize",
+              "name": "normalize",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static String formalize(final Object value)",
+              "signature": "public static String normalize(final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the value to formalize",
+                  "javadoc": "the value to normalize",
                   "nullability": "unspecified"
                 }
               ],
@@ -39996,13 +39996,13 @@
               "see_also": []
             },
             {
-              "name": "subString",
+              "name": "substring",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static String subString(final String str, final int fromIndex)",
+              "signature": "public static String substring(final String str, final int fromIndex)",
               "return_type": "String",
               "type_params": [],
               "params": [
@@ -40026,13 +40026,13 @@
               "see_also": []
             },
             {
-              "name": "subString",
+              "name": "substring",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static String subString(final String str, final int fromIndex, final int length)",
+              "signature": "public static String substring(final String str, final int fromIndex, final int length)",
               "return_type": "String",
               "type_params": [],
               "params": [

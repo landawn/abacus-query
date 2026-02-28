@@ -113,7 +113,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testGreaterEqual() {
-        String result = Expression.greaterEqual("score", 60);
+        String result = Expression.greaterThanOrEqual("score", 60);
 
         assertTrue(result.contains("score"));
         assertTrue(result.contains(">="));
@@ -149,7 +149,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testLessEqual() {
-        String result = Expression.lessEqual("discount", 50);
+        String result = Expression.lessThanOrEqual("discount", 50);
 
         assertTrue(result.contains("discount"));
         assertTrue(result.contains("<="));
@@ -307,7 +307,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testBitwiseXOr() {
-        String result = Expression.bitwiseXOr("value1", "value2");
+        String result = Expression.bitwiseXor("value1", "value2");
 
         assertTrue(result.contains("value1"));
         assertTrue(result.contains("^"));
@@ -532,7 +532,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testSubStringFromIndex() {
-        String result = Expression.subString("phone", 1);
+        String result = Expression.substring("phone", 1);
 
         assertTrue(result.contains("SUBSTR"));
         assertTrue(result.contains("phone"));
@@ -541,7 +541,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testSubStringWithLength() {
-        String result = Expression.subString("code", 1, 3);
+        String result = Expression.substring("code", 1, 3);
 
         assertTrue(result.contains("SUBSTR"));
         assertTrue(result.contains("code"));
@@ -610,28 +610,28 @@ public class Expression2025Test extends TestBase {
     // Utility methods
     @Test
     public void testFormalizeString() {
-        String result = Expression.formalize("text");
+        String result = Expression.normalize("text");
 
         assertEquals("'text'", result);
     }
 
     @Test
     public void testFormalizeNumber() {
-        String result = Expression.formalize(123);
+        String result = Expression.normalize(123);
 
         assertEquals("123", result);
     }
 
     @Test
     public void testFormalizeBoolean() {
-        String result = Expression.formalize(true);
+        String result = Expression.normalize(true);
 
         assertEquals("true", result);
     }
 
     @Test
     public void testFormalizeNull() {
-        String result = Expression.formalize(null);
+        String result = Expression.normalize(null);
 
         assertEquals("null", result);
     }
@@ -639,7 +639,7 @@ public class Expression2025Test extends TestBase {
     @Test
     public void testFormalizeExpression() {
         Expression expr = new Expression("column_name");
-        String result = Expression.formalize(expr);
+        String result = Expression.normalize(expr);
 
         assertEquals("column_name", result);
     }
@@ -886,7 +886,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testBitwiseXOrWithMultipleValues() {
-        String result = Expression.bitwiseXOr("value1", "value2", "value3");
+        String result = Expression.bitwiseXor("value1", "value2", "value3");
 
         assertTrue(result.contains("value1"));
         assertTrue(result.contains("^"));
@@ -896,21 +896,21 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testFormalizeCharSequence() {
-        String result = Expression.formalize(new StringBuilder("test"));
+        String result = Expression.normalize(new StringBuilder("test"));
 
         assertEquals("'test'", result);
     }
 
     @Test
     public void testFormalizeDouble() {
-        String result = Expression.formalize(3.14);
+        String result = Expression.normalize(3.14);
 
         assertEquals("3.14", result);
     }
 
     @Test
     public void testFormalizeLong() {
-        String result = Expression.formalize(999L);
+        String result = Expression.normalize(999L);
 
         assertEquals("999", result);
     }

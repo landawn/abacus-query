@@ -679,8 +679,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testFilters_greaterEqual() {
-        GreaterEqual condition = Filters.greaterEqual("score", 60);
+    public void testFilters_greaterThanOrEqual() {
+        GreaterEqual condition = Filters.greaterThanOrEqual("score", 60);
         assertNotNull(condition);
     }
 
@@ -697,7 +697,7 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testFilters_lessEqual() {
+    public void testFilters_lessThanOrEqual() {
         LessEqual condition = Filters.le("age", 65);
         assertNotNull(condition);
     }
@@ -983,7 +983,7 @@ public class JavadocExamplesQueryTest {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
         b.select().append("*");
         b.from().append("users");
-        b.offsetRows(20).fetchNextNRowsOnly(10);
+        b.offsetRows(20).fetchNextRows(10);
         String sql = b.build();
         assertTrue(sql.contains("OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY"));
     }

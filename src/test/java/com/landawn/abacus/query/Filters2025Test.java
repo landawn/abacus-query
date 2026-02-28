@@ -30,8 +30,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
@@ -269,7 +267,7 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testGreaterEqual() {
-        GreaterEqual ge = Filters.greaterEqual("age", 21);
+        GreaterEqual ge = Filters.greaterThanOrEqual("age", 21);
         assertNotNull(ge);
         assertEquals("age", ge.getPropName());
     }
@@ -295,7 +293,7 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testLessEqual() {
-        LessEqual le = Filters.lessEqual("age", 60);
+        LessEqual le = Filters.lessThanOrEqual("age", 60);
         assertNotNull(le);
         assertEquals("age", le.getPropName());
     }
@@ -633,7 +631,7 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testGreaterEqualWithoutValue() {
-        GreaterEqual ge = Filters.greaterEqual("count");
+        GreaterEqual ge = Filters.greaterThanOrEqual("count");
         assertNotNull(ge);
     }
 
@@ -645,7 +643,7 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testLessEqualWithoutValue() {
-        LessEqual le = Filters.lessEqual("maximum");
+        LessEqual le = Filters.lessThanOrEqual("maximum");
         assertNotNull(le);
     }
 
@@ -719,8 +717,7 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testOrderByThreeColumns() {
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC, "age", SortDirection.DESC, "email",
-                SortDirection.ASC);
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC, "age", SortDirection.DESC, "email", SortDirection.ASC);
         assertNotNull(orderBy);
     }
 
@@ -1145,11 +1142,6 @@ public class Filters2025Test extends TestBase {
     public void testCriteria() {
         com.landawn.abacus.query.condition.Criteria criteria = Filters.criteria();
         assertNotNull(criteria);
-    }
-
-    @Test
-    public void testCFClass() {
-        assertNotNull(Filters.CF.class);
     }
 
     @Test

@@ -238,8 +238,8 @@ public class GreaterEqual2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentOperator() {
-        GreaterEqual greaterEqual = new GreaterEqual("field", 20);
-        LessEqual lessEqual = new LessEqual("field", 20);
-        assertNotEquals(greaterEqual, lessEqual);
+        GreaterEqual greaterThanOrEqual = new GreaterEqual("field", 20);
+        LessEqual lessThanOrEqual = new LessEqual("field", 20);
+        assertNotEquals(greaterThanOrEqual, lessThanOrEqual);
     }
 }

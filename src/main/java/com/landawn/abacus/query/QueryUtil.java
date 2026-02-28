@@ -265,7 +265,7 @@ public final class QueryUtil {
             if (propInfo.columnName.isPresent()) {
                 propColumnNameMap.put(propInfo.name, propInfo.columnName.get());
             } else {
-                propColumnNameMap.put(propInfo.name, SQLBuilder.formalizeColumnName(propInfo.name, namingPolicy));
+                propColumnNameMap.put(propInfo.name, SQLBuilder.normalizeColumnName(propInfo.name, namingPolicy));
 
                 final Type<?> propType = propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type;
 

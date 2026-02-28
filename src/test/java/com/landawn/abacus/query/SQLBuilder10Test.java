@@ -626,14 +626,14 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testOffsetRows() {
-        String sql = PSC.select("*").from("users").orderBy("id").offsetRows(20).fetchNextNRowsOnly(10).sql();
+        String sql = PSC.select("*").from("users").orderBy("id").offsetRows(20).fetchNextRows(10).sql();
 
         assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
     }
 
     @Test
     public void testFetchNextNRowsOnly() {
-        String sql = PSC.select("*").from("users").orderBy("id").offsetRows(0).fetchNextNRowsOnly(10).sql();
+        String sql = PSC.select("*").from("users").orderBy("id").offsetRows(0).fetchNextRows(10).sql();
 
         assertEquals("SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
     }
@@ -1185,15 +1185,15 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testNamingPolicyConversion() {
-        // Test formalize column name
-        assertEquals("first_name", AbstractQueryBuilder.formalizeColumnName("firstName", NamingPolicy.SNAKE_CASE));
-        assertEquals("FIRST_NAME", AbstractQueryBuilder.formalizeColumnName("firstName", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("firstName", AbstractQueryBuilder.formalizeColumnName("first_name", NamingPolicy.CAMEL_CASE));
-        assertEquals("firstName", AbstractQueryBuilder.formalizeColumnName("firstName", NamingPolicy.NO_CHANGE));
+        // Test normalize column name
+        assertEquals("first_name", AbstractQueryBuilder.normalizeColumnName("firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("FIRST_NAME", AbstractQueryBuilder.normalizeColumnName("firstName", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("firstName", AbstractQueryBuilder.normalizeColumnName("first_name", NamingPolicy.CAMEL_CASE));
+        assertEquals("firstName", AbstractQueryBuilder.normalizeColumnName("firstName", NamingPolicy.NO_CHANGE));
 
         // SQL keywords should not be converted
-        assertEquals("SELECT", AbstractQueryBuilder.formalizeColumnName("SELECT", NamingPolicy.SNAKE_CASE));
-        assertEquals("FROM", AbstractQueryBuilder.formalizeColumnName("FROM", NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT", AbstractQueryBuilder.normalizeColumnName("SELECT", NamingPolicy.SNAKE_CASE));
+        assertEquals("FROM", AbstractQueryBuilder.normalizeColumnName("FROM", NamingPolicy.SNAKE_CASE));
     }
 
     @Test
@@ -1540,10 +1540,10 @@ public class SQLBuilder10Test extends TestBase {
     @Test
     public void testFormatColumnNameEdgeCases() {
         // Test edge cases for column name formatting
-        assertEquals("id", AbstractQueryBuilder.formalizeColumnName("id", NamingPolicy.SNAKE_CASE));
-        assertEquals("ID", AbstractQueryBuilder.formalizeColumnName("id", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("user_name123", AbstractQueryBuilder.formalizeColumnName("userName123", NamingPolicy.SNAKE_CASE));
-        assertEquals("USER_NAME123", AbstractQueryBuilder.formalizeColumnName("userName123", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("id", AbstractQueryBuilder.normalizeColumnName("id", NamingPolicy.SNAKE_CASE));
+        assertEquals("ID", AbstractQueryBuilder.normalizeColumnName("id", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("user_name123", AbstractQueryBuilder.normalizeColumnName("userName123", NamingPolicy.SNAKE_CASE));
+        assertEquals("USER_NAME123", AbstractQueryBuilder.normalizeColumnName("userName123", NamingPolicy.SCREAMING_SNAKE_CASE));
     }
 
     @Test

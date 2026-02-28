@@ -422,8 +422,8 @@ A fluent SQL builder for constructing SQL statements programmatically.
 - **Parameters:**
   - `offset` (`int`) — the number of rows to skip
 - **Returns:** this SQLBuilder instance for method chaining
-##### fetchNextNRowsOnly(...) -> This
-- **Signature:** `public This fetchNextNRowsOnly(final int n)`
+##### fetchNextRows(...) -> This
+- **Signature:** `public This fetchNextRows(final int n)`
 - **Summary:** Adds a FETCH NEXT N ROWS ONLY clause (SQL Server syntax).
 - **Parameters:**
   - `n` (`int`) — the number of rows to fetch
@@ -811,7 +811,7 @@ A fluent builder for creating dynamic SQL queries programmatically.
   - `offset` (`int`) — the number of rows to skip (must not be negative)
   - `count` (`int`) — the maximum number of rows to return (must not be negative)
 - **Returns:** this builder instance for method chaining
-- **See also:** #offsetRows(int), #fetchNextNRowsOnly(int), #fetchFirstNRowsOnly(int)
+- **See also:** #offsetRows(int), #fetchNextRows(int), #fetchFirstNRowsOnly(int)
 ##### limitByRowNum(...) -> DynamicSQLBuilder
 - **Signature:** `public DynamicSQLBuilder limitByRowNum(final int count)`
 - **Summary:** Adds an Oracle-style ROWNUM condition to limit results.
@@ -824,8 +824,8 @@ A fluent builder for creating dynamic SQL queries programmatically.
 - **Parameters:**
   - `offset` (`int`) — the number of rows to skip (must not be negative)
 - **Returns:** this builder instance for method chaining
-##### fetchNextNRowsOnly(...) -> DynamicSQLBuilder
-- **Signature:** `public DynamicSQLBuilder fetchNextNRowsOnly(final int n)`
+##### fetchNextRows(...) -> DynamicSQLBuilder
+- **Signature:** `public DynamicSQLBuilder fetchNextRows(final int n)`
 - **Summary:** Adds a FETCH NEXT clause for SQL:2008 standard result limiting.
 - **Parameters:**
   - `n` (`int`) — the number of rows to fetch (must not be negative)
@@ -1507,14 +1507,14 @@ A comprehensive, enterprise-grade factory class providing a complete suite of SQ
   - `propName` (`String`) — the property/column name
 - **Returns:** a GreaterThan condition with a parameter placeholder
 - **See also:** com.landawn.abacus.query.SQLBuilder
-##### greaterEqual(...) -> GreaterEqual
-- **Signature:** `public static GreaterEqual greaterEqual(final String propName, final Object propValue)`
+##### greaterThanOrEqual(...) -> GreaterEqual
+- **Signature:** `public static GreaterEqual greaterThanOrEqual(final String propName, final Object propValue)`
 - **Summary:** Creates a greater-than-or-equal condition (>=) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
   - `propValue` (`Object`) — the value to compare against
 - **Returns:** a GreaterEqual condition
-- **Signature:** `public static GreaterEqual greaterEqual(final String propName)`
+- **Signature:** `public static GreaterEqual greaterThanOrEqual(final String propName)`
 - **Summary:** Creates a parameterized greater-than-or-equal condition for use with prepared statements.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
@@ -1559,14 +1559,14 @@ A comprehensive, enterprise-grade factory class providing a complete suite of SQ
   - `propName` (`String`) — the property/column name
 - **Returns:** a LessThan condition with a parameter placeholder
 - **See also:** com.landawn.abacus.query.SQLBuilder
-##### lessEqual(...) -> LessEqual
-- **Signature:** `public static LessEqual lessEqual(final String propName, final Object propValue)`
+##### lessThanOrEqual(...) -> LessEqual
+- **Signature:** `public static LessEqual lessThanOrEqual(final String propName, final Object propValue)`
 - **Summary:** Creates a less-than-or-equal condition ( &lt; =) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
   - `propValue` (`Object`) — the value to compare against
 - **Returns:** a LessEqual condition
-- **Signature:** `public static LessEqual lessEqual(final String propName)`
+- **Signature:** `public static LessEqual lessThanOrEqual(final String propName)`
 - **Summary:** Creates a parameterized less-than-or-equal condition for use with prepared statements.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
@@ -8832,8 +8832,8 @@ Represents a raw SQL expression that can be used in queries.
   - `literal` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value
 - **Returns:** a string representation of the greater-than expression
-##### greaterEqual(...) -> String
-- **Signature:** `public static String greaterEqual(final String literal, final Object value)`
+##### greaterThanOrEqual(...) -> String
+- **Signature:** `public static String greaterThanOrEqual(final String literal, final Object value)`
 - **Summary:** Creates a greater-than-or-equal expression between a literal and a value.
 - **Parameters:**
   - `literal` (`String`) — the left-hand side of the comparison
@@ -8860,8 +8860,8 @@ Represents a raw SQL expression that can be used in queries.
   - `literal` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value
 - **Returns:** a string representation of the less-than expression
-##### lessEqual(...) -> String
-- **Signature:** `public static String lessEqual(final String literal, final Object value)`
+##### lessThanOrEqual(...) -> String
+- **Signature:** `public static String lessThanOrEqual(final String literal, final Object value)`
 - **Summary:** Creates a less-than-or-equal expression between a literal and a value.
 - **Parameters:**
   - `literal` (`String`) — the left-hand side of the comparison
@@ -8995,17 +8995,17 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `objects` (`Object[]`) — the values for bitwise OR operation
 - **Returns:** a string representation of the bitwise OR expression
-##### bitwiseXOr(...) -> String
-- **Signature:** `public static String bitwiseXOr(final Object... objects)`
+##### bitwiseXor(...) -> String
+- **Signature:** `public static String bitwiseXor(final Object... objects)`
 - **Summary:** Creates a bitwise XOR expression for the given objects.
 - **Parameters:**
   - `objects` (`Object[]`) — the values for bitwise XOR operation
 - **Returns:** a string representation of the bitwise XOR expression
-##### formalize(...) -> String
-- **Signature:** `public static String formalize(final Object value)`
+##### normalize(...) -> String
+- **Signature:** `public static String normalize(final Object value)`
 - **Summary:** Converts a value to its SQL representation.
 - **Parameters:**
-  - `value` (`Object`) — the value to formalize
+  - `value` (`Object`) — the value to normalize
 - **Returns:** the SQL representation of the value
 ##### count(...) -> String
 - **Signature:** `public static String count(final String expression)`
@@ -9157,14 +9157,14 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `str` (`String`) — the string to get length of
 - **Returns:** a LENGTH function string
-##### subString(...) -> String
-- **Signature:** `public static String subString(final String str, final int fromIndex)`
+##### substring(...) -> String
+- **Signature:** `public static String substring(final String str, final int fromIndex)`
 - **Summary:** Creates a SUBSTR function expression starting from a position.
 - **Parameters:**
   - `str` (`String`) — the string to extract from
   - `fromIndex` (`int`) — the starting position (1-based)
 - **Returns:** a SUBSTR function string
-- **Signature:** `public static String subString(final String str, final int fromIndex, final int length)`
+- **Signature:** `public static String substring(final String str, final int fromIndex, final int length)`
 - **Summary:** Creates a SUBSTR function expression with start position and length.
 - **Parameters:**
   - `str` (`String`) — the string to extract from

@@ -268,7 +268,7 @@ public class DynamicSQLBuilder {
      * @param count the maximum number of rows to return (must not be negative)
      * @return this builder instance for method chaining
      * @see #offsetRows(int)
-     * @see #fetchNextNRowsOnly(int)
+     * @see #fetchNextRows(int)
      * @see #fetchFirstNRowsOnly(int)
      */
     public DynamicSQLBuilder limit(final int offset, final int count) {
@@ -309,11 +309,11 @@ public class DynamicSQLBuilder {
 
     /**
      * Adds an OFFSET clause for SQL:2008 standard pagination.
-     * Typically used with {@link #fetchNextNRowsOnly(int)} or {@link #fetchFirstNRowsOnly(int)}.
+     * Typically used with {@link #fetchNextRows(int)} or {@link #fetchFirstNRowsOnly(int)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * builder.offsetRows(20).fetchNextNRowsOnly(10);
+     * builder.offsetRows(20).fetchNextRows(10);
      * // Generates: OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
      *
@@ -334,14 +334,14 @@ public class DynamicSQLBuilder {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * builder.offsetRows(100).fetchNextNRowsOnly(25);
+     * builder.offsetRows(100).fetchNextRows(25);
      * // Generates: OFFSET 100 ROWS FETCH NEXT 25 ROWS ONLY
      * }</pre>
      *
      * @param n the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder fetchNextNRowsOnly(final int n) {
+    public DynamicSQLBuilder fetchNextRows(final int n) {
         N.checkArgNotNegative(n, "n");
 
         getStringBuilderForMoreParts().append(" FETCH NEXT ").append(n).append(" ROWS ONLY");

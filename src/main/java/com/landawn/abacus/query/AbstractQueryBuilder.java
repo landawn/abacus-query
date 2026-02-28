@@ -472,21 +472,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return "";
         }
 
-        String alis = classTableAliasMap.get(entityClass);
+        String alias = classTableAliasMap.get(entityClass);
 
-        if (alis == null) {
+        if (alias == null) {
             if (entityClass.getAnnotation(Table.class) != null) {
-                alis = entityClass.getAnnotation(Table.class).alias();
+                alias = entityClass.getAnnotation(Table.class).alias();
             }
 
-            if (alis == null) {
-                alis = "";
+            if (alias == null) {
+                alias = "";
             }
 
-            classTableAliasMap.put(entityClass, alis);
+            classTableAliasMap.put(entityClass, alias);
         }
 
-        return alis;
+        return alias;
     }
 
     /**
@@ -1251,10 +1251,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p>This method allows specifying additional FROM clause expressions beyond just a table name.</p>
      *
      * @param tableName the name of the table to select from
-     * @param fromCause additional FROM clause expression or conditions
+     * @param fromClause additional FROM clause expression or conditions
      * @return this builder instance for method chaining
      */
-    protected This from(final String tableName, final String fromCause) {
+    protected This from(final String tableName, final String fromClause) {
         appendOperationBeforeFrom(tableName);
 
         final boolean withAlias = Strings.isNotEmpty(_tableAlias);
@@ -1273,7 +1273,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                             sb.append(SK.COMMA_SPACE);
                         }
 
-                        sb.append(formalizeColumnName(_propColumnNameMap, columnName));
+                        sb.append(normalizeColumnName(_propColumnNameMap, columnName));
 
                         if (_namingPolicy != NamingPolicy.NO_CHANGE && !SK.ASTERISK.equals(columnName)) {
                             sb.append(SPACE_AS_SPACE).append(SK.QUOTATION_D).append(columnName).append(SK.QUOTATION_D);
@@ -1348,7 +1348,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _sb.append(_SPACE_FROM_SPACE);
 
-        _sb.append(fromCause);
+        _sb.append(fromClause);
 
         _hasFromBeenSet = true;
 
@@ -2808,7 +2808,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .orderBy("id")
      *                 .offsetRows(20)
-     *                 .fetchNextNRowsOnly(10)
+     *                 .fetchNextRows(10)
      *                 .query();
      * // Output: SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
@@ -2833,7 +2833,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .orderBy("id")
      *                 .offsetRows(0)
-     *                 .fetchNextNRowsOnly(10)
+     *                 .fetchNextRows(10)
      *                 .query();
      * // Output: SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
@@ -2841,7 +2841,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param n the number of rows to fetch
      * @return this SQLBuilder instance for method chaining
      */
-    public This fetchNextNRowsOnly(final int n) {
+    public This fetchNextRows(final int n) {
         checkIfAlreadyCalled(SK.FETCH_NEXT);
 
         _sb.append(" FETCH NEXT ").append(n).append(" ROWS ONLY");
@@ -4709,7 +4709,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         } else if (propValue instanceof Condition) {
             appendCondition((Condition) propValue);
         } else {
-            _sb.append(Expression.formalize(propValue));
+            _sb.append(Expression.normalize(propValue));
         }
     }
 
@@ -4893,9 +4893,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (matched) {
                 if (isFromAppendColumn) {
-                    _sb.append(formalizeColumnName(expr, _namingPolicy));
+                    _sb.append(normalizeColumnName(expr, _namingPolicy));
                 } else {
-                    _sb.append(formalizeColumnName(_propColumnNameMap, expr));
+                    _sb.append(normalizeColumnName(_propColumnNameMap, expr));
                 }
 
                 return;
@@ -4911,7 +4911,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
                 _sb.append(word);
             } else {
-                _sb.append(formalizeColumnName(_propColumnNameMap, word));
+                _sb.append(normalizeColumnName(_propColumnNameMap, word));
             }
         }
     }
@@ -4974,7 +4974,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     final Tuple2<String, Boolean> subTp = subPropColumnNameMap.get(subPropName);
                     _sb.append(propEntityTableAliasOrName)
                             .append(SK._PERIOD)
-                            .append(subTp != null ? subTp._1 : formalizeColumnName(subPropName, _namingPolicy));
+                            .append(subTp != null ? subTp._1 : normalizeColumnName(subPropName, _namingPolicy));
 
                     if (isForSelect) {
                         _sb.append(_SPACE_AS_SPACE);
@@ -5132,7 +5132,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return false;
     }
 
-    protected static String formalizeColumnName(final String word, final NamingPolicy namingPolicy) {
+    protected static String normalizeColumnName(final String word, final NamingPolicy namingPolicy) {
         if (sqlKeyWords.contains(word) || namingPolicy == NamingPolicy.NO_CHANGE) {
             return word;
         }
@@ -5142,7 +5142,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return namingPolicy.convert(word);
     }
 
-    protected String formalizeColumnName(final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String propName) {
+    protected String normalizeColumnName(final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String propName) {
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
@@ -5172,9 +5172,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         if (Strings.isNotEmpty(_tableAlias) && propName.length() > _tableAlias.length() + 1 && propName.charAt(_tableAlias.length()) == '.'
                 && propName.startsWith(_tableAlias)) {
-            return _tableAlias + "." + formalizeColumnName(propName.substring(_tableAlias.length() + 1), _namingPolicy);
+            return _tableAlias + "." + normalizeColumnName(propName.substring(_tableAlias.length() + 1), _namingPolicy);
         } else {
-            return formalizeColumnName(propName, _namingPolicy);
+            return normalizeColumnName(propName, _namingPolicy);
         }
     }
 
