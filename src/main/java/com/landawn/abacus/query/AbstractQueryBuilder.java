@@ -368,7 +368,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected String _tableAlias; //NOSONAR
 
-    protected String _preselect; //NOSONAR
+    protected String _selectModifier; //NOSONAR
 
     protected Collection<String> _propOrColumnNames; //NOSONAR
 
@@ -1032,7 +1032,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds DISTINCT clause to the SELECT statement.
-     * <p>This method is equivalent to calling {@code preselect(DISTINCT)}.</p>
+     * <p>This method is equivalent to calling {@code selectModifier(DISTINCT)}.</p>
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1043,7 +1043,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This distinct() { //NOSONAR
-        return preselect(DISTINCT);
+        return selectModifier(DISTINCT);
     }
 
     /**
@@ -1052,21 +1052,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").preselect("TOP 10").from("account").query();
+     * String sql = PSC.select("*").selectModifier("TOP 10").from("account").query();
      * // Output: SELECT TOP 10 * FROM account
      * }</pre>
      * 
-     * @param preselect modifiers like ALL, DISTINCT, DISTINCTROW, TOP, etc.
+     * @param selectModifier modifiers like ALL, DISTINCT, DISTINCTROW, TOP, etc.
      * @return this SQLBuilder instance for method chaining
-     * @throws IllegalStateException if preselect has already been set
+     * @throws IllegalStateException if selectModifier has already been set
      */
-    public This preselect(final String preselect) {
-        if (Strings.isNotEmpty(_preselect)) {
-            throw new IllegalStateException("preselect has already been set and cannot be set again");
+    public This selectModifier(final String selectModifier) {
+        if (Strings.isNotEmpty(_selectModifier)) {
+            throw new IllegalStateException("selectModifier has already been set and cannot be set again");
         }
 
-        if (Strings.isNotEmpty(preselect)) {
-            _preselect = preselect;
+        if (Strings.isNotEmpty(selectModifier)) {
+            _selectModifier = selectModifier;
 
             final int selectIdx = _sb.indexOf(SK.SELECT);
 
@@ -1075,7 +1075,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 _sb.append(_SPACE);
 
-                appendStringExpr(_preselect, false);
+                appendStringExpr(_selectModifier, false);
 
                 final int newLength = _sb.length();
 
@@ -1408,8 +1408,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(_SELECT);
         _sb.append(_SPACE);
 
-        if (Strings.isNotEmpty(_preselect)) {
-            appendStringExpr(_preselect, false);
+        if (Strings.isNotEmpty(_selectModifier)) {
+            appendStringExpr(_selectModifier, false);
 
             _sb.append(_SPACE);
         }
@@ -2953,7 +2953,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 appendCondition(having.getCondition());
             }
 
-            final List<Cell> aggregations = criteria.getAggregations();
+            final List<Cell> aggregations = criteria.getSetOperations();
 
             if (N.notEmpty(aggregations)) {
                 for (final Cell aggregation : aggregations) {

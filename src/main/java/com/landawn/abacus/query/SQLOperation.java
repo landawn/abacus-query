@@ -137,10 +137,10 @@ public enum SQLOperation {
      */
     UNKNOWN("UNKNOWN");
 
-    private final String sqlText;
+    private final String name;
 
     SQLOperation(final String name) {
-        this.sqlText = name;
+        this.name = name;
     }
 
     private static final Map<String, SQLOperation> operationMap;
@@ -150,7 +150,7 @@ public enum SQLOperation {
         final Map<String, SQLOperation> tempMap = new HashMap<>();
 
         for (final SQLOperation value : values) {
-            tempMap.put(value.sqlText, value);
+            tempMap.put(value.name, value);
             tempMap.put(value.name(), value);
         }
 
@@ -188,26 +188,26 @@ public enum SQLOperation {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLOperation op = SQLOperation.SELECT;
-     * String sqlKeyword = op.sqlText();   // Returns "SELECT"
+     * String sqlKeyword = op.getName();   // Returns "SELECT"
      *
      * SQLOperation txOp = SQLOperation.BEGIN_TRANSACTION;
-     * String txText = txOp.sqlText();   // Returns "BEGIN TRANSACTION"
+     * String txText = txOp.getName();   // Returns "BEGIN TRANSACTION"
      * }</pre>
      *
      * @return the SQL keyword string representation of this operation, never {@code null}
      */
-    public String sqlText() {
-        return sqlText;
+    public String getName() {
+        return name;
     }
 
     /**
      * Returns the string representation of this SQL operation.
-     * This method returns the same value as {@link #sqlText()}.
+     * This method returns the same value as {@link #getName()}.
      *
      * @return the operation name as a string
      */
     @Override
     public String toString() {
-        return sqlText;
+        return name;
     }
 }

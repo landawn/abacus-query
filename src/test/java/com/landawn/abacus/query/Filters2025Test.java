@@ -1146,37 +1146,37 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testCBWhere() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.where(Filters.equal("status", "active"));
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.where(Filters.equal("status", "active"));
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBWhereString() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.where("status = 'active'");
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.where("status = 'active'");
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBGroupBy() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.groupBy("department");
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.groupBy("department");
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBHaving() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.having(Filters.expr("COUNT(*) > 5"));
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.having(Filters.expr("COUNT(*) > 5"));
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBOrderBy() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.orderBy("name");
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.orderBy("name");
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBLimit() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CB.limit(10);
+        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.limit(10);
         assertNotNull(criteria);
     }
 }

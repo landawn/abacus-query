@@ -48,30 +48,30 @@ public class SQLOperationTest extends TestBase {
     @Test
     public void testGetName() {
         // Test getName() for all operations
-        assertEquals("SELECT", SQLOperation.SELECT.sqlText());
-        assertEquals("INSERT", SQLOperation.INSERT.sqlText());
-        assertEquals("UPDATE", SQLOperation.UPDATE.sqlText());
-        assertEquals("DELETE", SQLOperation.DELETE.sqlText());
-        assertEquals("MERGE", SQLOperation.MERGE.sqlText());
-        assertEquals("CREATE", SQLOperation.CREATE.sqlText());
-        assertEquals("DROP", SQLOperation.DROP.sqlText());
-        assertEquals("ALTER", SQLOperation.ALTER.sqlText());
-        assertEquals("SHOW", SQLOperation.SHOW.sqlText());
-        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.sqlText());
-        assertEquals("USE", SQLOperation.USE.sqlText());
-        assertEquals("RENAME", SQLOperation.RENAME.sqlText());
-        assertEquals(SK.BEGIN_TRANSACTION, SQLOperation.BEGIN_TRANSACTION.sqlText());
-        assertEquals("COMMIT", SQLOperation.COMMIT.sqlText());
-        assertEquals("ROLLBACK", SQLOperation.ROLLBACK.sqlText());
-        assertEquals("CALL", SQLOperation.CALL.sqlText());
-        assertEquals("UNKNOWN", SQLOperation.UNKNOWN.sqlText());
+        assertEquals("SELECT", SQLOperation.SELECT.getName());
+        assertEquals("INSERT", SQLOperation.INSERT.getName());
+        assertEquals("UPDATE", SQLOperation.UPDATE.getName());
+        assertEquals("DELETE", SQLOperation.DELETE.getName());
+        assertEquals("MERGE", SQLOperation.MERGE.getName());
+        assertEquals("CREATE", SQLOperation.CREATE.getName());
+        assertEquals("DROP", SQLOperation.DROP.getName());
+        assertEquals("ALTER", SQLOperation.ALTER.getName());
+        assertEquals("SHOW", SQLOperation.SHOW.getName());
+        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.getName());
+        assertEquals("USE", SQLOperation.USE.getName());
+        assertEquals("RENAME", SQLOperation.RENAME.getName());
+        assertEquals(SK.BEGIN_TRANSACTION, SQLOperation.BEGIN_TRANSACTION.getName());
+        assertEquals("COMMIT", SQLOperation.COMMIT.getName());
+        assertEquals("ROLLBACK", SQLOperation.ROLLBACK.getName());
+        assertEquals("CALL", SQLOperation.CALL.getName());
+        assertEquals("UNKNOWN", SQLOperation.UNKNOWN.getName());
     }
 
     @Test
     public void testToString() {
         // Test toString() returns the same as getName()
         for (SQLOperation op : SQLOperation.values()) {
-            assertEquals(op.sqlText(), op.toString());
+            assertEquals(op.getName(), op.toString());
         }
 
         // Test specific cases
@@ -255,26 +255,26 @@ public class SQLOperationTest extends TestBase {
     public void testOperationMapConsistency() {
         // Test that all enum values can be retrieved by their name through getOperation
         for (SQLOperation op : SQLOperation.values()) {
-            assertEquals(op, SQLOperation.of(op.sqlText()));
+            assertEquals(op, SQLOperation.of(op.getName()));
         }
 
         // Test that getName() returns the expected value used in getOperation()
-        assertEquals("SELECT", SQLOperation.SELECT.sqlText());
-        assertEquals("INSERT", SQLOperation.INSERT.sqlText());
-        assertEquals("UPDATE", SQLOperation.UPDATE.sqlText());
-        assertEquals("DELETE", SQLOperation.DELETE.sqlText());
-        assertEquals("MERGE", SQLOperation.MERGE.sqlText());
-        assertEquals("CREATE", SQLOperation.CREATE.sqlText());
-        assertEquals("DROP", SQLOperation.DROP.sqlText());
-        assertEquals("ALTER", SQLOperation.ALTER.sqlText());
-        assertEquals("SHOW", SQLOperation.SHOW.sqlText());
-        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.sqlText());
-        assertEquals("USE", SQLOperation.USE.sqlText());
-        assertEquals("RENAME", SQLOperation.RENAME.sqlText());
-        assertEquals(SK.BEGIN_TRANSACTION, SQLOperation.BEGIN_TRANSACTION.sqlText());
-        assertEquals("COMMIT", SQLOperation.COMMIT.sqlText());
-        assertEquals("ROLLBACK", SQLOperation.ROLLBACK.sqlText());
-        assertEquals("CALL", SQLOperation.CALL.sqlText());
-        assertEquals("UNKNOWN", SQLOperation.UNKNOWN.sqlText());
+        assertEquals("SELECT", SQLOperation.SELECT.getName());
+        assertEquals("INSERT", SQLOperation.INSERT.getName());
+        assertEquals("UPDATE", SQLOperation.UPDATE.getName());
+        assertEquals("DELETE", SQLOperation.DELETE.getName());
+        assertEquals("MERGE", SQLOperation.MERGE.getName());
+        assertEquals("CREATE", SQLOperation.CREATE.getName());
+        assertEquals("DROP", SQLOperation.DROP.getName());
+        assertEquals("ALTER", SQLOperation.ALTER.getName());
+        assertEquals("SHOW", SQLOperation.SHOW.getName());
+        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.getName());
+        assertEquals("USE", SQLOperation.USE.getName());
+        assertEquals("RENAME", SQLOperation.RENAME.getName());
+        assertEquals(SK.BEGIN_TRANSACTION, SQLOperation.BEGIN_TRANSACTION.getName());
+        assertEquals("COMMIT", SQLOperation.COMMIT.getName());
+        assertEquals("ROLLBACK", SQLOperation.ROLLBACK.getName());
+        assertEquals("CALL", SQLOperation.CALL.getName());
+        assertEquals("UNKNOWN", SQLOperation.UNKNOWN.getName());
     }
 }

@@ -165,23 +165,23 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testConcatPropNamesArray() {
         // Test empty array
-        String result = AbstractCondition.concatPropNames();
+        String result = AbstractCondition.joinPropNames();
         Assertions.assertEquals("", result);
 
         // Test single element
-        result = AbstractCondition.concatPropNames("name");
+        result = AbstractCondition.joinPropNames("name");
         Assertions.assertEquals("name", result);
 
         // Test two elements
-        result = AbstractCondition.concatPropNames("city", "state");
+        result = AbstractCondition.joinPropNames("city", "state");
         Assertions.assertEquals("(city, state)", result);
 
         // Test three elements
-        result = AbstractCondition.concatPropNames("a", "b", "c");
+        result = AbstractCondition.joinPropNames("a", "b", "c");
         Assertions.assertEquals("(a, b, c)", result);
 
         // Test more than three elements
-        result = AbstractCondition.concatPropNames("col1", "col2", "col3", "col4", "col5");
+        result = AbstractCondition.joinPropNames("col1", "col2", "col3", "col4", "col5");
         Assertions.assertEquals("(col1, col2, col3, col4, col5)", result);
     }
 
@@ -189,27 +189,27 @@ public class AbstractConditionTest extends TestBase {
     public void testConcatPropNamesCollection() {
         // Test empty collection
         List<String> empty = new ArrayList<>();
-        String result = AbstractCondition.concatPropNames(empty);
+        String result = AbstractCondition.joinPropNames(empty);
         Assertions.assertEquals("", result);
 
         // Test single element
         List<String> single = Arrays.asList("name");
-        result = AbstractCondition.concatPropNames(single);
+        result = AbstractCondition.joinPropNames(single);
         Assertions.assertEquals("name", result);
 
         // Test two elements
         List<String> two = Arrays.asList("city", "state");
-        result = AbstractCondition.concatPropNames(two);
+        result = AbstractCondition.joinPropNames(two);
         Assertions.assertEquals("(city, state)", result);
 
         // Test three elements
         List<String> three = Arrays.asList("a", "b", "c");
-        result = AbstractCondition.concatPropNames(three);
+        result = AbstractCondition.joinPropNames(three);
         Assertions.assertEquals("(a, b, c)", result);
 
         // Test more than three elements
         List<String> many = Arrays.asList("col1", "col2", "col3", "col4", "col5");
-        result = AbstractCondition.concatPropNames(many);
+        result = AbstractCondition.joinPropNames(many);
         Assertions.assertEquals("(col1, col2, col3, col4, col5)", result);
     }
 
@@ -221,7 +221,7 @@ public class AbstractConditionTest extends TestBase {
         props.add("second");
         props.add("third");
 
-        String result = AbstractCondition.concatPropNames(props);
+        String result = AbstractCondition.joinPropNames(props);
         Assertions.assertEquals("(first, second, third)", result);
     }
 

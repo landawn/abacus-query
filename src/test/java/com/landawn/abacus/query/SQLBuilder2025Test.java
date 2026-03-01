@@ -639,7 +639,7 @@ public class SQLBuilder2025Test extends TestBase {
     // Preselect tests
     @Test
     public void testPreselectDistinct() {
-        String sql = SQLBuilder.PSC.select("status").from("users").preselect("DISTINCT").sql();
+        String sql = SQLBuilder.PSC.select("status").from("users").selectModifier("DISTINCT").sql();
         assertTrue(sql.contains("DISTINCT"));
     }
 

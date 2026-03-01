@@ -3654,26 +3654,6 @@ public class Filters {
         return new Criteria();
     }
 
-    //    /**
-    //     * A utility class providing static factory methods identical to Filters.
-    //     * CF serves as a shorter alias for Filters to reduce verbosity.
-    //     * 
-    //     * <p><b>Usage Examples:</b></p>
-    //     * <pre>{@code
-    //     * // Instead of Filters.eq("name", "John")
-    //     * Condition c = CF.eq("name", "John");
-    //     * }</pre>
-    //     *
-    //     * <p>All methods in Filters are available through CF.</p>
-    //     */
-    //    @Beta
-    //    public static final class CF extends Filters {
-    //
-    //        private CF() {
-    //            // singleton for utility class.
-    //        }
-    //    }
-
     /**
      * A utility class for building Criteria objects with a fluent interface.
      * CB (Criteria Builder) provides static methods that create and return
@@ -3685,18 +3665,18 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Instead of: Filters.criteria().where(condition)
-     * Criteria c = CB.where(Filters.eq("status", "active"));
+     * Criteria c = CriteriaBuilder.where(Filters.eq("status", "active"));
      * 
      * // Chain multiple operations
-     * Criteria c = CB.where("age > 18")
+     * Criteria c = CriteriaBuilder.where("age > 18")
      *     .orderBy("name")
      *     .limit(50);
      * }</pre>
      */
     @Beta
-    public static final class CB {
+    public static final class CriteriaBuilder {
 
-        private CB() {
+        private CriteriaBuilder() {
             // singleton for utility class.
         }
 

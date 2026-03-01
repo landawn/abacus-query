@@ -78,17 +78,17 @@ import com.landawn.abacus.util.Strings;
  */
 public class Criteria extends AbstractCondition {
 
-    private static final Set<Operator> aggregationOperators = N.newHashSet();
+    private static final Set<Operator> setOperators = N.newHashSet();
 
     static {
-        aggregationOperators.add(Operator.UNION_ALL);
-        aggregationOperators.add(Operator.UNION);
-        aggregationOperators.add(Operator.INTERSECT);
-        aggregationOperators.add(Operator.EXCEPT);
-        aggregationOperators.add(Operator.MINUS);
+        setOperators.add(Operator.UNION_ALL);
+        setOperators.add(Operator.UNION);
+        setOperators.add(Operator.INTERSECT);
+        setOperators.add(Operator.EXCEPT);
+        setOperators.add(Operator.MINUS);
     }
 
-    private String preselect = null;
+    private String selectModifier = null;
 
     private List<Condition> conditionList;
 
@@ -110,19 +110,19 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Gets the preselect modifier (e.g., DISTINCT, DISTINCTROW).
-     * The preselect modifier appears before the SELECT columns in SQL.
+     * Gets the selectModifier modifier (e.g., DISTINCT, DISTINCTROW).
+     * The selectModifier modifier appears before the SELECT columns in SQL.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().distinct();
-     * String modifier = criteria.preselect();   // Returns "DISTINCT"
+     * String modifier = criteria.getSelectModifier();   // Returns "DISTINCT"
      * }</pre>
      * 
-     * @return the preselect modifier, or null if not set
+     * @return the selectModifier modifier, or null if not set
      */
-    public String preselect() {
-        return preselect;
+    public String getSelectModifier() {
+        return selectModifier;
     }
 
     /**
@@ -226,7 +226,7 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Gets all aggregation operations (UNION, UNION ALL, INTERSECT, EXCEPT, MINUS).
+     * Gets all set operations (UNION, UNION ALL, INTERSECT, EXCEPT, MINUS).
      * These are set operations that combine results from multiple queries.
      *
      * <p><b>Usage Examples:</b></p>
@@ -238,21 +238,21 @@ public class Criteria extends AbstractCondition {
      *     .union(archivedUsers)
      *     .unionAll(tempUsers);
      *
-     * List<Cell> aggregations = criteria.getAggregations();
+     * List<Cell> setOperations = criteria.getSetOperations();
      * // Returns a list of 2 aggregation conditions (UNION and UNION ALL)
      *
      * Criteria noAgg = new Criteria().where(Filters.eq("status", "active"));
-     * List<Cell> empty = noAgg.getAggregations();
+     * List<Cell> empty = noAgg.getSetOperations();
      * // Returns an empty list
      * }</pre>
      *
      * @return a list of aggregation conditions, empty if none exist
      */
-    public List<Cell> getAggregations() {
+    public List<Cell> getSetOperations() {
         List<Cell> result = null;
 
         for (final Condition cond : conditionList) {
-            if (aggregationOperators.contains(cond.getOperator())) {
+            if (setOperators.contains(cond.getOperator())) {
                 if (result == null) {
                     result = new ArrayList<>();
                 }
@@ -440,7 +440,7 @@ public class Criteria extends AbstractCondition {
      *     .limit(10);
      *
      * criteria.clear();
-     * // criteria is now empty; preselect is also reset to null
+     * // criteria is now empty; selectModifier is also reset to null
      *
      * // Rebuild the criteria with new conditions
      * criteria.where(Filters.gt("age", 21))
@@ -449,13 +449,13 @@ public class Criteria extends AbstractCondition {
      *
      */
     public void clear() {
-        preselect = null;
+        selectModifier = null;
         conditionList.clear();
     }
 
     /**
      * Gets all parameters from all conditions in the proper order.
-     * The order follows SQL clause precedence: JOIN, WHERE, HAVING, aggregations.
+     * The order follows SQL clause precedence: JOIN, WHERE, HAVING, setOperations.
      * Parameters from GROUP BY, ORDER BY, and LIMIT are not included as they typically don't have parameters.
      * 
      * @return a list of all parameters from all conditions
@@ -488,7 +488,7 @@ public class Criteria extends AbstractCondition {
                 parameters.addAll(having.getParameters());
             }
 
-            final List<Cell> condList = getAggregations();
+            final List<Cell> condList = getSetOperations();
 
             for (final Condition cond : condList) {
                 parameters.addAll(cond.getParameters());
@@ -515,7 +515,7 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Clears all parameter values by setting them to null to free memory.
-     * This clears parameters from all conditions in this criteria (JOIN, WHERE, HAVING, aggregations).
+     * This clears parameters from all conditions in this criteria (JOIN, WHERE, HAVING, setOperations).
      *
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>
@@ -543,7 +543,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria distinct() {
-        preselect = SK.DISTINCT;
+        selectModifier = SK.DISTINCT;
 
         return this;
     }
@@ -567,7 +567,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria distinctBy(final String columnNames) {
-        preselect = Strings.isEmpty(columnNames) ? SK.DISTINCT : SK.DISTINCT + "(" + columnNames + ")";
+        selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCT : SK.DISTINCT + "(" + columnNames + ")";
 
         return this;
     }
@@ -587,7 +587,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria distinctRow() {
-        preselect = SK.DISTINCTROW;
+        selectModifier = SK.DISTINCTROW;
 
         return this;
     }
@@ -606,31 +606,31 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria distinctRowBy(final String columnNames) {
-        preselect = Strings.isEmpty(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
+        selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
 
         return this;
     }
 
     /**
-     * Sets a custom preselect modifier.
+     * Sets a custom selectModifier modifier.
      * This allows for database-specific modifiers not covered by other methods.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .preselect("SQL_CALC_FOUND_ROWS")
+     *     .selectModifier("SQL_CALC_FOUND_ROWS")
      *     .where(Filters.eq("active", true));
      * // Results in: SELECT SQL_CALC_FOUND_ROWS ... WHERE active = true
      *
      * // MySQL-specific modifier
-     * criteria.preselect("SQL_NO_CACHE");
+     * criteria.selectModifier("SQL_NO_CACHE");
      * }</pre>
      *
-     * @param preselect the custom preselect modifier
+     * @param selectModifier the custom selectModifier modifier
      * @return this Criteria instance for method chaining
      */
-    public Criteria preselect(final String preselect) {
-        this.preselect = preselect;
+    public Criteria selectModifier(final String selectModifier) {
+        this.selectModifier = selectModifier;
 
         return this;
     }
@@ -1536,7 +1536,7 @@ public class Criteria extends AbstractCondition {
     @SuppressWarnings("StringConcatenationInLoop")
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        final String preselect = Strings.isEmpty(this.preselect) ? Strings.EMPTY : SK.SPACE + this.preselect; //NOSONAR
+        final String selectModifier = Strings.isEmpty(this.selectModifier) ? Strings.EMPTY : SK.SPACE + this.selectModifier; //NOSONAR
         String join = Strings.EMPTY;
         String where = Strings.EMPTY;
         String groupBy = Strings.EMPTY;
@@ -1564,32 +1564,32 @@ public class Criteria extends AbstractCondition {
             }
         }
 
-        return preselect + join + where + groupBy + having + aggregate + orderBy + limit + forUpdate;
+        return selectModifier + join + where + groupBy + having + aggregate + orderBy + limit + forUpdate;
     }
 
     /**
      * Returns the hash code of this Criteria.
-     * The hash code is based on the preselect modifier and all conditions.
+     * The hash code is based on the selectModifier modifier and all conditions.
      * 
      * @return the hash code value
      */
     @Override
     public int hashCode() {
-        int h = Strings.isEmpty(preselect) ? 0 : preselect.hashCode();
+        int h = Strings.isEmpty(selectModifier) ? 0 : selectModifier.hashCode();
         return (h * 31) + conditionList.hashCode();
     }
 
     /**
      * Checks if this Criteria is equal to another object.
-     * Two Criteria are equal if they have the same preselect modifier and conditions.
+     * Two Criteria are equal if they have the same selectModifier modifier and conditions.
      * 
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
      */
     @Override
     public boolean equals(final Object obj) {
-        return this == obj
-                || (obj instanceof Criteria && N.equals(((Criteria) obj).preselect, preselect) && N.equals(((Criteria) obj).conditionList, conditionList));
+        return this == obj || (obj instanceof Criteria && N.equals(((Criteria) obj).selectModifier, selectModifier)
+                && N.equals(((Criteria) obj).conditionList, conditionList));
     }
 
     /**

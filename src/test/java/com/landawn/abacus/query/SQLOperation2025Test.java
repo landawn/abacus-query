@@ -66,23 +66,23 @@ public class SQLOperation2025Test extends TestBase {
 
     @Test
     public void testSqlText() {
-        assertEquals("SELECT", SQLOperation.SELECT.sqlText());
-        assertEquals("INSERT", SQLOperation.INSERT.sqlText());
-        assertEquals("UPDATE", SQLOperation.UPDATE.sqlText());
-        assertEquals("DELETE", SQLOperation.DELETE.sqlText());
-        assertEquals("MERGE", SQLOperation.MERGE.sqlText());
-        assertEquals("CREATE", SQLOperation.CREATE.sqlText());
-        assertEquals("DROP", SQLOperation.DROP.sqlText());
-        assertEquals("ALTER", SQLOperation.ALTER.sqlText());
-        assertEquals("SHOW", SQLOperation.SHOW.sqlText());
-        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.sqlText());
-        assertEquals("USE", SQLOperation.USE.sqlText());
-        assertEquals("RENAME", SQLOperation.RENAME.sqlText());
-        assertEquals("BEGIN TRANSACTION", SQLOperation.BEGIN_TRANSACTION.sqlText());
-        assertEquals("COMMIT", SQLOperation.COMMIT.sqlText());
-        assertEquals("ROLLBACK", SQLOperation.ROLLBACK.sqlText());
-        assertEquals("CALL", SQLOperation.CALL.sqlText());
-        assertEquals("UNKNOWN", SQLOperation.UNKNOWN.sqlText());
+        assertEquals("SELECT", SQLOperation.SELECT.getName());
+        assertEquals("INSERT", SQLOperation.INSERT.getName());
+        assertEquals("UPDATE", SQLOperation.UPDATE.getName());
+        assertEquals("DELETE", SQLOperation.DELETE.getName());
+        assertEquals("MERGE", SQLOperation.MERGE.getName());
+        assertEquals("CREATE", SQLOperation.CREATE.getName());
+        assertEquals("DROP", SQLOperation.DROP.getName());
+        assertEquals("ALTER", SQLOperation.ALTER.getName());
+        assertEquals("SHOW", SQLOperation.SHOW.getName());
+        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.getName());
+        assertEquals("USE", SQLOperation.USE.getName());
+        assertEquals("RENAME", SQLOperation.RENAME.getName());
+        assertEquals("BEGIN TRANSACTION", SQLOperation.BEGIN_TRANSACTION.getName());
+        assertEquals("COMMIT", SQLOperation.COMMIT.getName());
+        assertEquals("ROLLBACK", SQLOperation.ROLLBACK.getName());
+        assertEquals("CALL", SQLOperation.CALL.getName());
+        assertEquals("UNKNOWN", SQLOperation.UNKNOWN.getName());
     }
 
     @Test
@@ -96,7 +96,7 @@ public class SQLOperation2025Test extends TestBase {
         assertEquals("DROP", SQLOperation.DROP.toString());
         assertEquals("ALTER", SQLOperation.ALTER.toString());
         assertEquals("SHOW", SQLOperation.SHOW.toString());
-        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.sqlText());
+        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.getName());
         assertEquals("USE", SQLOperation.USE.toString());
         assertEquals("RENAME", SQLOperation.RENAME.toString());
         assertEquals("BEGIN TRANSACTION", SQLOperation.BEGIN_TRANSACTION.toString());
@@ -125,7 +125,7 @@ public class SQLOperation2025Test extends TestBase {
     @Test
     public void testToStringMatchesSqlText() {
         for (SQLOperation op : SQLOperation.values()) {
-            assertEquals(op.sqlText(), op.toString());
+            assertEquals(op.getName(), op.toString());
         }
     }
 }

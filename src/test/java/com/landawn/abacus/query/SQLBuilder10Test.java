@@ -364,13 +364,13 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testPreselect() {
-        String sql = PSC.select("*").preselect("TOP 10").from("account").sql();
+        String sql = PSC.select("*").selectModifier("TOP 10").from("account").sql();
 
         assertEquals("SELECT TOP 10 * FROM account", sql);
 
-        // Test duplicate preselect
-        SQLBuilder builder = PSC.select("*").preselect("TOP 10");
-        assertThrows(IllegalStateException.class, () -> builder.preselect("DISTINCT"));
+        // Test duplicate selectModifier
+        SQLBuilder builder = PSC.select("*").selectModifier("TOP 10");
+        assertThrows(IllegalStateException.class, () -> builder.selectModifier("DISTINCT"));
     }
 
     @Test

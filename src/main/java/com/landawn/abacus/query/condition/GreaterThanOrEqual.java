@@ -99,6 +99,6 @@ public class GreaterThanOrEqual extends Binary {
      * @throws IllegalArgumentException if propName is null or empty
      */
     public GreaterThanOrEqual(final String propName, final Object propValue) {
-        super(propName, Operator.GREATER_THAN_OR__EQUAL, propValue);
+        super(propName, Operator.GREATER_THAN_OR_EQUAL, propValue);
     }
 }

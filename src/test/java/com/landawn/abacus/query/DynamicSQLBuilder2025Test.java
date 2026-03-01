@@ -42,8 +42,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testSelectAppendSingleColumn() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("id");
-        builder.fromClause().append("users");
+        builder.select().append("id");
+        builder.from().append("users");
         String sql = builder.build();
         assertEquals("SELECT id FROM users", sql);
     }
@@ -51,8 +51,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testSelectAppendMultipleColumns() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("id").append("name").append("email");
-        builder.fromClause().append("users");
+        builder.select().append("id").append("name").append("email");
+        builder.from().append("users");
         String sql = builder.build();
         assertEquals("SELECT id, name, email FROM users", sql);
     }
@@ -60,8 +60,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testSelectAppendWithAlias() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("first_name", "fname").append("last_name", "lname");
-        builder.fromClause().append("users");
+        builder.select().append("first_name", "fname").append("last_name", "lname");
+        builder.from().append("users");
         String sql = builder.build();
         assertEquals("SELECT first_name AS fname, last_name AS lname FROM users", sql);
     }
@@ -69,8 +69,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testSelectAppendCollection() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append(Arrays.asList("id", "name", "email"));
-        builder.fromClause().append("users");
+        builder.select().append(Arrays.asList("id", "name", "email"));
+        builder.from().append("users");
         String sql = builder.build();
         assertEquals("SELECT id, name, email FROM users", sql);
     }
@@ -82,8 +82,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         columns.put("user_name", "uname");
 
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append(columns);
-        builder.fromClause().append("users");
+        builder.select().append(columns);
+        builder.from().append("users");
         String sql = builder.build();
 
         assertTrue(sql.contains("SELECT"));
@@ -94,8 +94,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testSelectAppendIf() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("id").appendIf(true, "name").appendIf(false, "email");
-        builder.fromClause().append("users");
+        builder.select().append("id").appendIf(true, "name").appendIf(false, "email");
+        builder.from().append("users");
         String sql = builder.build();
         assertEquals("SELECT id, name FROM users", sql);
     }
@@ -103,14 +103,14 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testSelectAppendIfOrElse() {
         DynamicSQLBuilder builder1 = DynamicSQLBuilder.create();
-        builder1.selectClause().appendIfOrElse(true, "full_name", "first_name");
-        builder1.fromClause().append("users");
+        builder1.select().appendIfOrElse(true, "full_name", "first_name");
+        builder1.from().append("users");
         String sql1 = builder1.build();
         assertEquals("SELECT full_name FROM users", sql1);
 
         DynamicSQLBuilder builder2 = DynamicSQLBuilder.create();
-        builder2.selectClause().appendIfOrElse(false, "full_name", "first_name");
-        builder2.fromClause().append("users");
+        builder2.select().appendIfOrElse(false, "full_name", "first_name");
+        builder2.from().append("users");
         String sql2 = builder2.build();
         assertEquals("SELECT first_name FROM users", sql2);
     }
@@ -118,8 +118,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromAppendTable() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
+        builder.select().append("*");
+        builder.from().append("users");
         String sql = builder.build();
         assertEquals("SELECT * FROM users", sql);
     }
@@ -127,8 +127,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromAppendTableWithAlias() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("u.id");
-        builder.fromClause().append("users", "u");
+        builder.select().append("u.id");
+        builder.from().append("users", "u");
         String sql = builder.build();
         assertEquals("SELECT u.id FROM users u", sql);
     }
@@ -136,8 +136,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromAppendMultipleTables() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users", "u").append("orders", "o");
+        builder.select().append("*");
+        builder.from().append("users", "u").append("orders", "o");
         String sql = builder.build();
         assertEquals("SELECT * FROM users u, orders o", sql);
     }
@@ -145,8 +145,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromJoin() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users", "u").join("orders o", "u.id = o.user_id");
+        builder.select().append("*");
+        builder.from().append("users", "u").join("orders o", "u.id = o.user_id");
         String sql = builder.build();
         assertEquals("SELECT * FROM users u JOIN orders o ON u.id = o.user_id", sql);
     }
@@ -154,8 +154,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromInnerJoin() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users", "u").innerJoin("orders o", "u.id = o.user_id");
+        builder.select().append("*");
+        builder.from().append("users", "u").innerJoin("orders o", "u.id = o.user_id");
         String sql = builder.build();
         assertEquals("SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id", sql);
     }
@@ -163,8 +163,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromLeftJoin() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
+        builder.select().append("*");
+        builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
         String sql = builder.build();
         assertEquals("SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id", sql);
     }
@@ -172,8 +172,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromRightJoin() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users", "u").rightJoin("orders o", "u.id = o.user_id");
+        builder.select().append("*");
+        builder.from().append("users", "u").rightJoin("orders o", "u.id = o.user_id");
         String sql = builder.build();
         assertEquals("SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id", sql);
     }
@@ -181,8 +181,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromFullJoin() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users", "u").fullJoin("departments d", "u.dept_id = d.id");
+        builder.select().append("*");
+        builder.from().append("users", "u").fullJoin("departments d", "u.dept_id = d.id");
         String sql = builder.build();
         assertEquals("SELECT * FROM users u FULL JOIN departments d ON u.dept_id = d.id", sql);
     }
@@ -190,8 +190,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromAppendIf() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users").appendIf(true, "active_users").appendIf(false, "deleted_users");
+        builder.select().append("*");
+        builder.from().append("users").appendIf(true, "active_users").appendIf(false, "deleted_users");
         String sql = builder.build();
         assertEquals("SELECT * FROM users, active_users", sql);
     }
@@ -199,14 +199,14 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFromAppendIfOrElse() {
         DynamicSQLBuilder builder1 = DynamicSQLBuilder.create();
-        builder1.selectClause().append("*");
-        builder1.fromClause().appendIfOrElse(true, "active_users", "all_users");
+        builder1.select().append("*");
+        builder1.from().appendIfOrElse(true, "active_users", "all_users");
         String sql1 = builder1.build();
         assertEquals("SELECT * FROM active_users", sql1);
 
         DynamicSQLBuilder builder2 = DynamicSQLBuilder.create();
-        builder2.selectClause().append("*");
-        builder2.fromClause().appendIfOrElse(false, "active_users", "all_users");
+        builder2.select().append("*");
+        builder2.from().appendIfOrElse(false, "active_users", "all_users");
         String sql2 = builder2.build();
         assertEquals("SELECT * FROM all_users", sql2);
     }
@@ -214,9 +214,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testWhereAppend() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.whereClause().append("age > 18");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().append("age > 18");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE age > 18", sql);
     }
@@ -224,9 +224,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testWhereAnd() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.whereClause().append("age > 18").and("status = 'active'");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().append("age > 18").and("status = 'active'");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE age > 18 AND status = 'active'", sql);
     }
@@ -234,9 +234,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testWhereOr() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.whereClause().append("role = 'admin'").or("role = 'moderator'");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().append("role = 'admin'").or("role = 'moderator'");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE role = 'admin' OR role = 'moderator'", sql);
     }
@@ -244,9 +244,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testWhereRepeatQM() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.whereClause().append("id IN (").repeatQM(3).append(")");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().append("id IN (").repeatQM(3).append(")");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE id IN (?, ?, ? )", sql);
     }
@@ -254,9 +254,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testWhereRepeatQMWithPrefixPostfix() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.whereClause().append("status IN ").repeatQM(2, "(", ")");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().append("status IN ").repeatQM(2, "(", ")");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE status IN (?, ?)", sql);
     }
@@ -264,9 +264,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testWhereAppendIf() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.whereClause().append("age > 18").appendIf(true, "AND status = 'active'");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().append("age > 18").appendIf(true, "AND status = 'active'");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE age > 18 AND status = 'active'", sql);
     }
@@ -274,9 +274,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testWhereAppendIfOrElse() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.whereClause().appendIfOrElse(true, "status = 'active'", "status = 'inactive'");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().appendIfOrElse(true, "status = 'active'", "status = 'inactive'");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE status = 'active'", sql);
     }
@@ -284,9 +284,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testGroupByAppend() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("department, COUNT(*)");
-        builder.fromClause().append("employees");
-        builder.groupByClause().append("department");
+        builder.select().append("department, COUNT(*)");
+        builder.from().append("employees");
+        builder.groupBy().append("department");
         String sql = builder.build();
         assertEquals("SELECT department, COUNT(*) FROM employees GROUP BY department", sql);
     }
@@ -294,9 +294,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testGroupByAppendMultiple() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("year, month, COUNT(*)");
-        builder.fromClause().append("sales");
-        builder.groupByClause().append("year").append("month");
+        builder.select().append("year, month, COUNT(*)");
+        builder.from().append("sales");
+        builder.groupBy().append("year").append("month");
         String sql = builder.build();
         assertEquals("SELECT year, month, COUNT(*) FROM sales GROUP BY year, month", sql);
     }
@@ -304,9 +304,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testGroupByAppendCollection() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("sales");
-        builder.groupByClause().append(Arrays.asList("year", "quarter", "region"));
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().append(Arrays.asList("year", "quarter", "region"));
         String sql = builder.build();
         assertEquals("SELECT * FROM sales GROUP BY year, quarter, region", sql);
     }
@@ -314,9 +314,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testGroupByAppendIf() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("sales");
-        builder.groupByClause().append("product").appendIf(true, "region");
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().append("product").appendIf(true, "region");
         String sql = builder.build();
         assertEquals("SELECT * FROM sales GROUP BY product, region", sql);
     }
@@ -324,9 +324,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testGroupByAppendIfOrElse() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("sales");
-        builder.groupByClause().appendIfOrElse(true, "year, month", "year");
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().appendIfOrElse(true, "year, month", "year");
         String sql = builder.build();
         assertEquals("SELECT * FROM sales GROUP BY year, month", sql);
     }
@@ -334,10 +334,10 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testHavingAppend() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("department, COUNT(*)");
-        builder.fromClause().append("employees");
-        builder.groupByClause().append("department");
-        builder.havingClause().append("COUNT(*) > 5");
+        builder.select().append("department, COUNT(*)");
+        builder.from().append("employees");
+        builder.groupBy().append("department");
+        builder.having().append("COUNT(*) > 5");
         String sql = builder.build();
         assertEquals("SELECT department, COUNT(*) FROM employees GROUP BY department HAVING COUNT(*) > 5", sql);
     }
@@ -345,10 +345,10 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testHavingAnd() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("sales");
-        builder.groupByClause().append("region");
-        builder.havingClause().append("COUNT(*) > 10").and("SUM(amount) > 1000");
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().append("region");
+        builder.having().append("COUNT(*) > 10").and("SUM(amount) > 1000");
         String sql = builder.build();
         assertEquals("SELECT * FROM sales GROUP BY region HAVING COUNT(*) > 10 AND SUM(amount) > 1000", sql);
     }
@@ -356,10 +356,10 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testHavingOr() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("sales");
-        builder.groupByClause().append("product");
-        builder.havingClause().append("COUNT(*) > 100").or("AVG(price) > 50");
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().append("product");
+        builder.having().append("COUNT(*) > 100").or("AVG(price) > 50");
         String sql = builder.build();
         assertEquals("SELECT * FROM sales GROUP BY product HAVING COUNT(*) > 100 OR AVG(price) > 50", sql);
     }
@@ -367,10 +367,10 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testHavingAppendIf() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("sales");
-        builder.groupByClause().append("region");
-        builder.havingClause().append("COUNT(*) > 0").appendIf(true, "AND SUM(revenue) > 5000");
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().append("region");
+        builder.having().append("COUNT(*) > 0").appendIf(true, "AND SUM(revenue) > 5000");
         String sql = builder.build();
         assertTrue(sql.contains("HAVING COUNT(*) > 0 AND SUM(revenue) > 5000"));
     }
@@ -378,10 +378,10 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testHavingAppendIfOrElse() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("sales");
-        builder.groupByClause().append("region");
-        builder.havingClause().appendIfOrElse(true, "COUNT(*) > 100", "COUNT(*) > 10");
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().append("region");
+        builder.having().appendIfOrElse(true, "COUNT(*) > 100", "COUNT(*) > 10");
         String sql = builder.build();
         assertTrue(sql.contains("HAVING COUNT(*) > 100"));
     }
@@ -389,9 +389,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testOrderByAppend() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.orderByClause().append("created_date DESC");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.orderBy().append("created_date DESC");
         String sql = builder.build();
         assertEquals("SELECT * FROM users ORDER BY created_date DESC", sql);
     }
@@ -399,9 +399,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testOrderByAppendMultiple() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.orderByClause().append("last_name ASC").append("first_name ASC");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.orderBy().append("last_name ASC").append("first_name ASC");
         String sql = builder.build();
         assertEquals("SELECT * FROM users ORDER BY last_name ASC, first_name ASC", sql);
     }
@@ -409,9 +409,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testOrderByAppendCollection() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("products");
-        builder.orderByClause().append(Arrays.asList("category", "price DESC", "name"));
+        builder.select().append("*");
+        builder.from().append("products");
+        builder.orderBy().append(Arrays.asList("category", "price DESC", "name"));
         String sql = builder.build();
         assertEquals("SELECT * FROM products ORDER BY category, price DESC, name", sql);
     }
@@ -419,9 +419,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testOrderByAppendIf() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.orderByClause().append("name").appendIf(true, "age DESC");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.orderBy().append("name").appendIf(true, "age DESC");
         String sql = builder.build();
         assertEquals("SELECT * FROM users ORDER BY name, age DESC", sql);
     }
@@ -429,9 +429,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testOrderByAppendIfOrElse() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.orderByClause().appendIfOrElse(true, "created_date DESC", "created_date ASC");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.orderBy().appendIfOrElse(true, "created_date DESC", "created_date ASC");
         String sql = builder.build();
         assertEquals("SELECT * FROM users ORDER BY created_date DESC", sql);
     }
@@ -439,8 +439,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testLimitString() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
+        builder.select().append("*");
+        builder.from().append("users");
         builder.limit("LIMIT 10 OFFSET 20");
         String sql = builder.build();
         assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
@@ -449,8 +449,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testLimitInt() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
+        builder.select().append("*");
+        builder.from().append("users");
         builder.limit(10);
         String sql = builder.build();
         assertEquals("SELECT * FROM users LIMIT 10", sql);
@@ -459,8 +459,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testLimitWithOffset() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
+        builder.select().append("*");
+        builder.from().append("users");
         builder.limit(20, 10);
         String sql = builder.build();
         assertEquals("SELECT * FROM users LIMIT 20, 10", sql);
@@ -469,8 +469,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testLimitByRowNum() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
+        builder.select().append("*");
+        builder.from().append("users");
         builder.limitByRowNum(100);
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE ROWNUM <= 100", sql);
@@ -479,9 +479,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testLimitByRowNumWithWhere() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
-        builder.whereClause().append("active = 1");
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().append("active = 1");
         builder.limitByRowNum(100);
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE active = 1 AND ROWNUM <= 100", sql);
@@ -490,8 +490,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testOffsetRows() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
+        builder.select().append("*");
+        builder.from().append("users");
         builder.offsetRows(20);
         String sql = builder.build();
         assertEquals("SELECT * FROM users OFFSET 20 ROWS", sql);
@@ -500,8 +500,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFetchNextNRowsOnly() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
+        builder.select().append("*");
+        builder.from().append("users");
         builder.offsetRows(20);
         builder.fetchNextRows(10);
         String sql = builder.build();
@@ -511,8 +511,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testFetchFirstNRowsOnly() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
+        builder.select().append("*");
+        builder.from().append("users");
         builder.fetchFirstRows(50);
         String sql = builder.build();
         assertEquals("SELECT * FROM users FETCH FIRST 50 ROWS ONLY", sql);
@@ -521,8 +521,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testUnion() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("id, name");
-        builder.fromClause().append("active_users");
+        builder.select().append("id, name");
+        builder.from().append("active_users");
         builder.union("SELECT id, name FROM inactive_users");
         String sql = builder.build();
         assertTrue(sql.contains("UNION"));
@@ -533,8 +533,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testUnionAll() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("table1");
+        builder.select().append("*");
+        builder.from().append("table1");
         builder.unionAll("SELECT * FROM table2");
         String sql = builder.build();
         assertTrue(sql.contains("UNION ALL"));
@@ -543,8 +543,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testIntersect() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("user_id");
-        builder.fromClause().append("orders");
+        builder.select().append("user_id");
+        builder.from().append("orders");
         builder.intersect("SELECT user_id FROM premium_members");
         String sql = builder.build();
         assertTrue(sql.contains("INTERSECT"));
@@ -553,8 +553,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testExcept() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("user_id");
-        builder.fromClause().append("all_users");
+        builder.select().append("user_id");
+        builder.from().append("all_users");
         builder.except("SELECT user_id FROM blocked_users");
         String sql = builder.build();
         assertTrue(sql.contains("EXCEPT"));
@@ -563,8 +563,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testMinus() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("id");
-        builder.fromClause().append("table1");
+        builder.select().append("id");
+        builder.from().append("table1");
         builder.minus("SELECT id FROM table2");
         String sql = builder.build();
         assertTrue(sql.contains("MINUS"));
@@ -573,12 +573,12 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testComplexQuery() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("u.id").append("u.name").append("COUNT(o.id)", "order_count");
-        builder.fromClause().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
-        builder.whereClause().append("u.status = ?").and("u.created_date > ?");
-        builder.groupByClause().append("u.id").append("u.name");
-        builder.havingClause().append("COUNT(o.id) > 0");
-        builder.orderByClause().append("order_count DESC");
+        builder.select().append("u.id").append("u.name").append("COUNT(o.id)", "order_count");
+        builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
+        builder.where().append("u.status = ?").and("u.created_date > ?");
+        builder.groupBy().append("u.id").append("u.name");
+        builder.having().append("COUNT(o.id) > 0");
+        builder.orderBy().append("order_count DESC");
         builder.limit(10);
         String sql = builder.build();
 
@@ -595,8 +595,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testMultipleJoins() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause()
+        builder.select().append("*");
+        builder.from()
                 .append("users", "u")
                 .innerJoin("orders o", "u.id = o.user_id")
                 .leftJoin("products p", "o.product_id = p.id")
@@ -615,10 +615,10 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         boolean orderByName = true;
 
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("id").append("name").appendIf(includeEmail, "email");
-        builder.fromClause().append("users");
-        builder.whereClause().append("status = 'active'").appendIf(filterByAge, "AND age > 18");
-        builder.orderByClause().appendIf(orderByName, "name ASC");
+        builder.select().append("id").append("name").appendIf(includeEmail, "email");
+        builder.from().append("users");
+        builder.where().append("status = 'active'").appendIf(filterByAge, "AND age > 18");
+        builder.orderBy().appendIf(orderByName, "name ASC");
         String sql = builder.build();
 
         assertTrue(sql.contains("email"));
@@ -629,8 +629,8 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     @Test
     public void testEmptyQuery() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-        builder.selectClause().append("*");
-        builder.fromClause().append("users");
+        builder.select().append("*");
+        builder.from().append("users");
         String sql = builder.build();
         assertEquals("SELECT * FROM users", sql);
     }
@@ -639,9 +639,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     public void testWhereRepeatQMZero() {
         assertThrows(IllegalArgumentException.class, () -> {
             DynamicSQLBuilder builder = DynamicSQLBuilder.create();
-            builder.selectClause().append("*");
-            builder.fromClause().append("users");
-            builder.whereClause().append("id IN (").repeatQM(-1).append(")");
+            builder.select().append("*");
+            builder.from().append("users");
+            builder.where().append("id IN (").repeatQM(-1).append(")");
             builder.build();
         });
     }

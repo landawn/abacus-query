@@ -342,7 +342,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the greater-than-or-equal expression
      */
     public static String greaterThanOrEqual(final String literal, final Object value) {
-        return link(Operator.GREATER_THAN_OR__EQUAL, literal, value);
+        return link(Operator.GREATER_THAN_OR_EQUAL, literal, value);
     }
 
     /**
@@ -360,7 +360,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the greater-than-or-equal expression
      */
     public static String ge(final String literal, final Object value) {
-        return link(Operator.GREATER_THAN_OR__EQUAL, literal, value);
+        return link(Operator.GREATER_THAN_OR_EQUAL, literal, value);
     }
 
     /**
@@ -412,7 +412,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the less-than-or-equal expression
      */
     public static String lessThanOrEqual(final String literal, final Object value) {
-        return link(Operator.LESS_THAN_OR__EQUAL, literal, value);
+        return link(Operator.LESS_THAN_OR_EQUAL, literal, value);
     }
 
     /**
@@ -430,7 +430,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the less-than-or-equal expression
      */
     public static String le(final String literal, final Object value) {
-        return link(Operator.LESS_THAN_OR__EQUAL, literal, value);
+        return link(Operator.LESS_THAN_OR_EQUAL, literal, value);
     }
 
     /**

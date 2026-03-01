@@ -289,16 +289,16 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * concatPropNames("name");            // Returns: name
-     * concatPropNames("city", "state");   // Returns: (city, state)
-     * concatPropNames("a", "b", "c");     // Returns: (a, b, c)
-     * concatPropNames();                  // Returns: ""
+     * joinPropNames("name");            // Returns: name
+     * joinPropNames("city", "state");   // Returns: (city, state)
+     * joinPropNames("a", "b", "c");     // Returns: (a, b, c)
+     * joinPropNames();                  // Returns: ""
      * }</pre>
      *
      * @param propNames the property names to concatenate (varargs, can be empty)
      * @return a formatted string of property names, empty string if no names provided
      */
-    protected static String concatPropNames(final String... propNames) {
+    protected static String joinPropNames(final String... propNames) {
         if (N.isEmpty(propNames)) {
             return Strings.EMPTY;
         }
@@ -356,19 +356,19 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> names = Arrays.asList("city", "state", "zip");
-     * concatPropNames(names);   // Returns: (city, state, zip)
+     * joinPropNames(names);   // Returns: (city, state, zip)
      *
      * Set<String> single = Collections.singleton("id");
-     * concatPropNames(single);   // Returns: id
+     * joinPropNames(single);   // Returns: id
      *
      * List<String> empty = Collections.emptyList();
-     * concatPropNames(empty);   // Returns: ""
+     * joinPropNames(empty);   // Returns: ""
      * }</pre>
      *
      * @param propNames the collection of property names to concatenate (can be empty)
      * @return a formatted string of property names, empty string if collection is empty
      */
-    protected static String concatPropNames(final Collection<String> propNames) {
+    protected static String joinPropNames(final Collection<String> propNames) {
         if (N.isEmpty(propNames)) {
             return Strings.EMPTY;
         }

@@ -15,7 +15,7 @@ public class GreaterThanOrEqualTest extends TestBase {
         Assertions.assertNotNull(ge);
         Assertions.assertEquals("age", ge.getPropName());
         Assertions.assertEquals(18, (Integer) (Integer) ge.getPropValue());
-        Assertions.assertEquals(Operator.GREATER_THAN_OR__EQUAL, ge.getOperator());
+        Assertions.assertEquals(Operator.GREATER_THAN_OR_EQUAL, ge.getOperator());
     }
 
     @Test

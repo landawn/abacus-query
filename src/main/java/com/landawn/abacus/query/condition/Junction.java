@@ -88,7 +88,7 @@ import com.landawn.abacus.util.Strings;
  */
 public class Junction extends AbstractCondition {
 
-    List<Condition> conditionList;
+    List<Condition> conditions;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -96,7 +96,7 @@ public class Junction extends AbstractCondition {
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Junction() {
-        conditionList = new ArrayList<>();
+        conditions = new ArrayList<>();
     }
 
     /**
@@ -127,7 +127,7 @@ public class Junction extends AbstractCondition {
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
-        conditionList = new ArrayList<>();
+        this.conditions = new ArrayList<>();
         add(conditions);
     }
 
@@ -154,7 +154,7 @@ public class Junction extends AbstractCondition {
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
-        conditionList = new ArrayList<>();
+        this.conditions = new ArrayList<>();
         add(conditions); // NOSONAR
     }
 
@@ -177,7 +177,7 @@ public class Junction extends AbstractCondition {
      * @return the list of conditions. Modifications to this list will affect the junction.
      */
     public List<Condition> getConditions() {
-        return conditionList;
+        return conditions;
     }
 
     /**
@@ -210,7 +210,7 @@ public class Junction extends AbstractCondition {
             }
         }
 
-        conditionList.clear();
+        this.conditions.clear();
         add(conditions);
     }
 
@@ -245,7 +245,7 @@ public class Junction extends AbstractCondition {
             }
         }
 
-        conditionList.clear();
+        this.conditions.clear();
         add(conditions);
     }
 
@@ -284,7 +284,7 @@ public class Junction extends AbstractCondition {
             }
         }
 
-        conditionList.addAll(Arrays.asList(conditions));
+        this.conditions.addAll(Arrays.asList(conditions));
     }
 
     /**
@@ -313,7 +313,8 @@ public class Junction extends AbstractCondition {
                 throw new IllegalArgumentException("Condition cannot be null");
             }
         }
-        conditionList.addAll(conditions);
+
+        this.conditions.addAll(conditions);
     }
 
     /**
@@ -344,7 +345,7 @@ public class Junction extends AbstractCondition {
         }
 
         for (final Condition cond : conditions) {
-            conditionList.remove(cond);
+            this.conditions.remove(cond);
         }
     }
 
@@ -371,7 +372,7 @@ public class Junction extends AbstractCondition {
             return;
         }
 
-        conditionList.removeAll(conditions);
+        this.conditions.removeAll(conditions);
     }
 
     /**
@@ -394,7 +395,7 @@ public class Junction extends AbstractCondition {
      *
      */
     public void clear() {
-        conditionList.clear();
+        conditions.clear();
     }
 
     /**
@@ -409,7 +410,7 @@ public class Junction extends AbstractCondition {
     public List<Object> getParameters() {
         final List<Object> parameters = new ArrayList<>();
 
-        for (final Condition condition : conditionList) {
+        for (final Condition condition : conditions) {
             if (condition != null) {
                 parameters.addAll(condition.getParameters());
             }
@@ -428,7 +429,7 @@ public class Junction extends AbstractCondition {
      */
     @Override
     public void clearParameters() {
-        for (final Condition condition : conditionList) {
+        for (final Condition condition : conditions) {
             if (condition != null) {
                 condition.clearParameters();
             }
@@ -448,11 +449,11 @@ public class Junction extends AbstractCondition {
     public <T extends Condition> T copy() {
         final Junction result = super.copy();
 
-        result.conditionList = new ArrayList<>();
+        result.conditions = new ArrayList<>();
 
-        for (final Condition cond : conditionList) {
+        for (final Condition cond : conditions) {
             if (cond != null) {
-                result.conditionList.add(cond.copy());
+                result.conditions.add(cond.copy());
             }
         }
 
@@ -469,7 +470,7 @@ public class Junction extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        if (N.isEmpty(conditionList)) {
+        if (N.isEmpty(conditions)) {
             return Strings.EMPTY;
         }
 
@@ -479,7 +480,7 @@ public class Junction extends AbstractCondition {
             sb.append(_PARENTHESES_L);
 
             boolean isFirst = true;
-            for (final Condition condition : conditionList) {
+            for (final Condition condition : conditions) {
                 if (condition == null) {
                     continue;
                 }
@@ -516,7 +517,7 @@ public class Junction extends AbstractCondition {
     public int hashCode() {
         int h = 17;
         h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        return (h * 31) + conditionList.hashCode();
+        return (h * 31) + conditions.hashCode();
     }
 
     /**
@@ -534,7 +535,7 @@ public class Junction extends AbstractCondition {
         }
 
         if (obj instanceof final Junction other) {
-            return N.equals(operator, other.operator) && N.equals(conditionList, other.conditionList);
+            return N.equals(operator, other.operator) && N.equals(conditions, other.conditions);
 
         }
 

@@ -97,7 +97,7 @@ public class DynamicSQLBuilder {
      *
      * @return the Select clause builder for method chaining
      */
-    public SelectClause selectClause() {
+    public SelectClause select() {
         return selectClause;
     }
 
@@ -114,7 +114,7 @@ public class DynamicSQLBuilder {
      *
      * @return the From clause builder for method chaining
      */
-    public FromClause fromClause() {
+    public FromClause from() {
         return fromClause;
     }
 
@@ -131,7 +131,7 @@ public class DynamicSQLBuilder {
      *
      * @return the Where clause builder for method chaining
      */
-    public WhereClause whereClause() {
+    public WhereClause where() {
         if (whereClause == null) {
             whereClause = new WhereClause(Objectory.createStringBuilder());
         }
@@ -152,7 +152,7 @@ public class DynamicSQLBuilder {
      *
      * @return the GroupBy clause builder for method chaining
      */
-    public GroupByClause groupByClause() {
+    public GroupByClause groupBy() {
         if (groupByClause == null) {
             groupByClause = new GroupByClause(Objectory.createStringBuilder());
         }
@@ -173,7 +173,7 @@ public class DynamicSQLBuilder {
      *
      * @return the Having clause builder for method chaining
      */
-    public HavingClause havingClause() {
+    public HavingClause having() {
         if (havingClause == null) {
             havingClause = new HavingClause(Objectory.createStringBuilder());
         }
@@ -194,7 +194,7 @@ public class DynamicSQLBuilder {
      *
      * @return the OrderBy clause builder for method chaining
      */
-    public OrderByClause orderByClause() {
+    public OrderByClause orderBy() {
         if (orderByClause == null) {
             orderByClause = new OrderByClause(Objectory.createStringBuilder());
         }
@@ -299,7 +299,7 @@ public class DynamicSQLBuilder {
         final String rowNumCondition = "ROWNUM <= " + count;
 
         if (whereClause == null || whereClause.sb.isEmpty()) {
-            whereClause().append(rowNumCondition);
+            where().append(rowNumCondition);
         } else {
             whereClause.and(rowNumCondition);
         }
@@ -592,7 +592,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the SELECT clause of a SQL query.
      * Provides methods to add columns with optional aliases and conditional inclusion.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#selectClause()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#select()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -781,7 +781,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the FROM clause of a SQL query.
      * Supports adding tables, aliases, and various types of joins.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#fromClause()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#from()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1012,7 +1012,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the WHERE clause of a SQL query.
      * Supports adding conditions with AND/OR operators and parameter placeholders.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#whereClause()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#where()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1241,7 +1241,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the GROUP BY clause of a SQL query.
      * Supports adding single or multiple grouping columns.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#groupByClause()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#groupBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1382,7 +1382,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the HAVING clause of a SQL query.
      * Used to filter grouped results based on aggregate conditions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#havingClause()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#having()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1545,7 +1545,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the ORDER BY clause of a SQL query.
      * Supports adding single or multiple columns with sort directions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#orderByClause()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#orderBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>

@@ -46,15 +46,15 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testPreselect() {
         Criteria criteria = new Criteria();
-        String preselect = criteria.preselect();
+        String selectModifier = criteria.getSelectModifier();
         // Default should be null or empty
     }
 
     @Test
     public void testPreselectSetter() {
         Criteria criteria = new Criteria();
-        criteria.preselect("DISTINCT");
-        assertEquals("DISTINCT", criteria.preselect());
+        criteria.selectModifier("DISTINCT");
+        assertEquals("DISTINCT", criteria.getSelectModifier());
     }
 
     @Test
@@ -88,7 +88,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGetAggregation() {
         Criteria criteria = new Criteria();
-        List<Cell> aggregation = criteria.getAggregations();
+        List<Cell> aggregation = criteria.getSetOperations();
         assertNotNull(aggregation);
     }
 
@@ -128,7 +128,7 @@ public class Criteria2025Test extends TestBase {
         criteria.where(Filters.equal("name", "John"));
         criteria.clear();
         assertTrue(criteria.getConditions().isEmpty());
-        assertNull(criteria.preselect());
+        assertNull(criteria.getSelectModifier());
     }
 
     @Test
@@ -466,9 +466,9 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testPreselectChaining() {
         Criteria criteria = new Criteria();
-        Criteria result = criteria.preselect("DISTINCT").where(Filters.equal("status", "active"));
+        Criteria result = criteria.selectModifier("DISTINCT").where(Filters.equal("status", "active"));
         assertNotNull(result);
-        assertEquals("DISTINCT", criteria.preselect());
+        assertEquals("DISTINCT", criteria.getSelectModifier());
     }
 
     @Test
@@ -510,7 +510,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
         Criteria result = criteria.union(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregations().size() > 0);
+        assertTrue(criteria.getSetOperations().size() > 0);
     }
 
     @Test
@@ -519,7 +519,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
         Criteria result = criteria.unionAll(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregations().size() > 0);
+        assertTrue(criteria.getSetOperations().size() > 0);
     }
 
     @Test
@@ -528,7 +528,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM premium_users");
         Criteria result = criteria.intersect(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregations().size() > 0);
+        assertTrue(criteria.getSetOperations().size() > 0);
     }
 
     @Test
@@ -537,7 +537,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM blocked_users");
         Criteria result = criteria.except(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregations().size() > 0);
+        assertTrue(criteria.getSetOperations().size() > 0);
     }
 
     @Test
@@ -546,7 +546,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM inactive_users");
         Criteria result = criteria.minus(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregations().size() > 0);
+        assertTrue(criteria.getSetOperations().size() > 0);
     }
 
     @Test
@@ -557,7 +557,7 @@ public class Criteria2025Test extends TestBase {
         Criteria copy = original.copy();
 
         assertNotNull(copy);
-        assertEquals(original.preselect(), copy.preselect());
+        assertEquals(original.getSelectModifier(), copy.getSelectModifier());
         assertEquals(original.getConditions().size(), copy.getConditions().size());
 
         // Verify it's a deep copy
@@ -619,28 +619,28 @@ public class Criteria2025Test extends TestBase {
     public void testDistinctByEmpty() {
         Criteria criteria = new Criteria();
         criteria.distinctBy("");
-        assertEquals("DISTINCT", criteria.preselect());
+        assertEquals("DISTINCT", criteria.getSelectModifier());
     }
 
     @Test
     public void testDistinctByNull() {
         Criteria criteria = new Criteria();
         criteria.distinctBy(null);
-        assertEquals("DISTINCT", criteria.preselect());
+        assertEquals("DISTINCT", criteria.getSelectModifier());
     }
 
     @Test
     public void testDistinctRowByEmpty() {
         Criteria criteria = new Criteria();
         criteria.distinctRowBy("");
-        assertEquals("DISTINCTROW", criteria.preselect());
+        assertEquals("DISTINCTROW", criteria.getSelectModifier());
     }
 
     @Test
     public void testDistinctRowByNull() {
         Criteria criteria = new Criteria();
         criteria.distinctRowBy(null);
-        assertEquals("DISTINCTROW", criteria.preselect());
+        assertEquals("DISTINCTROW", criteria.getSelectModifier());
     }
 
     @Test
@@ -651,14 +651,14 @@ public class Criteria2025Test extends TestBase {
 
         criteria.union(subQuery1).unionAll(subQuery2);
 
-        List<Cell> aggregations = criteria.getAggregations();
+        List<Cell> aggregations = criteria.getSetOperations();
         assertEquals(2, aggregations.size());
     }
 
     @Test
     public void testGetEmptyAggregation() {
         Criteria criteria = new Criteria();
-        List<Cell> aggregations = criteria.getAggregations();
+        List<Cell> aggregations = criteria.getSetOperations();
         assertNotNull(aggregations);
         assertTrue(aggregations.isEmpty());
     }
@@ -747,7 +747,7 @@ public class Criteria2025Test extends TestBase {
                 .orderBy("COUNT(*)", SortDirection.DESC)
                 .limit(10);
 
-        assertNotNull(criteria.preselect());
+        assertNotNull(criteria.getSelectModifier());
         assertEquals(1, criteria.getJoins().size());
         assertNotNull(criteria.getWhere());
         assertNotNull(criteria.getGroupBy());
@@ -781,7 +781,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testPreselectNull() {
         Criteria criteria = new Criteria();
-        criteria.preselect(null);
+        criteria.selectModifier(null);
         // Should not throw error
         assertNotNull(criteria);
     }
@@ -803,6 +803,6 @@ public class Criteria2025Test extends TestBase {
         assertNull(criteria.getHaving());
         assertNull(criteria.getOrderBy());
         assertNull(criteria.getLimit());
-        assertNull(criteria.preselect());
+        assertNull(criteria.getSelectModifier());
     }
 }

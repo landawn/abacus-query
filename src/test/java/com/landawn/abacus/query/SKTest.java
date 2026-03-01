@@ -132,9 +132,9 @@ public class SKTest extends TestBase {
     @Test
     void testComparisonOperators() {
         assertEquals("!=", SK.NOT_EQUAL);
-        assertEquals("<>", SK.NOT_EQUAL_ANGLE);
-        assertEquals(">=", SK.GREATER_THAN_OR__EQUAL);
-        assertEquals("<=", SK.LESS_THAN_OR__EQUAL);
+        assertEquals("<>", SK.NOT_EQUAL_ANSI);
+        assertEquals(">=", SK.GREATER_THAN_OR_EQUAL);
+        assertEquals("<=", SK.LESS_THAN_OR_EQUAL);
     }
 
     @Test

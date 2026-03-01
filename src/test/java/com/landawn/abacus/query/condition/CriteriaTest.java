@@ -30,43 +30,43 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testPreselect() {
         Criteria criteria = Filters.criteria();
-        Assertions.assertNull(criteria.preselect());
+        Assertions.assertNull(criteria.getSelectModifier());
     }
 
     @Test
     public void testDistinct() {
         Criteria criteria = Filters.criteria().distinct();
-        Assertions.assertEquals("DISTINCT", criteria.preselect());
+        Assertions.assertEquals("DISTINCT", criteria.getSelectModifier());
     }
 
     @Test
     public void testDistinctBy() {
         Criteria criteria = Filters.criteria().distinctBy("department, location");
-        Assertions.assertEquals("DISTINCT(department, location)", criteria.preselect());
+        Assertions.assertEquals("DISTINCT(department, location)", criteria.getSelectModifier());
     }
 
     @Test
     public void testDistinctByEmpty() {
         Criteria criteria = Filters.criteria().distinctBy("");
-        Assertions.assertEquals("DISTINCT", criteria.preselect());
+        Assertions.assertEquals("DISTINCT", criteria.getSelectModifier());
     }
 
     @Test
     public void testDistinctRow() {
         Criteria criteria = Filters.criteria().distinctRow();
-        Assertions.assertEquals("DISTINCTROW", criteria.preselect());
+        Assertions.assertEquals("DISTINCTROW", criteria.getSelectModifier());
     }
 
     @Test
     public void testDistinctRowBy() {
         Criteria criteria = Filters.criteria().distinctRowBy("id, name");
-        Assertions.assertEquals("DISTINCTROW(id, name)", criteria.preselect());
+        Assertions.assertEquals("DISTINCTROW(id, name)", criteria.getSelectModifier());
     }
 
     @Test
     public void testPreselectCustom() {
-        Criteria criteria = Filters.criteria().preselect("CUSTOM");
-        Assertions.assertEquals("CUSTOM", criteria.preselect());
+        Criteria criteria = Filters.criteria().selectModifier("CUSTOM");
+        Assertions.assertEquals("CUSTOM", criteria.getSelectModifier());
     }
 
     @Test
@@ -323,7 +323,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_orders");
         Criteria criteria = Filters.criteria().union(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregations();
+        List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.UNION, aggregations.get(0).getOperator());
     }
@@ -333,7 +333,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM temp_orders");
         Criteria criteria = Filters.criteria().unionAll(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregations();
+        List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.UNION_ALL, aggregations.get(0).getOperator());
     }
@@ -343,7 +343,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
         Criteria criteria = Filters.criteria().intersect(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregations();
+        List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.INTERSECT, aggregations.get(0).getOperator());
     }
@@ -353,7 +353,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM blocked_users");
         Criteria criteria = Filters.criteria().except(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregations();
+        List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).getOperator());
     }
@@ -363,7 +363,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         Criteria criteria = Filters.criteria().minus(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregations();
+        List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.MINUS, aggregations.get(0).getOperator());
     }
@@ -413,7 +413,7 @@ public class CriteriaTest extends TestBase {
         Assertions.assertNull(criteria.getOrderBy());
         Assertions.assertNull(criteria.getLimit());
         Assertions.assertTrue(criteria.getJoins().isEmpty());
-        Assertions.assertNull(criteria.preselect());
+        Assertions.assertNull(criteria.getSelectModifier());
     }
 
     @Test
@@ -441,7 +441,7 @@ public class CriteriaTest extends TestBase {
         Criteria copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.preselect(), copy.preselect());
+        Assertions.assertEquals(original.getSelectModifier(), copy.getSelectModifier());
         Assertions.assertEquals(original.getConditions().size(), copy.getConditions().size());
         Assertions.assertNotSame(original.getConditions(), copy.getConditions());
 
@@ -498,7 +498,7 @@ public class CriteriaTest extends TestBase {
 
         Assertions.assertEquals(criteria1, criteria1);
         Assertions.assertEquals(criteria1, criteria2);
-        Assertions.assertNotEquals(criteria1, criteria3); // Different preselect
+        Assertions.assertNotEquals(criteria1, criteria3); // Different selectModifier
         Assertions.assertNotEquals(criteria1, criteria4); // Different condition
         Assertions.assertNotEquals(criteria1, null);
         Assertions.assertNotEquals(criteria1, "string");
@@ -527,7 +527,7 @@ public class CriteriaTest extends TestBase {
                 .limit(20, 100);
 
         // Verify all components are present
-        Assertions.assertEquals("DISTINCT", criteria.preselect());
+        Assertions.assertEquals("DISTINCT", criteria.getSelectModifier());
         Assertions.assertEquals(2, criteria.getJoins().size());
         Assertions.assertNotNull(criteria.getWhere());
         Assertions.assertNotNull(criteria.getGroupBy());

@@ -37,7 +37,7 @@ import com.landawn.abacus.annotation.Internal;
  * // Result: "John, Doe, 30"
  *
  * // Using SQL operators
- * String condition = "age" + SK.SPACE + SK.GREATER_THAN_OR__EQUAL + SK.SPACE + "18";
+ * String condition = "age" + SK.SPACE + SK.GREATER_THAN_OR_EQUAL + SK.SPACE + "18";
  * // Result: "age >= 18"
  * }</pre>
  *
@@ -486,19 +486,19 @@ public final class SK {
      * Represents the SQL not equal operator: {@code "<>"}.
      * Alternative syntax for inequality in SQL.
      */
-    public static final String NOT_EQUAL_ANGLE = "<>";
+    public static final String NOT_EQUAL_ANSI = "<>";
 
     /**
      * Represents the greater than or equal operator: {@code ">="}.
      * Used for comparison operations.
      */
-    public static final String GREATER_THAN_OR__EQUAL = ">=";
+    public static final String GREATER_THAN_OR_EQUAL = ">=";
 
     /**
      * Represents the less than or equal operator: {@code "<="}.
      * Used for comparison operations.
      */
-    public static final String LESS_THAN_OR__EQUAL = "<=";
+    public static final String LESS_THAN_OR_EQUAL = "<=";
 
     // --------------------SQL key words----------------------------
     /**
