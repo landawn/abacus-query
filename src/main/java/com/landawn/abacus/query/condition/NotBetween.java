@@ -14,14 +14,6 @@
 
 package com.landawn.abacus.query.condition;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.landawn.abacus.query.SK;
-import com.landawn.abacus.util.ImmutableList;
-import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.NamingPolicy;
-
 /**
  * Represents a NOT BETWEEN condition in SQL queries.
  * This condition checks if a value is NOT within a specified range.
@@ -65,18 +57,12 @@ import com.landawn.abacus.util.NamingPolicy;
  * NotBetween dateRange = new NotBetween("order_date", "2024-01-01", "2024-12-31");
  * // Renders as: order_date NOT BETWEEN '2024-01-01' AND '2024-12-31'
  * }</pre>
- * 
- * @see AbstractCondition
+ *
+ * @see AbstractBetween
  * @see Between
  * @see Condition
  */
-public class NotBetween extends AbstractCondition {
-    // For Kryo
-    final String propName;
-
-    private Object minValue;
-
-    private Object maxValue;
+public class NotBetween extends AbstractBetween {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -84,7 +70,6 @@ public class NotBetween extends AbstractCondition {
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     NotBetween() {
-        propName = null;
     }
 
     /**
@@ -111,248 +96,6 @@ public class NotBetween extends AbstractCondition {
      * @throws IllegalArgumentException if propName is null or empty
      */
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {
-        super(Operator.NOT_BETWEEN);
-
-        N.checkArgNotEmpty(propName, "propName");
-
-        this.propName = propName;
-        this.minValue = minValue;
-        this.maxValue = maxValue;
-    }
-
-    /**
-     * Gets the property name for this NOT BETWEEN condition.
-     * Returns the name of the column or field being tested against the range.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween tempRange = new NotBetween("temperature", 36.0, 37.5);
-     * String name = tempRange.getPropName();   // "temperature"
-     *
-     * NotBetween salaryRange = new NotBetween("salary", 50000, 100000);
-     * String salaryName = salaryRange.getPropName();   // "salary"
-     * }</pre>
-     *
-     * @return the property name
-     */
-    public String getPropName() {
-        return propName;
-    }
-
-    /**
-     * Gets the minimum value of the range to exclude.
-     * Values less than this will match the condition (since they fall outside the range).
-     * The type parameter allows the value to be cast to the expected type.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween tempRange = new NotBetween("temperature", 36.0, 37.5);
-     * Double min = tempRange.getMinValue();   // 36.0
-     *
-     * NotBetween ageRange = new NotBetween("age", 18, 65);
-     * Integer minAge = ageRange.getMinValue();   // 18
-     * }</pre>
-     *
-     * @param <T> the type of the minimum value
-     * @return the minimum value of the excluded range
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T getMinValue() {
-        return (T) minValue;
-    }
-
-    /**
-     * Sets a new minimum value for the range.
-     * Note: Modifying conditions after creation is not recommended as they should be immutable.
-     * This method exists for backward compatibility but should be avoided in new code.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Deprecated: prefer creating a new NotBetween instead
-     * NotBetween range = new NotBetween("temperature", 36.0, 37.5);
-     * range.setMinValue(35.5);   // Not recommended
-     *
-     * // Preferred approach: create a new NotBetween
-     * NotBetween newRange = new NotBetween("temperature", 35.5, 37.5);
-     * }</pre>
-     *
-     * @param minValue the new minimum value to set
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Create a new NotBetween instance instead.
-     */
-    @Deprecated
-    public void setMinValue(final Object minValue) {
-        this.minValue = minValue;
-    }
-
-    /**
-     * Gets the maximum value of the range to exclude.
-     * Values greater than this will match the condition (since they fall outside the range).
-     * The type parameter allows the value to be cast to the expected type.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotBetween tempRange = new NotBetween("temperature", 36.0, 37.5);
-     * Double max = tempRange.getMaxValue();   // 37.5
-     *
-     * NotBetween ageRange = new NotBetween("age", 18, 65);
-     * Integer maxAge = ageRange.getMaxValue();   // 65
-     * }</pre>
-     *
-     * @param <T> the type of the maximum value
-     * @return the maximum value of the excluded range
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T getMaxValue() {
-        return (T) maxValue;
-    }
-
-    /**
-     * Sets a new maximum value for the range.
-     * Note: Modifying conditions after creation is not recommended as they should be immutable.
-     * This method exists for backward compatibility but should be avoided in new code.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Deprecated: prefer creating a new NotBetween instead
-     * NotBetween range = new NotBetween("temperature", 36.0, 37.5);
-     * range.setMaxValue(38.0);   // Not recommended
-     *
-     * // Preferred approach: create a new NotBetween
-     * NotBetween newRange = new NotBetween("temperature", 36.0, 38.0);
-     * }</pre>
-     *
-     * @param maxValue the new maximum value to set
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Create a new NotBetween instance instead.
-     */
-    @Deprecated
-    public void setMaxValue(final Object maxValue) {
-        this.maxValue = maxValue;
-    }
-
-    /**
-     * Gets the list of parameters for this condition.
-     * If min/max values are themselves conditions (like subqueries), their parameters are included.
-     * Otherwise, the values themselves are returned as parameters.
-     *
-     * @return list containing the min and max values or their parameters
-     */
-    @Override
-    public List<Object> getParameters() {
-        final List<Object> parameters = new ArrayList<>();
-
-        if (minValue instanceof Condition) {
-            parameters.addAll(((Condition) minValue).getParameters());
-        } else {
-            parameters.add(minValue);
-        }
-
-        if (maxValue instanceof Condition) {
-            parameters.addAll(((Condition) maxValue).getParameters());
-        } else {
-            parameters.add(maxValue);
-        }
-
-        return ImmutableList.wrap(parameters);
-    }
-
-    /**
-     * Clears all parameter values by setting them to null to free memory.
-     * This method sets both minValue and maxValue fields to null unless they are Conditions,
-     * in which case it recursively clears parameters in the nested conditions.
-     *
-     */
-    @Override
-    public void clearParameters() {
-        if (minValue instanceof Condition) {
-            ((Condition) minValue).clearParameters();
-        } else {
-            minValue = null;
-        }
-
-        if (maxValue instanceof Condition) {
-            ((Condition) maxValue).clearParameters();
-        } else {
-            maxValue = null;
-        }
-    }
-
-    /**
-     * Creates a deep copy of this NOT BETWEEN condition.
-     * If min/max values are conditions themselves (like expressions or subqueries),
-     * they are also copied to ensure complete independence.
-     *
-     * @param <T> the type of condition to return
-     * @return a new instance with copied values
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends Condition> T copy() {
-        final NotBetween copy = super.copy();
-
-        if (minValue instanceof Condition) {
-            copy.minValue = ((Condition) minValue).copy();
-        }
-
-        if (maxValue instanceof Condition) {
-            copy.maxValue = ((Condition) maxValue).copy();
-        }
-
-        return (T) copy;
-    }
-
-    /**
-     * Converts this NOT BETWEEN condition to its string representation.
-     * The rendered format is {@code <prop> NOT BETWEEN <min> AND <max>}.
-     * The naming policy is applied to the property name to handle different naming conventions.
-     *
-     * @param namingPolicy the naming policy to apply to the property name
-     * @return string representation of the NOT BETWEEN condition
-     */
-    @Override
-    public String toString(final NamingPolicy namingPolicy) {
-        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        return effectiveNamingPolicy.convert(propName) + SK._SPACE + operator().toString() + SK._SPACE + parameter2String(minValue, effectiveNamingPolicy)
-                + SK._SPACE + SK.AND + SK._SPACE + parameter2String(maxValue, effectiveNamingPolicy);
-    }
-
-    /**
-     * Generates the hash code for this NOT BETWEEN condition.
-     * The hash code is computed based on the property name, operator, and both range values.
-     * Two NotBetween instances with the same property, operator, and range values will have
-     * the same hash code, ensuring correct behavior in hash-based collections.
-     *
-     * @return hash code based on property name, operator, and range values
-     */
-    @Override
-    public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        h = (h * 31) + ((minValue == null) ? 0 : minValue.hashCode());
-        return (h * 31) + ((maxValue == null) ? 0 : maxValue.hashCode());
-    }
-
-    /**
-     * Checks if this NOT BETWEEN condition is equal to another object.
-     * Two NOT BETWEEN conditions are equal if they have the same property name,
-     * operator, and range boundaries (both min and max values).
-     *
-     * @param obj the object to compare with
-     * @return {@code true} if the objects are equal, {@code false} otherwise
-     */
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-
-        if (obj instanceof final NotBetween other) {
-            return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(minValue, other.minValue)
-                    && N.equals(maxValue, other.maxValue);
-        }
-
-        return false;
+        super(propName, Operator.NOT_BETWEEN, minValue, maxValue);
     }
 }

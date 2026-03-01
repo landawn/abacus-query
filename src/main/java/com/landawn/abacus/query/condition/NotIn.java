@@ -14,21 +14,13 @@
 
 package com.landawn.abacus.query.condition;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import com.landawn.abacus.query.SK;
-import com.landawn.abacus.util.ImmutableList;
-import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.NamingPolicy;
 
 /**
  * Represents a NOT IN condition in SQL queries.
  * This condition checks if a property value is NOT contained in a specified collection of values.
  * It's the logical opposite of the IN operator and is useful for exclusion-based filtering.
- * 
+ *
  * <p>The NOT IN operator is particularly useful for:
  * <ul>
  *   <li>Excluding records with specific status values</li>
@@ -36,7 +28,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *   <li>Implementing blacklist-based filtering</li>
  *   <li>Finding records that don't match any value in a list</li>
  * </ul>
- * 
+ *
  * <p>Important considerations:
  * <ul>
  *   <li>NULL handling: If the list contains NULL or the column has NULL values,
@@ -45,38 +37,29 @@ import com.landawn.abacus.util.NamingPolicy;
  *   <li>Performance: For large lists, consider using NOT EXISTS or LEFT JOIN instead</li>
  *   <li>The values list is copied during construction to ensure immutability</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Exclude inactive statuses
  * List<String> inactiveStatuses = Arrays.asList("deleted", "archived", "suspended");
  * NotIn condition = new NotIn("status", inactiveStatuses);
  * // Results in: status NOT IN ('deleted', 'archived', 'suspended')
- * 
+ *
  * // Exclude specific department IDs
  * Set<Integer> excludedDepts = new HashSet<>(Arrays.asList(10, 20, 30));
  * NotIn deptCondition = new NotIn("department_id", excludedDepts);
  * // Results in: department_id NOT IN (10, 20, 30)
- * 
+ *
  * // Exclude test users
  * List<String> testEmails = Arrays.asList("test@example.com", "demo@example.com");
  * NotIn emailCondition = new NotIn("email", testEmails);
  * }</pre>
- * 
+ *
+ * @see AbstractIn
  * @see In
  * @see NotInSubQuery
- * @see AbstractCondition
  */
-public class NotIn extends AbstractCondition {
-
-    /**
-     * The property name to check.
-     * This field stores the name of the column or property that will be compared
-     * against the list of values. It's package-private for serialization frameworks.
-     */
-    final String propName;
-
-    private List<?> values;
+public class NotIn extends AbstractIn {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -84,7 +67,6 @@ public class NotIn extends AbstractCondition {
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     NotIn() {
-        propName = null;
     }
 
     /**
@@ -111,195 +93,6 @@ public class NotIn extends AbstractCondition {
      * @throws IllegalArgumentException if propName is null or values is null/empty
      */
     public NotIn(final String propName, final Collection<?> values) {
-        super(Operator.NOT_IN);
-
-        N.checkArgNotEmpty(propName, "propName");
-        N.checkArgNotEmpty(values, "values");
-
-        this.propName = propName;
-        this.values = new ArrayList<>(values);
-    }
-
-    /**
-     * Gets the property name for this NOT IN condition.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn excludeFilter = new NotIn("status", Arrays.asList("deleted", "archived"));
-     * String propName = excludeFilter.getPropName();
-     * // Returns: "status"
-     * }</pre>
-     *
-     * @return the property name, or {@code null} for an uninitialized instance created by serialization frameworks
-     */
-    public String getPropName() {
-        return propName;
-    }
-
-    /**
-     * Gets the collection of values that the property should NOT match.
-     * Returns the internal list of values used in the NOT IN condition. These are the
-     * values that will be excluded when the query is executed.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn excludeFilter = new NotIn("department_id", Arrays.asList(10, 20, 30));
-     * List<?> values = excludeFilter.getValues();
-     * // Returns: [10, 20, 30]
-     *
-     * NotIn statusFilter = new NotIn("status", Arrays.asList("deleted", "archived"));
-     * List<?> excluded = statusFilter.getValues();
-     * // Returns: ["deleted", "archived"]
-     * }</pre>
-     *
-     * @return an unmodifiable view of the values to exclude (may be null if cleared)
-     */
-    public List<?> getValues() { //NOSONAR
-        return values == null ? null : Collections.unmodifiableList(values);
-    }
-
-    /**
-     * Sets new values for this NOT IN condition.
-     * This method allows replacing the collection of values to be excluded.
-     * However, modifying conditions after creation is strongly discouraged as conditions should
-     * be treated as immutable to ensure thread safety and predictable behavior.
-     *
-     * <p>Important notes:
-     * <ul>
-     *   <li>This method exists for backward compatibility only</li>
-     *   <li>Using this method breaks the immutability contract of conditions</li>
-     *   <li>Instead of modifying, create a new NotIn instance with the desired values</li>
-     *   <li>Shared conditions modified this way can cause race conditions</li>
-     * </ul>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NotIn statusFilter = new NotIn("status", Arrays.asList("deleted", "archived"));
-     *
-     * // Replace values (deprecated - prefer creating a new NotIn instance instead)
-     * statusFilter.setValues(Arrays.asList("suspended", "banned"));
-     *
-     * // Preferred approach: create a new NotIn instance
-     * NotIn updatedFilter = new NotIn("status", Arrays.asList("suspended", "banned"));
-     * }</pre>
-     *
-     * @param values the new collection of values to exclude. Must not be null or empty.
-     * @throws IllegalArgumentException if values is null or empty
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Create a new NotIn instance instead of modifying existing conditions.
-     */
-    @Deprecated
-    public void setValues(final List<?> values) {
-        N.checkArgNotEmpty(values, "values");
-
-        this.values = new ArrayList<>(values);
-    }
-
-    /**
-     * Gets the parameter values for this condition.
-     * Returns the values that should be excluded when the query is executed.
-     * These values will be bound to the prepared statement placeholders.
-     *
-     * @return an immutable list of parameter values, or empty list if values is null
-     */
-    @Override
-    public List<Object> getParameters() {
-        return values == null ? N.emptyList() : ImmutableList.wrap((List<Object>) values);
-    }
-
-    /**
-     * Clears all parameter values by setting them to null to free memory.
-     *
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
-     *
-     */
-    @SuppressWarnings("rawtypes")
-    @Override
-    public void clearParameters() {
-        if (N.notEmpty(values)) {
-            N.fill((List) values, null);
-        }
-    }
-
-    /**
-     * Creates a deep copy of this NOT IN condition.
-     * The copy includes a new list containing the same values, ensuring complete
-     * independence from the original condition.
-     *
-     * @param <T> the type of condition to return
-     * @return a new instance with copied values
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends Condition> T copy() {
-        final NotIn copy = super.copy();
-
-        copy.values = values == null ? null : new ArrayList<>(values);
-
-        return (T) copy;
-    }
-
-    /**
-     * Converts this NOT IN condition to its string representation using the specified naming policy.
-     * The naming policy is applied to the property name to handle different naming conventions.
-     * Values are formatted appropriately based on their types.
-     *
-     * @param namingPolicy the naming policy to apply to the property name
-     * @return string representation of the NOT IN condition
-     */
-    @Override
-    public String toString(final NamingPolicy namingPolicy) {
-        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        final StringBuilder sb = new StringBuilder();
-        sb.append(effectiveNamingPolicy.convert(propName)).append(SK._SPACE).append(operator().toString()).append(SK.SPACE_PARENTHESIS_L);
-
-        if (values != null) {
-            for (int i = 0; i < values.size(); i++) {
-                if (i > 0) {
-                    sb.append(SK.COMMA_SPACE);
-                }
-                sb.append(parameter2String(values.get(i), effectiveNamingPolicy));
-            }
-        }
-
-        sb.append(SK._PARENTHESIS_R);
-        return sb.toString();
-    }
-
-    /**
-     * Generates the hash code for this NOT IN condition.
-     * The hash code is computed based on the property name, operator, and values list,
-     * ensuring consistent hashing for equivalent conditions.
-     *
-     * @return hash code based on property name, operator, and values
-     */
-    @Override
-    public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        return (h * 31) + ((values == null) ? 0 : values.hashCode());
-    }
-
-    /**
-     * Checks if this NOT IN condition is equal to another object.
-     * Two NOT IN conditions are equal if they have the same property name,
-     * operator, and values list.
-     *
-     * @param obj the object to compare with
-     * @return {@code true} if the objects are equal, {@code false} otherwise
-     */
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-
-        if (obj instanceof final NotIn other) {
-            return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(values, other.values);
-        }
-
-        return false;
+        super(propName, Operator.NOT_IN, values);
     }
 }
