@@ -713,11 +713,11 @@ public class Criteria extends AbstractCondition {
      * }</pre>
      * 
      * @param joinEntity the table or entity to join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return this Criteria instance for method chaining
      */
-    public Criteria join(final String joinEntity, final Condition condition) {
-        add(new Join(joinEntity, condition));
+    public Criteria join(final String joinEntity, final Condition cond) {
+        add(new Join(joinEntity, cond));
 
         return this;
     }
@@ -733,11 +733,11 @@ public class Criteria extends AbstractCondition {
      * }</pre>
      * 
      * @param joinEntities the collection of tables/entities to join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return this Criteria instance for method chaining
      */
-    public Criteria join(final Collection<String> joinEntities, final Condition condition) {
-        add(new Join(joinEntities, condition));
+    public Criteria join(final Collection<String> joinEntities, final Condition cond) {
+        add(new Join(joinEntities, cond));
 
         return this;
     }
@@ -756,18 +756,18 @@ public class Criteria extends AbstractCondition {
      *     ));
      * }</pre>
      * 
-     * @param condition the WHERE condition
+     * @param cond the WHERE condition
      * @return this Criteria instance for method chaining
      */
-    public Criteria where(final Condition condition) {
-        if (condition == null) {
+    public Criteria where(final Condition cond) {
+        if (cond == null) {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (condition.operator() == Operator.WHERE) {
-            add(condition);
+        if (cond.operator() == Operator.WHERE) {
+            add(cond);
         } else {
-            add(new Where(condition));
+            add(new Where(cond));
         }
 
         return this;
@@ -808,18 +808,18 @@ public class Criteria extends AbstractCondition {
      *     .groupBy(Filters.expr("YEAR(order_date), MONTH(order_date)"));
      * }</pre>
      * 
-     * @param condition the GROUP BY condition
+     * @param cond the GROUP BY condition
      * @return this Criteria instance for method chaining
      */
-    public Criteria groupBy(final Condition condition) {
-        if (condition == null) {
+    public Criteria groupBy(final Condition cond) {
+        if (cond == null) {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (condition.operator() == Operator.GROUP_BY) {
-            add(condition);
+        if (cond.operator() == Operator.GROUP_BY) {
+            add(cond);
         } else {
-            add(new GroupBy(condition));
+            add(new GroupBy(cond));
         }
 
         return this;
@@ -998,18 +998,18 @@ public class Criteria extends AbstractCondition {
      *     ));
      * }</pre>
      * 
-     * @param condition the HAVING condition
+     * @param cond the HAVING condition
      * @return this Criteria instance for method chaining
      */
-    public Criteria having(final Condition condition) {
-        if (condition == null) {
+    public Criteria having(final Condition cond) {
+        if (cond == null) {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (condition.operator() == Operator.HAVING) {
-            add(condition);
+        if (cond.operator() == Operator.HAVING) {
+            add(cond);
         } else {
-            add(new Having(condition));
+            add(new Having(cond));
         }
 
         return this;
@@ -1131,18 +1131,18 @@ public class Criteria extends AbstractCondition {
      *     .orderBy(Filters.expr("CASE WHEN priority = 'HIGH' THEN 1 ELSE 2 END, created_date DESC"));
      * }</pre>
      * 
-     * @param condition the ORDER BY condition
+     * @param cond the ORDER BY condition
      * @return this Criteria instance for method chaining
      */
-    public Criteria orderBy(final Condition condition) {
-        if (condition == null) {
+    public Criteria orderBy(final Condition cond) {
+        if (cond == null) {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (condition.operator() == Operator.ORDER_BY) {
-            add(condition);
+        if (cond.operator() == Operator.ORDER_BY) {
+            add(cond);
         } else {
-            add(new OrderBy(condition));
+            add(new OrderBy(cond));
         }
 
         return this;

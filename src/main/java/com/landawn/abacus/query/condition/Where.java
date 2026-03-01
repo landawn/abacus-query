@@ -90,10 +90,10 @@ public class Where extends Clause {
      * // SQL: WHERE user_id IN (SELECT id FROM users WHERE active = true)
      * }</pre>
      *
-     * @param condition the condition to apply in the WHERE clause. Must not be null.
-     * @throws NullPointerException if condition is null
+     * @param cond the condition to apply in the WHERE clause. Must not be null.
+     * @throws NullPointerException if cond is null
      */
-    public Where(final Condition condition) {
-        super(Operator.WHERE, condition);
+    public Where(final Condition cond) {
+        super(Operator.WHERE, cond);
     }
 }

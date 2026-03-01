@@ -131,15 +131,15 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
      * }</pre>
      *
-     * @param condition the condition to AND with this condition (must not be null)
+     * @param cond the condition to AND with this condition (must not be null)
      * @return a new And condition containing both conditions
-     * @throws IllegalArgumentException if {@code condition} is null
+     * @throws IllegalArgumentException if {@code cond} is null
      */
     @Override
-    public And and(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+    public And and(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
 
-        return new And(this, condition);
+        return new And(this, cond);
     }
 
     /**
@@ -155,15 +155,15 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * // Results in: ((hasDiscount = true AND NOT isMember = true) OR (NOT hasDiscount = true AND isMember = true))
      * }</pre>
      *
-     * @param condition the condition to XOR with this condition (must not be null)
+     * @param cond the condition to XOR with this condition (must not be null)
      * @return a new Or condition representing the exclusive-or of both conditions
-     * @throws IllegalArgumentException if {@code condition} is null
+     * @throws IllegalArgumentException if {@code cond} is null
      */
     @Override
-    public Or xor(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+    public Or xor(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
 
-        return new Or(new And(this, new Not(condition)), new And(new Not(this), condition));
+        return new Or(new And(this, new Not(cond)), new And(new Not(this), cond));
     }
 
     /**
@@ -183,15 +183,15 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * // Results in: ((status = 'premium') OR (status = 'vip') OR (status = 'gold'))
      * }</pre>
      *
-     * @param condition the condition to OR with this condition
+     * @param cond the condition to OR with this condition
      * @return a new Or condition containing both conditions
-     * @throws IllegalArgumentException if {@code condition} is null
+     * @throws IllegalArgumentException if {@code cond} is null
      */
     @Override
-    public Or or(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+    public Or or(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
 
-        return new Or(this, condition);
+        return new Or(this, cond);
     }
 
     /**

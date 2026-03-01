@@ -155,18 +155,18 @@ public class And extends Junction {
      * // extended is a new instance with all conditions
      * }</pre>
      *
-     * @param condition the condition to add to this AND. Must not be null.
+     * @param cond the condition to add to this AND. Must not be null.
      * @return a new AND condition containing all existing conditions plus the new one
-     * @throws IllegalArgumentException if condition is null
+     * @throws IllegalArgumentException if cond is null
      */
     @Override
-    public And and(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+    public And and(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
 
         final List<Condition> conditionList = new ArrayList<>(this.conditions.size() + 1);
 
         conditionList.addAll(this.conditions);
-        conditionList.add(condition);
+        conditionList.add(cond);
 
         return new And(conditionList);
     }

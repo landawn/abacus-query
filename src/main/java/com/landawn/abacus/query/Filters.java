@@ -453,13 +453,13 @@ public class Filters {
      * ));
      * }</pre>
      * 
-     * @param condition the condition to negate
+     * @param cond the condition to negate
      * @return a Not condition that wraps and negates the provided condition
      * @see Not
      * @see Condition
      */
-    public static Not not(final Condition condition) {
-        return condition.not();
+    public static Not not(final Condition cond) {
+        return cond.not();
     }
 
     /**
@@ -2196,11 +2196,11 @@ public class Filters {
      * Where where = Filters.where(Filters.equal("active", true));
      * }</pre>
      *
-     * @param condition the condition for the WHERE clause
+     * @param cond the condition for the WHERE clause
      * @return a Where clause
      */
-    public static Where where(final Condition condition) {
-        return new Where(condition);
+    public static Where where(final Condition cond) {
+        return new Where(cond);
     }
 
     /**
@@ -2357,11 +2357,11 @@ public class Filters {
      * );
      * }</pre>
      *
-     * @param condition the grouping condition
+     * @param cond the grouping condition
      * @return a GroupBy clause
      */
-    public static GroupBy groupBy(final Condition condition) {
-        return new GroupBy(condition);
+    public static GroupBy groupBy(final Condition cond) {
+        return new GroupBy(cond);
     }
 
     /**
@@ -2374,11 +2374,11 @@ public class Filters {
      * // Results in SQL like: HAVING COUNT(*) > 5
      * }</pre>
      *
-     * @param condition the condition for the HAVING clause
+     * @param cond the condition for the HAVING clause
      * @return a Having clause
      */
-    public static Having having(final Condition condition) {
-        return new Having(condition);
+    public static Having having(final Condition cond) {
+        return new Having(cond);
     }
 
     /**
@@ -2599,11 +2599,11 @@ public class Filters {
      * );
      * }</pre>
      *
-     * @param condition the ordering condition
+     * @param cond the ordering condition
      * @return an OrderBy clause
      */
-    public static OrderBy orderBy(final Condition condition) {
-        return new OrderBy(condition);
+    public static OrderBy orderBy(final Condition cond) {
+        return new OrderBy(cond);
     }
 
     /**
@@ -2615,11 +2615,11 @@ public class Filters {
      * // Results in SQL like: ON users.id = orders.user_id
      * }</pre>
      *
-     * @param condition the join condition
+     * @param cond the join condition
      * @return an On clause
      */
-    public static On on(final Condition condition) {
-        return new On(condition);
+    public static On on(final Condition cond) {
+        return new On(cond);
     }
 
     /**
@@ -2730,11 +2730,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return a Join clause
      */
-    public static Join join(final String joinEntity, final Condition condition) {
-        return new Join(joinEntity, condition);
+    public static Join join(final String joinEntity, final Condition cond) {
+        return new Join(joinEntity, cond);
     }
 
     /**
@@ -2747,11 +2747,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return a Join clause
      */
-    public static Join join(final Collection<String> joinEntities, final Condition condition) {
-        return new Join(joinEntities, condition);
+    public static Join join(final Collection<String> joinEntities, final Condition cond) {
+        return new Join(joinEntities, cond);
     }
 
     /**
@@ -2782,11 +2782,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to left join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return a LeftJoin clause
      */
-    public static LeftJoin leftJoin(final String joinEntity, final Condition condition) {
-        return new LeftJoin(joinEntity, condition);
+    public static LeftJoin leftJoin(final String joinEntity, final Condition cond) {
+        return new LeftJoin(joinEntity, cond);
     }
 
     /**
@@ -2799,11 +2799,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to left join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return a LeftJoin clause
      */
-    public static LeftJoin leftJoin(final Collection<String> joinEntities, final Condition condition) {
-        return new LeftJoin(joinEntities, condition);
+    public static LeftJoin leftJoin(final Collection<String> joinEntities, final Condition cond) {
+        return new LeftJoin(joinEntities, cond);
     }
 
     /**
@@ -2834,11 +2834,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to right join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return a RightJoin clause
      */
-    public static RightJoin rightJoin(final String joinEntity, final Condition condition) {
-        return new RightJoin(joinEntity, condition);
+    public static RightJoin rightJoin(final String joinEntity, final Condition cond) {
+        return new RightJoin(joinEntity, cond);
     }
 
     /**
@@ -2851,11 +2851,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to right join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return a RightJoin clause
      */
-    public static RightJoin rightJoin(final Collection<String> joinEntities, final Condition condition) {
-        return new RightJoin(joinEntities, condition);
+    public static RightJoin rightJoin(final Collection<String> joinEntities, final Condition cond) {
+        return new RightJoin(joinEntities, cond);
     }
 
     /**
@@ -2885,11 +2885,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to cross join
-     * @param condition the optional join condition
+     * @param cond the optional join condition
      * @return a CrossJoin clause
      */
-    public static CrossJoin crossJoin(final String joinEntity, final Condition condition) {
-        return new CrossJoin(joinEntity, condition);
+    public static CrossJoin crossJoin(final String joinEntity, final Condition cond) {
+        return new CrossJoin(joinEntity, cond);
     }
 
     /**
@@ -2901,11 +2901,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to cross join
-     * @param condition the optional join condition
+     * @param cond the optional join condition
      * @return a CrossJoin clause
      */
-    public static CrossJoin crossJoin(final Collection<String> joinEntities, final Condition condition) {
-        return new CrossJoin(joinEntities, condition);
+    public static CrossJoin crossJoin(final Collection<String> joinEntities, final Condition cond) {
+        return new CrossJoin(joinEntities, cond);
     }
 
     /**
@@ -2936,11 +2936,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to full join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return a FullJoin clause
      */
-    public static FullJoin fullJoin(final String joinEntity, final Condition condition) {
-        return new FullJoin(joinEntity, condition);
+    public static FullJoin fullJoin(final String joinEntity, final Condition cond) {
+        return new FullJoin(joinEntity, cond);
     }
 
     /**
@@ -2953,11 +2953,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to full join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return a FullJoin clause
      */
-    public static FullJoin fullJoin(final Collection<String> joinEntities, final Condition condition) {
-        return new FullJoin(joinEntities, condition);
+    public static FullJoin fullJoin(final Collection<String> joinEntities, final Condition cond) {
+        return new FullJoin(joinEntities, cond);
     }
 
     /**
@@ -2988,11 +2988,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to inner join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return an InnerJoin clause
      */
-    public static InnerJoin innerJoin(final String joinEntity, final Condition condition) {
-        return new InnerJoin(joinEntity, condition);
+    public static InnerJoin innerJoin(final String joinEntity, final Condition cond) {
+        return new InnerJoin(joinEntity, cond);
     }
 
     /**
@@ -3005,11 +3005,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to inner join
-     * @param condition the join condition
+     * @param cond the join condition
      * @return an InnerJoin clause
      */
-    public static InnerJoin innerJoin(final Collection<String> joinEntities, final Condition condition) {
-        return new InnerJoin(joinEntities, condition);
+    public static InnerJoin innerJoin(final Collection<String> joinEntities, final Condition cond) {
+        return new InnerJoin(joinEntities, cond);
     }
 
     /**
@@ -3039,11 +3039,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to natural join
-     * @param condition the additional join condition
+     * @param cond the additional join condition
      * @return a NaturalJoin clause
      */
-    public static NaturalJoin naturalJoin(final String joinEntity, final Condition condition) {
-        return new NaturalJoin(joinEntity, condition);
+    public static NaturalJoin naturalJoin(final String joinEntity, final Condition cond) {
+        return new NaturalJoin(joinEntity, cond);
     }
 
     /**
@@ -3055,11 +3055,11 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to natural join
-     * @param condition the additional join condition
+     * @param cond the additional join condition
      * @return a NaturalJoin clause
      */
-    public static NaturalJoin naturalJoin(final Collection<String> joinEntities, final Condition condition) {
-        return new NaturalJoin(joinEntities, condition);
+    public static NaturalJoin naturalJoin(final Collection<String> joinEntities, final Condition cond) {
+        return new NaturalJoin(joinEntities, cond);
     }
 
     /**
@@ -3321,11 +3321,11 @@ public class Filters {
      * // SQL fragment: salary > ALL (SELECT salary FROM employees WHERE dept = 'IT')
      * }</pre>
      *
-     * @param condition the subquery condition
+     * @param subQuery the subquery
      * @return an All condition
      */
-    public static All all(final SubQuery condition) {
-        return new All(condition);
+    public static All all(final SubQuery subQuery) {
+        return new All(subQuery);
     }
 
     /**
@@ -3339,11 +3339,11 @@ public class Filters {
      * // SQL fragment: price < ANY (SELECT price FROM products WHERE category = 'electronics')
      * }</pre>
      *
-     * @param condition the subquery condition
+     * @param subQuery the subquery
      * @return an Any condition
      */
-    public static Any any(final SubQuery condition) {
-        return new Any(condition);
+    public static Any any(final SubQuery subQuery) {
+        return new Any(subQuery);
     }
 
     /**
@@ -3357,11 +3357,11 @@ public class Filters {
      * // SQL fragment: passing_score <= SOME (SELECT score FROM exams WHERE student_id = 123)
      * }</pre>
      *
-     * @param condition the subquery condition
+     * @param subQuery the subquery
      * @return a Some condition
      */
-    public static Some some(final SubQuery condition) {
-        return new Some(condition);
+    public static Some some(final SubQuery subQuery) {
+        return new Some(subQuery);
     }
 
     /**
@@ -3374,11 +3374,11 @@ public class Filters {
      * // SQL fragment: EXISTS (SELECT 1 FROM orders WHERE orders.user_id = users.id)
      * }</pre>
      *
-     * @param condition the subquery to check
+     * @param subQuery the subquery to check
      * @return an Exists condition
      */
-    public static Exists exists(final SubQuery condition) {
-        return new Exists(condition);
+    public static Exists exists(final SubQuery subQuery) {
+        return new Exists(subQuery);
     }
 
     /**
@@ -3391,11 +3391,11 @@ public class Filters {
      * // SQL fragment: NOT EXISTS (SELECT 1 FROM archived_users WHERE archived_users.id = users.id)
      * }</pre>
      *
-     * @param condition the subquery to check
+     * @param subQuery the subquery to check
      * @return a NotExists condition
      */
-    public static NotExists notExists(final SubQuery condition) {
-        return new NotExists(condition);
+    public static NotExists notExists(final SubQuery subQuery) {
+        return new NotExists(subQuery);
     }
 
     /**
@@ -3409,11 +3409,11 @@ public class Filters {
      * // Results in SQL like: UNION SELECT id FROM archived_users
      * }</pre>
      *
-     * @param condition the subquery to union with
+     * @param subQuery the subquery to union with
      * @return a Union clause
      */
-    public static Union union(final SubQuery condition) {
-        return new Union(condition);
+    public static Union union(final SubQuery subQuery) {
+        return new Union(subQuery);
     }
 
     /**
@@ -3427,11 +3427,11 @@ public class Filters {
      * // Results in SQL like: UNION ALL SELECT name FROM inactive_products
      * }</pre>
      *
-     * @param condition the subquery to union with
+     * @param subQuery the subquery to union with
      * @return a UnionAll clause
      */
-    public static UnionAll unionAll(final SubQuery condition) {
-        return new UnionAll(condition);
+    public static UnionAll unionAll(final SubQuery subQuery) {
+        return new UnionAll(subQuery);
     }
 
     /**
@@ -3445,11 +3445,11 @@ public class Filters {
      * // Results in SQL like: EXCEPT SELECT id FROM blacklisted_customers
      * }</pre>
      *
-     * @param condition the subquery to subtract
+     * @param subQuery the subquery to subtract
      * @return an Except clause
      */
-    public static Except except(final SubQuery condition) {
-        return new Except(condition);
+    public static Except except(final SubQuery subQuery) {
+        return new Except(subQuery);
     }
 
     /**
@@ -3463,11 +3463,11 @@ public class Filters {
      * // Results in SQL like: INTERSECT SELECT product_id FROM discounted_items
      * }</pre>
      *
-     * @param condition the subquery to intersect with
+     * @param subQuery the subquery to intersect with
      * @return an Intersect clause
      */
-    public static Intersect intersect(final SubQuery condition) {
-        return new Intersect(condition);
+    public static Intersect intersect(final SubQuery subQuery) {
+        return new Intersect(subQuery);
     }
 
     /**
@@ -3481,11 +3481,11 @@ public class Filters {
      * // Results in SQL like: MINUS SELECT id FROM deleted_records
      * }</pre>
      *
-     * @param condition the subquery to subtract
+     * @param subQuery the subquery to subtract
      * @return a Minus clause
      */
-    public static Minus minus(final SubQuery condition) {
-        return new Minus(condition);
+    public static Minus minus(final SubQuery subQuery) {
+        return new Minus(subQuery);
     }
 
     /**
@@ -3499,12 +3499,12 @@ public class Filters {
      * }</pre>
      *
      * @param operator the operator to apply
-     * @param condition the condition to wrap
+     * @param cond the condition to wrap
      * @return a Cell condition
      */
     @Beta
-    public static Cell cell(final Operator operator, final Condition condition) {
-        return new Cell(operator, condition);
+    public static Cell cell(final Operator operator, final Condition cond) {
+        return new Cell(operator, cond);
     }
 
     /**
@@ -3520,11 +3520,11 @@ public class Filters {
      *
      * @param entityClass the entity class representing the table
      * @param propNames collection of property names to select
-     * @param condition the WHERE condition for the subquery
+     * @param cond the WHERE condition for the subquery
      * @return a SubQuery
      */
-    public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
-        return new SubQuery(entityClass, propNames, condition);
+    public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {
+        return new SubQuery(entityClass, propNames, cond);
     }
 
     /**
@@ -3539,11 +3539,11 @@ public class Filters {
      *
      * @param entityName the entity/table name
      * @param propNames collection of property names to select
-     * @param condition the WHERE condition for the subquery
+     * @param cond the WHERE condition for the subquery
      * @return a SubQuery
      */
-    public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
-        return new SubQuery(entityName, propNames, condition);
+    public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
+        return new SubQuery(entityName, propNames, cond);
     }
 
     /**
@@ -3706,11 +3706,11 @@ public class Filters {
          * Criteria criteria = CB.where(Filters.equal("active", true));
          * }</pre>
          *
-         * @param condition the condition for the WHERE clause
+         * @param cond the condition for the WHERE clause
          * @return a new Criteria with the WHERE condition
          */
-        public static Criteria where(final Condition condition) {
-            return Filters.criteria().where(condition);
+        public static Criteria where(final Condition cond) {
+            return Filters.criteria().where(cond);
         }
 
         /**
@@ -3737,11 +3737,11 @@ public class Filters {
          * Criteria criteria = CB.groupBy(Filters.expr("YEAR(date), MONTH(date)"));
          * }</pre>
          *
-         * @param condition the grouping condition
+         * @param cond the grouping condition
          * @return a new Criteria with the GROUP BY condition
          */
-        public static Criteria groupBy(final Condition condition) {
-            return Filters.criteria().groupBy(condition);
+        public static Criteria groupBy(final Condition cond) {
+            return Filters.criteria().groupBy(cond);
         }
 
         /**
@@ -3834,11 +3834,11 @@ public class Filters {
          * Criteria criteria = CB.having(Filters.greaterThan("COUNT(*)", 5));
          * }</pre>
          *
-         * @param condition the condition for the HAVING clause
+         * @param cond the condition for the HAVING clause
          * @return a new Criteria with the HAVING condition
          */
-        public static Criteria having(final Condition condition) {
-            return Filters.criteria().having(condition);
+        public static Criteria having(final Condition cond) {
+            return Filters.criteria().having(cond);
         }
 
         /**
@@ -3924,11 +3924,11 @@ public class Filters {
          * Criteria criteria = CB.orderBy(Filters.expr("FIELD(status, 'new', 'pending', 'complete')"));
          * }</pre>
          *
-         * @param condition the ordering condition
+         * @param cond the ordering condition
          * @return a new Criteria with the ORDER BY condition
          */
-        public static Criteria orderBy(final Condition condition) {
-            return Filters.criteria().orderBy(condition);
+        public static Criteria orderBy(final Condition cond) {
+            return Filters.criteria().orderBy(cond);
         }
 
         /**

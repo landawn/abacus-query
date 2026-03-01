@@ -145,12 +145,12 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param condition the join condition, typically an {@link On} condition for column equality;
+     * @param cond the join condition, typically an {@link On} condition for column equality;
      *            any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
-    public RightJoin(final String joinEntity, final Condition condition) {
-        super(Operator.RIGHT_JOIN, joinEntity, condition);
+    public RightJoin(final String joinEntity, final Condition cond) {
+        super(Operator.RIGHT_JOIN, joinEntity, cond);
     }
 
     /**
@@ -176,11 +176,11 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param condition the join condition, typically an {@link On} condition for column equality;
+     * @param cond the join condition, typically an {@link On} condition for column equality;
      *            any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntities is null or empty
      */
-    public RightJoin(final Collection<String> joinEntities, final Condition condition) {
-        super(Operator.RIGHT_JOIN, joinEntities, condition);
+    public RightJoin(final Collection<String> joinEntities, final Condition cond) {
+        super(Operator.RIGHT_JOIN, joinEntities, cond);
     }
 }

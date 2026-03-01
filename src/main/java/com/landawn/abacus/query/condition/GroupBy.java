@@ -95,11 +95,11 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END
      * }</pre>
      *
-     * @param condition the grouping condition or expression. Must not be null.
-     * @throws NullPointerException if condition is null
+     * @param cond the grouping condition or expression. Must not be null.
+     * @throws NullPointerException if cond is null
      */
-    public GroupBy(final Condition condition) {
-        super(Operator.GROUP_BY, condition);
+    public GroupBy(final Condition cond) {
+        super(Operator.GROUP_BY, cond);
     }
 
     /**

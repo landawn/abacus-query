@@ -120,11 +120,11 @@ public interface Condition {
      * // Equivalent to: age > 18 AND status = 'active' AND verified = true
      * }</pre>
      * 
-     * @param condition the condition to AND with this condition (must not be null)
+     * @param cond the condition to AND with this condition (must not be null)
      * @return a new And condition containing both conditions
-     * @throws IllegalArgumentException if {@code condition} is null
+     * @throws IllegalArgumentException if {@code cond} is null
      */
-    And and(Condition condition);
+    And and(Condition cond);
 
     /**
      * Creates a new OR condition combining this condition with another.
@@ -151,11 +151,11 @@ public interface Condition {
      * // Equivalent to: memberType = 'premium' OR memberType = 'vip' OR memberType = 'gold'
      * }</pre>
      * 
-     * @param condition the condition to OR with this condition (must not be null)
+     * @param cond the condition to OR with this condition (must not be null)
      * @return a new Or condition containing both conditions
-     * @throws IllegalArgumentException if {@code condition} is null
+     * @throws IllegalArgumentException if {@code cond} is null
      */
-    Or or(Condition condition);
+    Or or(Condition cond);
 
     /**
      * Creates a new XOR (exclusive OR) condition combining this condition with another.
@@ -179,11 +179,11 @@ public interface Condition {
      * // Equivalent to: (hasDiscount = true AND NOT isMember = true) OR (NOT hasDiscount = true AND isMember = true)
      * }</pre>
      *
-     * @param condition the condition to XOR with this condition (must not be null)
+     * @param cond the condition to XOR with this condition (must not be null)
      * @return a new Or condition representing the exclusive-or of both conditions
-     * @throws IllegalArgumentException if {@code condition} is null
+     * @throws IllegalArgumentException if {@code cond} is null
      */
-    Or xor(Condition condition);
+    Or xor(Condition cond);
 
     /**
      * Creates a new NOT condition that negates this condition.

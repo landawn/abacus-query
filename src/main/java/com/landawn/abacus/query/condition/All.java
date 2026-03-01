@@ -107,11 +107,11 @@ public class All extends Cell {
      * // Used with: WHERE price < ALL (SELECT price FROM products WHERE category = 'premium')
      * }</pre>
      *
-     * @param condition the subquery that returns values to compare against. Must not be null.
-     * @throws NullPointerException if condition is null
+     * @param subQuery the subquery that returns values to compare against. Must not be null.
+     * @throws NullPointerException if subQuery is null
      */
-    public All(final SubQuery condition) {
-        super(Operator.ALL, condition);
+    public All(final SubQuery subQuery) {
+        super(Operator.ALL, subQuery);
     }
 
     @Override

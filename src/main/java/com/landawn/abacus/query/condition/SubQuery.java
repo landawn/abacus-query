@@ -188,11 +188,11 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityName the entity/table name
      * @param propNames collection of property names to select
-     * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
+     * @param cond the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
      * @throws IllegalArgumentException if entityName is null or empty, if propNames is null,
      *             or if propNames contains null/empty names
      */
-    public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
+    public SubQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
         super(Operator.EMPTY);
 
         if (Strings.isEmpty(entityName)) {
@@ -203,10 +203,10 @@ public class SubQuery extends AbstractCondition {
         this.entityClass = null;
         this.propNames = copyAndValidatePropNames(propNames);
 
-        if (condition == null || CriteriaUtil.isClause(condition)) {
-            this.condition = condition;
+        if (cond == null || CriteriaUtil.isClause(cond)) {
+            this.condition = cond;
         } else {
-            this.condition = Filters.where(condition);
+            this.condition = Filters.where(cond);
         }
 
         sql = null;
@@ -240,11 +240,11 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityClass the entity class
      * @param propNames collection of property names to select
-     * @param condition the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
+     * @param cond the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
      * @throws IllegalArgumentException if entityClass is null, if propNames is null,
      *             or if propNames contains null/empty names
      */
-    public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
+    public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {
         super(Operator.EMPTY);
 
         if (entityClass == null) {
@@ -254,10 +254,10 @@ public class SubQuery extends AbstractCondition {
         this.entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
         this.propNames = copyAndValidatePropNames(propNames);
-        if (condition == null || CriteriaUtil.isClause(condition)) {
-            this.condition = condition;
+        if (cond == null || CriteriaUtil.isClause(cond)) {
+            this.condition = cond;
         } else {
-            this.condition = Filters.where(condition);
+            this.condition = Filters.where(cond);
         }
 
         sql = null;

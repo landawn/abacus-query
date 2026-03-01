@@ -168,11 +168,11 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
-    public Join(final String joinEntity, final Condition condition) {
-        this(Operator.JOIN, joinEntity, condition);
+    public Join(final String joinEntity, final Condition cond) {
+        this(Operator.JOIN, joinEntity, cond);
     }
 
     /**
@@ -185,18 +185,18 @@ public class Join extends AbstractCondition {
      * <pre>{@code
      * // Used internally by LeftJoin
      * class LeftJoin extends Join {
-     *     LeftJoin(String joinEntity, Condition condition) {
-     *         super(Operator.LEFT_JOIN, joinEntity, condition);
+     *     LeftJoin(String joinEntity, Condition cond) {
+     *         super(Operator.LEFT_JOIN, joinEntity, cond);
      *     }
      * }
      * }</pre>
      *
      * @param operator the join operator
      * @param joinEntity the table or entity to join with
-     * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
      */
-    protected Join(final Operator operator, final String joinEntity, final Condition condition) {
-        this(operator, Collections.singletonList(joinEntity), condition);
+    protected Join(final Operator operator, final String joinEntity, final Condition cond) {
+        this(operator, Collections.singletonList(joinEntity), cond);
     }
 
     /**
@@ -226,11 +226,11 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with
-     * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntities is null/empty or contains null/empty elements
      */
-    public Join(final Collection<String> joinEntities, final Condition condition) {
-        this(Operator.JOIN, joinEntities, condition);
+    public Join(final Collection<String> joinEntities, final Condition cond) {
+        this(Operator.JOIN, joinEntities, cond);
     }
 
     /**
@@ -243,21 +243,21 @@ public class Join extends AbstractCondition {
      * <pre>{@code
      * // Used internally by subclasses
      * class RightJoin extends Join {
-     *     RightJoin(Collection<String> joinEntities, Condition condition) {
-     *         super(Operator.RIGHT_JOIN, joinEntities, condition);
+     *     RightJoin(Collection<String> joinEntities, Condition cond) {
+     *         super(Operator.RIGHT_JOIN, joinEntities, cond);
      *     }
      * }
      * }</pre>
      *
      * @param operator the join operator
      * @param joinEntities the collection of tables or entities to join with
-     * @param condition the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
      */
-    protected Join(final Operator operator, final Collection<String> joinEntities, final Condition condition) {
+    protected Join(final Operator operator, final Collection<String> joinEntities, final Condition cond) {
         super(operator);
 
         this.joinEntities = copyAndValidateJoinEntities(joinEntities);
-        this.condition = condition;
+        this.condition = cond;
     }
 
     private static List<String> copyAndValidateJoinEntities(final Collection<String> joinEntities) {
@@ -278,12 +278,12 @@ public class Join extends AbstractCondition {
      * JOIN clauses cannot be combined using AND logic.
      * Combine conditions within the ON clause instead.
      *
-     * @param condition the condition to AND with (ignored)
+     * @param cond the condition to AND with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown
      */
     @Override
-    public And and(final Condition condition) throws UnsupportedOperationException {
+    public And and(final Condition cond) throws UnsupportedOperationException {
         throw new UnsupportedOperationException("AND operation is not supported for Join. Combine conditions within the ON clause instead");
     }
 
@@ -292,12 +292,12 @@ public class Join extends AbstractCondition {
      * JOIN clauses cannot be combined using XOR logic.
      * Combine conditions within the ON clause instead.
      *
-     * @param condition the condition to XOR with (ignored)
+     * @param cond the condition to XOR with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown
      */
     @Override
-    public Or xor(final Condition condition) throws UnsupportedOperationException {
+    public Or xor(final Condition cond) throws UnsupportedOperationException {
         throw new UnsupportedOperationException("XOR operation is not supported for Join. Combine conditions within the ON clause instead");
     }
 
@@ -306,12 +306,12 @@ public class Join extends AbstractCondition {
      * JOIN clauses cannot be combined using OR logic.
      * Combine conditions within the ON clause instead.
      *
-     * @param condition the condition to OR with (ignored)
+     * @param cond the condition to OR with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown
      */
     @Override
-    public Or or(final Condition condition) throws UnsupportedOperationException {
+    public Or or(final Condition cond) throws UnsupportedOperationException {
         throw new UnsupportedOperationException("OR operation is not supported for Join. Combine conditions within the ON clause instead");
     }
 

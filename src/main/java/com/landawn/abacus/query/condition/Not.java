@@ -109,11 +109,11 @@ public class Not extends Cell {
      * // Results in: NOT ((status = 'PENDING') OR (status = 'PROCESSING'))
      * }</pre>
      *
-     * @param condition the condition to be negated. Can be any type of condition
+     * @param cond the condition to be negated. Can be any type of condition
      *                  including simple comparisons, complex logical conditions,
      *                  or subquery conditions. Must not be null.
      */
-    public Not(final Condition condition) {
-        super(Operator.NOT, condition);
+    public Not(final Condition cond) {
+        super(Operator.NOT, cond);
     }
 }

@@ -95,11 +95,11 @@ public class OrderBy extends Clause {
      * // SQL: ORDER BY (price * quantity) DESC
      * }</pre>
      *
-     * @param condition the ordering condition. Must not be null.
-     * @throws NullPointerException if condition is null
+     * @param cond the ordering condition. Must not be null.
+     * @throws NullPointerException if cond is null
      */
-    public OrderBy(final Condition condition) {
-        super(Operator.ORDER_BY, condition);
+    public OrderBy(final Condition cond) {
+        super(Operator.ORDER_BY, cond);
     }
 
     /**

@@ -71,11 +71,11 @@ public class Cell extends AbstractCondition {
      * }</pre>
      *
      * @param operator the operator to apply to the condition
-     * @param condition the condition to wrap (must not be null)
+     * @param cond the condition to wrap (must not be null)
      */
-    public Cell(final Operator operator, final Condition condition) {
+    public Cell(final Operator operator, final Condition cond) {
         super(operator);
-        this.condition = N.checkArgNotNull(condition, "condition");
+        this.condition = N.checkArgNotNull(cond, "cond");
     }
 
     /**
@@ -116,12 +116,12 @@ public class Cell extends AbstractCondition {
      * Cell newNotCell = new Cell(Operator.NOT, Filters.equal("status", "inactive"));
      * }</pre>
      *
-     * @param condition the new condition to wrap
+     * @param cond the new condition to wrap
      * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
     @Deprecated
-    public void setCondition(final Condition condition) {
-        this.condition = condition;
+    public void setCondition(final Condition cond) {
+        this.condition = cond;
     }
 
     /**

@@ -107,11 +107,11 @@ public class Any extends Cell {
      * // Used with: WHERE price = ANY (SELECT price FROM competitor_products)
      * }</pre>
      *
-     * @param condition the subquery that returns values to compare against. Must not be null.
-     * @throws NullPointerException if condition is null
+     * @param subQuery the subquery that returns values to compare against. Must not be null.
+     * @throws NullPointerException if subQuery is null
      */
-    public Any(final SubQuery condition) {
-        super(Operator.ANY, condition);
+    public Any(final SubQuery subQuery) {
+        super(Operator.ANY, subQuery);
     }
 
     @Override

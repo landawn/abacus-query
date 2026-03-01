@@ -85,8 +85,8 @@ public abstract class Clause extends Cell {
      * <pre>{@code
      * // Example implementation in a subclass:
      * public class Where extends Clause {
-     *     public Where(Condition condition) {
-     *         super(Operator.WHERE, condition);
+     *     public Where(Condition cond) {
+     *         super(Operator.WHERE, cond);
      *     }
      * }
      *
@@ -96,10 +96,10 @@ public abstract class Clause extends Cell {
      * }</pre>
      *
      * @param operator the clause operator (e.g., WHERE, HAVING, GROUP_BY). Must not be null.
-     * @param condition the condition to be wrapped by this clause. Must not be null.
+     * @param cond the condition to be wrapped by this clause. Must not be null.
      */
-    protected Clause(final Operator operator, final Condition condition) {
-        super(operator, condition);
+    protected Clause(final Operator operator, final Condition cond) {
+        super(operator, cond);
     }
 
     /**
@@ -124,12 +124,12 @@ public abstract class Clause extends Cell {
      * );
      * }</pre>
      *
-     * @param condition the condition to AND with (ignored)
+     * @param cond the condition to AND with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown
      */
     @Override
-    public And and(final Condition condition) throws UnsupportedOperationException {
+    public And and(final Condition cond) throws UnsupportedOperationException {
         throw new UnsupportedOperationException("AND operation is not supported for Clause. Combine conditions within the clause instead");
     }
 
@@ -137,12 +137,12 @@ public abstract class Clause extends Cell {
      * This operation is not supported for Clause objects.
      * Clauses cannot be combined using XOR logic.
      *
-     * @param condition the condition to XOR with (ignored)
+     * @param cond the condition to XOR with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown
      */
     @Override
-    public Or xor(final Condition condition) throws UnsupportedOperationException {
+    public Or xor(final Condition cond) throws UnsupportedOperationException {
         throw new UnsupportedOperationException("XOR operation is not supported for Clause. Combine conditions within the clause instead");
     }
 
@@ -168,12 +168,12 @@ public abstract class Clause extends Cell {
      * );
      * }</pre>
      *
-     * @param condition the condition to OR with (ignored)
+     * @param cond the condition to OR with (ignored)
      * @return never returns normally
      * @throws UnsupportedOperationException always thrown
      */
     @Override
-    public Or or(final Condition condition) throws UnsupportedOperationException {
+    public Or or(final Condition cond) throws UnsupportedOperationException {
         throw new UnsupportedOperationException("OR operation is not supported for Clause. Combine conditions within the clause instead");
     }
 

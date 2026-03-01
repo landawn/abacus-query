@@ -177,16 +177,16 @@ public final class CriteriaUtil {
      * boolean result4 = CriteriaUtil.isClause((Condition) null);   // false
      * }</pre>
      *
-     * @param condition the condition to check
+     * @param cond the condition to check
      * @return {@code true} if the condition has a clause operator, {@code false} if null or not a clause
      */
-    public static boolean isClause(final Condition condition) {
-        //        if (condition == null) {
+    public static boolean isClause(final Condition cond) {
+        //        if (cond == null) {
         //            return false;
         //        }
         //
-        //        if (condition instanceof Expression) {
-        //            Expression exp = (Expression) condition;
+        //        if (cond instanceof Expression) {
+        //            Expression exp = (Expression) cond;
         //
         //            if (N.isEmpty(exp.getLiteral())) {
         //                return false;
@@ -197,9 +197,9 @@ public final class CriteriaUtil {
         //                return isClause(word) || isClause(word + D._SPACE + sqlParser.nextWord());
         //            }
         //        } else {
-        //            return isClause(condition.operator());
+        //            return isClause(cond.operator());
         //        }
-        return condition != null && isClause(condition.operator());
+        return cond != null && isClause(cond.operator());
     }
 
     /**

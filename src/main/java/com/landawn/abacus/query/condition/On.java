@@ -128,11 +128,11 @@ public class On extends Cell {
      * // Generates: INNER JOIN salary_grades ON (emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary)
      * }</pre>
      *
-     * @param condition the join condition, can be any type of condition including
+     * @param cond the join condition, can be any type of condition including
      *                  Expression, Equal, And, Or, Between, or more complex conditions
      */
-    public On(final Condition condition) {
-        super(Operator.ON, condition);
+    public On(final Condition cond) {
+        super(Operator.ON, cond);
     }
 
     /**
