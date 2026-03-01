@@ -335,13 +335,13 @@ public class DynamicSQLBuilder {
      * // Generates: OFFSET 100 ROWS FETCH NEXT 25 ROWS ONLY
      * }</pre>
      *
-     * @param rowCount the number of rows to fetch (must not be negative)
+     * @param count the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder fetchNextRows(final int rowCount) {
-        N.checkArgNotNegative(rowCount, "rowCount");
+    public DynamicSQLBuilder fetchNextRows(final int count) {
+        N.checkArgNotNegative(count, "count");
 
-        getStringBuilderForMoreParts().append(" FETCH NEXT ").append(rowCount).append(" ROWS ONLY");
+        getStringBuilderForMoreParts().append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
 
         return this;
     }
@@ -356,13 +356,13 @@ public class DynamicSQLBuilder {
      * // Generates: FETCH FIRST 10 ROWS ONLY
      * }</pre>
      *
-     * @param rowCount the number of rows to fetch (must not be negative)
+     * @param count the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder fetchFirstRows(final int rowCount) {
-        N.checkArgNotNegative(rowCount, "rowCount");
+    public DynamicSQLBuilder fetchFirstRows(final int count) {
+        N.checkArgNotNegative(count, "count");
 
-        getStringBuilderForMoreParts().append(" FETCH FIRST ").append(rowCount).append(" ROWS ONLY");
+        getStringBuilderForMoreParts().append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
 
         return this;
     }
@@ -1067,7 +1067,7 @@ public class DynamicSQLBuilder {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * where.append("id IN (").repeatQM(3).append(")");
+         * where.append("id IN (").repeatQuestionMark(3).append(")");
          * // Generates: id IN (?, ?, ?)
          * }</pre>
          *
@@ -1075,7 +1075,7 @@ public class DynamicSQLBuilder {
          * @return this Where instance for method chaining
          * @throws IllegalArgumentException if placeholderCount is negative
          */
-        public WhereClause repeatQM(final int placeholderCount) {
+        public WhereClause repeatQuestionMark(final int placeholderCount) {
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
 
             for (int i = 0; i < placeholderCount; i++) {
@@ -1090,12 +1090,26 @@ public class DynamicSQLBuilder {
         }
 
         /**
+         * Appends question mark placeholders for parameterized queries.
+         * Alias for {@link #repeatQuestionMark(int)}.
+         *
+         * @param placeholderCount the number of question marks to append
+         * @return this Where instance for method chaining
+         * @throws IllegalArgumentException if placeholderCount is negative
+         * @deprecated Use {@link #repeatQuestionMark(int)} for better readability.
+         */
+        @Deprecated
+        public WhereClause repeatQM(final int placeholderCount) {
+            return repeatQuestionMark(placeholderCount);
+        }
+
+        /**
          * Appends question mark placeholders surrounded by prefix and postfix.
          * Commonly used for IN clauses with automatic parentheses.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * where.append("status IN ").repeatQM(3, "(", ")");
+         * where.append("status IN ").repeatQuestionMark(3, "(", ")");
          * // Generates: status IN (?, ?, ?)
          * }</pre>
          *
@@ -1105,7 +1119,7 @@ public class DynamicSQLBuilder {
          * @return this Where instance for method chaining
          * @throws IllegalArgumentException if placeholderCount is negative
          */
-        public WhereClause repeatQM(final int placeholderCount, final String prefix, final String postfix) {
+        public WhereClause repeatQuestionMark(final int placeholderCount, final String prefix, final String postfix) {
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
 
             if (placeholderCount > 0) {
@@ -1123,6 +1137,22 @@ public class DynamicSQLBuilder {
             }
 
             return this;
+        }
+
+        /**
+         * Appends question mark placeholders surrounded by prefix and postfix.
+         * Alias for {@link #repeatQuestionMark(int, String, String)}.
+         *
+         * @param placeholderCount the number of question marks to append
+         * @param prefix the string to add before the question marks
+         * @param postfix the string to add after the question marks
+         * @return this Where instance for method chaining
+         * @throws IllegalArgumentException if placeholderCount is negative
+         * @deprecated Use {@link #repeatQuestionMark(int, String, String)} for better readability.
+         */
+        @Deprecated
+        public WhereClause repeatQM(final int placeholderCount, final String prefix, final String postfix) {
+            return repeatQuestionMark(placeholderCount, prefix, postfix);
         }
 
         /**

@@ -291,7 +291,7 @@ public class SKTest extends TestBase {
         assertEquals("UNION ALL", SK.UNION_ALL);
         assertEquals("INTERSECT", SK.INTERSECT);
         assertEquals("EXCEPT", SK.EXCEPT);
-        assertEquals("MINUS", SK.EXCEPT2);
+        assertEquals("MINUS", SK.EXCEPT_MINUS);
     }
 
     // Tests for SQL Aggregate Functions

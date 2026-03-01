@@ -536,16 +536,16 @@ public final class QueryUtil {
      * // Returns: []
      * }</pre>
      *
-     * @param targetClass the entity class to analyze (must not be null)
+     * @param entityClass the entity class to analyze (must not be null)
      * @return an immutable list of ID field names, or empty list if no ID fields are defined
-     * @throws IllegalArgumentException if targetClass is null
+     * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal only.
      */
     @Deprecated
     @Internal
     @Immutable
-    public static List<String> getIdPropNames(final Class<?> targetClass) {
-        return getIdPropNames(targetClass, false);
+    public static List<String> getIdPropNames(final Class<?> entityClass) {
+        return getIdPropNames(entityClass, false);
     }
 
     /**
@@ -568,19 +568,19 @@ public final class QueryUtil {
      * // Returns: ["id"]
      * }</pre>
      *
-     * @param targetClass the entity class to analyze
+     * @param entityClass the entity class to analyze
      * @param fakeIdForEmpty if true, returns a fake ID when no ID fields are found
      * @return an immutable list of ID field names or fake ID if requested and none found
-     * @throws IllegalArgumentException if targetClass is null
+     * @throws IllegalArgumentException if entityClass is null
      * @deprecated for internal only.
      */
     @Deprecated
     @Internal
     @Immutable
-    public static List<String> getIdPropNames(final Class<?> targetClass, final boolean fakeIdForEmpty) {
-        N.checkArgNotNull(targetClass, ENTITY_CLASS);
+    public static List<String> getIdPropNames(final Class<?> entityClass, final boolean fakeIdForEmpty) {
+        N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
-        final ImmutableList<String> idPropNames = ParserUtil.getBeanInfo(targetClass).idPropNameList;
+        final ImmutableList<String> idPropNames = ParserUtil.getBeanInfo(entityClass).idPropNameList;
 
         return N.isEmpty(idPropNames) && fakeIdForEmpty ? fakeIds : idPropNames;
     }
@@ -667,7 +667,7 @@ public final class QueryUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String placeholders = QueryUtil.repeatQM(3);
+     * String placeholders = QueryUtil.repeatQuestionMark(3);
      * // Returns: "?, ?, ?"
      * String sql = "INSERT INTO users (name, email, age) VALUES (" + placeholders + ")";
      * // Result: "INSERT INTO users (name, email, age) VALUES (?, ?, ?)"
@@ -677,7 +677,7 @@ public final class QueryUtil {
      * @return a string containing n question marks separated by ", ", or empty string if n is 0
      * @throws IllegalArgumentException if n is negative
      */
-    public static String repeatQM(final int n) {
+    public static String repeatQuestionMark(final int n) {
         N.checkArgNotNegative(n, "count");
 
         String result = QM_CACHE.get(n);
@@ -687,6 +687,20 @@ public final class QueryUtil {
         }
 
         return result;
+    }
+
+    /**
+     * Generates a string of question marks (?) repeated n times with comma-space delimiter.
+     * Alias for {@link #repeatQuestionMark(int)}.
+     *
+     * @param n the number of question marks to generate (must not be negative)
+     * @return a string containing n question marks separated by ", ", or empty string if n is 0
+     * @throws IllegalArgumentException if n is negative
+     * @deprecated Use {@link #repeatQuestionMark(int)} for better readability.
+     */
+    @Deprecated
+    public static String repeatQM(final int n) {
+        return repeatQuestionMark(n);
     }
 
     /**

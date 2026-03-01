@@ -38,7 +38,7 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>Instance caching for memory efficiency (using {@link #of(String)})</li>
  *   <li>Fluent API for creating various SQL conditions</li>
- *   <li>Support for comparison operators (eq, ne, gt, ge, lt, le)</li>
+ *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
  *   <li>Support for pattern matching (like, notLike, startsWith, endsWith, contains)</li>
  *   <li>Support for null checks (isNull, isNotNull)</li>
  *   <li>Support for range and set operations (between, in)</li>
@@ -53,8 +53,8 @@ import com.landawn.abacus.util.Strings;
  * NamedProperty name = NamedProperty.of("name");
  *
  * // Use it to create various conditions
- * Condition c1 = age.eq(25);   // age = 25
- * Condition c2 = age.gt(18);   // age > 18
+ * Condition c1 = age.equal(25);   // age = 25
+ * Condition c2 = age.greaterThan(18);   // age > 18
  * Condition c3 = age.between(20, 30);   // age BETWEEN 20 AND 30
  * Condition c4 = age.in(Arrays.asList(25, 30, 35));   // age IN (25, 30, 35)
  *
@@ -70,13 +70,13 @@ import com.landawn.abacus.util.Strings;
  * Or orCondition = age.anyEqual(25, 30, 35);   // age = 25 OR age = 30 OR age = 35
  *
  * // Combine with AND/OR for complex queries
- * Condition complex = age.gt(18).and(status.eq("active"));
+ * Condition complex = age.greaterThan(18).and(status.equal("active"));
  * // Results in: age > 18 AND status = 'active'
  *
  * // Use in query building
  * SQLBuilder builder = PSC.select("*")
  *     .from("users")
- *     .where(age.ge(21).and(status.in("active", "pending")));
+ *     .where(age.greaterThanOrEqual(21).and(status.in("active", "pending")));
  * }</pre>
  *
  * @see Condition
@@ -174,9 +174,8 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the value to compare against
      * @return an Equal condition for this property
-     * @deprecated please use {@link #equal(Object)}
      */
-    @Deprecated
+    @Beta
     public Equal eq(final Object value) {
         return equal(value);
     }
@@ -200,7 +199,6 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
-    @SuppressWarnings("deprecation")
     public Or anyEqual(final Object... values) {
         N.checkArgNotEmpty(values, "values");
 
@@ -234,7 +232,6 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
-    @SuppressWarnings("deprecation")
     public Or anyEqual(final Collection<?> values) {
         N.checkArgNotEmpty(values, "values");
 
@@ -271,9 +268,8 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the value to compare against
      * @return a NotEqual condition for this property
-     * @deprecated please use {@link #notEqual(Object)}
      */
-    @Deprecated
+    @Beta
     public NotEqual ne(final Object value) {
         return notEqual(value);
     }
@@ -302,9 +298,8 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the value to compare against
      * @return a GreaterThan condition for this property
-     * @deprecated please use {@link #greaterThan(Object)}
      */
-    @Deprecated
+    @Beta
     public GreaterThan gt(final Object value) {
         return greaterThan(value);
     }
@@ -363,9 +358,8 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the value to compare against
      * @return a LessThan condition for this property
-     * @deprecated please use {@link #lessThan(Object)}
      */
-    @Deprecated
+    @Beta
     public LessThan lt(final Object value) {
         return lessThan(value);
     }
@@ -611,6 +605,130 @@ public sealed class NamedProperty permits NP {
      */
     public In in(final Collection<?> values) {
         return Filters.in(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with an array of values.
+     * This generates a condition that checks if the property value does not match any of the specified values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("status").notIn("deleted", "archived");
+     * // Results in: status NOT IN ('deleted', 'archived')
+     *
+     * NamedProperty.of("priority").notIn(4, 5);
+     * // Results in: priority NOT IN (4, 5)
+     * }</pre>
+     *
+     * @param values array of values to check non-membership against
+     * @return a NotIn condition for this property
+     * @see NotIn
+     * @see Filters#notIn(String, Object[])
+     */
+    public NotIn notIn(final Object... values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with a collection of values.
+     * This is similar to {@link #notIn(Object...)} but accepts a collection instead of varargs.
+     * Useful when the values are already in a collection or list.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Set<Integer> excludedIds = new HashSet<>(Arrays.asList(100, 200, 300));
+     * NamedProperty.of("id").notIn(excludedIds);
+     * // Results in: id NOT IN (100, 200, 300)
+     *
+     * List<String> blockedDepartments = Arrays.asList("Temp", "Archived");
+     * NamedProperty.of("department").notIn(blockedDepartments);
+     * // Results in: department NOT IN ('Temp', 'Archived')
+     * }</pre>
+     *
+     * @param values collection of values to check non-membership against
+     * @return a NotIn condition for this property
+     * @see NotIn
+     * @see Filters#notIn(String, Collection)
+     */
+    public NotIn notIn(final Collection<?> values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT BETWEEN condition for this property.
+     * This generates a condition that checks if the property value is outside the specified range.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("age").notBetween(18, 65);          // age NOT BETWEEN 18 AND 65
+     * NamedProperty.of("price").notBetween(10.0, 100.0);   // price NOT BETWEEN 10.0 AND 100.0
+     * }</pre>
+     *
+     * @param minValue the minimum value of the excluded range (inclusive). Can be numeric, date, string, or any comparable type.
+     * @param maxValue the maximum value of the excluded range (inclusive). Can be numeric, date, string, or any comparable type.
+     * @return a NotBetween condition for this property
+     * @see NotBetween
+     * @see Filters#notBetween(String, Object, Object)
+     */
+    public NotBetween notBetween(final Object minValue, final Object maxValue) {
+        return Filters.notBetween(propName, minValue, maxValue);
+    }
+
+    /**
+     * Creates a NOT LIKE condition that excludes values starting with the specified prefix.
+     * This is a convenience method that automatically appends the % wildcard to the value.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("name").notStartsWith("test");   // name NOT LIKE 'test%'
+     * NamedProperty.of("code").notStartsWith("TMP");    // code NOT LIKE 'TMP%'
+     * }</pre>
+     *
+     * @param value the prefix to exclude. The % wildcard will be automatically appended.
+     * @return a NotLike condition with % appended to the value
+     * @see NotLike
+     * @see Filters#notStartsWith(String, Object)
+     */
+    public NotLike notStartsWith(final Object value) {
+        return Filters.notStartsWith(propName, value);
+    }
+
+    /**
+     * Creates a NOT LIKE condition that excludes values ending with the specified suffix.
+     * This is a convenience method that automatically prepends the % wildcard to the value.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("email").notEndsWith("@temp.com");   // email NOT LIKE '%@temp.com'
+     * NamedProperty.of("filename").notEndsWith(".tmp");      // filename NOT LIKE '%.tmp'
+     * }</pre>
+     *
+     * @param value the suffix to exclude. The % wildcard will be automatically prepended.
+     * @return a NotLike condition with % prepended to the value
+     * @see NotLike
+     * @see Filters#notEndsWith(String, Object)
+     */
+    public NotLike notEndsWith(final Object value) {
+        return Filters.notEndsWith(propName, value);
+    }
+
+    /**
+     * Creates a NOT LIKE condition that excludes values containing the specified substring.
+     * This is a convenience method that automatically adds % wildcards to both sides of the value.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("description").notContains("deprecated");   // description NOT LIKE '%deprecated%'
+     * NamedProperty.of("title").notContains("draft");              // title NOT LIKE '%draft%'
+     * }</pre>
+     *
+     * @param value the substring to exclude. The % wildcard will be automatically added to both sides.
+     * @return a NotLike condition with % on both sides of the value
+     * @see NotLike
+     * @see Filters#notContains(String, Object)
+     */
+    public NotLike notContains(final Object value) {
+        return Filters.notContains(propName, value);
     }
 
     /**

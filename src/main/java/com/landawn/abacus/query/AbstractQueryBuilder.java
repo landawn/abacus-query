@@ -280,9 +280,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected static final char[] _SPACE_EXCEPT_SPACE = (SK.SPACE + SK.EXCEPT + SK.SPACE).toCharArray();
 
-    protected static final char[] _EXCEPT2 = SK.EXCEPT2.toCharArray();
+    protected static final char[] _EXCEPT_MINUS = SK.EXCEPT_MINUS.toCharArray();
 
-    protected static final char[] _SPACE_EXCEPT2_SPACE = (SK.SPACE + SK.EXCEPT2 + SK.SPACE).toCharArray();
+    protected static final char[] _SPACE_EXCEPT_MINUS_SPACE = (SK.SPACE + SK.EXCEPT_MINUS + SK.SPACE).toCharArray();
 
     protected static final char[] _AS = SK.AS.toCharArray();
 
@@ -3575,7 +3575,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _hasFromBeenSet = false;
         _tableAlias = null;
 
-        _sb.append(_SPACE_EXCEPT2_SPACE);
+        _sb.append(_SPACE_EXCEPT_MINUS_SPACE);
 
         // it's subquery
         if (isSubQuery(propOrColumnNames)) {
@@ -3617,7 +3617,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _hasFromBeenSet = false;
         _tableAlias = null;
 
-        _sb.append(_SPACE_EXCEPT2_SPACE);
+        _sb.append(_SPACE_EXCEPT_MINUS_SPACE);
 
         return (This) this;
     }

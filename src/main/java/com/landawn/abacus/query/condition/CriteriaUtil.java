@@ -20,6 +20,7 @@ import java.util.Set;
 import com.landawn.abacus.annotation.Internal;
 import com.landawn.abacus.util.ImmutableSet;
 import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.Strings;
 
 /**
  * Utility class for working with Criteria and clause operators.
@@ -151,6 +152,10 @@ public final class CriteriaUtil {
      * @return {@code true} if the operator string represents a clause operator, {@code false} otherwise
      */
     public static boolean isClause(final String operator) {
+        if (Strings.isEmpty(operator)) {
+            return false;
+        }
+
         return isClause(Operator.of(operator));
     }
 

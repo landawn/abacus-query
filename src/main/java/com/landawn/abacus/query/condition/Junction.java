@@ -401,7 +401,10 @@ public class Junction extends AbstractCondition {
      * junction.add(new Equal("role", "admin"));
      * }</pre>
      *
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+     *             Instead of modifying an existing junction, create a new junction with the desired conditions.
      */
+    @Deprecated
     public void clear() {
         conditions.clear();
     }

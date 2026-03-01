@@ -1136,7 +1136,7 @@ public final class SK {
      * Oracle's equivalent of EXCEPT; returns rows from first query not in second query.
      *
      */
-    public static final String EXCEPT2 = "MINUS";
+    public static final String EXCEPT_MINUS = "MINUS";
 
     /**
      * SQL AVG function: {@code "AVG"}.

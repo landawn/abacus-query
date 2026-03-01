@@ -345,7 +345,7 @@ public enum Operator {
      * MINUS operator.
      * Synonym for EXCEPT (Oracle syntax).
      */
-    MINUS(SK.EXCEPT2),
+    MINUS(SK.EXCEPT_MINUS),
 
     /**
      * Empty operator.
@@ -394,15 +394,15 @@ public enum Operator {
      *
      * // Returns null for unknown operators
      * Operator unknown = Operator.of("UNKNOWN");   // null
-     * Operator nullOp = Operator.of(null);         // null
      * }</pre>
      *
-     * @param name the string representation of the operator. Can be null.
-     * @return the corresponding Operator enum value, or {@code null} if name is null or not found
+     * @param name the string representation of the operator. Must not be null.
+     * @return the corresponding Operator enum value, or {@code null} if not found
+     * @throws IllegalArgumentException if name is null
      */
     public static Operator of(final String name) {
         if (name == null) {
-            return null;
+            throw new IllegalArgumentException("Operator name cannot be null");
         }
 
         // Check cache first

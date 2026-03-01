@@ -248,9 +248,8 @@ public class Expression extends AbstractCondition {
      * @param literal the left-hand side of the equality
      * @param value the right-hand side value
      * @return a string representation of the equality expression
-     * @deprecated please use {@link #equal(String, Object)}
      */
-    @Deprecated
+    @Beta
     public static String eq(final String literal, final Object value) {
         return equal(literal, value);
     }
@@ -288,9 +287,8 @@ public class Expression extends AbstractCondition {
      * @param literal the left-hand side of the inequality
      * @param value the right-hand side value
      * @return a string representation of the not-equal expression
-     * @deprecated please use {@link #notEqual(String, Object)}
      */
-    @Deprecated
+    @Beta
     public static String ne(final String literal, final Object value) {
         return notEqual(literal, value);
     }
@@ -328,9 +326,8 @@ public class Expression extends AbstractCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the greater-than expression
-     * @deprecated please use {@link #greaterThan(String, Object)}
      */
-    @Deprecated
+    @Beta
     public static String gt(final String literal, final Object value) {
         return greaterThan(literal, value);
     }
@@ -401,9 +398,8 @@ public class Expression extends AbstractCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the less-than expression
-     * @deprecated please use {@link #lessThan(String, Object)}
      */
-    @Deprecated
+    @Beta
     public static String lt(final String literal, final Object value) {
         return lessThan(literal, value);
     }
@@ -483,7 +479,7 @@ public class Expression extends AbstractCondition {
      */
     @Deprecated
     public static String bt(final String literal, final Object min, final Object max) {
-        return link(Operator.BETWEEN, literal, min, max);
+        return between(literal, min, max);
     }
 
     /**

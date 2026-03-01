@@ -420,8 +420,10 @@ public class Filters {
     /**
      * Returns a condition that always evaluates to false.
      *
-     * @return an Expression that always evaluates to false (1 &gt; 2) 
+     * @return an Expression that always evaluates to false (1 &gt; 2)
+     * @deprecated is dangerous (could silently return zero rows)
      */
+    @Deprecated
     public static Expression alwaysFalse() {
         return ALWAYS_FALSE;
     }
@@ -557,9 +559,8 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare for equality
      * @return an Equal condition
-     * @deprecated please use {@link #equal(String, Object)}
      */
-    @Deprecated
+    @Beta
     public static Equal eq(final String propName, final Object propValue) {
         return equal(propName, propValue);
     }
@@ -577,9 +578,8 @@ public class Filters {
      * @param propName the property/column name
      * @return an Equal condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
-     * @deprecated please use {@link #equal(String)}
      */
-    @Deprecated
+    @Beta
     public static Equal eq(final String propName) {
         return equal(propName);
     }
@@ -608,11 +608,11 @@ public class Filters {
 
         if (props.size() == 1) {
             final Map.Entry<String, ?> prop = propIter.next();
-            return or(eq(prop.getKey(), prop.getValue()));
+            return or(equal(prop.getKey(), prop.getValue()));
         } else if (props.size() == 2) {
             final Map.Entry<String, ?> prop1 = propIter.next();
             final Map.Entry<String, ?> prop2 = propIter.next();
-            return eq(prop1.getKey(), prop1.getValue()).or(eq(prop2.getKey(), prop2.getValue()));
+            return equal(prop1.getKey(), prop1.getValue()).or(equal(prop2.getKey(), prop2.getValue()));
         } else {
             final Condition[] conds = new Condition[props.size()];
             Map.Entry<String, ?> prop = null;
@@ -673,11 +673,11 @@ public class Filters {
 
         if (selectPropNames.size() == 1) {
             final String propName = iter.next();
-            return or(eq(propName, entityInfo.getPropValue(entity, propName)));
+            return or(equal(propName, entityInfo.getPropValue(entity, propName)));
         } else if (selectPropNames.size() == 2) {
             final String propName1 = iter.next();
             final String propName2 = iter.next();
-            return eq(propName1, entityInfo.getPropValue(entity, propName1)).or(eq(propName2, entityInfo.getPropValue(entity, propName2)));
+            return equal(propName1, entityInfo.getPropValue(entity, propName1)).or(equal(propName2, entityInfo.getPropValue(entity, propName2)));
         } else {
             final Condition[] conds = new Condition[selectPropNames.size()];
             String propName = null;
@@ -708,7 +708,7 @@ public class Filters {
      * @return an Or condition
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
-        return eq(propName1, propValue1).or(eq(propName2, propValue2));
+        return equal(propName1, propValue1).or(equal(propName2, propValue2));
     }
 
     /**
@@ -730,7 +730,7 @@ public class Filters {
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
-        return or(eq(propName1, propValue1), eq(propName2, propValue2), eq(propName3, propValue3));
+        return or(equal(propName1, propValue1), equal(propName2, propValue2), equal(propName3, propValue3));
     }
 
     /**
@@ -757,11 +757,11 @@ public class Filters {
 
         if (props.size() == 1) {
             final Map.Entry<String, ?> prop = propIter.next();
-            return and(eq(prop.getKey(), prop.getValue()));
+            return and(equal(prop.getKey(), prop.getValue()));
         } else if (props.size() == 2) {
             final Map.Entry<String, ?> prop1 = propIter.next();
             final Map.Entry<String, ?> prop2 = propIter.next();
-            return eq(prop1.getKey(), prop1.getValue()).and(eq(prop2.getKey(), prop2.getValue()));
+            return equal(prop1.getKey(), prop1.getValue()).and(equal(prop2.getKey(), prop2.getValue()));
         } else {
             final Condition[] conds = new Condition[props.size()];
             Map.Entry<String, ?> prop = null;
@@ -823,11 +823,11 @@ public class Filters {
 
         if (selectPropNames.size() == 1) {
             final String propName = iter.next();
-            return and(eq(propName, entityInfo.getPropValue(entity, propName)));
+            return and(equal(propName, entityInfo.getPropValue(entity, propName)));
         } else if (selectPropNames.size() == 2) {
             final String propName1 = iter.next();
             final String propName2 = iter.next();
-            return eq(propName1, entityInfo.getPropValue(entity, propName1)).and(eq(propName2, entityInfo.getPropValue(entity, propName2)));
+            return equal(propName1, entityInfo.getPropValue(entity, propName1)).and(equal(propName2, entityInfo.getPropValue(entity, propName2)));
         } else {
             final Condition[] conds = new Condition[selectPropNames.size()];
             String propName = null;
@@ -857,7 +857,7 @@ public class Filters {
      * @return an And condition
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
-        return eq(propName1, propValue1).and(eq(propName2, propValue2));
+        return equal(propName1, propValue1).and(equal(propName2, propValue2));
     }
 
     /**
@@ -878,7 +878,7 @@ public class Filters {
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
-        return and(eq(propName1, propValue1), eq(propName2, propValue2), eq(propName3, propValue3));
+        return and(equal(propName1, propValue1), equal(propName2, propValue2), equal(propName3, propValue3));
     }
 
     /**
@@ -974,13 +974,16 @@ public class Filters {
     }
 
     /**
-     * Creates a BETWEEN-like condition using greater than and less than comparisons.
+     * Creates a BETWEEN-like condition using greater-than (gt) and less-than (lt) comparisons.
      * The result is: propName &gt; minValue AND propName &lt; maxValue.
-     * 
+     *
+     * <p>Abbreviations: {@code gt} = {@link #greaterThan(String, Object) greaterThan},
+     * {@code lt} = {@link #lessThan(String, Object) lessThan}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLt("age", 18, 65);
-     * // SQL fragment: age &gt; 18 AND age &lt; 65
+     * // SQL fragment: age > 18 AND age < 65
      * }</pre>
      *
      * @param propName the property/column name
@@ -995,11 +998,14 @@ public class Filters {
     /**
      * Creates a parameterized BETWEEN-like condition for prepared statements.
      * The result is: propName &gt; ? AND propName &lt; ?.
-     * 
+     *
+     * <p>Abbreviations: {@code gt} = {@link #greaterThan(String) greaterThan},
+     * {@code lt} = {@link #lessThan(String) lessThan}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLt("price");
-     * // SQL fragment: price &gt; ? AND price &lt; ?
+     * // SQL fragment: price > ? AND price < ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1010,13 +1016,16 @@ public class Filters {
     }
 
     /**
-     * Creates a BETWEEN-like condition using greater than or equal and less than comparisons.
+     * Creates a BETWEEN-like condition using greater-than-or-equal (ge) and less-than (lt) comparisons.
      * The result is: propName &gt;= minValue AND propName &lt; maxValue.
-     * 
+     *
+     * <p>Abbreviations: {@code ge} = {@link #greaterThanOrEqual(String, Object) greaterThanOrEqual},
+     * {@code lt} = {@link #lessThan(String, Object) lessThan}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLt("price", 100, 500);
-     * // SQL fragment: price &gt;= 100 AND price &lt; 500
+     * // SQL fragment: price >= 100 AND price < 500
      * }</pre>
      *
      * @param propName the property/column name
@@ -1031,11 +1040,14 @@ public class Filters {
     /**
      * Creates a parameterized BETWEEN-like condition for prepared statements.
      * The result is: propName &gt;= ? AND propName &lt; ?.
-     * 
+     *
+     * <p>Abbreviations: {@code ge} = {@link #greaterThanOrEqual(String) greaterThanOrEqual},
+     * {@code lt} = {@link #lessThan(String) lessThan}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLt("score");
-     * // SQL fragment: score &gt;= ? AND score &lt; ?
+     * // SQL fragment: score >= ? AND score < ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1046,13 +1058,16 @@ public class Filters {
     }
 
     /**
-     * Creates a BETWEEN-like condition using greater than or equal and less than or equal comparisons.
+     * Creates a BETWEEN-like condition using greater-than-or-equal (ge) and less-than-or-equal (le) comparisons.
      * The result is: propName &gt;= minValue AND propName &lt;= maxValue.
-     * 
+     *
+     * <p>Abbreviations: {@code ge} = {@link #greaterThanOrEqual(String, Object) greaterThanOrEqual},
+     * {@code le} = {@link #lessThanOrEqual(String, Object) lessThanOrEqual}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLe("date", startDate, endDate);
-     * // SQL fragment: date &gt;= '2023-01-01' AND date &lt;= '2023-12-31'
+     * // SQL fragment: date >= '2023-01-01' AND date <= '2023-12-31'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1067,11 +1082,14 @@ public class Filters {
     /**
      * Creates a parameterized BETWEEN-like condition for prepared statements.
      * The result is: propName &gt;= ? AND propName &lt;= ?.
-     * 
+     *
+     * <p>Abbreviations: {@code ge} = {@link #greaterThanOrEqual(String) greaterThanOrEqual},
+     * {@code le} = {@link #lessThanOrEqual(String) lessThanOrEqual}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLe("amount");
-     * // SQL fragment: amount &gt;= ? AND amount &lt;= ?
+     * // SQL fragment: amount >= ? AND amount <= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1082,13 +1100,16 @@ public class Filters {
     }
 
     /**
-     * Creates a BETWEEN-like condition using greater than and less than or equal comparisons.
+     * Creates a BETWEEN-like condition using greater-than (gt) and less-than-or-equal (le) comparisons.
      * The result is: propName &gt; minValue AND propName &lt;= maxValue.
-     * 
+     *
+     * <p>Abbreviations: {@code gt} = {@link #greaterThan(String, Object) greaterThan},
+     * {@code le} = {@link #lessThanOrEqual(String, Object) lessThanOrEqual}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLe("score", 0, 100);
-     * // SQL fragment: score &gt; 0 AND score &lt;= 100
+     * // SQL fragment: score > 0 AND score <= 100
      * }</pre>
      *
      * @param propName the property/column name
@@ -1103,11 +1124,14 @@ public class Filters {
     /**
      * Creates a parameterized BETWEEN-like condition for prepared statements.
      * The result is: propName &gt; ? AND propName &lt;= ?.
-     * 
+     *
+     * <p>Abbreviations: {@code gt} = {@link #greaterThan(String) greaterThan},
+     * {@code le} = {@link #lessThanOrEqual(String) lessThanOrEqual}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLe("temperature");
-     * // SQL fragment: temperature &gt; ? AND temperature &lt;= ?
+     * // SQL fragment: temperature > ? AND temperature <= ?
      * }</pre>
      *
      * @param propName the property/column name
@@ -1140,11 +1164,11 @@ public class Filters {
 
         if (selectPropNames.size() == 1) {
             final String propName = iter.next();
-            return and(eq(propName, entityId.get(propName)));
+            return and(equal(propName, entityId.get(propName)));
         } else if (selectPropNames.size() == 2) {
             final String propName1 = iter.next();
             final String propName2 = iter.next();
-            return eq(propName1, entityId.get(propName1)).and(eq(propName2, entityId.get(propName2)));
+            return equal(propName1, entityId.get(propName1)).and(equal(propName2, entityId.get(propName2)));
         } else {
             final Condition[] conds = new Condition[selectPropNames.size()];
             String propName = null;
@@ -1236,9 +1260,8 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare for inequality
      * @return a NotEqual condition
-     * @deprecated please use {@link #notEqual(String, Object)}
      */
-    @Deprecated
+    @Beta
     public static NotEqual ne(final String propName, final Object propValue) {
         return notEqual(propName, propValue);
     }
@@ -1256,9 +1279,8 @@ public class Filters {
      * @param propName the property/column name
      * @return a NotEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
-     * @deprecated please use {@link #notEqual(String)}
      */
-    @Deprecated
+    @Beta
     public static NotEqual ne(final String propName) {
         return notEqual(propName);
     }
@@ -1309,9 +1331,8 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a GreaterThan condition
-     * @deprecated please use {@link #greaterThan(String, Object)}
      */
-    @Deprecated
+    @Beta
     public static GreaterThan gt(final String propName, final Object propValue) {
         return greaterThan(propName, propValue);
     }
@@ -1329,9 +1350,8 @@ public class Filters {
      * @param propName the property/column name
      * @return a GreaterThan condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
-     * @deprecated please use {@link #greaterThan(String)}
      */
-    @Deprecated
+    @Beta
     public static GreaterThan gt(final String propName) {
         return greaterThan(propName);
     }
@@ -1453,9 +1473,8 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a LessThan condition
-     * @deprecated please use {@link #lessThan(String, Object)}
      */
-    @Deprecated
+    @Beta
     public static LessThan lt(final String propName, final Object propValue) {
         return lessThan(propName, propValue);
     }
@@ -1473,9 +1492,8 @@ public class Filters {
      * @param propName the property/column name
      * @return a LessThan condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
-     * @deprecated please use {@link #lessThan(String)}
      */
-    @Deprecated
+    @Beta
     public static LessThan lt(final String propName) {
         return lessThan(propName);
     }
@@ -2281,14 +2299,14 @@ public class Filters {
      * // Results in SQL like: GROUP BY year DESC, month ASC
      * }</pre>
      *
-     * @param propNameA first property name
-     * @param directionA first property sort direction
-     * @param propNameB second property name
-     * @param directionB second property sort direction
+     * @param propName1 first property name
+     * @param direction1 first property sort direction
+     * @param propName2 second property name
+     * @param direction2 second property sort direction
      * @return a GroupBy clause
      */
-    public static GroupBy groupBy(final String propNameA, final SortDirection directionA, final String propNameB, final SortDirection directionB) {
-        return groupBy(N.asLinkedHashMap(propNameA, directionA, propNameB, directionB));
+    public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
+        return groupBy(N.asLinkedHashMap(propName1, direction1, propName2, direction2));
     }
 
     /**
@@ -2299,17 +2317,17 @@ public class Filters {
      * GroupBy groupBy = Filters.groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
      * }</pre>
      *
-     * @param propNameA first property name
-     * @param directionA first property sort direction
-     * @param propNameB second property name
-     * @param directionB second property sort direction
-     * @param propNameC third property name
-     * @param directionC third property sort direction
+     * @param propName1 first property name
+     * @param direction1 first property sort direction
+     * @param propName2 second property name
+     * @param direction2 second property sort direction
+     * @param propName3 third property name
+     * @param direction3 third property sort direction
      * @return a GroupBy clause
      */
-    public static GroupBy groupBy(final String propNameA, final SortDirection directionA, final String propNameB, final SortDirection directionB,
-            final String propNameC, final SortDirection directionC) {
-        return groupBy(N.asLinkedHashMap(propNameA, directionA, propNameB, directionB, propNameC, directionC));
+    public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
+            final String propName3, final SortDirection direction3) {
+        return groupBy(N.asLinkedHashMap(propName1, direction1, propName2, direction2, propName3, direction3));
     }
 
     /**
@@ -2522,14 +2540,14 @@ public class Filters {
      * // Results in SQL like: ORDER BY status ASC, priority DESC
      * }</pre>
      *
-     * @param propNameA first property name
-     * @param directionA first property sort direction
-     * @param propNameB second property name
-     * @param directionB second property sort direction
+     * @param propName1 first property name
+     * @param direction1 first property sort direction
+     * @param propName2 second property name
+     * @param direction2 second property sort direction
      * @return an OrderBy clause
      */
-    public static OrderBy orderBy(final String propNameA, final SortDirection directionA, final String propNameB, final SortDirection directionB) {
-        return orderBy(N.asLinkedHashMap(propNameA, directionA, propNameB, directionB));
+    public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
+        return orderBy(N.asLinkedHashMap(propName1, direction1, propName2, direction2));
     }
 
     /**
@@ -2540,17 +2558,17 @@ public class Filters {
      * OrderBy orderBy = Filters.orderBy("year", SortDirection.DESC, "month", SortDirection.DESC, "day", SortDirection.ASC);
      * }</pre>
      *
-     * @param propNameA first property name
-     * @param directionA first property sort direction
-     * @param propNameB second property name
-     * @param directionB second property sort direction
-     * @param propNameC third property name
-     * @param directionC third property sort direction
+     * @param propName1 first property name
+     * @param direction1 first property sort direction
+     * @param propName2 second property name
+     * @param direction2 second property sort direction
+     * @param propName3 third property name
+     * @param direction3 third property sort direction
      * @return an OrderBy clause
      */
-    public static OrderBy orderBy(final String propNameA, final SortDirection directionA, final String propNameB, final SortDirection directionB,
-            final String propNameC, final SortDirection directionC) {
-        return orderBy(N.asLinkedHashMap(propNameA, directionA, propNameB, directionB, propNameC, directionC));
+    public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
+            final String propName3, final SortDirection direction3) {
+        return orderBy(N.asLinkedHashMap(propName1, direction1, propName2, direction2, propName3, direction3));
     }
 
     /**
