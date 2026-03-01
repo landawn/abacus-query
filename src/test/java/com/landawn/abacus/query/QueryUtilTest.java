@@ -437,29 +437,29 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testRepeatQM() {
+    public void testRepeatQuestionMark() {
         // Test zero count
-        assertEquals("", QueryUtil.repeatQM(0));
+        assertEquals("", QueryUtil.repeatQuestionMark(0));
 
         // Test small counts (cached)
-        assertEquals("?", QueryUtil.repeatQM(1));
-        assertEquals("?, ?", QueryUtil.repeatQM(2));
-        assertEquals("?, ?, ?", QueryUtil.repeatQM(3));
-        assertEquals("?, ?, ?, ?, ?", QueryUtil.repeatQM(5));
+        assertEquals("?", QueryUtil.repeatQuestionMark(1));
+        assertEquals("?, ?", QueryUtil.repeatQuestionMark(2));
+        assertEquals("?, ?, ?", QueryUtil.repeatQuestionMark(3));
+        assertEquals("?, ?, ?, ?, ?", QueryUtil.repeatQuestionMark(5));
 
         // Test larger cached values
-        assertEquals(Strings.repeat("?", 30, ", "), QueryUtil.repeatQM(30));
-        assertEquals(Strings.repeat("?", 100, ", "), QueryUtil.repeatQM(100));
-        assertEquals(Strings.repeat("?", 200, ", "), QueryUtil.repeatQM(200));
-        assertEquals(Strings.repeat("?", 300, ", "), QueryUtil.repeatQM(300));
-        assertEquals(Strings.repeat("?", 500, ", "), QueryUtil.repeatQM(500));
-        assertEquals(Strings.repeat("?", 1000, ", "), QueryUtil.repeatQM(1000));
+        assertEquals(Strings.repeat("?", 30, ", "), QueryUtil.repeatQuestionMark(30));
+        assertEquals(Strings.repeat("?", 100, ", "), QueryUtil.repeatQuestionMark(100));
+        assertEquals(Strings.repeat("?", 200, ", "), QueryUtil.repeatQuestionMark(200));
+        assertEquals(Strings.repeat("?", 300, ", "), QueryUtil.repeatQuestionMark(300));
+        assertEquals(Strings.repeat("?", 500, ", "), QueryUtil.repeatQuestionMark(500));
+        assertEquals(Strings.repeat("?", 1000, ", "), QueryUtil.repeatQuestionMark(1000));
 
         // Test non-cached value
-        assertEquals(Strings.repeat("?", 37, ", "), QueryUtil.repeatQM(37));
+        assertEquals(Strings.repeat("?", 37, ", "), QueryUtil.repeatQuestionMark(37));
 
         // Test negative value should throw exception
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.repeatQM(-1));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.repeatQuestionMark(-1));
     }
 
     @Test

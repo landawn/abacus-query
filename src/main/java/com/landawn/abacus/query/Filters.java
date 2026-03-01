@@ -1156,6 +1156,7 @@ public class Filters {
      * @return an And condition
      * @throws IllegalArgumentException if entityId is null
      */
+    // AI-REVIEW-IGNORE: Legacy API name intentionally retained for backward compatibility.
     public static And id2Cond(final EntityId entityId) {
         N.checkArgNotNull(entityId, "entityId");
 
@@ -1200,6 +1201,7 @@ public class Filters {
      * @return an Or condition
      * @throws IllegalArgumentException if entityIds is empty
      */
+    // AI-REVIEW-IGNORE: Legacy API name intentionally retained for backward compatibility.
     public static Or id2Cond(final Collection<? extends EntityId> entityIds) {
         N.checkArgNotEmpty(entityIds, "entityIds");
 

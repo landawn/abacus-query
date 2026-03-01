@@ -218,51 +218,51 @@ public class QueryUtil2025Test extends TestBase {
     }
 
     @Test
-    public void testRepeatQM() {
-        String qm = QueryUtil.repeatQM(3);
+    public void testRepeatQuestionMark() {
+        String qm = QueryUtil.repeatQuestionMark(3);
         assertEquals("?, ?, ?", qm);
     }
 
     @Test
-    public void testRepeatQM_One() {
-        String qm = QueryUtil.repeatQM(1);
+    public void testRepeatQuestionMark_One() {
+        String qm = QueryUtil.repeatQuestionMark(1);
         assertEquals("?", qm);
     }
 
     @Test
-    public void testRepeatQM_Zero() {
-        String qm = QueryUtil.repeatQM(0);
+    public void testRepeatQuestionMark_Zero() {
+        String qm = QueryUtil.repeatQuestionMark(0);
         assertEquals("", qm);
     }
 
     @Test
-    public void testRepeatQM_Large() {
-        String qm = QueryUtil.repeatQM(100);
+    public void testRepeatQuestionMark_Large() {
+        String qm = QueryUtil.repeatQuestionMark(100);
         assertNotNull(qm);
         assertTrue(qm.contains("?"));
     }
 
     @Test
-    public void testRepeatQM_Negative() {
+    public void testRepeatQuestionMark_Negative() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.repeatQM(-1);
+            QueryUtil.repeatQuestionMark(-1);
         });
     }
 
     @Test
-    public void testRepeatQM_Cached() {
-        String qm1 = QueryUtil.repeatQM(5);
-        String qm2 = QueryUtil.repeatQM(5);
+    public void testRepeatQuestionMark_Cached() {
+        String qm1 = QueryUtil.repeatQuestionMark(5);
+        String qm2 = QueryUtil.repeatQuestionMark(5);
         assertEquals(qm1, qm2);
     }
 
     @Test
-    public void testRepeatQM_SpecialCachedValues() {
-        assertNotNull(QueryUtil.repeatQM(100));
-        assertNotNull(QueryUtil.repeatQM(200));
-        assertNotNull(QueryUtil.repeatQM(300));
-        assertNotNull(QueryUtil.repeatQM(500));
-        assertNotNull(QueryUtil.repeatQM(1000));
+    public void testRepeatQuestionMark_SpecialCachedValues() {
+        assertNotNull(QueryUtil.repeatQuestionMark(100));
+        assertNotNull(QueryUtil.repeatQuestionMark(200));
+        assertNotNull(QueryUtil.repeatQuestionMark(300));
+        assertNotNull(QueryUtil.repeatQuestionMark(500));
+        assertNotNull(QueryUtil.repeatQuestionMark(1000));
     }
 
     @Test
@@ -346,9 +346,9 @@ public class QueryUtil2025Test extends TestBase {
     }
 
     @Test
-    public void testRepeatQM_AllCachedValues() {
+    public void testRepeatQuestionMark_AllCachedValues() {
         for (int i = 0; i <= 30; i++) {
-            String result = QueryUtil.repeatQM(i);
+            String result = QueryUtil.repeatQuestionMark(i);
             assertNotNull(result);
             if (i == 0) {
                 assertEquals("", result);
@@ -361,8 +361,8 @@ public class QueryUtil2025Test extends TestBase {
     }
 
     @Test
-    public void testRepeatQM_NonCachedValue() {
-        String result = QueryUtil.repeatQM(50);
+    public void testRepeatQuestionMark_NonCachedValue() {
+        String result = QueryUtil.repeatQuestionMark(50);
         assertNotNull(result);
         assertEquals(148, result.length()); // "?, " * 50 = 150 - 2 = 148 characters
     }

@@ -242,21 +242,21 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     }
 
     @Test
-    public void testWhereRepeatQM() {
+    public void testWhereRepeatQuestionMark() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
         builder.select().append("*");
         builder.from().append("users");
-        builder.where().append("id IN (").repeatQM(3).append(")");
+        builder.where().append("id IN (").repeatQuestionMark(3).append(")");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE id IN (?, ?, ? )", sql);
     }
 
     @Test
-    public void testWhereRepeatQMWithPrefixPostfix() {
+    public void testWhereRepeatQuestionMarkWithPrefixPostfix() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
         builder.select().append("*");
         builder.from().append("users");
-        builder.where().append("status IN ").repeatQM(2, "(", ")");
+        builder.where().append("status IN ").repeatQuestionMark(2, "(", ")");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE status IN (?, ?)", sql);
     }
@@ -636,12 +636,12 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     }
 
     @Test
-    public void testWhereRepeatQMZero() {
+    public void testWhereRepeatQuestionMarkZero() {
         assertThrows(IllegalArgumentException.class, () -> {
             DynamicSQLBuilder builder = DynamicSQLBuilder.create();
             builder.select().append("*");
             builder.from().append("users");
-            builder.where().append("id IN (").repeatQM(-1).append(")");
+            builder.where().append("id IN (").repeatQuestionMark(-1).append(")");
             builder.build();
         });
     }

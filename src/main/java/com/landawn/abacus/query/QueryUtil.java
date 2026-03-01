@@ -114,6 +114,7 @@ public final class QueryUtil {
      */
     @Deprecated
     @Beta
+    // AI-REVIEW-IGNORE: Legacy API name intentionally retained for backward compatibility.
     public static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
@@ -170,6 +171,7 @@ public final class QueryUtil {
      * @return an immutable map of column names (including case variations) to property names
      * @throws IllegalArgumentException if entityClass is null
      */
+    // AI-REVIEW-IGNORE: Legacy API name intentionally retained for backward compatibility.
     public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
@@ -222,6 +224,7 @@ public final class QueryUtil {
      * @param namingPolicy the naming policy to use for column name conversion
      * @return an immutable map of property names to column names, or empty map if entityClass is null or Map
      */
+    // AI-REVIEW-IGNORE: Legacy API name intentionally retained for backward compatibility.
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
         if (entityClass == null || Map.class.isAssignableFrom(entityClass)) {
@@ -687,20 +690,6 @@ public final class QueryUtil {
         }
 
         return result;
-    }
-
-    /**
-     * Generates a string of question marks (?) repeated n times with comma-space delimiter.
-     * Alias for {@link #repeatQuestionMark(int)}.
-     *
-     * @param n the number of question marks to generate (must not be negative)
-     * @return a string containing n question marks separated by ", ", or empty string if n is 0
-     * @throws IllegalArgumentException if n is negative
-     * @deprecated Use {@link #repeatQuestionMark(int)} for better readability.
-     */
-    @Deprecated
-    public static String repeatQM(final int n) {
-        return repeatQuestionMark(n);
     }
 
     /**

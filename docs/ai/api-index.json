@@ -4052,12 +4052,12 @@
               "see_also": []
             },
             {
-              "name": "repeatQM",
+              "name": "repeatQuestionMark",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public Where repeatQM(final int n)",
+              "signature": "public Where repeatQuestionMark(final int n)",
               "return_type": "Where",
               "type_params": [],
               "params": [
@@ -4075,12 +4075,12 @@
               "see_also": []
             },
             {
-              "name": "repeatQM",
+              "name": "repeatQuestionMark",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public Where repeatQM(final int n, final String prefix, final String postfix)",
+              "signature": "public Where repeatQuestionMark(final int n, final String prefix, final String postfix)",
               "return_type": "Where",
               "type_params": [],
               "params": [
@@ -10925,13 +10925,13 @@
               "see_also": []
             },
             {
-              "name": "repeatQM",
+              "name": "repeatQuestionMark",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static String repeatQM(final int n)",
+              "signature": "public static String repeatQuestionMark(final int n)",
               "return_type": "String",
               "type_params": [],
               "params": [

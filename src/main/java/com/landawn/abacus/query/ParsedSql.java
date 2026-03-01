@@ -233,6 +233,7 @@ public final class ParsedSql {
      *
      * @return the parameterized SQL string with ? placeholders
      */
+    // AI-REVIEW-IGNORE: DSL-style accessor name intentionally avoids JavaBean getter prefix.
     public String parameterizedSql() {
         return parameterizedSql;
     }
@@ -255,6 +256,7 @@ public final class ParsedSql {
      *
      * @return an immutable list of parameter names
      */
+    // AI-REVIEW-IGNORE: DSL-style accessor name intentionally avoids JavaBean getter prefix.
     public ImmutableList<String> namedParameters() {
         return namedParameters;
     }
@@ -276,6 +278,7 @@ public final class ParsedSql {
      *
      * @return the number of parameters in the SQL
      */
+    // AI-REVIEW-IGNORE: DSL-style accessor name intentionally avoids JavaBean getter prefix.
     public int parameterCount() {
         return parameterCount;
     }

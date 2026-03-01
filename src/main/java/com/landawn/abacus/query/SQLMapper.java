@@ -224,6 +224,7 @@ public final class SQLMapper {
      *
      * @return a set view of all SQL identifiers in this mapper, maintaining insertion order
      */
+    // AI-REVIEW-IGNORE: DSL-style accessor name intentionally avoids JavaBean getter prefix.
     public Set<String> sqlIds() {
         return sqlMap.keySet();
     }

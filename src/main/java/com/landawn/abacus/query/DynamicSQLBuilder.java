@@ -1018,7 +1018,7 @@ public class DynamicSQLBuilder {
      *     .append("status = ?")
      *     .and("age >= ?")
      *     .or("vip = true")
-     *     .and("city IN ").repeatQM(3, "(", ")");
+     *     .and("city IN ").repeatQuestionMark(3, "(", ")");
      * // Generates: WHERE status = ? AND age >= ? OR vip = true AND city IN (?, ?, ?)
      * }</pre>
      */
@@ -1090,20 +1090,6 @@ public class DynamicSQLBuilder {
         }
 
         /**
-         * Appends question mark placeholders for parameterized queries.
-         * Alias for {@link #repeatQuestionMark(int)}.
-         *
-         * @param placeholderCount the number of question marks to append
-         * @return this Where instance for method chaining
-         * @throws IllegalArgumentException if placeholderCount is negative
-         * @deprecated Use {@link #repeatQuestionMark(int)} for better readability.
-         */
-        @Deprecated
-        public WhereClause repeatQM(final int placeholderCount) {
-            return repeatQuestionMark(placeholderCount);
-        }
-
-        /**
          * Appends question mark placeholders surrounded by prefix and postfix.
          * Commonly used for IN clauses with automatic parentheses.
          *
@@ -1137,22 +1123,6 @@ public class DynamicSQLBuilder {
             }
 
             return this;
-        }
-
-        /**
-         * Appends question mark placeholders surrounded by prefix and postfix.
-         * Alias for {@link #repeatQuestionMark(int, String, String)}.
-         *
-         * @param placeholderCount the number of question marks to append
-         * @param prefix the string to add before the question marks
-         * @param postfix the string to add after the question marks
-         * @return this Where instance for method chaining
-         * @throws IllegalArgumentException if placeholderCount is negative
-         * @deprecated Use {@link #repeatQuestionMark(int, String, String)} for better readability.
-         */
-        @Deprecated
-        public WhereClause repeatQM(final int placeholderCount, final String prefix, final String postfix) {
-            return repeatQuestionMark(placeholderCount, prefix, postfix);
         }
 
         /**

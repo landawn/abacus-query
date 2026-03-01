@@ -1028,13 +1028,13 @@ Builder class for constructing the WHERE clause of a SQL query.
 - **Parameters:**
   - `cond` (`String`) — the condition to append (must not be null)
 - **Returns:** this Where instance for method chaining
-##### repeatQM(...) -> Where
-- **Signature:** `public Where repeatQM(final int n)`
+##### repeatQuestionMark(...) -> Where
+- **Signature:** `public Where repeatQuestionMark(final int n)`
 - **Summary:** Appends question mark placeholders for parameterized queries.
 - **Parameters:**
   - `n` (`int`) — the number of question marks to append
 - **Returns:** this Where instance for method chaining
-- **Signature:** `public Where repeatQM(final int n, final String prefix, final String postfix)`
+- **Signature:** `public Where repeatQuestionMark(final int n, final String prefix, final String postfix)`
 - **Summary:** Appends question mark placeholders surrounded by prefix and postfix.
 - **Parameters:**
   - `n` (`int`) — the number of question marks to append
@@ -2728,8 +2728,8 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Parameters:**
   - `idPropNames` (`List<String>`) — the list of ID property names to check
 - **Returns:** {@code true} if this is a fake ID
-##### repeatQM(...) -> String
-- **Signature:** `public static String repeatQM(final int n)`
+##### repeatQuestionMark(...) -> String
+- **Signature:** `public static String repeatQuestionMark(final int n)`
 - **Summary:** Generates a string of question marks (?) repeated n times with comma-space delimiter.
 - **Parameters:**
   - `n` (`int`) — the number of question marks to generate (must not be negative)
