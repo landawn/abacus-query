@@ -20,7 +20,7 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery(sql);
 
         Assertions.assertNotNull(subQuery);
-        Assertions.assertEquals(sql, subQuery.getSql());
+        Assertions.assertEquals(sql, subQuery.sql());
         Assertions.assertEquals("", subQuery.getEntityName());
         Assertions.assertNull(subQuery.getEntityClass());
         Assertions.assertNull(subQuery.getSelectPropNames());
@@ -35,7 +35,7 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery(entityName, sql);
 
         Assertions.assertEquals(entityName, subQuery.getEntityName());
-        Assertions.assertEquals(sql, subQuery.getSql());
+        Assertions.assertEquals(sql, subQuery.sql());
     }
 
     @Test
@@ -61,7 +61,7 @@ public class SubQueryTest extends TestBase {
         Assertions.assertEquals("users", subQuery.getEntityName());
         Assertions.assertEquals(props, subQuery.getSelectPropNames());
         Assertions.assertNotNull(subQuery.getCondition());
-        Assertions.assertNull(subQuery.getSql());
+        Assertions.assertNull(subQuery.sql());
     }
 
     @Test
@@ -191,7 +191,7 @@ public class SubQueryTest extends TestBase {
         SubQuery copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getSql(), copy.getSql());
+        Assertions.assertEquals(original.sql(), copy.sql());
     }
 
     @Test

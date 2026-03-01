@@ -32,20 +32,24 @@ import com.landawn.abacus.util.Strings;
  * <p>This class provides three ways to create LIMIT clauses:
  * <ul>
  *   <li>Simple limit with count only</li>
- *   <li>Limit with offset for pagination</li>
+ *   <li>Limit with count and offset for pagination</li>
  *   <li>Custom expression for database-specific syntax</li>
  * </ul>
- * 
+ *
+ * <p><b>Note:</b> The two-argument constructor takes {@code (count, offset)}, not {@code (offset, count)}.
+ * This differs from the MySQL {@code LIMIT offset, count} syntax and the
+ * {@link com.landawn.abacus.query.AbstractQueryBuilder#limit(int, int)} method which takes {@code (offset, count)}.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Limit to first 10 rows
  * Limit limit1 = new Limit(10);
  * // SQL: LIMIT 10
- * 
- * // Pagination: Get 20 rows starting from row 50
- * Limit limit2 = new Limit(50, 20);
+ *
+ * // Pagination: Get 20 rows starting from row 51 (count=20, offset=50)
+ * Limit limit2 = new Limit(20, 50);
  * // SQL: LIMIT 20 OFFSET 50
- * 
+ *
  * // Custom expression for specific databases
  * Limit limit3 = new Limit("10 OFFSET 20");
  * }</pre>
@@ -100,19 +104,20 @@ public class Limit extends Clause {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Page 1: First 10 results (offset 0)
-     * Limit page1 = new Limit(0, 10);
-     * // SQL: SELECT * FROM orders LIMIT 10 OFFSET 0
+     * // Page 1: First 10 results (count=10, offset=0)
+     * Limit page1 = new Limit(10, 0);
+     * // SQL: LIMIT 10
      *
-     * // Page 3: Results 21-30 (offset 20, count 10)
-     * Limit page3 = new Limit(20, 10);
-     * // SQL: SELECT * FROM orders LIMIT 10 OFFSET 20
+     * // Page 3: Results 21-30 (count=10, offset=20)
+     * Limit page3 = new Limit(10, 20);
+     * // SQL: LIMIT 10 OFFSET 20
      *
-     * // Get 50 products starting from the 101st
-     * Limit products = new Limit(100, 50);
-     * // SQL: SELECT * FROM products LIMIT 50 OFFSET 100
+     * // Get 50 products starting from the 101st (count=50, offset=100)
+     * Limit products = new Limit(50, 100);
+     * // SQL: LIMIT 50 OFFSET 100
      * }</pre>
-     * @param count the maximum number of rows to return after the offset. Must be non-negative.
+     *
+     * @param count the maximum number of rows to return. Must be non-negative.
      * @param offset the number of rows to skip before returning results. Must be non-negative.
      *
      * @throws IllegalArgumentException if offset or count is negative
@@ -200,8 +205,8 @@ public class Limit extends Clause {
      * int count = limit.getCount();
      * // Returns: 25
      *
-     * // Limit with offset
-     * Limit paged = new Limit(100, 50);
+     * // Limit with offset (count=50, offset=100)
+     * Limit paged = new Limit(50, 100);
      * int pageCount = paged.getCount();
      * // Returns: 50
      *
@@ -224,8 +229,8 @@ public class Limit extends Clause {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Limit with offset for pagination
-     * Limit page3 = new Limit(20, 10);
+     * // Limit with offset for pagination (count=10, offset=20)
+     * Limit page3 = new Limit(10, 20);
      * int offset = page3.getOffset();
      * // Returns: 20
      *

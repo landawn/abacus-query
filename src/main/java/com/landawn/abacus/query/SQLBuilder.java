@@ -592,8 +592,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
         } else if (cond instanceof final SubQuery subQuery) {
             final Condition subCond = subQuery.getCondition();
 
-            if (Strings.isNotEmpty(subQuery.getSql())) {
-                _sb.append(subQuery.getSql());
+            if (Strings.isNotEmpty(subQuery.sql())) {
+                _sb.append(subQuery.sql());
             } else {
                 final SQLBuilder subBuilder;
 

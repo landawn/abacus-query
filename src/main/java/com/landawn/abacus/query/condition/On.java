@@ -158,11 +158,11 @@ public class On extends Cell {
      * // Generates: LEFT JOIN employees emp2 ON emp1.manager_id = emp2.employee_id
      * }</pre>
      *
-     * @param propName the column name from the first table (can include table name/alias)
-     * @param anotherPropName the column name from the second table (can include table name/alias)
+     * @param leftPropName the column name from the first table (can include table name/alias)
+     * @param rightPropName the column name from the second table (can include table name/alias)
      */
-    public On(final String propName, final String anotherPropName) {
-        this(createOnCondition(propName, anotherPropName));
+    public On(final String leftPropName, final String rightPropName) {
+        this(createOnCondition(leftPropName, rightPropName));
     }
 
     /**

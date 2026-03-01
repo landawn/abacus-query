@@ -34,7 +34,7 @@ public class SubQuery2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery(sql);
 
         assertNotNull(subQuery);
-        assertEquals(sql, subQuery.getSql());
+        assertEquals(sql, subQuery.sql());
         assertNull(subQuery.getCondition());
         assertNull(subQuery.getSelectPropNames());
     }
@@ -47,7 +47,7 @@ public class SubQuery2025Test extends TestBase {
 
         assertNotNull(subQuery);
         assertEquals(entityName, subQuery.getEntityName());
-        assertEquals(sql, subQuery.getSql());
+        assertEquals(sql, subQuery.sql());
     }
 
     @Test
@@ -76,7 +76,7 @@ public class SubQuery2025Test extends TestBase {
         assertEquals(entityName, subQuery.getEntityName());
         assertEquals(props, subQuery.getSelectPropNames());
         assertNotNull(subQuery.getCondition());
-        assertNull(subQuery.getSql());
+        assertNull(subQuery.sql());
     }
 
     @Test
@@ -134,7 +134,7 @@ public class SubQuery2025Test extends TestBase {
         String sql = "SELECT * FROM users";
         SubQuery subQuery = Filters.subQuery(sql);
 
-        assertEquals(sql, subQuery.getSql());
+        assertEquals(sql, subQuery.sql());
     }
 
     @Test
@@ -246,7 +246,7 @@ public class SubQuery2025Test extends TestBase {
 
         assertNotNull(copy);
         assertNotSame(original, copy);
-        assertEquals(original.getSql(), copy.getSql());
+        assertEquals(original.sql(), copy.sql());
     }
 
     @Test
