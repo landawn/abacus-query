@@ -33,11 +33,11 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
-public class XOR2025Test extends TestBase {
+public class Xor2025Test extends TestBase {
 
     @Test
     public void testConstructor() {
-        XOR condition = new XOR("field", true);
+        Xor condition = new Xor("field", true);
         assertEquals("field", condition.getPropName());
         assertEquals(true, condition.getPropValue());
         assertEquals(Operator.XOR, condition.getOperator());
@@ -45,36 +45,36 @@ public class XOR2025Test extends TestBase {
 
     @Test
     public void testConstructor_NullPropertyName() {
-        assertThrows(IllegalArgumentException.class, () -> new XOR(null, true));
+        assertThrows(IllegalArgumentException.class, () -> new Xor(null, true));
     }
 
     @Test
     public void testConstructor_EmptyPropertyName() {
-        assertThrows(IllegalArgumentException.class, () -> new XOR("", true));
+        assertThrows(IllegalArgumentException.class, () -> new Xor("", true));
     }
 
     @Test
     public void testGetPropName() {
-        XOR condition = new XOR("isPremium", true);
+        Xor condition = new Xor("isPremium", true);
         assertEquals("isPremium", condition.getPropName());
     }
 
     @Test
     public void testGetPropValue() {
-        XOR condition = new XOR("hasDiscount", false);
+        Xor condition = new Xor("hasDiscount", false);
         Boolean value = condition.getPropValue();
         assertEquals(false, value);
     }
 
     @Test
     public void testGetOperator() {
-        XOR condition = new XOR("field", "value");
+        Xor condition = new Xor("field", "value");
         assertEquals(Operator.XOR, condition.getOperator());
     }
 
     @Test
     public void testGetParameters() {
-        XOR condition = new XOR("status", "active");
+        Xor condition = new Xor("status", "active");
         List<Object> params = condition.getParameters();
         assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
@@ -82,15 +82,15 @@ public class XOR2025Test extends TestBase {
 
     @Test
     public void testClearParameters() {
-        XOR condition = new XOR("field", "value");
+        Xor condition = new Xor("field", "value");
         condition.clearParameters();
         assertNull(condition.getPropValue());
     }
 
     @Test
     public void testCopy() {
-        XOR original = new XOR("name", "John");
-        XOR copy = original.copy();
+        Xor original = new Xor("name", "John");
+        Xor copy = original.copy();
 
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
@@ -99,7 +99,7 @@ public class XOR2025Test extends TestBase {
 
     @Test
     public void testToString_NoChange() {
-        XOR condition = new XOR("hasGoldMembership", true);
+        Xor condition = new Xor("hasGoldMembership", true);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("hasGoldMembership"));
         assertTrue(result.contains("XOR"));
@@ -107,56 +107,56 @@ public class XOR2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        XOR cond1 = new XOR("field", true);
-        XOR cond2 = new XOR("field", true);
+        Xor cond1 = new Xor("field", true);
+        Xor cond2 = new Xor("field", true);
         assertEquals(cond1.hashCode(), cond2.hashCode());
     }
 
     @Test
     public void testEquals_SameObject() {
-        XOR condition = new XOR("field", "value");
+        Xor condition = new Xor("field", "value");
         assertEquals(condition, condition);
     }
 
     @Test
     public void testEquals_EqualObjects() {
-        XOR cond1 = new XOR("status", "active");
-        XOR cond2 = new XOR("status", "active");
+        Xor cond1 = new Xor("status", "active");
+        Xor cond2 = new Xor("status", "active");
         assertEquals(cond1, cond2);
     }
 
     @Test
     public void testEquals_DifferentPropName() {
-        XOR cond1 = new XOR("field1", "value");
-        XOR cond2 = new XOR("field2", "value");
+        Xor cond1 = new Xor("field1", "value");
+        Xor cond2 = new Xor("field2", "value");
         assertNotEquals(cond1, cond2);
     }
 
     @Test
     public void testEquals_Null() {
-        XOR condition = new XOR("field", "value");
+        Xor condition = new Xor("field", "value");
         assertNotEquals(null, condition);
     }
 
     @Test
     public void testAnd() {
-        XOR cond1 = new XOR("a", 1);
-        XOR cond2 = new XOR("b", 2);
+        Xor cond1 = new Xor("a", 1);
+        Xor cond2 = new Xor("b", 2);
         And result = cond1.and(cond2);
         assertEquals(Integer.valueOf(2), result.getConditions().size());
     }
 
     @Test
     public void testOr() {
-        XOR cond1 = new XOR("a", 1);
-        XOR cond2 = new XOR("b", 2);
+        Xor cond1 = new Xor("a", 1);
+        Xor cond2 = new Xor("b", 2);
         Or result = cond1.or(cond2);
         assertEquals(Integer.valueOf(2), result.getConditions().size());
     }
 
     @Test
     public void testNot() {
-        XOR condition = new XOR("field", "value");
+        Xor condition = new Xor("field", "value");
         Not result = condition.not();
         assertNotNull(result);
     }
@@ -164,7 +164,7 @@ public class XOR2025Test extends TestBase {
     @Test
     @SuppressWarnings("deprecation")
     public void testSetPropValue() {
-        XOR condition = new XOR("flag", true);
+        Xor condition = new Xor("flag", true);
         assertEquals(true, condition.getPropValue());
 
         condition.setPropValue(false);
@@ -173,7 +173,7 @@ public class XOR2025Test extends TestBase {
 
     @Test
     public void testToString_NoArgs() {
-        XOR condition = new XOR("isActive", true);
+        Xor condition = new Xor("isActive", true);
         String result = condition.toString();
 
         assertTrue(result.contains("isActive"));
@@ -182,14 +182,14 @@ public class XOR2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentPropValue() {
-        XOR cond1 = new XOR("field", "value1");
-        XOR cond2 = new XOR("field", "value2");
+        Xor cond1 = new Xor("field", "value1");
+        Xor cond2 = new Xor("field", "value2");
         assertNotEquals(cond1, cond2);
     }
 
     @Test
     public void testEquals_DifferentClass() {
-        XOR condition = new XOR("field", "value");
+        Xor condition = new Xor("field", "value");
         Equal equal = new Equal("field", "value");
         assertNotEquals(condition, (Object) equal);
     }
@@ -197,7 +197,7 @@ public class XOR2025Test extends TestBase {
     @Test
     public void testGetParameters_WithNestedCondition() {
         SubQuery subQuery = new SubQuery("SELECT id FROM users");
-        XOR condition = new XOR("userId", subQuery);
+        Xor condition = new Xor("userId", subQuery);
 
         List<Object> params = condition.getParameters();
         assertNotNull(params);
@@ -206,8 +206,8 @@ public class XOR2025Test extends TestBase {
 
     @Test
     public void testCopy_DeepCopy() {
-        XOR original = new XOR("value", 100);
-        XOR copy = original.copy();
+        Xor original = new Xor("value", 100);
+        Xor copy = original.copy();
 
         original.clearParameters();
         assertNull(original.getPropValue());
@@ -216,7 +216,7 @@ public class XOR2025Test extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        XOR condition = new XOR("userName", "john");
+        Xor condition = new Xor("userName", "john");
         String result = condition.toString(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("user_name") || result.contains("userName"));
@@ -224,8 +224,8 @@ public class XOR2025Test extends TestBase {
 
     @Test
     public void testHashCode_DifferentValues() {
-        XOR cond1 = new XOR("field", "value1");
-        XOR cond2 = new XOR("field", "value2");
+        Xor cond1 = new Xor("field", "value1");
+        Xor cond2 = new Xor("field", "value2");
         assertNotEquals(cond1.hashCode(), cond2.hashCode());
     }
 }

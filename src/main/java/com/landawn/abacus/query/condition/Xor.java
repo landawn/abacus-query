@@ -49,11 +49,11 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Basic XOR usage (MySQL syntax)
- * XOR xor = new XOR("usePasswordAuth", true);
+ * Xor xor = new Xor("usePasswordAuth", true);
  * // SQL: usePasswordAuth XOR true
  *
  * // XOR with column and value
- * XOR flagCheck = new XOR("isActive", 1);
+ * Xor flagCheck = new Xor("isActive", 1);
  * // SQL: isActive XOR 1
  * // True when isActive is 0 or false, false when isActive is non-zero
  *
@@ -88,14 +88,14 @@ package com.landawn.abacus.query.condition;
  * @see Not
  * @see Binary
  */
-public class XOR extends Binary {
+public class Xor extends Binary {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor creates an uninitialized XOR instance and should not be used
+     * This constructor creates an uninitialized Xor instance and should not be used
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
-    XOR() {
+    Xor() {
     }
 
     /**
@@ -112,12 +112,12 @@ public class XOR extends Binary {
      * // The exact SQL syntax varies by database
      *
      * // MySQL-style XOR - ensure exactly one condition is true
-     * XOR exclusiveAuth = new XOR("usePasswordAuth", true);
+     * Xor exclusiveAuth = new Xor("usePasswordAuth", true);
      * // SQL: usePasswordAuth XOR true
      * // This evaluates to true when usePasswordAuth != true
      *
      * // XOR with numeric values (treated as boolean: 0=false, non-zero=true)
-     * XOR xorCheck = new XOR("flagA", 1);
+     * Xor xorCheck = new Xor("flagA", 1);
      * // SQL: flagA XOR 1
      *
      * // Database compatibility note:
@@ -134,7 +134,7 @@ public class XOR extends Binary {
      * @param propValue the value to compare against. Can be null, a literal value, Expression, or SubQuery.
      * @throws IllegalArgumentException if propName is null or empty
      */
-    public XOR(final String propName, final Object propValue) {
+    public Xor(final String propName, final Object propValue) {
         super(propName, Operator.XOR, propValue);
     }
 }

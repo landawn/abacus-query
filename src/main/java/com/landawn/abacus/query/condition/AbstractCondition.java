@@ -259,7 +259,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
         }
 
         if (parameter instanceof String) {
-            return SK._QUOTATION_S + parameter.toString() + SK._QUOTATION_S;
+            return SK._SINGLE_QUOTE + parameter.toString() + SK._SINGLE_QUOTE;
         }
 
         if (parameter instanceof Condition) {

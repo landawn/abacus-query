@@ -65,8 +65,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testParsedSql_classLevelExample() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
-        String parameterized = parsed.getParameterizedSql();
-        List<String> params = parsed.getNamedParameters();
+        String parameterized = parsed.parameterizedSql();
+        List<String> params = parsed.namedParameters();
 
         assertEquals("SELECT * FROM users WHERE id = ? AND status = ?", parameterized);
         assertEquals(Arrays.asList("userId", "status"), params);
@@ -75,19 +75,19 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testParsedSql_parseNamedParameters() {
         ParsedSql ps1 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-        assertEquals("SELECT * FROM users WHERE id = ?", ps1.getParameterizedSql());
+        assertEquals("SELECT * FROM users WHERE id = ?", ps1.parameterizedSql());
     }
 
     @Test
     public void testParsedSql_parseIBatisStyle() {
         ParsedSql ps2 = ParsedSql.parse("INSERT INTO users (name, email) VALUES (#{name}, #{email})");
-        assertEquals(Arrays.asList("name", "email"), ps2.getNamedParameters());
+        assertEquals(Arrays.asList("name", "email"), ps2.namedParameters());
     }
 
     @Test
     public void testParsedSql_parseJdbcPlaceholders() {
         ParsedSql ps3 = ParsedSql.parse("UPDATE users SET status = ? WHERE id = ?");
-        assertEquals(2, ps3.getParameterCount());
+        assertEquals(2, ps3.parameterCount());
     }
 
     @Test
@@ -98,69 +98,69 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testParsedSql_getParameterizedSql() {
+    public void testParsedSql_parameterizedSql() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
-        String sql = parsed.getParameterizedSql();
+        String sql = parsed.parameterizedSql();
         assertEquals("SELECT * FROM users WHERE id = ? AND status = ?", sql);
     }
 
     @Test
-    public void testParsedSql_getParameterizedSqlForJdbc() {
+    public void testParsedSql_parameterizedSqlForJdbc() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :name");
-        String jdbcSql = parsed.getParameterizedSql(false);
+        String jdbcSql = parsed.parameterizedSql(false);
         assertEquals("SELECT * FROM users WHERE id = ? AND name = ?", jdbcSql);
     }
 
     @Test
-    public void testParsedSql_getParameterizedSqlForCouchbase() {
+    public void testParsedSql_parameterizedSqlForCouchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :name");
-        String couchbaseSql = parsed.getParameterizedSql(true);
+        String couchbaseSql = parsed.parameterizedSql(true);
         assertEquals("SELECT * FROM users WHERE id = $1 AND name = $2", couchbaseSql);
     }
 
     @Test
-    public void testParsedSql_getNamedParameters() {
+    public void testParsedSql_namedParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-        ImmutableList<String> params = parsed.getNamedParameters();
+        ImmutableList<String> params = parsed.namedParameters();
         assertEquals(Arrays.asList("name", "minAge"), params);
 
         ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-        ImmutableList<String> params2 = parsed2.getNamedParameters();
+        ImmutableList<String> params2 = parsed2.namedParameters();
         assertTrue(params2.isEmpty());
     }
 
     @Test
-    public void testParsedSql_getNamedParametersWithCouchbase() {
+    public void testParsedSql_namedParametersWithCouchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
 
-        ImmutableList<String> params = parsed.getNamedParameters(false);
+        ImmutableList<String> params = parsed.namedParameters(false);
         assertEquals(Arrays.asList("name", "minAge"), params);
 
-        ImmutableList<String> cbParams = parsed.getNamedParameters(true);
+        ImmutableList<String> cbParams = parsed.namedParameters(true);
         assertEquals(Arrays.asList("name", "minAge"), cbParams);
 
         ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-        ImmutableList<String> cbParams2 = parsed2.getNamedParameters(true);
+        ImmutableList<String> cbParams2 = parsed2.namedParameters(true);
         assertTrue(cbParams2.isEmpty());
     }
 
     @Test
-    public void testParsedSql_getParameterCount() {
+    public void testParsedSql_parameterCount() {
         ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (:name, :email, :age)");
-        int count = parsed.getParameterCount();
+        int count = parsed.parameterCount();
         assertEquals(3, count);
 
         ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users");
-        int count2 = parsed2.getParameterCount();
+        int count2 = parsed2.parameterCount();
         assertEquals(0, count2);
     }
 
     @Test
-    public void testParsedSql_getParameterCountWithCouchbase() {
+    public void testParsedSql_parameterCountWithCouchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-        int count = parsed.getParameterCount(false);
+        int count = parsed.parameterCount(false);
         assertEquals(2, count);
-        int cbCount = parsed.getParameterCount(true);
+        int cbCount = parsed.parameterCount(true);
         assertEquals(2, cbCount);
     }
 
@@ -220,7 +220,7 @@ public class JavadocExamplesQueryTest {
 
         ParsedSql retrieved = mapper.get("findUserById");
         assertNotNull(retrieved);
-        assertEquals("select * from users where id = ?", retrieved.getParameterizedSql());
+        assertEquals("select * from users where id = ?", retrieved.parameterizedSql());
     }
 
     @Test
@@ -234,7 +234,7 @@ public class JavadocExamplesQueryTest {
         ParsedSql sql = mapper.get("insertUser");
         assertNotNull(sql);
 
-        ImmutableMap<String, String> retrievedAttrs = mapper.getAttrs("insertUser");
+        ImmutableMap<String, String> retrievedAttrs = mapper.getAttributes("insertUser");
         assertNotNull(retrievedAttrs);
         assertEquals("100", retrievedAttrs.get("batchSize"));
         assertEquals("30", retrievedAttrs.get("timeout"));
@@ -321,11 +321,11 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testSQLParser_indexWord() {
+    public void testSQLParser_indexOfWord() {
         String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
-        int index = SQLParser.indexWord(sql, "ORDER BY", 0, false);
+        int index = SQLParser.indexOfWord(sql, "ORDER BY", 0, false);
         assertTrue(index >= 0, "ORDER BY should be found in the SQL");
-        int whereIndex = SQLParser.indexWord(sql, "WHERE", 0, false);
+        int whereIndex = SQLParser.indexOfWord(sql, "WHERE", 0, false);
         assertTrue(whereIndex >= 0, "WHERE should be found in the SQL");
         assertTrue(whereIndex < index, "WHERE should come before ORDER BY");
     }
@@ -404,7 +404,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testSK_classLevelExample_sqlOperators() {
-        String condition = "age" + SK.SPACE + SK.GREATER_EQUAL + SK.SPACE + "18";
+        String condition = "age" + SK.SPACE + SK.GREATER_THAN_OR__EQUAL + SK.SPACE + "18";
         assertEquals("age >= 18", condition);
     }
 
@@ -421,9 +421,9 @@ public class JavadocExamplesQueryTest {
         assertEquals(")", SK.PARENTHESES_R);
         assertEquals("=", SK.EQUAL);
         assertEquals("!=", SK.NOT_EQUAL);
-        assertEquals("<>", SK.NOT_EQUAL2);
-        assertEquals(">=", SK.GREATER_EQUAL);
-        assertEquals("<=", SK.LESS_EQUAL);
+        assertEquals("<>", SK.NOT_EQUAL_ANGLE);
+        assertEquals(">=", SK.GREATER_THAN_OR__EQUAL);
+        assertEquals("<=", SK.LESS_THAN_OR__EQUAL);
         assertEquals("SELECT", SK.SELECT);
         assertEquals("INSERT", SK.INSERT);
         assertEquals("UPDATE", SK.UPDATE);
@@ -869,10 +869,10 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_classLevelExample() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("id", "user_id").append("name");
-        b.from().append("users", "u");
-        b.where().append("u.active = ?").and("u.age > ?");
-        b.orderBy().append("u.name ASC");
+        b.selectClause().append("id", "user_id").append("name");
+        b.fromClause().append("users", "u");
+        b.whereClause().append("u.active = ?").and("u.age > ?");
+        b.orderByClause().append("u.name ASC");
         b.limit(10);
         String sql = b.build();
         assertEquals("SELECT id AS user_id, name FROM users u WHERE u.active = ? AND u.age > ? ORDER BY u.name ASC LIMIT 10", sql);
@@ -887,8 +887,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_selectAppend() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("id").append("name", "user_name");
-        b.from().append("users");
+        b.selectClause().append("id").append("name", "user_name");
+        b.fromClause().append("users");
         String sql = b.build();
         assertEquals("SELECT id, name AS user_name FROM users", sql);
     }
@@ -896,8 +896,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_fromWithJoin() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
+        b.selectClause().append("*");
+        b.fromClause().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
         assertTrue(sql.contains("LEFT JOIN orders o ON u.id = o.user_id"));
     }
@@ -905,9 +905,9 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_where() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users");
-        b.where().append("status = ?").and("created_date > ?");
+        b.selectClause().append("*");
+        b.fromClause().append("users");
+        b.whereClause().append("status = ?").and("created_date > ?");
         String sql = b.build();
         assertTrue(sql.contains("WHERE status = ? AND created_date > ?"));
     }
@@ -915,9 +915,9 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_groupBy() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("department").append("COUNT(*)");
-        b.from().append("employees");
-        b.groupBy().append("department");
+        b.selectClause().append("department").append("COUNT(*)");
+        b.fromClause().append("employees");
+        b.groupByClause().append("department");
         String sql = b.build();
         assertTrue(sql.contains("GROUP BY department"));
     }
@@ -925,10 +925,10 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_having() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("department").append("COUNT(*)");
-        b.from().append("employees");
-        b.groupBy().append("department");
-        b.having().append("COUNT(*) > ?");
+        b.selectClause().append("department").append("COUNT(*)");
+        b.fromClause().append("employees");
+        b.groupByClause().append("department");
+        b.havingClause().append("COUNT(*) > ?");
         String sql = b.build();
         assertTrue(sql.contains("HAVING COUNT(*) > ?"));
     }
@@ -936,9 +936,9 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_orderBy() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users");
-        b.orderBy().append("created_date DESC").append("name ASC");
+        b.selectClause().append("*");
+        b.fromClause().append("users");
+        b.orderByClause().append("created_date DESC").append("name ASC");
         String sql = b.build();
         assertTrue(sql.contains("ORDER BY created_date DESC, name ASC"));
     }
@@ -946,8 +946,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_limitIntInt() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users");
+        b.selectClause().append("*");
+        b.fromClause().append("users");
         b.limit(20, 10);
         String sql = b.build();
         assertTrue(sql.contains("LIMIT 20, 10"));
@@ -956,8 +956,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_offsetAndFetch() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users");
+        b.selectClause().append("*");
+        b.fromClause().append("users");
         b.offsetRows(20).fetchNextRows(10);
         String sql = b.build();
         assertTrue(sql.contains("OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY"));
@@ -966,9 +966,9 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_fetchFirst() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users");
-        b.fetchFirstNRowsOnly(10);
+        b.selectClause().append("*");
+        b.fromClause().append("users");
+        b.fetchFirstRows(10);
         String sql = b.build();
         assertTrue(sql.contains("FETCH FIRST 10 ROWS ONLY"));
     }
@@ -976,8 +976,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_union() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("id").append("name");
-        b.from().append("active_users");
+        b.selectClause().append("id").append("name");
+        b.fromClause().append("active_users");
         b.union("SELECT id, name FROM archived_users");
         String sql = b.build();
         assertTrue(sql.contains("UNION SELECT id, name FROM archived_users"));
@@ -986,8 +986,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_unionAll() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("id").append("name");
-        b.from().append("users");
+        b.selectClause().append("id").append("name");
+        b.fromClause().append("users");
         b.unionAll("SELECT id, name FROM temp_users");
         String sql = b.build();
         assertTrue(sql.contains("UNION ALL SELECT id, name FROM temp_users"));
@@ -996,9 +996,9 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_build() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users");
-        b.where().append("active = true");
+        b.selectClause().append("*");
+        b.fromClause().append("users");
+        b.whereClause().append("active = true");
         String sql = b.build();
         assertEquals("SELECT * FROM users WHERE active = true", sql);
     }
@@ -1006,8 +1006,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_selectAppendCollection() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append(Arrays.asList("id", "name", "email"));
-        b.from().append("users");
+        b.selectClause().append(Arrays.asList("id", "name", "email"));
+        b.fromClause().append("users");
         String sql = b.build();
         assertEquals("SELECT id, name, email FROM users", sql);
     }
@@ -1017,8 +1017,8 @@ public class JavadocExamplesQueryTest {
         boolean includeSalary = true;
         boolean includeBonus = false;
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("id").appendIf(includeSalary, "salary").appendIf(includeBonus, "bonus");
-        b.from().append("employees");
+        b.selectClause().append("id").appendIf(includeSalary, "salary").appendIf(includeBonus, "bonus");
+        b.fromClause().append("employees");
         String sql = b.build();
         assertTrue(sql.contains("salary"));
         assertFalse(sql.contains("bonus"));
@@ -1027,8 +1027,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_intersect() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("user_id");
-        b.from().append("all_users");
+        b.selectClause().append("user_id");
+        b.fromClause().append("all_users");
         b.intersect("SELECT user_id FROM premium_users");
         String sql = b.build();
         assertTrue(sql.contains("INTERSECT SELECT user_id FROM premium_users"));
@@ -1037,8 +1037,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_except() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("user_id");
-        b.from().append("all_users");
+        b.selectClause().append("user_id");
+        b.fromClause().append("all_users");
         b.except("SELECT user_id FROM blocked_users");
         String sql = b.build();
         assertTrue(sql.contains("EXCEPT SELECT user_id FROM blocked_users"));
@@ -1047,8 +1047,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_minus() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("user_id");
-        b.from().append("all_users");
+        b.selectClause().append("user_id");
+        b.fromClause().append("all_users");
         b.minus("SELECT user_id FROM inactive_users");
         String sql = b.build();
         assertTrue(sql.contains("MINUS SELECT user_id FROM inactive_users"));
@@ -1057,8 +1057,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_fromAppendWithAlias() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users", "u");
+        b.selectClause().append("*");
+        b.fromClause().append("users", "u");
         String sql = b.build();
         assertEquals("SELECT * FROM users u", sql);
     }
@@ -1066,8 +1066,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_fromInnerJoin() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("u.id").append("p.name");
-        b.from().append("users", "u").innerJoin("products p", "u.id = p.user_id");
+        b.selectClause().append("u.id").append("p.name");
+        b.fromClause().append("users", "u").innerJoin("products p", "u.id = p.user_id");
         String sql = b.build();
         assertTrue(sql.contains("INNER JOIN products p ON u.id = p.user_id"));
     }
@@ -1075,8 +1075,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_fromRightJoin() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users", "u").rightJoin("orders o", "u.id = o.user_id");
+        b.selectClause().append("*");
+        b.fromClause().append("users", "u").rightJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
         assertTrue(sql.contains("RIGHT JOIN orders o ON u.id = o.user_id"));
     }
@@ -1084,8 +1084,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_fromFullJoin() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users", "u").fullJoin("orders o", "u.id = o.user_id");
+        b.selectClause().append("*");
+        b.fromClause().append("users", "u").fullJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
         assertTrue(sql.contains("FULL JOIN orders o ON u.id = o.user_id"));
     }
@@ -1093,8 +1093,8 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_limitByRowNum() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users");
+        b.selectClause().append("*");
+        b.fromClause().append("users");
         b.limitByRowNum(10);
         String sql = b.build();
         assertTrue(sql.contains("ROWNUM <= 10"));
@@ -1103,14 +1103,14 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_selectAppendIfOrElse() {
         DynamicSQLBuilder b1 = DynamicSQLBuilder.create();
-        b1.select().appendIfOrElse(true, "first_name || ' ' || last_name AS full_name", "first_name");
-        b1.from().append("users");
+        b1.selectClause().appendIfOrElse(true, "first_name || ' ' || last_name AS full_name", "first_name");
+        b1.fromClause().append("users");
         String sql1 = b1.build();
         assertTrue(sql1.contains("first_name || ' ' || last_name AS full_name"));
 
         DynamicSQLBuilder b2 = DynamicSQLBuilder.create();
-        b2.select().appendIfOrElse(false, "first_name || ' ' || last_name AS full_name", "first_name");
-        b2.from().append("users");
+        b2.selectClause().appendIfOrElse(false, "first_name || ' ' || last_name AS full_name", "first_name");
+        b2.fromClause().append("users");
         String sql2 = b2.build();
         assertTrue(sql2.contains("SELECT first_name FROM"));
         assertFalse(sql2.contains("full_name"));
@@ -1119,9 +1119,9 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testDynamicSQLBuilder_whereOr() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users");
-        b.where().append("status = 'active'").or("role = 'admin'");
+        b.selectClause().append("*");
+        b.fromClause().append("users");
+        b.whereClause().append("status = 'active'").or("role = 'admin'");
         String sql = b.build();
         assertTrue(sql.contains("WHERE status = 'active' OR role = 'admin'"));
     }
@@ -1131,9 +1131,9 @@ public class JavadocExamplesQueryTest {
         boolean filterByStatus = true;
         boolean filterByRole = false;
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
-        b.select().append("*");
-        b.from().append("users");
-        b.where().append("1 = 1").appendIf(filterByStatus, "AND status = 'active'").appendIf(filterByRole, "AND role = 'admin'");
+        b.selectClause().append("*");
+        b.fromClause().append("users");
+        b.whereClause().append("1 = 1").appendIf(filterByStatus, "AND status = 'active'").appendIf(filterByRole, "AND role = 'admin'");
         String sql = b.build();
         assertTrue(sql.contains("status = 'active'"));
         assertFalse(sql.contains("role = 'admin'"));

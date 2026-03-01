@@ -17,7 +17,7 @@ public class LimitTest extends TestBase {
         Limit limit = Filters.limit(10);
         Assertions.assertEquals(10, limit.getCount());
         Assertions.assertEquals(0, limit.getOffset());
-        Assertions.assertNull(limit.getExpr());
+        Assertions.assertNull(limit.getExpression());
     }
 
     @Test
@@ -25,14 +25,14 @@ public class LimitTest extends TestBase {
         Limit limit = Filters.limit(20, 50);
         Assertions.assertEquals(50, limit.getCount());
         Assertions.assertEquals(20, limit.getOffset());
-        Assertions.assertNull(limit.getExpr());
+        Assertions.assertNull(limit.getExpression());
     }
 
     @Test
     public void testConstructorWithExpression() {
         String expr = "10 OFFSET 20";
         Limit limit = Filters.limit(expr);
-        Assertions.assertEquals(SK.LIMIT + SK.SPACE + expr, limit.getExpr());
+        Assertions.assertEquals(SK.LIMIT + SK.SPACE + expr, limit.getExpression());
         Assertions.assertEquals(Integer.MAX_VALUE, limit.getCount());
         Assertions.assertEquals(0, limit.getOffset());
     }
@@ -41,7 +41,7 @@ public class LimitTest extends TestBase {
     public void testConstructorWithExpressionTrims() {
         String expr = "  10 OFFSET 20  ";
         Limit limit = Filters.limit(expr);
-        Assertions.assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getExpr());
+        Assertions.assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getExpression());
     }
 
     @Test

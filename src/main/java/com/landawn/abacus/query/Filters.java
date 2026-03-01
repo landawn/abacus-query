@@ -83,7 +83,7 @@ import com.landawn.abacus.query.condition.Union;
 import com.landawn.abacus.query.condition.UnionAll;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
-import com.landawn.abacus.query.condition.XOR;
+import com.landawn.abacus.query.condition.Xor;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.EntityId;
 import com.landawn.abacus.util.N;
@@ -2036,7 +2036,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * XOR condition = Filters.xor("is_premium", true);
+     * Xor condition = Filters.xor("is_premium", true);
      * // SQL fragment: is_premium XOR TRUE
      * }</pre>
      *
@@ -2044,8 +2044,8 @@ public class Filters {
      * @param propValue the value to XOR with
      * @return an XOR condition
      */
-    public static XOR xor(final String propName, final Object propValue) {
-        return new XOR(propName, propValue);
+    public static Xor xor(final String propName, final Object propValue) {
+        return new Xor(propName, propValue);
     }
 
     /**

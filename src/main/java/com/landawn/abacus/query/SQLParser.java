@@ -363,7 +363,7 @@ public final class SQLParser {
                 } else {
                     sb.append(c);
 
-                    if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
+                    if ((c == SK._SINGLE_QUOTE) || (c == SK._DOUBLE_QUOTE)) {
                         quoteChar = c;
                     }
                 }
@@ -397,10 +397,10 @@ public final class SQLParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
-     * int index = SQLParser.indexWord(sql, "ORDER BY", 0, false);
+     * int index = SQLParser.indexOfWord(sql, "ORDER BY", 0, false);
      * // Returns: 40 (the position where "ORDER BY" starts)
      *
-     * int whereIndex = SQLParser.indexWord(sql, "WHERE", 0, false);
+     * int whereIndex = SQLParser.indexOfWord(sql, "WHERE", 0, false);
      * // Returns: 20 (the position where "WHERE" starts)
      * }</pre>
      * 
@@ -410,7 +410,7 @@ public final class SQLParser {
      * @param caseSensitive whether the search should be case-sensitive
      * @return the index of the word if found, or -1 if not found
      */
-    public static int indexWord(final String sql, final String word, final int fromIndex, final boolean caseSensitive) {
+    public static int indexOfWord(final String sql, final String word, final int fromIndex, final boolean caseSensitive) {
         String[] subWords = compositeWords.get(word);
 
         if (subWords == null) {
@@ -545,7 +545,7 @@ public final class SQLParser {
                     } else {
                         sb.append(c);
 
-                        if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
+                        if ((c == SK._SINGLE_QUOTE) || (c == SK._DOUBLE_QUOTE)) {
                             quoteChar = c;
                         }
                     }
@@ -564,7 +564,7 @@ public final class SQLParser {
                 Objectory.recycle(sb);
             }
         } else {
-            int result = indexWord(sql, subWords[0], fromIndex, caseSensitive);
+            int result = indexOfWord(sql, subWords[0], fromIndex, caseSensitive);
 
             while (result >= 0) {
                 int tmpIndex = result + subWords[0].length();
@@ -592,7 +592,7 @@ public final class SQLParser {
                 }
 
                 // First sub-word matched but subsequent words didn't; continue searching from after the current match
-                result = indexWord(sql, subWords[0], result + subWords[0].length(), caseSensitive);
+                result = indexOfWord(sql, subWords[0], result + subWords[0].length(), caseSensitive);
             }
 
             return result;
@@ -711,7 +711,7 @@ public final class SQLParser {
                 } else {
                     sb.append(c);
 
-                    if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
+                    if ((c == SK._SINGLE_QUOTE) || (c == SK._DOUBLE_QUOTE)) {
                         quoteChar = c;
                     }
                 }

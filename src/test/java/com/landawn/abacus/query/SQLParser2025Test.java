@@ -151,7 +151,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testIndexWord() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SQLParser.indexWord(sql, "WHERE", 0, false);
+        int index = SQLParser.indexOfWord(sql, "WHERE", 0, false);
         assertTrue(index >= 0);
         assertEquals("WHERE", sql.substring(index, index + 5));
     }
@@ -159,35 +159,35 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testIndexWordCaseInsensitive() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SQLParser.indexWord(sql, "where", 0, false);
+        int index = SQLParser.indexOfWord(sql, "where", 0, false);
         assertTrue(index >= 0);
     }
 
     @Test
     public void testIndexWordCaseSensitive() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SQLParser.indexWord(sql, "where", 0, true);
+        int index = SQLParser.indexOfWord(sql, "where", 0, true);
         assertEquals(-1, index);
     }
 
     @Test
     public void testIndexWordNotFound() {
         String sql = "SELECT * FROM users";
-        int index = SQLParser.indexWord(sql, "WHERE", 0, false);
+        int index = SQLParser.indexOfWord(sql, "WHERE", 0, false);
         assertEquals(-1, index);
     }
 
     @Test
     public void testIndexWordComposite() {
         String sql = "SELECT * FROM users ORDER BY name";
-        int index = SQLParser.indexWord(sql, "ORDER BY", 0, false);
+        int index = SQLParser.indexOfWord(sql, "ORDER BY", 0, false);
         assertTrue(index >= 0);
     }
 
     @Test
     public void testIndexWordFromPosition() {
         String sql = "SELECT * FROM users WHERE age > 18 AND status = 'active'";
-        int firstAnd = SQLParser.indexWord(sql, "AND", 0, false);
+        int firstAnd = SQLParser.indexOfWord(sql, "AND", 0, false);
         assertTrue(firstAnd > 0);
     }
 
@@ -403,8 +403,8 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testIndexWordMultipleOccurrences() {
         String sql = "SELECT name FROM users WHERE name = 'John' OR name = 'Jane'";
-        int firstIndex = SQLParser.indexWord(sql, "name", 0, false);
-        int secondIndex = SQLParser.indexWord(sql, "name", firstIndex + 1, false);
+        int firstIndex = SQLParser.indexOfWord(sql, "name", 0, false);
+        int secondIndex = SQLParser.indexOfWord(sql, "name", firstIndex + 1, false);
         assertTrue(firstIndex >= 0);
         assertTrue(secondIndex > firstIndex);
     }

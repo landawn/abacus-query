@@ -180,7 +180,7 @@ public class ExceptTest extends TestBase {
 
         Criteria criteria = Filters.criteria().where(Filters.eq("status", "active")).except(excludedUsers);
 
-        List<Cell> aggregations = criteria.getAggregation();
+        List<Cell> aggregations = criteria.getAggregations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).getOperator());
     }

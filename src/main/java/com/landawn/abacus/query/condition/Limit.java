@@ -180,18 +180,18 @@ public class Limit extends AbstractCondition {
      * <pre>{@code
      * // Limit created with a custom expression
      * Limit customLimit = new Limit("10 OFFSET 20");
-     * String expr = customLimit.getExpr();
+     * String expr = customLimit.getExpression();
      * // Returns: "LIMIT 10 OFFSET 20"
      *
      * // Limit created with count/offset returns null
      * Limit numericLimit = new Limit(20, 10);
-     * String noExpr = numericLimit.getExpr();
+     * String noExpr = numericLimit.getExpression();
      * // Returns: null
      * }</pre>
      *
      * @return the custom expression string, or {@code null} if constructed with count/offset parameters
      */
-    public String getExpr() {
+    public String getExpression() {
         return expr;
     }
 

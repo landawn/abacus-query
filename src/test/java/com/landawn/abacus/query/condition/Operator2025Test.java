@@ -31,11 +31,11 @@ public class Operator2025Test extends TestBase {
     public void testGetOperator_Comparison() {
         assertEquals(Operator.EQUAL, Operator.of("="));
         assertEquals(Operator.NOT_EQUAL, Operator.of("!="));
-        assertEquals(Operator.NOT_EQUAL2, Operator.of("<>"));
+        assertEquals(Operator.NOT_EQUAL_ANGLE, Operator.of("<>"));
         assertEquals(Operator.GREATER_THAN, Operator.of(">"));
-        assertEquals(Operator.GREATER_EQUAL, Operator.of(">="));
+        assertEquals(Operator.GREATER_THAN_OR__EQUAL, Operator.of(">="));
         assertEquals(Operator.LESS_THAN, Operator.of("<"));
-        assertEquals(Operator.LESS_EQUAL, Operator.of("<="));
+        assertEquals(Operator.LESS_THAN_OR__EQUAL, Operator.of("<="));
     }
 
     @Test
@@ -214,11 +214,11 @@ public class Operator2025Test extends TestBase {
         // Test all comparison operators
         assertNotNull(Operator.EQUAL);
         assertNotNull(Operator.NOT_EQUAL);
-        assertNotNull(Operator.NOT_EQUAL2);
+        assertNotNull(Operator.NOT_EQUAL_ANGLE);
         assertNotNull(Operator.GREATER_THAN);
-        assertNotNull(Operator.GREATER_EQUAL);
+        assertNotNull(Operator.GREATER_THAN_OR__EQUAL);
         assertNotNull(Operator.LESS_THAN);
-        assertNotNull(Operator.LESS_EQUAL);
+        assertNotNull(Operator.LESS_THAN_OR__EQUAL);
 
         // Test all logical operators
         assertNotNull(Operator.AND);

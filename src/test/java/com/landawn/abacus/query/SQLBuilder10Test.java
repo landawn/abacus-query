@@ -640,7 +640,7 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testFetchFirstNRowsOnly() {
-        String sql = PSC.select("*").from("users").orderBy("id").fetchFirstNRowsOnly(10).sql();
+        String sql = PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).sql();
 
         assertEquals("SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY", sql);
     }

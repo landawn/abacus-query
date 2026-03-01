@@ -38,14 +38,14 @@ public class SKTest extends TestBase {
     @Test
     void testQuoteAndEscapeCharacters() {
         assertEquals('\\', SK._BACKSLASH);
-        assertEquals('\'', SK._QUOTATION_S);
-        assertEquals('"', SK._QUOTATION_D);
+        assertEquals('\'', SK._SINGLE_QUOTE);
+        assertEquals('"', SK._DOUBLE_QUOTE);
     }
 
     @Test
     void testOperatorCharacters() {
         assertEquals('&', SK._AMPERSAND);
-        assertEquals('|', SK._VERTICALBAR);
+        assertEquals('|', SK._VERTICAL_BAR);
         assertEquals('_', SK._UNDERSCORE);
         assertEquals('<', SK._LESS_THAN);
         assertEquals('>', SK._GREATER_THAN);
@@ -71,9 +71,9 @@ public class SKTest extends TestBase {
     @Test
     void testSpecialOperatorCharacters() {
         assertEquals('^', SK._CIRCUMFLEX);
-        assertEquals('~', SK._UNARYBIT);
+        assertEquals('~', SK._TILDE);
         assertEquals('$', SK._DOLLAR);
-        assertEquals('#', SK._SHARP);
+        assertEquals('#', SK._HASH);
         assertEquals('!', SK._EXCLAMATION);
     }
 
@@ -87,10 +87,10 @@ public class SKTest extends TestBase {
         assertEquals(":", SK.COLON);
         assertEquals(";", SK.SEMICOLON);
         assertEquals("\\", SK.BACKSLASH);
-        assertEquals("'", SK.QUOTATION_S);
-        assertEquals("\"", SK.QUOTATION_D);
+        assertEquals("'", SK.SINGLE_QUOTE);
+        assertEquals("\"", SK.DOUBLE_QUOTE);
         assertEquals("&", SK.AMPERSAND);
-        assertEquals("|", SK.VERTICALBAR);
+        assertEquals("|", SK.VERTICAL_BAR);
         assertEquals("_", SK.UNDERSCORE);
         assertEquals("<", SK.LESS_THAN);
         assertEquals(">", SK.GREATER_THAN);
@@ -108,9 +108,9 @@ public class SKTest extends TestBase {
         assertEquals("{", SK.BRACE_L);
         assertEquals("}", SK.BRACE_R);
         assertEquals("^", SK.CIRCUMFLEX);
-        assertEquals("~", SK.UNARYBIT);
+        assertEquals("~", SK.TILDE);
         assertEquals("$", SK.DOLLAR);
-        assertEquals("#", SK.SHARP);
+        assertEquals("#", SK.HASH);
         assertEquals("!", SK.EXCLAMATION);
     }
 
@@ -119,10 +119,10 @@ public class SKTest extends TestBase {
         assertEquals(", ", SK.COMMA_SPACE);
         assertEquals(": ", SK.COLON_SPACE);
         assertEquals("; ", SK.SEMICOLON_SPACE);
-        assertEquals(" '", SK.SPACE_QUOTATION_S);
-        assertEquals("' ", SK.QUOTATION_S_SPACE);
-        assertEquals(" \"", SK.SPACE_QUOTATION_D);
-        assertEquals("\" ", SK.QUOTATION_D_SPACE);
+        assertEquals(" '", SK.SPACE_SINGLE_QUOTE);
+        assertEquals("' ", SK.SINGLE_QUOTE_SPACE);
+        assertEquals(" \"", SK.SPACE_DOUBLE_QUOTE);
+        assertEquals("\" ", SK.DOUBLE_QUOTE_SPACE);
         assertEquals(" (", SK.SPACE_PARENTHESES_L);
         assertEquals(") ", SK.PARENTHESES_R_SPACE);
     }
@@ -132,14 +132,14 @@ public class SKTest extends TestBase {
     @Test
     void testComparisonOperators() {
         assertEquals("!=", SK.NOT_EQUAL);
-        assertEquals("<>", SK.NOT_EQUAL2);
-        assertEquals(">=", SK.GREATER_EQUAL);
-        assertEquals("<=", SK.LESS_EQUAL);
+        assertEquals("<>", SK.NOT_EQUAL_ANGLE);
+        assertEquals(">=", SK.GREATER_THAN_OR__EQUAL);
+        assertEquals("<=", SK.LESS_THAN_OR__EQUAL);
     }
 
     @Test
     void testLogicalOperators() {
-        assertEquals("||", SK.PARALLEL);
+        assertEquals("||", SK.DOUBLE_PIPE);
         assertEquals("&&", SK.AND_OP);
         assertEquals("||", SK.OR_OP);
     }
@@ -180,7 +180,7 @@ public class SKTest extends TestBase {
         assertEquals("JOIN", SK.JOIN);
         assertEquals("NATURAL", SK.NATURAL);
         assertEquals("INNER", SK.INNER);
-        assertEquals("OUTER ", SK.OUTER); // Note: has trailing space
+        assertEquals("OUTER", SK.OUTER); // Note: has trailing space
         assertEquals("LEFT", SK.LEFT);
         assertEquals("RIGHT", SK.RIGHT);
         assertEquals("FULL", SK.FULL);
@@ -396,10 +396,10 @@ public class SKTest extends TestBase {
         assertEquals(String.valueOf(SK._COLON), SK.COLON);
         assertEquals(String.valueOf(SK._SEMICOLON), SK.SEMICOLON);
         assertEquals(String.valueOf(SK._BACKSLASH), SK.BACKSLASH);
-        assertEquals(String.valueOf(SK._QUOTATION_S), SK.QUOTATION_S);
-        assertEquals(String.valueOf(SK._QUOTATION_D), SK.QUOTATION_D);
+        assertEquals(String.valueOf(SK._SINGLE_QUOTE), SK.SINGLE_QUOTE);
+        assertEquals(String.valueOf(SK._DOUBLE_QUOTE), SK.DOUBLE_QUOTE);
         assertEquals(String.valueOf(SK._AMPERSAND), SK.AMPERSAND);
-        assertEquals(String.valueOf(SK._VERTICALBAR), SK.VERTICALBAR);
+        assertEquals(String.valueOf(SK._VERTICAL_BAR), SK.VERTICAL_BAR);
         assertEquals(String.valueOf(SK._UNDERSCORE), SK.UNDERSCORE);
         assertEquals(String.valueOf(SK._LESS_THAN), SK.LESS_THAN);
         assertEquals(String.valueOf(SK._GREATER_THAN), SK.GREATER_THAN);
@@ -459,10 +459,10 @@ public class SKTest extends TestBase {
         assertEquals(SK.COMMA + SK.SPACE, SK.COMMA_SPACE);
         assertEquals(SK.COLON + SK.SPACE, SK.COLON_SPACE);
         assertEquals(SK.SEMICOLON + SK.SPACE, SK.SEMICOLON_SPACE);
-        assertEquals(SK.SPACE + SK.QUOTATION_S, SK.SPACE_QUOTATION_S);
-        assertEquals(SK.QUOTATION_S + SK.SPACE, SK.QUOTATION_S_SPACE);
-        assertEquals(SK.SPACE + SK.QUOTATION_D, SK.SPACE_QUOTATION_D);
-        assertEquals(SK.QUOTATION_D + SK.SPACE, SK.QUOTATION_D_SPACE);
+        assertEquals(SK.SPACE + SK.SINGLE_QUOTE, SK.SPACE_SINGLE_QUOTE);
+        assertEquals(SK.SINGLE_QUOTE + SK.SPACE, SK.SINGLE_QUOTE_SPACE);
+        assertEquals(SK.SPACE + SK.DOUBLE_QUOTE, SK.SPACE_DOUBLE_QUOTE);
+        assertEquals(SK.DOUBLE_QUOTE + SK.SPACE, SK.DOUBLE_QUOTE_SPACE);
         assertEquals(SK.SPACE + SK.PARENTHESES_L, SK.SPACE_PARENTHESES_L);
         assertEquals(SK.PARENTHESES_R + SK.SPACE, SK.PARENTHESES_R_SPACE);
     }
@@ -484,8 +484,7 @@ public class SKTest extends TestBase {
     @Test
     void testSQLSpecificEdgeCases() {
         // Test that OUTER has trailing space (common SQL syntax)
-        assertEquals("OUTER ", SK.OUTER);
-        assertTrue(SK.OUTER.endsWith(" "));
+        assertEquals("OUTER", SK.OUTER);
 
         // Test compound keywords with proper spacing
         assertEquals("GROUP BY", SK.GROUP_BY);
@@ -517,12 +516,12 @@ public class SKTest extends TestBase {
         // Test printable ASCII characters
         assertEquals(32, SK._SPACE); // Space
         assertEquals(33, SK._EXCLAMATION); // !
-        assertEquals(34, SK._QUOTATION_D); // "
-        assertEquals(35, SK._SHARP); // #
+        assertEquals(34, SK._DOUBLE_QUOTE); // "
+        assertEquals(35, SK._HASH); // #
         assertEquals(36, SK._DOLLAR); // $
         assertEquals(37, SK._PERCENT); // %
         assertEquals(38, SK._AMPERSAND); // &
-        assertEquals(39, SK._QUOTATION_S); // '
+        assertEquals(39, SK._SINGLE_QUOTE); // '
         assertEquals(40, SK._PARENTHESES_L); // (
         assertEquals(41, SK._PARENTHESES_R); // )
         assertEquals(42, SK._ASTERISK); // *

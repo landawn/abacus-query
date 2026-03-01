@@ -49,23 +49,23 @@ public class SK2025Test extends TestBase {
     public void testBackslashAndQuotes() {
         assertEquals('\\', SK._BACKSLASH);
         assertEquals("\\", SK.BACKSLASH);
-        assertEquals('\'', SK._QUOTATION_S);
-        assertEquals("'", SK.QUOTATION_S);
-        assertEquals(" '", SK.SPACE_QUOTATION_S);
-        assertEquals("' ", SK.QUOTATION_S_SPACE);
-        assertEquals('"', SK._QUOTATION_D);
-        assertEquals("\"", SK.QUOTATION_D);
-        assertEquals(" \"", SK.SPACE_QUOTATION_D);
-        assertEquals("\" ", SK.QUOTATION_D_SPACE);
+        assertEquals('\'', SK._SINGLE_QUOTE);
+        assertEquals("'", SK.SINGLE_QUOTE);
+        assertEquals(" '", SK.SPACE_SINGLE_QUOTE);
+        assertEquals("' ", SK.SINGLE_QUOTE_SPACE);
+        assertEquals('"', SK._DOUBLE_QUOTE);
+        assertEquals("\"", SK.DOUBLE_QUOTE);
+        assertEquals(" \"", SK.SPACE_DOUBLE_QUOTE);
+        assertEquals("\" ", SK.DOUBLE_QUOTE_SPACE);
     }
 
     @Test
     public void testOperatorCharacters() {
         assertEquals('&', SK._AMPERSAND);
         assertEquals("&", SK.AMPERSAND);
-        assertEquals('|', SK._VERTICALBAR);
-        assertEquals("|", SK.VERTICALBAR);
-        assertEquals("||", SK.PARALLEL);
+        assertEquals('|', SK._VERTICAL_BAR);
+        assertEquals("|", SK.VERTICAL_BAR);
+        assertEquals("||", SK.DOUBLE_PIPE);
         assertEquals('_', SK._UNDERSCORE);
         assertEquals("_", SK.UNDERSCORE);
         assertEquals('<', SK._LESS_THAN);
@@ -89,9 +89,9 @@ public class SK2025Test extends TestBase {
     @Test
     public void testComparisonOperators() {
         assertEquals("!=", SK.NOT_EQUAL);
-        assertEquals("<>", SK.NOT_EQUAL2);
-        assertEquals(">=", SK.GREATER_EQUAL);
-        assertEquals("<=", SK.LESS_EQUAL);
+        assertEquals("<>", SK.NOT_EQUAL_ANGLE);
+        assertEquals(">=", SK.GREATER_THAN_OR__EQUAL);
+        assertEquals("<=", SK.LESS_THAN_OR__EQUAL);
     }
 
     @Test
@@ -118,12 +118,12 @@ public class SK2025Test extends TestBase {
     public void testMiscCharacters() {
         assertEquals('^', SK._CIRCUMFLEX);
         assertEquals("^", SK.CIRCUMFLEX);
-        assertEquals('~', SK._UNARYBIT);
-        assertEquals("~", SK.UNARYBIT);
+        assertEquals('~', SK._TILDE);
+        assertEquals("~", SK.TILDE);
         assertEquals('$', SK._DOLLAR);
         assertEquals("$", SK.DOLLAR);
-        assertEquals('#', SK._SHARP);
-        assertEquals("#", SK.SHARP);
+        assertEquals('#', SK._HASH);
+        assertEquals("#", SK.HASH);
         assertEquals('!', SK._EXCLAMATION);
         assertEquals("!", SK.EXCLAMATION);
     }
@@ -165,7 +165,7 @@ public class SK2025Test extends TestBase {
         assertEquals("JOIN", SK.JOIN);
         assertEquals("NATURAL", SK.NATURAL);
         assertEquals("INNER", SK.INNER);
-        assertEquals("OUTER ", SK.OUTER);
+        assertEquals("OUTER", SK.OUTER);
         assertEquals("LEFT JOIN", SK.LEFT_JOIN);
         assertEquals("LEFT", SK.LEFT);
         assertEquals("RIGHT JOIN", SK.RIGHT_JOIN);

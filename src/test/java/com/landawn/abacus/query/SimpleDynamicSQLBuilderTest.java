@@ -27,12 +27,12 @@ public class SimpleDynamicSQLBuilderTest extends TestBase {
     void testClauseBuilders() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
 
-        assertNotNull(builder.select());
-        assertNotNull(builder.from());
-        assertNotNull(builder.where());
-        assertNotNull(builder.groupBy());
-        assertNotNull(builder.having());
-        assertNotNull(builder.orderBy());
+        assertNotNull(builder.selectClause());
+        assertNotNull(builder.fromClause());
+        assertNotNull(builder.whereClause());
+        assertNotNull(builder.groupByClause());
+        assertNotNull(builder.havingClause());
+        assertNotNull(builder.orderByClause());
     }
 
     @Test

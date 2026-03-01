@@ -37,7 +37,7 @@ import com.landawn.abacus.annotation.Internal;
  * // Result: "John, Doe, 30"
  *
  * // Using SQL operators
- * String condition = "age" + SK.SPACE + SK.GREATER_EQUAL + SK.SPACE + "18";
+ * String condition = "age" + SK.SPACE + SK.GREATER_THAN_OR__EQUAL + SK.SPACE + "18";
  * // Result: "age >= 18"
  * }</pre>
  *
@@ -163,47 +163,47 @@ public final class SK {
      * Represents the single quotation mark character: {@code '\''}.
      * Used for character literals and string quoting.
      */
-    public static final char _QUOTATION_S = '\'';
+    public static final char _SINGLE_QUOTE = '\'';
 
     /**
      * Represents the single quotation mark string: {@code "'"}.
      */
-    public static final String QUOTATION_S = "'";
+    public static final String SINGLE_QUOTE = "'";
 
     /**
      * Represents space followed by single quotation mark: {@code " '"}.
      * Useful for formatting quoted text.
      */
-    public static final String SPACE_QUOTATION_S = " '";
+    public static final String SPACE_SINGLE_QUOTE = " '";
 
     /**
      * Represents single quotation mark followed by space: {@code "' "}.
      * Useful for formatting quoted text.
      */
-    public static final String QUOTATION_S_SPACE = "' ";
+    public static final String SINGLE_QUOTE_SPACE = "' ";
 
     /**
      * Represents the double quotation mark character: {@code '"'}.
      * Used for string literals in many programming languages.
      */
-    public static final char _QUOTATION_D = '"';
+    public static final char _DOUBLE_QUOTE = '"';
 
     /**
      * Represents the double quotation mark string: {@code "\""}.
      */
-    public static final String QUOTATION_D = "\"";
+    public static final String DOUBLE_QUOTE = "\"";
 
     /**
      * Represents space followed by double quotation mark: {@code " \""}.
      * Useful for formatting quoted text.
      */
-    public static final String SPACE_QUOTATION_D = " \"";
+    public static final String SPACE_DOUBLE_QUOTE = " \"";
 
     /**
      * Represents double quotation mark followed by space: {@code "\" "}.
      * Useful for formatting quoted text.
      */
-    public static final String QUOTATION_D_SPACE = "\" ";
+    public static final String DOUBLE_QUOTE_SPACE = "\" ";
 
     /**
      * Represents the ampersand character: {@code '&'}.
@@ -220,18 +220,18 @@ public final class SK {
      * Represents the vertical bar character: {@code '|'}.
      * Used as bitwise OR operator and pipe symbol.
      */
-    public static final char _VERTICALBAR = '|';
+    public static final char _VERTICAL_BAR = '|';
 
     /**
      * Represents the vertical bar string: {@code "|"}.
      */
-    public static final String VERTICALBAR = "|";
+    public static final String VERTICAL_BAR = "|";
 
     /**
      * Represents double vertical bars: {@code "||"}.
      * Used as logical OR operator in SQL and some programming languages.
      */
-    public static final String PARALLEL = "||";
+    public static final String DOUBLE_PIPE = "||";
 
     /**
      * Represents the underscore character: {@code '_'}.
@@ -436,12 +436,12 @@ public final class SK {
      * Represents the tilde character: {@code '~'}.
      * Used as bitwise NOT operator and home directory symbol.
      */
-    public static final char _UNARYBIT = '~';
+    public static final char _TILDE = '~';
 
     /**
      * Represents the tilde string: {@code "~"}.
      */
-    public static final String UNARYBIT = "~";
+    public static final String TILDE = "~";
 
     /**
      * Represents the dollar sign character: {@code '$'}.
@@ -458,12 +458,12 @@ public final class SK {
      * Represents the hash/pound character: {@code '#'}.
      * Used for comments and CSS selectors.
      */
-    public static final char _SHARP = '#';
+    public static final char _HASH = '#';
 
     /**
      * Represents the hash/pound string: {@code "#"}.
      */
-    public static final String SHARP = "#";
+    public static final String HASH = "#";
 
     /**
      * Represents the exclamation mark character: {@code '!'}.
@@ -486,19 +486,19 @@ public final class SK {
      * Represents the SQL not equal operator: {@code "<>"}.
      * Alternative syntax for inequality in SQL.
      */
-    public static final String NOT_EQUAL2 = "<>";
+    public static final String NOT_EQUAL_ANGLE = "<>";
 
     /**
      * Represents the greater than or equal operator: {@code ">="}.
      * Used for comparison operations.
      */
-    public static final String GREATER_EQUAL = ">=";
+    public static final String GREATER_THAN_OR__EQUAL = ">=";
 
     /**
      * Represents the less than or equal operator: {@code "<="}.
      * Used for comparison operations.
      */
-    public static final String LESS_EQUAL = "<=";
+    public static final String LESS_THAN_OR__EQUAL = "<=";
 
     // --------------------SQL key words----------------------------
     /**
@@ -670,11 +670,11 @@ public final class SK {
     public static final String INNER = "INNER";
 
     /**
-     * SQL OUTER keyword with trailing space: {@code "OUTER "}.
+     * SQL OUTER keyword with trailing space: {@code "OUTER"}.
      * Used with LEFT, RIGHT, or FULL keywords to specify outer join operations.
      *
      */
-    public static final String OUTER = "OUTER ";
+    public static final String OUTER = "OUTER";
 
     /**
      * SQL LEFT JOIN clause: {@code "LEFT JOIN"}.

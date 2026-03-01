@@ -52,7 +52,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testGetPropValue() {
-        Binary binary = Filters.binary("age", Operator.GREATER_EQUAL, 25);
+        Binary binary = Filters.binary("age", Operator.GREATER_THAN_OR__EQUAL, 25);
         Integer value = binary.getPropValue();
         Assertions.assertEquals(25, value);
     }
@@ -103,7 +103,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testCopy() {
-        Binary original = Filters.binary("temperature", Operator.LESS_EQUAL, 32.0);
+        Binary original = Filters.binary("temperature", Operator.LESS_THAN_OR__EQUAL, 32.0);
         Binary copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
@@ -167,11 +167,11 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testEquals() {
-        Binary binary1 = Filters.binary("age", Operator.GREATER_EQUAL, 18);
-        Binary binary2 = Filters.binary("age", Operator.GREATER_EQUAL, 18);
-        Binary binary3 = Filters.binary("age", Operator.GREATER_EQUAL, 21);
+        Binary binary1 = Filters.binary("age", Operator.GREATER_THAN_OR__EQUAL, 18);
+        Binary binary2 = Filters.binary("age", Operator.GREATER_THAN_OR__EQUAL, 18);
+        Binary binary3 = Filters.binary("age", Operator.GREATER_THAN_OR__EQUAL, 21);
         Binary binary4 = Filters.binary("age", Operator.GREATER_THAN, 18);
-        Binary binary5 = Filters.binary("height", Operator.GREATER_EQUAL, 18);
+        Binary binary5 = Filters.binary("height", Operator.GREATER_THAN_OR__EQUAL, 18);
 
         Assertions.assertEquals(binary1, binary1);
         Assertions.assertEquals(binary1, binary2);
@@ -200,7 +200,7 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testAnd() {
-        Binary binary = Filters.binary("age", Operator.GREATER_EQUAL, 18);
+        Binary binary = Filters.binary("age", Operator.GREATER_THAN_OR__EQUAL, 18);
         LessThan lt = Filters.lt("age", 65);
 
         And and = binary.and(lt);
@@ -238,9 +238,9 @@ public class BinaryTest extends TestBase {
         Binary eq = Filters.binary("prop", Operator.EQUAL, 1);
         Binary ne = Filters.binary("prop", Operator.NOT_EQUAL, 1);
         Binary gt = Filters.binary("prop", Operator.GREATER_THAN, 1);
-        Binary ge = Filters.binary("prop", Operator.GREATER_EQUAL, 1);
+        Binary ge = Filters.binary("prop", Operator.GREATER_THAN_OR__EQUAL, 1);
         Binary lt = Filters.binary("prop", Operator.LESS_THAN, 1);
-        Binary le = Filters.binary("prop", Operator.LESS_EQUAL, 1);
+        Binary le = Filters.binary("prop", Operator.LESS_THAN_OR__EQUAL, 1);
         Binary like = Filters.binary("prop", Operator.LIKE, "%test%");
         Binary in = Filters.binary("prop", Operator.IN, Arrays.asList(1, 2, 3));
 

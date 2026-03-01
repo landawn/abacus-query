@@ -238,17 +238,17 @@ public class Criteria extends AbstractCondition {
      *     .union(archivedUsers)
      *     .unionAll(tempUsers);
      *
-     * List<Cell> aggregations = criteria.getAggregation();
+     * List<Cell> aggregations = criteria.getAggregations();
      * // Returns a list of 2 aggregation conditions (UNION and UNION ALL)
      *
      * Criteria noAgg = new Criteria().where(Filters.eq("status", "active"));
-     * List<Cell> empty = noAgg.getAggregation();
+     * List<Cell> empty = noAgg.getAggregations();
      * // Returns an empty list
      * }</pre>
      *
      * @return a list of aggregation conditions, empty if none exist
      */
-    public List<Cell> getAggregation() {
+    public List<Cell> getAggregations() {
         List<Cell> result = null;
 
         for (final Condition cond : conditionList) {
@@ -488,7 +488,7 @@ public class Criteria extends AbstractCondition {
                 parameters.addAll(having.getParameters());
             }
 
-            final List<Cell> condList = getAggregation();
+            final List<Cell> condList = getAggregations();
 
             for (final Condition cond : condList) {
                 parameters.addAll(cond.getParameters());

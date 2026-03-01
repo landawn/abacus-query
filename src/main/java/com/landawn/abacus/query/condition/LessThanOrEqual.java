@@ -107,6 +107,6 @@ public class LessThanOrEqual extends Binary {
      * @throws IllegalArgumentException if propName is null or empty
      */
     public LessThanOrEqual(final String propName, final Object propValue) {
-        super(propName, Operator.LESS_EQUAL, propValue);
+        super(propName, Operator.LESS_THAN_OR__EQUAL, propValue);
     }
 }

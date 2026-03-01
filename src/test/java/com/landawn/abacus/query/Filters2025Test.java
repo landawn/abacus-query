@@ -59,7 +59,7 @@ import com.landawn.abacus.query.condition.NotLike;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.Or;
 import com.landawn.abacus.query.condition.Where;
-import com.landawn.abacus.query.condition.XOR;
+import com.landawn.abacus.query.condition.Xor;
 import com.landawn.abacus.query.entity.Account;
 
 @Tag("2025")
@@ -439,7 +439,7 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testXor() {
-        XOR xor = Filters.xor("flag", true);
+        Xor xor = Filters.xor("flag", true);
         assertNotNull(xor);
     }
 

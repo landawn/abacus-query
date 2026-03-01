@@ -40,7 +40,7 @@ public class GreaterThanOrEqual2025Test extends TestBase {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("age", 25);
         assertEquals("age", condition.getPropName());
         assertEquals(25, (int) condition.getPropValue());
-        assertEquals(Operator.GREATER_EQUAL, condition.getOperator());
+        assertEquals(Operator.GREATER_THAN_OR__EQUAL, condition.getOperator());
     }
 
     @Test
@@ -82,7 +82,7 @@ public class GreaterThanOrEqual2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("field", "value");
-        assertEquals(Operator.GREATER_EQUAL, condition.getOperator());
+        assertEquals(Operator.GREATER_THAN_OR__EQUAL, condition.getOperator());
     }
 
     @Test

@@ -51,17 +51,17 @@ public class DynamicSQLBuilder {
 
     static final Logger logger = LoggerFactory.getLogger(DynamicSQLBuilder.class);
 
-    private Select select = new Select(Objectory.createStringBuilder());
+    private SelectClause selectClause = new SelectClause(Objectory.createStringBuilder());
 
-    private From from = new From(Objectory.createStringBuilder());
+    private FromClause fromClause = new FromClause(Objectory.createStringBuilder());
 
-    private Where where;
+    private WhereClause whereClause;
 
-    private GroupBy groupBy;
+    private GroupByClause groupByClause;
 
-    private Having having;
+    private HavingClause havingClause;
 
-    private OrderBy orderBy;
+    private OrderByClause orderByClause;
 
     private StringBuilder moreParts = null;
 
@@ -97,8 +97,8 @@ public class DynamicSQLBuilder {
      *
      * @return the Select clause builder for method chaining
      */
-    public Select select() {
-        return select;
+    public SelectClause selectClause() {
+        return selectClause;
     }
 
     /**
@@ -114,8 +114,8 @@ public class DynamicSQLBuilder {
      *
      * @return the From clause builder for method chaining
      */
-    public From from() {
-        return from;
+    public FromClause fromClause() {
+        return fromClause;
     }
 
     /**
@@ -131,12 +131,12 @@ public class DynamicSQLBuilder {
      *
      * @return the Where clause builder for method chaining
      */
-    public Where where() {
-        if (where == null) {
-            where = new Where(Objectory.createStringBuilder());
+    public WhereClause whereClause() {
+        if (whereClause == null) {
+            whereClause = new WhereClause(Objectory.createStringBuilder());
         }
 
-        return where;
+        return whereClause;
     }
 
     /**
@@ -152,12 +152,12 @@ public class DynamicSQLBuilder {
      *
      * @return the GroupBy clause builder for method chaining
      */
-    public GroupBy groupBy() {
-        if (groupBy == null) {
-            groupBy = new GroupBy(Objectory.createStringBuilder());
+    public GroupByClause groupByClause() {
+        if (groupByClause == null) {
+            groupByClause = new GroupByClause(Objectory.createStringBuilder());
         }
 
-        return groupBy;
+        return groupByClause;
     }
 
     /**
@@ -173,12 +173,12 @@ public class DynamicSQLBuilder {
      *
      * @return the Having clause builder for method chaining
      */
-    public Having having() {
-        if (having == null) {
-            having = new Having(Objectory.createStringBuilder());
+    public HavingClause havingClause() {
+        if (havingClause == null) {
+            havingClause = new HavingClause(Objectory.createStringBuilder());
         }
 
-        return having;
+        return havingClause;
     }
 
     /**
@@ -194,12 +194,12 @@ public class DynamicSQLBuilder {
      *
      * @return the OrderBy clause builder for method chaining
      */
-    public OrderBy orderBy() {
-        if (orderBy == null) {
-            orderBy = new OrderBy(Objectory.createStringBuilder());
+    public OrderByClause orderByClause() {
+        if (orderByClause == null) {
+            orderByClause = new OrderByClause(Objectory.createStringBuilder());
         }
 
-        return orderBy;
+        return orderByClause;
     }
 
     /**
@@ -269,7 +269,7 @@ public class DynamicSQLBuilder {
      * @return this builder instance for method chaining
      * @see #offsetRows(int)
      * @see #fetchNextRows(int)
-     * @see #fetchFirstNRowsOnly(int)
+     * @see #fetchFirstRows(int)
      */
     public DynamicSQLBuilder limit(final int offset, final int count) {
         N.checkArgNotNegative(offset, "offset");
@@ -298,10 +298,10 @@ public class DynamicSQLBuilder {
 
         final String rowNumCondition = "ROWNUM <= " + count;
 
-        if (where == null || where.sb.isEmpty()) {
-            where().append(rowNumCondition);
+        if (whereClause == null || whereClause.sb.isEmpty()) {
+            whereClause().append(rowNumCondition);
         } else {
-            where.and(rowNumCondition);
+            whereClause.and(rowNumCondition);
         }
 
         return this;
@@ -309,7 +309,7 @@ public class DynamicSQLBuilder {
 
     /**
      * Adds an OFFSET clause for SQL:2008 standard pagination.
-     * Typically used with {@link #fetchNextRows(int)} or {@link #fetchFirstNRowsOnly(int)}.
+     * Typically used with {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -355,14 +355,14 @@ public class DynamicSQLBuilder {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * builder.fetchFirstNRowsOnly(10);
+     * builder.fetchFirstRows(10);
      * // Generates: FETCH FIRST 10 ROWS ONLY
      * }</pre>
      *
      * @param n the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder fetchFirstNRowsOnly(final int n) {
+    public DynamicSQLBuilder fetchFirstRows(final int n) {
         N.checkArgNotNegative(n, "n");
 
         getStringBuilderForMoreParts().append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
@@ -501,79 +501,79 @@ public class DynamicSQLBuilder {
      */
     public String build() {
         try {
-            if (select == null) {
+            if (selectClause == null) {
                 throw new IllegalStateException("This DynamicSQLBuilder has already been closed after build() was called");
             }
 
-            if (from != null && !from.sb.isEmpty()) {
-                if (!select.sb.isEmpty()) {
-                    select.sb.append(" ");
+            if (fromClause != null && !fromClause.sb.isEmpty()) {
+                if (!selectClause.sb.isEmpty()) {
+                    selectClause.sb.append(" ");
                 }
 
-                select.sb.append(from.sb);
+                selectClause.sb.append(fromClause.sb);
             }
 
-            if (where != null && !where.sb.isEmpty()) {
-                if (!select.sb.isEmpty()) {
-                    select.sb.append(" ");
+            if (whereClause != null && !whereClause.sb.isEmpty()) {
+                if (!selectClause.sb.isEmpty()) {
+                    selectClause.sb.append(" ");
                 }
 
-                select.sb.append(where.sb);
+                selectClause.sb.append(whereClause.sb);
             }
 
-            if (groupBy != null && !groupBy.sb.isEmpty()) {
-                if (!select.sb.isEmpty()) {
-                    select.sb.append(" ");
+            if (groupByClause != null && !groupByClause.sb.isEmpty()) {
+                if (!selectClause.sb.isEmpty()) {
+                    selectClause.sb.append(" ");
                 }
 
-                select.sb.append(groupBy.sb);
+                selectClause.sb.append(groupByClause.sb);
             }
 
-            if (having != null && !having.sb.isEmpty()) {
-                if (!select.sb.isEmpty()) {
-                    select.sb.append(" ");
+            if (havingClause != null && !havingClause.sb.isEmpty()) {
+                if (!selectClause.sb.isEmpty()) {
+                    selectClause.sb.append(" ");
                 }
 
-                select.sb.append(having.sb);
+                selectClause.sb.append(havingClause.sb);
             }
 
-            if (orderBy != null && !orderBy.sb.isEmpty()) {
-                if (!select.sb.isEmpty()) {
-                    select.sb.append(" ");
+            if (orderByClause != null && !orderByClause.sb.isEmpty()) {
+                if (!selectClause.sb.isEmpty()) {
+                    selectClause.sb.append(" ");
                 }
 
-                select.sb.append(orderBy.sb);
+                selectClause.sb.append(orderByClause.sb);
             }
 
             if (moreParts != null) {
-                select.sb.append(moreParts);
+                selectClause.sb.append(moreParts);
             }
 
-            return select.sb.toString();
+            return selectClause.sb.toString();
         } finally {
-            if (from != null) {
-                Objectory.recycle(from.sb);
-                from = null;
+            if (fromClause != null) {
+                Objectory.recycle(fromClause.sb);
+                fromClause = null;
             }
 
-            if (where != null) {
-                Objectory.recycle(where.sb);
-                where = null;
+            if (whereClause != null) {
+                Objectory.recycle(whereClause.sb);
+                whereClause = null;
             }
 
-            if (groupBy != null) {
-                Objectory.recycle(groupBy.sb);
-                groupBy = null;
+            if (groupByClause != null) {
+                Objectory.recycle(groupByClause.sb);
+                groupByClause = null;
             }
 
-            if (having != null) {
-                Objectory.recycle(having.sb);
-                having = null;
+            if (havingClause != null) {
+                Objectory.recycle(havingClause.sb);
+                havingClause = null;
             }
 
-            if (orderBy != null) {
-                Objectory.recycle(orderBy.sb);
-                orderBy = null;
+            if (orderByClause != null) {
+                Objectory.recycle(orderByClause.sb);
+                orderByClause = null;
             }
 
             if (moreParts != null) {
@@ -581,9 +581,9 @@ public class DynamicSQLBuilder {
                 moreParts = null;
             }
 
-            if (select != null) {
-                Objectory.recycle(select.sb);
-                select = null;
+            if (selectClause != null) {
+                Objectory.recycle(selectClause.sb);
+                selectClause = null;
             }
         }
     }
@@ -592,7 +592,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the SELECT clause of a SQL query.
      * Provides methods to add columns with optional aliases and conditional inclusion.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#select()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#selectClause()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -604,11 +604,11 @@ public class DynamicSQLBuilder {
      *     .appendIf(includeAge, "age");
      * }</pre>
      */
-    public static class Select {
+    public static class SelectClause {
 
         final StringBuilder sb;
 
-        Select(final StringBuilder sb) {
+        SelectClause(final StringBuilder sb) {
             this.sb = sb;
         }
 
@@ -625,7 +625,7 @@ public class DynamicSQLBuilder {
          * @param column the column name to select (must not be null)
          * @return this Select instance for method chaining
          */
-        public Select append(final String column) {
+        public SelectClause append(final String column) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -651,7 +651,7 @@ public class DynamicSQLBuilder {
          * @param alias the alias for the column (must not be null)
          * @return this Select instance for method chaining
          */
-        public Select append(final String column, final String alias) {
+        public SelectClause append(final String column, final String alias) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -676,7 +676,7 @@ public class DynamicSQLBuilder {
          * @param columns collection of column names to select (must not be null)
          * @return this Select instance for method chaining
          */
-        public Select append(final Collection<String> columns) {
+        public SelectClause append(final Collection<String> columns) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -704,7 +704,7 @@ public class DynamicSQLBuilder {
          * @param columnsAndAliasMap map where keys are column names and values are aliases (must not be null)
          * @return this Select instance for method chaining
          */
-        public Select append(final Map<String, String> columnsAndAliasMap) {
+        public SelectClause append(final Map<String, String> columnsAndAliasMap) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -730,7 +730,7 @@ public class DynamicSQLBuilder {
          * @param str the string to append if condition is true
          * @return this Select instance for method chaining
          */
-        public Select appendIf(final boolean b, final String str) {
+        public SelectClause appendIf(final boolean b, final String str) {
             if (b) {
                 if (!sb.isEmpty()) {
                     sb.append(", ");
@@ -760,7 +760,7 @@ public class DynamicSQLBuilder {
          * @param strToAppendForFalse the string to append if condition is false
          * @return this Select instance for method chaining
          */
-        public Select appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public SelectClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -781,7 +781,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the FROM clause of a SQL query.
      * Supports adding tables, aliases, and various types of joins.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#from()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#fromClause()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -792,11 +792,11 @@ public class DynamicSQLBuilder {
      *     .innerJoin("products p", "o.product_id = p.id");
      * }</pre>
      */
-    public static class From {
+    public static class FromClause {
 
         final StringBuilder sb;
 
-        From(final StringBuilder sb) {
+        FromClause(final StringBuilder sb) {
             this.sb = sb;
         }
 
@@ -813,7 +813,7 @@ public class DynamicSQLBuilder {
          * @param table the table name to add (must not be null)
          * @return this From instance for method chaining
          */
-        public From append(final String table) {
+        public FromClause append(final String table) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -839,7 +839,7 @@ public class DynamicSQLBuilder {
          * @param alias the alias for the table (must not be null)
          * @return this From instance for method chaining
          */
-        public From append(final String table, final String alias) {
+        public FromClause append(final String table, final String alias) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -864,7 +864,7 @@ public class DynamicSQLBuilder {
          * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
-        public From join(final String table, final String on) {
+        public FromClause join(final String table, final String on) {
             sb.append(" JOIN ").append(table).append(" ON ").append(on);
 
             return this;
@@ -884,7 +884,7 @@ public class DynamicSQLBuilder {
          * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
-        public From innerJoin(final String table, final String on) {
+        public FromClause innerJoin(final String table, final String on) {
             sb.append(" INNER JOIN ").append(table).append(" ON ").append(on);
 
             return this;
@@ -904,7 +904,7 @@ public class DynamicSQLBuilder {
          * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
-        public From leftJoin(final String table, final String on) {
+        public FromClause leftJoin(final String table, final String on) {
             sb.append(" LEFT JOIN ").append(table).append(" ON ").append(on);
 
             return this;
@@ -924,7 +924,7 @@ public class DynamicSQLBuilder {
          * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
-        public From rightJoin(final String table, final String on) {
+        public FromClause rightJoin(final String table, final String on) {
             sb.append(" RIGHT JOIN ").append(table).append(" ON ").append(on);
 
             return this;
@@ -944,7 +944,7 @@ public class DynamicSQLBuilder {
          * @param on the join condition (must not be null)
          * @return this From instance for method chaining
          */
-        public From fullJoin(final String table, final String on) {
+        public FromClause fullJoin(final String table, final String on) {
             sb.append(" FULL JOIN ").append(table).append(" ON ").append(on);
 
             return this;
@@ -963,7 +963,7 @@ public class DynamicSQLBuilder {
          * @param str the string to append if condition is true
          * @return this From instance for method chaining
          */
-        public From appendIf(final boolean b, final String str) {
+        public FromClause appendIf(final boolean b, final String str) {
             if (b) {
                 if (!sb.isEmpty()) {
                     sb.append(", ");
@@ -991,7 +991,7 @@ public class DynamicSQLBuilder {
          * @param strToAppendForFalse the string to append if condition is false
          * @return this From instance for method chaining
          */
-        public From appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public FromClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1012,7 +1012,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the WHERE clause of a SQL query.
      * Supports adding conditions with AND/OR operators and parameter placeholders.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#where()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#whereClause()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1025,7 +1025,7 @@ public class DynamicSQLBuilder {
      * // Generates: WHERE status = ? AND age >= ? OR vip = true AND city IN (?, ?, ?)
      * }</pre>
      */
-    public static class Where {
+    public static class WhereClause {
 
         /** The sb. */
         final StringBuilder sb;
@@ -1035,7 +1035,7 @@ public class DynamicSQLBuilder {
          *
          * @param sb
          */
-        Where(final StringBuilder sb) {
+        WhereClause(final StringBuilder sb) {
             this.sb = sb;
         }
 
@@ -1052,7 +1052,7 @@ public class DynamicSQLBuilder {
          * @param cond the condition to append (must not be null)
          * @return this Where instance for method chaining
          */
-        public Where append(final String cond) {
+        public WhereClause append(final String cond) {
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
@@ -1078,7 +1078,7 @@ public class DynamicSQLBuilder {
          * @return this Where instance for method chaining
          * @throws IllegalArgumentException if n is negative
          */
-        public Where repeatQM(final int n) {
+        public WhereClause repeatQM(final int n) {
             N.checkArgNotNegative(n, "n");
 
             for (int i = 0; i < n; i++) {
@@ -1108,7 +1108,7 @@ public class DynamicSQLBuilder {
          * @return this Where instance for method chaining
          * @throws IllegalArgumentException if n is negative
          */
-        public Where repeatQM(final int n, final String prefix, final String postfix) {
+        public WhereClause repeatQM(final int n, final String prefix, final String postfix) {
             N.checkArgNotNegative(n, "n");
 
             if (n > 0) {
@@ -1140,7 +1140,7 @@ public class DynamicSQLBuilder {
          * @param cond the condition to add with AND (must not be null)
          * @return this Where instance for method chaining
          */
-        public Where and(final String cond) {
+        public WhereClause and(final String cond) {
             if (sb.isEmpty()) {
                 sb.append("WHERE ");
             } else {
@@ -1164,7 +1164,7 @@ public class DynamicSQLBuilder {
          * @param cond the condition to add with OR (must not be null)
          * @return this Where instance for method chaining
          */
-        public Where or(final String cond) {
+        public WhereClause or(final String cond) {
             if (sb.isEmpty()) {
                 sb.append("WHERE ");
             } else {
@@ -1190,7 +1190,7 @@ public class DynamicSQLBuilder {
          * @param str the string to append if condition is true
          * @return this Where instance for method chaining
          */
-        public Where appendIf(final boolean b, final String str) {
+        public WhereClause appendIf(final boolean b, final String str) {
             if (b) {
                 if (!sb.isEmpty()) {
                     sb.append(" ");
@@ -1220,7 +1220,7 @@ public class DynamicSQLBuilder {
          * @param strToAppendForFalse the string to append if condition is false
          * @return this Where instance for method chaining
          */
-        public Where appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public WhereClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
@@ -1241,7 +1241,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the GROUP BY clause of a SQL query.
      * Supports adding single or multiple grouping columns.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#groupBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#groupByClause()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1253,7 +1253,7 @@ public class DynamicSQLBuilder {
      * // Generates: GROUP BY department, year, month, region
      * }</pre>
      */
-    public static class GroupBy {
+    public static class GroupByClause {
 
         /** The sb. */
         final StringBuilder sb;
@@ -1263,7 +1263,7 @@ public class DynamicSQLBuilder {
          *
          * @param sb
          */
-        GroupBy(final StringBuilder sb) {
+        GroupByClause(final StringBuilder sb) {
             this.sb = sb;
         }
 
@@ -1280,7 +1280,7 @@ public class DynamicSQLBuilder {
          * @param column the column name to group by (must not be null)
          * @return this GroupBy instance for method chaining
          */
-        public GroupBy append(final String column) {
+        public GroupByClause append(final String column) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1305,7 +1305,7 @@ public class DynamicSQLBuilder {
          * @param columns collection of column names to group by (must not be null)
          * @return this GroupBy instance for method chaining
          */
-        public GroupBy append(final Collection<String> columns) {
+        public GroupByClause append(final Collection<String> columns) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1331,7 +1331,7 @@ public class DynamicSQLBuilder {
          * @param str the string to append if condition is true
          * @return this GroupBy instance for method chaining
          */
-        public GroupBy appendIf(final boolean b, final String str) {
+        public GroupByClause appendIf(final boolean b, final String str) {
             if (b) {
                 if (!sb.isEmpty()) {
                     sb.append(", ");
@@ -1361,7 +1361,7 @@ public class DynamicSQLBuilder {
          * @param strToAppendForFalse the string to append if condition is false
          * @return this GroupBy instance for method chaining
          */
-        public GroupBy appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public GroupByClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1382,7 +1382,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the HAVING clause of a SQL query.
      * Used to filter grouped results based on aggregate conditions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#having()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#havingClause()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1393,7 +1393,7 @@ public class DynamicSQLBuilder {
      * // Generates: GROUP BY department HAVING COUNT(*) > ? AND AVG(salary) > ?
      * }</pre>
      */
-    public static class Having {
+    public static class HavingClause {
 
         /** The sb. */
         final StringBuilder sb;
@@ -1403,7 +1403,7 @@ public class DynamicSQLBuilder {
          *
          * @param sb
          */
-        Having(final StringBuilder sb) {
+        HavingClause(final StringBuilder sb) {
             this.sb = sb;
         }
 
@@ -1420,7 +1420,7 @@ public class DynamicSQLBuilder {
          * @param cond the condition to append (must not be null)
          * @return this Having instance for method chaining
          */
-        public Having append(final String cond) {
+        public HavingClause append(final String cond) {
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
@@ -1444,7 +1444,7 @@ public class DynamicSQLBuilder {
          * @param cond the condition to add with AND (must not be null)
          * @return this Having instance for method chaining
          */
-        public Having and(final String cond) {
+        public HavingClause and(final String cond) {
             if (sb.isEmpty()) {
                 sb.append("HAVING ");
             } else {
@@ -1468,7 +1468,7 @@ public class DynamicSQLBuilder {
          * @param cond the condition to add with OR (must not be null)
          * @return this Having instance for method chaining
          */
-        public Having or(final String cond) {
+        public HavingClause or(final String cond) {
             if (sb.isEmpty()) {
                 sb.append("HAVING ");
             } else {
@@ -1494,7 +1494,7 @@ public class DynamicSQLBuilder {
          * @param str the string to append if condition is true
          * @return this Having instance for method chaining
          */
-        public Having appendIf(final boolean b, final String str) {
+        public HavingClause appendIf(final boolean b, final String str) {
             if (b) {
                 if (!sb.isEmpty()) {
                     sb.append(" ");
@@ -1524,7 +1524,7 @@ public class DynamicSQLBuilder {
          * @param strToAppendForFalse the string to append if condition is false
          * @return this Having instance for method chaining
          */
-        public Having appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public HavingClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
@@ -1545,7 +1545,7 @@ public class DynamicSQLBuilder {
      * Builder class for constructing the ORDER BY clause of a SQL query.
      * Supports adding single or multiple columns with sort directions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#orderBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#orderByClause()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1557,7 +1557,7 @@ public class DynamicSQLBuilder {
      * // Generates: ORDER BY created_date DESC, priority ASC, category, name
      * }</pre>
      */
-    public static class OrderBy {
+    public static class OrderByClause {
 
         /** The sb. */
         final StringBuilder sb;
@@ -1567,7 +1567,7 @@ public class DynamicSQLBuilder {
          *
          * @param sb
          */
-        OrderBy(final StringBuilder sb) {
+        OrderByClause(final StringBuilder sb) {
             this.sb = sb;
         }
 
@@ -1584,7 +1584,7 @@ public class DynamicSQLBuilder {
          * @param column the column name with optional ASC/DESC (must not be null)
          * @return this OrderBy instance for method chaining
          */
-        public OrderBy append(final String column) {
+        public OrderByClause append(final String column) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1609,7 +1609,7 @@ public class DynamicSQLBuilder {
          * @param columns collection of column names with optional sort directions (must not be null)
          * @return this OrderBy instance for method chaining
          */
-        public OrderBy append(final Collection<String> columns) {
+        public OrderByClause append(final Collection<String> columns) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1635,7 +1635,7 @@ public class DynamicSQLBuilder {
          * @param str the string to append if condition is true
          * @return this OrderBy instance for method chaining
          */
-        public OrderBy appendIf(final boolean b, final String str) {
+        public OrderByClause appendIf(final boolean b, final String str) {
             if (b) {
                 if (!sb.isEmpty()) {
                     sb.append(", ");
@@ -1665,7 +1665,7 @@ public class DynamicSQLBuilder {
          * @param strToAppendForFalse the string to append if condition is false
          * @return this OrderBy instance for method chaining
          */
-        public OrderBy appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public OrderByClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {

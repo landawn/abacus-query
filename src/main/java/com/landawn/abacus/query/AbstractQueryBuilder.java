@@ -1276,7 +1276,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         sb.append(normalizeColumnName(_propColumnNameMap, columnName));
 
                         if (_namingPolicy != NamingPolicy.NO_CHANGE && !SK.ASTERISK.equals(columnName)) {
-                            sb.append(SPACE_AS_SPACE).append(SK.QUOTATION_D).append(columnName).append(SK.QUOTATION_D);
+                            sb.append(SPACE_AS_SPACE).append(SK.DOUBLE_QUOTE).append(columnName).append(SK.DOUBLE_QUOTE);
                         }
                     }
 
@@ -2857,7 +2857,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderBy("id")
-     *                 .fetchFirstNRowsOnly(10)
+     *                 .fetchFirstRows(10)
      *                 .query();
      * // Output: SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY
      * }</pre>
@@ -2865,7 +2865,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param n the number of rows to fetch
      * @return this SQLBuilder instance for method chaining
      */
-    public This fetchFirstNRowsOnly(final int n) {
+    public This fetchFirstRows(final int n) {
         checkIfAlreadyCalled(SK.FETCH_FIRST);
 
         _sb.append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
@@ -2953,7 +2953,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 appendCondition(having.getCondition());
             }
 
-            final List<Cell> aggregations = criteria.getAggregation();
+            final List<Cell> aggregations = criteria.getAggregations();
 
             if (N.notEmpty(aggregations)) {
                 for (final Cell aggregation : aggregations) {
@@ -2972,8 +2972,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final Limit limit = criteria.getLimit();
 
             if (limit != null) {
-                if (Strings.isNotEmpty(limit.getExpr())) {
-                    _sb.append(_SPACE).append(limit.getExpr());
+                if (Strings.isNotEmpty(limit.getExpression())) {
+                    _sb.append(_SPACE).append(limit.getExpression());
                 } else if (limit.getOffset() > 0) {
                     limit(limit.getOffset(), limit.getCount());
                 } else {
@@ -4944,7 +4944,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(_SPACE_AS_SPACE);
 
                 if (quotePropAlias) {
-                    _sb.append(SK._QUOTATION_D);
+                    _sb.append(SK._DOUBLE_QUOTE);
                 }
 
                 if (withClassAlias) {
@@ -4954,7 +4954,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
 
                 if (quotePropAlias) {
-                    _sb.append(SK._QUOTATION_D);
+                    _sb.append(SK._DOUBLE_QUOTE);
                 }
             }
 
@@ -4988,13 +4988,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         _sb.append(_SPACE_AS_SPACE);
 
                         if (quotePropAlias) {
-                            _sb.append(SK._QUOTATION_D);
+                            _sb.append(SK._DOUBLE_QUOTE);
                         }
 
                         _sb.append(propInfo.name).append(SK._PERIOD).append(subPropName);
 
                         if (quotePropAlias) {
-                            _sb.append(SK._QUOTATION_D);
+                            _sb.append(SK._DOUBLE_QUOTE);
                         }
                     }
                 }
@@ -5021,7 +5021,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                             _sb.append(_SPACE_AS_SPACE);
 
                             if (quotePropAlias) {
-                                _sb.append(SK._QUOTATION_D);
+                                _sb.append(SK._DOUBLE_QUOTE);
                             }
 
                             if (withClassAlias) {
@@ -5031,7 +5031,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                             _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
 
                             if (quotePropAlias) {
-                                _sb.append(SK._QUOTATION_D);
+                                _sb.append(SK._DOUBLE_QUOTE);
                             }
                         }
 
@@ -5052,7 +5052,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(_SPACE_AS_SPACE);
 
                 if (quotePropAlias) {
-                    _sb.append(SK._QUOTATION_D);
+                    _sb.append(SK._DOUBLE_QUOTE);
                 }
 
                 if (withClassAlias) {
@@ -5062,7 +5062,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(propAlias);
 
                 if (quotePropAlias) {
-                    _sb.append(SK._QUOTATION_D);
+                    _sb.append(SK._DOUBLE_QUOTE);
                 }
             }
         } else if (isForSelect) {
@@ -5079,14 +5079,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 //
                 //    if (_namingPolicy != NamingPolicy.NO_CHANGE && !(lastChar == '*' || lastChar == ')')) {
                 //        _sb.append(_SPACE_AS_SPACE);
-                //        _sb.append(SK._QUOTATION_D);
+                //        _sb.append(SK._DOUBLE_QUOTE);
                 //
                 //        if (withClassAlias) {
                 //            _sb.append(classAlias).append(SK._PERIOD);
                 //        }
                 //
                 //        _sb.append(propName);
-                //        _sb.append(SK._QUOTATION_D);
+                //        _sb.append(SK._DOUBLE_QUOTE);
                 //    }
 
                 int idx = -1;
@@ -5097,7 +5097,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     _sb.append(_SPACE_AS_SPACE);
 
                     if (quotePropAlias) {
-                        _sb.append(SK._QUOTATION_D);
+                        _sb.append(SK._DOUBLE_QUOTE);
                     }
 
                     if (withClassAlias) {
@@ -5107,7 +5107,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     _sb.append(propName);
 
                     if (quotePropAlias) {
-                        _sb.append(SK._QUOTATION_D);
+                        _sb.append(SK._DOUBLE_QUOTE);
                     }
                 }
             }
@@ -5128,10 +5128,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
-            int index = SQLParser.indexWord(propOrColumnNames[0], SK.SELECT, 0, false);
+            int index = SQLParser.indexOfWord(propOrColumnNames[0], SK.SELECT, 0, false);
 
             if (index >= 0) {
-                index = SQLParser.indexWord(propOrColumnNames[0], SK.FROM, index, false);
+                index = SQLParser.indexOfWord(propOrColumnNames[0], SK.FROM, index, false);
 
                 return index >= 1;
             }

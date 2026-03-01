@@ -34,54 +34,54 @@ public class ParsedSql2025Test extends TestBase {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users");
         assertNotNull(parsed);
         assertEquals("SELECT * FROM users", parsed.sql());
-        assertEquals("SELECT * FROM users", parsed.getParameterizedSql());
-        assertEquals(0, parsed.getParameterCount());
-        assertTrue(parsed.getNamedParameters().isEmpty());
+        assertEquals("SELECT * FROM users", parsed.parameterizedSql());
+        assertEquals(0, parsed.parameterCount());
+        assertTrue(parsed.namedParameters().isEmpty());
     }
 
     @Test
     public void testParse_WithQuestionMarkParameter() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-        assertEquals("SELECT * FROM users WHERE id = ?", parsed.getParameterizedSql());
-        assertEquals(1, parsed.getParameterCount());
-        assertTrue(parsed.getNamedParameters().isEmpty());
+        assertEquals("SELECT * FROM users WHERE id = ?", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertTrue(parsed.namedParameters().isEmpty());
     }
 
     @Test
     public void testParse_WithMultipleQuestionMarks() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE age > ? AND status = ?");
-        assertEquals("SELECT * FROM users WHERE age > ? AND status = ?", parsed.getParameterizedSql());
-        assertEquals(2, parsed.getParameterCount());
-        assertTrue(parsed.getNamedParameters().isEmpty());
+        assertEquals("SELECT * FROM users WHERE age > ? AND status = ?", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertTrue(parsed.namedParameters().isEmpty());
     }
 
     @Test
     public void testParse_WithNamedParameter() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-        assertEquals("SELECT * FROM users WHERE id = ?", parsed.getParameterizedSql());
-        assertEquals(1, parsed.getParameterCount());
-        assertEquals(1, parsed.getNamedParameters().size());
-        assertEquals("userId", parsed.getNamedParameters().get(0));
+        assertEquals("SELECT * FROM users WHERE id = ?", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals(1, parsed.namedParameters().size());
+        assertEquals("userId", parsed.namedParameters().get(0));
     }
 
     @Test
     public void testParse_WithMultipleNamedParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE age > :minAge AND age < :maxAge");
-        assertEquals("SELECT * FROM users WHERE age > ? AND age < ?", parsed.getParameterizedSql());
-        assertEquals(2, parsed.getParameterCount());
-        assertEquals(2, parsed.getNamedParameters().size());
-        assertEquals("minAge", parsed.getNamedParameters().get(0));
-        assertEquals("maxAge", parsed.getNamedParameters().get(1));
+        assertEquals("SELECT * FROM users WHERE age > ? AND age < ?", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertEquals(2, parsed.namedParameters().size());
+        assertEquals("minAge", parsed.namedParameters().get(0));
+        assertEquals("maxAge", parsed.namedParameters().get(1));
     }
 
     @Test
     public void testParse_WithIBatisParameter() {
         ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email) VALUES (#{name}, #{email})");
-        assertEquals("INSERT INTO users (name, email) VALUES (?, ?)", parsed.getParameterizedSql());
-        assertEquals(2, parsed.getParameterCount());
-        assertEquals(2, parsed.getNamedParameters().size());
-        assertEquals("name", parsed.getNamedParameters().get(0));
-        assertEquals("email", parsed.getNamedParameters().get(1));
+        assertEquals("INSERT INTO users (name, email) VALUES (?, ?)", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertEquals(2, parsed.namedParameters().size());
+        assertEquals("name", parsed.namedParameters().get(0));
+        assertEquals("email", parsed.namedParameters().get(1));
     }
 
     @Test
@@ -115,15 +115,15 @@ public class ParsedSql2025Test extends TestBase {
     @Test
     public void testParse_WithTrailingSemicolon() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users;");
-        assertEquals("SELECT * FROM users", parsed.getParameterizedSql());
-        assertFalse(parsed.getParameterizedSql().endsWith(";"));
+        assertEquals("SELECT * FROM users", parsed.parameterizedSql());
+        assertFalse(parsed.parameterizedSql().endsWith(";"));
     }
 
     @Test
     public void testParse_WithWhitespace() {
         ParsedSql parsed = ParsedSql.parse("  SELECT * FROM users  ");
         assertEquals("SELECT * FROM users", parsed.sql());
-        assertEquals("SELECT * FROM users", parsed.getParameterizedSql());
+        assertEquals("SELECT * FROM users", parsed.parameterizedSql());
     }
 
     @Test
@@ -137,7 +137,7 @@ public class ParsedSql2025Test extends TestBase {
     @Test
     public void testGetParameterizedSql_Couchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-        String couchbaseSql = parsed.getParameterizedSql(true);
+        String couchbaseSql = parsed.parameterizedSql(true);
         assertNotNull(couchbaseSql);
         assertTrue(couchbaseSql.contains("$1"));
     }
@@ -145,7 +145,7 @@ public class ParsedSql2025Test extends TestBase {
     @Test
     public void testGetParameterizedSql_CouchbaseWithNamedParams() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :userName");
-        String couchbaseSql = parsed.getParameterizedSql(true);
+        String couchbaseSql = parsed.parameterizedSql(true);
         assertNotNull(couchbaseSql);
         assertTrue(couchbaseSql.contains("$1"));
         assertTrue(couchbaseSql.contains("$2"));
@@ -154,21 +154,21 @@ public class ParsedSql2025Test extends TestBase {
     @Test
     public void testGetParameterizedSql_NotCouchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-        String sql = parsed.getParameterizedSql(false);
+        String sql = parsed.parameterizedSql(false);
         assertEquals("SELECT * FROM users WHERE id = ?", sql);
     }
 
     @Test
     public void testGetNamedParameters_Couchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-        parsed.getParameterizedSql(true);
-        assertNotNull(parsed.getNamedParameters(true));
+        parsed.parameterizedSql(true);
+        assertNotNull(parsed.namedParameters(true));
     }
 
     @Test
     public void testGetParameterCount_Couchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = ? AND name = ?");
-        int count = parsed.getParameterCount(true);
+        int count = parsed.parameterCount(true);
         assertEquals(2, count);
     }
 
@@ -230,58 +230,58 @@ public class ParsedSql2025Test extends TestBase {
     @Test
     public void testParse_Update() {
         ParsedSql parsed = ParsedSql.parse("UPDATE users SET name = :name WHERE id = :id");
-        assertEquals("UPDATE users SET name = ? WHERE id = ?", parsed.getParameterizedSql());
-        assertEquals(2, parsed.getParameterCount());
-        assertEquals("name", parsed.getNamedParameters().get(0));
-        assertEquals("id", parsed.getNamedParameters().get(1));
+        assertEquals("UPDATE users SET name = ? WHERE id = ?", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertEquals("name", parsed.namedParameters().get(0));
+        assertEquals("id", parsed.namedParameters().get(1));
     }
 
     @Test
     public void testParse_Delete() {
         ParsedSql parsed = ParsedSql.parse("DELETE FROM users WHERE id = :id");
-        assertEquals("DELETE FROM users WHERE id = ?", parsed.getParameterizedSql());
-        assertEquals(1, parsed.getParameterCount());
-        assertEquals("id", parsed.getNamedParameters().get(0));
+        assertEquals("DELETE FROM users WHERE id = ?", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals("id", parsed.namedParameters().get(0));
     }
 
     @Test
     public void testParse_Insert() {
         ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, age) VALUES (:name, :age)");
-        assertEquals("INSERT INTO users (name, age) VALUES (?, ?)", parsed.getParameterizedSql());
-        assertEquals(2, parsed.getParameterCount());
-        assertEquals("name", parsed.getNamedParameters().get(0));
-        assertEquals("age", parsed.getNamedParameters().get(1));
+        assertEquals("INSERT INTO users (name, age) VALUES (?, ?)", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertEquals("name", parsed.namedParameters().get(0));
+        assertEquals("age", parsed.namedParameters().get(1));
     }
 
     @Test
     public void testParse_Call() {
         ParsedSql parsed = ParsedSql.parse("CALL refresh_user(:userId, :mode)");
-        assertEquals("CALL refresh_user(?, ?)", parsed.getParameterizedSql());
-        assertEquals(2, parsed.getParameterCount());
-        assertEquals("userId", parsed.getNamedParameters().get(0));
-        assertEquals("mode", parsed.getNamedParameters().get(1));
+        assertEquals("CALL refresh_user(?, ?)", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertEquals("userId", parsed.namedParameters().get(0));
+        assertEquals("mode", parsed.namedParameters().get(1));
     }
 
     @Test
     public void testParse_NonQueryStatement() {
         ParsedSql parsed = ParsedSql.parse("CREATE TABLE users (id INT)");
-        assertEquals("CREATE TABLE users (id INT)", parsed.getParameterizedSql());
-        assertEquals(0, parsed.getParameterCount());
-        assertTrue(parsed.getNamedParameters().isEmpty());
+        assertEquals("CREATE TABLE users (id INT)", parsed.parameterizedSql());
+        assertEquals(0, parsed.parameterCount());
+        assertTrue(parsed.namedParameters().isEmpty());
     }
 
     @Test
     public void testParse_WithComments() {
         ParsedSql parsed = ParsedSql.parse("-- Comment\nSELECT * FROM users WHERE id = :id");
-        assertNotNull(parsed.getParameterizedSql());
-        assertEquals(1, parsed.getParameterCount());
+        assertNotNull(parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
     }
 
     @Test
     public void testParse_ComplexNamedParameter() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :user_id_123");
-        assertEquals("SELECT * FROM users WHERE id = ?", parsed.getParameterizedSql());
-        assertEquals(1, parsed.getParameterCount());
-        assertEquals("user_id_123", parsed.getNamedParameters().get(0));
+        assertEquals("SELECT * FROM users WHERE id = ?", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals("user_id_123", parsed.namedParameters().get(0));
     }
 }

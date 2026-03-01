@@ -74,7 +74,7 @@ public enum Operator {
      * Alternative not equal operator (&lt;&gt;).
      * Some databases prefer this syntax over !=.
      */
-    NOT_EQUAL2(SK.NOT_EQUAL2),
+    NOT_EQUAL_ANGLE(SK.NOT_EQUAL_ANGLE),
 
     /**
      * NOT logical operator.
@@ -140,7 +140,7 @@ public enum Operator {
      * Greater than or equal operator (>=).
      * Used for "greater than or equal" comparisons.
      */
-    GREATER_EQUAL(SK.GREATER_EQUAL),
+    GREATER_THAN_OR__EQUAL(SK.GREATER_THAN_OR__EQUAL),
 
     /**
      * Less than operator (&lt;).
@@ -152,7 +152,7 @@ public enum Operator {
      * Less than or equal operator (&lt;=).
      * Used for "less than or equal" comparisons.
      */
-    LESS_EQUAL(SK.LESS_EQUAL),
+    LESS_THAN_OR__EQUAL(SK.LESS_THAN_OR__EQUAL),
 
     /**
      * BETWEEN operator.
@@ -385,7 +385,7 @@ public enum Operator {
      * // Look up symbolic operators
      * Operator eq = Operator.of("=");       // Operator.EQUAL
      * Operator gt = Operator.of(">");       // Operator.GREATER_THAN
-     * Operator gte = Operator.of(">=");     // Operator.GREATER_EQUAL
+     * Operator gte = Operator.of(">=");     // Operator.GREATER_THAN_OR__EQUAL
      *
      * // Look up word operators (case-insensitive)
      * Operator and = Operator.of("AND");    // Operator.AND

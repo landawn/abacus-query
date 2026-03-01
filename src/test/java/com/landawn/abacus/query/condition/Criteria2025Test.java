@@ -88,7 +88,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGetAggregation() {
         Criteria criteria = new Criteria();
-        List<Cell> aggregation = criteria.getAggregation();
+        List<Cell> aggregation = criteria.getAggregations();
         assertNotNull(aggregation);
     }
 
@@ -510,7 +510,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
         Criteria result = criteria.union(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregation().size() > 0);
+        assertTrue(criteria.getAggregations().size() > 0);
     }
 
     @Test
@@ -519,7 +519,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
         Criteria result = criteria.unionAll(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregation().size() > 0);
+        assertTrue(criteria.getAggregations().size() > 0);
     }
 
     @Test
@@ -528,7 +528,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM premium_users");
         Criteria result = criteria.intersect(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregation().size() > 0);
+        assertTrue(criteria.getAggregations().size() > 0);
     }
 
     @Test
@@ -537,7 +537,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM blocked_users");
         Criteria result = criteria.except(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregation().size() > 0);
+        assertTrue(criteria.getAggregations().size() > 0);
     }
 
     @Test
@@ -546,7 +546,7 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM inactive_users");
         Criteria result = criteria.minus(subQuery);
         assertNotNull(result);
-        assertTrue(criteria.getAggregation().size() > 0);
+        assertTrue(criteria.getAggregations().size() > 0);
     }
 
     @Test
@@ -651,14 +651,14 @@ public class Criteria2025Test extends TestBase {
 
         criteria.union(subQuery1).unionAll(subQuery2);
 
-        List<Cell> aggregations = criteria.getAggregation();
+        List<Cell> aggregations = criteria.getAggregations();
         assertEquals(2, aggregations.size());
     }
 
     @Test
     public void testGetEmptyAggregation() {
         Criteria criteria = new Criteria();
-        List<Cell> aggregations = criteria.getAggregation();
+        List<Cell> aggregations = criteria.getAggregations();
         assertNotNull(aggregations);
         assertTrue(aggregations.isEmpty());
     }

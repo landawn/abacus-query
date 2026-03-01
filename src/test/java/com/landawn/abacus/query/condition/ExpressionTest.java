@@ -174,7 +174,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testDivision() {
-        String result = Expression.division(Filters.expr("total"), Filters.expr("count"));
+        String result = Expression.divide(Filters.expr("total"), Filters.expr("count"));
         Assertions.assertEquals("total / count", result);
     }
 
@@ -186,13 +186,13 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLShift() {
-        String result = Expression.lShift(Filters.expr("value"), 2);
+        String result = Expression.leftShift(Filters.expr("value"), 2);
         Assertions.assertEquals("value << 2", result);
     }
 
     @Test
     public void testRShift() {
-        String result = Expression.rShift(Filters.expr("value"), 2);
+        String result = Expression.rightShift(Filters.expr("value"), 2);
         Assertions.assertEquals("value >> 2", result);
     }
 
@@ -232,7 +232,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testAverage() {
-        String result = Expression.average("price");
+        String result = Expression.avg("price");
         Assertions.assertEquals("AVG(price)", result);
     }
 
@@ -364,7 +364,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testStringLength() {
-        String result = Expression.stringLength("name");
+        String result = Expression.length("name");
         Assertions.assertEquals("LENGTH(name)", result);
     }
 
@@ -388,25 +388,25 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLTrim() {
-        String result = Expression.lTrim("text");
+        String result = Expression.leftTrim("text");
         Assertions.assertEquals("LTRIM(text)", result);
     }
 
     @Test
     public void testRTrim() {
-        String result = Expression.rTrim("text");
+        String result = Expression.rightTrim("text");
         Assertions.assertEquals("RTRIM(text)", result);
     }
 
     @Test
     public void testLPad() {
-        String result = Expression.lPad("text", 10, "'*'");
+        String result = Expression.leftPad("text", 10, "'*'");
         Assertions.assertEquals("LPAD(text, 10, '*')", result);
     }
 
     @Test
     public void testRPad() {
-        String result = Expression.rPad("text", 10, "'*'");
+        String result = Expression.rightPad("text", 10, "'*'");
         Assertions.assertEquals("RPAD(text, 10, '*')", result);
     }
 

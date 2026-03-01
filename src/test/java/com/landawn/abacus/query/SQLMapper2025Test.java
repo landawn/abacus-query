@@ -64,7 +64,7 @@ public class SQLMapper2025Test extends TestBase {
         ParsedSql sql = mapper.get("insertUser");
         assertNotNull(sql);
 
-        ImmutableMap<String, String> retrievedAttrs = mapper.getAttrs("insertUser");
+        ImmutableMap<String, String> retrievedAttrs = mapper.getAttributes("insertUser");
         assertNotNull(retrievedAttrs);
         assertEquals("100", retrievedAttrs.get("batchSize"));
     }
@@ -160,7 +160,7 @@ public class SQLMapper2025Test extends TestBase {
 
         mapper.add("query1", "SELECT * FROM users", attrs);
 
-        ImmutableMap<String, String> retrieved = mapper.getAttrs("query1");
+        ImmutableMap<String, String> retrieved = mapper.getAttributes("query1");
         assertNotNull(retrieved);
         assertEquals("50", retrieved.get("fetchSize"));
         assertEquals("30", retrieved.get("timeout"));
@@ -169,21 +169,21 @@ public class SQLMapper2025Test extends TestBase {
     @Test
     public void testGetAttrsNonExistent() {
         SQLMapper mapper = new SQLMapper();
-        ImmutableMap<String, String> attrs = mapper.getAttrs("nonExistent");
+        ImmutableMap<String, String> attrs = mapper.getAttributes("nonExistent");
         assertNull(attrs);
     }
 
     @Test
     public void testGetAttrsEmptyId() {
         SQLMapper mapper = new SQLMapper();
-        ImmutableMap<String, String> attrs = mapper.getAttrs("");
+        ImmutableMap<String, String> attrs = mapper.getAttributes("");
         assertNull(attrs);
     }
 
     @Test
     public void testGetAttrsNullId() {
         SQLMapper mapper = new SQLMapper();
-        ImmutableMap<String, String> attrs = mapper.getAttrs(null);
+        ImmutableMap<String, String> attrs = mapper.getAttributes(null);
         assertNull(attrs);
     }
 
@@ -253,8 +253,8 @@ public class SQLMapper2025Test extends TestBase {
 
         assertNotNull(copy.get("query1"));
         assertNotNull(copy.get("query2"));
-        assertNotNull(copy.getAttrs("query2"));
-        assertEquals("100", copy.getAttrs("query2").get("batchSize"));
+        assertNotNull(copy.getAttributes("query2"));
+        assertEquals("100", copy.getAttributes("query2").get("batchSize"));
     }
 
     @Test
@@ -318,7 +318,7 @@ public class SQLMapper2025Test extends TestBase {
 
         mapper.add("complexQuery", "SELECT * FROM large_table", attrs);
 
-        ImmutableMap<String, String> retrieved = mapper.getAttrs("complexQuery");
+        ImmutableMap<String, String> retrieved = mapper.getAttributes("complexQuery");
         assertEquals("200", retrieved.get(SQLMapper.BATCH_SIZE));
         assertEquals("100", retrieved.get(SQLMapper.FETCH_SIZE));
         assertEquals("60", retrieved.get(SQLMapper.TIMEOUT));
@@ -361,7 +361,7 @@ public class SQLMapper2025Test extends TestBase {
 
         mapper.add("query1", "SELECT * FROM users", attrs);
 
-        ImmutableMap<String, String> retrieved = mapper.getAttrs("query1");
+        ImmutableMap<String, String> retrieved = mapper.getAttributes("query1");
         assertNotNull(retrieved);
         assertTrue(retrieved.isEmpty());
     }
@@ -403,7 +403,7 @@ public class SQLMapper2025Test extends TestBase {
     @Test
     public void testGetAttrsWithNullId() {
         SQLMapper mapper = new SQLMapper();
-        ImmutableMap<String, String> attrs = mapper.getAttrs(null);
+        ImmutableMap<String, String> attrs = mapper.getAttributes(null);
         assertNull(attrs);
     }
 
@@ -496,7 +496,7 @@ public class SQLMapper2025Test extends TestBase {
     public void testGetAttrsTooLongId() {
         SQLMapper mapper = new SQLMapper();
         String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
-        ImmutableMap<String, String> attrs = mapper.getAttrs(longId);
+        ImmutableMap<String, String> attrs = mapper.getAttributes(longId);
         assertNull(attrs);
     }
 
@@ -520,7 +520,7 @@ public class SQLMapper2025Test extends TestBase {
 
         SQLMapper copy = original.copy();
 
-        ImmutableMap<String, String> copiedAttrs = copy.getAttrs("query1");
+        ImmutableMap<String, String> copiedAttrs = copy.getAttributes("query1");
         assertNotNull(copiedAttrs);
         assertEquals("100", copiedAttrs.get("batchSize"));
         assertEquals("30", copiedAttrs.get("timeout"));

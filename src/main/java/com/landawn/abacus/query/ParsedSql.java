@@ -47,8 +47,8 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
- * String parameterized = parsed.getParameterizedSql();   // "SELECT * FROM users WHERE id = ? AND status = ?"
- * List<String> params = parsed.getNamedParameters();   // ["userId", "status"]
+ * String parameterized = parsed.parameterizedSql();   // "SELECT * FROM users WHERE id = ? AND status = ?"
+ * List<String> params = parsed.namedParameters();   // ["userId", "status"]
  * }</pre>
  * 
  * @see SQLParser
@@ -173,15 +173,15 @@ public final class ParsedSql {
      * <pre>{@code
      * // Using named parameters
      * ParsedSql ps1 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-     * System.out.println(ps1.getParameterizedSql());   // "SELECT * FROM users WHERE id = ?"
+     * System.out.println(ps1.parameterizedSql());   // "SELECT * FROM users WHERE id = ?"
      *
      * // Using iBatis/MyBatis style
      * ParsedSql ps2 = ParsedSql.parse("INSERT INTO users (name, email) VALUES (#{name}, #{email})");
-     * System.out.println(ps2.getNamedParameters());   // ["name", "email"]
+     * System.out.println(ps2.namedParameters());   // ["name", "email"]
      *
      * // Using standard JDBC placeholders
      * ParsedSql ps3 = ParsedSql.parse("UPDATE users SET status = ? WHERE id = ?");
-     * System.out.println(ps3.getParameterCount());   // 2
+     * System.out.println(ps3.parameterCount());   // 2
      * }</pre>
      *
      * @param sql the SQL string to parse (must not be null or empty)
@@ -234,18 +234,18 @@ public final class ParsedSql {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
-     * String sql = parsed.getParameterizedSql();
+     * String sql = parsed.parameterizedSql();
      * // Returns: "SELECT * FROM users WHERE id = ? AND status = ?"
      *
      * // Use with PreparedStatement
-     * PreparedStatement stmt = connection.prepareStatement(parsed.getParameterizedSql());
+     * PreparedStatement stmt = connection.prepareStatement(parsed.parameterizedSql());
      * stmt.setLong(1, userId);
      * stmt.setString(2, status);
      * }</pre>
      *
      * @return the parameterized SQL string with ? placeholders
      */
-    public String getParameterizedSql() {
+    public String parameterizedSql() {
         return parameterizedSql;
     }
 
@@ -259,18 +259,18 @@ public final class ParsedSql {
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :name");
      *
      * // Standard JDBC format
-     * String jdbcSql = parsed.getParameterizedSql(false);
+     * String jdbcSql = parsed.parameterizedSql(false);
      * // Returns: "SELECT * FROM users WHERE id = ? AND name = ?"
      *
      * // Couchbase N1QL format
-     * String couchbaseSql = parsed.getParameterizedSql(true);
+     * String couchbaseSql = parsed.parameterizedSql(true);
      * // Returns: "SELECT * FROM users WHERE id = $1 AND name = $2"
      * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase-formatted SQL with $n parameters, {@code false} for standard JDBC format with ? placeholders
      * @return the parameterized SQL string in the requested format
      */
-    public String getParameterizedSql(final boolean isForCouchbase) {
+    public String parameterizedSql(final boolean isForCouchbase) {
         if (isForCouchbase) {
             if (Strings.isEmpty(couchbaseParameterizedSql)) {
                 synchronized (this) {
@@ -293,18 +293,18 @@ public final class ParsedSql {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-     * ImmutableList<String> params = parsed.getNamedParameters();
+     * ImmutableList<String> params = parsed.namedParameters();
      * // Returns: ["name", "minAge"]
      *
      * // SQL with no named parameters returns empty list
      * ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-     * ImmutableList<String> params2 = parsed2.getNamedParameters();
+     * ImmutableList<String> params2 = parsed2.namedParameters();
      * // Returns: []
      * }</pre>
      *
      * @return an immutable list of parameter names
      */
-    public ImmutableList<String> getNamedParameters() {
+    public ImmutableList<String> namedParameters() {
         return namedParameters;
     }
 
@@ -319,23 +319,23 @@ public final class ParsedSql {
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
      *
      * // Standard format
-     * ImmutableList<String> params = parsed.getNamedParameters(false);
+     * ImmutableList<String> params = parsed.namedParameters(false);
      * // Returns: ["name", "minAge"]
      *
      * // Couchbase format
-     * ImmutableList<String> cbParams = parsed.getNamedParameters(true);
+     * ImmutableList<String> cbParams = parsed.namedParameters(true);
      * // Returns: ["name", "minAge"]
      *
      * // Positional parameters return empty list for Couchbase
      * ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-     * ImmutableList<String> cbParams2 = parsed2.getNamedParameters(true);
+     * ImmutableList<String> cbParams2 = parsed2.namedParameters(true);
      * // Returns: []
      * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase-formatted parameter names, {@code false} for standard format
      * @return an immutable list of parameter names
      */
-    public ImmutableList<String> getNamedParameters(final boolean isForCouchbase) {
+    public ImmutableList<String> namedParameters(final boolean isForCouchbase) {
         if (isForCouchbase) {
             if (Strings.isEmpty(couchbaseParameterizedSql)) {
                 synchronized (this) {
@@ -358,17 +358,17 @@ public final class ParsedSql {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (:name, :email, :age)");
-     * int count = parsed.getParameterCount();
+     * int count = parsed.parameterCount();
      * // Returns: 3
      *
      * ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users");
-     * int count2 = parsed2.getParameterCount();
+     * int count2 = parsed2.parameterCount();
      * // Returns: 0
      * }</pre>
      *
      * @return the number of parameters in the SQL
      */
-    public int getParameterCount() {
+    public int parameterCount() {
         return parameterCount;
     }
 
@@ -380,18 +380,18 @@ public final class ParsedSql {
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
      *
      * // Standard parameter count
-     * int count = parsed.getParameterCount(false);
+     * int count = parsed.parameterCount(false);
      * // Returns: 2
      *
      * // Couchbase parameter count
-     * int cbCount = parsed.getParameterCount(true);
+     * int cbCount = parsed.parameterCount(true);
      * // Returns: 2
      * }</pre>
      *
      * @param isForCouchbase {@code true} to get Couchbase parameter count, {@code false} for standard count
      * @return the number of parameters
      */
-    public int getParameterCount(final boolean isForCouchbase) {
+    public int parameterCount(final boolean isForCouchbase) {
         if (isForCouchbase) {
             if (Strings.isEmpty(couchbaseParameterizedSql)) {
                 synchronized (this) {

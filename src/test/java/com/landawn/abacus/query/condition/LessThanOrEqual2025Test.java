@@ -40,7 +40,7 @@ public class LessThanOrEqual2025Test extends TestBase {
         LessThanOrEqual condition = new LessThanOrEqual("age", 25);
         assertEquals("age", condition.getPropName());
         assertEquals(25, (int) condition.getPropValue());
-        assertEquals(Operator.LESS_EQUAL, condition.getOperator());
+        assertEquals(Operator.LESS_THAN_OR__EQUAL, condition.getOperator());
     }
 
     @Test
@@ -82,7 +82,7 @@ public class LessThanOrEqual2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         LessThanOrEqual condition = new LessThanOrEqual("field", "value");
-        assertEquals(Operator.LESS_EQUAL, condition.getOperator());
+        assertEquals(Operator.LESS_THAN_OR__EQUAL, condition.getOperator());
     }
 
     @Test

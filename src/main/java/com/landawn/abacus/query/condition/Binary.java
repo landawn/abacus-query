@@ -86,7 +86,7 @@ public class Binary extends AbstractCondition {
      * 
      * // With a subquery as value
      * SubQuery subQuery = Filters.subQuery("SELECT MIN(price) FROM products");
-     * Binary minPrice = new Binary("price", Operator.GREATER_EQUAL, subQuery);
+     * Binary minPrice = new Binary("price", Operator.GREATER_THAN_OR__EQUAL, subQuery);
      * }</pre>
      * 
      * @param propName the property name to compare (must not be null or empty)

@@ -323,7 +323,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_orders");
         Criteria criteria = Filters.criteria().union(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregation();
+        List<Cell> aggregations = criteria.getAggregations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.UNION, aggregations.get(0).getOperator());
     }
@@ -333,7 +333,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM temp_orders");
         Criteria criteria = Filters.criteria().unionAll(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregation();
+        List<Cell> aggregations = criteria.getAggregations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.UNION_ALL, aggregations.get(0).getOperator());
     }
@@ -343,7 +343,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
         Criteria criteria = Filters.criteria().intersect(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregation();
+        List<Cell> aggregations = criteria.getAggregations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.INTERSECT, aggregations.get(0).getOperator());
     }
@@ -353,7 +353,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM blocked_users");
         Criteria criteria = Filters.criteria().except(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregation();
+        List<Cell> aggregations = criteria.getAggregations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).getOperator());
     }
@@ -363,7 +363,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         Criteria criteria = Filters.criteria().minus(subQuery);
 
-        List<Cell> aggregations = criteria.getAggregation();
+        List<Cell> aggregations = criteria.getAggregations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.MINUS, aggregations.get(0).getOperator());
     }

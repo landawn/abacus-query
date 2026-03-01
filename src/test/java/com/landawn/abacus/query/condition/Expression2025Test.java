@@ -270,7 +270,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testDivision() {
-        String result = Expression.division("total", "count");
+        String result = Expression.divide("total", "count");
 
         assertTrue(result.contains("total"));
         assertTrue(result.contains("/"));
@@ -316,7 +316,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testLShift() {
-        String result = Expression.lShift("flags", 2);
+        String result = Expression.leftShift("flags", 2);
 
         assertTrue(result.contains("flags"));
         assertTrue(result.contains("<<"));
@@ -325,7 +325,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testRShift() {
-        String result = Expression.rShift("value", 4);
+        String result = Expression.rightShift("value", 4);
 
         assertTrue(result.contains("value"));
         assertTrue(result.contains(">>"));
@@ -342,7 +342,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testAverage() {
-        String result = Expression.average("salary");
+        String result = Expression.avg("salary");
 
         assertTrue(result.contains("AVG"));
         assertTrue(result.contains("salary"));
@@ -524,7 +524,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testStringLength() {
-        String result = Expression.stringLength("name");
+        String result = Expression.length("name");
 
         assertTrue(result.contains("LENGTH"));
         assertTrue(result.contains("name"));
@@ -559,7 +559,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testLTrim() {
-        String result = Expression.lTrim("comment");
+        String result = Expression.leftTrim("comment");
 
         assertTrue(result.contains("LTRIM"));
         assertTrue(result.contains("comment"));
@@ -567,7 +567,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testRTrim() {
-        String result = Expression.rTrim("code");
+        String result = Expression.rightTrim("code");
 
         assertTrue(result.contains("RTRIM"));
         assertTrue(result.contains("code"));
@@ -575,7 +575,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testLPad() {
-        String result = Expression.lPad("id", 10, "'0'");
+        String result = Expression.leftPad("id", 10, "'0'");
 
         assertTrue(result.contains("LPAD"));
         assertTrue(result.contains("id"));
@@ -584,7 +584,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testRPad() {
-        String result = Expression.rPad("name", 20, "' '");
+        String result = Expression.rightPad("name", 20, "' '");
 
         assertTrue(result.contains("RPAD"));
         assertTrue(result.contains("name"));
@@ -829,7 +829,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testDivisionWithMultipleValues() {
-        String result = Expression.division("total", "count", "factor");
+        String result = Expression.divide("total", "count", "factor");
 
         assertTrue(result.contains("total"));
         assertTrue(result.contains("/"));
@@ -848,7 +848,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testLShiftWithMultipleValues() {
-        String result = Expression.lShift("flags", "2", "1");
+        String result = Expression.leftShift("flags", "2", "1");
 
         assertTrue(result.contains("flags"));
         assertTrue(result.contains("<<"));
@@ -857,7 +857,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testRShiftWithMultipleValues() {
-        String result = Expression.rShift("value", "4", "2");
+        String result = Expression.rightShift("value", "4", "2");
 
         assertTrue(result.contains("value"));
         assertTrue(result.contains(">>"));

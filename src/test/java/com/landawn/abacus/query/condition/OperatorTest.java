@@ -21,7 +21,7 @@ public class OperatorTest extends TestBase {
     public void testToString() {
         Assertions.assertEquals("=", Operator.EQUAL.toString());
         Assertions.assertEquals(">", Operator.GREATER_THAN.toString());
-        Assertions.assertEquals("<=", Operator.LESS_EQUAL.toString());
+        Assertions.assertEquals("<=", Operator.LESS_THAN_OR__EQUAL.toString());
         Assertions.assertEquals("IN", Operator.IN.toString());
         Assertions.assertEquals("NOT IN", Operator.NOT_IN.toString());
     }
@@ -48,9 +48,9 @@ public class OperatorTest extends TestBase {
     public void testGetOperatorWithSymbols() {
         Assertions.assertEquals(Operator.GREATER_THAN, Operator.of(">"));
         Assertions.assertEquals(Operator.LESS_THAN, Operator.of("<"));
-        Assertions.assertEquals(Operator.GREATER_EQUAL, Operator.of(">="));
-        Assertions.assertEquals(Operator.LESS_EQUAL, Operator.of("<="));
-        Assertions.assertEquals(Operator.NOT_EQUAL2, Operator.of("<>"));
+        Assertions.assertEquals(Operator.GREATER_THAN_OR__EQUAL, Operator.of(">="));
+        Assertions.assertEquals(Operator.LESS_THAN_OR__EQUAL, Operator.of("<="));
+        Assertions.assertEquals(Operator.NOT_EQUAL_ANGLE, Operator.of("<>"));
     }
 
     @Test
@@ -104,11 +104,11 @@ public class OperatorTest extends TestBase {
         // Comparison operators
         Assertions.assertEquals("=", Operator.EQUAL.getName());
         Assertions.assertEquals("!=", Operator.NOT_EQUAL.getName());
-        Assertions.assertEquals("<>", Operator.NOT_EQUAL2.getName());
+        Assertions.assertEquals("<>", Operator.NOT_EQUAL_ANGLE.getName());
         Assertions.assertEquals(">", Operator.GREATER_THAN.getName());
-        Assertions.assertEquals(">=", Operator.GREATER_EQUAL.getName());
+        Assertions.assertEquals(">=", Operator.GREATER_THAN_OR__EQUAL.getName());
         Assertions.assertEquals("<", Operator.LESS_THAN.getName());
-        Assertions.assertEquals("<=", Operator.LESS_EQUAL.getName());
+        Assertions.assertEquals("<=", Operator.LESS_THAN_OR__EQUAL.getName());
 
         // Logical operators
         Assertions.assertEquals("AND", Operator.AND.getName());

@@ -43,7 +43,7 @@ public class Limit2025Test extends TestBase {
         assertNotNull(limit);
         assertEquals(10, limit.getCount());
         assertEquals(0, limit.getOffset());
-        assertNull(limit.getExpr());
+        assertNull(limit.getExpression());
     }
 
     @Test
@@ -53,7 +53,7 @@ public class Limit2025Test extends TestBase {
         assertNotNull(limit);
         assertEquals(10, limit.getCount());
         assertEquals(20, limit.getOffset());
-        assertNull(limit.getExpr());
+        assertNull(limit.getExpression());
     }
 
     @Test
@@ -61,7 +61,7 @@ public class Limit2025Test extends TestBase {
         Limit limit = new Limit("10 OFFSET 20");
 
         assertNotNull(limit);
-        assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getExpr());
+        assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getExpression());
         assertEquals(Integer.MAX_VALUE, limit.getCount());
         assertEquals(0, limit.getOffset());
     }
@@ -85,14 +85,14 @@ public class Limit2025Test extends TestBase {
     public void testGetExpr() {
         Limit limit = new Limit("FIRST 10 ROWS");
 
-        assertEquals("FIRST 10 ROWS", limit.getExpr());
+        assertEquals("FIRST 10 ROWS", limit.getExpression());
     }
 
     @Test
     public void testGetExprWithoutExpression() {
         Limit limit = new Limit(10);
 
-        assertNull(limit.getExpr());
+        assertNull(limit.getExpression());
     }
 
     @Test
@@ -304,7 +304,7 @@ public class Limit2025Test extends TestBase {
         Limit copy = original.copy();
 
         assertNotSame(original, copy);
-        assertEquals(original.getExpr(), copy.getExpr());
+        assertEquals(original.getExpression(), copy.getExpression());
     }
 
     @Test
@@ -328,10 +328,10 @@ public class Limit2025Test extends TestBase {
     @Test
     public void testCustomExpressionFormats() {
         Limit mysqlStyle = new Limit("10, 20");
-        assertEquals(SK.LIMIT + SK.SPACE + "10, 20", mysqlStyle.getExpr());
+        assertEquals(SK.LIMIT + SK.SPACE + "10, 20", mysqlStyle.getExpression());
 
         Limit standardStyle = new Limit("20 OFFSET 10");
-        assertEquals(SK.LIMIT + SK.SPACE + "20 OFFSET 10", standardStyle.getExpr());
+        assertEquals(SK.LIMIT + SK.SPACE + "20 OFFSET 10", standardStyle.getExpression());
     }
 
     @Test
@@ -369,7 +369,7 @@ public class Limit2025Test extends TestBase {
 
         assertEquals(original.getCount(), copy.getCount());
         assertEquals(original.getOffset(), copy.getOffset());
-        assertEquals(original.getExpr(), copy.getExpr());
+        assertEquals(original.getExpression(), copy.getExpression());
     }
 
     @Test

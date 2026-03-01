@@ -197,21 +197,21 @@ public class SQLParserTest extends TestBase {
         String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
 
         // Test finding simple words
-        assertEquals(0, SQLParser.indexWord(sql, "SELECT", 0, false));
-        assertEquals(9, SQLParser.indexWord(sql, "FROM", 0, false));
-        assertEquals(20, SQLParser.indexWord(sql, "WHERE", 0, false));
-        assertEquals(40, SQLParser.indexWord(sql, "ORDER BY", 0, false));
+        assertEquals(0, SQLParser.indexOfWord(sql, "SELECT", 0, false));
+        assertEquals(9, SQLParser.indexOfWord(sql, "FROM", 0, false));
+        assertEquals(20, SQLParser.indexOfWord(sql, "WHERE", 0, false));
+        assertEquals(40, SQLParser.indexOfWord(sql, "ORDER BY", 0, false));
 
         // Test case sensitivity
-        assertEquals(0, SQLParser.indexWord(sql, "select", 0, false));
-        assertEquals(-1, SQLParser.indexWord(sql, "select", 0, true));
+        assertEquals(0, SQLParser.indexOfWord(sql, "select", 0, false));
+        assertEquals(-1, SQLParser.indexOfWord(sql, "select", 0, true));
 
         // Test not found
-        assertEquals(-1, SQLParser.indexWord(sql, "INSERT", 0, false));
+        assertEquals(-1, SQLParser.indexOfWord(sql, "INSERT", 0, false));
 
         // Test from different starting positions
-        assertEquals(-1, SQLParser.indexWord(sql, "SELECT", 5, false));
-        assertEquals(40, SQLParser.indexWord(sql, "ORDER BY", 30, false));
+        assertEquals(-1, SQLParser.indexOfWord(sql, "SELECT", 5, false));
+        assertEquals(40, SQLParser.indexOfWord(sql, "ORDER BY", 30, false));
     }
 
     @Test
@@ -219,16 +219,16 @@ public class SQLParserTest extends TestBase {
         String sql = "SELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id";
 
         // Test composite words
-        assertEquals(20, SQLParser.indexWord(sql, "LEFT JOIN", 0, false));
-        assertEquals(20, SQLParser.indexWord(sql, "left join", 0, false));
+        assertEquals(20, SQLParser.indexOfWord(sql, "LEFT JOIN", 0, false));
+        assertEquals(20, SQLParser.indexOfWord(sql, "left join", 0, false));
 
         // Test GROUP BY
         sql = "SELECT COUNT(*) FROM users GROUP BY age";
-        assertEquals(27, SQLParser.indexWord(sql, "GROUP BY", 0, false));
+        assertEquals(27, SQLParser.indexOfWord(sql, "GROUP BY", 0, false));
 
         // Test ORDER BY
         sql = "SELECT * FROM users ORDER BY name";
-        assertEquals(20, SQLParser.indexWord(sql, "ORDER BY", 0, false));
+        assertEquals(20, SQLParser.indexOfWord(sql, "ORDER BY", 0, false));
     }
 
     @Test
@@ -237,16 +237,16 @@ public class SQLParserTest extends TestBase {
         String sql = "SELECT * FROM users WHERE name = 'SELECT something'";
 
         // Should find the first SELECT, not the one in quotes
-        assertEquals(0, SQLParser.indexWord(sql, "SELECT", 0, false));
+        assertEquals(0, SQLParser.indexOfWord(sql, "SELECT", 0, false));
 
         // Should find the quoted SELECT when searching from appropriate position
-        int firstSelect = SQLParser.indexWord(sql, "SELECT", 0, false);
-        int secondSelect = SQLParser.indexWord(sql, "SELECT", firstSelect + 1, false);
+        int firstSelect = SQLParser.indexOfWord(sql, "SELECT", 0, false);
+        int secondSelect = SQLParser.indexOfWord(sql, "SELECT", firstSelect + 1, false);
         assertEquals(-1, secondSelect);
 
         // Test escaped quote in SQL-standard form (two single quotes) inside a string literal
         sql = "SELECT * FROM users WHERE note = 'it''s SELECT here'";
-        assertEquals(-1, SQLParser.indexWord(sql, "SELECT", 1, false));
+        assertEquals(-1, SQLParser.indexOfWord(sql, "SELECT", 1, false));
     }
 
     @Test
@@ -254,9 +254,9 @@ public class SQLParserTest extends TestBase {
         String sql = "SELECT * WHERE a = b AND c != d OR e >= f";
 
         // Test finding operators
-        assertEquals(17, SQLParser.indexWord(sql, "=", 0, false));
-        assertEquals(27, SQLParser.indexWord(sql, "!=", 0, false));
-        assertEquals(sql.indexOf(">="), SQLParser.indexWord(sql, ">=", 0, false));
+        assertEquals(17, SQLParser.indexOfWord(sql, "=", 0, false));
+        assertEquals(27, SQLParser.indexOfWord(sql, "!=", 0, false));
+        assertEquals(sql.indexOf(">="), SQLParser.indexOfWord(sql, ">=", 0, false));
     }
 
     @Test

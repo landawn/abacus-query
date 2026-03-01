@@ -64,7 +64,7 @@ public class SQLMapperTest extends TestBase {
         assertEquals("SELECT * FROM users WHERE id = ?", findById.sql());
 
         // Check attributes
-        ImmutableMap<String, String> attrs = mapper.getAttrs("updateName");
+        ImmutableMap<String, String> attrs = mapper.getAttributes("updateName");
         assertNotNull(attrs);
         assertEquals("100", attrs.get("batchSize"));
         assertEquals("50", attrs.get("fetchSize"));
@@ -163,21 +163,21 @@ public class SQLMapperTest extends TestBase {
         mapper.add("query1", "SELECT * FROM users", attrs);
 
         // Test valid getAttrs
-        ImmutableMap<String, String> retrieved = mapper.getAttrs("query1");
+        ImmutableMap<String, String> retrieved = mapper.getAttributes("query1");
         assertNotNull(retrieved);
         assertEquals("100", retrieved.get("batchSize"));
         assertEquals("30", retrieved.get("timeout"));
 
         // Test getAttrs with empty id
-        assertNull(mapper.getAttrs(""));
-        assertNull(mapper.getAttrs(null));
+        assertNull(mapper.getAttributes(""));
+        assertNull(mapper.getAttributes(null));
 
         // Test getAttrs with id too long
         String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
-        assertNull(mapper.getAttrs(longId));
+        assertNull(mapper.getAttributes(longId));
 
         // Test getAttrs non-existent
-        assertNull(mapper.getAttrs("nonExistent"));
+        assertNull(mapper.getAttributes("nonExistent"));
     }
 
     @Test
@@ -221,7 +221,7 @@ public class SQLMapperTest extends TestBase {
         assertNotNull(sql);
         assertEquals("SELECT * FROM users", sql.sql());
 
-        ImmutableMap<String, String> retrievedAttrs = mapper.getAttrs("query1");
+        ImmutableMap<String, String> retrievedAttrs = mapper.getAttributes("query1");
         assertEquals("50", retrievedAttrs.get("batchSize"));
 
         // Test duplicate id
@@ -265,7 +265,7 @@ public class SQLMapperTest extends TestBase {
         assertEquals(mapper.keySet(), copy.keySet());
         assertEquals(mapper.get("query1"), copy.get("query1"));
         assertEquals(mapper.get("query2"), copy.get("query2"));
-        assertEquals(mapper.getAttrs("query1"), copy.getAttrs("query1"));
+        assertEquals(mapper.getAttributes("query1"), copy.getAttributes("query1"));
 
         // Verify copy is independent
         copy.add("query3", ParsedSql.parse("SELECT * FROM products"));
@@ -294,7 +294,7 @@ public class SQLMapperTest extends TestBase {
         assertEquals(mapper.get("findUser").sql(), loaded.get("findUser").sql());
         assertEquals(mapper.get("updateUser").sql(), loaded.get("updateUser").sql());
 
-        ImmutableMap<String, String> loadedAttrs = loaded.getAttrs("findUser");
+        ImmutableMap<String, String> loadedAttrs = loaded.getAttributes("findUser");
         assertEquals("100", loadedAttrs.get("batchSize"));
         assertEquals("50", loadedAttrs.get("fetchSize"));
     }

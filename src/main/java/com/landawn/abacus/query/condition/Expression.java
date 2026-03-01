@@ -55,8 +55,8 @@ import static com.landawn.abacus.query.SK.SUM;
 import static com.landawn.abacus.query.SK.TAN;
 import static com.landawn.abacus.query.SK.TRIM;
 import static com.landawn.abacus.query.SK.UPPER;
-import static com.landawn.abacus.query.SK.VERTICALBAR;
-import static com.landawn.abacus.query.SK._QUOTATION_S;
+import static com.landawn.abacus.query.SK.VERTICAL_BAR;
+import static com.landawn.abacus.query.SK._SINGLE_QUOTE;
 
 import java.util.List;
 import java.util.Map;
@@ -342,7 +342,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the greater-than-or-equal expression
      */
     public static String greaterThanOrEqual(final String literal, final Object value) {
-        return link(Operator.GREATER_EQUAL, literal, value);
+        return link(Operator.GREATER_THAN_OR__EQUAL, literal, value);
     }
 
     /**
@@ -360,7 +360,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the greater-than-or-equal expression
      */
     public static String ge(final String literal, final Object value) {
-        return link(Operator.GREATER_EQUAL, literal, value);
+        return link(Operator.GREATER_THAN_OR__EQUAL, literal, value);
     }
 
     /**
@@ -412,7 +412,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the less-than-or-equal expression
      */
     public static String lessThanOrEqual(final String literal, final Object value) {
-        return link(Operator.LESS_EQUAL, literal, value);
+        return link(Operator.LESS_THAN_OR__EQUAL, literal, value);
     }
 
     /**
@@ -430,7 +430,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the less-than-or-equal expression
      */
     public static String le(final String literal, final Object value) {
-        return link(Operator.LESS_EQUAL, literal, value);
+        return link(Operator.LESS_THAN_OR__EQUAL, literal, value);
     }
 
     /**
@@ -672,17 +672,17 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.division(Expression.of("total"), Expression.of("count"));
+     * String expr = Expression.divide(Expression.of("total"), Expression.of("count"));
      * // Returns: "total / count"
      *
-     * String expr2 = Expression.division(Expression.of("distance"), Expression.of("time"), 60);
+     * String expr2 = Expression.divide(Expression.of("distance"), Expression.of("time"), 60);
      * // Returns: "distance / time / 60"
      * }</pre>
      *
      * @param objects the values to divide
      * @return a string representation of the division expression
      */
-    public static String division(final Object... objects) {
+    public static String divide(final Object... objects) {
         return link(SLASH, objects);
     }
 
@@ -714,14 +714,14 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.lShift(Expression.of("flags"), 2);
+     * String expr = Expression.leftShift(Expression.of("flags"), 2);
      * // Returns: "flags << 2"
      * }</pre>
      *
      * @param objects the values for left shift operation
      * @return a string representation of the left shift expression
      */
-    public static String lShift(final Object... objects) {
+    public static String leftShift(final Object... objects) {
         return link(LEFT_SHIFT, objects);
     }
 
@@ -732,14 +732,14 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.rShift(Expression.of("value"), 4);
+     * String expr = Expression.rightShift(Expression.of("value"), 4);
      * // Returns: "value >> 4"
      * }</pre>
      *
      * @param objects the values for right shift operation
      * @return a string representation of the right shift expression
      */
-    public static String rShift(final Object... objects) {
+    public static String rightShift(final Object... objects) {
         return link(RIGHT_SHIFT, objects);
     }
 
@@ -777,7 +777,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the bitwise OR expression
      */
     public static String bitwiseOr(final Object... objects) {
-        return link(VERTICALBAR, objects);
+        return link(VERTICAL_BAR, objects);
     }
 
     /**
@@ -963,13 +963,13 @@ public class Expression extends AbstractCondition {
         }
 
         if (value instanceof String) {
-            return (_QUOTATION_S + Strings.quoteEscaped((String) value) + _QUOTATION_S);
+            return (_SINGLE_QUOTE + Strings.quoteEscaped((String) value) + _SINGLE_QUOTE);
         } else if (value instanceof Number || value instanceof Boolean) {
             return value.toString();
         } else if (value instanceof Expression) {
             return ((Expression) value).getLiteral();
         } else {
-            return (_QUOTATION_S + Strings.quoteEscaped(N.stringOf(value)) + _QUOTATION_S);
+            return (_SINGLE_QUOTE + Strings.quoteEscaped(N.stringOf(value)) + _SINGLE_QUOTE);
         }
     }
 
@@ -997,14 +997,14 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.average("salary");   // Returns: "AVG(salary)"
-     * String expr2 = Expression.average("age");     // Returns: "AVG(age)"
+     * String expr = Expression.avg("salary");   // Returns: "AVG(salary)"
+     * String expr2 = Expression.avg("age");     // Returns: "AVG(age)"
      * }</pre>
      *
      * @param expression the expression to average
      * @return an AVG function string
      */
-    public static String average(final String expression) {
+    public static String avg(final String expression) {
         return function(AVG, expression);
     }
 
@@ -1383,14 +1383,14 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.stringLength("name");           // Returns: "LENGTH(name)"
-     * String expr2 = Expression.stringLength("description");   // Returns: "LENGTH(description)"
+     * String expr = Expression.length("name");           // Returns: "LENGTH(name)"
+     * String expr2 = Expression.length("description");   // Returns: "LENGTH(description)"
      * }</pre>
      *
      * @param str the string to get length of
      * @return a LENGTH function string
      */
-    public static String stringLength(final String str) {
+    public static String length(final String str) {
         return function(LENGTH, str);
     }
 
@@ -1454,14 +1454,14 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lTrim("comment");    // Returns: "LTRIM(comment)"
-     * String expr2 = Expression.lTrim("address");   // Returns: "LTRIM(address)"
+     * String expr = Expression.leftTrim("comment");    // Returns: "LTRIM(comment)"
+     * String expr2 = Expression.leftTrim("address");   // Returns: "LTRIM(address)"
      * }</pre>
      *
      * @param str the string to left trim
      * @return an LTRIM function string
      */
-    public static String lTrim(final String str) {
+    public static String leftTrim(final String str) {
         return function(LTRIM, str);
     }
 
@@ -1471,14 +1471,14 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.rTrim("code");           // Returns: "RTRIM(code)"
-     * String expr2 = Expression.rTrim("description");   // Returns: "RTRIM(description)"
+     * String expr = Expression.rightTrim("code");           // Returns: "RTRIM(code)"
+     * String expr2 = Expression.rightTrim("description");   // Returns: "RTRIM(description)"
      * }</pre>
      *
      * @param str the string to right trim
      * @return an RTRIM function string
      */
-    public static String rTrim(final String str) {
+    public static String rightTrim(final String str) {
         return function(RTRIM, str);
     }
 
@@ -1488,8 +1488,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lPad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
-     * String expr2 = Expression.lPad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
+     * String expr = Expression.leftPad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
+     * String expr2 = Expression.leftPad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
      * }</pre>
      *
      * @param str the string to pad
@@ -1497,7 +1497,7 @@ public class Expression extends AbstractCondition {
      * @param padStr the string to pad with
      * @return an LPAD function string
      */
-    public static String lPad(final String str, final int length, final String padStr) {
+    public static String leftPad(final String str, final int length, final String padStr) {
         return function(LPAD, str, length, padStr);
     }
 
@@ -1507,8 +1507,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.rPad("name", 20, "' '");    // Returns: "RPAD(name, 20, ' ')"
-     * String expr2 = Expression.rPad("code", 10, "'X'");   // Returns: "RPAD(code, 10, 'X')"
+     * String expr = Expression.rightPad("name", 20, "' '");    // Returns: "RPAD(name, 20, ' ')"
+     * String expr2 = Expression.rightPad("code", 10, "'X'");   // Returns: "RPAD(code, 10, 'X')"
      * }</pre>
      *
      * @param str the string to pad
@@ -1516,7 +1516,7 @@ public class Expression extends AbstractCondition {
      * @param padStr the string to pad with
      * @return an RPAD function string
      */
-    public static String rPad(final String str, final int length, final String padStr) {
+    public static String rightPad(final String str, final int length, final String padStr) {
         return function(RPAD, str, length, padStr);
     }
 
