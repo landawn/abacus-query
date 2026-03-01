@@ -126,4 +126,15 @@ public class IsInfinite extends Is {
     public IsInfinite(final String propName) {
         super(propName, INFINITE);
     }
+
+    /**
+     * @param propValue
+     * @throws UnsupportedOperationException always
+     * @deprecated the prop value of {@code IsInfinite} is always {@code INFINITE} and cannot be changed.
+     */
+    @Deprecated
+    @Override
+    public void setPropValue(final Object propValue) {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -129,4 +129,15 @@ public class IsNull extends Is {
     public IsNull(final String propName) {
         super(propName, NULL);
     }
+
+    /**
+     * @param propValue
+     * @throws UnsupportedOperationException always
+     * @deprecated the prop value of {@code IsNull} is always {@code NULL} and cannot be changed.
+     */
+    @Deprecated
+    @Override
+    public void setPropValue(final Object propValue) {
+        throw new UnsupportedOperationException();
+    }
 }

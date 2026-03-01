@@ -127,4 +127,15 @@ public class IsNotNaN extends IsNot {
     public IsNotNaN(final String propName) {
         super(propName, NAN);
     }
+
+    /**
+     * @param propValue
+     * @throws UnsupportedOperationException always
+     * @deprecated the prop value of {@code IsNotNaN} is always {@code NAN} and cannot be changed.
+     */
+    @Deprecated
+    @Override
+    public void setPropValue(final Object propValue) {
+        throw new UnsupportedOperationException();
+    }
 }
