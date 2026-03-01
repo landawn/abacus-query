@@ -185,6 +185,16 @@ public class Minus2025Test extends TestBase {
     }
 
     @Test
+    public void testXor_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Minus minus = new Minus(subQuery);
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            minus.xor(new Equal("field", "value"));
+        });
+    }
+
+    @Test
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Minus minus = new Minus(subQuery);

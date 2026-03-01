@@ -84,7 +84,6 @@ import com.landawn.abacus.query.condition.Union;
 import com.landawn.abacus.query.condition.UnionAll;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
-import com.landawn.abacus.query.condition.Xor;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.EntityId;
 import com.landawn.abacus.util.N;
@@ -193,7 +192,7 @@ import com.landawn.abacus.util.N;
  *   <li><b>Basic Comparison:</b> {@code eq()}, {@code ne()}, {@code lt()}, {@code le()}, {@code gt()}, {@code ge()}</li>
  *   <li><b>Range and Collection:</b> {@code between()}, {@code in()}, {@code notIn()}, {@code like()}</li>
  *   <li><b>Null Operations:</b> {@code isNull()}, {@code isNotNull()}, {@code isEmpty()}, {@code isNullOrZero()}</li>
- *   <li><b>Logical Combinators:</b> {@code and()}, {@code or()}, {@code not()}, {@code xor()}</li>
+ *   <li><b>Logical Combinators:</b> {@code and()}, {@code or()}, {@code not()}</li>
  *   <li><b>String Patterns:</b> {@code like()}, {@code notLike()}, {@code contains()}, {@code startsWith()}, {@code endsWith()}</li>
  *   <li><b>Join Conditions:</b> {@code join()}, {@code leftJoin()}, {@code rightJoin()}, {@code innerJoin()}, {@code fullJoin()}</li>
  * </ul>
@@ -2051,24 +2050,6 @@ public class Filters {
      */
     public static IsNot isNot(final String propName, final Object propValue) {
         return new IsNot(propName, propValue);
-    }
-
-    /**
-     * Creates an XOR (exclusive OR) condition for the specified property and value.
-     * The condition is true when exactly one of the operands is true.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Xor condition = Filters.xor("is_premium", true);
-     * // SQL fragment: is_premium XOR TRUE
-     * }</pre>
-     *
-     * @param propName the property/column name
-     * @param propValue the value to XOR with
-     * @return an XOR condition
-     */
-    public static Xor xor(final String propName, final Object propValue) {
-        return new Xor(propName, propValue);
     }
 
     /**

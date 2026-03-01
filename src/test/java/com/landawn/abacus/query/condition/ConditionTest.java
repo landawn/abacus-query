@@ -157,6 +157,45 @@ public class ConditionTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> simpleCondition.or(null));
     }
 
+    // Tests for xor() method
+
+    @Test
+    void testXorCreatesOrCondition() {
+        Condition other = Filters.eq("type", "admin");
+        Condition result = simpleCondition.xor(other);
+
+        assertNotNull(result);
+        assertEquals(Operator.OR, result.operator());
+        assertTrue(result instanceof Or);
+    }
+
+    @Test
+    void testXorReturnsNewInstance() {
+        Condition other = Filters.eq("type", "admin");
+        Condition result = simpleCondition.xor(other);
+
+        assertNotSame(simpleCondition, result);
+        assertNotSame(other, result);
+    }
+
+    @Test
+    void testXorWithNullCondition() {
+        assertThrows(IllegalArgumentException.class, () -> simpleCondition.xor(null));
+    }
+
+    @Test
+    void testXorSemantics() {
+        // XOR should produce (A AND NOT B) OR (NOT A AND B)
+        Condition a = Filters.eq("x", 1);
+        Condition b = Filters.eq("y", 2);
+        Or result = a.xor(b);
+
+        // The result should be an Or with 2 conditions (each an And)
+        assertEquals(2, result.getConditions().size());
+        assertTrue(result.getConditions().get(0) instanceof And);
+        assertTrue(result.getConditions().get(1) instanceof And);
+    }
+
     // Tests for not() method
 
     @Test

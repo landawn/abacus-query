@@ -187,6 +187,13 @@ public class FullJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testXor() {
+        FullJoin join1 = new FullJoin("orders");
+        FullJoin join2 = new FullJoin("products");
+        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
+    }
+
+    @Test
     public void testAllRowsFromBothTables() {
         FullJoin join = new FullJoin("orders", new Equal("users.id", "orders.user_id"));
         assertNotNull(join);

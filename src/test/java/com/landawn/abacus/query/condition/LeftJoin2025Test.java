@@ -187,6 +187,13 @@ public class LeftJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testXor() {
+        LeftJoin join1 = new LeftJoin("orders");
+        LeftJoin join2 = new LeftJoin("products");
+        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
+    }
+
+    @Test
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("customers.id", "o.customer_id"), new Equal("o.status", "active")));
         LeftJoin join = new LeftJoin("orders o", andCondition);

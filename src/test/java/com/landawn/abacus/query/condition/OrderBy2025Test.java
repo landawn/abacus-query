@@ -343,6 +343,14 @@ public class OrderBy2025Test extends TestBase {
     }
 
     @Test
+    public void testXorThrowsException() {
+        OrderBy orderBy = new OrderBy("name");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            orderBy.xor(new Equal("verified", true));
+        });
+    }
+
+    @Test
     @SuppressWarnings("deprecation")
     public void testSetCondition() {
         OrderBy orderBy = new OrderBy(Filters.expr("name ASC"));

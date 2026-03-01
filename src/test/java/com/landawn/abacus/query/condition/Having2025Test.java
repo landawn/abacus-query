@@ -269,6 +269,14 @@ public class Having2025Test extends TestBase {
     }
 
     @Test
+    public void testXorThrowsException() {
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
+        assertThrows(UnsupportedOperationException.class, () -> {
+            having.xor(new Equal("verified", true));
+        });
+    }
+
+    @Test
     @SuppressWarnings("deprecation")
     public void testSetCondition() {
         Equal originalCondition = Filters.eq("COUNT(*)", 5);

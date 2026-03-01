@@ -289,6 +289,20 @@ public class Join extends AbstractCondition {
 
     /**
      * This operation is not supported for Join conditions.
+     * JOIN clauses cannot be combined using XOR logic.
+     * Combine conditions within the ON clause instead.
+     *
+     * @param condition the condition to XOR with (ignored)
+     * @return never returns normally
+     * @throws UnsupportedOperationException always thrown
+     */
+    @Override
+    public Or xor(final Condition condition) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException("XOR operation is not supported for Join. Combine conditions within the ON clause instead");
+    }
+
+    /**
+     * This operation is not supported for Join conditions.
      * JOIN clauses cannot be combined using OR logic.
      * Combine conditions within the ON clause instead.
      *

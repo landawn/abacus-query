@@ -68,7 +68,6 @@ import com.landawn.abacus.query.condition.Union;
 import com.landawn.abacus.query.condition.UnionAll;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
-import com.landawn.abacus.query.condition.Xor;
 
 public class FiltersTest extends TestBase {
 
@@ -590,14 +589,6 @@ public class FiltersTest extends TestBase {
         Assertions.assertNotNull(isNot);
         Assertions.assertEquals("type", isNot.getPropName());
         Assertions.assertEquals("guest", isNot.getPropValue());
-    }
-
-    @Test
-    public void testXor() {
-        Xor xor = Filters.xor("hasDiscount", true);
-        Assertions.assertNotNull(xor);
-        Assertions.assertEquals("hasDiscount", xor.getPropName());
-        Assertions.assertEquals(true, xor.getPropValue());
     }
 
     @Test

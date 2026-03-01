@@ -291,6 +291,14 @@ public class GroupBy2025Test extends TestBase {
     }
 
     @Test
+    public void testXorThrowsException() {
+        GroupBy groupBy = new GroupBy("department");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            groupBy.xor(new Equal("verified", true));
+        });
+    }
+
+    @Test
     @SuppressWarnings("deprecation")
     public void testSetCondition() {
         GroupBy groupBy = new GroupBy(Filters.expr("department"));

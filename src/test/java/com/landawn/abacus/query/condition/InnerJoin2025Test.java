@@ -187,6 +187,13 @@ public class InnerJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testXor() {
+        InnerJoin join1 = new InnerJoin("orders");
+        InnerJoin join2 = new InnerJoin("products");
+        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
+    }
+
+    @Test
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", (Object) 100)));
         InnerJoin join = new InnerJoin("orders o", andCondition);

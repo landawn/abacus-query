@@ -175,6 +175,16 @@ public class UnionAll2025Test extends TestBase {
     }
 
     @Test
+    public void testXor_ThrowsException() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        UnionAll unionAll = new UnionAll(subQuery);
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            unionAll.xor(new Equal("field", "value"));
+        });
+    }
+
+    @Test
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         UnionAll unionAll = new UnionAll(subQuery);

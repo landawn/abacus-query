@@ -187,6 +187,13 @@ public class NaturalJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testXor() {
+        NaturalJoin join1 = new NaturalJoin("orders");
+        NaturalJoin join2 = new NaturalJoin("products");
+        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
+    }
+
+    @Test
     public void testAutomaticColumcountMatchBetweening() {
         NaturalJoin join = new NaturalJoin("customers");
         assertNotNull(join);

@@ -141,6 +141,15 @@ public class Limit2025Test extends TestBase {
     }
 
     @Test
+    public void testXorThrowsException() {
+        Limit limit = new Limit(10);
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            limit.xor(new Equal("verified", true));
+        });
+    }
+
+    @Test
     public void testToStringWithCountOnly() {
         Limit limit = new Limit(10);
         String result = limit.toString(NamingPolicy.NO_CHANGE);

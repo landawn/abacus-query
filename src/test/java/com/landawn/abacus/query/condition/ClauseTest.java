@@ -55,6 +55,15 @@ public class ClauseTest extends TestBase {
     }
 
     @Test
+    public void testXorThrowsException() {
+        TestClause clause = new TestClause(Operator.WHERE, Filters.eq("id", 1));
+
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+            clause.xor(Filters.eq("name", "test"));
+        });
+    }
+
+    @Test
     public void testInheritedMethodsFromCell() {
         GreaterThan gt = Filters.gt("price", 100);
         TestClause clause = new TestClause(Operator.WHERE, gt);

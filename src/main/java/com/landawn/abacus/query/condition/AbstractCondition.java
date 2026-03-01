@@ -143,6 +143,30 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     }
 
     /**
+     * Creates a new XOR (exclusive OR) condition combining this condition with another.
+     * Exactly one of the two conditions must be true for the result to be true.
+     * Implemented as: {@code (this AND NOT other) OR (NOT this AND other)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition c1 = Filters.equal("hasDiscount", true);
+     * Condition c2 = Filters.equal("isMember", true);
+     * Or xorResult = c1.xor(c2);
+     * // Results in: ((hasDiscount = true AND NOT isMember = true) OR (NOT hasDiscount = true AND isMember = true))
+     * }</pre>
+     *
+     * @param condition the condition to XOR with this condition (must not be null)
+     * @return a new Or condition representing the exclusive-or of both conditions
+     * @throws IllegalArgumentException if {@code condition} is null
+     */
+    @Override
+    public Or xor(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
+
+        return new Or(new And(this, new Not(condition)), new And(new Not(this), condition));
+    }
+
+    /**
      * Creates a new OR condition combining this condition with another.
      * At least one condition must be true for the OR condition to be true.
      *

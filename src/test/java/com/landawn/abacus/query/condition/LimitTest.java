@@ -89,6 +89,14 @@ public class LimitTest extends TestBase {
     }
 
     @Test
+    public void testXorThrowsException() {
+        Limit limit = Filters.limit(10);
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+            limit.xor(Filters.eq("name", "test"));
+        });
+    }
+
+    @Test
     public void testToStringWithCountOnly() {
         Limit limit = Filters.limit(10);
         String result = limit.toString(NamingPolicy.CAMEL_CASE);

@@ -181,6 +181,13 @@ public class Join2025Test extends TestBase {
     }
 
     @Test
+    public void testXor() {
+        Join join1 = new Join("orders");
+        Join join2 = new Join("products");
+        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
+    }
+
+    @Test
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", (Object) 100)));
         Join join = new Join("orders o", andCondition);

@@ -135,6 +135,19 @@ public abstract class Clause extends Cell {
 
     /**
      * This operation is not supported for Clause objects.
+     * Clauses cannot be combined using XOR logic.
+     *
+     * @param condition the condition to XOR with (ignored)
+     * @return never returns normally
+     * @throws UnsupportedOperationException always thrown
+     */
+    @Override
+    public Or xor(final Condition condition) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException("XOR operation is not supported for Clause. Combine conditions within the clause instead");
+    }
+
+    /**
+     * This operation is not supported for Clause objects.
      * Clauses cannot be combined using OR logic.
      *
      * <p>Clauses are structural components of SQL that must maintain their independence.

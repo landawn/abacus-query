@@ -187,6 +187,13 @@ public class CrossJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testXor() {
+        CrossJoin join1 = new CrossJoin("colors");
+        CrossJoin join2 = new CrossJoin("sizes");
+        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
+    }
+
+    @Test
     public void testCartesianProduct() {
         CrossJoin join = new CrossJoin("colors");
         assertNotNull(join);

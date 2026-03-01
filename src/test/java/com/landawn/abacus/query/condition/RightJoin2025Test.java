@@ -187,6 +187,13 @@ public class RightJoin2025Test extends TestBase {
     }
 
     @Test
+    public void testXor() {
+        RightJoin join1 = new RightJoin("orders");
+        RightJoin join2 = new RightJoin("products");
+        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
+    }
+
+    @Test
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("orders.product_id", "products.id"), new Equal("products.active", true)));
         RightJoin join = new RightJoin("products", andCondition);

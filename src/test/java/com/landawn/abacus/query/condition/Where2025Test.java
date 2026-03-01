@@ -209,6 +209,14 @@ public class Where2025Test extends TestBase {
     }
 
     @Test
+    public void testXorThrowsException() {
+        Where where = new Where(new Equal("status", "active"));
+        assertThrows(UnsupportedOperationException.class, () -> {
+            where.xor(new Equal("verified", true));
+        });
+    }
+
+    @Test
     @SuppressWarnings("deprecation")
     public void testSetCondition() {
         Equal originalCondition = new Equal("status", "active");

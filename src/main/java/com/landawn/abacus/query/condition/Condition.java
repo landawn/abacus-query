@@ -158,6 +158,34 @@ public interface Condition {
     Or or(Condition condition);
 
     /**
+     * Creates a new XOR (exclusive OR) condition combining this condition with another.
+     * Exactly one of the two conditions must be true for the result to be true.
+     *
+     * <p>The XOR operation follows standard exclusive-or logic:</p>
+     * <ul>
+     *   <li>true XOR true = false</li>
+     *   <li>true XOR false = true</li>
+     *   <li>false XOR true = true</li>
+     *   <li>false XOR false = false</li>
+     * </ul>
+     *
+     * <p>This is implemented as: {@code (this AND NOT other) OR (NOT this AND other)}</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition hasDiscount = Filters.equal("hasDiscount", true);
+     * Condition isMember = Filters.equal("isMember", true);
+     * Condition exclusiveOr = hasDiscount.xor(isMember);
+     * // Equivalent to: (hasDiscount = true AND NOT isMember = true) OR (NOT hasDiscount = true AND isMember = true)
+     * }</pre>
+     *
+     * @param condition the condition to XOR with this condition (must not be null)
+     * @return a new Or condition representing the exclusive-or of both conditions
+     * @throws IllegalArgumentException if {@code condition} is null
+     */
+    Or xor(Condition condition);
+
+    /**
      * Creates a new NOT condition that negates this condition.
      * The result is true when this condition is false, and vice versa.
      * 
