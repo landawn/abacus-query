@@ -1894,11 +1894,35 @@ public class Filters {
         return new IsNotNull(propName);
     }
 
+    /**
+     * Creates a compound condition to check that a property is neither null nor an empty string.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * And condition = Filters.isNotNullOrEmpty("email");
+     * // SQL fragment: email IS NOT NULL AND email != ''
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @return an And condition combining not-null and not-empty checks
+     */
     @Beta
     public static And isNotNullOrEmpty(final String propName) {
         return isNotNull(propName).and(notEqual(propName, ""));
     }
 
+    /**
+     * Creates a compound condition to check that a property is neither null nor zero.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * And condition = Filters.isNotNullOrZero("quantity");
+     * // SQL fragment: quantity IS NOT NULL AND quantity != 0
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @return an And condition combining not-null and non-zero checks
+     */
     @Beta
     public static And isNotNullOrZero(final String propName) {
         return isNotNull(propName).and(notEqual(propName, 0));

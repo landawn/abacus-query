@@ -649,11 +649,21 @@ public sealed class NamedProperty permits NP {
         return propName;
     }
 
+    /**
+     * Backward-compatible subtype of {@link NamedProperty}.
+     *
+     * <p>This type is kept for compatibility with existing user code that explicitly
+     * references {@code NamedProperty.NP}.</p>
+     */
     public static final class NP extends NamedProperty {
 
-        public NP(String propName) {
+        /**
+         * Creates an {@code NP} instance for the specified property name.
+         *
+         * @param propName the property name
+         */
+        public NP(final String propName) {
             super(propName);
-            // TODO Auto-generated constructor stub
         }
     }
 }
