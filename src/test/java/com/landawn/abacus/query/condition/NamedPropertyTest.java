@@ -65,37 +65,37 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
-    public void testEqAnyOfWithArray() {
+    public void testAnyEqualWithArray() {
         NamedProperty prop = NamedProperty.of("color");
-        Or condition = prop.eqAnyOf("red", "green", "blue");
+        Or condition = prop.anyEqual("red", "green", "blue");
 
         Assertions.assertEquals(3, condition.getConditions().size());
     }
 
     @Test
-    public void testEqAnyOfWithCollection() {
+    public void testAnyEqualWithCollection() {
         NamedProperty prop = NamedProperty.of("city");
         List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
-        Or condition = prop.eqAnyOf(cities);
+        Or condition = prop.anyEqual(cities);
 
         Assertions.assertEquals(3, condition.getConditions().size());
     }
 
     @Test
-    public void testEqAnyOfWithEmptyArray() {
+    public void testAnyEqualWithEmptyArray() {
         NamedProperty prop = NamedProperty.of("city");
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            prop.eqAnyOf();
+            prop.anyEqual();
         });
     }
 
     @Test
-    public void testEqAnyOfWithEmptyCollection() {
+    public void testAnyEqualWithEmptyCollection() {
         NamedProperty prop = NamedProperty.of("city");
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            prop.eqAnyOf(Arrays.asList());
+            prop.anyEqual(Arrays.asList());
         });
     }
 
@@ -281,7 +281,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty status = NamedProperty.of("status");
 
         // Create complex conditions using named properties
-        Or complexCondition = age.eqAnyOf(25, 30, 35);
+        Or complexCondition = age.anyEqual(25, 30, 35);
         In statusCondition = status.in(Arrays.asList("active", "pending"));
 
         Assertions.assertEquals(3, complexCondition.getConditions().size());

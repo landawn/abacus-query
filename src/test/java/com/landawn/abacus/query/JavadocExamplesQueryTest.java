@@ -567,44 +567,44 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testFilters_eqAnyOf_map() {
+    public void testFilters_anyEqual_map() {
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("name", "John");
         props.put("email", "john@example.com");
-        Or condition = Filters.eqAnyOf(props);
+        Or condition = Filters.anyEqual(props);
         assertNotNull(condition);
     }
 
     @Test
-    public void testFilters_eqAnyOf_twoProps() {
-        Or condition = Filters.eqAnyOf("name", "John", "email", "john@example.com");
+    public void testFilters_anyEqual_twoProps() {
+        Or condition = Filters.anyEqual("name", "John", "email", "john@example.com");
         assertNotNull(condition);
     }
 
     @Test
-    public void testFilters_eqAnyOf_threeProps() {
-        Or condition = Filters.eqAnyOf("status", "active", "type", "premium", "verified", true);
+    public void testFilters_anyEqual_threeProps() {
+        Or condition = Filters.anyEqual("status", "active", "type", "premium", "verified", true);
         assertNotNull(condition);
     }
 
     @Test
-    public void testFilters_eqAnd_map() {
+    public void testFilters_allEqual_map() {
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("status", "active");
         props.put("type", "premium");
-        And condition = Filters.eqAnd(props);
+        And condition = Filters.allEqual(props);
         assertNotNull(condition);
     }
 
     @Test
-    public void testFilters_eqAnd_twoProps() {
-        And condition = Filters.eqAnd("status", "active", "type", "premium");
+    public void testFilters_allEqual_twoProps() {
+        And condition = Filters.allEqual("status", "active", "type", "premium");
         assertNotNull(condition);
     }
 
     @Test
-    public void testFilters_eqAnd_threeProps() {
-        And condition = Filters.eqAnd("status", "active", "type", "premium", "verified", true);
+    public void testFilters_allEqual_threeProps() {
+        And condition = Filters.allEqual("status", "active", "type", "premium", "verified", true);
         assertNotNull(condition);
     }
 

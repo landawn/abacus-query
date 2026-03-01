@@ -145,65 +145,65 @@ public class Filters2025Test extends TestBase {
     }
 
     @Test
-    public void testEqAnyOfMap() {
+    public void testAnyEqualMap() {
         Map<String, Object> props = new HashMap<>();
         props.put("name", "John");
         props.put("age", 30);
 
-        Or or = Filters.eqAnyOf(props);
+        Or or = Filters.anyEqual(props);
         assertNotNull(or);
         assertEquals(2, or.getConditions().size());
     }
 
     @Test
-    public void testEqAnyOfEntity() {
+    public void testAnyEqualEntity() {
         Account account = new Account();
-        Or or = Filters.eqAnyOf(account);
+        Or or = Filters.anyEqual(account);
         assertNotNull(or);
     }
 
     @Test
-    public void testEqAnyOfTwoProps() {
-        Or or = Filters.eqAnyOf("name", "John", "age", 30);
+    public void testAnyEqualTwoProps() {
+        Or or = Filters.anyEqual("name", "John", "age", 30);
         assertNotNull(or);
         assertEquals(2, or.getConditions().size());
     }
 
     @Test
-    public void testEqAnyOfThreeProps() {
-        Or or = Filters.eqAnyOf("name", "John", "age", 30, "status", "active");
+    public void testAnyEqualThreeProps() {
+        Or or = Filters.anyEqual("name", "John", "age", 30, "status", "active");
         assertNotNull(or);
         assertEquals(3, or.getConditions().size());
     }
 
     @Test
-    public void testEqAndMap() {
+    public void testAllEqualMap() {
         Map<String, Object> props = new HashMap<>();
         props.put("status", "active");
         props.put("verified", true);
 
-        And and = Filters.eqAnd(props);
+        And and = Filters.allEqual(props);
         assertNotNull(and);
         assertEquals(2, and.getConditions().size());
     }
 
     @Test
-    public void testEqAndEntity() {
+    public void testAllEqualEntity() {
         Account account = new Account();
-        And and = Filters.eqAnd(account);
+        And and = Filters.allEqual(account);
         assertNotNull(and);
     }
 
     @Test
-    public void testEqAndTwoProps() {
-        And and = Filters.eqAnd("status", "active", "verified", true);
+    public void testAllEqualTwoProps() {
+        And and = Filters.allEqual("status", "active", "verified", true);
         assertNotNull(and);
         assertEquals(2, and.getConditions().size());
     }
 
     @Test
-    public void testEqAndThreeProps() {
-        And and = Filters.eqAnd("name", "John", "age", 30, "status", "active");
+    public void testAllEqualThreeProps() {
+        And and = Filters.allEqual("name", "John", "age", 30, "status", "active");
         assertNotNull(and);
         assertEquals(3, and.getConditions().size());
     }
@@ -655,7 +655,7 @@ public class Filters2025Test extends TestBase {
     }
 
     @Test
-    public void testEqAndOrList() {
+    public void testAnyOfAllEqualList() {
         Map<String, Object> props1 = new HashMap<>();
         props1.put("status", "active");
         props1.put("type", "A");
@@ -664,25 +664,25 @@ public class Filters2025Test extends TestBase {
         props2.put("status", "pending");
         props2.put("type", "B");
 
-        Or or = Filters.eqAndOr(Arrays.asList(props1, props2));
+        Or or = Filters.anyOfAllEqual(Arrays.asList(props1, props2));
         assertNotNull(or);
     }
 
     @Test
-    public void testEqAndOrEntities() {
+    public void testAnyOfAllEqualEntities() {
         Account account1 = new Account();
         Account account2 = new Account();
 
-        Or or = Filters.eqAndOr(Arrays.asList(account1, account2));
+        Or or = Filters.anyOfAllEqual(Arrays.asList(account1, account2));
         assertNotNull(or);
     }
 
     @Test
-    public void testEqAndOrEntitiesWithSelectPropNames() {
+    public void testAnyOfAllEqualEntitiesWithSelectPropNames() {
         Account account1 = new Account();
         Account account2 = new Account();
 
-        Or or = Filters.eqAndOr(Arrays.asList(account1, account2), Arrays.asList("id", "firstName"));
+        Or or = Filters.anyOfAllEqual(Arrays.asList(account1, account2), Arrays.asList("id", "firstName"));
         assertNotNull(or);
     }
 

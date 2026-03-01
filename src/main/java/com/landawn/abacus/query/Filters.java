@@ -588,7 +588,7 @@ public class Filters {
      * Map<String, Object> props = new HashMap<>();
      * props.put("name", "John");
      * props.put("email", "john@example.com");
-     * Or condition = Filters.eqAnyOf(props);
+     * Or condition = Filters.anyEqual(props);
      * // SQL fragment: name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
@@ -596,7 +596,7 @@ public class Filters {
      * @return an Or condition
      * @throws IllegalArgumentException if props is empty
      */
-    public static Or eqAnyOf(final Map<String, ?> props) {
+    public static Or anyEqual(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
 
         final Iterator<? extends Map.Entry<String, ?>> propIter = props.entrySet().iterator();
@@ -629,7 +629,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com");
-     * Or condition = Filters.eqAnyOf(user);
+     * Or condition = Filters.anyEqual(user);
      * // SQL fragment: name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
@@ -637,10 +637,10 @@ public class Filters {
      * @return an Or condition
      */
     @SuppressWarnings("deprecation")
-    public static Or eqAnyOf(final Object entity) {
+    public static Or anyEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
 
-        return eqAnyOf(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
+        return anyEqual(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
     }
 
     /**
@@ -651,7 +651,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
-     * Or condition = Filters.eqAnyOf(user, Arrays.asList("name", "email"));
+     * Or condition = Filters.anyEqual(user, Arrays.asList("name", "email"));
      * // Only uses name and email, ignores age
      * }</pre>
      *
@@ -660,7 +660,7 @@ public class Filters {
      * @return an Or condition
      * @throws IllegalArgumentException if selectPropNames is empty
      */
-    public static Or eqAnyOf(final Object entity, final Collection<String> selectPropNames) {
+    public static Or anyEqual(final Object entity, final Collection<String> selectPropNames) {
         N.checkArgNotEmpty(selectPropNames, "selectPropNames"); //NOSONAR
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
@@ -692,7 +692,7 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = Filters.eqAnyOf("name", "John", "email", "john@example.com");
+     * Or condition = Filters.anyEqual("name", "John", "email", "john@example.com");
      * // SQL fragment: name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
@@ -702,7 +702,7 @@ public class Filters {
      * @param propValue2 second property value
      * @return an Or condition
      */
-    public static Or eqAnyOf(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
+    public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return eq(propName1, propValue1).or(eq(propName2, propValue2));
     }
 
@@ -712,7 +712,7 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = Filters.eqAnyOf("status", "active", "type", "premium", "verified", true);
+     * Or condition = Filters.anyEqual("status", "active", "type", "premium", "verified", true);
      * }</pre>
      *
      * @param propName1 first property name
@@ -723,20 +723,21 @@ public class Filters {
      * @param propValue3 third property value
      * @return an Or condition
      */
-    public static Or eqAnyOf(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
+    public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
         return or(eq(propName1, propValue1), eq(propName2, propValue2), eq(propName3, propValue3));
     }
 
     /**
-     * Creates an AND condition from a map where each entry represents a property-value equality check.
-     * 
+     * Creates an AND condition from a map where each entry represents a property-value equality check
+     * across <b>different</b> columns/properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, Object> props = new HashMap<>();
      * props.put("status", "active");
      * props.put("type", "premium");
-     * And condition = Filters.eqAnd(props);
+     * And condition = Filters.allEqual(props);
      * // SQL fragment: status = 'active' AND type = 'premium'
      * }</pre>
      *
@@ -744,7 +745,7 @@ public class Filters {
      * @return an And condition
      * @throws IllegalArgumentException if props is empty
      */
-    public static And eqAnd(final Map<String, ?> props) {
+    public static And allEqual(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
 
         final Iterator<? extends Map.Entry<String, ?>> propIter = props.entrySet().iterator();
@@ -772,12 +773,13 @@ public class Filters {
 
     /**
      * Creates an AND condition from an entity object using all its properties.
-     * Each property of the entity will be included as an equality check in the AND condition.
-     * 
+     * Each property of the entity will be included as an equality check in the AND condition
+     * across <b>different</b> columns/properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
-     * And condition = Filters.eqAnd(user);
+     * And condition = Filters.allEqual(user);
      * // SQL fragment: name = 'John' AND email = 'john@example.com' AND age = 25
      * }</pre>
      *
@@ -785,19 +787,21 @@ public class Filters {
      * @return an And condition
      */
     @SuppressWarnings("deprecation")
-    public static And eqAnd(final Object entity) {
+    public static And allEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
 
-        return eqAnd(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
+        return allEqual(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
     }
 
     /**
      * Creates an AND condition from an entity object using only the specified properties.
-     * 
+     * Each property forms an equality check in the AND condition
+     * across <b>different</b> columns/properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
-     * And condition = Filters.eqAnd(user, Arrays.asList("email", "age"));
+     * And condition = Filters.allEqual(user, Arrays.asList("email", "age"));
      * // Only uses email and age, ignores name
      * }</pre>
      *
@@ -806,7 +810,7 @@ public class Filters {
      * @return an And condition
      * @throws IllegalArgumentException if selectPropNames is empty
      */
-    public static And eqAnd(final Object entity, final Collection<String> selectPropNames) {
+    public static And allEqual(final Object entity, final Collection<String> selectPropNames) {
         N.checkArgNotEmpty(selectPropNames, "selectPropNames");
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
@@ -837,7 +841,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = Filters.eqAnd("status", "active", "type", "premium");
+     * And condition = Filters.allEqual("status", "active", "type", "premium");
      * // SQL fragment: status = 'active' AND type = 'premium'
      * }</pre>
      *
@@ -847,7 +851,7 @@ public class Filters {
      * @param propValue2 second property value
      * @return an And condition
      */
-    public static And eqAnd(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
+    public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return eq(propName1, propValue1).and(eq(propName2, propValue2));
     }
 
@@ -856,7 +860,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = Filters.eqAnd("status", "active", "type", "premium", "verified", true);
+     * And condition = Filters.allEqual("status", "active", "type", "premium", "verified", true);
      * }</pre>
      *
      * @param propName1 first property name
@@ -867,7 +871,7 @@ public class Filters {
      * @param propValue3 third property value
      * @return an And condition
      */
-    public static And eqAnd(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
+    public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
         return and(eq(propName1, propValue1), eq(propName2, propValue2), eq(propName3, propValue3));
     }
@@ -881,7 +885,7 @@ public class Filters {
      * List<Map<String, Object>> propsList = new ArrayList<>();
      * propsList.add(Map.of("status", "active", "type", "premium"));
      * propsList.add(Map.of("status", "trial", "verified", true));
-     * Or condition = Filters.eqAndOr(propsList);
+     * Or condition = Filters.anyOfAllEqual(propsList);
      * // Results in: (status='active' AND type='premium') OR (status='trial' AND verified=true)
      * }</pre>
      *
@@ -890,13 +894,13 @@ public class Filters {
      * @throws IllegalArgumentException if propsList is empty
      */
     @Beta
-    public static Or eqAndOr(final List<? extends Map<String, ?>> propsList) {
+    public static Or anyOfAllEqual(final List<? extends Map<String, ?>> propsList) {
         N.checkArgNotEmpty(propsList, "propsList");
 
         final Condition[] conds = new Condition[propsList.size()];
 
         for (int i = 0, size = propsList.size(); i < size; i++) {
-            conds[i] = eqAnd(propsList.get(i));
+            conds[i] = allEqual(propsList.get(i));
         }
 
         return or(conds);
@@ -912,7 +916,7 @@ public class Filters {
      *     new User("John", "john@example.com"),
      *     new User("Jane", "jane@example.com")
      * );
-     * Or condition = Filters.eqAndOr(users);
+     * Or condition = Filters.anyOfAllEqual(users);
      * // Results in: (name='John' AND email='john@example.com') OR (name='Jane' AND email='jane@example.com')
      * }</pre>
      *
@@ -922,13 +926,13 @@ public class Filters {
      */
     @SuppressWarnings("deprecation")
     @Beta
-    public static Or eqAndOr(final Collection<?> entities) {
+    public static Or anyOfAllEqual(final Collection<?> entities) {
         N.checkArgNotEmpty(entities, "entities");
 
         final Object firstNonNull = N.firstNonNull(entities)
                 .orElseThrow(() -> new IllegalArgumentException("All elements in the specified entities are null."));
 
-        return eqAndOr(entities, QueryUtil.getSelectPropNames(firstNonNull.getClass(), false, null));
+        return anyOfAllEqual(entities, QueryUtil.getSelectPropNames(firstNonNull.getClass(), false, null));
     }
 
     /**
@@ -938,7 +942,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<User> users = Arrays.asList(new User(...), new User(...));
-     * Or condition = Filters.eqAndOr(users, Arrays.asList("name", "status"));
+     * Or condition = Filters.anyOfAllEqual(users, Arrays.asList("name", "status"));
      * // Only uses name and status properties from each user
      * }</pre>
      *
@@ -948,7 +952,7 @@ public class Filters {
      * @throws IllegalArgumentException if entities or selectPropNames is empty
      */
     @Beta
-    public static Or eqAndOr(final Collection<?> entities, final Collection<String> selectPropNames) {
+    public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> selectPropNames) {
         N.checkArgNotEmpty(entities, "entities");
         N.checkArgNotEmpty(selectPropNames, "selectPropNames");
         N.checkArgument(!N.allNull(entities), "All specified entities are null");
@@ -957,7 +961,7 @@ public class Filters {
 
         for (final Object entity : entities) {
             if (entity != null) {
-                condList.add(eqAnd(entity, selectPropNames));
+                condList.add(allEqual(entity, selectPropNames));
             }
         }
 

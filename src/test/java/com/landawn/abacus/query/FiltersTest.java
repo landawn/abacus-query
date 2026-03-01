@@ -140,8 +140,8 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testEqAnyOfWithArray() {
-        Or or = Filters.eqAnyOf("status", "active", "pending", "approved");
+    public void testAnyEqualWithArray() {
+        Or or = Filters.anyEqual("status", "active", "pending", "approved");
         Assertions.assertNotNull(or);
         Assertions.assertEquals(2, or.getConditions().size());
     }
@@ -154,52 +154,52 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testEqAnyOfWithMap() {
+    public void testAnyEqualWithMap() {
         Map<String, Object> props = new HashMap<>();
         props.put("name", "John");
         props.put("age", 25);
         props.put("status", "active");
 
-        Or or = Filters.eqAnyOf(props);
+        Or or = Filters.anyEqual(props);
         Assertions.assertNotNull(or);
         Assertions.assertEquals(3, or.getConditions().size());
     }
 
     @Test
-    public void testEqAnyOfWithTwoProperties() {
-        Or or = Filters.eqAnyOf("name", "John", "age", 25);
+    public void testAnyEqualWithTwoProperties() {
+        Or or = Filters.anyEqual("name", "John", "age", 25);
         Assertions.assertNotNull(or);
         Assertions.assertEquals(2, or.getConditions().size());
     }
 
     @Test
-    public void testEqAnyOfWithThreeProperties() {
-        Or or = Filters.eqAnyOf("name", "John", "age", 25, "status", "active");
+    public void testAnyEqualWithThreeProperties() {
+        Or or = Filters.anyEqual("name", "John", "age", 25, "status", "active");
         Assertions.assertNotNull(or);
         Assertions.assertEquals(3, or.getConditions().size());
     }
 
     @Test
-    public void testEqAndWithMap() {
+    public void testAllEqualWithMap() {
         Map<String, Object> props = new HashMap<>();
         props.put("name", "John");
         props.put("age", 25);
 
-        And and = Filters.eqAnd(props);
+        And and = Filters.allEqual(props);
         Assertions.assertNotNull(and);
         Assertions.assertEquals(2, and.getConditions().size());
     }
 
     @Test
-    public void testEqAndWithTwoProperties() {
-        And and = Filters.eqAnd("name", "John", "age", 25);
+    public void testAllEqualWithTwoProperties() {
+        And and = Filters.allEqual("name", "John", "age", 25);
         Assertions.assertNotNull(and);
         Assertions.assertEquals(2, and.getConditions().size());
     }
 
     @Test
-    public void testEqAndWithThreeProperties() {
-        And and = Filters.eqAnd("name", "John", "age", 25, "status", "active");
+    public void testAllEqualWithThreeProperties() {
+        And and = Filters.allEqual("name", "John", "age", 25, "status", "active");
         Assertions.assertNotNull(and);
         Assertions.assertEquals(3, and.getConditions().size());
     }
