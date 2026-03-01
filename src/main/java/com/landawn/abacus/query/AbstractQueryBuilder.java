@@ -2838,13 +2838,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
      * 
-     * @param n the number of rows to fetch
+     * @param rowCount the number of rows to fetch
      * @return this SQLBuilder instance for method chaining
      */
-    public This fetchNextRows(final int n) {
+    public This fetchNextRows(final int rowCount) {
         checkIfAlreadyCalled(SK.FETCH_NEXT);
 
-        _sb.append(" FETCH NEXT ").append(n).append(" ROWS ONLY");
+        _sb.append(" FETCH NEXT ").append(rowCount).append(" ROWS ONLY");
 
         return (This) this;
     }
@@ -2862,13 +2862,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY
      * }</pre>
      * 
-     * @param n the number of rows to fetch
+     * @param rowCount the number of rows to fetch
      * @return this SQLBuilder instance for method chaining
      */
-    public This fetchFirstRows(final int n) {
+    public This fetchFirstRows(final int rowCount) {
         checkIfAlreadyCalled(SK.FETCH_FIRST);
 
-        _sb.append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
+        _sb.append(" FETCH FIRST ").append(rowCount).append(" ROWS ONLY");
 
         return (This) this;
     }
@@ -3028,13 +3028,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
      * 
-     * @param b if true, the condition will be appended
+     * @param condition if true, the condition will be appended
      * @param cond the condition to append
      * @return this SQLBuilder instance for method chaining
      */
     @Beta
-    public This appendIf(final boolean b, final Condition cond) {
-        if (b) {
+    public This appendIf(final boolean condition, final Condition cond) {
+        if (condition) {
             append(cond);
         }
 
@@ -3056,12 +3056,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
      * }</pre>
      *
-     * @param b if true, the expression will be appended
+     * @param condition if true, the expression will be appended
      * @param expr the expression to append
      * @return this SQLBuilder instance for method chaining
      */
-    public This appendIf(final boolean b, final String expr) {
-        if (b) {
+    public This appendIf(final boolean condition, final String expr) {
+        if (condition) {
             append(expr);
         }
 
@@ -3082,13 +3082,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .query();
      * }</pre>
      * 
-     * @param b if true, the consumer will be executed
+     * @param condition if true, the consumer will be executed
      * @param append the consumer function to execute
      * @return this SQLBuilder instance for method chaining
      */
     @Beta
-    public This appendIf(final boolean b, final java.util.function.Consumer<? super This> append) {
-        if (b) {
+    public This appendIf(final boolean condition, final java.util.function.Consumer<? super This> append) {
+        if (condition) {
             append.accept((This) this);
         }
 
@@ -3110,14 +3110,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE status = ?
      * }</pre>
      * 
-     * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
-     * @param condToAppendForTrue the condition to append if b is true
-     * @param condToAppendForFalse the condition to append if b is false
+     * @param condition if true, append condToAppendForTrue; otherwise append condToAppendForFalse
+     * @param condToAppendForTrue the condition to append if condition is true
+     * @param condToAppendForFalse the condition to append if condition is false
      * @return this SQLBuilder instance for method chaining
      */
     @Beta
-    public This appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
-        if (b) {
+    public This appendIfOrElse(final boolean condition, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
+        if (condition) {
             append(condToAppendForTrue);
         } else {
             append(condToAppendForFalse);
@@ -3142,14 +3142,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY name ASC
      * }</pre>
      *
-     * @param b if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
-     * @param exprToAppendForTrue the expression to append if b is true
-     * @param exprToAppendForFalse the expression to append if b is false
+     * @param condition if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
+     * @param exprToAppendForTrue the expression to append if condition is true
+     * @param exprToAppendForFalse the expression to append if condition is false
      * @return this SQLBuilder instance for method chaining
      */
     @Beta
-    public This appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse) {
-        if (b) {
+    public This appendIfOrElse(final boolean condition, final String exprToAppendForTrue, final String exprToAppendForFalse) {
+        if (condition) {
             append(exprToAppendForTrue);
         } else {
             append(exprToAppendForFalse);

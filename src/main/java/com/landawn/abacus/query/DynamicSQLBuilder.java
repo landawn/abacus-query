@@ -338,13 +338,13 @@ public class DynamicSQLBuilder {
      * // Generates: OFFSET 100 ROWS FETCH NEXT 25 ROWS ONLY
      * }</pre>
      *
-     * @param n the number of rows to fetch (must not be negative)
+     * @param rowCount the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder fetchNextRows(final int n) {
-        N.checkArgNotNegative(n, "n");
+    public DynamicSQLBuilder fetchNextRows(final int rowCount) {
+        N.checkArgNotNegative(rowCount, "rowCount");
 
-        getStringBuilderForMoreParts().append(" FETCH NEXT ").append(n).append(" ROWS ONLY");
+        getStringBuilderForMoreParts().append(" FETCH NEXT ").append(rowCount).append(" ROWS ONLY");
 
         return this;
     }
@@ -359,13 +359,13 @@ public class DynamicSQLBuilder {
      * // Generates: FETCH FIRST 10 ROWS ONLY
      * }</pre>
      *
-     * @param n the number of rows to fetch (must not be negative)
+     * @param rowCount the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder fetchFirstRows(final int n) {
-        N.checkArgNotNegative(n, "n");
+    public DynamicSQLBuilder fetchFirstRows(final int rowCount) {
+        N.checkArgNotNegative(rowCount, "rowCount");
 
-        getStringBuilderForMoreParts().append(" FETCH FIRST ").append(n).append(" ROWS ONLY");
+        getStringBuilderForMoreParts().append(" FETCH FIRST ").append(rowCount).append(" ROWS ONLY");
 
         return this;
     }
@@ -726,19 +726,19 @@ public class DynamicSQLBuilder {
          *       .appendIf(includeBonus, "bonus");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param str the string to append if condition is true
+         * @param condition the condition to check
+         * @param textToAppend the string to append if condition is true
          * @return this Select instance for method chaining
          */
-        public SelectClause appendIf(final boolean b, final String str) {
-            if (b) {
+        public SelectClause appendIf(final boolean condition, final String textToAppend) {
+            if (condition) {
                 if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
                     sb.append("SELECT ");
                 }
 
-                sb.append(str);
+                sb.append(textToAppend);
             }
 
             return this;
@@ -755,22 +755,22 @@ public class DynamicSQLBuilder {
          *                      "first_name");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param strToAppendForTrue the string to append if condition is true
-         * @param strToAppendForFalse the string to append if condition is false
+         * @param condition the condition to check
+         * @param textToAppendWhenTrue the string to append if condition is true
+         * @param textToAppendWhenFalse the string to append if condition is false
          * @return this Select instance for method chaining
          */
-        public SelectClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public SelectClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("SELECT ");
             }
 
-            if (b) {
-                sb.append(strToAppendForTrue);
+            if (condition) {
+                sb.append(textToAppendWhenTrue);
             } else {
-                sb.append(strToAppendForFalse);
+                sb.append(textToAppendWhenFalse);
             }
 
             return this;
@@ -959,19 +959,19 @@ public class DynamicSQLBuilder {
          * from.appendIf(includeArchive, "archived_users");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param str the string to append if condition is true
+         * @param condition the condition to check
+         * @param textToAppend the string to append if condition is true
          * @return this From instance for method chaining
          */
-        public FromClause appendIf(final boolean b, final String str) {
-            if (b) {
+        public FromClause appendIf(final boolean condition, final String textToAppend) {
+            if (condition) {
                 if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
                     sb.append("FROM ");
                 }
 
-                sb.append(str);
+                sb.append(textToAppend);
             }
 
             return this;
@@ -986,22 +986,22 @@ public class DynamicSQLBuilder {
          * from.appendIfOrElse(useArchive, "archived_users", "active_users");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param strToAppendForTrue the string to append if condition is true
-         * @param strToAppendForFalse the string to append if condition is false
+         * @param condition the condition to check
+         * @param textToAppendWhenTrue the string to append if condition is true
+         * @param textToAppendWhenFalse the string to append if condition is false
          * @return this From instance for method chaining
          */
-        public FromClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public FromClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("FROM ");
             }
 
-            if (b) {
-                sb.append(strToAppendForTrue);
+            if (condition) {
+                sb.append(textToAppendWhenTrue);
             } else {
-                sb.append(strToAppendForFalse);
+                sb.append(textToAppendWhenFalse);
             }
 
             return this;
@@ -1074,14 +1074,14 @@ public class DynamicSQLBuilder {
          * // Generates: id IN (?, ?, ?)
          * }</pre>
          *
-         * @param n the number of question marks to append
+         * @param placeholderCount the number of question marks to append
          * @return this Where instance for method chaining
-         * @throws IllegalArgumentException if n is negative
+         * @throws IllegalArgumentException if placeholderCount is negative
          */
-        public WhereClause repeatQM(final int n) {
-            N.checkArgNotNegative(n, "n");
+        public WhereClause repeatQM(final int placeholderCount) {
+            N.checkArgNotNegative(placeholderCount, "placeholderCount");
 
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < placeholderCount; i++) {
                 if (i > 0) {
                     sb.append(", ?");
                 } else {
@@ -1102,19 +1102,19 @@ public class DynamicSQLBuilder {
          * // Generates: status IN (?, ?, ?)
          * }</pre>
          *
-         * @param n the number of question marks to append
+         * @param placeholderCount the number of question marks to append
          * @param prefix the string to add before the question marks
          * @param postfix the string to add after the question marks
          * @return this Where instance for method chaining
-         * @throws IllegalArgumentException if n is negative
+         * @throws IllegalArgumentException if placeholderCount is negative
          */
-        public WhereClause repeatQM(final int n, final String prefix, final String postfix) {
-            N.checkArgNotNegative(n, "n");
+        public WhereClause repeatQM(final int placeholderCount, final String prefix, final String postfix) {
+            N.checkArgNotNegative(placeholderCount, "placeholderCount");
 
-            if (n > 0) {
+            if (placeholderCount > 0) {
                 sb.append(prefix);
 
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < placeholderCount; i++) {
                     if (i > 0) {
                         sb.append(", ?");
                     } else {
@@ -1186,19 +1186,19 @@ public class DynamicSQLBuilder {
          *      .appendIf(filterByDate, "AND created_date > ?");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param str the string to append if condition is true
+         * @param condition the condition to check
+         * @param textToAppend the string to append if condition is true
          * @return this Where instance for method chaining
          */
-        public WhereClause appendIf(final boolean b, final String str) {
-            if (b) {
+        public WhereClause appendIf(final boolean condition, final String textToAppend) {
+            if (condition) {
                 if (!sb.isEmpty()) {
                     sb.append(" ");
                 } else {
                     sb.append("WHERE ");
                 }
 
-                sb.append(str);
+                sb.append(textToAppend);
             }
 
             return this;
@@ -1215,22 +1215,22 @@ public class DynamicSQLBuilder {
          *                      "status = 'active'");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param strToAppendForTrue the string to append if condition is true
-         * @param strToAppendForFalse the string to append if condition is false
+         * @param condition the condition to check
+         * @param textToAppendWhenTrue the string to append if condition is true
+         * @param textToAppendWhenFalse the string to append if condition is false
          * @return this Where instance for method chaining
          */
-        public WhereClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public WhereClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
                 sb.append("WHERE ");
             }
 
-            if (b) {
-                sb.append(strToAppendForTrue);
+            if (condition) {
+                sb.append(textToAppendWhenTrue);
             } else {
-                sb.append(strToAppendForFalse);
+                sb.append(textToAppendWhenFalse);
             }
 
             return this;
@@ -1327,19 +1327,19 @@ public class DynamicSQLBuilder {
          *        .appendIf(groupByRegion, "region_id");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param str the string to append if condition is true
+         * @param condition the condition to check
+         * @param textToAppend the string to append if condition is true
          * @return this GroupBy instance for method chaining
          */
-        public GroupByClause appendIf(final boolean b, final String str) {
-            if (b) {
+        public GroupByClause appendIf(final boolean condition, final String textToAppend) {
+            if (condition) {
                 if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
                     sb.append("GROUP BY ");
                 }
 
-                sb.append(str);
+                sb.append(textToAppend);
             }
 
             return this;
@@ -1356,22 +1356,22 @@ public class DynamicSQLBuilder {
          *                        "year");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param strToAppendForTrue the string to append if condition is true
-         * @param strToAppendForFalse the string to append if condition is false
+         * @param condition the condition to check
+         * @param textToAppendWhenTrue the string to append if condition is true
+         * @param textToAppendWhenFalse the string to append if condition is false
          * @return this GroupBy instance for method chaining
          */
-        public GroupByClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public GroupByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("GROUP BY ");
             }
 
-            if (b) {
-                sb.append(strToAppendForTrue);
+            if (condition) {
+                sb.append(textToAppendWhenTrue);
             } else {
-                sb.append(strToAppendForFalse);
+                sb.append(textToAppendWhenFalse);
             }
 
             return this;
@@ -1490,19 +1490,19 @@ public class DynamicSQLBuilder {
          *       .appendIf(checkRevenue, "AND SUM(revenue) > ?");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param str the string to append if condition is true
+         * @param condition the condition to check
+         * @param textToAppend the string to append if condition is true
          * @return this Having instance for method chaining
          */
-        public HavingClause appendIf(final boolean b, final String str) {
-            if (b) {
+        public HavingClause appendIf(final boolean condition, final String textToAppend) {
+            if (condition) {
                 if (!sb.isEmpty()) {
                     sb.append(" ");
                 } else {
                     sb.append("HAVING ");
                 }
 
-                sb.append(str);
+                sb.append(textToAppend);
             }
 
             return this;
@@ -1519,22 +1519,22 @@ public class DynamicSQLBuilder {
          *                       "COUNT(*) > 10");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param strToAppendForTrue the string to append if condition is true
-         * @param strToAppendForFalse the string to append if condition is false
+         * @param condition the condition to check
+         * @param textToAppendWhenTrue the string to append if condition is true
+         * @param textToAppendWhenFalse the string to append if condition is false
          * @return this Having instance for method chaining
          */
-        public HavingClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public HavingClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
                 sb.append("HAVING ");
             }
 
-            if (b) {
-                sb.append(strToAppendForTrue);
+            if (condition) {
+                sb.append(textToAppendWhenTrue);
             } else {
-                sb.append(strToAppendForFalse);
+                sb.append(textToAppendWhenFalse);
             }
 
             return this;
@@ -1631,19 +1631,19 @@ public class DynamicSQLBuilder {
          *        .appendIf(sortByDate, "created_date DESC");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param str the string to append if condition is true
+         * @param condition the condition to check
+         * @param textToAppend the string to append if condition is true
          * @return this OrderBy instance for method chaining
          */
-        public OrderByClause appendIf(final boolean b, final String str) {
-            if (b) {
+        public OrderByClause appendIf(final boolean condition, final String textToAppend) {
+            if (condition) {
                 if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
                     sb.append("ORDER BY ");
                 }
 
-                sb.append(str);
+                sb.append(textToAppend);
             }
 
             return this;
@@ -1660,22 +1660,22 @@ public class DynamicSQLBuilder {
          *                        "created_date ASC");
          * }</pre>
          *
-         * @param b the condition to check
-         * @param strToAppendForTrue the string to append if condition is true
-         * @param strToAppendForFalse the string to append if condition is false
+         * @param condition the condition to check
+         * @param textToAppendWhenTrue the string to append if condition is true
+         * @param textToAppendWhenFalse the string to append if condition is false
          * @return this OrderBy instance for method chaining
          */
-        public OrderByClause appendIfOrElse(final boolean b, final String strToAppendForTrue, final String strToAppendForFalse) {
+        public OrderByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
                 sb.append("ORDER BY ");
             }
 
-            if (b) {
-                sb.append(strToAppendForTrue);
+            if (condition) {
+                sb.append(textToAppendWhenTrue);
             } else {
-                sb.append(strToAppendForFalse);
+                sb.append(textToAppendWhenFalse);
             }
 
             return this;
