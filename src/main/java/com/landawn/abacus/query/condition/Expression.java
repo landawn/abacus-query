@@ -106,7 +106,7 @@ import com.landawn.abacus.util.Strings;
  * @see AbstractCondition
  * @see Filters#expr(String)
  */
-public class Expression extends AbstractCondition {
+public class Expression extends AbstractCondition implements LogicalCondition {
 
     static final String NULL_STRING = "null";
 

@@ -71,7 +71,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * @see SubQuery
  * @see Cell
  */
-public class All extends Cell {
+public class All extends Cell implements LogicalCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.

@@ -35,7 +35,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * @see NotBetween
  * @see AbstractCondition
  */
-public abstract class AbstractBetween extends AbstractCondition {
+public abstract class AbstractBetween extends AbstractCondition implements LogicalCondition {
 
     // For Kryo
     final String propName;

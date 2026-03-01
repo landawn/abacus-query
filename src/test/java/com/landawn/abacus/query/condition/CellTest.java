@@ -117,34 +117,25 @@ public class CellTest extends TestBase {
     }
 
     @Test
-    public void testAnd() {
+    public void testAnd_NotSupportedForCell() {
         Cell cell = new Cell(Operator.NOT, Filters.eq("active", true));
         Equal eq = Filters.eq("status", "published");
 
-        And and = cell.and(eq);
-
-        Assertions.assertNotNull(and);
-        Assertions.assertEquals(2, and.getConditions().size());
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> cell.and(eq));
     }
 
     @Test
-    public void testOr() {
+    public void testOr_NotSupportedForCell() {
         Cell cell = new Cell(Operator.EXISTS, Filters.subQuery("SELECT 1"));
         GreaterThan gt = Filters.gt("count", 0);
 
-        Or or = cell.or(gt);
-
-        Assertions.assertNotNull(or);
-        Assertions.assertEquals(2, or.getConditions().size());
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> cell.or(gt));
     }
 
     @Test
-    public void testNot() {
+    public void testNot_NotSupportedForCell() {
         Cell cell = new Cell(Operator.EXISTS, Filters.subQuery("SELECT id FROM users"));
 
-        Not not = cell.not();
-
-        Assertions.assertNotNull(not);
-        Assertions.assertEquals(cell, not.getCondition());
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> cell.not());
     }
 }

@@ -39,7 +39,7 @@ import com.landawn.abacus.util.Strings;
  * @see SubQuery
  * @see AbstractCondition
  */
-public abstract class AbstractInSubQuery extends AbstractCondition {
+public abstract class AbstractInSubQuery extends AbstractCondition implements LogicalCondition {
 
     // For Kryo
     final Collection<String> propNames;

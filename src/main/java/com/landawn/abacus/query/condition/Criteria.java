@@ -77,7 +77,7 @@ import com.landawn.abacus.util.Strings;
  * @see Filters
  * @see Clause
  */
-public class Criteria extends AbstractCondition {
+public class Criteria extends AbstractCondition implements LogicalCondition {
 
     private static final Set<Operator> setOperators = N.newHashSet();
 

@@ -342,34 +342,25 @@ public class Cell2025Test extends TestBase {
     }
 
     @Test
-    public void testAnd_InheritedFromAbstractCondition() {
+    public void testAnd_NotSupportedForCell() {
         Cell cell = new Cell(Operator.NOT, Filters.eq("a", 1));
         Condition other = Filters.eq("b", 2);
 
-        And result = cell.and(other);
-
-        assertNotNull(result);
-        assertEquals(2, result.getConditions().size());
+        assertThrows(UnsupportedOperationException.class, () -> cell.and(other));
     }
 
     @Test
-    public void testOr_InheritedFromAbstractCondition() {
+    public void testOr_NotSupportedForCell() {
         Cell cell = new Cell(Operator.NOT, Filters.eq("a", 1));
         Condition other = Filters.eq("b", 2);
 
-        Or result = cell.or(other);
-
-        assertNotNull(result);
-        assertEquals(2, result.getConditions().size());
+        assertThrows(UnsupportedOperationException.class, () -> cell.or(other));
     }
 
     @Test
-    public void testNot_InheritedFromAbstractCondition() {
+    public void testNot_NotSupportedForCell() {
         Cell cell = new Cell(Operator.EXISTS, Filters.isNull("test"));
 
-        Not result = cell.not();
-
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
+        assertThrows(UnsupportedOperationException.class, () -> cell.not());
     }
 }

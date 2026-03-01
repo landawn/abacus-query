@@ -55,7 +55,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * @see NotIn
  * @see Cell
  */
-public class NotExists extends Cell {
+public class NotExists extends Cell implements LogicalCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.

@@ -120,11 +120,19 @@ public interface Condition {
      * // Equivalent to: age > 18 AND status = 'active' AND verified = true
      * }</pre>
      * 
+     * <p>Not all condition types support this operation. Structural conditions like
+     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
+     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
+     *
      * @param cond the condition to AND with this condition (must not be null)
      * @return a new And condition containing both conditions
      * @throws IllegalArgumentException if {@code cond} is null
+     * @throws UnsupportedOperationException if this condition type does not support logical operations
      */
-    And and(Condition cond);
+    @SuppressWarnings("unused")
+    default And and(final Condition cond) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Creates a new OR condition combining this condition with another.
@@ -151,11 +159,18 @@ public interface Condition {
      * // Equivalent to: memberType = 'premium' OR memberType = 'vip' OR memberType = 'gold'
      * }</pre>
      * 
+     * <p>Not all condition types support this operation. Structural conditions like
+     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
+     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
+     *
      * @param cond the condition to OR with this condition (must not be null)
      * @return a new Or condition containing both conditions
      * @throws IllegalArgumentException if {@code cond} is null
+     * @throws UnsupportedOperationException if this condition type does not support logical operations
      */
-    Or or(Condition cond);
+    default Or or(@SuppressWarnings("unused") final Condition cond) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Creates a new XOR (exclusive OR) condition combining this condition with another.
@@ -179,11 +194,18 @@ public interface Condition {
      * // Equivalent to: (hasDiscount = true AND NOT isMember = true) OR (NOT hasDiscount = true AND isMember = true)
      * }</pre>
      *
+     * <p>Not all condition types support this operation. Structural conditions like
+     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
+     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
+     *
      * @param cond the condition to XOR with this condition (must not be null)
      * @return a new Or condition representing the exclusive-or of both conditions
      * @throws IllegalArgumentException if {@code cond} is null
+     * @throws UnsupportedOperationException if this condition type does not support logical operations
      */
-    Or xor(Condition cond);
+    default Or xor(@SuppressWarnings("unused") final Condition cond) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Creates a new NOT condition that negates this condition.
@@ -210,9 +232,16 @@ public interface Condition {
      * // Equivalent to: NOT (status = 'active' AND age > 18)
      * }</pre>
      * 
+     * <p>Not all condition types support this operation. Structural conditions like
+     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
+     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
+     *
      * @return a new Not condition wrapping this condition
+     * @throws UnsupportedOperationException if this condition type does not support logical operations
      */
-    Not not();
+    default Not not() {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Creates a copy of this condition.
