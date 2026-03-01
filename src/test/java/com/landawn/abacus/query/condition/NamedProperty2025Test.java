@@ -90,20 +90,20 @@ public class NamedProperty2025Test extends TestBase {
     }
 
     @Test
-    public void testEqOrWithVarargs() {
+    public void testEqAnyOfWithVarargs() {
         NamedProperty np = NamedProperty.of("color");
-        Or or = np.eqOr("red", "green", "blue");
+        Or or = np.eqAnyOf("red", "green", "blue");
 
         assertNotNull(or);
         assertEquals(3, or.getConditions().size());
     }
 
     @Test
-    public void testEqOrWithCollection() {
+    public void testEqAnyOfWithCollection() {
         NamedProperty np = NamedProperty.of("city");
         List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
 
-        Or or = np.eqOr(cities);
+        Or or = np.eqAnyOf(cities);
 
         assertNotNull(or);
         assertEquals(3, or.getConditions().size());
@@ -341,7 +341,7 @@ public class NamedProperty2025Test extends TestBase {
     public void testComplexUsageWithOr() {
         NamedProperty priority = NamedProperty.of("priority");
 
-        Or or = priority.eqOr(1, 2, 3, 4, 5);
+        Or or = priority.eqAnyOf(1, 2, 3, 4, 5);
 
         assertEquals(5, or.getConditions().size());
     }
@@ -417,30 +417,30 @@ public class NamedProperty2025Test extends TestBase {
     }
 
     @Test
-    public void testComplexEqOrWithMixedTypes() {
+    public void testComplexEqAnyOfWithMixedTypes() {
         NamedProperty type = NamedProperty.of("type");
 
-        Or or = type.eqOr("A", "B", "C", "D");
+        Or or = type.eqAnyOf("A", "B", "C", "D");
 
         assertEquals(4, or.getConditions().size());
     }
 
     @Test
-    public void testEqOrWithSingleValue() {
+    public void testEqAnyOfWithSingleValue() {
         NamedProperty status = NamedProperty.of("status");
 
-        Or or = status.eqOr("active");
+        Or or = status.eqAnyOf("active");
 
         assertNotNull(or);
         assertEquals(1, or.getConditions().size());
     }
 
     @Test
-    public void testEqOrWithEmptyCollection() {
+    public void testEqAnyOfWithEmptyCollection() {
         NamedProperty status = NamedProperty.of("status");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            status.eqOr(Arrays.asList());
+            status.eqAnyOf(Arrays.asList());
         });
     }
 

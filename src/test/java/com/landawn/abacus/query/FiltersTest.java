@@ -140,8 +140,8 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testEqOrWithArray() {
-        Or or = Filters.eqOr("status", "active", "pending", "approved");
+    public void testEqAnyOfWithArray() {
+        Or or = Filters.eqAnyOf("status", "active", "pending", "approved");
         Assertions.assertNotNull(or);
         Assertions.assertEquals(2, or.getConditions().size());
     }
@@ -154,27 +154,27 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testEqOrWithMap() {
+    public void testEqAnyOfWithMap() {
         Map<String, Object> props = new HashMap<>();
         props.put("name", "John");
         props.put("age", 25);
         props.put("status", "active");
 
-        Or or = Filters.eqOr(props);
+        Or or = Filters.eqAnyOf(props);
         Assertions.assertNotNull(or);
         Assertions.assertEquals(3, or.getConditions().size());
     }
 
     @Test
-    public void testEqOrWithTwoProperties() {
-        Or or = Filters.eqOr("name", "John", "age", 25);
+    public void testEqAnyOfWithTwoProperties() {
+        Or or = Filters.eqAnyOf("name", "John", "age", 25);
         Assertions.assertNotNull(or);
         Assertions.assertEquals(2, or.getConditions().size());
     }
 
     @Test
-    public void testEqOrWithThreeProperties() {
-        Or or = Filters.eqOr("name", "John", "age", 25, "status", "active");
+    public void testEqAnyOfWithThreeProperties() {
+        Or or = Filters.eqAnyOf("name", "John", "age", 25, "status", "active");
         Assertions.assertNotNull(or);
         Assertions.assertEquals(3, or.getConditions().size());
     }

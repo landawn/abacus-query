@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.condition.NamedProperty.NP;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Strings;
 
@@ -40,7 +41,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Support for pattern matching (like, notLike, startsWith, endsWith, contains)</li>
  *   <li>Support for null checks (isNull, isNotNull)</li>
  *   <li>Support for range and set operations (between, in)</li>
- *   <li>Convenience methods for OR combinations (eqOr)</li>
+ *   <li>Convenience methods for OR combinations (eqAnyOf)</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -65,7 +66,7 @@ import com.landawn.abacus.util.Strings;
  * Condition c8 = status.isNotNull();   // status IS NOT NULL
  *
  * // Chain conditions with OR
- * Or orCondition = age.eqOr(25, 30, 35);   // age = 25 OR age = 30 OR age = 35
+ * Or orCondition = age.eqAnyOf(25, 30, 35);   // age = 25 OR age = 30 OR age = 35
  *
  * // Combine with AND/OR for complex queries
  * Condition complex = age.gt(18).and(status.eq("active"));
@@ -80,7 +81,7 @@ import com.landawn.abacus.util.Strings;
  * @see Condition
  * @see Filters
  */
-public final class NamedProperty {
+public sealed class NamedProperty permits NP {
 
     private static final Map<String, NamedProperty> instancePool = new ConcurrentHashMap<>();
 
@@ -174,10 +175,10 @@ public final class NamedProperty {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("color").eqOr("red", "green", "blue");
+     * NamedProperty.of("color").eqAnyOf("red", "green", "blue");
      * // Results in: color = 'red' OR color = 'green' OR color = 'blue'
      *
-     * NamedProperty.of("priority").eqOr(1, 2, 3);
+     * NamedProperty.of("priority").eqAnyOf(1, 2, 3);
      * // Results in: priority = 1 OR priority = 2 OR priority = 3
      * }</pre>
      *
@@ -187,7 +188,7 @@ public final class NamedProperty {
      * @see Equal
      */
     @SuppressWarnings("deprecation")
-    public Or eqOr(final Object... values) {
+    public Or eqAnyOf(final Object... values) {
         N.checkArgNotEmpty(values, "values");
 
         final Or or = Filters.or();
@@ -201,17 +202,17 @@ public final class NamedProperty {
 
     /**
      * Creates an OR condition with multiple EQUAL checks for this property using a collection.
-     * This is similar to {@link #eqOr(Object...)} but accepts a collection instead of varargs.
+     * This is similar to {@link #eqAnyOf(Object...)} but accepts a collection instead of varargs.
      * Useful when the values are already in a collection or list.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
-     * NamedProperty.of("city").eqOr(cities);
+     * NamedProperty.of("city").eqAnyOf(cities);
      * // Results in: city = 'New York' OR city = 'Los Angeles' OR city = 'Chicago'
      *
      * Set<Integer> validIds = Set.of(10, 20, 30);
-     * NamedProperty.of("department_id").eqOr(validIds);
+     * NamedProperty.of("department_id").eqAnyOf(validIds);
      * // Results in: department_id = 10 OR department_id = 20 OR department_id = 30
      * }</pre>
      *
@@ -221,7 +222,7 @@ public final class NamedProperty {
      * @see Equal
      */
     @SuppressWarnings("deprecation")
-    public Or eqOr(final Collection<?> values) {
+    public Or eqAnyOf(final Collection<?> values) {
         N.checkArgNotEmpty(values, "values");
 
         final Or or = Filters.or();
@@ -575,5 +576,13 @@ public final class NamedProperty {
     @Override
     public String toString() {
         return propName;
+    }
+
+    public static final class NP extends NamedProperty {
+
+        public NP(String propName) {
+            super(propName);
+            // TODO Auto-generated constructor stub
+        }
     }
 }

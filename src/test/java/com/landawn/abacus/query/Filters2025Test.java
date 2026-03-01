@@ -46,6 +46,7 @@ import com.landawn.abacus.query.condition.IsNot;
 import com.landawn.abacus.query.condition.IsNotInfinite;
 import com.landawn.abacus.query.condition.IsNotNaN;
 import com.landawn.abacus.query.condition.IsNotNull;
+import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.IsNull;
 import com.landawn.abacus.query.condition.Junction;
 import com.landawn.abacus.query.condition.LessThanOrEqual;
@@ -136,41 +137,41 @@ public class Filters2025Test extends TestBase {
     }
 
     @Test
-    public void testEqOrCollection() {
+    public void testInCollectionForAge() {
         List<Integer> ages = Arrays.asList(20, 30, 40);
-        Or or = Filters.eqOr("age", ages);
-        assertNotNull(or);
-        assertFalse(or.getConditions().isEmpty());
+        In in = Filters.in("age", ages);
+        assertNotNull(in);
+        assertFalse(in.getValues().isEmpty());
     }
 
     @Test
-    public void testEqOrMap() {
+    public void testEqAnyOfMap() {
         Map<String, Object> props = new HashMap<>();
         props.put("name", "John");
         props.put("age", 30);
 
-        Or or = Filters.eqOr(props);
+        Or or = Filters.eqAnyOf(props);
         assertNotNull(or);
         assertEquals(2, or.getConditions().size());
     }
 
     @Test
-    public void testEqOrEntity() {
+    public void testEqAnyOfEntity() {
         Account account = new Account();
-        Or or = Filters.eqOr(account);
+        Or or = Filters.eqAnyOf(account);
         assertNotNull(or);
     }
 
     @Test
-    public void testEqOrTwoProps() {
-        Or or = Filters.eqOr("name", "John", "age", 30);
+    public void testEqAnyOfTwoProps() {
+        Or or = Filters.eqAnyOf("name", "John", "age", 30);
         assertNotNull(or);
         assertEquals(2, or.getConditions().size());
     }
 
     @Test
-    public void testEqOrThreeProps() {
-        Or or = Filters.eqOr("name", "John", "age", 30, "status", "active");
+    public void testEqAnyOfThreeProps() {
+        Or or = Filters.eqAnyOf("name", "John", "age", 30, "status", "active");
         assertNotNull(or);
         assertEquals(3, or.getConditions().size());
     }

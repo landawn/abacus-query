@@ -579,75 +579,16 @@ public class Filters {
         return eq(propName, QME);
     }
 
-    //    // The method eqOr(String, Object[]) is ambiguous for the type Filters
-    //    /**
-    //     * Creates an OR condition where the property equals any of the provided values.
-    //     * 
-    //     * <p><b>Usage Examples:</b></p>
-    //     * <pre>{@code
-    //     * Or condition = Filters.eqOr("status", "active", "pending", "approved");
-    //     * // SQL fragment: status = 'active' OR status = 'pending' OR status = 'approved'
-    //     * }</pre>
-    //     *
-    //     * @param propName the property/column name
-    //     * @param propValues the values to compare against (must not be empty)
-    //     * @return an Or condition
-    //     * @throws IllegalArgumentException if propValues is empty
-    //     * @deprecated Use {@link #eqOr(String, Collection)} instead for better clarity.
-    //     * @see #eqOr(String, Collection)
-    //     */
-    //    @Deprecated
-    //    public static Or eqOr(final String propName, final Object... propValues) {
-    //        N.checkArgNotEmpty(propValues, "propValues");
-    //
-    //        final Or or = Filters.or();
-    //
-    //        for (final Object propValue : propValues) {
-    //            or.add(eq(propName, propValue));
-    //        }
-    //
-    //        return or;
-    //    }
-
     /**
-     * Creates an OR condition where the property equals any of the values in the collection.
+     * Creates an OR condition from a map where each entry represents a property-value equality check
+     * across <b>different</b> columns/properties.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> statuses = Arrays.asList("active", "pending");
-     * Or condition = Filters.eqOr("status", statuses);
-     * }</pre>
-     *
-     * @param propName the property/column name
-     * @param propValues the collection of values to compare against (must not be empty)
-     * @return an Or condition
-     * @throws IllegalArgumentException if propValues is empty
-     * @deprecated Use {@link #in(String, Collection)} instead for better clarity and performance.
-     *             For example, replace {@code eqOr("status", Arrays.asList("a", "b"))}
-     *             with {@code in("status", Arrays.asList("a", "b"))}.
-     */
-    @Deprecated
-    public static Or eqOr(final String propName, final Collection<?> propValues) {
-        N.checkArgNotEmpty(propValues, "propValues");
-
-        final Or or = Filters.or();
-
-        for (final Object propValue : propValues) {
-            or.add(eq(propName, propValue));
-        }
-
-        return or;
-    }
-
-    /**
-     * Creates an OR condition from a map where each entry represents a property-value equality check.
-     * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, Object> props = new HashMap<>();
      * props.put("name", "John");
      * props.put("email", "john@example.com");
-     * Or condition = Filters.eqOr(props);
+     * Or condition = Filters.eqAnyOf(props);
      * // SQL fragment: name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
@@ -655,7 +596,7 @@ public class Filters {
      * @return an Or condition
      * @throws IllegalArgumentException if props is empty
      */
-    public static Or eqOr(final Map<String, ?> props) {
+    public static Or eqAnyOf(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
 
         final Iterator<? extends Map.Entry<String, ?>> propIter = props.entrySet().iterator();
@@ -682,12 +623,13 @@ public class Filters {
 
     /**
      * Creates an OR condition from an entity object using all its properties.
-     * Each property of the entity will be included as an equality check in the OR condition.
-     * 
+     * Each property of the entity will be included as an equality check in the OR condition
+     * across <b>different</b> columns/properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com");
-     * Or condition = Filters.eqOr(user);
+     * Or condition = Filters.eqAnyOf(user);
      * // SQL fragment: name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
@@ -695,19 +637,21 @@ public class Filters {
      * @return an Or condition
      */
     @SuppressWarnings("deprecation")
-    public static Or eqOr(final Object entity) {
+    public static Or eqAnyOf(final Object entity) {
         N.checkArgNotNull(entity, "entity");
 
-        return eqOr(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
+        return eqAnyOf(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
     }
 
     /**
      * Creates an OR condition from an entity object using only the specified properties.
-     * 
+     * Each property forms an equality check in the OR condition
+     * across <b>different</b> columns/properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
-     * Or condition = Filters.eqOr(user, Arrays.asList("name", "email"));
+     * Or condition = Filters.eqAnyOf(user, Arrays.asList("name", "email"));
      * // Only uses name and email, ignores age
      * }</pre>
      *
@@ -716,7 +660,7 @@ public class Filters {
      * @return an Or condition
      * @throws IllegalArgumentException if selectPropNames is empty
      */
-    public static Or eqOr(final Object entity, final Collection<String> selectPropNames) {
+    public static Or eqAnyOf(final Object entity, final Collection<String> selectPropNames) {
         N.checkArgNotEmpty(selectPropNames, "selectPropNames"); //NOSONAR
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
@@ -743,11 +687,12 @@ public class Filters {
     }
 
     /**
-     * Creates an OR condition with two property-value pairs.
-     * 
+     * Creates an OR condition with two property-value pairs
+     * across <b>different</b> columns/properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = Filters.eqOr("name", "John", "email", "john@example.com");
+     * Or condition = Filters.eqAnyOf("name", "John", "email", "john@example.com");
      * // SQL fragment: name = 'John' OR email = 'john@example.com'
      * }</pre>
      *
@@ -757,16 +702,17 @@ public class Filters {
      * @param propValue2 second property value
      * @return an Or condition
      */
-    public static Or eqOr(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
+    public static Or eqAnyOf(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return eq(propName1, propValue1).or(eq(propName2, propValue2));
     }
 
     /**
-     * Creates an OR condition with three property-value pairs.
-     * 
+     * Creates an OR condition with three property-value pairs
+     * across <b>different</b> columns/properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = Filters.eqOr("status", "active", "type", "premium", "verified", true);
+     * Or condition = Filters.eqAnyOf("status", "active", "type", "premium", "verified", true);
      * }</pre>
      *
      * @param propName1 first property name
@@ -777,7 +723,7 @@ public class Filters {
      * @param propValue3 third property value
      * @return an Or condition
      */
-    public static Or eqOr(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
+    public static Or eqAnyOf(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
         return or(eq(propName1, propValue1), eq(propName2, propValue2), eq(propName3, propValue3));
     }

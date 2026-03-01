@@ -567,23 +567,23 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testFilters_eqOr_map() {
+    public void testFilters_eqAnyOf_map() {
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("name", "John");
         props.put("email", "john@example.com");
-        Or condition = Filters.eqOr(props);
+        Or condition = Filters.eqAnyOf(props);
         assertNotNull(condition);
     }
 
     @Test
-    public void testFilters_eqOr_twoProps() {
-        Or condition = Filters.eqOr("name", "John", "email", "john@example.com");
+    public void testFilters_eqAnyOf_twoProps() {
+        Or condition = Filters.eqAnyOf("name", "John", "email", "john@example.com");
         assertNotNull(condition);
     }
 
     @Test
-    public void testFilters_eqOr_threeProps() {
-        Or condition = Filters.eqOr("status", "active", "type", "premium", "verified", true);
+    public void testFilters_eqAnyOf_threeProps() {
+        Or condition = Filters.eqAnyOf("status", "active", "type", "premium", "verified", true);
         assertNotNull(condition);
     }
 
