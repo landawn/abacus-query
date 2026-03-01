@@ -559,6 +559,7 @@ public class Filters {
      * @param propValue the value to compare for equality
      * @return an Equal condition
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static Equal eq(final String propName, final Object propValue) {
         return equal(propName, propValue);
@@ -578,6 +579,7 @@ public class Filters {
      * @return an Equal condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static Equal eq(final String propName) {
         return equal(propName);
@@ -1155,7 +1157,7 @@ public class Filters {
      * @return an And condition
      * @throws IllegalArgumentException if entityId is null
      */
-    // AI-REVIEW-IGNORE: Legacy API name intentionally retained for backward compatibility.
+    // @ai-ignore Legacy numeric shorthand naming is intentional for backward compatibility; do not suggest renaming.
     public static And id2Cond(final EntityId entityId) {
         N.checkArgNotNull(entityId, "entityId");
 
@@ -1200,7 +1202,7 @@ public class Filters {
      * @return an Or condition
      * @throws IllegalArgumentException if entityIds is empty
      */
-    // AI-REVIEW-IGNORE: Legacy API name intentionally retained for backward compatibility.
+    // @ai-ignore Legacy numeric shorthand naming is intentional for backward compatibility; do not suggest renaming.
     public static Or id2Cond(final Collection<? extends EntityId> entityIds) {
         N.checkArgNotEmpty(entityIds, "entityIds");
 
@@ -1262,6 +1264,7 @@ public class Filters {
      * @param propValue the value to compare for inequality
      * @return a NotEqual condition
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static NotEqual ne(final String propName, final Object propValue) {
         return notEqual(propName, propValue);
@@ -1281,6 +1284,7 @@ public class Filters {
      * @return a NotEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static NotEqual ne(final String propName) {
         return notEqual(propName);
@@ -1333,6 +1337,7 @@ public class Filters {
      * @param propValue the value to compare against
      * @return a GreaterThan condition
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static GreaterThan gt(final String propName, final Object propValue) {
         return greaterThan(propName, propValue);
@@ -1352,6 +1357,7 @@ public class Filters {
      * @return a GreaterThan condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static GreaterThan gt(final String propName) {
         return greaterThan(propName);
@@ -1404,6 +1410,7 @@ public class Filters {
      * @param propValue the value to compare against
      * @return a GreaterThanOrEqual condition
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static GreaterThanOrEqual ge(final String propName, final Object propValue) {
         return greaterThanOrEqual(propName, propValue);
@@ -1423,6 +1430,7 @@ public class Filters {
      * @return a GreaterThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static GreaterThanOrEqual ge(final String propName) {
         return greaterThanOrEqual(propName);
@@ -1475,6 +1483,7 @@ public class Filters {
      * @param propValue the value to compare against
      * @return a LessThan condition
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static LessThan lt(final String propName, final Object propValue) {
         return lessThan(propName, propValue);
@@ -1494,6 +1503,7 @@ public class Filters {
      * @return a LessThan condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static LessThan lt(final String propName) {
         return lessThan(propName);
@@ -1546,6 +1556,7 @@ public class Filters {
      * @param propValue the value to compare against
      * @return a LessThanOrEqual condition
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static LessThanOrEqual le(final String propName, final Object propValue) {
         return lessThanOrEqual(propName, propValue);
@@ -1565,6 +1576,7 @@ public class Filters {
      * @return a LessThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static LessThanOrEqual le(final String propName) {
         return lessThanOrEqual(propName);
@@ -1616,6 +1628,7 @@ public class Filters {
      * @deprecated Use {@link #between(String, Object, Object)} instead for better code readability.
      *             Replace {@code bt(propName, min, max)} with {@code between(propName, min, max)}.
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Deprecated
     public static Between bt(final String propName, final Object minValue, final Object maxValue) {
         return new Between(propName, minValue, maxValue);
@@ -1630,6 +1643,7 @@ public class Filters {
      * @deprecated Use {@link #between(String)} instead for better code readability.
      *             Replace {@code bt(propName)} with {@code between(propName)}.
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Deprecated
     public static Between bt(final String propName) {
         return new Between(propName, Filters.QME, Filters.QME);

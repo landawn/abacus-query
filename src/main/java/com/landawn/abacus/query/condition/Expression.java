@@ -249,6 +249,7 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the equality expression
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String eq(final String literal, final Object value) {
         return equal(literal, value);
@@ -288,6 +289,7 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the not-equal expression
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String ne(final String literal, final Object value) {
         return notEqual(literal, value);
@@ -327,6 +329,7 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the greater-than expression
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String gt(final String literal, final Object value) {
         return greaterThan(literal, value);
@@ -363,6 +366,7 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the greater-than-or-equal expression
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String ge(final String literal, final Object value) {
         return greaterThanOrEqual(literal, value);
@@ -399,6 +403,7 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the less-than expression
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String lt(final String literal, final Object value) {
         return lessThan(literal, value);
@@ -435,6 +440,7 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the less-than-or-equal expression
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String le(final String literal, final Object value) {
         return lessThanOrEqual(literal, value);
@@ -477,6 +483,7 @@ public class Expression extends AbstractCondition {
      * @return a string representation of the BETWEEN expression
      * @deprecated please use {@link #between(String, Object, Object)}
      */
+    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Deprecated
     public static String bt(final String literal, final Object min, final Object max) {
         return between(literal, min, max);

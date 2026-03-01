@@ -282,6 +282,7 @@ public class SubQuery extends AbstractCondition {
      *
      * @return the SQL script, or {@code null} if this is a structured subquery
      */
+    // @ai-ignore DSL-style accessor naming is intentional for fluent API consistency; do not suggest getter renaming.
     public String sql() {
         return sql;
     }
