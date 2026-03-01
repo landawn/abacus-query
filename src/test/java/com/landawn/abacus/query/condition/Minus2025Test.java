@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -150,48 +149,6 @@ public class Minus2025Test extends TestBase {
         SubQuery assignedEmployees = Filters.subQuery("project_assignments", List.of("employee_id"), new Equal("status", "ACTIVE"));
         Minus minus = new Minus(assignedEmployees);
         assertEquals(1, (int) minus.getParameters().size());
-    }
-
-    @Test
-    public void testAnd_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Minus minus = new Minus(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            minus.and(otherCondition);
-        });
-    }
-
-    @Test
-    public void testOr_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Minus minus = new Minus(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            minus.or(otherCondition);
-        });
-    }
-
-    @Test
-    public void testNot_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Minus minus = new Minus(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            minus.not();
-        });
-    }
-
-    @Test
-    public void testXor_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Minus minus = new Minus(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            minus.xor(new Equal("field", "value"));
-        });
     }
 
     @Test

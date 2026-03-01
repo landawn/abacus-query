@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -164,33 +163,6 @@ public class CrossJoin2025Test extends TestBase {
     public void testEquals_Null() {
         CrossJoin join = new CrossJoin("colors");
         assertNotEquals(null, join);
-    }
-
-    @Test
-    public void testAnd() {
-        CrossJoin join1 = new CrossJoin("colors");
-        CrossJoin join2 = new CrossJoin("sizes");
-        assertThrows(UnsupportedOperationException.class, () -> join1.and(join2));
-    }
-
-    @Test
-    public void testOr() {
-        CrossJoin join1 = new CrossJoin("colors");
-        CrossJoin join2 = new CrossJoin("sizes");
-        assertThrows(UnsupportedOperationException.class, () -> join1.or(join2));
-    }
-
-    @Test
-    public void testNot() {
-        CrossJoin join = new CrossJoin("colors");
-        assertThrows(UnsupportedOperationException.class, () -> join.not());
-    }
-
-    @Test
-    public void testXor() {
-        CrossJoin join1 = new CrossJoin("colors");
-        CrossJoin join2 = new CrossJoin("sizes");
-        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
     }
 
     @Test

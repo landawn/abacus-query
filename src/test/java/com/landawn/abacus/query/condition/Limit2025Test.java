@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
@@ -111,42 +110,6 @@ public class Limit2025Test extends TestBase {
         // Should do nothing, but not throw exception
         assertNotNull(limit.getParameters());
         assertTrue(limit.getParameters().isEmpty());
-    }
-
-    @Test
-    public void testAndThrowsException() {
-        Limit limit = new Limit(10);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            limit.and(new Equal("id", 1));
-        });
-    }
-
-    @Test
-    public void testOrThrowsException() {
-        Limit limit = new Limit(10);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            limit.or(new Equal("id", 1));
-        });
-    }
-
-    @Test
-    public void testNotThrowsException() {
-        Limit limit = new Limit(10);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            limit.not();
-        });
-    }
-
-    @Test
-    public void testXorThrowsException() {
-        Limit limit = new Limit(10);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            limit.xor(new Equal("verified", true));
-        });
     }
 
     @Test

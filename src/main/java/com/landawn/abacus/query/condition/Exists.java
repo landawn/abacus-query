@@ -64,7 +64,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * @see Cell
  * @see In
  */
-public class Exists extends Cell implements LogicalCondition {
+public class Exists extends Cell {
 
     /**
      * Default constructor for serialization frameworks like Kryo.

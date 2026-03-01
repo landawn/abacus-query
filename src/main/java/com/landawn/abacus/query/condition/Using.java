@@ -78,7 +78,7 @@ import com.landawn.abacus.util.N;
  * @see NaturalJoin
  * @see Cell
  */
-public class Using extends Cell implements LogicalCondition {
+public class Using extends Cell {
 
     /**
      * Default constructor for serialization frameworks like Kryo.

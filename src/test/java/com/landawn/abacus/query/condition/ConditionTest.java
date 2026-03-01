@@ -21,14 +21,14 @@ import com.landawn.abacus.util.NamingPolicy;
 /**
  * Unit tests for the Condition interface contract.
  * Tests the core behavior and contracts that all Condition implementations should follow.
- * 
+ *
  * This test focuses on the interface contract rather than implementation-specific behavior,
  * which is covered in individual implementation test classes.
  */
 public class ConditionTest extends TestBase {
 
-    private Condition simpleCondition;
-    private Condition complexCondition;
+    private LogicalCondition simpleCondition;
+    private LogicalCondition complexCondition;
 
     @BeforeEach
     void setUp() {
@@ -100,9 +100,9 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testAndChaining() {
-        Condition condition1 = Filters.eq("field1", "value1");
-        Condition condition2 = Filters.eq("field2", "value2");
-        Condition condition3 = Filters.eq("field3", "value3");
+        LogicalCondition condition1 = Filters.eq("field1", "value1");
+        LogicalCondition condition2 = Filters.eq("field2", "value2");
+        LogicalCondition condition3 = Filters.eq("field3", "value3");
 
         Condition result = condition1.and(condition2).and(condition3);
 
@@ -142,9 +142,9 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testOrChaining() {
-        Condition condition1 = Filters.eq("status", "active");
-        Condition condition2 = Filters.eq("status", "pending");
-        Condition condition3 = Filters.eq("status", "processing");
+        LogicalCondition condition1 = Filters.eq("status", "active");
+        LogicalCondition condition2 = Filters.eq("status", "pending");
+        LogicalCondition condition3 = Filters.eq("status", "processing");
 
         Condition result = condition1.or(condition2).or(condition3);
 
@@ -186,8 +186,8 @@ public class ConditionTest extends TestBase {
     @Test
     void testXorSemantics() {
         // XOR should produce (A AND NOT B) OR (NOT A AND B)
-        Condition a = Filters.eq("x", 1);
-        Condition b = Filters.eq("y", 2);
+        LogicalCondition a = Filters.eq("x", 1);
+        LogicalCondition b = Filters.eq("y", 2);
         Or result = a.xor(b);
 
         // The result should be an Or with 2 conditions (each an And)
@@ -215,8 +215,8 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testDoubleNegation() {
-        Condition negated = simpleCondition.not();
-        Condition doubleNegated = negated.not();
+        Not negated = simpleCondition.not();
+        Not doubleNegated = negated.not();
 
         assertNotNull(doubleNegated);
         assertEquals(Operator.NOT, doubleNegated.operator());
@@ -395,9 +395,9 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testLogicalOperationsCombination() {
-        Condition condition1 = Filters.eq("status", "active");
-        Condition condition2 = Filters.gt("age", 18);
-        Condition condition3 = Filters.lt("age", 65);
+        LogicalCondition condition1 = Filters.eq("status", "active");
+        LogicalCondition condition2 = Filters.gt("age", 18);
+        LogicalCondition condition3 = Filters.lt("age", 65);
 
         // Test complex logical combination
         Condition result = condition1.and(condition2.or(condition3)).not();
@@ -408,7 +408,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testCopyAndLogicalOperations() {
-        Condition copy = simpleCondition.copy();
+        LogicalCondition copy = simpleCondition.copy();
         Condition combined = copy.and(Filters.gt("age", 21));
 
         assertNotNull(combined);
@@ -421,8 +421,8 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testParameterManagementWithLogicalOperations() {
-        Condition condition1 = Filters.eq("name", "John");
-        Condition condition2 = Filters.gt("age", 25);
+        LogicalCondition condition1 = Filters.eq("name", "John");
+        LogicalCondition condition2 = Filters.gt("age", 25);
         Condition combined = condition1.and(condition2);
 
         List<Object> params = combined.getParameters();
@@ -476,7 +476,7 @@ public class ConditionTest extends TestBase {
     @Test
     void testConditionChainPerformance() {
         // Test performance with long condition chains
-        Condition chain = Filters.eq("field1", "value1");
+        LogicalCondition chain = Filters.eq("field1", "value1");
 
         for (int i = 2; i <= 100; i++) {
             chain = chain.and(Filters.eq("field" + i, "value" + i));
@@ -514,7 +514,7 @@ public class ConditionTest extends TestBase {
     @Test
     void testThreadSafetyContract() {
         // Basic thread safety test - conditions should be immutable and thread-safe
-        final Condition condition = Filters.eq("field", "value");
+        final LogicalCondition condition = Filters.eq("field", "value");
 
         Thread thread1 = new Thread(() -> {
             for (int i = 0; i < 100; i++) {

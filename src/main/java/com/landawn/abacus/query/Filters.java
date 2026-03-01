@@ -459,7 +459,7 @@ public class Filters {
      * @see Condition
      */
     public static Not not(final Condition cond) {
-        return cond.not();
+        return new Not(cond);
     }
 
     /**

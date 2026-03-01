@@ -342,25 +342,31 @@ public class Cell2025Test extends TestBase {
     }
 
     @Test
-    public void testAnd_NotSupportedForCell() {
+    public void testAndSupportedForCell() {
         Cell cell = new Cell(Operator.NOT, Filters.eq("a", 1));
         Condition other = Filters.eq("b", 2);
 
-        assertThrows(UnsupportedOperationException.class, () -> cell.and(other));
+        And result = cell.and(other);
+        assertNotNull(result);
+        assertEquals(Operator.AND, result.operator());
     }
 
     @Test
-    public void testOr_NotSupportedForCell() {
+    public void testOrSupportedForCell() {
         Cell cell = new Cell(Operator.NOT, Filters.eq("a", 1));
         Condition other = Filters.eq("b", 2);
 
-        assertThrows(UnsupportedOperationException.class, () -> cell.or(other));
+        Or result = cell.or(other);
+        assertNotNull(result);
+        assertEquals(Operator.OR, result.operator());
     }
 
     @Test
-    public void testNot_NotSupportedForCell() {
+    public void testNotSupportedForCell() {
         Cell cell = new Cell(Operator.EXISTS, Filters.isNull("test"));
 
-        assertThrows(UnsupportedOperationException.class, () -> cell.not());
+        Not result = cell.not();
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.operator());
     }
 }

@@ -77,7 +77,7 @@ import com.landawn.abacus.util.Strings;
  * @see Filters
  * @see Clause
  */
-public class Criteria extends AbstractCondition implements LogicalCondition {
+public class Criteria extends AbstractCondition {
 
     private static final Set<Operator> setOperators = N.newHashSet();
 
@@ -168,17 +168,17 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
      * Criteria criteria = new Criteria()
      *     .where(Filters.equal("status", "active"));
      *
-     * Cell whereClause = criteria.getWhere();
+     * Clause whereClause = criteria.getWhere();
      * // Returns the Where condition wrapping: status = 'active'
      *
      * Criteria noWhere = new Criteria().orderBy("name");
-     * Cell result = noWhere.getWhere();   // Returns null
+     * Clause result = noWhere.getWhere();   // Returns null
      * }</pre>
      *
      * @return the Where condition, or null if not set
      */
-    public Cell getWhere() {
-        return (Cell) find(Operator.WHERE);
+    public Clause getWhere() {
+        return (Clause) find(Operator.WHERE);
     }
 
     /**
@@ -190,17 +190,17 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
      * Criteria criteria = new Criteria()
      *     .groupBy("department", "location");
      *
-     * Cell groupByClause = criteria.getGroupBy();
+     * Clause groupByClause = criteria.getGroupBy();
      * // Returns the GroupBy condition for: department, location
      *
      * Criteria noGroupBy = new Criteria().where(Filters.equal("active", true));
-     * Cell result = noGroupBy.getGroupBy();   // Returns null
+     * Clause result = noGroupBy.getGroupBy();   // Returns null
      * }</pre>
      *
      * @return the GroupBy condition, or null if not set
      */
-    public Cell getGroupBy() {
-        return (Cell) find(Operator.GROUP_BY);
+    public Clause getGroupBy() {
+        return (Clause) find(Operator.GROUP_BY);
     }
 
     /**
@@ -213,17 +213,17 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
      *     .groupBy("department")
      *     .having("COUNT(*) > 5");
      *
-     * Cell havingClause = criteria.getHaving();
+     * Clause havingClause = criteria.getHaving();
      * // Returns the Having condition wrapping: COUNT(*) > 5
      *
      * Criteria noHaving = new Criteria().groupBy("category");
-     * Cell result = noHaving.getHaving();   // Returns null
+     * Clause result = noHaving.getHaving();   // Returns null
      * }</pre>
      *
      * @return the Having condition, or null if not set
      */
-    public Cell getHaving() {
-        return (Cell) find(Operator.HAVING);
+    public Clause getHaving() {
+        return (Clause) find(Operator.HAVING);
     }
 
     /**
@@ -239,18 +239,18 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
      *     .union(archivedUsers)
      *     .unionAll(tempUsers);
      *
-     * List<Cell> setOperations = criteria.getSetOperations();
+     * List<Clause> setOperations = criteria.getSetOperations();
      * // Returns a list of 2 aggregation conditions (UNION and UNION ALL)
      *
      * Criteria noAgg = new Criteria().where(Filters.equal("status", "active"));
-     * List<Cell> empty = noAgg.getSetOperations();
+     * List<Clause> empty = noAgg.getSetOperations();
      * // Returns an empty list
      * }</pre>
      *
      * @return a list of aggregation conditions, empty if none exist
      */
-    public List<Cell> getSetOperations() {
-        List<Cell> result = null;
+    public List<Clause> getSetOperations() {
+        List<Clause> result = null;
 
         for (final Condition cond : conditionList) {
             if (setOperators.contains(cond.operator())) {
@@ -258,7 +258,7 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
                     result = new ArrayList<>();
                 }
 
-                result.add((Cell) cond);
+                result.add((Clause) cond);
             }
         }
 
@@ -278,17 +278,17 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
      * Criteria criteria = new Criteria()
      *     .orderBy("name", SortDirection.ASC);
      *
-     * Cell orderByClause = criteria.getOrderBy();
+     * Clause orderByClause = criteria.getOrderBy();
      * // Returns the OrderBy condition for: name ASC
      *
      * Criteria noOrderBy = new Criteria().where(Filters.equal("active", true));
-     * Cell result = noOrderBy.getOrderBy();   // Returns null
+     * Clause result = noOrderBy.getOrderBy();   // Returns null
      * }</pre>
      *
      * @return the OrderBy condition, or null if not set
      */
-    public Cell getOrderBy() {
-        return (Cell) find(Operator.ORDER_BY);
+    public Clause getOrderBy() {
+        return (Clause) find(Operator.ORDER_BY);
     }
 
     /**
@@ -471,7 +471,7 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
                 parameters.addAll(join.getParameters());
             }
 
-            final Cell where = getWhere();
+            final Clause where = getWhere();
 
             if (where != null) {
                 parameters.addAll(where.getParameters());
@@ -479,17 +479,17 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
 
             // group by no parameters.
             /*
-             * Cell groupBy = getGroupBy();
+             * Clause groupBy = getGroupBy();
              *
              * if (groupBy != null) { parameters.addAll(groupBy.getParameters()); }
              */
-            final Cell having = getHaving();
+            final Clause having = getHaving();
 
             if (having != null) {
                 parameters.addAll(having.getParameters());
             }
 
-            final List<Cell> condList = getSetOperations();
+            final List<Clause> condList = getSetOperations();
 
             for (final Condition cond : condList) {
                 parameters.addAll(cond.getParameters());
@@ -497,14 +497,14 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
 
             // order by no parameters.
             /*
-             * Cell orderBy = getOrderBy();
+             * Clause orderBy = getOrderBy();
              *
              * if (orderBy != null) { parameters.addAll(orderBy.getParameters()); }
              */
 
             // limit no parameters.
             /*
-             * Cell limit = getLimit();
+             * Clause limit = getLimit();
              *
              * if (limit != null) { parameters.addAll(limit.getParameters()); }
              */
@@ -1663,10 +1663,10 @@ public class Criteria extends AbstractCondition implements LogicalCondition {
         if (cond.operator() == Operator.WHERE || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.GROUP_BY
                 || cond.operator() == Operator.HAVING || cond.operator() == Operator.LIMIT) {
 
-            final Condition cell = find(cond.operator());
+            final Condition clause = find(cond.operator());
 
-            if (cell != null) {
-                conditionList.remove(cell); // NOSONAR
+            if (clause != null) {
+                conditionList.remove(clause); // NOSONAR
             }
         }
 

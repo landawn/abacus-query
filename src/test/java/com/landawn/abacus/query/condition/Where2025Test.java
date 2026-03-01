@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -182,38 +181,6 @@ public class Where2025Test extends TestBase {
         Or orCondition = new Or(new Equal("type", "A"), new Equal("type", "B"));
         Where where = new Where(orCondition);
         assertEquals(2, (int) where.getParameters().size());
-    }
-
-    @Test
-    public void testAndThrowsException() {
-        Where where = new Where(new Equal("status", "active"));
-        assertThrows(UnsupportedOperationException.class, () -> {
-            where.and(new Equal("verified", true));
-        });
-    }
-
-    @Test
-    public void testOrThrowsException() {
-        Where where = new Where(new Equal("status", "active"));
-        assertThrows(UnsupportedOperationException.class, () -> {
-            where.or(new Equal("status", "pending"));
-        });
-    }
-
-    @Test
-    public void testNotThrowsException() {
-        Where where = new Where(new Equal("status", "active"));
-        assertThrows(UnsupportedOperationException.class, () -> {
-            where.not();
-        });
-    }
-
-    @Test
-    public void testXorThrowsException() {
-        Where where = new Where(new Equal("status", "active"));
-        assertThrows(UnsupportedOperationException.class, () -> {
-            where.xor(new Equal("verified", true));
-        });
     }
 
     @Test

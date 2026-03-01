@@ -95,153 +95,153 @@ public interface Condition {
      */
     Operator operator();
 
-    /**
-     * Creates a new AND condition combining this condition with another.
-     * Both conditions must be true for the result to be true.
-     * 
-     * <p>The AND operation follows standard logical conjunction rules:</p>
-     * <ul>
-     *   <li>true AND true = true</li>
-     *   <li>true AND false = false</li>
-     *   <li>false AND true = false</li>
-     *   <li>false AND false = false</li>
-     * </ul>
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition age = Filters.greaterThan("age", 18);
-     * Condition status = Filters.equal("status", "active");
-     * And combined = age.and(status);
-     * // Equivalent to: age > 18 AND status = 'active'
-     * 
-     * // Can be chained
-     * Condition verified = Filters.equal("verified", true);
-     * And all = age.and(status).and(verified);
-     * // Equivalent to: age > 18 AND status = 'active' AND verified = true
-     * }</pre>
-     * 
-     * <p>Not all condition types support this operation. Structural conditions like
-     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
-     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
-     *
-     * @param cond the condition to AND with this condition (must not be null)
-     * @return a new And condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is null
-     * @throws UnsupportedOperationException if this condition type does not support logical operations
-     */
-    @SuppressWarnings("unused")
-    default And and(final Condition cond) {
-        throw new UnsupportedOperationException();
-    }
+    //    /**
+    //     * Creates a new NOT condition that negates this condition.
+    //     * The result is true when this condition is false, and vice versa.
+    //     * 
+    //     * <p>The NOT operation follows standard logical negation rules:</p>
+    //     * <ul>
+    //     *   <li>NOT true = false</li>
+    //     *   <li>NOT false = true</li>
+    //     * </ul>
+    //     * 
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Condition isNull = Filters.isNull("email");
+    //     * Not isNotNull = isNull.not();
+    //     * // Equivalent to: NOT (email IS NULL)
+    //     * 
+    //     * // Complex negation
+    //     * Condition complex = Filters.and(
+    //     *     Filters.equal("status", "active"),
+    //     *     Filters.greaterThan("age", 18)
+    //     * );
+    //     * Not negated = complex.not();
+    //     * // Equivalent to: NOT (status = 'active' AND age > 18)
+    //     * }</pre>
+    //     * 
+    //     * <p>Not all condition types support this operation. Structural conditions like
+    //     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
+    //     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
+    //     *
+    //     * @return a new Not condition wrapping this condition
+    //     * @throws UnsupportedOperationException if this condition type does not support logical operations
+    //     */
+    //    default Not not() {
+    //        throw new UnsupportedOperationException();
+    //    }
 
-    /**
-     * Creates a new OR condition combining this condition with another.
-     * Either condition can be true for the result to be true.
-     * 
-     * <p>The OR operation follows standard logical disjunction rules:</p>
-     * <ul>
-     *   <li>true OR true = true</li>
-     *   <li>true OR false = true</li>
-     *   <li>false OR true = true</li>
-     *   <li>false OR false = false</li>
-     * </ul>
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition premium = Filters.equal("memberType", "premium");
-     * Condition vip = Filters.equal("memberType", "vip");
-     * Or combined = premium.or(vip);
-     * // Equivalent to: memberType = 'premium' OR memberType = 'vip'
-     * 
-     * // Can be chained
-     * Condition gold = Filters.equal("memberType", "gold");
-     * Or any = premium.or(vip).or(gold);
-     * // Equivalent to: memberType = 'premium' OR memberType = 'vip' OR memberType = 'gold'
-     * }</pre>
-     * 
-     * <p>Not all condition types support this operation. Structural conditions like
-     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
-     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
-     *
-     * @param cond the condition to OR with this condition (must not be null)
-     * @return a new Or condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is null
-     * @throws UnsupportedOperationException if this condition type does not support logical operations
-     */
-    default Or or(@SuppressWarnings("unused") final Condition cond) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Creates a new XOR (exclusive OR) condition combining this condition with another.
-     * Exactly one of the two conditions must be true for the result to be true.
-     *
-     * <p>The XOR operation follows standard exclusive-or logic:</p>
-     * <ul>
-     *   <li>true XOR true = false</li>
-     *   <li>true XOR false = true</li>
-     *   <li>false XOR true = true</li>
-     *   <li>false XOR false = false</li>
-     * </ul>
-     *
-     * <p>This is implemented as: {@code (this AND NOT other) OR (NOT this AND other)}</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition hasDiscount = Filters.equal("hasDiscount", true);
-     * Condition isMember = Filters.equal("isMember", true);
-     * Condition exclusiveOr = hasDiscount.xor(isMember);
-     * // Equivalent to: (hasDiscount = true AND NOT isMember = true) OR (NOT hasDiscount = true AND isMember = true)
-     * }</pre>
-     *
-     * <p>Not all condition types support this operation. Structural conditions like
-     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
-     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
-     *
-     * @param cond the condition to XOR with this condition (must not be null)
-     * @return a new Or condition representing the exclusive-or of both conditions
-     * @throws IllegalArgumentException if {@code cond} is null
-     * @throws UnsupportedOperationException if this condition type does not support logical operations
-     */
-    default Or xor(@SuppressWarnings("unused") final Condition cond) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Creates a new NOT condition that negates this condition.
-     * The result is true when this condition is false, and vice versa.
-     * 
-     * <p>The NOT operation follows standard logical negation rules:</p>
-     * <ul>
-     *   <li>NOT true = false</li>
-     *   <li>NOT false = true</li>
-     * </ul>
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition isNull = Filters.isNull("email");
-     * Not isNotNull = isNull.not();
-     * // Equivalent to: NOT (email IS NULL)
-     * 
-     * // Complex negation
-     * Condition complex = Filters.and(
-     *     Filters.equal("status", "active"),
-     *     Filters.greaterThan("age", 18)
-     * );
-     * Not negated = complex.not();
-     * // Equivalent to: NOT (status = 'active' AND age > 18)
-     * }</pre>
-     * 
-     * <p>Not all condition types support this operation. Structural conditions like
-     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
-     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
-     *
-     * @return a new Not condition wrapping this condition
-     * @throws UnsupportedOperationException if this condition type does not support logical operations
-     */
-    default Not not() {
-        throw new UnsupportedOperationException();
-    }
+    //    /**
+    //     * Creates a new AND condition combining this condition with another.
+    //     * Both conditions must be true for the result to be true.
+    //     * 
+    //     * <p>The AND operation follows standard logical conjunction rules:</p>
+    //     * <ul>
+    //     *   <li>true AND true = true</li>
+    //     *   <li>true AND false = false</li>
+    //     *   <li>false AND true = false</li>
+    //     *   <li>false AND false = false</li>
+    //     * </ul>
+    //     * 
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Condition age = Filters.greaterThan("age", 18);
+    //     * Condition status = Filters.equal("status", "active");
+    //     * And combined = age.and(status);
+    //     * // Equivalent to: age > 18 AND status = 'active'
+    //     * 
+    //     * // Can be chained
+    //     * Condition verified = Filters.equal("verified", true);
+    //     * And all = age.and(status).and(verified);
+    //     * // Equivalent to: age > 18 AND status = 'active' AND verified = true
+    //     * }</pre>
+    //     * 
+    //     * <p>Not all condition types support this operation. Structural conditions like
+    //     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
+    //     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
+    //     *
+    //     * @param cond the condition to AND with this condition (must not be null)
+    //     * @return a new And condition containing both conditions
+    //     * @throws IllegalArgumentException if {@code cond} is null
+    //     * @throws UnsupportedOperationException if this condition type does not support logical operations
+    //     */
+    //    @SuppressWarnings("unused")
+    //    default And and(final Condition cond) {
+    //        throw new UnsupportedOperationException();
+    //    }
+    //
+    //    /**
+    //     * Creates a new OR condition combining this condition with another.
+    //     * Either condition can be true for the result to be true.
+    //     * 
+    //     * <p>The OR operation follows standard logical disjunction rules:</p>
+    //     * <ul>
+    //     *   <li>true OR true = true</li>
+    //     *   <li>true OR false = true</li>
+    //     *   <li>false OR true = true</li>
+    //     *   <li>false OR false = false</li>
+    //     * </ul>
+    //     * 
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Condition premium = Filters.equal("memberType", "premium");
+    //     * Condition vip = Filters.equal("memberType", "vip");
+    //     * Or combined = premium.or(vip);
+    //     * // Equivalent to: memberType = 'premium' OR memberType = 'vip'
+    //     * 
+    //     * // Can be chained
+    //     * Condition gold = Filters.equal("memberType", "gold");
+    //     * Or any = premium.or(vip).or(gold);
+    //     * // Equivalent to: memberType = 'premium' OR memberType = 'vip' OR memberType = 'gold'
+    //     * }</pre>
+    //     * 
+    //     * <p>Not all condition types support this operation. Structural conditions like
+    //     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
+    //     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
+    //     *
+    //     * @param cond the condition to OR with this condition (must not be null)
+    //     * @return a new Or condition containing both conditions
+    //     * @throws IllegalArgumentException if {@code cond} is null
+    //     * @throws UnsupportedOperationException if this condition type does not support logical operations
+    //     */
+    //    default Or or(@SuppressWarnings("unused") final Condition cond) {
+    //        throw new UnsupportedOperationException();
+    //    }
+    //
+    //    /**
+    //     * Creates a new XOR (exclusive OR) condition combining this condition with another.
+    //     * Exactly one of the two conditions must be true for the result to be true.
+    //     *
+    //     * <p>The XOR operation follows standard exclusive-or logic:</p>
+    //     * <ul>
+    //     *   <li>true XOR true = false</li>
+    //     *   <li>true XOR false = true</li>
+    //     *   <li>false XOR true = true</li>
+    //     *   <li>false XOR false = false</li>
+    //     * </ul>
+    //     *
+    //     * <p>This is implemented as: {@code (this AND NOT other) OR (NOT this AND other)}</p>
+    //     *
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Condition hasDiscount = Filters.equal("hasDiscount", true);
+    //     * Condition isMember = Filters.equal("isMember", true);
+    //     * Condition exclusiveOr = hasDiscount.xor(isMember);
+    //     * // Equivalent to: (hasDiscount = true AND NOT isMember = true) OR (NOT hasDiscount = true AND isMember = true)
+    //     * }</pre>
+    //     *
+    //     * <p>Not all condition types support this operation. Structural conditions like
+    //     * {@link Clause} and {@link Join} will throw {@link UnsupportedOperationException}.
+    //     * Use {@link LogicalCondition} for compile-time type safety when logical operations are required.</p>
+    //     *
+    //     * @param cond the condition to XOR with this condition (must not be null)
+    //     * @return a new Or condition representing the exclusive-or of both conditions
+    //     * @throws IllegalArgumentException if {@code cond} is null
+    //     * @throws UnsupportedOperationException if this condition type does not support logical operations
+    //     */
+    //    default Or xor(@SuppressWarnings("unused") final Condition cond) {
+    //        throw new UnsupportedOperationException();
+    //    }
 
     /**
      * Creates a copy of this condition.

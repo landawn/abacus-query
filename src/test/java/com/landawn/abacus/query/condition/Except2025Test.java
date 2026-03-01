@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -143,48 +142,6 @@ public class Except2025Test extends TestBase {
         SubQuery soldProducts = Filters.subQuery("order_items", List.of("product_id"), new GreaterThan("order_date", "2024-01-01"));
         Except except = new Except(soldProducts);
         assertEquals(1, (int) except.getParameters().size());
-    }
-
-    @Test
-    public void testAnd_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Except except = new Except(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            except.and(otherCondition);
-        });
-    }
-
-    @Test
-    public void testOr_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Except except = new Except(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            except.or(otherCondition);
-        });
-    }
-
-    @Test
-    public void testNot_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Except except = new Except(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            except.not();
-        });
-    }
-
-    @Test
-    public void testXor_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Except except = new Except(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            except.xor(new Equal("field", "value"));
-        });
     }
 
     @Test

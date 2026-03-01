@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
@@ -242,38 +241,6 @@ public class Having2025Test extends TestBase {
 
         assertTrue(result.startsWith("HAVING"));
         assertTrue(result.contains(">="));
-    }
-
-    @Test
-    public void testAndThrowsException() {
-        Having having = new Having(Filters.gt("COUNT(*)", 5));
-        assertThrows(UnsupportedOperationException.class, () -> {
-            having.and(Filters.lt("AVG(age)", 30));
-        });
-    }
-
-    @Test
-    public void testOrThrowsException() {
-        Having having = new Having(Filters.gt("COUNT(*)", 5));
-        assertThrows(UnsupportedOperationException.class, () -> {
-            having.or(Filters.lt("SUM(amount)", 1000));
-        });
-    }
-
-    @Test
-    public void testNotThrowsException() {
-        Having having = new Having(Filters.gt("COUNT(*)", 5));
-        assertThrows(UnsupportedOperationException.class, () -> {
-            having.not();
-        });
-    }
-
-    @Test
-    public void testXorThrowsException() {
-        Having having = new Having(Filters.gt("COUNT(*)", 5));
-        assertThrows(UnsupportedOperationException.class, () -> {
-            having.xor(new Equal("verified", true));
-        });
     }
 
     @Test

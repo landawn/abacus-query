@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -164,33 +163,6 @@ public class FullJoin2025Test extends TestBase {
     public void testEquals_Null() {
         FullJoin join = new FullJoin("orders");
         assertNotEquals(null, join);
-    }
-
-    @Test
-    public void testAnd() {
-        FullJoin join1 = new FullJoin("orders");
-        FullJoin join2 = new FullJoin("products");
-        assertThrows(UnsupportedOperationException.class, () -> join1.and(join2));
-    }
-
-    @Test
-    public void testOr() {
-        FullJoin join1 = new FullJoin("orders");
-        FullJoin join2 = new FullJoin("products");
-        assertThrows(UnsupportedOperationException.class, () -> join1.or(join2));
-    }
-
-    @Test
-    public void testNot() {
-        FullJoin join = new FullJoin("orders");
-        assertThrows(UnsupportedOperationException.class, () -> join.not());
-    }
-
-    @Test
-    public void testXor() {
-        FullJoin join1 = new FullJoin("orders");
-        FullJoin join2 = new FullJoin("products");
-        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
     }
 
     @Test

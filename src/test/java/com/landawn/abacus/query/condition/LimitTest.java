@@ -65,38 +65,6 @@ public class LimitTest extends TestBase {
     }
 
     @Test
-    public void testAndThrowsException() {
-        Limit limit = Filters.limit(10);
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            limit.and(Filters.eq("id", 1));
-        });
-    }
-
-    @Test
-    public void testOrThrowsException() {
-        Limit limit = Filters.limit(10);
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            limit.or(Filters.eq("id", 1));
-        });
-    }
-
-    @Test
-    public void testNotThrowsException() {
-        Limit limit = Filters.limit(10);
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            limit.not();
-        });
-    }
-
-    @Test
-    public void testXorThrowsException() {
-        Limit limit = Filters.limit(10);
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            limit.xor(Filters.eq("name", "test"));
-        });
-    }
-
-    @Test
     public void testToStringWithCountOnly() {
         Limit limit = Filters.limit(10);
         String result = limit.toString(NamingPolicy.CAMEL_CASE);

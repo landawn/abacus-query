@@ -28,42 +28,6 @@ public class ClauseTest extends TestBase {
     }
 
     @Test
-    public void testAndThrowsException() {
-        TestClause clause = new TestClause(Operator.WHERE, Filters.eq("id", 1));
-
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            clause.and(Filters.eq("name", "test"));
-        });
-    }
-
-    @Test
-    public void testOrThrowsException() {
-        TestClause clause = new TestClause(Operator.HAVING, Filters.gt("COUNT(*)", 5));
-
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            clause.or(Filters.lt("SUM(amount)", 1000));
-        });
-    }
-
-    @Test
-    public void testNotThrowsException() {
-        TestClause clause = new TestClause(Operator.GROUP_BY, Filters.expr("department"));
-
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            clause.not();
-        });
-    }
-
-    @Test
-    public void testXorThrowsException() {
-        TestClause clause = new TestClause(Operator.WHERE, Filters.eq("id", 1));
-
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            clause.xor(Filters.eq("name", "test"));
-        });
-    }
-
-    @Test
     public void testInheritedMethodsFromCell() {
         GreaterThan gt = Filters.gt("price", 100);
         TestClause clause = new TestClause(Operator.WHERE, gt);

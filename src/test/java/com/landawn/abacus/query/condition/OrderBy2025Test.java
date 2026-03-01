@@ -319,38 +319,6 @@ public class OrderBy2025Test extends TestBase {
     }
 
     @Test
-    public void testAndThrowsException() {
-        OrderBy orderBy = new OrderBy("name");
-        assertThrows(UnsupportedOperationException.class, () -> {
-            orderBy.and(Filters.eq("status", "active"));
-        });
-    }
-
-    @Test
-    public void testOrThrowsException() {
-        OrderBy orderBy = new OrderBy("name");
-        assertThrows(UnsupportedOperationException.class, () -> {
-            orderBy.or(Filters.eq("status", "active"));
-        });
-    }
-
-    @Test
-    public void testNotThrowsException() {
-        OrderBy orderBy = new OrderBy("name");
-        assertThrows(UnsupportedOperationException.class, () -> {
-            orderBy.not();
-        });
-    }
-
-    @Test
-    public void testXorThrowsException() {
-        OrderBy orderBy = new OrderBy("name");
-        assertThrows(UnsupportedOperationException.class, () -> {
-            orderBy.xor(new Equal("verified", true));
-        });
-    }
-
-    @Test
     @SuppressWarnings("deprecation")
     public void testSetCondition() {
         OrderBy orderBy = new OrderBy(Filters.expr("name ASC"));

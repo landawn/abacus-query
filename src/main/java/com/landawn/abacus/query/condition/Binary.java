@@ -58,7 +58,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * @see LessThan
  * @see Condition
  */
-public class Binary extends AbstractCondition implements LogicalCondition {
+public class Binary extends LogicalCondition {
 
     // For Kryo
     final String propName;

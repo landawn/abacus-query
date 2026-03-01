@@ -90,7 +90,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // In a subclass constructor
-     * abstract class CustomCondition extends AbstractCondition {
+     * abstract class CustomCondition extends LogicalCondition {
      *     CustomCondition() {
      *         super(Operator.EQUAL);   // Sets the operator
      *     }

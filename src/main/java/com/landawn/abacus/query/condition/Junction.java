@@ -87,7 +87,7 @@ import com.landawn.abacus.util.Strings;
  * @see Criteria
  * @see AbstractCondition
  */
-public class Junction extends AbstractCondition implements LogicalCondition {
+public class Junction extends LogicalCondition {
 
     List<Condition> conditions;
 

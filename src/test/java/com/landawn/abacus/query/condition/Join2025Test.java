@@ -18,7 +18,6 @@ package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -158,33 +157,6 @@ public class Join2025Test extends TestBase {
     public void testEquals_Null() {
         Join join = new Join("orders");
         assertNotEquals(null, join);
-    }
-
-    @Test
-    public void testAnd() {
-        Join join1 = new Join("orders");
-        Join join2 = new Join("products");
-        assertThrows(UnsupportedOperationException.class, () -> join1.and(join2));
-    }
-
-    @Test
-    public void testOr() {
-        Join join1 = new Join("orders");
-        Join join2 = new Join("products");
-        assertThrows(UnsupportedOperationException.class, () -> join1.or(join2));
-    }
-
-    @Test
-    public void testNot() {
-        Join join = new Join("orders");
-        assertThrows(UnsupportedOperationException.class, () -> join.not());
-    }
-
-    @Test
-    public void testXor() {
-        Join join1 = new Join("orders");
-        Join join2 = new Join("products");
-        assertThrows(UnsupportedOperationException.class, () -> join1.xor(join2));
     }
 
     @Test

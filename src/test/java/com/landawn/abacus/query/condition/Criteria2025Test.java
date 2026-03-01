@@ -67,35 +67,35 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGetWhere() {
         Criteria criteria = new Criteria();
-        Cell where = criteria.getWhere();
+        Clause where = criteria.getWhere();
         // Initially may be null
     }
 
     @Test
     public void testGetGroupBy() {
         Criteria criteria = new Criteria();
-        Cell groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.getGroupBy();
         // Initially may be null
     }
 
     @Test
     public void testGetHaving() {
         Criteria criteria = new Criteria();
-        Cell having = criteria.getHaving();
+        Clause having = criteria.getHaving();
         // Initially may be null
     }
 
     @Test
     public void testGetAggregation() {
         Criteria criteria = new Criteria();
-        List<Cell> aggregation = criteria.getSetOperations();
+        List<Clause> aggregation = criteria.getSetOperations();
         assertNotNull(aggregation);
     }
 
     @Test
     public void testGetOrderBy() {
         Criteria criteria = new Criteria();
-        Cell orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.getOrderBy();
         // Initially may be null
     }
 
@@ -651,14 +651,14 @@ public class Criteria2025Test extends TestBase {
 
         criteria.union(subQuery1).unionAll(subQuery2);
 
-        List<Cell> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.getSetOperations();
         assertEquals(2, aggregations.size());
     }
 
     @Test
     public void testGetEmptyAggregation() {
         Criteria criteria = new Criteria();
-        List<Cell> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.getSetOperations();
         assertNotNull(aggregations);
         assertTrue(aggregations.isEmpty());
     }

@@ -37,7 +37,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * @see NotIn
  * @see AbstractCondition
  */
-public abstract class AbstractIn extends AbstractCondition implements LogicalCondition {
+public abstract class AbstractIn extends LogicalCondition {
 
     // For Kryo
     final String propName;

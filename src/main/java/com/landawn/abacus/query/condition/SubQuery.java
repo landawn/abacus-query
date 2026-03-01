@@ -74,7 +74,7 @@ import com.landawn.abacus.util.Strings;
  * @see Exists
  * @see NotExists
  */
-public class SubQuery extends AbstractCondition implements LogicalCondition {
+public class SubQuery extends LogicalCondition {
 
     // For Kryo
     final String entityName;

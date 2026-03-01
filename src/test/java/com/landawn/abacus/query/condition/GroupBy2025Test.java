@@ -267,38 +267,6 @@ public class GroupBy2025Test extends TestBase {
     }
 
     @Test
-    public void testAndThrowsException() {
-        GroupBy groupBy = new GroupBy("department");
-        assertThrows(UnsupportedOperationException.class, () -> {
-            groupBy.and(Filters.eq("status", "active"));
-        });
-    }
-
-    @Test
-    public void testOrThrowsException() {
-        GroupBy groupBy = new GroupBy("department");
-        assertThrows(UnsupportedOperationException.class, () -> {
-            groupBy.or(Filters.eq("status", "active"));
-        });
-    }
-
-    @Test
-    public void testNotThrowsException() {
-        GroupBy groupBy = new GroupBy("department");
-        assertThrows(UnsupportedOperationException.class, () -> {
-            groupBy.not();
-        });
-    }
-
-    @Test
-    public void testXorThrowsException() {
-        GroupBy groupBy = new GroupBy("department");
-        assertThrows(UnsupportedOperationException.class, () -> {
-            groupBy.xor(new Equal("verified", true));
-        });
-    }
-
-    @Test
     @SuppressWarnings("deprecation")
     public void testSetCondition() {
         GroupBy groupBy = new GroupBy(Filters.expr("department"));

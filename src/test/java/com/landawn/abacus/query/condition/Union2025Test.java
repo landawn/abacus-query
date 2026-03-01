@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -136,48 +135,6 @@ public class Union2025Test extends TestBase {
         union.clearParameters();
         List<Object> clearedParams = union.getParameters();
         assertTrue(clearedParams.size() == 1 && clearedParams.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testAnd_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Union union = new Union(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            union.and(otherCondition);
-        });
-    }
-
-    @Test
-    public void testOr_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Union union = new Union(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            union.or(otherCondition);
-        });
-    }
-
-    @Test
-    public void testNot_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Union union = new Union(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            union.not();
-        });
-    }
-
-    @Test
-    public void testXor_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Union union = new Union(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            union.xor(new Equal("field", "value"));
-        });
     }
 
     @Test

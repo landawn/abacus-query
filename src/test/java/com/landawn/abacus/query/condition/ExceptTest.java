@@ -116,25 +116,6 @@ public class ExceptTest extends TestBase {
     }
 
     @Test
-    public void testClauseRestrictions() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM test");
-        Except except = Filters.except(subQuery);
-
-        // These should throw UnsupportedOperationException as per Clause class
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            except.and(Filters.eq("test", 1));
-        });
-
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            except.or(Filters.eq("test", 1));
-        });
-
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            except.not();
-        });
-    }
-
-    @Test
     public void testSetCondition() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
@@ -180,7 +161,7 @@ public class ExceptTest extends TestBase {
 
         Criteria criteria = Filters.criteria().where(Filters.eq("status", "active")).except(excludedUsers);
 
-        List<Cell> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).operator());
     }

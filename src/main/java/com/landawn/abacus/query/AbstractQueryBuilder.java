@@ -51,7 +51,6 @@ import com.landawn.abacus.query.SQLBuilder.NSC;
 import com.landawn.abacus.query.SQLBuilder.PAC;
 import com.landawn.abacus.query.SQLBuilder.PLC;
 import com.landawn.abacus.query.SQLBuilder.PSC;
-import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
@@ -2807,37 +2806,37 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
             }
 
-            final Cell where = criteria.getWhere();
+            final Clause where = criteria.getWhere();
 
             if ((where != null)) {
                 _sb.append(_SPACE_WHERE_SPACE);
                 appendCondition(where.getCondition());
             }
 
-            final Cell groupBy = criteria.getGroupBy();
+            final Clause groupBy = criteria.getGroupBy();
 
             if (groupBy != null) {
                 _sb.append(_SPACE_GROUP_BY_SPACE);
                 appendCondition(groupBy.getCondition());
             }
 
-            final Cell having = criteria.getHaving();
+            final Clause having = criteria.getHaving();
 
             if (having != null) {
                 _sb.append(_SPACE_HAVING_SPACE);
                 appendCondition(having.getCondition());
             }
 
-            final List<Cell> aggregations = criteria.getSetOperations();
+            final List<Clause> aggregations = criteria.getSetOperations();
 
             if (N.notEmpty(aggregations)) {
-                for (final Cell aggregation : aggregations) {
+                for (final Clause aggregation : aggregations) {
                     _sb.append(_SPACE).append(aggregation.operator()).append(_SPACE);
                     appendCondition(aggregation.getCondition());
                 }
             }
 
-            final Cell orderBy = criteria.getOrderBy();
+            final Clause orderBy = criteria.getOrderBy();
 
             if (orderBy != null) {
                 _sb.append(_SPACE_ORDER_BY_SPACE);

@@ -25,14 +25,14 @@ public class WhereTest extends TestBase {
         Assertions.assertEquals(likeCondition, where2.getCondition());
 
         // Test with complex AND condition
-        Condition andCondition = Filters.eq("age", 25).and(Filters.gt("salary", 50000));
+        And andCondition = Filters.eq("age", 25).and(Filters.gt("salary", 50000));
         Where where3 = Filters.where(andCondition);
         Assertions.assertNotNull(where3);
         Assertions.assertEquals(Operator.WHERE, where3.operator());
         Assertions.assertEquals(andCondition, where3.getCondition());
 
         // Test with OR condition
-        Condition orCondition = Filters.eq("department", "IT").or(Filters.eq("department", "HR"));
+        Or orCondition = Filters.eq("department", "IT").or(Filters.eq("department", "HR"));
         Where where4 = Filters.where(orCondition);
         Assertions.assertNotNull(where4);
         Assertions.assertEquals(Operator.WHERE, where4.operator());
@@ -96,12 +96,12 @@ public class WhereTest extends TestBase {
     @Test
     public void testWithComplexNestedConditions() {
         // Test with deeply nested conditions
-        Condition cond1 = Filters.eq("a", 1);
-        Condition cond2 = Filters.gt("b", 2);
-        Condition cond3 = Filters.lt("c", 3);
-        Condition cond4 = Filters.like("d", "%test%");
+        Equal cond1 = Filters.eq("a", 1);
+        GreaterThan cond2 = Filters.gt("b", 2);
+        LessThan cond3 = Filters.lt("c", 3);
+        Like cond4 = Filters.like("d", "%test%");
 
-        Condition complex = cond1.and(cond2).or(cond3.and(cond4));
+        Or complex = cond1.and(cond2).or(cond3.and(cond4));
         Where where = Filters.where(complex);
 
         Assertions.assertNotNull(where);

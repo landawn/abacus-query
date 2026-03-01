@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.SQLBuilder.NSC;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.SQLBuilder.NSC;
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.NamingPolicy;
@@ -123,7 +123,7 @@ public class CriteriaTest extends TestBase {
         Equal eq = Filters.eq("status", "active");
         Criteria criteria = Filters.criteria().where(eq);
 
-        Cell where = criteria.getWhere();
+        Clause where = criteria.getWhere();
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.operator());
         Assertions.assertEquals(eq, where.getCondition());
@@ -133,7 +133,7 @@ public class CriteriaTest extends TestBase {
     public void testWhereString() {
         Criteria criteria = Filters.criteria().where("age > 18");
 
-        Cell where = criteria.getWhere();
+        Clause where = criteria.getWhere();
         Assertions.assertNotNull(where);
         Assertions.assertTrue(where.getCondition() instanceof Expression);
     }
@@ -148,7 +148,7 @@ public class CriteriaTest extends TestBase {
         Where whereCondition = Filters.where(Filters.eq("id", 1));
         Criteria criteria = Filters.criteria().where(whereCondition);
 
-        Cell where = criteria.getWhere();
+        Clause where = criteria.getWhere();
         Assertions.assertNotNull(where);
         Assertions.assertEquals(whereCondition, where);
     }
@@ -162,7 +162,7 @@ public class CriteriaTest extends TestBase {
     public void testGroupBy() {
         Criteria criteria = Filters.criteria().groupBy("department", "location");
 
-        Cell groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
         Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
     }
@@ -171,7 +171,7 @@ public class CriteriaTest extends TestBase {
     public void testGroupByWithDirection() {
         Criteria criteria = Filters.criteria().groupBy("salary", SortDirection.DESC);
 
-        Cell groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
     }
 
@@ -180,7 +180,7 @@ public class CriteriaTest extends TestBase {
         List<String> props = Arrays.asList("dept", "team");
         Criteria criteria = Filters.criteria().groupBy(props);
 
-        Cell groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
     }
 
@@ -192,7 +192,7 @@ public class CriteriaTest extends TestBase {
 
         Criteria criteria = Filters.criteria().groupBy(orders);
 
-        Cell groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
     }
 
@@ -201,7 +201,7 @@ public class CriteriaTest extends TestBase {
         Expression expr = Filters.expr("YEAR(date)");
         Criteria criteria = Filters.criteria().groupBy(expr);
 
-        Cell groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
         Assertions.assertEquals(expr, groupBy.getCondition());
     }
@@ -216,7 +216,7 @@ public class CriteriaTest extends TestBase {
         GreaterThan gt = Filters.gt("COUNT(*)", 5);
         Criteria criteria = Filters.criteria().having(gt);
 
-        Cell having = criteria.getHaving();
+        Clause having = criteria.getHaving();
         Assertions.assertNotNull(having);
         Assertions.assertEquals(Operator.HAVING, having.operator());
         Assertions.assertEquals(gt, having.getCondition());
@@ -226,7 +226,7 @@ public class CriteriaTest extends TestBase {
     public void testHavingString() {
         Criteria criteria = Filters.criteria().having("SUM(amount) > 1000");
 
-        Cell having = criteria.getHaving();
+        Clause having = criteria.getHaving();
         Assertions.assertNotNull(having);
         Assertions.assertTrue(having.getCondition() instanceof Expression);
     }
@@ -245,7 +245,7 @@ public class CriteriaTest extends TestBase {
     public void testOrderByAsc() {
         Criteria criteria = Filters.criteria().orderByAsc("lastName", "firstName");
 
-        Cell orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
         Assertions.assertEquals(Operator.ORDER_BY, orderBy.operator());
     }
@@ -254,7 +254,7 @@ public class CriteriaTest extends TestBase {
     public void testOrderByDesc() {
         Criteria criteria = Filters.criteria().orderByDesc("createdDate", "id");
 
-        Cell orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
     }
 
@@ -262,7 +262,7 @@ public class CriteriaTest extends TestBase {
     public void testOrderBy() {
         Criteria criteria = Filters.criteria().orderBy("name", SortDirection.ASC);
 
-        Cell orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
     }
 
@@ -270,7 +270,7 @@ public class CriteriaTest extends TestBase {
     public void testOrderByMultiple() {
         Criteria criteria = Filters.criteria().orderBy("dept", SortDirection.ASC, "salary", SortDirection.DESC);
 
-        Cell orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
     }
 
@@ -282,7 +282,7 @@ public class CriteriaTest extends TestBase {
 
         Criteria criteria = Filters.criteria().orderBy(orders);
 
-        Cell orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
     }
 
@@ -323,7 +323,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_orders");
         Criteria criteria = Filters.criteria().union(subQuery);
 
-        List<Cell> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.UNION, aggregations.get(0).operator());
     }
@@ -333,7 +333,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM temp_orders");
         Criteria criteria = Filters.criteria().unionAll(subQuery);
 
-        List<Cell> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.UNION_ALL, aggregations.get(0).operator());
     }
@@ -343,7 +343,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
         Criteria criteria = Filters.criteria().intersect(subQuery);
 
-        List<Cell> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.INTERSECT, aggregations.get(0).operator());
     }
@@ -353,7 +353,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM blocked_users");
         Criteria criteria = Filters.criteria().except(subQuery);
 
-        List<Cell> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).operator());
     }
@@ -363,7 +363,7 @@ public class CriteriaTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         Criteria criteria = Filters.criteria().minus(subQuery);
 
-        List<Cell> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.MINUS, aggregations.get(0).operator());
     }
@@ -549,7 +549,7 @@ public class CriteriaTest extends TestBase {
     public void testReplaceClause() {
         Criteria criteria = Filters.criteria().where(Filters.eq("id", 1)).where(Filters.eq("id", 2)); // Should replace the first where
 
-        Cell where = criteria.getWhere();
+        Clause where = criteria.getWhere();
         Equal eq = where.getCondition();
         Assertions.assertEquals(2, (Integer) eq.getPropValue());
     }
@@ -558,7 +558,7 @@ public class CriteriaTest extends TestBase {
     public void testMultipleGroupBy() {
         Criteria criteria = Filters.criteria().groupBy("dept", SortDirection.ASC, "team", SortDirection.DESC, "member", SortDirection.ASC);
 
-        Cell groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
     }
 
@@ -566,34 +566,7 @@ public class CriteriaTest extends TestBase {
     public void testMultipleOrderBy() {
         Criteria criteria = Filters.criteria().orderBy("priority", SortDirection.DESC, "date", SortDirection.ASC, "id", SortDirection.ASC);
 
-        Cell orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
-    }
-
-    @Test
-    public void testAnd() {
-        Criteria criteria = Filters.criteria().where(Filters.eq("id", 1));
-
-        And and = criteria.and(Filters.eq("status", "active"));
-        Assertions.assertNotNull(and);
-        Assertions.assertEquals(2, and.getConditions().size());
-    }
-
-    @Test
-    public void testOr() {
-        Criteria criteria = Filters.criteria().where(Filters.eq("type", "A"));
-
-        Or or = criteria.or(Filters.eq("type", "B"));
-        Assertions.assertNotNull(or);
-        Assertions.assertEquals(2, or.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        Criteria criteria = Filters.criteria().where(Filters.eq("active", true));
-
-        Not not = criteria.not();
-        Assertions.assertNotNull(not);
-        Assertions.assertEquals(criteria, not.getCondition());
     }
 }

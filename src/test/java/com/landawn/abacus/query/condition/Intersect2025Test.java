@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -144,48 +143,6 @@ public class Intersect2025Test extends TestBase {
         Intersect intersect = new Intersect(onSale);
         // Raw SQL SubQuery has no parameters
         assertEquals(0, (int) intersect.getParameters().size());
-    }
-
-    @Test
-    public void testAnd_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Intersect intersect = new Intersect(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            intersect.and(otherCondition);
-        });
-    }
-
-    @Test
-    public void testOr_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Intersect intersect = new Intersect(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            intersect.or(otherCondition);
-        });
-    }
-
-    @Test
-    public void testNot_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Intersect intersect = new Intersect(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            intersect.not();
-        });
-    }
-
-    @Test
-    public void testXor_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Intersect intersect = new Intersect(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            intersect.xor(new Equal("field", "value"));
-        });
     }
 
     @Test

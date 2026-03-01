@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
@@ -44,38 +43,6 @@ public class Clause2025Test extends TestBase {
         assertNotNull(clause);
         assertNotNull(clause.operator());
         assertNotNull(clause.getCondition());
-    }
-
-    @Test
-    public void testAnd_ThrowsException() {
-        Condition condition = Filters.eq("test", "value");
-        TestClause clause = new TestClause(Operator.WHERE, condition);
-        Condition otherCondition = Filters.eq("other", "value2");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            clause.and(otherCondition);
-        });
-    }
-
-    @Test
-    public void testOr_ThrowsException() {
-        Condition condition = Filters.eq("test", "value");
-        TestClause clause = new TestClause(Operator.WHERE, condition);
-        Condition otherCondition = Filters.eq("other", "value2");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            clause.or(otherCondition);
-        });
-    }
-
-    @Test
-    public void testNot_ThrowsException() {
-        Condition condition = Filters.eq("test", "value");
-        TestClause clause = new TestClause(Operator.WHERE, condition);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            clause.not();
-        });
     }
 
     @Test

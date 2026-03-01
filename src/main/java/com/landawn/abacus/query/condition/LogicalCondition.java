@@ -35,7 +35,25 @@ import com.landawn.abacus.util.N;
  * @see Or
  * @see Not
  */
-public interface LogicalCondition extends Condition {
+public abstract class LogicalCondition extends AbstractCondition {
+
+    LogicalCondition() {
+        super();
+    }
+
+    protected LogicalCondition(final Operator operator) {
+        super(operator);
+    }
+
+    /**
+     * Creates a new NOT condition that negates this condition.
+     * The result is true when this condition is false, and vice versa.
+     *
+     * @return a new Not condition wrapping this condition
+     */
+    public Not not() {
+        return new Not(this);
+    }
 
     /**
      * Creates a new AND condition combining this condition with another.
@@ -45,8 +63,7 @@ public interface LogicalCondition extends Condition {
      * @return a new And condition containing both conditions
      * @throws IllegalArgumentException if {@code cond} is null
      */
-    @Override
-    default And and(final Condition cond) {
+    public And and(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
 
         return new And(this, cond);
@@ -60,22 +77,10 @@ public interface LogicalCondition extends Condition {
      * @return a new Or condition containing both conditions
      * @throws IllegalArgumentException if {@code cond} is null
      */
-    @Override
-    default Or or(final Condition cond) {
+    public Or or(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
 
         return new Or(this, cond);
-    }
-
-    /**
-     * Creates a new NOT condition that negates this condition.
-     * The result is true when this condition is false, and vice versa.
-     *
-     * @return a new Not condition wrapping this condition
-     */
-    @Override
-    default Not not() {
-        return new Not(this);
     }
 
     /**
@@ -87,8 +92,7 @@ public interface LogicalCondition extends Condition {
      * @return a new Or condition representing the exclusive-or of both conditions
      * @throws IllegalArgumentException if {@code cond} is null
      */
-    @Override
-    default Or xor(final Condition cond) {
+    public Or xor(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
 
         return new Or(new And(this, new Not(cond)), new And(new Not(this), cond));

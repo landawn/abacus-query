@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -140,48 +139,6 @@ public class UnionAll2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id, name, 'active' as status FROM active_users");
         UnionAll unionAll = new UnionAll(subQuery);
         assertEquals(Operator.UNION_ALL, unionAll.operator());
-    }
-
-    @Test
-    public void testAnd_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        UnionAll unionAll = new UnionAll(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            unionAll.and(otherCondition);
-        });
-    }
-
-    @Test
-    public void testOr_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        UnionAll unionAll = new UnionAll(subQuery);
-        Condition otherCondition = Filters.eq("test", "value");
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            unionAll.or(otherCondition);
-        });
-    }
-
-    @Test
-    public void testNot_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        UnionAll unionAll = new UnionAll(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            unionAll.not();
-        });
-    }
-
-    @Test
-    public void testXor_ThrowsException() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        UnionAll unionAll = new UnionAll(subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> {
-            unionAll.xor(new Equal("field", "value"));
-        });
     }
 
     @Test
