@@ -199,6 +199,7 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
+    @SuppressWarnings("deprecation")
     public Or anyEqual(final Object... values) {
         N.checkArgNotEmpty(values, "values");
 
@@ -232,6 +233,7 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
+    @SuppressWarnings("deprecation")
     public Or anyEqual(final Collection<?> values) {
         N.checkArgNotEmpty(values, "values");
 
@@ -466,6 +468,26 @@ public sealed class NamedProperty permits NP {
     }
 
     /**
+     * Creates a NOT BETWEEN condition for this property.
+     * This generates a condition that checks if the property value is outside the specified range.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("age").notBetween(18, 65);          // age NOT BETWEEN 18 AND 65
+     * NamedProperty.of("price").notBetween(10.0, 100.0);   // price NOT BETWEEN 10.0 AND 100.0
+     * }</pre>
+     *
+     * @param minValue the minimum value of the excluded range (inclusive). Can be numeric, date, string, or any comparable type.
+     * @param maxValue the maximum value of the excluded range (inclusive). Can be numeric, date, string, or any comparable type.
+     * @return a NotBetween condition for this property
+     * @see NotBetween
+     * @see Filters#notBetween(String, Object, Object)
+     */
+    public NotBetween notBetween(final Object minValue, final Object maxValue) {
+        return Filters.notBetween(propName, minValue, maxValue);
+    }
+
+    /**
      * Creates a LIKE condition for this property.
      * This generates a pattern matching condition using SQL LIKE syntax with wildcards.
      *
@@ -523,6 +545,25 @@ public sealed class NamedProperty permits NP {
     }
 
     /**
+     * Creates a NOT LIKE condition that excludes values starting with the specified prefix.
+     * This is a convenience method that automatically appends the % wildcard to the value.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("name").notStartsWith("test");   // name NOT LIKE 'test%'
+     * NamedProperty.of("code").notStartsWith("TMP");    // code NOT LIKE 'TMP%'
+     * }</pre>
+     *
+     * @param value the prefix to exclude. The % wildcard will be automatically appended.
+     * @return a NotLike condition with % appended to the value
+     * @see NotLike
+     * @see Filters#notStartsWith(String, Object)
+     */
+    public NotLike notStartsWith(final Object value) {
+        return Filters.notStartsWith(propName, value);
+    }
+
+    /**
      * Creates a LIKE condition that matches values ending with the specified suffix.
      * This is a convenience method that automatically prepends the % wildcard to the value.
      *
@@ -542,6 +583,25 @@ public sealed class NamedProperty permits NP {
     }
 
     /**
+     * Creates a NOT LIKE condition that excludes values ending with the specified suffix.
+     * This is a convenience method that automatically prepends the % wildcard to the value.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("email").notEndsWith("@temp.com");   // email NOT LIKE '%@temp.com'
+     * NamedProperty.of("filename").notEndsWith(".tmp");      // filename NOT LIKE '%.tmp'
+     * }</pre>
+     *
+     * @param value the suffix to exclude. The % wildcard will be automatically prepended.
+     * @return a NotLike condition with % prepended to the value
+     * @see NotLike
+     * @see Filters#notEndsWith(String, Object)
+     */
+    public NotLike notEndsWith(final Object value) {
+        return Filters.notEndsWith(propName, value);
+    }
+
+    /**
      * Creates a LIKE condition that matches values containing the specified substring.
      * This is a convenience method that automatically adds % wildcards to both sides of the value.
      *
@@ -558,6 +618,25 @@ public sealed class NamedProperty permits NP {
      */
     public Like contains(final Object value) {
         return Filters.contains(propName, value);
+    }
+
+    /**
+     * Creates a NOT LIKE condition that excludes values containing the specified substring.
+     * This is a convenience method that automatically adds % wildcards to both sides of the value.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("description").notContains("deprecated");   // description NOT LIKE '%deprecated%'
+     * NamedProperty.of("title").notContains("draft");              // title NOT LIKE '%draft%'
+     * }</pre>
+     *
+     * @param value the substring to exclude. The % wildcard will be automatically added to both sides.
+     * @return a NotLike condition with % on both sides of the value
+     * @see NotLike
+     * @see Filters#notContains(String, Object)
+     */
+    public NotLike notContains(final Object value) {
+        return Filters.notContains(propName, value);
     }
 
     /**
@@ -652,83 +731,6 @@ public sealed class NamedProperty permits NP {
      */
     public NotIn notIn(final Collection<?> values) {
         return Filters.notIn(propName, values);
-    }
-
-    /**
-     * Creates a NOT BETWEEN condition for this property.
-     * This generates a condition that checks if the property value is outside the specified range.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty.of("age").notBetween(18, 65);          // age NOT BETWEEN 18 AND 65
-     * NamedProperty.of("price").notBetween(10.0, 100.0);   // price NOT BETWEEN 10.0 AND 100.0
-     * }</pre>
-     *
-     * @param minValue the minimum value of the excluded range (inclusive). Can be numeric, date, string, or any comparable type.
-     * @param maxValue the maximum value of the excluded range (inclusive). Can be numeric, date, string, or any comparable type.
-     * @return a NotBetween condition for this property
-     * @see NotBetween
-     * @see Filters#notBetween(String, Object, Object)
-     */
-    public NotBetween notBetween(final Object minValue, final Object maxValue) {
-        return Filters.notBetween(propName, minValue, maxValue);
-    }
-
-    /**
-     * Creates a NOT LIKE condition that excludes values starting with the specified prefix.
-     * This is a convenience method that automatically appends the % wildcard to the value.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty.of("name").notStartsWith("test");   // name NOT LIKE 'test%'
-     * NamedProperty.of("code").notStartsWith("TMP");    // code NOT LIKE 'TMP%'
-     * }</pre>
-     *
-     * @param value the prefix to exclude. The % wildcard will be automatically appended.
-     * @return a NotLike condition with % appended to the value
-     * @see NotLike
-     * @see Filters#notStartsWith(String, Object)
-     */
-    public NotLike notStartsWith(final Object value) {
-        return Filters.notStartsWith(propName, value);
-    }
-
-    /**
-     * Creates a NOT LIKE condition that excludes values ending with the specified suffix.
-     * This is a convenience method that automatically prepends the % wildcard to the value.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty.of("email").notEndsWith("@temp.com");   // email NOT LIKE '%@temp.com'
-     * NamedProperty.of("filename").notEndsWith(".tmp");      // filename NOT LIKE '%.tmp'
-     * }</pre>
-     *
-     * @param value the suffix to exclude. The % wildcard will be automatically prepended.
-     * @return a NotLike condition with % prepended to the value
-     * @see NotLike
-     * @see Filters#notEndsWith(String, Object)
-     */
-    public NotLike notEndsWith(final Object value) {
-        return Filters.notEndsWith(propName, value);
-    }
-
-    /**
-     * Creates a NOT LIKE condition that excludes values containing the specified substring.
-     * This is a convenience method that automatically adds % wildcards to both sides of the value.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty.of("description").notContains("deprecated");   // description NOT LIKE '%deprecated%'
-     * NamedProperty.of("title").notContains("draft");              // title NOT LIKE '%draft%'
-     * }</pre>
-     *
-     * @param value the substring to exclude. The % wildcard will be automatically added to both sides.
-     * @return a NotLike condition with % on both sides of the value
-     * @see NotLike
-     * @see Filters#notContains(String, Object)
-     */
-    public NotLike notContains(final Object value) {
-        return Filters.notContains(propName, value);
     }
 
     /**
