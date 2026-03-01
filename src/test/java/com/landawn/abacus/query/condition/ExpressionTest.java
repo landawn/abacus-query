@@ -132,13 +132,13 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testIsEmpty() {
-        String result = Expression.isEmpty("description");
+        String result = Expression.isNullOrEmpty("description");
         Assertions.assertEquals("description IS BLANK", result);
     }
 
     @Test
     public void testIsNotEmpty() {
-        String result = Expression.isNotEmpty("title");
+        String result = Expression.isNotNullOrEmpty("title");
         Assertions.assertEquals("title IS NOT BLANK", result);
     }
 
@@ -370,13 +370,13 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testSubString() {
-        String result = Expression.substring("text", 5);
+        String result = Expression.substr("text", 5);
         Assertions.assertEquals("SUBSTR(text, 5)", result);
     }
 
     @Test
     public void testSubStringWithLength() {
-        String result = Expression.substring("text", 5, 10);
+        String result = Expression.substr("text", 5, 10);
         Assertions.assertEquals("SUBSTR(text, 5, 10)", result);
     }
 
@@ -388,25 +388,25 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLTrim() {
-        String result = Expression.leftTrim("text");
+        String result = Expression.ltrim("text");
         Assertions.assertEquals("LTRIM(text)", result);
     }
 
     @Test
     public void testRTrim() {
-        String result = Expression.rightTrim("text");
+        String result = Expression.rtrim("text");
         Assertions.assertEquals("RTRIM(text)", result);
     }
 
     @Test
     public void testLPad() {
-        String result = Expression.leftPad("text", 10, "'*'");
+        String result = Expression.lpad("text", 10, "'*'");
         Assertions.assertEquals("LPAD(text, 10, '*')", result);
     }
 
     @Test
     public void testRPad() {
-        String result = Expression.rightPad("text", 10, "'*'");
+        String result = Expression.rpad("text", 10, "'*'");
         Assertions.assertEquals("RPAD(text, 10, '*')", result);
     }
 

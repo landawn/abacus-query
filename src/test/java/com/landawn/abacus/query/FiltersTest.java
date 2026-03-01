@@ -529,7 +529,7 @@ public class FiltersTest extends TestBase {
 
     @Test
     public void testIsEmpty() {
-        Or isEmpty = Filters.isEmpty("description");
+        Or isEmpty = Filters.isNullOrEmpty("description");
         Assertions.assertNotNull(isEmpty);
         Assertions.assertEquals(2, isEmpty.getConditions().size());
     }

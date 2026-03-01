@@ -409,7 +409,9 @@ public class Filters {
      * }</pre>
      *
      * @return an Expression that always evaluates to true (1 &lt; 2)
+     * @deprecated is dangerous (could silently filter everything)
      */
+    @Deprecated
     public static Expression alwaysTrue() {
         return ALWAYS_TRUE;
     }
@@ -417,12 +419,8 @@ public class Filters {
     /**
      * Returns a condition that always evaluates to false.
      *
-     * @return an Expression that always evaluates to false (1 &gt; 2)
-     * @deprecated This method is deprecated and should not be used in new code.
-     *             Consider using explicit condition logic or {@link #not(Condition)} with
-     *             {@link #alwaysTrue()} instead: {@code not(alwaysTrue())}.
+     * @return an Expression that always evaluates to false (1 &gt; 2) 
      */
-    @Deprecated
     public static Expression alwaysFalse() {
         return ALWAYS_FALSE;
     }
@@ -1880,7 +1878,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Or condition = Filters.isEmpty("description");
+     * Or condition = Filters.isNullOrEmpty("description");
      * // SQL fragment: description IS NULL OR description = ''
      * }</pre>
      *
@@ -1888,7 +1886,7 @@ public class Filters {
      * @return an Or condition combining null and empty checks
      */
     @Beta
-    public static Or isEmpty(final String propName) {
+    public static Or isNullOrEmpty(final String propName) {
         return isNull(propName).or(equal(propName, ""));
     }
 
@@ -1924,6 +1922,16 @@ public class Filters {
      */
     public static IsNotNull isNotNull(final String propName) {
         return new IsNotNull(propName);
+    }
+
+    @Beta
+    public static And isNotNullOrEmpty(final String propName) {
+        return isNotNull(propName).and(notEqual(propName, ""));
+    }
+
+    @Beta
+    public static And isNotNullOrZero(final String propName) {
+        return isNotNull(propName).and(notEqual(propName, 0));
     }
 
     /**

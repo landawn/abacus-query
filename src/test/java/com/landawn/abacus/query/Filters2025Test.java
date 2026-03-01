@@ -384,7 +384,7 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testIsEmpty() {
-        Or isEmpty = Filters.isEmpty("description");
+        Or isEmpty = Filters.isNullOrEmpty("description");
         assertNotNull(isEmpty);
     }
 

@@ -204,7 +204,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testIsEmpty() {
-        String result = Expression.isEmpty("description");
+        String result = Expression.isNullOrEmpty("description");
 
         assertTrue(result.contains("description"));
         assertTrue(result.contains("IS"));
@@ -213,7 +213,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testIsNotEmpty() {
-        String result = Expression.isNotEmpty("name");
+        String result = Expression.isNotNullOrEmpty("name");
 
         assertTrue(result.contains("name"));
         assertTrue(result.contains("IS NOT"));
@@ -532,7 +532,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testSubStringFromIndex() {
-        String result = Expression.substring("phone", 1);
+        String result = Expression.substr("phone", 1);
 
         assertTrue(result.contains("SUBSTR"));
         assertTrue(result.contains("phone"));
@@ -541,7 +541,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testSubStringWithLength() {
-        String result = Expression.substring("code", 1, 3);
+        String result = Expression.substr("code", 1, 3);
 
         assertTrue(result.contains("SUBSTR"));
         assertTrue(result.contains("code"));
@@ -559,7 +559,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testLTrim() {
-        String result = Expression.leftTrim("comment");
+        String result = Expression.ltrim("comment");
 
         assertTrue(result.contains("LTRIM"));
         assertTrue(result.contains("comment"));
@@ -567,7 +567,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testRTrim() {
-        String result = Expression.rightTrim("code");
+        String result = Expression.rtrim("code");
 
         assertTrue(result.contains("RTRIM"));
         assertTrue(result.contains("code"));
@@ -575,7 +575,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testLPad() {
-        String result = Expression.leftPad("id", 10, "'0'");
+        String result = Expression.lpad("id", 10, "'0'");
 
         assertTrue(result.contains("LPAD"));
         assertTrue(result.contains("id"));
@@ -584,7 +584,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testRPad() {
-        String result = Expression.rightPad("name", 20, "' '");
+        String result = Expression.rpad("name", 20, "' '");
 
         assertTrue(result.contains("RPAD"));
         assertTrue(result.contains("name"));

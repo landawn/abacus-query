@@ -186,6 +186,7 @@ public final class NamedProperty {
      * @see Or
      * @see Equal
      */
+    @SuppressWarnings("deprecation")
     public Or eqOr(final Object... values) {
         N.checkArgNotEmpty(values, "values");
 
@@ -219,6 +220,7 @@ public final class NamedProperty {
      * @see Or
      * @see Equal
      */
+    @SuppressWarnings("deprecation")
     public Or eqOr(final Collection<?> values) {
         N.checkArgNotEmpty(values, "values");
 

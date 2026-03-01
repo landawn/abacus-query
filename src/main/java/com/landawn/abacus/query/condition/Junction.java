@@ -200,7 +200,9 @@ public class Junction extends AbstractCondition {
      *
      * @param conditions the new conditions to set. Existing conditions will be cleared.
      * @throws IllegalArgumentException if conditions array contains null elements
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
+    @Deprecated
     public final void set(final Condition... conditions) {
         if (N.notEmpty(conditions)) {
             for (final Condition condition : conditions) {
@@ -235,7 +237,9 @@ public class Junction extends AbstractCondition {
      *
      * @param conditions the new collection of conditions to set. Existing conditions will be cleared.
      * @throws IllegalArgumentException if conditions collection contains null elements
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
+    @Deprecated
     public void set(final Collection<? extends Condition> conditions) {
         if (N.notEmpty(conditions)) {
             for (final Condition condition : conditions) {
@@ -272,7 +276,9 @@ public class Junction extends AbstractCondition {
      *
      * @param conditions the conditions to add
      * @throws IllegalArgumentException if conditions array contains null elements
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
+    @Deprecated
     public final void add(final Condition... conditions) {
         if (N.isEmpty(conditions)) {
             return;
@@ -302,7 +308,9 @@ public class Junction extends AbstractCondition {
      *
      * @param conditions the collection of conditions to add
      * @throws IllegalArgumentException if conditions contains null elements
+     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
      */
+    @Deprecated
     public void add(final Collection<? extends Condition> conditions) {
         if (N.isEmpty(conditions)) {
             return;

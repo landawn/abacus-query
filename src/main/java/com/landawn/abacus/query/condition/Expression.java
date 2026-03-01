@@ -537,14 +537,14 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.isEmpty("description");   // Returns: "description IS BLANK"
-     * String expr2 = Expression.isEmpty("address");      // Returns: "address IS BLANK"
+     * String expr = Expression.isNullOrEmpty("description");   // Returns: "description IS BLANK"
+     * String expr2 = Expression.isNullOrEmpty("address");      // Returns: "address IS BLANK"
      * }</pre>
      *
      * @param literal the literal to check for emptiness
      * @return a string representation of the IS EMPTY expression
      */
-    public static String isEmpty(final String literal) {
+    public static String isNullOrEmpty(final String literal) {
         return link2(Operator.IS, literal, EMPTY);
     }
 
@@ -554,14 +554,14 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.isNotEmpty("name");      // Returns: "name IS NOT BLANK"
-     * String expr2 = Expression.isNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
+     * String expr = Expression.isNotNullOrEmpty("name");      // Returns: "name IS NOT BLANK"
+     * String expr2 = Expression.isNotNullOrEmpty("comment");   // Returns: "comment IS NOT BLANK"
      * }</pre>
      *
      * @param literal the literal to check for non-emptiness
      * @return a string representation of the IS NOT EMPTY expression
      */
-    public static String isNotEmpty(final String literal) {
+    public static String isNotNullOrEmpty(final String literal) {
         return link2(Operator.IS_NOT, literal, EMPTY);
     }
 
@@ -1400,15 +1400,15 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.substring("phone", 1);   // Returns: "SUBSTR(phone, 1)"
-     * String expr2 = Expression.substring("code", 3);   // Returns: "SUBSTR(code, 3)"
+     * String expr = Expression.substr("phone", 1);   // Returns: "SUBSTR(phone, 1)"
+     * String expr2 = Expression.substr("code", 3);   // Returns: "SUBSTR(code, 3)"
      * }</pre>
      *
      * @param str the string to extract from
      * @param fromIndex the starting position (1-based)
      * @return a SUBSTR function string
      */
-    public static String substring(final String str, final int fromIndex) {
+    public static String substr(final String str, final int fromIndex) {
         return function(SUBSTR, str, fromIndex);
     }
 
@@ -1418,8 +1418,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.substring("phone", 1, 3);   // Returns: "SUBSTR(phone, 1, 3)"
-     * String expr2 = Expression.substring("zip", 1, 5);    // Returns: "SUBSTR(zip, 1, 5)"
+     * String expr = Expression.substr("phone", 1, 3);   // Returns: "SUBSTR(phone, 1, 3)"
+     * String expr2 = Expression.substr("zip", 1, 5);    // Returns: "SUBSTR(zip, 1, 5)"
      * }</pre>
      *
      * @param str the string to extract from
@@ -1427,7 +1427,7 @@ public class Expression extends AbstractCondition {
      * @param length the number of characters to extract
      * @return a SUBSTR function string
      */
-    public static String substring(final String str, final int fromIndex, final int length) {
+    public static String substr(final String str, final int fromIndex, final int length) {
         return function(SUBSTR, str, fromIndex, length);
     }
 
@@ -1454,14 +1454,14 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.leftTrim("comment");    // Returns: "LTRIM(comment)"
-     * String expr2 = Expression.leftTrim("address");   // Returns: "LTRIM(address)"
+     * String expr = Expression.ltrim("comment");    // Returns: "LTRIM(comment)"
+     * String expr2 = Expression.ltrim("address");   // Returns: "LTRIM(address)"
      * }</pre>
      *
      * @param str the string to left trim
      * @return an LTRIM function string
      */
-    public static String leftTrim(final String str) {
+    public static String ltrim(final String str) {
         return function(LTRIM, str);
     }
 
@@ -1471,14 +1471,14 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.rightTrim("code");           // Returns: "RTRIM(code)"
-     * String expr2 = Expression.rightTrim("description");   // Returns: "RTRIM(description)"
+     * String expr = Expression.rtrim("code");           // Returns: "RTRIM(code)"
+     * String expr2 = Expression.rtrim("description");   // Returns: "RTRIM(description)"
      * }</pre>
      *
      * @param str the string to right trim
      * @return an RTRIM function string
      */
-    public static String rightTrim(final String str) {
+    public static String rtrim(final String str) {
         return function(RTRIM, str);
     }
 
@@ -1488,8 +1488,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.leftPad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
-     * String expr2 = Expression.leftPad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
+     * String expr = Expression.lpad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
+     * String expr2 = Expression.lpad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
      * }</pre>
      *
      * @param str the string to pad
@@ -1497,7 +1497,7 @@ public class Expression extends AbstractCondition {
      * @param padStr the string to pad with
      * @return an LPAD function string
      */
-    public static String leftPad(final String str, final int length, final String padStr) {
+    public static String lpad(final String str, final int length, final String padStr) {
         return function(LPAD, str, length, padStr);
     }
 
@@ -1507,8 +1507,8 @@ public class Expression extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.rightPad("name", 20, "' '");    // Returns: "RPAD(name, 20, ' ')"
-     * String expr2 = Expression.rightPad("code", 10, "'X'");   // Returns: "RPAD(code, 10, 'X')"
+     * String expr = Expression.rpad("name", 20, "' '");    // Returns: "RPAD(name, 20, ' ')"
+     * String expr2 = Expression.rpad("code", 10, "'X'");   // Returns: "RPAD(code, 10, 'X')"
      * }</pre>
      *
      * @param str the string to pad
@@ -1516,7 +1516,7 @@ public class Expression extends AbstractCondition {
      * @param padStr the string to pad with
      * @return an RPAD function string
      */
-    public static String rightPad(final String str, final int length, final String padStr) {
+    public static String rpad(final String str, final int length, final String padStr) {
         return function(RPAD, str, length, padStr);
     }
 

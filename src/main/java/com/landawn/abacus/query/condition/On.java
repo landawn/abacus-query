@@ -243,6 +243,7 @@ public class On extends Cell {
      * @param propNamePair map of column name pairs
      * @return a single Equal condition or an And condition combining multiple equalities
      */
+    @SuppressWarnings("deprecation")
     static Condition createOnCondition(final Map<String, String> propNamePair) {
         N.checkArgNotEmpty(propNamePair, "propNamePair");
 
