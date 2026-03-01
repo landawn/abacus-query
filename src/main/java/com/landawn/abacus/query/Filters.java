@@ -3619,13 +3619,13 @@ public class Filters {
      * Limit limit = Filters.limit(20, 10);
      * // Results in SQL like: LIMIT 10 OFFSET 20 (skip 20, take 10)
      * }</pre>
-     *
-     * @param offset the number of rows to skip
      * @param count the maximum number of rows to return
+     * @param offset the number of rows to skip
+     *
      * @return a Limit clause
      */
-    public static Limit limit(final int offset, final int count) {
-        return new Limit(offset, count);
+    public static Limit limit(final int count, final int offset) {
+        return new Limit(count, offset);
     }
 
     /**

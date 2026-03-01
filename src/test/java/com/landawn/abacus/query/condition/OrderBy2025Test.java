@@ -112,7 +112,7 @@ public class OrderBy2025Test extends TestBase {
 
     @Test
     public void testStaticCreateConditionWithStrings() {
-        String result = OrderBy.createCondition("name", "age", "city");
+        String result = AbstractCondition.createSortExpression("name", "age", "city");
 
         assertTrue(result.contains("name"));
         assertTrue(result.contains("age"));
@@ -121,7 +121,7 @@ public class OrderBy2025Test extends TestBase {
 
     @Test
     public void testStaticCreateConditionWithDirection() {
-        String result = OrderBy.createCondition("price", SortDirection.DESC);
+        String result = AbstractCondition.createSortExpression("price", SortDirection.DESC);
 
         assertTrue(result.contains("price"));
         assertTrue(result.contains("DESC"));
@@ -130,7 +130,7 @@ public class OrderBy2025Test extends TestBase {
     @Test
     public void testStaticCreateConditionWithCollection() {
         List<String> props = Arrays.asList("col1", "col2");
-        String result = OrderBy.createCondition(props, SortDirection.ASC);
+        String result = AbstractCondition.createSortExpression(props, SortDirection.ASC);
 
         assertTrue(result.contains("col1"));
         assertTrue(result.contains("col2"));
@@ -143,7 +143,7 @@ public class OrderBy2025Test extends TestBase {
         orders.put("first", SortDirection.DESC);
         orders.put("second", SortDirection.ASC);
 
-        String result = OrderBy.createCondition(orders);
+        String result = AbstractCondition.createSortExpression(orders);
 
         assertTrue(result.contains("first"));
         assertTrue(result.contains("second"));
@@ -310,7 +310,7 @@ public class OrderBy2025Test extends TestBase {
 
     @Test
     public void testCreateConditionStaticMethod() {
-        String result = OrderBy.createCondition("a", "b", "c");
+        String result = AbstractCondition.createSortExpression("a", "b", "c");
 
         assertTrue(result.contains("a"));
         assertTrue(result.contains("b"));
@@ -398,7 +398,7 @@ public class OrderBy2025Test extends TestBase {
 
     @Test
     public void testStaticCreateConditionWithSingleProperty() {
-        String result = OrderBy.createCondition("name");
+        String result = AbstractCondition.createSortExpression("name");
         assertTrue(result.contains("name"));
     }
 
@@ -406,7 +406,7 @@ public class OrderBy2025Test extends TestBase {
     public void testStaticCreateConditionWithEmptyMap() {
         Map<String, SortDirection> orders = new LinkedHashMap<>();
         assertThrows(IllegalArgumentException.class, () -> {
-            OrderBy.createCondition(orders);
+            AbstractCondition.createSortExpression(orders);
         });
     }
 

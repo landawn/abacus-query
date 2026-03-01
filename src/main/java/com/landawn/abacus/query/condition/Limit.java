@@ -53,7 +53,7 @@ import com.landawn.abacus.util.Strings;
  * @see Clause
  * @see AbstractCondition
  */
-public class Limit extends AbstractCondition {
+public class Limit extends Clause {
 
     private int count;
 
@@ -89,7 +89,7 @@ public class Limit extends AbstractCondition {
      * @throws IllegalArgumentException if count is negative
      */
     public Limit(final int count) {
-        this(0, count);
+        this(count, 0);
     }
 
     /**
@@ -112,20 +112,14 @@ public class Limit extends AbstractCondition {
      * Limit products = new Limit(100, 50);
      * // SQL: SELECT * FROM products LIMIT 50 OFFSET 100
      * }</pre>
-     *
-     * @param offset the number of rows to skip before returning results. Must be non-negative.
      * @param count the maximum number of rows to return after the offset. Must be non-negative.
+     * @param offset the number of rows to skip before returning results. Must be non-negative.
+     *
      * @throws IllegalArgumentException if offset or count is negative
      */
-    public Limit(final int offset, final int count) {
-        super(Operator.LIMIT);
-
-        if (offset < 0) {
-            throw new IllegalArgumentException("offset cannot be negative: " + offset);
-        }
-        if (count < 0) {
-            throw new IllegalArgumentException("count cannot be negative: " + count);
-        }
+    public Limit(final int count, final int offset) {
+        super(Operator.LIMIT, Expression.of(offset == 0 ? String.valueOf(N.checkArgNotNegative(count, "count"))
+                : N.checkArgNotNegative(count, "count") + " OFFSET " + N.checkArgNotNegative(offset, "offset")));
 
         this.count = count;
         this.offset = offset;
@@ -152,7 +146,7 @@ public class Limit extends AbstractCondition {
      * @throws IllegalArgumentException if expr is null or empty (implementation-dependent)
      */
     public Limit(final String expr) {
-        this(0, Integer.MAX_VALUE);
+        this(Integer.MAX_VALUE, 0);
 
         if (Strings.isEmpty(expr)) {
             throw new IllegalArgumentException("Limit expression cannot be null or empty");

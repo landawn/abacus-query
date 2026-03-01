@@ -1366,7 +1366,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria limit(final int offset, final int count) {
-        add(Filters.limit(offset, count));
+        add(Filters.limit(count, offset));
 
         return this;
     }
@@ -1543,8 +1543,8 @@ public class Criteria extends AbstractCondition {
         String having = Strings.EMPTY;
         String orderBy = Strings.EMPTY;
         String limit = Strings.EMPTY;
+        String setOps = Strings.EMPTY;
         final String forUpdate = Strings.EMPTY;
-        String aggregate = Strings.EMPTY;
 
         for (final Condition cond : conditionList) {
             if (cond.getOperator() == Operator.WHERE) {
@@ -1560,11 +1560,11 @@ public class Criteria extends AbstractCondition {
             } else if (cond instanceof Join) {
                 join += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else {
-                aggregate += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
+                setOps += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             }
         }
 
-        return selectModifier + join + where + groupBy + having + aggregate + orderBy + limit + forUpdate;
+        return selectModifier + join + where + groupBy + having + setOps + orderBy + limit + forUpdate;
     }
 
     /**

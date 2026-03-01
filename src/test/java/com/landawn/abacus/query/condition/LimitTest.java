@@ -22,7 +22,7 @@ public class LimitTest extends TestBase {
 
     @Test
     public void testConstructorWithOffsetAndCount() {
-        Limit limit = Filters.limit(20, 50);
+        Limit limit = Filters.limit(50, 20);
         Assertions.assertEquals(50, limit.getCount());
         Assertions.assertEquals(20, limit.getOffset());
         Assertions.assertNull(limit.getExpression());
@@ -97,7 +97,7 @@ public class LimitTest extends TestBase {
 
     @Test
     public void testToStringWithOffsetAndCount() {
-        Limit limit = Filters.limit(20, 50);
+        Limit limit = Filters.limit(50, 20);
         String result = limit.toString(NamingPolicy.CAMEL_CASE);
         Assertions.assertEquals("LIMIT 50 OFFSET 20", result);
     }
@@ -112,11 +112,11 @@ public class LimitTest extends TestBase {
 
     @Test
     public void testHashCodeWithoutExpression() {
-        Limit limit1 = Filters.limit(20, 50);
-        Limit limit2 = Filters.limit(20, 50);
+        Limit limit1 = Filters.limit(50, 20);
+        Limit limit2 = Filters.limit(50, 20);
         Assertions.assertEquals(limit1.hashCode(), limit2.hashCode());
 
-        Limit limit3 = Filters.limit(10, 50);
+        Limit limit3 = Filters.limit(50, 10);
         Assertions.assertNotEquals(limit1.hashCode(), limit3.hashCode());
     }
 
@@ -151,10 +151,10 @@ public class LimitTest extends TestBase {
 
     @Test
     public void testEqualsWithoutExpression() {
-        Limit limit1 = Filters.limit(20, 50);
-        Limit limit2 = Filters.limit(20, 50);
-        Limit limit3 = Filters.limit(20, 60);
-        Limit limit4 = Filters.limit(30, 50);
+        Limit limit1 = Filters.limit(50, 20);
+        Limit limit2 = Filters.limit(50, 20);
+        Limit limit3 = Filters.limit(60, 20);
+        Limit limit4 = Filters.limit(50, 30);
 
         Assertions.assertTrue(limit1.equals(limit2));
         Assertions.assertFalse(limit1.equals(limit3));

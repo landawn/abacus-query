@@ -14,10 +14,15 @@
 
 package com.landawn.abacus.query.condition;
 
+import static com.landawn.abacus.query.SK.COMMA_SPACE;
+import static com.landawn.abacus.query.SK.SPACE;
+
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 
 import com.landawn.abacus.query.SK;
+import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
@@ -407,6 +412,153 @@ public abstract class AbstractCondition implements Condition, Cloneable {
                 } finally {
                     Objectory.recycle(sb);
                 }
+        }
+    }
+
+    /**
+     * Creates a comma-separated string of property names for ordering.
+     * This is an internal helper method used by OrderBy and GroupBy constructors.
+     *
+     * <p>This method is package-private and not intended for direct use by application code.
+     * Use the public OrderBy constructors instead.</p>
+     *
+     * @param propNames array of property names. Must not be null or empty.
+     * @return formatted string for ORDER BY clause
+     * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
+     */
+    static String createSortExpression(final String... propNames) {
+        N.checkArgNotEmpty(propNames, "propNames");
+
+        final StringBuilder sb = Objectory.createStringBuilder();
+
+        try {
+            int i = 0;
+            for (final String propName : propNames) {
+                if (Strings.isEmpty(propName)) {
+                    throw new IllegalArgumentException("Property name cannot be null or empty");
+                }
+
+                if (i++ > 0) {
+                    sb.append(COMMA_SPACE);
+                }
+
+                sb.append(propName);
+            }
+
+            return sb.toString();
+        } finally {
+            Objectory.recycle(sb);
+        }
+    }
+
+    /**
+     * Creates an ordering condition for a single property with direction.
+     * This is an internal helper method used by OrderBy and GroupBy constructors.
+     *
+     * <p>This method is package-private and not intended for direct use by application code.
+     * Use the public OrderBy constructors instead.</p>
+     *
+     * @param propName the property name
+     * @param direction the sort direction
+     * @return formatted string for ORDER BY clause
+     * @throws IllegalArgumentException if propName is null/empty or direction is null
+     */
+    static String createSortExpression(final String propName, final SortDirection direction) {
+        if (Strings.isEmpty(propName)) {
+            throw new IllegalArgumentException("Property name cannot be null or empty");
+        }
+        if (direction == null) {
+            throw new IllegalArgumentException("direction cannot be null");
+        }
+        return propName + SPACE + direction;
+    }
+
+    /**
+     * Creates an ordering condition for multiple properties with the same direction.
+     * This is an internal helper method used by OrderBy and GroupBy constructors.
+     *
+     * <p>This method is package-private and not intended for direct use by application code.
+     * Use the public OrderBy constructors instead.</p>
+     *
+     * @param propNames collection of property names
+     * @param direction the sort direction
+     * @return formatted string for ORDER BY clause
+     * @throws IllegalArgumentException if propNames is null/empty, direction is null, or propNames contains null/empty elements
+     */
+    static String createSortExpression(final Collection<String> propNames, final SortDirection direction) {
+        N.checkArgNotEmpty(propNames, "propNames");
+
+        if (direction == null) {
+            throw new IllegalArgumentException("direction cannot be null");
+        }
+
+        final StringBuilder sb = Objectory.createStringBuilder();
+
+        try {
+            int i = 0;
+            for (final String propName : propNames) {
+                if (Strings.isEmpty(propName)) {
+                    throw new IllegalArgumentException("Property name in collection cannot be null or empty");
+                }
+
+                if (i++ > 0) {
+                    sb.append(COMMA_SPACE);
+                }
+
+                sb.append(propName);
+                sb.append(SPACE);
+                sb.append(direction);
+            }
+
+            return sb.toString();
+        } finally {
+            Objectory.recycle(sb);
+        }
+    }
+
+    /**
+     * Creates an ordering condition from a map of properties and their directions.
+     * This is an internal helper method used by OrderBy and GroupBy constructors.
+     *
+     * <p>This method is package-private and not intended for direct use by application code.
+     * Use the public OrderBy constructors instead.</p>
+     *
+     * @param orders map of property names to sort directions
+     * @return formatted string for ORDER BY clause
+     * @throws IllegalArgumentException if orders is null/empty, or contains null/empty keys or null values
+     */
+    static String createSortExpression(final Map<String, SortDirection> orders) {
+        if (orders == null || orders.isEmpty()) {
+            throw new IllegalArgumentException("orders cannot be null or empty");
+        }
+
+        final StringBuilder sb = Objectory.createStringBuilder();
+
+        try {
+            int i = 0;
+            for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+                final String propName = entry.getKey();
+                final SortDirection direction = entry.getValue();
+
+                if (Strings.isEmpty(propName)) {
+                    throw new IllegalArgumentException("Property name in orders cannot be null or empty");
+                }
+                if (direction == null) {
+                    throw new IllegalArgumentException("SortDirection in orders cannot be null");
+                }
+
+                if (i++ > 0) {
+                    sb.append(COMMA_SPACE);
+                }
+
+                sb.append(propName);
+                sb.append(SPACE);
+                sb.append(direction);
+            }
+
+            return sb.toString();
+        } finally {
+            Objectory.recycle(sb);
         }
     }
 }

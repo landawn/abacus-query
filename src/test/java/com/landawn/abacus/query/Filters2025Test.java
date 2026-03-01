@@ -1128,7 +1128,7 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testLimitWithOffset() {
-        com.landawn.abacus.query.condition.Limit limit = Filters.limit(10, 20);
+        com.landawn.abacus.query.condition.Limit limit = Filters.limit(20, 10);
         assertNotNull(limit);
     }
 

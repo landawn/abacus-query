@@ -1123,7 +1123,7 @@ public class FiltersTest extends TestBase {
         Assertions.assertEquals(10, limit1.getCount());
 
         // Test with offset and count
-        Limit limit2 = Filters.limit(20, 50);
+        Limit limit2 = Filters.limit(50, 20);
         Assertions.assertNotNull(limit2);
         Assertions.assertEquals(20, limit2.getOffset());
         Assertions.assertEquals(50, limit2.getCount());

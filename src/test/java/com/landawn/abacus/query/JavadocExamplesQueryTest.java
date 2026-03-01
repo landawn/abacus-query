@@ -818,7 +818,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testFilters_limitWithOffset() {
-        Limit limit = Filters.limit(20, 10);
+        Limit limit = Filters.limit(10, 20);
         assertNotNull(limit);
     }
 

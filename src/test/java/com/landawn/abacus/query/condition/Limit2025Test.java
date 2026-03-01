@@ -48,7 +48,7 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testConstructorWithOffsetAndCount() {
-        Limit limit = new Limit(20, 10);
+        Limit limit = new Limit(10, 20);
 
         assertNotNull(limit);
         assertEquals(10, limit.getCount());
@@ -75,7 +75,7 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testGetOffset() {
-        Limit limit = new Limit(100, 25);
+        Limit limit = new Limit(25, 100);
 
         assertEquals(100, limit.getOffset());
         assertEquals(25, limit.getCount());
@@ -152,7 +152,7 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testToStringWithOffsetAndCount() {
-        Limit limit = new Limit(20, 10);
+        Limit limit = new Limit(10, 20);
         String result = limit.toString(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("LIMIT"));
@@ -182,9 +182,9 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testEqualsWithOffset() {
-        Limit limit1 = new Limit(10, 5);
-        Limit limit2 = new Limit(10, 5);
-        Limit limit3 = new Limit(20, 5);
+        Limit limit1 = new Limit(5, 10);
+        Limit limit2 = new Limit(5, 10);
+        Limit limit3 = new Limit(5, 20);
 
         assertEquals(limit1, limit2);
         assertNotEquals(limit1, limit3);
@@ -225,8 +225,8 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testHashCodeWithOffset() {
-        Limit limit1 = new Limit(20, 10);
-        Limit limit2 = new Limit(20, 10);
+        Limit limit1 = new Limit(10, 20);
+        Limit limit2 = new Limit(10, 20);
 
         assertEquals(limit1.hashCode(), limit2.hashCode());
     }
@@ -241,7 +241,7 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testHashCodeConsistency() {
-        Limit limit = new Limit(50, 10);
+        Limit limit = new Limit(10, 50);
         int hash1 = limit.hashCode();
         int hash2 = limit.hashCode();
 
@@ -258,7 +258,7 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testZeroOffset() {
-        Limit limit = new Limit(0, 10);
+        Limit limit = new Limit(10, 0);
 
         assertEquals(0, limit.getOffset());
         assertEquals(10, limit.getCount());
@@ -266,7 +266,7 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testLargeOffset() {
-        Limit limit = new Limit(1000000, 50);
+        Limit limit = new Limit(50, 1000000);
 
         assertEquals(1000000, limit.getOffset());
         assertEquals(50, limit.getCount());
@@ -290,7 +290,7 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        Limit original = new Limit(30, 10);
+        Limit original = new Limit(10, 30);
         Limit copy = original.copy();
 
         assertNotSame(original, copy);
@@ -310,7 +310,7 @@ public class Limit2025Test extends TestBase {
     @Test
     public void testPagination() {
         // Page 1: First 10 records
-        Limit page1 = new Limit(0, 10);
+        Limit page1 = new Limit(10, 0);
         assertEquals(0, page1.getOffset());
         assertEquals(10, page1.getCount());
 
@@ -320,7 +320,7 @@ public class Limit2025Test extends TestBase {
         assertEquals(10, page2.getCount());
 
         // Page 3: Next 10 records
-        Limit page3 = new Limit(20, 10);
+        Limit page3 = new Limit(10, 20);
         assertEquals(20, page3.getOffset());
         assertEquals(10, page3.getCount());
     }
@@ -345,7 +345,7 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testToString_NoArgsWithOffset() {
-        Limit limit = new Limit(10, 20);
+        Limit limit = new Limit(20, 10);
         String result = limit.toString();
 
         assertTrue(result.contains("LIMIT"));
@@ -364,7 +364,7 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testCopy_PreservesAllFields() {
-        Limit original = new Limit(50, 25);
+        Limit original = new Limit(25, 50);
         Limit copy = original.copy();
 
         assertEquals(original.getCount(), copy.getCount());
@@ -374,8 +374,8 @@ public class Limit2025Test extends TestBase {
 
     @Test
     public void testEquals_SameValues() {
-        Limit limit1 = new Limit(100, 50);
-        Limit limit2 = new Limit(100, 50);
+        Limit limit1 = new Limit(50, 100);
+        Limit limit2 = new Limit(50, 100);
 
         assertEquals(limit1, limit2);
         assertEquals(limit1.hashCode(), limit2.hashCode());
