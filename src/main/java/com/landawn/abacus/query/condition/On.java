@@ -69,7 +69,7 @@ import com.landawn.abacus.util.N;
  * // Join with ON condition and additional filter
  * Condition filteredJoin = Filters.and(
  *     new On("products.category_id", "categories.id"),
- *     Filters.eq("categories.active", true)
+ *     Filters.equal("categories.active", true)
  * );
  * RightJoin rightJoin = new RightJoin("categories", filteredJoin);
  * // Generates: RIGHT JOIN categories (ON products.category_id = categories.id) AND (categories.active = true)
@@ -112,7 +112,7 @@ public class On extends Cell {
      * Condition complexCondition = Filters.and(
      *     Filters.expr("orders.customer_id = customers.id"),
      *     Filters.between("orders.order_date", "2024-01-01", "2024-12-31"),
-     *     Filters.ne("customers.status", "DELETED")
+     *     Filters.notEqual("customers.status", "DELETED")
      * );
      * On on2 = new On(complexCondition);
      * LeftJoin join2 = new LeftJoin("customers", on2);

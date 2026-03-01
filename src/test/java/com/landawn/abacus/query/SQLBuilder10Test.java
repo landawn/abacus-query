@@ -612,7 +612,7 @@ public class SQLBuilder10Test extends TestBase {
         assertEquals("SELECT * FROM users LIMIT 10", sql);
 
         // With offset
-        sql = PSC.select("*").from("users").limit(20, 10).sql();
+        sql = PSC.select("*").from("users").limit(10, 20).sql();
 
         assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
     }
@@ -902,7 +902,7 @@ public class SQLBuilder10Test extends TestBase {
                 .groupBy("u.id", "u.name", "o.order_number")
                 .having(Filters.gt("COUNT(*)", 1))
                 .orderBy("u.name", SortDirection.ASC)
-                .limit(10, 20)
+                .limit(20, 10)
                 .sql();
 
         assertTrue(sql.contains("SELECT u.id, u.name, o.order_number"));
@@ -1307,7 +1307,7 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testLimitWithLargeNumbers() {
-        String sql = PSC.select("*").from("users").limit(1000000, 50).sql();
+        String sql = PSC.select("*").from("users").limit(50, 1000000).sql();
 
         assertEquals("SELECT * FROM users LIMIT 50 OFFSET 1000000", sql);
     }
@@ -1372,7 +1372,7 @@ public class SQLBuilder10Test extends TestBase {
                 .groupBy("department")
                 .having(Filters.gt("COUNT(*)", 5))
                 .orderBy("department")
-                .limit(10, 20);
+                .limit(20, 10);
 
         String sql = PSC.select("department", "COUNT(*)").from("employees").append(criteria).sql();
 
@@ -1477,7 +1477,7 @@ public class SQLBuilder10Test extends TestBase {
                 .groupBy("u.id", "u.name")
                 .having(Filters.gt("COUNT(o.id)", 5))
                 .orderBy("total_amount", SortDirection.DESC)
-                .limit(10, 20)
+                .limit(20, 10)
                 .sql();
 
         // Verify all parts are present

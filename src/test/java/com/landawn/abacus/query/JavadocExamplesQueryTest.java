@@ -948,9 +948,9 @@ public class JavadocExamplesQueryTest {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
         b.select().append("*");
         b.from().append("users");
-        b.limit(20, 10);
+        b.limit(10, 20);
         String sql = b.build();
-        assertTrue(sql.contains("LIMIT 20, 10"));
+        assertTrue(sql.contains("LIMIT 10 OFFSET 20"));
     }
 
     @Test

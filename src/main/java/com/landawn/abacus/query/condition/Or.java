@@ -50,15 +50,15 @@ import com.landawn.abacus.util.N;
  * <pre>{@code
  * // Create OR with multiple conditions
  * Or or = new Or(
- *     Filters.eq("status", "active"),
- *     Filters.eq("status", "pending"),
- *     Filters.eq("status", "review")
+ *     Filters.equal("status", "active"),
+ *     Filters.equal("status", "pending"),
+ *     Filters.equal("status", "review")
  * );
  * // Results in: ((status = 'active') OR (status = 'pending') OR (status = 'review'))
  *
  * // Build OR condition fluently
- * Or or2 = new Or(Filters.gt("age", 65))
- *     .or(Filters.lt("age", 18));
+ * Or or2 = new Or(Filters.greaterThan("age", 65))
+ *     .or(Filters.lessThan("age", 18));
  * // Results in: ((age > 65) OR (age < 18))
  * }</pre>
  *
@@ -89,9 +89,9 @@ public class Or extends Junction {
      * <pre>{@code
      * // Find users in specific cities
      * Or or = new Or(
-     *     Filters.eq("city", "New York"),
-     *     Filters.eq("city", "Los Angeles"),
-     *     Filters.eq("city", "Chicago")
+     *     Filters.equal("city", "New York"),
+     *     Filters.equal("city", "Los Angeles"),
+     *     Filters.equal("city", "Chicago")
      * );
      * // Results in: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
      *
@@ -130,8 +130,8 @@ public class Or extends Junction {
      *
      * // Combining existing conditions
      * Set<Condition> statusConditions = new HashSet<>();
-     * statusConditions.add(Filters.eq("status", "active"));
-     * statusConditions.add(Filters.eq("status", "pending"));
+     * statusConditions.add(Filters.equal("status", "active"));
+     * statusConditions.add(Filters.equal("status", "pending"));
      * Or statusOr = new Or(statusConditions);
      * // Results in: ((status = 'active') OR (status = 'pending'))
      * }</pre>
@@ -154,18 +154,18 @@ public class Or extends Junction {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Build condition step by step
-     * Or or = new Or(Filters.eq("type", "A"))
-     *     .or(Filters.eq("type", "B"))
-     *     .or(Filters.eq("type", "C"));
+     * Or or = new Or(Filters.equal("type", "A"))
+     *     .or(Filters.equal("type", "B"))
+     *     .or(Filters.equal("type", "C"));
      * // Results in: ((type = 'A') OR (type = 'B') OR (type = 'C'))
      *
      * // Add conditions conditionally
-     * Or baseOr = new Or(Filters.eq("status", "active"));
+     * Or baseOr = new Or(Filters.equal("status", "active"));
      * if (includeInactive) {
-     *     baseOr = baseOr.or(Filters.eq("status", "inactive"));
+     *     baseOr = baseOr.or(Filters.equal("status", "inactive"));
      * }
      * if (includePending) {
-     *     baseOr = baseOr.or(Filters.eq("status", "pending"));
+     *     baseOr = baseOr.or(Filters.equal("status", "pending"));
      * }
      * // Results vary based on flags
      * }</pre>

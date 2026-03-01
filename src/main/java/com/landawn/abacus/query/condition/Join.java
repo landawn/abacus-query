@@ -161,7 +161,7 @@ public class Join extends AbstractCondition {
      * Join complexJoin = new Join("products p",
      *     new And(
      *         new On("categories.id", "p.category_id"),
-     *         Filters.eq("p.active", true)
+     *         Filters.equal("p.active", true)
      *     ));
      * // Generates: JOIN products p (ON categories.id = p.category_id) AND (p.active = true)
      * // Note: And wraps each condition in parentheses

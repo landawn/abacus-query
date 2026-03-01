@@ -302,7 +302,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testLimitWithOffset() {
-        Criteria criteria = Filters.criteria().limit(20, 10);
+        Criteria criteria = Filters.criteria().limit(10, 20);
 
         Limit limit = criteria.getLimit();
         Assertions.assertNotNull(limit);
@@ -524,7 +524,7 @@ public class CriteriaTest extends TestBase {
                 .groupBy("users.id", "users.name")
                 .having(Filters.and(Filters.gt("COUNT(*)", 5), Filters.lt("SUM(orders.amount)", 10000)))
                 .orderBy("total_amount", SortDirection.DESC, "user_name", SortDirection.ASC)
-                .limit(20, 100);
+                .limit(100, 20);
 
         // Verify all components are present
         Assertions.assertEquals("DISTINCT", criteria.getSelectModifier());

@@ -461,9 +461,9 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
         builder.select().append("*");
         builder.from().append("users");
-        builder.limit(20, 10);
+        builder.limit(10, 20);
         String sql = builder.build();
-        assertEquals("SELECT * FROM users LIMIT 20, 10", sql);
+        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
     }
 
     @Test

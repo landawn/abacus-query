@@ -33,7 +33,7 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create a NOT cell
- * Cell notCell = new Cell(Operator.NOT, Filters.eq("status", "active"));
+ * Cell notCell = new Cell(Operator.NOT, Filters.equal("status", "active"));
  * 
  * // Create an EXISTS cell with a subquery
  * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
@@ -85,7 +85,7 @@ public class Cell extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a NOT cell wrapping an equality condition
-     * Cell notCell = new Cell(Operator.NOT, Filters.eq("status", "active"));
+     * Cell notCell = new Cell(Operator.NOT, Filters.equal("status", "active"));
      * Condition inner = notCell.getCondition();   // the Equal condition for status = 'active'
      *
      * // Create an EXISTS cell with a subquery
@@ -109,11 +109,11 @@ public class Cell extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Deprecated: prefer creating a new Cell instead
-     * Cell notCell = new Cell(Operator.NOT, Filters.eq("status", "active"));
-     * notCell.setCondition(Filters.eq("status", "inactive"));   // Not recommended
+     * Cell notCell = new Cell(Operator.NOT, Filters.equal("status", "active"));
+     * notCell.setCondition(Filters.equal("status", "inactive"));   // Not recommended
      *
      * // Preferred approach: create a new Cell
-     * Cell newNotCell = new Cell(Operator.NOT, Filters.eq("status", "inactive"));
+     * Cell newNotCell = new Cell(Operator.NOT, Filters.equal("status", "inactive"));
      * }</pre>
      *
      * @param condition the new condition to wrap

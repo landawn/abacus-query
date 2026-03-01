@@ -56,7 +56,7 @@ import java.util.Collection;
  * InnerJoin customerOrders = new InnerJoin("orders o",
  *     new And(
  *         new On("c.id", "o.customer_id"),
- *         Filters.eq("o.status", "completed")
+ *         Filters.equal("o.status", "completed")
  *     ));
  * // Generates: INNER JOIN orders o (ON c.id = o.customer_id) AND (o.status = 'completed')
  *
@@ -65,7 +65,7 @@ import java.util.Collection;
  *     new And(
  *         new On("p.product_id", "i.product_id"),
  *         new On("p.warehouse_id", "i.warehouse_id"),
- *         Filters.gt("i.quantity", 0)
+ *         Filters.greaterThan("i.quantity", 0)
  *     ));
  * // Generates: INNER JOIN inventory i (ON p.product_id = i.product_id) AND (ON p.warehouse_id = i.warehouse_id) AND (i.quantity > 0)
  *
@@ -144,8 +144,8 @@ public class InnerJoin extends Join {
      * InnerJoin filteredJoin = new InnerJoin("products p",
      *     new And(
      *         new On("order_items.product_id", "p.id"),
-     *         Filters.eq("p.active", true),
-     *         Filters.gt("p.stock", 0)
+     *         Filters.equal("p.active", true),
+     *         Filters.greaterThan("p.stock", 0)
      *     ));
      * // Generates: INNER JOIN products p (ON order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0)
      *

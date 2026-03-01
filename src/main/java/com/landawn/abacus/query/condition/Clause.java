@@ -41,14 +41,14 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Clauses are typically used through their specific implementations
- * Where where = new Where(Filters.eq("status", "active"));
- * Having having = new Having(Filters.gt("COUNT(*)", 5));
+ * Where where = new Where(Filters.equal("status", "active"));
+ * Having having = new Having(Filters.greaterThan("COUNT(*)", 5));
  * OrderBy orderBy = new OrderBy("created_date", SortDirection.DESC);
  *
  * // Add them to criteria
  * Criteria criteria = new Criteria()
- *     .where(Filters.eq("status", "active"))    // Correct usage
- *     .having(Filters.gt("COUNT(*)", 5));
+ *     .where(Filters.equal("status", "active"))    // Correct usage
+ *     .having(Filters.greaterThan("COUNT(*)", 5));
  *
  * // Cannot combine clauses with AND/OR/NOT
  * // where.and(having);   // This will throw UnsupportedOperationException
@@ -56,8 +56,8 @@ package com.landawn.abacus.query.condition;
  * // Instead, combine conditions within a clause
  * Where complexWhere = new Where(
  *     Filters.and(
- *         Filters.eq("status", "active"),
- *         Filters.gt("age", 18)
+ *         Filters.equal("status", "active"),
+ *         Filters.greaterThan("age", 18)
  *     )
  * );
  * }</pre>
@@ -91,8 +91,8 @@ public abstract class Clause extends Cell {
      * }
      *
      * // Using clause implementations
-     * Where where = new Where(Filters.eq("status", "active"));
-     * Having having = new Having(Filters.gt("COUNT(*)", 10));
+     * Where where = new Where(Filters.equal("status", "active"));
+     * Having having = new Having(Filters.greaterThan("COUNT(*)", 10));
      * }</pre>
      *
      * @param operator the clause operator (e.g., WHERE, HAVING, GROUP_BY). Must not be null.
@@ -118,8 +118,8 @@ public abstract class Clause extends Cell {
      * // Correct - AND conditions within a clause
      * Where where = new Where(
      *     Filters.and(
-     *         Filters.eq("status", "active"),
-     *         Filters.gt("age", 18)
+     *         Filters.equal("status", "active"),
+     *         Filters.greaterThan("age", 18)
      *     )
      * );
      * }</pre>
@@ -149,8 +149,8 @@ public abstract class Clause extends Cell {
      * // Correct - OR conditions within a clause
      * Where where = new Where(
      *     Filters.or(
-     *         Filters.eq("status", "active"),
-     *         Filters.eq("status", "pending")
+     *         Filters.equal("status", "active"),
+     *         Filters.equal("status", "pending")
      *     )
      * );
      * }</pre>
@@ -178,7 +178,7 @@ public abstract class Clause extends Cell {
      *
      * // Correct - NOT condition within a clause
      * Where where = new Where(
-     *     Filters.not(Filters.eq("status", "inactive"))
+     *     Filters.not(Filters.equal("status", "inactive"))
      * );
      *
      * // Or use specific NOT operations

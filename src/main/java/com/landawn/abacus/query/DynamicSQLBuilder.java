@@ -249,33 +249,30 @@ public class DynamicSQLBuilder {
     }
 
     /**
-     * Adds a LIMIT clause with offset for pagination.
-     * Generates MySQL-style syntax: {@code LIMIT offset, count}
-     *
-     * <p>This method uses MySQL-specific syntax where the first parameter is the offset and the
-     * second is the count. This differs from SQL standard LIMIT count OFFSET offset syntax.</p>
+     * Adds a LIMIT clause with count and offset for pagination.
+     * Generates SQL standard syntax: {@code LIMIT count OFFSET offset}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
      * builder.select().append("*");
      * builder.from().append("users");
-     * builder.limit(20, 10);
-     * // Generates: LIMIT 20, 10 (skip 20 rows, return next 10)
+     * builder.limit(10, 20);  // count=10, offset=20
+     * // Generates: SELECT * FROM users LIMIT 10 OFFSET 20 (skip 20 rows, return next 10)
      * }</pre>
      *
-     * @param offset the number of rows to skip (must not be negative)
      * @param count the maximum number of rows to return (must not be negative)
+     * @param offset the number of rows to skip (must not be negative)
      * @return this builder instance for method chaining
      * @see #offsetRows(int)
      * @see #fetchNextRows(int)
      * @see #fetchFirstRows(int)
      */
-    public DynamicSQLBuilder limit(final int offset, final int count) {
-        N.checkArgNotNegative(offset, "offset");
+    public DynamicSQLBuilder limit(final int count, final int offset) {
         N.checkArgNotNegative(count, "count");
+        N.checkArgNotNegative(offset, "offset");
 
-        getStringBuilderForMoreParts().append(" LIMIT ").append(offset).append(", ").append(count);
+        getStringBuilderForMoreParts().append(" LIMIT ").append(count).append(" OFFSET ").append(offset);
 
         return this;
     }

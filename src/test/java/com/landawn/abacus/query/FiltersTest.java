@@ -1236,7 +1236,7 @@ public class FiltersTest extends TestBase {
         Assertions.assertNotNull(criteria22);
 
         // Test limit with offset and count
-        Criteria criteria23 = CriteriaBuilder.limit(10, 30);
+        Criteria criteria23 = CriteriaBuilder.limit(30, 10);
         Assertions.assertNotNull(criteria23);
 
         // Test limit with expression

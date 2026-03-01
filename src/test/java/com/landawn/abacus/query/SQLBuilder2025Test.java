@@ -240,7 +240,7 @@ public class SQLBuilder2025Test extends TestBase {
 
     @Test
     public void testLimitWithOffset() {
-        String sql = SQLBuilder.PSC.select("*").from("users").limit(10, 20).sql();
+        String sql = SQLBuilder.PSC.select("*").from("users").limit(20, 10).sql();
         assertTrue(sql.contains("LIMIT"));
     }
 

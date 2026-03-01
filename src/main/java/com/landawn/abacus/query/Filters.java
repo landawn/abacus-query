@@ -24,6 +24,7 @@ import java.util.Map;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
+import com.landawn.abacus.query.Filters.CriteriaBuilder.CB;
 import com.landawn.abacus.query.condition.All;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Any;
@@ -200,16 +201,16 @@ import com.landawn.abacus.util.N;
  * <p><b>Common Usage Patterns:</b>
  * <pre>{@code
  * // Basic equality and comparison conditions
- * Condition userActive = Filters.eq("status", "ACTIVE");
- * Condition adultUsers = Filters.ge("age", 18);
- * Condition recentOrders = Filters.gt("order_date", lastWeek);
+ * Condition userActive = Filters.equal("status", "ACTIVE");
+ * Condition adultUsers = Filters.greaterThanOrEqual("age", 18);
+ * Condition recentOrders = Filters.greaterThan("order_date", lastWeek);
  *
  * // Complex logical conditions with proper precedence
  * Condition complexFilter = Filters.and(
- *     Filters.eq("department", "Engineering"),
+ *     Filters.equal("department", "Engineering"),
  *     Filters.or(
- *         Filters.gt("salary", 75000),
- *         Filters.eq("level", "Senior")
+ *         Filters.greaterThan("salary", 75000),
+ *         Filters.equal("level", "Senior")
  *     ),
  *     Filters.isNotNull("manager_id")
  * );
@@ -246,15 +247,15 @@ import com.landawn.abacus.util.N;
  *         }
  *
  *         if (criteria.getDepartment() != null) {
- *             conditions.add(Filters.eq("department", criteria.getDepartment()));
+ *             conditions.add(Filters.equal("department", criteria.getDepartment()));
  *         }
  *
  *         if (criteria.getMinAge() != null) {
- *             conditions.add(Filters.ge("age", criteria.getMinAge()));
+ *             conditions.add(Filters.greaterThanOrEqual("age", criteria.getMinAge()));
  *         }
  *
  *         if (criteria.getMaxAge() != null) {
- *             conditions.add(Filters.le("age", criteria.getMaxAge()));
+ *             conditions.add(Filters.lessThanOrEqual("age", criteria.getMaxAge()));
  *         }
  *
  *         if (criteria.getSkills() != null && !criteria.getSkills().isEmpty()) {
@@ -271,13 +272,13 @@ import com.landawn.abacus.util.N;
  *
  *     // Complex join condition building
  *     public static Condition buildUserOrderJoinCondition(OrderSearchCriteria orderCriteria) {
- *         Condition baseJoin = Filters.eq("users.id", "orders.customer_id");
+ *         Condition baseJoin = Filters.equal("users.id", "orders.customer_id");
  *
  *         List<Condition> orderConditions = new ArrayList<>();
  *         orderConditions.add(baseJoin);
  *
  *         if (orderCriteria.getMinTotal() != null) {
- *             orderConditions.add(Filters.ge("orders.total_amount", orderCriteria.getMinTotal()));
+ *             orderConditions.add(Filters.greaterThanOrEqual("orders.total_amount", orderCriteria.getMinTotal()));
  *         }
  *
  *         if (orderCriteria.getDateRange() != null) {
@@ -385,7 +386,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a parameterized condition
-     * Equal condition = Filters.eq("age");   // Uses QME internally
+     * Equal condition = Filters.equal("age");   // Uses QME internally
      * }</pre>
      */
     public static final Expression QME = Expr.of(SK.QUESTION_MARK);
@@ -404,7 +405,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition condition = includeFilter ? Filters.eq("status", "active") 
+     * Condition condition = includeFilter ? Filters.equal("status", "active") 
      *                                    : Filters.alwaysTrue();
      * }</pre>
      *
@@ -445,8 +446,8 @@ public class Filters {
      * 
      * // Create a complex negated condition
      * Not complexNot = Filters.not(Filters.and(
-     *     Filters.eq("status", "active"),
-     *     Filters.gt("age", 18),
+     *     Filters.equal("status", "active"),
+     *     Filters.greaterThan("age", 18),
      *     Filters.like("email", "%@company.com")
      * ));
      * }</pre>
@@ -550,7 +551,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Equal condition = Filters.eq("status", "active");
+     * Equal condition = Filters.equal("status", "active");
      * }</pre>
      *
      * @param propName the property/column name
@@ -569,7 +570,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Equal condition = Filters.eq("email");
+     * Equal condition = Filters.equal("email");
      * // SQL fragment: email = ?
      * }</pre>
      *
@@ -1229,7 +1230,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotEqual condition = Filters.ne("status", "inactive");
+     * NotEqual condition = Filters.notEqual("status", "inactive");
      * }</pre>
      *
      * @param propName the property/column name
@@ -1248,7 +1249,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotEqual condition = Filters.ne("category");
+     * NotEqual condition = Filters.notEqual("category");
      * // SQL fragment: category != ?
      * }</pre>
      *
@@ -1302,7 +1303,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThan condition = Filters.gt("price", 100);
+     * GreaterThan condition = Filters.greaterThan("price", 100);
      * }</pre>
      *
      * @param propName the property/column name
@@ -1321,7 +1322,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThan condition = Filters.gt("quantity");
+     * GreaterThan condition = Filters.greaterThan("quantity");
      * // SQL fragment: quantity > ?
      * }</pre>
      *
@@ -1375,7 +1376,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThanOrEqual condition = Filters.ge("level", 5);
+     * GreaterThanOrEqual condition = Filters.greaterThanOrEqual("level", 5);
      * }</pre>
      *
      * @param propName the property/column name
@@ -1393,7 +1394,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThanOrEqual condition = Filters.ge("rating");
+     * GreaterThanOrEqual condition = Filters.greaterThanOrEqual("rating");
      * // SQL fragment: rating >= ?
      * }</pre>
      *
@@ -1446,7 +1447,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThan condition = Filters.lt("stock", 10);
+     * LessThan condition = Filters.lessThan("stock", 10);
      * }</pre>
      *
      * @param propName the property/column name
@@ -1465,7 +1466,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThan condition = Filters.lt("expiry_date");
+     * LessThan condition = Filters.lessThan("expiry_date");
      * // SQL fragment: expiry_date < ?
      * }</pre>
      *
@@ -1519,7 +1520,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThanOrEqual condition = Filters.le("priority", 3);
+     * LessThanOrEqual condition = Filters.lessThanOrEqual("priority", 3);
      * }</pre>
      *
      * @param propName the property/column name
@@ -1537,7 +1538,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThanOrEqual condition = Filters.le("weight");
+     * LessThanOrEqual condition = Filters.lessThanOrEqual("weight");
      * // SQL fragment: weight <= ?
      * }</pre>
      *
@@ -2057,8 +2058,8 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.or(
-     *     Filters.eq("status", "active"),
-     *     Filters.gt("priority", 5),
+     *     Filters.equal("status", "active"),
+     *     Filters.greaterThan("priority", 5),
      *     Filters.isNull("deleted_at")
      * );
      * // Results in: ((status = 'active') OR (priority > 5) OR (deleted_at IS NULL))
@@ -2078,8 +2079,8 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Condition> conditions = Arrays.asList(
-     *     Filters.eq("type", "admin"),
-     *     Filters.eq("type", "moderator")
+     *     Filters.equal("type", "admin"),
+     *     Filters.equal("type", "moderator")
      * );
      * Or condition = Filters.or(conditions);
      * }</pre>
@@ -2098,8 +2099,8 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.and(
-     *     Filters.eq("status", "active"),
-     *     Filters.ge("age", 18),
+     *     Filters.equal("status", "active"),
+     *     Filters.greaterThanOrEqual("age", 18),
      *     Filters.isNotNull("email")
      * );
      * // Results in: ((status = 'active') AND (age >= 18) AND (email IS NOT NULL))
@@ -2120,7 +2121,7 @@ public class Filters {
      * <pre>{@code
      * List<Condition> conditions = Arrays.asList(
      *     Filters.between("price", 10, 100),
-     *     Filters.eq("in_stock", true)
+     *     Filters.equal("in_stock", true)
      * );
      * And condition = Filters.and(conditions);
      * }</pre>
@@ -2139,8 +2140,8 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Junction condition = Filters.junction(CustomOperator.NAND,
-     *     Filters.eq("flag1", true),
-     *     Filters.eq("flag2", true)
+     *     Filters.equal("flag1", true),
+     *     Filters.equal("flag2", true)
      * );
      * }</pre>
      *
@@ -2177,7 +2178,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Where where = Filters.where(Filters.eq("active", true));
+     * Where where = Filters.where(Filters.equal("active", true));
      * }</pre>
      *
      * @param condition the condition for the WHERE clause
@@ -2354,7 +2355,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Having having = Filters.having(Filters.gt("COUNT(*)", 5));
+     * Having having = Filters.having(Filters.greaterThan("COUNT(*)", 5));
      * // Results in SQL like: HAVING COUNT(*) > 5
      * }</pre>
      *
@@ -2595,7 +2596,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * On on = Filters.on(Filters.eq("users.id", "orders.user_id"));
+     * On on = Filters.on(Filters.equal("users.id", "orders.user_id"));
      * // Results in SQL like: ON users.id = orders.user_id
      * }</pre>
      *
@@ -2865,7 +2866,7 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * CrossJoin join = Filters.crossJoin("sizes", Filters.eq("active", true));
+     * CrossJoin join = Filters.crossJoin("sizes", Filters.equal("active", true));
      * }</pre>
      *
      * @param joinEntity the entity/table name to cross join
@@ -3019,7 +3020,7 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NaturalJoin join = Filters.naturalJoin("departments", Filters.eq("active", true));
+     * NaturalJoin join = Filters.naturalJoin("departments", Filters.equal("active", true));
      * }</pre>
      *
      * @param joinEntity the entity/table name to natural join
@@ -3498,7 +3499,7 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery(User.class, 
      *     Arrays.asList("id", "name"),
-     *     Filters.eq("active", true));
+     *     Filters.equal("active", true));
      * // Generates subquery based on User entity
      * }</pre>
      *
@@ -3615,7 +3616,6 @@ public class Filters {
      * }</pre>
      * @param count the maximum number of rows to return
      * @param offset the number of rows to skip
-     *
      * @return a Limit clause
      */
     public static Limit limit(final int count, final int offset) {
@@ -3645,7 +3645,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = Filters.criteria()
-     *     .where(Filters.eq("status", "active"))
+     *     .where(Filters.equal("status", "active"))
      *     .orderBy("created_date", SortDirection.DESC)
      *     .limit(10);
      * }</pre>
@@ -3667,7 +3667,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Instead of: Filters.criteria().where(condition)
-     * Criteria c = CriteriaBuilder.where(Filters.eq("status", "active"));
+     * Criteria c = CriteriaBuilder.where(Filters.equal("status", "active"));
      * 
      * // Chain multiple operations
      * Criteria c = CriteriaBuilder.where("age > 18")
@@ -3676,7 +3676,7 @@ public class Filters {
      * }</pre>
      */
     @Beta
-    public static final class CriteriaBuilder {
+    public static sealed class CriteriaBuilder permits CB {
 
         private CriteriaBuilder() {
             // singleton for utility class.
@@ -3688,7 +3688,7 @@ public class Filters {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.where(Filters.eq("active", true));
+         * Criteria criteria = CB.where(Filters.equal("active", true));
          * }</pre>
          *
          * @param condition the condition for the WHERE clause
@@ -3816,7 +3816,7 @@ public class Filters {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.having(Filters.gt("COUNT(*)", 5));
+         * Criteria criteria = CB.having(Filters.greaterThan("COUNT(*)", 5));
          * }</pre>
          *
          * @param condition the condition for the HAVING clause
@@ -4029,20 +4029,20 @@ public class Filters {
         }
 
         /**
-         * Creates a new Criteria with a LIMIT clause with offset and count.
-         * 
+         * Creates a new Criteria with a LIMIT clause with count and offset.
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = CB.limit(50, 25);
+         * Criteria criteria = CB.limit(25, 50);
          * // Results in SQL like: LIMIT 25 OFFSET 50
          * }</pre>
          *
-         * @param offset the number of rows to skip
          * @param count the maximum number of rows to return
+         * @param offset the number of rows to skip
          * @return a new Criteria with the LIMIT clause
          */
-        public static Criteria limit(final int offset, final int count) {
-            return Filters.criteria().limit(offset, count);
+        public static Criteria limit(final int count, final int offset) {
+            return Filters.criteria().limit(count, offset);
         }
 
         /**
@@ -4058,6 +4058,19 @@ public class Filters {
          */
         public static Criteria limit(final String expr) {
             return Filters.criteria().limit(expr);
+        }
+
+        /**
+         * Backward-compatible alias type for {@link CriteriaBuilder}.
+         *
+         * <p>This nested type is retained for source compatibility with existing
+         * code that references {@code Filters.CriteriaBuilder.CB} explicitly.</p>
+         */
+        public static final class CB extends CriteriaBuilder {
+
+            private CB() {
+                // utility class.
+            }
         }
     }
 }

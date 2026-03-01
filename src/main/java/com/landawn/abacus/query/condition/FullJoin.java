@@ -52,7 +52,7 @@ import java.util.Collection;
  * FullJoin complexJoin = new FullJoin("external_data e",
  *     new And(
  *         new On("internal_data.id", "e.id"),
- *         Filters.gt("e.updated_date", "2024-01-01")
+ *         Filters.greaterThan("e.updated_date", "2024-01-01")
  *     ));
  * // Generates: FULL JOIN external_data e (ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01')
  * }</pre>
@@ -122,8 +122,8 @@ public class FullJoin extends Join {
      * FullJoin reconcileData = new FullJoin("external_inventory ei",
      *     new And(
      *         new On("internal_inventory.product_id", "ei.product_id"),
-     *         Filters.eq("ei.active", true),
-     *         Filters.gt("ei.updated_date", "2023-01-01")
+     *         Filters.equal("ei.active", true),
+     *         Filters.greaterThan("ei.updated_date", "2023-01-01")
      *     ));
      * // Generates: FULL JOIN external_inventory ei (ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01')
      *

@@ -120,13 +120,13 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition c1 = Filters.eq("status", "active");
-     * Condition c2 = Filters.gt("age", 18);
+     * Condition c1 = Filters.equal("status", "active");
+     * Condition c2 = Filters.greaterThan("age", 18);
      * And combined = c1.and(c2);
      * // Results in: ((status = 'active') AND (age > 18))
      *
      * // Can be chained
-     * Condition c3 = Filters.lt("age", 65);
+     * Condition c3 = Filters.lessThan("age", 65);
      * And allConditions = c1.and(c2).and(c3);
      * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
      * }</pre>
@@ -148,13 +148,13 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition c1 = Filters.eq("status", "premium");
-     * Condition c2 = Filters.eq("status", "vip");
+     * Condition c1 = Filters.equal("status", "premium");
+     * Condition c2 = Filters.equal("status", "vip");
      * Or combined = c1.or(c2);
      * // Results in: ((status = 'premium') OR (status = 'vip'))
      *
      * // Can be chained
-     * Condition c3 = Filters.eq("status", "gold");
+     * Condition c3 = Filters.equal("status", "gold");
      * Or anyStatus = c1.or(c2).or(c3);
      * // Results in: ((status = 'premium') OR (status = 'vip') OR (status = 'gold'))
      * }</pre>
@@ -176,7 +176,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition c = Filters.eq("status", "inactive");
+     * Condition c = Filters.equal("status", "inactive");
      * Not negated = c.not();
      * // Results in: NOT status = 'inactive'
      *
@@ -186,8 +186,8 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * // Complex negation
      * Condition complex = Filters.and(
-     *     Filters.eq("type", "guest"),
-     *     Filters.lt("visits", 3)
+     *     Filters.equal("type", "guest"),
+     *     Filters.lessThan("visits", 3)
      * );
      * Not negatedComplex = complex.not();
      * // Results in: NOT (type = 'guest' AND visits < 3)

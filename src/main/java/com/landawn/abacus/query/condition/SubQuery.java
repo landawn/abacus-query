@@ -55,13 +55,13 @@ import com.landawn.abacus.util.Strings;
  * SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users WHERE status = 'active'");
  *
  * // Structured subquery with entity name
- * Condition activeCondition = Filters.eq("status", "active");
+ * Condition activeCondition = Filters.equal("status", "active");
  * SubQuery subQuery2 = Filters.subQuery("users", Arrays.asList("id"), activeCondition);
  * // Generates: SELECT id FROM users WHERE status = 'active'
  *
  * // Structured subquery with entity class
  * SubQuery subQuery3 = Filters.subQuery(User.class, Arrays.asList("id", "name"),
- *                                   Filters.gt("age", 18));
+ *                                   Filters.greaterThan("age", 18));
  * // Generates: SELECT id, name FROM User WHERE age > 18
  *
  * // Use in IN condition
@@ -179,8 +179,8 @@ public class SubQuery extends AbstractCondition {
      * // Select specific columns with conditions
      * List<String> props = Arrays.asList("id", "email");
      * Condition condition = Filters.and(
-     *     Filters.eq("active", true),
-     *     Filters.gt("created", "2024-01-01")
+     *     Filters.equal("active", true),
+     *     Filters.greaterThan("created", "2024-01-01")
      * );
      * SubQuery subQuery = Filters.subQuery("users", props, condition);
      * // Generates: SELECT id, email FROM users WHERE active = true AND created > '2024-01-01'
@@ -232,7 +232,7 @@ public class SubQuery extends AbstractCondition {
      * SubQuery activeProducts = Filters.subQuery(Product.class,
      *     Arrays.asList("id", "name", "price"),
      *     Filters.and(
-     *         Filters.eq("active", true),
+     *         Filters.equal("active", true),
      *         Filters.between("price", 10, 100)
      *     )
      * );
@@ -275,7 +275,7 @@ public class SubQuery extends AbstractCondition {
      * // Returns: "SELECT id FROM users WHERE status = 'active'"
      *
      * // Structured subquery returns null for sql()
-     * SubQuery structured = new SubQuery("users", Arrays.asList("id"), Filters.eq("status", "active"));
+     * SubQuery structured = new SubQuery("users", Arrays.asList("id"), Filters.equal("status", "active"));
      * String structuredSql = structured.sql();
      * // Returns: null
      * }</pre>
@@ -295,7 +295,7 @@ public class SubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Structured subquery with entity name
-     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), Filters.eq("active", true));
+     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), Filters.equal("active", true));
      * String entityName = subQuery.getEntityName();
      * // Returns: "users"
      *
@@ -323,12 +323,12 @@ public class SubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Subquery created with entity class
-     * SubQuery subQuery = new SubQuery(Product.class, Arrays.asList("id", "name"), Filters.eq("active", true));
+     * SubQuery subQuery = new SubQuery(Product.class, Arrays.asList("id", "name"), Filters.equal("active", true));
      * Class<?> entityClass = subQuery.getEntityClass();
      * // Returns: Product.class
      *
      * // Subquery created with entity name string returns null
-     * SubQuery namedQuery = new SubQuery("products", Arrays.asList("id"), Filters.eq("active", true));
+     * SubQuery namedQuery = new SubQuery("products", Arrays.asList("id"), Filters.equal("active", true));
      * Class<?> clazz = namedQuery.getEntityClass();
      * // Returns: null
      * }</pre>
@@ -347,7 +347,7 @@ public class SubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Structured subquery with selected properties
-     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "email", "name"), Filters.eq("active", true));
+     * SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "email", "name"), Filters.equal("active", true));
      * Collection<String> propNames = subQuery.getSelectPropNames();
      * // Returns: ["id", "email", "name"]
      *
@@ -389,7 +389,7 @@ public class SubQuery extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Structured subquery with condition
-     * Condition activeCondition = Filters.eq("active", true);
+     * Condition activeCondition = Filters.equal("active", true);
      * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), activeCondition);
      * Condition condition = subQuery.getCondition();
      * // Returns the wrapped WHERE condition: WHERE active = true

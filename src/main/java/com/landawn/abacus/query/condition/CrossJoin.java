@@ -52,7 +52,7 @@ import java.util.Collection;
  *
  * // CROSS JOIN with condition (unusual but supported)
  * CrossJoin filtered = new CrossJoin("categories",
- *     Filters.eq("active", true));
+ *     Filters.equal("active", true));
  * // Generates: CROSS JOIN categories (active = true)
  * // Note: Functionally equivalent to INNER JOIN with the condition
  *
@@ -129,7 +129,7 @@ public class CrossJoin extends Join {
      * CrossJoin complexCross = new CrossJoin("inventory i",
      *     new And(
      *         new On("i.warehouse_id", "w.id"),
-     *         Filters.eq("i.active", true)
+     *         Filters.equal("i.active", true)
      *     ));
      * // Generates: CROSS JOIN inventory i (ON i.warehouse_id = w.id) AND (i.active = true)
      * }</pre>
@@ -152,7 +152,7 @@ public class CrossJoin extends Join {
      * // Join multiple tables for all combinations with filter
      * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
      * CrossJoin join = new CrossJoin(tables,
-     *     Filters.eq("active", true));
+     *     Filters.equal("active", true));
      * // Generates: CROSS JOIN (sizes s, colors c, styles st) (active = true)
      *
      * // Using ON conditions (makes it similar to INNER JOIN)

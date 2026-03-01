@@ -36,9 +36,10 @@ import com.landawn.abacus.util.Strings;
  *   <li>Custom expression for database-specific syntax</li>
  * </ul>
  *
- * <p><b>Note:</b> The two-argument constructor takes {@code (count, offset)}, not {@code (offset, count)}.
- * This differs from the MySQL {@code LIMIT offset, count} syntax and the
- * {@link com.landawn.abacus.query.AbstractQueryBuilder#limit(int, int)} method which takes {@code (offset, count)}.</p>
+ * <p>All APIs consistently use {@code (count, offset)} parameter order:
+ * {@link com.landawn.abacus.query.AbstractQueryBuilder#limit(int, int)},
+ * {@link Criteria#limit(int, int)}, and
+ * {@link com.landawn.abacus.query.DynamicSQLBuilder#limit(int, int)}.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -46,7 +47,7 @@ import com.landawn.abacus.util.Strings;
  * Limit limit1 = new Limit(10);
  * // SQL: LIMIT 10
  *
- * // Pagination: Get 20 rows starting from row 51 (count=20, offset=50)
+ * // Pagination: return next 20, skip 50 rows (count=20, offset=50)
  * Limit limit2 = new Limit(20, 50);
  * // SQL: LIMIT 20 OFFSET 50
  *
@@ -89,7 +90,7 @@ public class Limit extends Clause {
      * // SQL: SELECT * FROM products WHERE name LIKE '%phone%' LIMIT 100
      * }</pre>
      *
-     * @param count the maximum number of rows to return. Should be non-negative (typically positive).
+     * @param count the maximum number of rows to return. Must be non-negative.
      * @throws IllegalArgumentException if count is negative
      */
     public Limit(final int count) {
@@ -98,28 +99,16 @@ public class Limit extends Clause {
 
     /**
      * Creates a LIMIT clause with both count and offset.
-     * This constructor enables pagination by specifying how many rows to skip (offset)
-     * and how many rows to return (count). This is the standard way to implement
-     * result pagination in SQL queries.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Page 1: First 10 results (count=10, offset=0)
-     * Limit page1 = new Limit(10, 0);
-     * // SQL: LIMIT 10
-     *
      * // Page 3: Results 21-30 (count=10, offset=20)
      * Limit page3 = new Limit(10, 20);
      * // SQL: LIMIT 10 OFFSET 20
-     *
-     * // Get 50 products starting from the 101st (count=50, offset=100)
-     * Limit products = new Limit(50, 100);
-     * // SQL: LIMIT 50 OFFSET 100
      * }</pre>
      *
      * @param count the maximum number of rows to return. Must be non-negative.
      * @param offset the number of rows to skip before returning results. Must be non-negative.
-     *
      * @throws IllegalArgumentException if offset or count is negative
      */
     public Limit(final int count, final int offset) {
@@ -147,8 +136,8 @@ public class Limit extends Clause {
      * Limit custom = new Limit("FIRST 10 SKIP 20");
      * }</pre>
      *
-     * @param expr the custom LIMIT expression as a string. Should not be null or empty.
-     * @throws IllegalArgumentException if expr is null or empty (implementation-dependent)
+     * @param expr the custom LIMIT expression as a string. Must not be null or empty.
+     * @throws IllegalArgumentException if expr is null or empty
      */
     public Limit(final String expr) {
         this(Integer.MAX_VALUE, 0);

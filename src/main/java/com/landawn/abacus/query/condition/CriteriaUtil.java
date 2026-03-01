@@ -160,13 +160,13 @@ public final class CriteriaUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Where whereClause = new Where(Filters.eq("status", "active"));
+     * Where whereClause = new Where(Filters.equal("status", "active"));
      * boolean result1 = CriteriaUtil.isClause(whereClause);   // true
      *
      * OrderBy orderByClause = new OrderBy("name");
      * boolean result2 = CriteriaUtil.isClause(orderByClause);   // true
      *
-     * Equal equalCond = Filters.eq("age", 25);
+     * Equal equalCond = Filters.equal("age", 25);
      * boolean result3 = CriteriaUtil.isClause(equalCond);   // false
      *
      * boolean result4 = CriteriaUtil.isClause((Condition) null);   // false
@@ -205,7 +205,7 @@ public final class CriteriaUtil {
      * <pre>{@code
      * Criteria criteria = new Criteria();
      * CriteriaUtil.add(criteria,
-     *     new Where(Filters.eq("status", "active")),
+     *     new Where(Filters.equal("status", "active")),
      *     new OrderBy("name", SortDirection.ASC)
      * );
      * // criteria now contains WHERE status = 'active' ORDER BY name ASC
@@ -226,7 +226,7 @@ public final class CriteriaUtil {
      * <pre>{@code
      * Criteria criteria = new Criteria();
      * List<Condition> conditions = Arrays.asList(
-     *     new Where(Filters.eq("active", true)),
+     *     new Where(Filters.equal("active", true)),
      *     new Limit(10)
      * );
      * CriteriaUtil.add(criteria, conditions);
@@ -247,7 +247,7 @@ public final class CriteriaUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria()
-     *     .where(Filters.eq("status", "active"))
+     *     .where(Filters.equal("status", "active"))
      *     .orderBy("name", SortDirection.ASC);
      * CriteriaUtil.remove(criteria, Operator.WHERE);
      * // Removes the WHERE clause from the criteria
@@ -269,7 +269,7 @@ public final class CriteriaUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Where whereClause = new Where(Filters.eq("status", "active"));
+     * Where whereClause = new Where(Filters.equal("status", "active"));
      * OrderBy orderByClause = new OrderBy("name");
      * Criteria criteria = new Criteria()
      *     .where(whereClause)
@@ -292,7 +292,7 @@ public final class CriteriaUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Where whereClause = new Where(Filters.eq("status", "active"));
+     * Where whereClause = new Where(Filters.equal("status", "active"));
      * Limit limitClause = new Limit(10);
      * List<Condition> conditionsToRemove = new ArrayList<>();
      * conditionsToRemove.add(whereClause);

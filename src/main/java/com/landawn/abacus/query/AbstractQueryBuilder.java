@@ -95,7 +95,7 @@ import com.landawn.abacus.util.stream.Stream;
  * // Simple SELECT
  * String sql = PSC.select("firstName", "lastName")
  *                 .from("account")
- *                 .where(Filters.eq("id", 1))
+ *                 .where(Filters.equal("id", 1))
  *                 .query();
  * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = ?
  * 
@@ -105,7 +105,7 @@ import com.landawn.abacus.util.stream.Stream;
  * // UPDATE with conditions
  * String sql = PSC.update("account")
  *                 .set("name", "status")
- *                 .where(Filters.eq("id", 1))
+ *                 .where(Filters.equal("id", 1))
  *                 .query();
  * }</pre>
  * 
@@ -2067,7 +2067,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users u")
      *                 .join("orders o")
-     *                 .on(Filters.eq("u.id", "o.user_id"))
+     *                 .on(Filters.equal("u.id", "o.user_id"))
      *                 .query();
      * }</pre>
      * 
@@ -2140,7 +2140,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .where(Filters.gt("age", 18))
+     *                 .where(Filters.greaterThan("age", 18))
      *                 .query();
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
@@ -2383,7 +2383,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("category", "COUNT(*) as count")
      *                 .from("products")
      *                 .groupBy("category")
-     *                 .having(Filters.gt("COUNT(*)", 10))
+     *                 .having(Filters.greaterThan("COUNT(*)", 10))
      *                 .query();
      * // Output: SELECT category, COUNT(*) as count FROM products GROUP BY category HAVING COUNT(*) > ?
      * }</pre>
@@ -2746,22 +2746,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds a LIMIT clause with an offset for pagination.
+     * Adds a LIMIT clause with count and offset for pagination.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .limit(20, 10)  // offset 20, limit 10
+     *                 .limit(10, 20)  // limit 10, offset 20
      *                 .query();
      * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
      * }</pre>
      *
-     * @param offset the number of rows to skip (appears as OFFSET in SQL)
      * @param count the maximum number of rows to return (appears as LIMIT in SQL)
+     * @param offset the number of rows to skip (appears as OFFSET in SQL)
      * @return this SQLBuilder instance for method chaining
      */
-    public This limit(final int offset, final int count) {
+    public This limit(final int count, final int offset) {
         checkIfAlreadyCalled(SK.LIMIT);
 
         _sb.append(_SPACE_LIMIT_SPACE);
@@ -2887,7 +2887,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .append(Filters.and(Filters.gt("age", 18), Filters.lt("age", 65)))
+     *                 .append(Filters.and(Filters.greaterThan("age", 18), Filters.lessThan("age", 65)))
      *                 .query();
      * // Output: SELECT * FROM users WHERE ((age > ?) AND (age < ?))
      * }</pre>
@@ -2975,7 +2975,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (Strings.isNotEmpty(limit.getExpression())) {
                     _sb.append(_SPACE).append(limit.getExpression());
                 } else if (limit.getOffset() > 0) {
-                    limit(limit.getOffset(), limit.getCount());
+                    limit(limit.getCount(), limit.getOffset());
                 } else {
                     limit(limit.getCount());
                 }
@@ -3023,7 +3023,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * boolean includeAgeFilter = true;
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .appendIf(includeAgeFilter, Filters.gt("age", 18))
+     *                 .appendIf(includeAgeFilter, Filters.greaterThan("age", 18))
      *                 .query();
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
@@ -3050,7 +3050,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * boolean includeForUpdate = true;
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .where(Filters.eq("id", 1))
+     *                 .where(Filters.equal("id", 1))
      *                 .appendIf(includeForUpdate, " FOR UPDATE")
      *                 .query();
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
@@ -3077,7 +3077,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .appendIf(complexFilter, builder -> 
-     *                     builder.where(Filters.gt("age", 18))
+     *                     builder.where(Filters.greaterThan("age", 18))
      *                            .orderBy("name"))
      *                 .query();
      * }</pre>
@@ -3104,8 +3104,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .appendIfOrElse(isActive, 
-     *                     Filters.eq("status", "active"),
-     *                     Filters.eq("status", "inactive"))
+     *                     Filters.equal("status", "active"),
+     *                     Filters.equal("status", "inactive"))
      *                 .query();
      * // Output: SELECT * FROM users WHERE status = ?
      * }</pre>
@@ -3755,7 +3755,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .where(Filters.eq("id", 1))
+     *                 .where(Filters.equal("id", 1))
      *                 .forUpdate()
      *                 .query();
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
@@ -3776,7 +3776,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.update("users")
      *                 .set("name = 'John'")
-     *                 .where(Filters.eq("id", 1))
+     *                 .where(Filters.equal("id", 1))
      *                 .query();
      * // Output: UPDATE users SET name = 'John' WHERE id = ?
      * }</pre>
@@ -3795,7 +3795,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.update("users")
      *                 .set("firstName", "lastName", "email")
-     *                 .where(Filters.eq("id", 1))
+     *                 .where(Filters.equal("id", 1))
      *                 .query();
      * // Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?
      * }</pre>
@@ -3904,7 +3904,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * values.put("lastName", "Doe");
      * String sql = PSC.update("users")
      *                 .set(values)
-     *                 .where(Filters.eq("id", 1))
+     *                 .where(Filters.equal("id", 1))
      *                 .query();
      * // Output: UPDATE users SET first_name = ?, last_name = ? WHERE id = ?
      * }</pre>
@@ -4001,7 +4001,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.update("account")
      *                 .set(accountEntity)
-     *                 .where(Filters.eq("id", 1))
+     *                 .where(Filters.equal("id", 1))
      *                 .query();
      * }</pre>
      * 
@@ -4021,7 +4021,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Set<String> excluded = N.asSet("createdDate", "version");
      * String sql = PSC.update("account")
      *                 .set(accountEntity, excluded)
-     *                 .where(Filters.eq("id", 1))
+     *                 .where(Filters.equal("id", 1))
      *                 .query();
      * }</pre>
      * 
@@ -4062,7 +4062,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.update("account")
      *                 .set(Account.class)
-     *                 .where(Filters.eq("id", 1))
+     *                 .where(Filters.equal("id", 1))
      *                 .query();
      * }</pre>
      *
@@ -4084,7 +4084,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Set<String> excluded = N.asSet("lastModified");
      * String sql = PSC.update("account")
      *                 .set(Account.class, excluded)
-     *                 .where(Filters.eq("id", 1))
+     *                 .where(Filters.equal("id", 1))
      *                 .query();
      * }</pre>
      *
@@ -4106,7 +4106,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .where(Filters.eq("status", "ACTIVE"))
+     *                 .where(Filters.equal("status", "ACTIVE"))
      *                 .query();
      * // sql contains: "SELECT * FROM users WHERE status = ?"
      * }</pre>
@@ -4148,8 +4148,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * SQLBuilder builder = PSC.select("*")
      *                        .from("account")
      *                        .where(Filters.and(
-     *                            Filters.eq("name", "John"),
-     *                            Filters.gt("age", 25)
+     *                            Filters.equal("name", "John"),
+     *                            Filters.greaterThan("age", 25)
      *                        ));
      * List<Object> params = builder.parameters();
      * // params contains: ["John", 25]
@@ -4169,7 +4169,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * SP sqlPair = PSC.select("*")
      *                 .from("account")
-     *                 .where(Filters.eq("status", "ACTIVE"))
+     *                 .where(Filters.equal("status", "ACTIVE"))
      *                 .build();
      * // sqlPair.query contains: "SELECT * FROM account WHERE status = ?"
      * // sqlPair.parameters contains: ["ACTIVE"]
@@ -4192,7 +4192,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //     * // Example usage:
     //     * SP sqlPair = PSC.select("*")
     //     *                 .from("account")
-    //     *                 .where(Filters.eq("status", "ACTIVE"))
+    //     *                 .where(Filters.equal("status", "ACTIVE"))
     //     *                 .pair();
     //     * // sqlPair.query contains: "SELECT * FROM account WHERE status = ?"
     //     * // sqlPair.parameters contains: ["ACTIVE"]
@@ -4213,7 +4213,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * List<Account> accounts = PSC.select("*")
      *     .from("account")
-     *     .where(Filters.eq("status", "ACTIVE"))
+     *     .where(Filters.equal("status", "ACTIVE"))
      *     .apply(sp -> jdbcTemplate.query(sp.query, sp.parameters, accountRowMapper));
      * }</pre>
      *
@@ -4236,7 +4236,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * int count = PSC.update("account")
      *     .set("status", "INACTIVE")
-     *     .where(Filters.lt("lastLogin", oneYearAgo))
+     *     .where(Filters.lessThan("lastLogin", oneYearAgo))
      *     .apply((sql, params) -> jdbcTemplate.update(sql, params.toArray()));
      * }</pre>
      *
@@ -4280,7 +4280,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * PSC.deleteFrom("account")
-     *    .where(Filters.eq("status", "DELETED"))
+     *    .where(Filters.equal("status", "DELETED"))
      *    .accept((sql, params) -> {
      *        logger.info("Executing: {} with params: {}", sql, params);
      *        jdbcTemplate.update(sql, params.toArray());
@@ -5319,7 +5319,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * SQLBuilder.resetHandlerForNamedParameter();
      * 
      * // Named SQL will now use :paramName format again
-     * String sql = NSC.select("name").from("users").where(Filters.eq("id", 1)).query();
+     * String sql = NSC.select("name").from("users").where(Filters.equal("id", 1)).query();
      * // Output: SELECT name FROM users WHERE id = :id
      * }</pre>
      */
@@ -5400,7 +5400,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Build a query and get SQL with parameters
      * SP sqlPair = PSC.select("firstName", "lastName")
      *                 .from("users")
-     *                 .where(Filters.eq("id", 123))
+     *                 .where(Filters.equal("id", 123))
      *                 .build();
      *
      * // Access SQL and parameters

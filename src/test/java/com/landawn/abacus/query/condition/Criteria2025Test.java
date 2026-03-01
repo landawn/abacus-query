@@ -409,7 +409,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testLimitWithOffset() {
         Criteria criteria = new Criteria();
-        Criteria result = criteria.limit(10, 50);
+        Criteria result = criteria.limit(50, 10);
         assertNotNull(result);
     }
 

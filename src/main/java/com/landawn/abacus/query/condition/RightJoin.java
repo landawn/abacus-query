@@ -56,7 +56,7 @@ import java.util.Collection;
  * RightJoin complexJoin = new RightJoin("products p",
  *     new And(
  *         new On("order_items.product_id", "p.id"),
- *         Filters.eq("p.active", true)
+ *         Filters.equal("p.active", true)
  *     ));
  * // Generates: RIGHT JOIN products p (ON order_items.product_id = p.id) AND (p.active = true)
  *
@@ -132,8 +132,8 @@ public class RightJoin extends Join {
      * RightJoin activeCategories = new RightJoin("categories c",
      *     new And(
      *         new On("products.category_id", "c.id"),
-     *         Filters.eq("c.active", true),
-     *         Filters.gt("c.created_date", "2023-01-01")
+     *         Filters.equal("c.active", true),
+     *         Filters.greaterThan("c.created_date", "2023-01-01")
      *     ));
      * // Generates: RIGHT JOIN categories c (ON products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01')
      *

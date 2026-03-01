@@ -49,8 +49,8 @@ import com.landawn.abacus.util.NamingPolicy;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create simple conditions
- * Condition ageCondition = Filters.gt("age", 18);
- * Condition statusCondition = Filters.eq("status", "active");
+ * Condition ageCondition = Filters.greaterThan("age", 18);
+ * Condition statusCondition = Filters.equal("status", "active");
  * 
  * // Combine conditions using logical operations
  * Condition combined = ageCondition.and(statusCondition);
@@ -81,7 +81,7 @@ public interface Condition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition eq = Filters.eq("status", "active");
+     * Condition eq = Filters.equal("status", "active");
      * Operator op = eq.getOperator();   // Operator.EQUAL
      *
      * Condition between = Filters.between("age", 18, 65);
@@ -109,13 +109,13 @@ public interface Condition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition age = Filters.gt("age", 18);
-     * Condition status = Filters.eq("status", "active");
+     * Condition age = Filters.greaterThan("age", 18);
+     * Condition status = Filters.equal("status", "active");
      * And combined = age.and(status);
      * // Equivalent to: age > 18 AND status = 'active'
      * 
      * // Can be chained
-     * Condition verified = Filters.eq("verified", true);
+     * Condition verified = Filters.equal("verified", true);
      * And all = age.and(status).and(verified);
      * // Equivalent to: age > 18 AND status = 'active' AND verified = true
      * }</pre>
@@ -140,13 +140,13 @@ public interface Condition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition premium = Filters.eq("memberType", "premium");
-     * Condition vip = Filters.eq("memberType", "vip");
+     * Condition premium = Filters.equal("memberType", "premium");
+     * Condition vip = Filters.equal("memberType", "vip");
      * Or combined = premium.or(vip);
      * // Equivalent to: memberType = 'premium' OR memberType = 'vip'
      * 
      * // Can be chained
-     * Condition gold = Filters.eq("memberType", "gold");
+     * Condition gold = Filters.equal("memberType", "gold");
      * Or any = premium.or(vip).or(gold);
      * // Equivalent to: memberType = 'premium' OR memberType = 'vip' OR memberType = 'gold'
      * }</pre>
@@ -175,8 +175,8 @@ public interface Condition {
      * 
      * // Complex negation
      * Condition complex = Filters.and(
-     *     Filters.eq("status", "active"),
-     *     Filters.gt("age", 18)
+     *     Filters.equal("status", "active"),
+     *     Filters.greaterThan("age", 18)
      * );
      * Not negated = complex.not();
      * // Equivalent to: NOT (status = 'active' AND age > 18)
@@ -194,7 +194,7 @@ public interface Condition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition original = Filters.eq("name", "John");
+     * Condition original = Filters.equal("name", "John");
      * Condition copied = original.copy();
      *
      * // The copy is independent of the original
@@ -202,7 +202,7 @@ public interface Condition {
      * List<Object> copiedParams = copied.getParameters();   // ["John"] - still intact
      *
      * // Copy a complex condition
-     * Condition complex = Filters.and(Filters.gt("age", 18), Filters.eq("status", "active"));
+     * Condition complex = Filters.and(Filters.greaterThan("age", 18), Filters.equal("status", "active"));
      * Condition complexCopy = complex.copy();
      * }</pre>
      *
@@ -217,7 +217,7 @@ public interface Condition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition eq = Filters.eq("name", "John");
+     * Condition eq = Filters.equal("name", "John");
      * List<Object> params = eq.getParameters();   // ["John"]
      *
      * Condition between = Filters.between("age", 18, 65);
@@ -240,7 +240,7 @@ public interface Condition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition eq = Filters.eq("name", "John");
+     * Condition eq = Filters.equal("name", "John");
      * List<Object> params = eq.getParameters();   // ["John"]
      *
      * // Release parameter memory when the condition is no longer needed
@@ -248,7 +248,7 @@ public interface Condition {
      * List<Object> cleared = eq.getParameters();   // [null]
      *
      * // For compound conditions, clears parameters recursively
-     * Condition combined = Filters.and(Filters.gt("age", 18), Filters.eq("status", "active"));
+     * Condition combined = Filters.and(Filters.greaterThan("age", 18), Filters.equal("status", "active"));
      * combined.clearParameters();   // Clears parameters in both child conditions
      * }</pre>
      *
@@ -261,7 +261,7 @@ public interface Condition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition eq = Filters.eq("firstName", "John");
+     * Condition eq = Filters.equal("firstName", "John");
      *
      * // No change to property names
      * String noChange = eq.toString(NamingPolicy.NO_CHANGE);       // "firstName = 'John'"

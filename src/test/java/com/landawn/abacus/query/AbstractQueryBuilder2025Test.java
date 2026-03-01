@@ -225,7 +225,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testLimitWithOffset() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).limit(10, 20).sql();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).limit(20, 10).sql();
         assertNotNull(sql);
     }
 

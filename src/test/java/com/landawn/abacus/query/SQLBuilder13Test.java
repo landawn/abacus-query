@@ -752,7 +752,7 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with count and offset
-            sql = NSB.select("*").from("users").limit(5, 10).sql();
+            sql = NSB.select("*").from("users").limit(10, 5).sql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
@@ -1643,7 +1643,7 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with offset parameter
-            sql = NSC.select("*").from("users").limit(20, 10).sql();
+            sql = NSC.select("*").from("users").limit(10, 20).sql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
@@ -2336,7 +2336,7 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with offset parameter
-            sql = NAC.select("*").from("ACCOUNT").limit(20, 10).sql();
+            sql = NAC.select("*").from("ACCOUNT").limit(10, 20).sql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
@@ -3111,7 +3111,7 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with offset parameter
-            sql = NLC.select("*").from("account").limit(20, 10).sql();
+            sql = NLC.select("*").from("account").limit(10, 20).sql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
@@ -3991,7 +3991,7 @@ public class SQLBuilder13Test extends TestBase {
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with offset parameter
-            sql = PSC.select("*").from("users").limit(20, 10).sql();
+            sql = PSC.select("*").from("users").limit(10, 20).sql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }

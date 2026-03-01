@@ -61,8 +61,8 @@ import java.util.Collection;
  * LeftJoin complexJoin = new LeftJoin("order_items oi",
  *     new And(
  *         new On("o.id", "oi.order_id"),
- *         Filters.eq("oi.status", "active"),
- *         Filters.gt("oi.quantity", 0)
+ *         Filters.equal("oi.status", "active"),
+ *         Filters.greaterThan("oi.quantity", 0)
  *     ));
  * // Generates: LEFT JOIN order_items oi (ON o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0)
  *
@@ -138,8 +138,8 @@ public class LeftJoin extends Join {
      * LeftJoin activeItems = new LeftJoin("order_items oi",
      *     new And(
      *         new On("orders.id", "oi.order_id"),
-     *         Filters.eq("oi.status", "active"),
-     *         Filters.gt("oi.created_date", "2023-01-01")
+     *         Filters.equal("oi.status", "active"),
+     *         Filters.greaterThan("oi.created_date", "2023-01-01")
      *     ));
      * // Generates: LEFT JOIN order_items oi (ON orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01')
      *

@@ -48,20 +48,20 @@ import com.landawn.abacus.util.N;
  * <pre>{@code
  * // Create an AND condition with multiple sub-conditions
  * And and = new And(
- *     Filters.eq("status", "active"),
- *     Filters.gt("age", 18),
- *     Filters.lt("age", 65)
+ *     Filters.equal("status", "active"),
+ *     Filters.greaterThan("age", 18),
+ *     Filters.lessThan("age", 65)
  * );
  * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
  *
  * // Chain additional conditions
- * And extended = and.and(Filters.eq("country", "USA"));
+ * And extended = and.and(Filters.equal("country", "USA"));
  * // Results in: ((status = 'active') AND (age > 18) AND (age < 65) AND (country = 'USA'))
  *
  * // Create from a collection
  * List<Condition> conditions = Arrays.asList(
  *     Filters.isNotNull("email"),
- *     Filters.eq("verified", true)
+ *     Filters.equal("verified", true)
  * );
  * And fromList = new And(conditions);
  * }</pre>
@@ -89,14 +89,14 @@ public class And extends Junction {
      * <pre>{@code
      * // Simple AND with two conditions
      * And and = new And(
-     *     Filters.eq("department", "Sales"),
-     *     Filters.ge("salary", 50000)
+     *     Filters.equal("department", "Sales"),
+     *     Filters.greaterThanOrEqual("salary", 50000)
      * );
      * // Results in: ((department = 'Sales') AND (salary >= 50000))
      *
      * // Complex AND with multiple conditions
      * And complex = new And(
-     *     Filters.eq("status", "active"),
+     *     Filters.equal("status", "active"),
      *     Filters.between("age", 25, 65),
      *     Filters.in("role", Arrays.asList("Manager", "Director")),
      *     Filters.isNotNull("email")
@@ -118,10 +118,10 @@ public class And extends Junction {
      * <pre>{@code
      * // Build conditions dynamically
      * List<Condition> conditions = new ArrayList<>();
-     * conditions.add(Filters.eq("status", "active"));
+     * conditions.add(Filters.equal("status", "active"));
      * conditions.add(Filters.isNotNull("email"));
      * if (includeAgeFilter) {
-     *     conditions.add(Filters.gt("age", 21));
+     *     conditions.add(Filters.greaterThan("age", 21));
      * }
      *
      * And and = new And(conditions);
@@ -142,13 +142,13 @@ public class And extends Junction {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Start with a basic AND
-     * And and = new And(Filters.eq("status", "active"));
+     * And and = new And(Filters.equal("status", "active"));
      *
      * // Add more conditions through chaining
      * And extended = and
-     *     .and(Filters.gt("score", 80))
-     *     .and(Filters.lt("attempts", 3))
-     *     .and(Filters.eq("verified", true));
+     *     .and(Filters.greaterThan("score", 80))
+     *     .and(Filters.lessThan("attempts", 3))
+     *     .and(Filters.equal("verified", true));
      * // Results in: ((status = 'active') AND (score > 80) AND (attempts < 3) AND (verified = true))
      *
      * // Original 'and' is unchanged

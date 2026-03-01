@@ -61,8 +61,8 @@ package com.landawn.abacus.query.condition;
  * // Instead of: XOR for checking "exactly one of A or B"
  * // Use: (A AND NOT B) OR (NOT A AND B)
  * Or exclusiveOr = new Or(
- *     new And(Filters.eq("hasPasswordAuth", true), Filters.eq("hasBiometricAuth", false)),
- *     new And(Filters.eq("hasPasswordAuth", false), Filters.eq("hasBiometricAuth", true))
+ *     new And(Filters.equal("hasPasswordAuth", true), Filters.equal("hasBiometricAuth", false)),
+ *     new And(Filters.equal("hasPasswordAuth", false), Filters.equal("hasBiometricAuth", true))
  * );
  * // This ensures exactly one authentication method is active
  * }</pre>

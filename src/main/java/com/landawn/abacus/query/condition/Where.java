@@ -35,12 +35,12 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple condition
- * Condition condition = Filters.eq("status", "active");
+ * Condition condition = Filters.equal("status", "active");
  * Where where = new Where(condition);
  * // SQL: WHERE status = 'active'
  *
  * // Complex condition
- * Condition and = Filters.and(Filters.eq("age", 25), Filters.gt("salary", 50000));
+ * Condition and = Filters.and(Filters.equal("age", 25), Filters.greaterThan("salary", 50000));
  * Where where2 = new Where(and);
  * // SQL: WHERE age = 25 AND salary > 50000
  * }</pre>
@@ -78,8 +78,8 @@ public class Where extends Clause {
      *
      * // Complex WHERE with multiple conditions
      * Condition complexCondition = Filters.or(
-     *     Filters.and(Filters.eq("status", "active"), Filters.gt("balance", 1000)),
-     *     Filters.eq("vip", true)
+     *     Filters.and(Filters.equal("status", "active"), Filters.greaterThan("balance", 1000)),
+     *     Filters.equal("vip", true)
      * );
      * Where complexWhere = new Where(complexCondition);
      * // SQL: WHERE ((status = 'active') AND (balance > 1000)) OR (vip = true)

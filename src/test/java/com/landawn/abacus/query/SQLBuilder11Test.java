@@ -1905,7 +1905,7 @@ public class SQLBuilder11Test extends TestBase {
 
         @Test
         public void testQueryWithLimitAndOffset() {
-            SQLBuilder sb = LCSB.select("*").from("customers").where(Filters.eq("status", "'ACTIVE'")).orderBy("customerId").limit(10, 20);
+            SQLBuilder sb = LCSB.select("*").from("customers").where(Filters.eq("status", "'ACTIVE'")).orderBy("customerId").limit(20, 10);
 
             Assertions.assertNotNull(sb);
             String sql = sb.sql();
