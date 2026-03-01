@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.condition.NamedProperty.NP;
 import com.landawn.abacus.util.N;
@@ -155,17 +156,29 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("status").eq("active");   // status = 'active'
-     * NamedProperty.of("count").eq(5);           // count = 5
+     * NamedProperty.of("status").equal("active");   // status = 'active'
+     * NamedProperty.of("count").equal(5);           // count = 5
      * }</pre>
      *
      * @param value the value to compare against. Can be of any type compatible with the property.
      * @return an Equal condition for this property
      * @see Equal
-     * @see Filters#eq(String, Object)
+     * @see Filters#equal(String, Object)
      */
+    public Equal equal(final Object value) {
+        return Filters.equal(propName, value);
+    }
+
+    /**
+     * Creates an EQUAL condition for this property.
+     *
+     * @param value the value to compare against
+     * @return an Equal condition for this property
+     * @deprecated please use {@link #equal(Object)}
+     */
+    @Deprecated
     public Equal eq(final Object value) {
-        return Filters.eq(propName, value);
+        return equal(value);
     }
 
     /**
@@ -194,7 +207,7 @@ public sealed class NamedProperty permits NP {
         final Or or = Filters.or();
 
         for (final Object propValue : values) {
-            or.add(Filters.eq(propName, propValue));
+            or.add(Filters.equal(propName, propValue));
         }
 
         return or;
@@ -228,7 +241,7 @@ public sealed class NamedProperty permits NP {
         final Or or = Filters.or();
 
         for (final Object propValue : values) {
-            or.add(Filters.eq(propName, propValue));
+            or.add(Filters.equal(propName, propValue));
         }
 
         return or;
@@ -240,17 +253,29 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("status").ne("deleted");   // status <> 'deleted'
-     * NamedProperty.of("count").ne(0);            // count <> 0
+     * NamedProperty.of("status").notEqual("deleted");   // status <> 'deleted'
+     * NamedProperty.of("count").notEqual(0);            // count <> 0
      * }</pre>
      *
      * @param value the value to compare against. Can be of any type compatible with the property.
      * @return a NotEqual condition for this property
      * @see NotEqual
-     * @see Filters#ne(String, Object)
+     * @see Filters#notEqual(String, Object)
      */
+    public NotEqual notEqual(final Object value) {
+        return Filters.notEqual(propName, value);
+    }
+
+    /**
+     * Creates a NOT EQUAL condition for this property.
+     *
+     * @param value the value to compare against
+     * @return a NotEqual condition for this property
+     * @deprecated please use {@link #notEqual(Object)}
+     */
+    @Deprecated
     public NotEqual ne(final Object value) {
-        return Filters.ne(propName, value);
+        return notEqual(value);
     }
 
     /**
@@ -259,17 +284,29 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("age").gt(18);        // age > 18
-     * NamedProperty.of("price").gt(99.99);   // price > 99.99
+     * NamedProperty.of("age").greaterThan(18);        // age > 18
+     * NamedProperty.of("price").greaterThan(99.99);   // price > 99.99
      * }</pre>
      *
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a GreaterThan condition for this property
      * @see GreaterThan
-     * @see Filters#gt(String, Object)
+     * @see Filters#greaterThan(String, Object)
      */
+    public GreaterThan greaterThan(final Object value) {
+        return Filters.greaterThan(propName, value);
+    }
+
+    /**
+     * Creates a GREATER THAN condition for this property.
+     *
+     * @param value the value to compare against
+     * @return a GreaterThan condition for this property
+     * @deprecated please use {@link #greaterThan(Object)}
+     */
+    @Deprecated
     public GreaterThan gt(final Object value) {
-        return Filters.gt(propName, value);
+        return greaterThan(value);
     }
 
     /**
@@ -278,17 +315,28 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("score").ge(60);   // score >= 60
-     * NamedProperty.of("age").ge(21);     // age >= 21
+     * NamedProperty.of("score").greaterThanOrEqual(60);   // score >= 60
+     * NamedProperty.of("age").greaterThanOrEqual(21);     // age >= 21
      * }</pre>
      *
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
      * @return a GreaterThanOrEqual condition for this property
      * @see GreaterThanOrEqual
-     * @see Filters#ge(String, Object)
+     * @see Filters#greaterThanOrEqual(String, Object)
      */
+    public GreaterThanOrEqual greaterThanOrEqual(final Object value) {
+        return Filters.greaterThanOrEqual(propName, value);
+    }
+
+    /**
+     * Creates a GREATER THAN OR EQUAL condition for this property.
+     *
+     * @param value the value to compare against
+     * @return a GreaterThanOrEqual condition for this property
+     */
+    @Beta
     public GreaterThanOrEqual ge(final Object value) {
-        return Filters.ge(propName, value);
+        return greaterThanOrEqual(value);
     }
 
     /**
@@ -297,17 +345,29 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("price").lt(100);   // price < 100
-     * NamedProperty.of("age").lt(18);      // age < 18
+     * NamedProperty.of("price").lessThan(100);   // price < 100
+     * NamedProperty.of("age").lessThan(18);      // age < 18
      * }</pre>
      *
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a LessThan condition for this property
      * @see LessThan
-     * @see Filters#lt(String, Object)
+     * @see Filters#lessThan(String, Object)
      */
+    public LessThan lessThan(final Object value) {
+        return Filters.lessThan(propName, value);
+    }
+
+    /**
+     * Creates a LESS THAN condition for this property.
+     *
+     * @param value the value to compare against
+     * @return a LessThan condition for this property
+     * @deprecated please use {@link #lessThan(Object)}
+     */
+    @Deprecated
     public LessThan lt(final Object value) {
-        return Filters.lt(propName, value);
+        return lessThan(value);
     }
 
     /**
@@ -316,17 +376,28 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("quantity").le(10);   // quantity <= 10
-     * NamedProperty.of("age").le(65);        // age <= 65
+     * NamedProperty.of("quantity").lessThanOrEqual(10);   // quantity <= 10
+     * NamedProperty.of("age").lessThanOrEqual(65);        // age <= 65
      * }</pre>
      *
      * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
      * @return a LessThanOrEqual condition for this property
      * @see LessThanOrEqual
-     * @see Filters#le(String, Object)
+     * @see Filters#lessThanOrEqual(String, Object)
      */
+    public LessThanOrEqual lessThanOrEqual(final Object value) {
+        return Filters.lessThanOrEqual(propName, value);
+    }
+
+    /**
+     * Creates a LESS THAN OR EQUAL condition for this property.
+     *
+     * @param value the value to compare against
+     * @return a LessThanOrEqual condition for this property
+     */
+    @Beta
     public LessThanOrEqual le(final Object value) {
-        return Filters.le(propName, value);
+        return lessThanOrEqual(value);
     }
 
     /**

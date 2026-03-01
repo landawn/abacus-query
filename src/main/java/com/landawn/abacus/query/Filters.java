@@ -556,9 +556,11 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare for equality
      * @return an Equal condition
+     * @deprecated please use {@link #equal(String, Object)}
      */
+    @Deprecated
     public static Equal eq(final String propName, final Object propValue) {
-        return new Equal(propName, propValue);
+        return equal(propName, propValue);
     }
 
     /**
@@ -574,9 +576,11 @@ public class Filters {
      * @param propName the property/column name
      * @return an Equal condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
+     * @deprecated please use {@link #equal(String)}
      */
+    @Deprecated
     public static Equal eq(final String propName) {
-        return eq(propName, QME);
+        return equal(propName);
     }
 
     /**
@@ -1231,9 +1235,11 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare for inequality
      * @return a NotEqual condition
+     * @deprecated please use {@link #notEqual(String, Object)}
      */
+    @Deprecated
     public static NotEqual ne(final String propName, final Object propValue) {
-        return new NotEqual(propName, propValue);
+        return notEqual(propName, propValue);
     }
 
     /**
@@ -1249,9 +1255,11 @@ public class Filters {
      * @param propName the property/column name
      * @return a NotEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
+     * @deprecated please use {@link #notEqual(String)}
      */
+    @Deprecated
     public static NotEqual ne(final String propName) {
-        return ne(propName, QME);
+        return notEqual(propName);
     }
 
     /**
@@ -1300,9 +1308,11 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a GreaterThan condition
+     * @deprecated please use {@link #greaterThan(String, Object)}
      */
+    @Deprecated
     public static GreaterThan gt(final String propName, final Object propValue) {
-        return new GreaterThan(propName, propValue);
+        return greaterThan(propName, propValue);
     }
 
     /**
@@ -1318,9 +1328,11 @@ public class Filters {
      * @param propName the property/column name
      * @return a GreaterThan condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
+     * @deprecated please use {@link #greaterThan(String)}
      */
+    @Deprecated
     public static GreaterThan gt(final String propName) {
-        return gt(propName, QME);
+        return greaterThan(propName);
     }
 
     /**
@@ -1370,8 +1382,9 @@ public class Filters {
      * @param propValue the value to compare against
      * @return a GreaterThanOrEqual condition
      */
+    @Beta
     public static GreaterThanOrEqual ge(final String propName, final Object propValue) {
-        return new GreaterThanOrEqual(propName, propValue);
+        return greaterThanOrEqual(propName, propValue);
     }
 
     /**
@@ -1388,8 +1401,9 @@ public class Filters {
      * @return a GreaterThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
+    @Beta
     public static GreaterThanOrEqual ge(final String propName) {
-        return ge(propName, QME);
+        return greaterThanOrEqual(propName);
     }
 
     /**
@@ -1438,9 +1452,11 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a LessThan condition
+     * @deprecated please use {@link #lessThan(String, Object)}
      */
+    @Deprecated
     public static LessThan lt(final String propName, final Object propValue) {
-        return new LessThan(propName, propValue);
+        return lessThan(propName, propValue);
     }
 
     /**
@@ -1456,9 +1472,11 @@ public class Filters {
      * @param propName the property/column name
      * @return a LessThan condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
+     * @deprecated please use {@link #lessThan(String)}
      */
+    @Deprecated
     public static LessThan lt(final String propName) {
-        return lt(propName, QME);
+        return lessThan(propName);
     }
 
     /**
@@ -1508,8 +1526,9 @@ public class Filters {
      * @param propValue the value to compare against
      * @return a LessThanOrEqual condition
      */
+    @Beta
     public static LessThanOrEqual le(final String propName, final Object propValue) {
-        return new LessThanOrEqual(propName, propValue);
+        return lessThanOrEqual(propName, propValue);
     }
 
     /**
@@ -1526,8 +1545,9 @@ public class Filters {
      * @return a LessThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
+    @Beta
     public static LessThanOrEqual le(final String propName) {
-        return le(propName, QME);
+        return lessThanOrEqual(propName);
     }
 
     /**

@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.SK;
@@ -247,9 +248,11 @@ public class Expression extends AbstractCondition {
      * @param literal the left-hand side of the equality
      * @param value the right-hand side value
      * @return a string representation of the equality expression
+     * @deprecated please use {@link #equal(String, Object)}
      */
+    @Deprecated
     public static String eq(final String literal, final Object value) {
-        return link(Operator.EQUAL, literal, value);
+        return equal(literal, value);
     }
 
     /**
@@ -285,9 +288,11 @@ public class Expression extends AbstractCondition {
      * @param literal the left-hand side of the inequality
      * @param value the right-hand side value
      * @return a string representation of the not-equal expression
+     * @deprecated please use {@link #notEqual(String, Object)}
      */
+    @Deprecated
     public static String ne(final String literal, final Object value) {
-        return link(Operator.NOT_EQUAL, literal, value);
+        return notEqual(literal, value);
     }
 
     /**
@@ -323,9 +328,11 @@ public class Expression extends AbstractCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the greater-than expression
+     * @deprecated please use {@link #greaterThan(String, Object)}
      */
+    @Deprecated
     public static String gt(final String literal, final Object value) {
-        return link(Operator.GREATER_THAN, literal, value);
+        return greaterThan(literal, value);
     }
 
     /**
@@ -359,8 +366,9 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the greater-than-or-equal expression
      */
+    @Beta
     public static String ge(final String literal, final Object value) {
-        return link(Operator.GREATER_THAN_OR_EQUAL, literal, value);
+        return greaterThanOrEqual(literal, value);
     }
 
     /**
@@ -393,9 +401,11 @@ public class Expression extends AbstractCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the less-than expression
+     * @deprecated please use {@link #lessThan(String, Object)}
      */
+    @Deprecated
     public static String lt(final String literal, final Object value) {
-        return link(Operator.LESS_THAN, literal, value);
+        return lessThan(literal, value);
     }
 
     /**
@@ -429,8 +439,9 @@ public class Expression extends AbstractCondition {
      * @param value the right-hand side value
      * @return a string representation of the less-than-or-equal expression
      */
+    @Beta
     public static String le(final String literal, final Object value) {
-        return link(Operator.LESS_THAN_OR_EQUAL, literal, value);
+        return lessThanOrEqual(literal, value);
     }
 
     /**
