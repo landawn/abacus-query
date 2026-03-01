@@ -500,12 +500,12 @@ public class DynamicSQLBuilder {
      * @return the complete SQL query string
      */
     public String build() {
-        if (select == null) {
-            throw new IllegalStateException("This DynamicSQLBuilder has already been closed after build() was called");
-        }
+        try {
+            if (select == null) {
+                throw new IllegalStateException("This DynamicSQLBuilder has already been closed after build() was called");
+            }
 
-        if (from != null) {
-            if (!from.sb.isEmpty()) {
+            if (from != null && !from.sb.isEmpty()) {
                 if (!select.sb.isEmpty()) {
                     select.sb.append(" ");
                 }
@@ -513,12 +513,7 @@ public class DynamicSQLBuilder {
                 select.sb.append(from.sb);
             }
 
-            Objectory.recycle(from.sb);
-            from = null;
-        }
-
-        if (where != null) {
-            if (!where.sb.isEmpty()) {
+            if (where != null && !where.sb.isEmpty()) {
                 if (!select.sb.isEmpty()) {
                     select.sb.append(" ");
                 }
@@ -526,12 +521,7 @@ public class DynamicSQLBuilder {
                 select.sb.append(where.sb);
             }
 
-            Objectory.recycle(where.sb);
-            where = null;
-        }
-
-        if (groupBy != null) {
-            if (!groupBy.sb.isEmpty()) {
+            if (groupBy != null && !groupBy.sb.isEmpty()) {
                 if (!select.sb.isEmpty()) {
                     select.sb.append(" ");
                 }
@@ -539,12 +529,7 @@ public class DynamicSQLBuilder {
                 select.sb.append(groupBy.sb);
             }
 
-            Objectory.recycle(groupBy.sb);
-            groupBy = null;
-        }
-
-        if (having != null) {
-            if (!having.sb.isEmpty()) {
+            if (having != null && !having.sb.isEmpty()) {
                 if (!select.sb.isEmpty()) {
                     select.sb.append(" ");
                 }
@@ -552,12 +537,7 @@ public class DynamicSQLBuilder {
                 select.sb.append(having.sb);
             }
 
-            Objectory.recycle(having.sb);
-            having = null;
-        }
-
-        if (orderBy != null) {
-            if (!orderBy.sb.isEmpty()) {
+            if (orderBy != null && !orderBy.sb.isEmpty()) {
                 if (!select.sb.isEmpty()) {
                     select.sb.append(" ");
                 }
@@ -565,22 +545,47 @@ public class DynamicSQLBuilder {
                 select.sb.append(orderBy.sb);
             }
 
-            Objectory.recycle(orderBy.sb);
-            orderBy = null;
+            if (moreParts != null) {
+                select.sb.append(moreParts);
+            }
+
+            return select.sb.toString();
+        } finally {
+            if (from != null) {
+                Objectory.recycle(from.sb);
+                from = null;
+            }
+
+            if (where != null) {
+                Objectory.recycle(where.sb);
+                where = null;
+            }
+
+            if (groupBy != null) {
+                Objectory.recycle(groupBy.sb);
+                groupBy = null;
+            }
+
+            if (having != null) {
+                Objectory.recycle(having.sb);
+                having = null;
+            }
+
+            if (orderBy != null) {
+                Objectory.recycle(orderBy.sb);
+                orderBy = null;
+            }
+
+            if (moreParts != null) {
+                Objectory.recycle(moreParts);
+                moreParts = null;
+            }
+
+            if (select != null) {
+                Objectory.recycle(select.sb);
+                select = null;
+            }
         }
-
-        if (moreParts != null) {
-            select.sb.append(moreParts);
-            Objectory.recycle(moreParts);
-            moreParts = null;
-        }
-
-        final String sql = select.sb.toString();
-        Objectory.recycle(select.sb);
-
-        select = null;
-
-        return sql;
     }
 
     /**

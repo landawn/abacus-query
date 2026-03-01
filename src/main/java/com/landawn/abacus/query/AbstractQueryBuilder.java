@@ -5329,59 +5329,61 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected static String getFromClause(final List<Selection> multiSelects, final NamingPolicy namingPolicy) {
         final StringBuilder sb = Objectory.createStringBuilder();
-        int idx = 0;
 
-        for (final Selection selection : multiSelects) {
-            if (idx++ > 0) {
-                sb.append(_COMMA_SPACE);
-            }
+        try {
+            int idx = 0;
 
-            sb.append(getTableName(selection.entityClass(), namingPolicy));
-
-            if (Strings.isNotEmpty(selection.tableAlias())) {
-                sb.append(' ').append(selection.tableAlias());
-            }
-
-            if (N.notEmpty(selection.selectPropNames()) || selection.includeSubEntityProperties()) {
-                final Class<?> entityClass = selection.entityClass();
-                final Collection<String> selectPropNames = selection.selectPropNames();
-                final Set<String> excludedPropNames = selection.excludedPropNames();
-                final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
-
-                if (N.isEmpty(subEntityPropNames)) {
-                    continue;
+            for (final Selection selection : multiSelects) {
+                if (idx++ > 0) {
+                    sb.append(_COMMA_SPACE);
                 }
 
-                final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
-                PropInfo propInfo = null;
-                Class<?> subEntityClass = null;
+                sb.append(getTableName(selection.entityClass(), namingPolicy));
 
-                for (final String subEntityPropName : subEntityPropNames) {
-                    if (N.notEmpty(selectPropNames)) {
-                        if (!selectPropNames.contains(subEntityPropName)) {
-                            continue;
-                        }
-                    } else if (excludedPropNames != null && excludedPropNames.contains(subEntityPropName)) {
+                if (Strings.isNotEmpty(selection.tableAlias())) {
+                    sb.append(' ').append(selection.tableAlias());
+                }
+
+                if (N.notEmpty(selection.selectPropNames()) || selection.includeSubEntityProperties()) {
+                    final Class<?> entityClass = selection.entityClass();
+                    final Collection<String> selectPropNames = selection.selectPropNames();
+                    final Set<String> excludedPropNames = selection.excludedPropNames();
+                    final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
+
+                    if (N.isEmpty(subEntityPropNames)) {
                         continue;
                     }
 
-                    propInfo = entityInfo.getPropInfo(subEntityPropName);
-                    subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
+                    final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
+                    PropInfo propInfo = null;
+                    Class<?> subEntityClass = null;
 
-                    sb.append(_COMMA_SPACE).append(getTableName(subEntityClass, namingPolicy));
+                    for (final String subEntityPropName : subEntityPropNames) {
+                        if (N.notEmpty(selectPropNames)) {
+                            if (!selectPropNames.contains(subEntityPropName)) {
+                                continue;
+                            }
+                        } else if (excludedPropNames != null && excludedPropNames.contains(subEntityPropName)) {
+                            continue;
+                        }
 
-                    final String subEntityTableAlias = getTableAlias(subEntityClass);
-                    if (Strings.isNotEmpty(subEntityTableAlias)) {
-                        sb.append(' ').append(subEntityTableAlias);
+                        propInfo = entityInfo.getPropInfo(subEntityPropName);
+                        subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
+
+                        sb.append(_COMMA_SPACE).append(getTableName(subEntityClass, namingPolicy));
+
+                        final String subEntityTableAlias = getTableAlias(subEntityClass);
+                        if (Strings.isNotEmpty(subEntityTableAlias)) {
+                            sb.append(' ').append(subEntityTableAlias);
+                        }
                     }
                 }
             }
+
+            return sb.toString();
+        } finally {
+            Objectory.recycle(sb);
         }
-
-        final String fromClause = sb.toString();
-
-        Objectory.recycle(sb);
-        return fromClause;
     }
 
     protected enum SQLPolicy {

@@ -790,6 +790,8 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria where(final String condition) {
+        N.checkArgNotEmpty(condition, "condition");
+
         add(new Where(Filters.expr(condition)));
 
         return this;
@@ -1028,6 +1030,8 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria having(final String condition) {
+        N.checkArgNotEmpty(condition, "condition");
+
         add(new Having(Filters.expr(condition)));
 
         return this;

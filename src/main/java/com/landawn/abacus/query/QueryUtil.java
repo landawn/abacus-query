@@ -15,6 +15,7 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -135,9 +136,7 @@ public final class QueryUtil {
             result = ImmutableMap.wrap(newProp2ColumnNameMap);
 
             if (namingPropColumnNameMap == null) {
-                namingPropColumnNameMap = new EnumMap<>(NamingPolicy.class);
-                // TODO not necessary?
-                // namingPropColumnNameMap = Collections.synchronizedMap(namingPropColumnNameMap)
+                namingPropColumnNameMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
                 entityTablePropColumnNameMap2.put(entityClass, namingPropColumnNameMap);
             }
 
@@ -303,9 +302,7 @@ public final class QueryUtil {
         Map<NamingPolicy, ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
 
         if (namingPropColumnMap == null) {
-            namingPropColumnMap = new EnumMap<>(NamingPolicy.class);
-            // TODO not necessary?
-            // namingPropColumnMap = Collections.synchronizedMap(namingPropColumnMap)
+            namingPropColumnMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
             entityTablePropColumnNameMap.put(entityClass, namingPropColumnMap);
         }
 
