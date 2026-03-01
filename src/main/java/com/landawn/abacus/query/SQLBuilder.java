@@ -3286,7 +3286,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Output: SELECT firstName, lastName FROM userAccount WHERE userId = 1
      * }</pre>
      * 
-     * @deprecated Use other naming policy implementations like {@link PSC}, {@link PAC}, {@link NSC} instead.
+     * @deprecated Use other naming policy implementations like {@link PLC}, {@link NLC} instead.
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
@@ -9792,8 +9792,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<Selection> selections = N.asList(
-         *     new Selection(Account.class, "a", "account", N.asSet("firstName", "lastName")),
-         *     new Selection(Order.class, "o", "order", N.asSet("totalAmount", "orderDate"))
+         *     new Selection(Account.class, "a", "account", null, false, null),
+         *     new Selection(Order.class, "o", "order", null, false, null)
          * );
          * String sql = PLC.select(selections)
          *                 .from("account a")
@@ -9893,8 +9893,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<Selection> selections = N.asList(
-         *     new Selection(Account.class, "a", "account", N.asSet("firstName", "email")),
-         *     new Selection(Order.class, "o", "order", N.asSet("totalAmount"))
+         *     new Selection(Account.class, "a", "account", null, false, null),
+         *     new Selection(Order.class, "o", "order", null, false, null)
          * );
          * String sql = PLC.selectFrom(selections)
          *                 .where(Filters.eq("a.id", "o.accountId"))
@@ -13510,8 +13510,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<Selection> selections = Arrays.asList(
-         *     new Selection(Account.class, "a", "acc", "accounts", true, null),
-         *     new Selection(Order.class, "o", "ord", "orders", false, Set.of("deletedFlag")),
+         *     new Selection(Account.class, "a", "acc", null, true, null),
+         *     new Selection(Order.class, "o", "ord", null, false, Set.of("deletedFlag")),
          *     new Selection(Product.class, "p", "prod", null, false, null)
          * );
          * String sql = NAC.selectFrom(selections)
@@ -15240,7 +15240,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * String sql = MSB.insertInto(Account.class, excluded)
          *                 .values("John", "john@email.com", "ACTIVE")
          *                 .sql();
-         * // Output: INSERT INTO ACCOUNT (FIRST_NAME, EMAIL, STATUS) VALUES (?, ?, ?)
+         * // Output: INSERT INTO Account (firstName, email, status) VALUES (#{firstName}, #{email}, #{status})
          * }</pre>
          *
          * @param entityClass the entity class to insert
@@ -16097,9 +16097,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<Selection> selections = N.asList(
-         *     new Selection(User.class, "u", "user"),
-         *     new Selection(Order.class, "o", "order"),
-         *     new Selection(Product.class, "p", "product")
+         *     new Selection(User.class, "u", "user", null, false, null),
+         *     new Selection(Order.class, "o", "order", null, false, null),
+         *     new Selection(Product.class, "p", "product", null, false, null)
          * );
          * String sql = MSC.selectFrom(selections)
          *                 .where(Filters.and(Filters.eq("u.ID", "o.USER_ID"), Filters.eq("o.PRODUCT_ID", "p.ID")))

@@ -409,7 +409,7 @@ public class Filters {
      * }</pre>
      *
      * @return an Expression that always evaluates to true (1 &lt; 2)
-     * @deprecated is dangerous (could silently filter everything)
+     * @deprecated is dangerous (could silently bypass all filtering, returning all rows)
      */
     @Deprecated
     public static Expression alwaysTrue() {
@@ -618,7 +618,7 @@ public class Filters {
 
             for (int i = 0, size = props.size(); i < size; i++) {
                 prop = propIter.next();
-                conds[i] = Filters.eq(prop.getKey(), prop.getValue());
+                conds[i] = Filters.equal(prop.getKey(), prop.getValue());
             }
 
             return or(conds);
@@ -683,7 +683,7 @@ public class Filters {
 
             for (int i = 0, size = selectPropNames.size(); i < size; i++) {
                 propName = iter.next();
-                conds[i] = Filters.eq(propName, entityInfo.getPropValue(entity, propName));
+                conds[i] = Filters.equal(propName, entityInfo.getPropValue(entity, propName));
             }
 
             return or(conds);
@@ -767,7 +767,7 @@ public class Filters {
 
             for (int i = 0, size = props.size(); i < size; i++) {
                 prop = propIter.next();
-                conds[i] = Filters.eq(prop.getKey(), prop.getValue());
+                conds[i] = Filters.equal(prop.getKey(), prop.getValue());
             }
 
             return and(conds);
@@ -833,7 +833,7 @@ public class Filters {
 
             for (int i = 0, size = selectPropNames.size(); i < size; i++) {
                 propName = iter.next();
-                conds[i] = Filters.eq(propName, entityInfo.getPropValue(entity, propName));
+                conds[i] = Filters.equal(propName, entityInfo.getPropValue(entity, propName));
             }
 
             return and(conds);
@@ -1150,7 +1150,7 @@ public class Filters {
 
             for (int i = 0, size = selectPropNames.size(); i < size; i++) {
                 propName = iter.next();
-                conds[i] = Filters.eq(propName, entityId.get(propName));
+                conds[i] = Filters.equal(propName, entityId.get(propName));
             }
 
             return and(conds);
@@ -3581,13 +3581,13 @@ public class Filters {
     }
 
     /**
-     * Creates a LIMIT clause with an offset and count.
+     * Creates a LIMIT clause with a count and offset.
      * Used for pagination of results.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit = Filters.limit(20, 10);
-     * // Results in SQL like: LIMIT 10 OFFSET 20 (skip 20, take 10)
+     * // Results in SQL like: LIMIT 20 OFFSET 10 (skip 10, take 20)
      * }</pre>
      * @param count the maximum number of rows to return
      * @param offset the number of rows to skip

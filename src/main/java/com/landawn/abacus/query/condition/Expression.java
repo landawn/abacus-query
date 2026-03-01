@@ -96,7 +96,7 @@ import com.landawn.abacus.util.Strings;
  * 
  * // SQL functions
  * String upperName = Expression.upper("name");
- * String avgPrice = Expression.average("price");
+ * String avgPrice = Expression.avg("price");
  * 
  * // Complex expressions (use Expression.of() for column references to avoid quoting)
  * String complex = Expression.plus(Expression.of("base_price"), Expression.of("tax"), Expression.of("shipping"));
@@ -662,10 +662,10 @@ public class Expression extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.multi(Expression.of("price"), Expression.of("quantity"), Expression.of("tax_rate"));
+     * String expr = Expression.multiply(Expression.of("price"), Expression.of("quantity"), Expression.of("tax_rate"));
      * // Returns: "price * quantity * tax_rate"
      *
-     * String expr2 = Expression.multi(Expression.of("hours"), 60);
+     * String expr2 = Expression.multiply(Expression.of("hours"), 60);
      * // Returns: "hours * 60"
      * }</pre>
      *

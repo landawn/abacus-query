@@ -274,9 +274,9 @@ public class SubQuery extends AbstractCondition {
      * String sql = rawQuery.sql();
      * // Returns: "SELECT id FROM users WHERE status = 'active'"
      *
-     * // Structured subquery returns null for getSql()
+     * // Structured subquery returns null for sql()
      * SubQuery structured = new SubQuery("users", Arrays.asList("id"), Filters.eq("status", "active"));
-     * String structuredSql = structured.getSql();
+     * String structuredSql = structured.sql();
      * // Returns: null
      * }</pre>
      *

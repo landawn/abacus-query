@@ -438,7 +438,7 @@ public final class SQLMapper {
      * mapper.saveTo(new File("sql/queries.xml"));
      * }</pre>
      *
-     * @param file the file to write to (will be created if it doesn't exist; parent directories must exist)
+     * @param file the file to write to (will be created if it doesn't exist; parent directories will be created if needed)
      * @throws UncheckedIOException if an I/O error occurs while creating or writing to the file
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")

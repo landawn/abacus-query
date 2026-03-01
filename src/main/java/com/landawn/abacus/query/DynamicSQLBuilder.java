@@ -36,13 +36,13 @@ import com.landawn.abacus.util.Strings;
  * 
  * <h2>Example usage:</h2>
  * <pre>{@code
- * String sql = DynamicSQLBuilder.create()
- *     .select().append("id", "user_id").append("name")
- *     .from().append("users", "u")
- *     .where().append("u.active = ?").and("u.age > ?")
- *     .orderBy().append("u.name ASC")
- *     .limit(10)
- *     .build();
+ * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+ * builder.select().append("id", "user_id").append("name");
+ * builder.from().append("users", "u");
+ * builder.where().append("u.active = ?").and("u.age > ?");
+ * builder.orderBy().append("u.name ASC");
+ * builder.limit(10);
+ * String sql = builder.build();
  * // Result: "SELECT id AS user_id, name FROM users u WHERE u.active = ? AND u.age > ? ORDER BY u.name ASC LIMIT 10"
  * }</pre>
  */
@@ -489,11 +489,11 @@ public class DynamicSQLBuilder {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = DynamicSQLBuilder.create()
-     *     .select().append("*")
-     *     .from().append("users")
-     *     .where().append("active = true")
-     *     .build();
+     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * builder.select().append("*");
+     * builder.from().append("users");
+     * builder.where().append("active = true");
+     * String sql = builder.build();
      * // Returns: "SELECT * FROM users WHERE active = true"
      * }</pre>
      *
@@ -1021,7 +1021,7 @@ public class DynamicSQLBuilder {
      *     .append("status = ?")
      *     .and("age >= ?")
      *     .or("vip = true")
-     *     .and("city IN (").repeatQM(3).append(")");
+     *     .and("city IN ").repeatQM(3, "(", ")");
      * // Generates: WHERE status = ? AND age >= ? OR vip = true AND city IN (?, ?, ?)
      * }</pre>
      */
@@ -1387,8 +1387,8 @@ public class DynamicSQLBuilder {
      *
      * <h2>Example usage:</h2>
      * <pre>{@code
-     * builder.groupBy().append("department")
-     *        .having().append("COUNT(*) > ?")
+     * builder.groupBy().append("department");
+     * builder.having().append("COUNT(*) > ?")
      *                 .and("AVG(salary) > ?");
      * // Generates: GROUP BY department HAVING COUNT(*) > ? AND AVG(salary) > ?
      * }</pre>
@@ -1690,10 +1690,10 @@ public class DynamicSQLBuilder {
      *
      * <h2>Example usage:</h2>
      * <pre>{@code
-     * DSB.create()
-     *    .select().append("*")
-     *    .from().append("users")
-     *    .build();
+     * DSB builder = DSB.create();
+     * builder.select().append("*");
+     * builder.from().append("users");
+     * String sql = builder.build();
      * }</pre>
      */
     public static final class DSB extends DynamicSQLBuilder {
@@ -1711,7 +1711,9 @@ public class DynamicSQLBuilder {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * DSB builder = DSB.create();
-         * String sql = builder.select().append("*").from().append("users").build();
+         * builder.select().append("*");
+         * builder.from().append("users");
+         * String sql = builder.build();
          * }</pre>
          *
          * @return a new DSB instance for method chaining

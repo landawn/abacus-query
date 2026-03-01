@@ -393,7 +393,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Constructs a new SQLBuilder with the specified naming policy and SQL policy.
      * 
      * @param namingPolicy the naming policy for column names, defaults to SNAKE_CASE if null
-     * @param sqlPolicy the SQL generation policy, defaults to SQL if null
+     * @param sqlPolicy the SQL generation policy, defaults to RAW_SQL if null
      */
     protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
@@ -4155,7 +4155,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // params contains: ["John", 25]
      * }</pre>
      *
-     * @return an immutable list of parameter values
+     * @return a list of parameter values
      */
     public List<Object> parameters() {
         return _parameters;
@@ -4707,9 +4707,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets the parameter for SQL.
+     * Sets the parameter for raw SQL (inlines the value directly into the SQL string).
      *
-     * @param propValue the new parameter for SQL
+     * @param propValue the new parameter for raw SQL
      */
     protected void setParameterForSQL(final Object propValue) {
         if (Filters.QME.equals(propValue)) {
@@ -4722,9 +4722,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets the parameter for raw SQL.
+     * Sets the parameter for parameterized SQL (uses '?' placeholder and adds value to parameter list).
      *
-     * @param propValue the new parameter for raw SQL
+     * @param propValue the new parameter for parameterized SQL
      */
     protected void setParameterForRawSQL(final Object propValue) {
         if (Filters.QME.equals(propValue)) {
