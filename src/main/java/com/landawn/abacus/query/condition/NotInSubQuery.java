@@ -338,17 +338,17 @@ public class NotInSubQuery extends AbstractCondition {
 
         if (N.notEmpty(propNames)) {
             if (propNames.size() == 1) {
-                return effectiveNamingPolicy.convert(propNames.iterator().next()) + SK._SPACE + operator().toString() + SK.SPACE_PARENTHESES_L + subQueryString
-                        + SK.PARENTHESES_R;
+                return effectiveNamingPolicy.convert(propNames.iterator().next()) + SK._SPACE + operator().toString() + SK.SPACE_PARENTHESIS_L + subQueryString
+                        + SK.PARENTHESIS_R;
             }
 
             final Function<String, String> converter = effectiveNamingPolicy::convert;
 
-            return "(" + Strings.join(N.map(propNames, converter), ", ") + ") " + operator().toString() + SK.SPACE_PARENTHESES_L + subQueryString
-                    + SK.PARENTHESES_R;
+            return "(" + Strings.join(N.map(propNames, converter), ", ") + ") " + operator().toString() + SK.SPACE_PARENTHESIS_L + subQueryString
+                    + SK.PARENTHESIS_R;
         }
 
-        return operator().toString() + SK.SPACE_PARENTHESES_L + subQueryString + SK.PARENTHESES_R;
+        return operator().toString() + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;
     }
 
 }

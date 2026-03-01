@@ -65,6 +65,13 @@ package com.landawn.abacus.query.condition;
 public class IsNotInfinite extends IsNot {
 
     /**
+     * Shared Expression instance representing INFINITE.
+     * This constant mirrors {@link IsInfinite#INFINITE} for symmetry, allowing code in this class
+     * to reference its own constant rather than reaching into the positive counterpart.
+     */
+    static final Expression INFINITE = IsInfinite.INFINITE;
+
+    /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized IsNotInfinite instance and should not be used 
      * directly in application code. It exists solely for serialization/deserialization purposes.
@@ -113,6 +120,6 @@ public class IsNotInfinite extends IsNot {
      * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
      */
     public IsNotInfinite(final String propName) {
-        super(propName, IsInfinite.INFINITE);
+        super(propName, INFINITE);
     }
 }

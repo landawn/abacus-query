@@ -278,19 +278,19 @@ public class DynamicSQLBuilder {
     }
 
     /**
-     * Adds an Oracle-style ROWNUM condition to limit results.
+     * Adds an Oracle-style ROWNUM condition to the WHERE clause.
      * Generates: {@code ROWNUM <= n}
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * builder.limitByRowNum(10);
+     * builder.whereRowNumAtMost(10);
      * // Generates: ROWNUM <= 10
      * }</pre>
      *
      * @param count the maximum number of rows to return (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder limitByRowNum(final int count) {
+    public DynamicSQLBuilder whereRowNumAtMost(final int count) {
         N.checkArgNotNegative(count, "count");
 
         final String rowNumCondition = "ROWNUM <= " + count;

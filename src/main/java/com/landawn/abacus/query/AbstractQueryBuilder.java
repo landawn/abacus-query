@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -879,7 +880,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(tableName);
 
         _sb.append(_SPACE);
-        _sb.append(SK._PARENTHESES_L);
+        _sb.append(SK._PARENTHESIS_L);
 
         final Collection<String> insertColumnNames;
 
@@ -911,12 +912,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             appendColumnName(columnName);
         }
 
-        _sb.append(SK._PARENTHESES_R);
+        _sb.append(SK._PARENTHESIS_R);
 
         if (_op == OperationType.ADD) {
             _sb.append(_SPACE_VALUES_SPACE);
 
-            _sb.append(SK._PARENTHESES_L);
+            _sb.append(SK._PARENTHESIS_L);
 
             if (N.notEmpty(_propOrColumnNames)) {
                 switch (_sqlPolicy) {
@@ -970,16 +971,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 int i = 0;
                 for (final Map<String, Object> localProps : _propsList) {
                     if (i++ > 0) {
-                        _sb.append(SK._PARENTHESES_R);
+                        _sb.append(SK._PARENTHESIS_R);
                         _sb.append(_COMMA_SPACE);
-                        _sb.append(SK._PARENTHESES_L);
+                        _sb.append(SK._PARENTHESIS_L);
                     }
 
                     appendInsertProps(localProps, insertColumnNames);
                 }
             }
 
-            _sb.append(SK._PARENTHESES_R);
+            _sb.append(SK._PARENTHESIS_R);
         }
         // When _op is QUERY (i.e., select().into().from()), skip the VALUES clause.
         // The subsequent from() call will append "SELECT ... FROM ..." to produce:
@@ -2786,7 +2787,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     if (join.getJoinEntities().size() == 1) {
                         _sb.append(join.getJoinEntities().get(0));
                     } else {
-                        _sb.append(SK._PARENTHESES_L);
+                        _sb.append(SK._PARENTHESIS_L);
                         int idx = 0;
 
                         for (final String joinTableName : join.getJoinEntities()) {
@@ -2797,7 +2798,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                             _sb.append(joinTableName);
                         }
 
-                        _sb.append(SK._PARENTHESES_R);
+                        _sb.append(SK._PARENTHESIS_R);
                     }
 
                     if (join.getCondition() != null) {
@@ -3801,7 +3802,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     _sb.append(_SPACE_EQUAL_SPACE);
 
-                    setParameterForSQL(entry.getValue());
+                    setParameterForRawSQL(entry.getValue());
                 }
 
                 break;
@@ -3818,7 +3819,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     _sb.append(_SPACE_EQUAL_SPACE);
 
-                    setParameterForRawSQL(entry.getValue());
+                    setParameterForSQL(entry.getValue());
                 }
 
                 break;
@@ -4029,10 +4030,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // params contains: ["John", 25]
      * }</pre>
      *
-     * @return a list of parameter values
+     * @return an unmodifiable view of the parameter values
      */
     public List<Object> parameters() {
-        return _parameters;
+        return Collections.unmodifiableList(_parameters);
     }
 
     /**
@@ -4585,7 +4586,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propValue the new parameter for raw SQL
      */
-    protected void setParameterForSQL(final Object propValue) {
+    protected void setParameterForRawSQL(final Object propValue) {
         if (Filters.QME.equals(propValue)) {
             _sb.append(SK._QUESTION_MARK);
         } else if (propValue instanceof Condition) {
@@ -4600,7 +4601,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propValue the new parameter for parameterized SQL
      */
-    protected void setParameterForRawSQL(final Object propValue) {
+    protected void setParameterForSQL(final Object propValue) {
         if (Filters.QME.equals(propValue)) {
             _sb.append(SK._QUESTION_MARK);
         } else if (propValue instanceof Condition) {
@@ -4661,13 +4662,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected void setParameter(final String propName, final Object propValue) {
         switch (_sqlPolicy) {
             case RAW_SQL: {
-                setParameterForSQL(propValue);
+                setParameterForRawSQL(propValue);
 
                 break;
             }
 
             case PARAMETERIZED_SQL: {
-                setParameterForRawSQL(propValue);
+                setParameterForSQL(propValue);
 
                 break;
             }
@@ -4714,7 +4715,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     }
 
                     final Object propValue = props.get(propName);
-                    setParameterForSQL(propValue);
+                    setParameterForRawSQL(propValue);
                 }
 
                 break;
@@ -4728,7 +4729,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     }
 
                     final Object propValue = props.get(propName);
-                    setParameterForRawSQL(propValue);
+                    setParameterForSQL(propValue);
                 }
 
                 break;

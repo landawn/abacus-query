@@ -16,6 +16,7 @@ package com.landawn.abacus.query.condition;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import com.landawn.abacus.query.SK;
@@ -154,10 +155,10 @@ public class In extends AbstractCondition {
      * // Returns: ["active", "pending"]
      * }</pre>
      *
-     * @return the internal values list, or {@code null} for an uninitialized instance
+     * @return an unmodifiable view of the values list, or {@code null} for an uninitialized instance
      */
     public List<?> getValues() { //NOSONAR
-        return values;
+        return values == null ? null : Collections.unmodifiableList(values);
     }
 
     /**
@@ -255,7 +256,7 @@ public class In extends AbstractCondition {
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final StringBuilder sb = new StringBuilder();
-        sb.append(effectiveNamingPolicy.convert(propName)).append(SK._SPACE).append(operator().toString()).append(SK.SPACE_PARENTHESES_L);
+        sb.append(effectiveNamingPolicy.convert(propName)).append(SK._SPACE).append(operator().toString()).append(SK.SPACE_PARENTHESIS_L);
 
         if (values != null) {
             for (int i = 0; i < values.size(); i++) {
@@ -266,7 +267,7 @@ public class In extends AbstractCondition {
             }
         }
 
-        sb.append(SK._PARENTHESES_R);
+        sb.append(SK._PARENTHESIS_R);
         return sb.toString();
     }
 

@@ -60,8 +60,8 @@ public class SKTest extends TestBase {
 
     @Test
     void testBracketCharacters() {
-        assertEquals('(', SK._PARENTHESES_L);
-        assertEquals(')', SK._PARENTHESES_R);
+        assertEquals('(', SK._PARENTHESIS_L);
+        assertEquals(')', SK._PARENTHESIS_R);
         assertEquals('[', SK._BRACKET_L);
         assertEquals(']', SK._BRACKET_R);
         assertEquals('{', SK._BRACE_L);
@@ -101,8 +101,8 @@ public class SKTest extends TestBase {
         assertEquals("/", SK.SLASH);
         assertEquals("*", SK.ASTERISK);
         assertEquals("?", SK.QUESTION_MARK);
-        assertEquals("(", SK.PARENTHESES_L);
-        assertEquals(")", SK.PARENTHESES_R);
+        assertEquals("(", SK.PARENTHESIS_L);
+        assertEquals(")", SK.PARENTHESIS_R);
         assertEquals("[", SK.BRACKET_L);
         assertEquals("]", SK.BRACKET_R);
         assertEquals("{", SK.BRACE_L);
@@ -123,8 +123,8 @@ public class SKTest extends TestBase {
         assertEquals("' ", SK.SINGLE_QUOTE_SPACE);
         assertEquals(" \"", SK.SPACE_DOUBLE_QUOTE);
         assertEquals("\" ", SK.DOUBLE_QUOTE_SPACE);
-        assertEquals(" (", SK.SPACE_PARENTHESES_L);
-        assertEquals(") ", SK.PARENTHESES_R_SPACE);
+        assertEquals(" (", SK.SPACE_PARENTHESIS_L);
+        assertEquals(") ", SK.PARENTHESIS_R_SPACE);
     }
 
     // Tests for Operator Constants
@@ -410,8 +410,8 @@ public class SKTest extends TestBase {
         assertEquals(String.valueOf(SK._SLASH), SK.SLASH);
         assertEquals(String.valueOf(SK._ASTERISK), SK.ASTERISK);
         assertEquals(String.valueOf(SK._QUESTION_MARK), SK.QUESTION_MARK);
-        assertEquals(String.valueOf(SK._PARENTHESES_L), SK.PARENTHESES_L);
-        assertEquals(String.valueOf(SK._PARENTHESES_R), SK.PARENTHESES_R);
+        assertEquals(String.valueOf(SK._PARENTHESIS_L), SK.PARENTHESIS_L);
+        assertEquals(String.valueOf(SK._PARENTHESIS_R), SK.PARENTHESIS_R);
         assertEquals(String.valueOf(SK._BRACKET_L), SK.BRACKET_L);
         assertEquals(String.valueOf(SK._BRACKET_R), SK.BRACKET_R);
         assertEquals(String.valueOf(SK._BRACE_L), SK.BRACE_L);
@@ -463,8 +463,8 @@ public class SKTest extends TestBase {
         assertEquals(SK.SINGLE_QUOTE + SK.SPACE, SK.SINGLE_QUOTE_SPACE);
         assertEquals(SK.SPACE + SK.DOUBLE_QUOTE, SK.SPACE_DOUBLE_QUOTE);
         assertEquals(SK.DOUBLE_QUOTE + SK.SPACE, SK.DOUBLE_QUOTE_SPACE);
-        assertEquals(SK.SPACE + SK.PARENTHESES_L, SK.SPACE_PARENTHESES_L);
-        assertEquals(SK.PARENTHESES_R + SK.SPACE, SK.PARENTHESES_R_SPACE);
+        assertEquals(SK.SPACE + SK.PARENTHESIS_L, SK.SPACE_PARENTHESIS_L);
+        assertEquals(SK.PARENTHESIS_R + SK.SPACE, SK.PARENTHESIS_R_SPACE);
     }
 
     // Tests for Special Cases
@@ -522,8 +522,8 @@ public class SKTest extends TestBase {
         assertEquals(37, SK._PERCENT); // %
         assertEquals(38, SK._AMPERSAND); // &
         assertEquals(39, SK._SINGLE_QUOTE); // '
-        assertEquals(40, SK._PARENTHESES_L); // (
-        assertEquals(41, SK._PARENTHESES_R); // )
+        assertEquals(40, SK._PARENTHESIS_L); // (
+        assertEquals(41, SK._PARENTHESIS_R); // )
         assertEquals(42, SK._ASTERISK); // *
         assertEquals(43, SK._PLUS); // +
         assertEquals(44, SK._COMMA); // ,

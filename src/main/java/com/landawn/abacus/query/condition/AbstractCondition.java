@@ -315,16 +315,16 @@ public abstract class AbstractCondition implements Condition, Cloneable {
                 return propNames[0];
 
             case 2:
-                return SK.PARENTHESES_L + propNames[0] + SK.COMMA_SPACE + propNames[1] + SK.PARENTHESES_R;
+                return SK.PARENTHESIS_L + propNames[0] + SK.COMMA_SPACE + propNames[1] + SK.PARENTHESIS_R;
 
             case 3:
-                return SK.PARENTHESES_L + propNames[0] + SK.COMMA_SPACE + propNames[1] + SK.COMMA_SPACE + propNames[2] + SK.PARENTHESES_R;
+                return SK.PARENTHESIS_L + propNames[0] + SK.COMMA_SPACE + propNames[1] + SK.COMMA_SPACE + propNames[2] + SK.PARENTHESIS_R;
 
             default:
                 final StringBuilder sb = Objectory.createStringBuilder();
 
                 try {
-                    sb.append(SK._PARENTHESES_L);
+                    sb.append(SK._PARENTHESIS_L);
 
                     for (int i = 0; i < size; i++) {
                         if (i > 0) {
@@ -334,7 +334,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
                         sb.append(propNames[i]);
                     }
 
-                    sb.append(SK._PARENTHESES_R);
+                    sb.append(SK._PARENTHESIS_R);
 
                     return sb.toString();
 
@@ -386,17 +386,17 @@ public abstract class AbstractCondition implements Condition, Cloneable {
                 return it.next();
 
             case 2:
-                return SK.PARENTHESES_L + it.next() + SK.COMMA_SPACE + it.next() + SK.PARENTHESES_R;
+                return SK.PARENTHESIS_L + it.next() + SK.COMMA_SPACE + it.next() + SK.PARENTHESIS_R;
 
             case 3:
-                return SK.PARENTHESES_L + it.next() + SK.COMMA_SPACE + it.next() + SK.COMMA_SPACE + it.next() + SK.PARENTHESES_R;
+                return SK.PARENTHESIS_L + it.next() + SK.COMMA_SPACE + it.next() + SK.COMMA_SPACE + it.next() + SK.PARENTHESIS_R;
 
             default:
 
                 final StringBuilder sb = Objectory.createStringBuilder();
 
                 try {
-                    sb.append(SK._PARENTHESES_L);
+                    sb.append(SK._PARENTHESIS_L);
 
                     for (int i = 0; i < size; i++) {
                         if (i > 0) {
@@ -406,7 +406,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
                         sb.append(it.next());
                     }
 
-                    sb.append(SK._PARENTHESES_R);
+                    sb.append(SK._PARENTHESIS_R);
 
                     return sb.toString();
                 } finally {

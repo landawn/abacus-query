@@ -16,8 +16,8 @@
 
 package com.landawn.abacus.query;
 
-import static com.landawn.abacus.query.SK._PARENTHESES_L;
-import static com.landawn.abacus.query.SK._PARENTHESES_R;
+import static com.landawn.abacus.query.SK._PARENTHESIS_L;
+import static com.landawn.abacus.query.SK._PARENTHESIS_R;
 import static com.landawn.abacus.query.SK._SPACE;
 
 import java.util.Collection;
@@ -421,7 +421,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
             _sb.append(_SPACE);
             _sb.append(in.operator().toString());
-            _sb.append(SK.SPACE_PARENTHESES_L);
+            _sb.append(SK.SPACE_PARENTHESIS_L);
 
             for (int i = 0, len = params.size(); i < len; i++) {
                 if (i > 0) {
@@ -435,14 +435,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
                 }
             }
 
-            _sb.append(SK._PARENTHESES_R);
+            _sb.append(SK._PARENTHESIS_R);
         } else if (cond instanceof final InSubQuery inSubQuery) {
             final Collection<String> propNames = inSubQuery.getPropNames();
 
             if (propNames.size() == 1) {
                 appendColumnName(propNames.iterator().next());
             } else {
-                _sb.append(SK._PARENTHESES_L);
+                _sb.append(SK._PARENTHESIS_L);
 
                 int idx = 0;
 
@@ -454,17 +454,17 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
                     appendColumnName(e);
                 }
 
-                _sb.append(SK._PARENTHESES_R);
+                _sb.append(SK._PARENTHESIS_R);
             }
 
             _sb.append(_SPACE);
             _sb.append(inSubQuery.operator().toString());
 
-            _sb.append(SK.SPACE_PARENTHESES_L);
+            _sb.append(SK.SPACE_PARENTHESIS_L);
 
             appendCondition(inSubQuery.getSubQuery());
 
-            _sb.append(SK._PARENTHESES_R);
+            _sb.append(SK._PARENTHESIS_R);
         } else if (cond instanceof final NotIn notIn) {
             final String propName = notIn.getPropName();
             final List<Object> params = notIn.getParameters();
@@ -473,7 +473,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
             _sb.append(_SPACE);
             _sb.append(notIn.operator().toString());
-            _sb.append(SK.SPACE_PARENTHESES_L);
+            _sb.append(SK.SPACE_PARENTHESIS_L);
 
             for (int i = 0, len = params.size(); i < len; i++) {
                 if (i > 0) {
@@ -487,14 +487,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
                 }
             }
 
-            _sb.append(SK._PARENTHESES_R);
+            _sb.append(SK._PARENTHESIS_R);
         } else if (cond instanceof final NotInSubQuery notInSubQuery) {
             final Collection<String> propNames = notInSubQuery.getPropNames();
 
             if (propNames.size() == 1) {
                 appendColumnName(propNames.iterator().next());
             } else {
-                _sb.append(SK._PARENTHESES_L);
+                _sb.append(SK._PARENTHESIS_L);
 
                 int idx = 0;
 
@@ -506,16 +506,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
                     appendColumnName(e);
                 }
 
-                _sb.append(SK._PARENTHESES_R);
+                _sb.append(SK._PARENTHESIS_R);
             }
 
             _sb.append(_SPACE);
             _sb.append(notInSubQuery.operator().toString());
-            _sb.append(SK.SPACE_PARENTHESES_L);
+            _sb.append(SK.SPACE_PARENTHESIS_L);
 
             appendCondition(notInSubQuery.getSubQuery());
 
-            _sb.append(SK._PARENTHESES_R);
+            _sb.append(SK._PARENTHESIS_R);
         } else if (cond instanceof Where || cond instanceof Having) {
             final Cell cell = (Cell) cond;
 
@@ -529,9 +529,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             _sb.append(cell.operator().toString());
             _sb.append(_SPACE);
 
-            _sb.append(_PARENTHESES_L);
+            _sb.append(_PARENTHESIS_L);
             appendCondition(cell.getCondition());
-            _sb.append(_PARENTHESES_R);
+            _sb.append(_PARENTHESIS_R);
         } else if (cond instanceof final Junction junction) {
             final List<Condition> conditionList = junction.getConditions();
 
@@ -544,7 +544,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             } else {
                 // TODO ((id = :id) AND (gui = :gui)) is not support in Cassandra.
                 // only (id = :id) AND (gui = :gui) works.
-                // sb.append(_PARENTHESES_L);
+                // sb.append(_PARENTHESIS_L);
 
                 for (int i = 0, size = conditionList.size(); i < size; i++) {
                     if (i > 0) {
@@ -553,14 +553,14 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
                         _sb.append(_SPACE);
                     }
 
-                    _sb.append(_PARENTHESES_L);
+                    _sb.append(_PARENTHESIS_L);
 
                     appendCondition(conditionList.get(i));
 
-                    _sb.append(_PARENTHESES_R);
+                    _sb.append(_PARENTHESIS_R);
                 }
 
-                // sb.append(_PARENTHESES_R);
+                // sb.append(_PARENTHESIS_R);
             }
         } else if (cond instanceof final SubQuery subQuery) {
             final Condition subCond = subQuery.getCondition();

@@ -16,6 +16,7 @@ package com.landawn.abacus.query.condition;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import com.landawn.abacus.query.SK;
@@ -151,10 +152,10 @@ public class NotIn extends AbstractCondition {
      * // Returns: ["deleted", "archived"]
      * }</pre>
      *
-     * @return list of values to exclude (may be null if cleared)
+     * @return an unmodifiable view of the values to exclude (may be null if cleared)
      */
     public List<?> getValues() { //NOSONAR
-        return values;
+        return values == null ? null : Collections.unmodifiableList(values);
     }
 
     /**
@@ -251,7 +252,7 @@ public class NotIn extends AbstractCondition {
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final StringBuilder sb = new StringBuilder();
-        sb.append(effectiveNamingPolicy.convert(propName)).append(SK._SPACE).append(operator().toString()).append(SK.SPACE_PARENTHESES_L);
+        sb.append(effectiveNamingPolicy.convert(propName)).append(SK._SPACE).append(operator().toString()).append(SK.SPACE_PARENTHESIS_L);
 
         if (values != null) {
             for (int i = 0; i < values.size(); i++) {
@@ -262,7 +263,7 @@ public class NotIn extends AbstractCondition {
             }
         }
 
-        sb.append(SK._PARENTHESES_R);
+        sb.append(SK._PARENTHESIS_R);
         return sb.toString();
     }
 

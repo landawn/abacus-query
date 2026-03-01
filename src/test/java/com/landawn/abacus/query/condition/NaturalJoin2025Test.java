@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -169,24 +170,20 @@ public class NaturalJoin2025Test extends TestBase {
     public void testAnd() {
         NaturalJoin join1 = new NaturalJoin("employees");
         NaturalJoin join2 = new NaturalJoin("departments");
-        And result = join1.and(join2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertThrows(UnsupportedOperationException.class, () -> join1.and(join2));
     }
 
     @Test
     public void testOr() {
         NaturalJoin join1 = new NaturalJoin("employees");
         NaturalJoin join2 = new NaturalJoin("departments");
-        Or result = join1.or(join2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertThrows(UnsupportedOperationException.class, () -> join1.or(join2));
     }
 
     @Test
     public void testNot() {
         NaturalJoin join = new NaturalJoin("employees");
-        Not result = join.not();
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
+        assertThrows(UnsupportedOperationException.class, () -> join.not());
     }
 
     @Test

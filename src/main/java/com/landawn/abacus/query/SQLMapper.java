@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.ResultSet;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -222,11 +223,11 @@ public final class SQLMapper {
      * sqlIds.forEach(id -> System.out.println("Available SQL: " + id));
      * }</pre>
      *
-     * @return a set view of all SQL identifiers in this mapper, maintaining insertion order
+     * @return an unmodifiable set view of all SQL identifiers in this mapper, maintaining insertion order
      */
     // AI-REVIEW-IGNORE: DSL-style accessor name intentionally avoids JavaBean getter prefix.
     public Set<String> sqlIds() {
-        return sqlMap.keySet();
+        return Collections.unmodifiableSet(sqlMap.keySet());
     }
 
     /**

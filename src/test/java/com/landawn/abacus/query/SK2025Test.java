@@ -98,12 +98,12 @@ public class SK2025Test extends TestBase {
     public void testBrackets() {
         assertEquals('?', SK._QUESTION_MARK);
         assertEquals("?", SK.QUESTION_MARK);
-        assertEquals('(', SK._PARENTHESES_L);
-        assertEquals("(", SK.PARENTHESES_L);
-        assertEquals(" (", SK.SPACE_PARENTHESES_L);
-        assertEquals(')', SK._PARENTHESES_R);
-        assertEquals(")", SK.PARENTHESES_R);
-        assertEquals(") ", SK.PARENTHESES_R_SPACE);
+        assertEquals('(', SK._PARENTHESIS_L);
+        assertEquals("(", SK.PARENTHESIS_L);
+        assertEquals(" (", SK.SPACE_PARENTHESIS_L);
+        assertEquals(')', SK._PARENTHESIS_R);
+        assertEquals(")", SK.PARENTHESIS_R);
+        assertEquals(") ", SK.PARENTHESIS_R_SPACE);
         assertEquals('[', SK._BRACKET_L);
         assertEquals("[", SK.BRACKET_L);
         assertEquals(']', SK._BRACKET_R);

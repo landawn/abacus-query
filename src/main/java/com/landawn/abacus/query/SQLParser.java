@@ -829,19 +829,19 @@ public final class SQLParser {
      * @return {@code true} if the word at the specified index is a function name, {@code false} otherwise
      */
     public static boolean isFunctionName(final List<String> words, final int len, final int index) {
-        //    return (i < len - 1 && words.get(i + 1).charAt(0) == SK._PARENTHESES_L)
-        //            || (i < len - 2 && SK.SPACE.equals(words.get(i + 1)) && words.get(i + 2).charAt(0) == SK._PARENTHESES_L);
+        //    return (i < len - 1 && words.get(i + 1).charAt(0) == SK._PARENTHESIS_L)
+        //            || (i < len - 2 && SK.SPACE.equals(words.get(i + 1)) && words.get(i + 2).charAt(0) == SK._PARENTHESIS_L);
 
         if (index < len - 1) {
             String nextWord = words.get(index + 1);
-            if (!nextWord.isEmpty() && nextWord.charAt(0) == SK._PARENTHESES_L) {
+            if (!nextWord.isEmpty() && nextWord.charAt(0) == SK._PARENTHESIS_L) {
                 return true;
             }
         }
 
         for (int i = index + 1; i < len; i++) {
             String word = words.get(i);
-            if (!word.isEmpty() && word.charAt(0) == SK._PARENTHESES_L) {
+            if (!word.isEmpty() && word.charAt(0) == SK._PARENTHESIS_L) {
                 return true;
             } else if (!SK.SPACE.equals(word)) {
                 return false;

@@ -15,6 +15,7 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -268,10 +269,10 @@ public final class Selection {
          *     .build();
          * }</pre>
          *
-         * @return a list of Selection objects
+         * @return an unmodifiable list of Selection objects
          */
         public List<Selection> build() {
-            return selections;
+            return Collections.unmodifiableList(selections);
         }
 
         /**

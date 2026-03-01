@@ -55,7 +55,7 @@ public class CellTest extends TestBase {
 
     @Test
     public void testClearParametersWithNullCondition() {
-        Assertions.assertThrows(NullPointerException.class, () -> new Cell(Operator.EXISTS, null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Cell(Operator.EXISTS, null));
     }
 
     @Test

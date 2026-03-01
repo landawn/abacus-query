@@ -407,13 +407,11 @@ public class Junction2025Test extends TestBase {
     }
 
     @Test
-    public void testJunctionConditionsListIsModifiable() {
+    public void testJunctionConditionsListIsUnmodifiable() {
         Junction junction = new Junction(Operator.AND);
         List<Condition> conditions = junction.getConditions();
 
-        conditions.add(Filters.eq("test", "value"));
-
-        assertEquals(1, junction.getConditions().size());
+        assertThrows(UnsupportedOperationException.class, () -> conditions.add(Filters.eq("test", "value")));
     }
 
     @Test
@@ -491,9 +489,10 @@ public class Junction2025Test extends TestBase {
     @Test
     public void testToString_WithNullConditionInList() {
         Junction junction = new Junction(Operator.AND);
-        junction.getConditions().add(Filters.eq("a", 1));
-        junction.getConditions().add(null);
-        junction.getConditions().add(Filters.eq("b", 2));
+        // Access package-private field directly since getConditions() now returns an unmodifiable view
+        junction.conditions.add(Filters.eq("a", 1));
+        junction.conditions.add(null);
+        junction.conditions.add(Filters.eq("b", 2));
 
         String result = junction.toString(NamingPolicy.NO_CHANGE);
         assertNotNull(result);
@@ -504,9 +503,9 @@ public class Junction2025Test extends TestBase {
     @Test
     public void testGetParameters_WithNullConditionInList() {
         Junction junction = new Junction(Operator.AND);
-        junction.getConditions().add(Filters.eq("a", 1));
-        junction.getConditions().add(null);
-        junction.getConditions().add(Filters.eq("b", 2));
+        junction.conditions.add(Filters.eq("a", 1));
+        junction.conditions.add(null);
+        junction.conditions.add(Filters.eq("b", 2));
 
         List<Object> params = junction.getParameters();
         assertEquals(2, params.size());
@@ -517,9 +516,9 @@ public class Junction2025Test extends TestBase {
     @Test
     public void testClearParameters_WithNullConditionInList() {
         Junction junction = new Junction(Operator.AND);
-        junction.getConditions().add(Filters.eq("a", 1));
-        junction.getConditions().add(null);
-        junction.getConditions().add(Filters.eq("b", 2));
+        junction.conditions.add(Filters.eq("a", 1));
+        junction.conditions.add(null);
+        junction.conditions.add(Filters.eq("b", 2));
 
         assertDoesNotThrow(() -> junction.clearParameters());
     }

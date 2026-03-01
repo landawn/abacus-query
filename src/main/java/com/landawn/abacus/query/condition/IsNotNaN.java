@@ -66,6 +66,13 @@ package com.landawn.abacus.query.condition;
 public class IsNotNaN extends IsNot {
 
     /**
+     * Shared Expression instance representing NAN.
+     * This constant mirrors {@link IsNaN#NAN} for symmetry, allowing code in this class
+     * to reference its own constant rather than reaching into the positive counterpart.
+     */
+    static final Expression NAN = IsNaN.NAN;
+
+    /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized IsNotNaN instance and should not be used 
      * directly in application code. It exists solely for serialization/deserialization purposes.
@@ -118,6 +125,6 @@ public class IsNotNaN extends IsNot {
      * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
      */
     public IsNotNaN(final String propName) {
-        super(propName, IsNaN.NAN);
+        super(propName, NAN);
     }
 }

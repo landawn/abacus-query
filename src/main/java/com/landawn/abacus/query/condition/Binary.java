@@ -20,7 +20,6 @@ import com.landawn.abacus.query.SK;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Strings;
 
 /**
  * Abstract base class for binary conditions that compare a property with a value.
@@ -97,9 +96,7 @@ public class Binary extends AbstractCondition {
     public Binary(final String propName, final Operator operator, final Object propValue) {
         super(operator);
 
-        if (Strings.isEmpty(propName)) {
-            throw new IllegalArgumentException("Property name cannot be null or empty");
-        }
+        N.checkArgNotEmpty(propName, "propName");
 
         this.propName = propName;
         this.propValue = propValue;

@@ -420,10 +420,10 @@ public class CriteriaTest extends TestBase {
     public void testGet() {
         Criteria criteria = Filters.criteria().join("orders").join("products").where(Filters.eq("status", "active"));
 
-        List<Condition> joins = criteria.get(Operator.JOIN);
+        List<Condition> joins = criteria.findConditions(Operator.JOIN);
         Assertions.assertEquals(2, joins.size());
 
-        List<Condition> wheres = criteria.get(Operator.WHERE);
+        List<Condition> wheres = criteria.findConditions(Operator.WHERE);
         Assertions.assertEquals(1, wheres.size());
     }
 

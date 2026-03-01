@@ -38,7 +38,7 @@ public class Cell2025Test extends TestBase {
 
     @Test
     public void testConstructorWithNullConditionThrowsException() {
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             new Cell(Operator.NOT, null);
         });
     }

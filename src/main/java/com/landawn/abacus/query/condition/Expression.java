@@ -1597,7 +1597,7 @@ public class Expression extends AbstractCondition {
         try {
             sb.append(functionName);
 
-            sb.append(SK._PARENTHESES_L);
+            sb.append(SK._PARENTHESIS_L);
 
             for (int i = 0; i < args.length; i++) {
                 if (i > 0) {
@@ -1607,7 +1607,7 @@ public class Expression extends AbstractCondition {
                 sb.append(N.stringOf(args[i]));
             }
 
-            sb.append(SK._PARENTHESES_R);
+            sb.append(SK._PARENTHESIS_R);
 
             return sb.toString();
 

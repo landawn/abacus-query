@@ -14,13 +14,14 @@
 
 package com.landawn.abacus.query.condition;
 
-import static com.landawn.abacus.query.SK._PARENTHESES_L;
-import static com.landawn.abacus.query.SK._PARENTHESES_R;
+import static com.landawn.abacus.query.SK._PARENTHESIS_L;
+import static com.landawn.abacus.query.SK._PARENTHESIS_R;
 import static com.landawn.abacus.query.SK._SPACE;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import com.landawn.abacus.util.ImmutableList;
@@ -174,10 +175,10 @@ public class Junction extends AbstractCondition {
      * // Returns: 2
      * }</pre>
      *
-     * @return the list of conditions. Modifications to this list will affect the junction.
+     * @return an unmodifiable view of the list of conditions in this junction.
      */
     public List<Condition> getConditions() {
-        return conditions;
+        return Collections.unmodifiableList(conditions);
     }
 
     /**
@@ -488,7 +489,7 @@ public class Junction extends AbstractCondition {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
-            sb.append(_PARENTHESES_L);
+            sb.append(_PARENTHESIS_L);
 
             boolean isFirst = true;
             for (final Condition condition : conditions) {
@@ -502,14 +503,14 @@ public class Junction extends AbstractCondition {
                     sb.append(_SPACE);
                 }
 
-                sb.append(_PARENTHESES_L);
+                sb.append(_PARENTHESIS_L);
                 sb.append(condition.toString(namingPolicy));
-                sb.append(_PARENTHESES_R);
+                sb.append(_PARENTHESIS_R);
 
                 isFirst = false;
             }
 
-            sb.append(_PARENTHESES_R);
+            sb.append(_PARENTHESIS_R);
 
             return sb.toString();
         } finally {

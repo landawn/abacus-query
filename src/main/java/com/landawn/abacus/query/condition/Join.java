@@ -274,6 +274,47 @@ public class Join extends AbstractCondition {
     }
 
     /**
+     * This operation is not supported for Join conditions.
+     * JOIN clauses cannot be combined using AND logic.
+     * Combine conditions within the ON clause instead.
+     *
+     * @param condition the condition to AND with (ignored)
+     * @return never returns normally
+     * @throws UnsupportedOperationException always thrown
+     */
+    @Override
+    public And and(final Condition condition) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException("AND operation is not supported for Join. Combine conditions within the ON clause instead");
+    }
+
+    /**
+     * This operation is not supported for Join conditions.
+     * JOIN clauses cannot be combined using OR logic.
+     * Combine conditions within the ON clause instead.
+     *
+     * @param condition the condition to OR with (ignored)
+     * @return never returns normally
+     * @throws UnsupportedOperationException always thrown
+     */
+    @Override
+    public Or or(final Condition condition) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException("OR operation is not supported for Join. Combine conditions within the ON clause instead");
+    }
+
+    /**
+     * This operation is not supported for Join conditions.
+     * JOIN clauses cannot be negated using NOT logic.
+     * Use NOT within the ON clause condition instead.
+     *
+     * @return never returns normally
+     * @throws UnsupportedOperationException always thrown
+     */
+    @Override
+    public Not not() throws UnsupportedOperationException {
+        throw new UnsupportedOperationException("NOT operation is not supported for Join. Use NOT within the ON clause condition instead");
+    }
+
+    /**
      * Gets the list of tables or entities involved in this join.
      * Returns a defensive copy of the tables that are being joined, including any aliases.
      *

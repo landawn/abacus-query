@@ -143,7 +143,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testConstructorWithNullSubQuery() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
             new Intersect(null);
         });
     }

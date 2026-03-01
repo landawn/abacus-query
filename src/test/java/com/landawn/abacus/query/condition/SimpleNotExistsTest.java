@@ -36,7 +36,7 @@ public class SimpleNotExistsTest extends TestBase {
 
     @Test
     void testConstructorWithNullSubQuery() {
-        assertThrows(NullPointerException.class, () -> new NotExists(null));
+        assertThrows(IllegalArgumentException.class, () -> new NotExists(null));
     }
 
     @Test

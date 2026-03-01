@@ -386,8 +386,8 @@ public class JavadocExamplesQueryTest {
         assertEquals(":", SK.COLON);
         assertEquals(";", SK.SEMICOLON);
         assertEquals("?", SK.QUESTION_MARK);
-        assertEquals("(", SK.PARENTHESES_L);
-        assertEquals(")", SK.PARENTHESES_R);
+        assertEquals("(", SK.PARENTHESIS_L);
+        assertEquals(")", SK.PARENTHESIS_R);
         assertEquals("=", SK.EQUAL);
         assertEquals("!=", SK.NOT_EQUAL);
         assertEquals("<>", SK.NOT_EQUAL_ANSI);
@@ -1060,11 +1060,11 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSQLBuilder_limitByRowNum() {
+    public void testDynamicSQLBuilder_whereRowNumAtMost() {
         DynamicSQLBuilder b = DynamicSQLBuilder.create();
         b.select().append("*");
         b.from().append("users");
-        b.limitByRowNum(10);
+        b.whereRowNumAtMost(10);
         String sql = b.build();
         assertTrue(sql.contains("ROWNUM <= 10"));
     }

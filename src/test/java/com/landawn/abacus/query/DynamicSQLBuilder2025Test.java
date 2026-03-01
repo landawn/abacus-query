@@ -471,7 +471,7 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
         builder.select().append("*");
         builder.from().append("users");
-        builder.limitByRowNum(100);
+        builder.whereRowNumAtMost(100);
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE ROWNUM <= 100", sql);
     }
@@ -482,7 +482,7 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         builder.select().append("*");
         builder.from().append("users");
         builder.where().append("active = 1");
-        builder.limitByRowNum(100);
+        builder.whereRowNumAtMost(100);
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE active = 1 AND ROWNUM <= 100", sql);
     }

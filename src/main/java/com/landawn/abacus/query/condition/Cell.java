@@ -75,7 +75,7 @@ public class Cell extends AbstractCondition {
      */
     public Cell(final Operator operator, final Condition condition) {
         super(operator);
-        this.condition = N.requireNonNull(condition, "condition");
+        this.condition = N.checkArgNotNull(condition, "condition");
     }
 
     /**

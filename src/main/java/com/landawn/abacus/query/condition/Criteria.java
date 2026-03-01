@@ -16,6 +16,7 @@ package com.landawn.abacus.query.condition;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -333,14 +334,14 @@ public class Criteria extends AbstractCondition {
      * // Returns an empty list
      * }</pre>
      *
-     * @return a list of all conditions
+     * @return an unmodifiable view of all conditions
      */
     public List<Condition> getConditions() {
-        return conditionList;
+        return Collections.unmodifiableList(conditionList);
     }
 
     /**
-     * Gets all conditions with the specified operator.
+     * Finds all conditions with the specified operator.
      * Useful for retrieving all conditions of a specific type.
      *
      * <p><b>Usage Examples:</b></p>
@@ -350,20 +351,20 @@ public class Criteria extends AbstractCondition {
      *     .join("payments", new On("orders.id", "payments.order_id"))
      *     .where(Filters.equal("status", "active"));
      *
-     * List<Condition> joins = criteria.get(Operator.JOIN);
+     * List<Condition> joins = criteria.findConditions(Operator.JOIN);
      * // Returns a list of 2 Join conditions
      *
-     * List<Condition> wheres = criteria.get(Operator.WHERE);
+     * List<Condition> wheres = criteria.findConditions(Operator.WHERE);
      * // Returns a list of 1 Where condition
      *
-     * List<Condition> limits = criteria.get(Operator.LIMIT);
+     * List<Condition> limits = criteria.findConditions(Operator.LIMIT);
      * // Returns an empty list (no LIMIT clause set)
      * }</pre>
      *
      * @param operator the operator to filter by (must not be null)
      * @return a list of conditions with the specified operator, empty list if none found
      */
-    public List<Condition> get(final Operator operator) {
+    public List<Condition> findConditions(final Operator operator) {
         final List<Condition> conditions = new ArrayList<>();
 
         for (final Condition cond : conditionList) {
@@ -402,7 +403,7 @@ public class Criteria extends AbstractCondition {
      * @param operator the operator of conditions to remove
      */
     void remove(final Operator operator) {
-        final List<Condition> conditions = get(operator);
+        final List<Condition> conditions = findConditions(operator);
         remove(conditions);
     }
 

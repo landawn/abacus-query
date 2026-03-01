@@ -55,6 +55,13 @@ package com.landawn.abacus.query.condition;
 public class IsNotNull extends IsNot {
 
     /**
+     * Shared Expression instance representing NULL.
+     * This constant mirrors {@link IsNull#NULL} for symmetry, allowing code in this class
+     * to reference its own constant rather than reaching into the positive counterpart.
+     */
+    static final Expression NULL = IsNull.NULL;
+
+    /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized IsNotNull instance and should not be used 
      * directly in application code. It exists solely for serialization/deserialization purposes.
@@ -101,6 +108,6 @@ public class IsNotNull extends IsNot {
      * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
      */
     public IsNotNull(final String propName) {
-        super(propName, IsNull.NULL);
+        super(propName, NULL);
     }
 }

@@ -133,7 +133,7 @@ public class HavingTest extends TestBase {
 
     @Test
     public void testConstructorWithNullCondition() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
             new Having(null);
         });
     }

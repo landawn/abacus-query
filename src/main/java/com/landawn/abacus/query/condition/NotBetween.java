@@ -21,7 +21,6 @@ import com.landawn.abacus.query.SK;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Strings;
 
 /**
  * Represents a NOT BETWEEN condition in SQL queries.
@@ -114,9 +113,7 @@ public class NotBetween extends AbstractCondition {
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {
         super(Operator.NOT_BETWEEN);
 
-        if (Strings.isEmpty(propName)) {
-            throw new IllegalArgumentException("Property name cannot be null or empty");
-        }
+        N.checkArgNotEmpty(propName, "propName");
 
         this.propName = propName;
         this.minValue = minValue;

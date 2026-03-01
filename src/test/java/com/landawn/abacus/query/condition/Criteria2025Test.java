@@ -117,7 +117,7 @@ public class Criteria2025Test extends TestBase {
     public void testGetByOperator() {
         Criteria criteria = new Criteria();
         criteria.where(Filters.equal("name", "John"));
-        List<Condition> whereConditions = criteria.get(Operator.WHERE);
+        List<Condition> whereConditions = criteria.findConditions(Operator.WHERE);
         assertNotNull(whereConditions);
     }
 
@@ -732,7 +732,7 @@ public class Criteria2025Test extends TestBase {
         // Replace where with another
         criteria.where(Filters.equal("type", "premium"));
 
-        List<Condition> whereConditions = criteria.get(Operator.WHERE);
+        List<Condition> whereConditions = criteria.findConditions(Operator.WHERE);
         assertEquals(1, whereConditions.size());
     }
 

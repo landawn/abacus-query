@@ -347,35 +347,35 @@ public final class SK {
      * Represents the left parenthesis character: {@code '('}.
      * Used for grouping and function calls.
      */
-    public static final char _PARENTHESES_L = '(';
+    public static final char _PARENTHESIS_L = '(';
 
     /**
      * Represents the left parenthesis string: {@code "("}.
      */
-    public static final String PARENTHESES_L = "(";
+    public static final String PARENTHESIS_L = "(";
 
     /**
      * Represents space followed by left parenthesis: {@code " ("}.
      * Useful for formatting function calls.
      */
-    public static final String SPACE_PARENTHESES_L = " (";
+    public static final String SPACE_PARENTHESIS_L = " (";
 
     /**
      * Represents the right parenthesis character: {@code ')'}.
      * Used for grouping and function calls.
      */
-    public static final char _PARENTHESES_R = ')';
+    public static final char _PARENTHESIS_R = ')';
 
     /**
      * Represents the right parenthesis string: {@code ")"}.
      */
-    public static final String PARENTHESES_R = ")";
+    public static final String PARENTHESIS_R = ")";
 
     /**
      * Represents right parenthesis followed by space: {@code ") "}.
      * Useful for formatting function calls.
      */
-    public static final String PARENTHESES_R_SPACE = ") ";
+    public static final String PARENTHESIS_R_SPACE = ") ";
 
     /**
      * Represents the left square bracket character: {@code '['}.
