@@ -265,30 +265,30 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
-    public void testGetParameterizedSql_forCouchbase() {
+    public void testGetParameterizedSql_withNamedParameters() {
         String sql = "SELECT * FROM users WHERE id = :userId AND status = :status";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        String couchbaseSql = parsed.parameterizedSqlForCouchbase();
-        Assertions.assertEquals("SELECT * FROM users WHERE id = $1 AND status = $2", couchbaseSql);
+        String parameterizedSql = parsed.parameterizedSql();
+        Assertions.assertEquals("SELECT * FROM users WHERE id = ? AND status = ?", parameterizedSql);
     }
 
     @Test
-    public void testGetParameterizedSql_forCouchbase_withQuestionMarks() {
+    public void testGetParameterizedSql_withQuestionMarks() {
         String sql = "SELECT * FROM users WHERE id = ? AND status = ?";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        String couchbaseSql = parsed.parameterizedSqlForCouchbase();
-        Assertions.assertEquals("SELECT * FROM users WHERE id = $1 AND status = $2", couchbaseSql);
+        String parameterizedSql = parsed.parameterizedSql();
+        Assertions.assertEquals("SELECT * FROM users WHERE id = ? AND status = ?", parameterizedSql);
     }
 
     @Test
-    public void testGetParameterizedSql_notForCouchbase() {
+    public void testGetParameterizedSql_withSingleNamedParameter() {
         String sql = "SELECT * FROM users WHERE id = :userId";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        String standardSql = parsed.parameterizedSql();
-        Assertions.assertEquals("SELECT * FROM users WHERE id = ?", standardSql);
+        String parameterizedSql = parsed.parameterizedSql();
+        Assertions.assertEquals("SELECT * FROM users WHERE id = ?", parameterizedSql);
     }
 
     @Test
@@ -303,42 +303,42 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
-    public void testGetNamedParameters_forCouchbase() {
+    public void testGetNamedParameters_withNamedParameters() {
         String sql = "SELECT * FROM users WHERE id = :userId AND status = :status";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        List<String> couchbaseParams = parsed.namedParametersForCouchbase();
-        Assertions.assertEquals(2, couchbaseParams.size());
-        Assertions.assertEquals("userId", couchbaseParams.get(0));
-        Assertions.assertEquals("status", couchbaseParams.get(1));
+        List<String> namedParams = parsed.namedParameters();
+        Assertions.assertEquals(2, namedParams.size());
+        Assertions.assertEquals("userId", namedParams.get(0));
+        Assertions.assertEquals("status", namedParams.get(1));
     }
 
     @Test
-    public void testGetNamedParameters_forCouchbase_withQuestionMarks() {
+    public void testGetNamedParameters_withQuestionMarks() {
         String sql = "SELECT * FROM users WHERE id = ? AND status = ?";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        List<String> couchbaseParams = parsed.namedParametersForCouchbase();
-        Assertions.assertTrue(couchbaseParams.isEmpty());
+        List<String> namedParams = parsed.namedParameters();
+        Assertions.assertTrue(namedParams.isEmpty());
     }
 
     @Test
-    public void testGetNamedParameters_forCouchbase_withDollarParameters() {
+    public void testGetNamedParameters_withDollarParameters() {
         String sql = "SELECT * FROM users WHERE id = $1 AND status = $2";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        List<String> couchbaseParams = parsed.namedParametersForCouchbase();
-        Assertions.assertTrue(couchbaseParams.isEmpty());
+        List<String> namedParams = parsed.namedParameters();
+        Assertions.assertTrue(namedParams.isEmpty());
     }
 
     @Test
-    public void testGetNamedParameters_notForCouchbase() {
+    public void testGetNamedParameters_withSingleNamedParameter() {
         String sql = "SELECT * FROM users WHERE id = :userId";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        List<String> standardParams = parsed.namedParameters();
-        Assertions.assertEquals(1, standardParams.size());
-        Assertions.assertEquals("userId", standardParams.get(0));
+        List<String> namedParams = parsed.namedParameters();
+        Assertions.assertEquals(1, namedParams.size());
+        Assertions.assertEquals("userId", namedParams.get(0));
     }
 
     @Test
@@ -358,21 +358,21 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
-    public void testGetParameterCount_forCouchbase() {
+    public void testGetParameterCount_withNamedParametersInSelect() {
         String sql = "SELECT * FROM users WHERE id = :userId AND status = :status";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        int couchbaseCount = parsed.parameterCountForCouchbase();
-        Assertions.assertEquals(2, couchbaseCount);
+        int parameterCount = parsed.parameterCount();
+        Assertions.assertEquals(2, parameterCount);
     }
 
     @Test
-    public void testGetParameterCount_notForCouchbase() {
+    public void testGetParameterCount_withSingleNamedParameterInSelect() {
         String sql = "SELECT * FROM users WHERE id = :userId";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        int standardCount = parsed.parameterCount();
-        Assertions.assertEquals(1, standardCount);
+        int parameterCount = parsed.parameterCount();
+        Assertions.assertEquals(1, parameterCount);
     }
 
     @Test
@@ -461,27 +461,27 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
-    public void testCouchbaseParameterizedSql_cacheReuse() {
+    public void testParameterizedSql_cacheReuse() {
         String sql = "SELECT * FROM users WHERE id = :userId";
         ParsedSql parsed = ParsedSql.parse(sql);
 
         // First call should trigger parsing
-        String couchbaseSql1 = parsed.parameterizedSqlForCouchbase();
+        String parameterizedSql1 = parsed.parameterizedSql();
         // Second call should use cached result
-        String couchbaseSql2 = parsed.parameterizedSqlForCouchbase();
+        String parameterizedSql2 = parsed.parameterizedSql();
 
-        Assertions.assertEquals(couchbaseSql1, couchbaseSql2);
+        Assertions.assertEquals(parameterizedSql1, parameterizedSql2);
     }
 
     @Test
-    public void testNonOperationSql_forCouchbase() {
+    public void testNonOperationSql() {
         String sql = "SET @variable = :value";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        String couchbaseSql = parsed.parameterizedSqlForCouchbase();
-        Assertions.assertEquals("SET @variable = :value", couchbaseSql);
-        Assertions.assertTrue(parsed.namedParametersForCouchbase().isEmpty());
-        Assertions.assertEquals(0, parsed.parameterCountForCouchbase());
+        String parameterizedSql = parsed.parameterizedSql();
+        Assertions.assertEquals("SET @variable = :value", parameterizedSql);
+        Assertions.assertTrue(parsed.namedParameters().isEmpty());
+        Assertions.assertEquals(0, parsed.parameterCount());
     }
 
     @Test
@@ -507,12 +507,11 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
-    public void testCouchbaseNumericParameters() {
+    public void testDollarNumericParameters_areNotNamedParameters() {
         String sql = "SELECT * FROM users WHERE id = $1 AND status = $2";
         ParsedSql parsed = ParsedSql.parse(sql);
 
-        // For Couchbase, numeric parameters should be detected
-        List<String> couchbaseParams = parsed.namedParametersForCouchbase();
-        Assertions.assertTrue(couchbaseParams.isEmpty());
+        List<String> namedParams = parsed.namedParameters();
+        Assertions.assertTrue(namedParams.isEmpty());
     }
 }

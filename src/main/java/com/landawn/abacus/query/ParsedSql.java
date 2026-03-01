@@ -27,21 +27,19 @@ import com.landawn.abacus.pool.PoolableWrapper;
 import com.landawn.abacus.util.IOUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.Numbers;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
 
 /**
  * Represents a parsed SQL statement with support for named parameters and parameterized queries.
  * This class handles SQL parsing to extract named parameters (e.g., :userId, #{userId}) and converts
- * them to standard JDBC parameter placeholders (?). It also supports Couchbase-style parameters.
+ * them to standard JDBC parameter placeholders (?).
  * 
  * <p>The class maintains an internal cache of parsed SQL statements for performance optimization.
  * Supported parameter formats include:</p>
  * <ul>
  *   <li>Named parameters: :paramName</li>
  *   <li>iBatis/MyBatis style: #{paramName}</li>
- *   <li>Couchbase style: $1, $2, etc.</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>
@@ -76,23 +74,13 @@ public final class ParsedSql {
 
     private static final String RIGHT_OF_IBATIS_NAMED_PARAMETER = "}";
 
-    private static final String PREFIX_OF_COUCHBASE_NAMED_PARAMETER = "$";
-
-    private static final char _PREFIX_OF_COUCHBASE_NAMED_PARAMETER = PREFIX_OF_COUCHBASE_NAMED_PARAMETER.charAt(0);
-
     private final String sql;
 
     private final String parameterizedSql;
 
-    private volatile String couchbaseParameterizedSql;
-
     private final ImmutableList<String> namedParameters;
 
-    private volatile ImmutableList<String> couchbaseNamedParameters;
-
     private int parameterCount;
-
-    private volatile int couchbaseParameterCount;
 
     private ParsedSql(final String sql) {
         this.sql = sql.trim();
@@ -250,25 +238,6 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the parameterized SQL formatted for Couchbase N1QL.
-     * JDBC placeholders (?) are converted to Couchbase positional parameters ($1, $2, etc.).
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :name");
-     * String couchbaseSql = parsed.parameterizedSqlForCouchbase();
-     * // Returns: "SELECT * FROM users WHERE id = $1 AND name = $2"
-     * }</pre>
-     *
-     * @return the Couchbase-formatted parameterized SQL string
-     */
-    public String parameterizedSqlForCouchbase() {
-        ensureCouchbaseParsed();
-
-        return couchbaseParameterizedSql;
-    }
-
-    /**
      * Gets the list of named parameters extracted from the SQL in order of appearance.
      * For SQL with no named parameters, returns an empty list.
      *
@@ -291,30 +260,6 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the list of named parameters formatted for Couchbase N1QL.
-     * For SQL with positional parameters only (using ?), Couchbase format returns an empty list since
-     * parameters are bound by position.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-     * ImmutableList<String> cbParams = parsed.namedParametersForCouchbase();
-     * // Returns: ["name", "minAge"]
-     *
-     * ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-     * ImmutableList<String> cbParams2 = parsed2.namedParametersForCouchbase();
-     * // Returns: []
-     * }</pre>
-     *
-     * @return an immutable list of Couchbase-formatted parameter names
-     */
-    public ImmutableList<String> namedParametersForCouchbase() {
-        ensureCouchbaseParsed();
-
-        return couchbaseNamedParameters;
-    }
-
-    /**
      * Gets the total number of parameters (named or positional) in the SQL.
      * This count includes all occurrences of ?, :paramName, or #{paramName}.
      *
@@ -333,120 +278,6 @@ public final class ParsedSql {
      */
     public int parameterCount() {
         return parameterCount;
-    }
-
-    /**
-     * Gets the parameter count formatted for Couchbase.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-     * int cbCount = parsed.parameterCountForCouchbase();
-     * // Returns: 2
-     * }</pre>
-     *
-     * @return the number of Couchbase parameters
-     */
-    public int parameterCountForCouchbase() {
-        ensureCouchbaseParsed();
-
-        return couchbaseParameterCount;
-    }
-
-    private void ensureCouchbaseParsed() {
-        if (Strings.isEmpty(couchbaseParameterizedSql)) {
-            synchronized (this) {
-                if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                    parseForCouchbase();
-                }
-            }
-        }
-    }
-
-    private void parseForCouchbase() {
-        final List<String> couchbaseNamedParameterList = new ArrayList<>();
-
-        final List<String> words = SQLParser.parse(sql);
-
-        boolean isOpSqlPrefix = false;
-        for (final String word : words) {
-            if (Strings.isNotEmpty(word) && !(word.equals(" ") || word.startsWith("--") || word.startsWith("/*"))) {
-                isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase(Locale.ROOT));
-                break;
-            }
-        }
-
-        if (isOpSqlPrefix) {
-            final StringBuilder sb = Objectory.createStringBuilder();
-
-            try {
-                int countOfParameter = 0;
-                int type = 0;
-                final int QUESTION_MARK_TYPE = 1;
-                final int NAMED_PARAMETER_TYPE = 2;
-                final int IBATIS_PARAMETER_TYPE = 4;
-
-                for (String word : words) {
-                    if (word.equals(SK.QUESTION_MARK)) {
-                        type |= QUESTION_MARK_TYPE;
-                        countOfParameter++;
-                        word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
-                    } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() > 3) {
-                        couchbaseNamedParameterList.add(word.substring(2, word.length() - 1));
-
-                        type |= IBATIS_PARAMETER_TYPE;
-                        countOfParameter++;
-                        word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
-                    } else if (word.length() >= 2 && (word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER || word.charAt(0) == _PREFIX_OF_COUCHBASE_NAMED_PARAMETER)
-                            && isValidNamedParameterChar(word.charAt(1))) {
-                        couchbaseNamedParameterList.add(word.substring(1));
-
-                        type |= NAMED_PARAMETER_TYPE;
-                        countOfParameter++;
-                        word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
-                    }
-
-                    if (Integer.bitCount(type) > 1) {
-                        throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
-                    }
-
-                    sb.append(word);
-                }
-
-                boolean isNamedParametersByNum = true;
-
-                for (int i = 0; i < countOfParameter && i < couchbaseNamedParameterList.size(); i++) {
-                    try {
-                        if (Numbers.toInt(couchbaseNamedParameterList.get(i)) != i + 1) {
-                            isNamedParametersByNum = false;
-                            break;
-                        }
-                    } catch (final Exception e) {
-                        // ignore;
-                        isNamedParametersByNum = false;
-                        break;
-                    }
-                }
-
-                if (isNamedParametersByNum && couchbaseNamedParameterList.size() == countOfParameter) {
-                    couchbaseNamedParameterList.clear();
-                }
-
-                couchbaseNamedParameters = ImmutableList.wrap(couchbaseNamedParameterList);
-                couchbaseParameterCount = countOfParameter;
-
-                final String tmpCouchbaseSql = Strings.stripToEmpty(sb.toString());
-                couchbaseParameterizedSql = tmpCouchbaseSql.endsWith(";") ? tmpCouchbaseSql.substring(0, tmpCouchbaseSql.length() - 1) : tmpCouchbaseSql;
-            } finally {
-                Objectory.recycle(sb);
-            }
-        } else {
-            couchbaseNamedParameters = ImmutableList.empty();
-            couchbaseParameterCount = 0;
-
-            final String tmpCouchbaseSql = Strings.stripToEmpty(this.sql);
-            couchbaseParameterizedSql = tmpCouchbaseSql.endsWith(";") ? tmpCouchbaseSql.substring(0, tmpCouchbaseSql.length() - 1) : tmpCouchbaseSql;
-        }
     }
 
     private static boolean isValidNamedParameterChar(final char ch) {

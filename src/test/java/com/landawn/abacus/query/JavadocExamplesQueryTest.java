@@ -112,13 +112,6 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testParsedSql_parameterizedSqlForCouchbase() {
-        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :name");
-        String couchbaseSql = parsed.parameterizedSqlForCouchbase();
-        assertEquals("SELECT * FROM users WHERE id = $1 AND name = $2", couchbaseSql);
-    }
-
-    @Test
     public void testParsedSql_namedParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
         ImmutableList<String> params = parsed.namedParameters();
@@ -130,21 +123,6 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testParsedSql_namedParametersWithCouchbase() {
-        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-
-        ImmutableList<String> params = parsed.namedParameters();
-        assertEquals(Arrays.asList("name", "minAge"), params);
-
-        ImmutableList<String> cbParams = parsed.namedParametersForCouchbase();
-        assertEquals(Arrays.asList("name", "minAge"), cbParams);
-
-        ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-        ImmutableList<String> cbParams2 = parsed2.namedParametersForCouchbase();
-        assertTrue(cbParams2.isEmpty());
-    }
-
-    @Test
     public void testParsedSql_parameterCount() {
         ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (:name, :email, :age)");
         int count = parsed.parameterCount();
@@ -153,15 +131,6 @@ public class JavadocExamplesQueryTest {
         ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users");
         int count2 = parsed2.parameterCount();
         assertEquals(0, count2);
-    }
-
-    @Test
-    public void testParsedSql_parameterCountWithCouchbase() {
-        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-        int count = parsed.parameterCount();
-        assertEquals(2, count);
-        int cbCount = parsed.parameterCountForCouchbase();
-        assertEquals(2, cbCount);
     }
 
     // ===================== QueryUtil.java Examples =====================

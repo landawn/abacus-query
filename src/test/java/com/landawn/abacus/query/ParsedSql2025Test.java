@@ -135,40 +135,40 @@ public class ParsedSql2025Test extends TestBase {
     }
 
     @Test
-    public void testGetParameterizedSql_Couchbase() {
+    public void testGetParameterizedSql_WithQuestionMarkParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-        String couchbaseSql = parsed.parameterizedSqlForCouchbase();
-        assertNotNull(couchbaseSql);
-        assertTrue(couchbaseSql.contains("$1"));
+        String sql = parsed.parameterizedSql();
+        assertNotNull(sql);
+        assertEquals("SELECT * FROM users WHERE id = ?", sql);
     }
 
     @Test
-    public void testGetParameterizedSql_CouchbaseWithNamedParams() {
+    public void testGetParameterizedSql_WithNamedParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :userName");
-        String couchbaseSql = parsed.parameterizedSqlForCouchbase();
-        assertNotNull(couchbaseSql);
-        assertTrue(couchbaseSql.contains("$1"));
-        assertTrue(couchbaseSql.contains("$2"));
+        String sql = parsed.parameterizedSql();
+        assertNotNull(sql);
+        assertEquals("SELECT * FROM users WHERE id = ? AND name = ?", sql);
     }
 
     @Test
-    public void testGetParameterizedSql_NotCouchbase() {
+    public void testGetParameterizedSql_WithSingleNamedParameter() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
         String sql = parsed.parameterizedSql();
         assertEquals("SELECT * FROM users WHERE id = ?", sql);
     }
 
     @Test
-    public void testGetNamedParameters_Couchbase() {
+    public void testGetNamedParameters_WithNamedParameter() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-        parsed.parameterizedSqlForCouchbase();
-        assertNotNull(parsed.namedParametersForCouchbase());
+        assertNotNull(parsed.namedParameters());
+        assertEquals(1, parsed.namedParameters().size());
+        assertEquals("userId", parsed.namedParameters().get(0));
     }
 
     @Test
-    public void testGetParameterCount_Couchbase() {
+    public void testGetParameterCount_WithQuestionMarkParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = ? AND name = ?");
-        int count = parsed.parameterCountForCouchbase();
+        int count = parsed.parameterCount();
         assertEquals(2, count);
     }
 
