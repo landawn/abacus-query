@@ -16,7 +16,7 @@ public class LikeTest extends TestBase {
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("name", condition.getPropName());
-        Assertions.assertEquals(Operator.LIKE, condition.getOperator());
+        Assertions.assertEquals(Operator.LIKE, condition.operator());
         Assertions.assertEquals("John%", condition.getPropValue());
     }
 
@@ -83,7 +83,7 @@ public class LikeTest extends TestBase {
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
     }
 

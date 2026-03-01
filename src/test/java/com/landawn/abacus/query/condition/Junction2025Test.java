@@ -34,7 +34,7 @@ public class Junction2025Test extends TestBase {
         Junction junction = new Junction(Operator.AND, cond1, cond2);
 
         assertNotNull(junction);
-        assertEquals(Operator.AND, junction.getOperator());
+        assertEquals(Operator.AND, junction.operator());
         assertEquals(2, junction.getConditions().size());
     }
 
@@ -45,7 +45,7 @@ public class Junction2025Test extends TestBase {
         Junction junction = new Junction(Operator.OR, conditions);
 
         assertNotNull(junction);
-        assertEquals(Operator.OR, junction.getOperator());
+        assertEquals(Operator.OR, junction.operator());
         assertEquals(3, junction.getConditions().size());
     }
 
@@ -54,7 +54,7 @@ public class Junction2025Test extends TestBase {
         Junction junction = new Junction(Operator.AND);
 
         assertNotNull(junction);
-        assertEquals(Operator.AND, junction.getOperator());
+        assertEquals(Operator.AND, junction.operator());
         assertEquals(0, junction.getConditions().size());
     }
 
@@ -250,7 +250,7 @@ public class Junction2025Test extends TestBase {
 
         assertNotNull(copy);
         assertNotSame(original, copy);
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
         assertEquals(original.getConditions().size(), copy.getConditions().size());
 
         // Verify deep copy

@@ -45,7 +45,7 @@ public class OrderBy2025Test extends TestBase {
         OrderBy orderBy = new OrderBy(Filters.expr("name ASC"));
 
         assertNotNull(orderBy);
-        assertEquals(Operator.ORDER_BY, orderBy.getOperator());
+        assertEquals(Operator.ORDER_BY, orderBy.operator());
     }
 
     @Test
@@ -234,8 +234,8 @@ public class OrderBy2025Test extends TestBase {
     public void testOperatorType() {
         OrderBy orderBy = new OrderBy("column");
 
-        assertEquals(Operator.ORDER_BY, orderBy.getOperator());
-        assertNotEquals(Operator.GROUP_BY, orderBy.getOperator());
+        assertEquals(Operator.ORDER_BY, orderBy.operator());
+        assertNotEquals(Operator.GROUP_BY, orderBy.operator());
     }
 
     @Test

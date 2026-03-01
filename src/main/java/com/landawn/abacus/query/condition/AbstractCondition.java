@@ -110,7 +110,7 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * @return the operator for this condition
      */
     @Override
-    public Operator getOperator() {
+    public Operator operator() {
         return operator;
     }
 

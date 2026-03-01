@@ -2691,17 +2691,17 @@ Utility class for handling database query operations, entity-column mappings, an
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; null or empty means no exclusions)
 - **Returns:** collection of property names suitable for UPDATE operations
-##### getIdFieldNames(...) -> List<String>
-- **Signature:** `@Deprecated @Internal @Immutable public static List<String> getIdFieldNames(final Class<?> targetClass)`
+##### getIdPropNames(...) -> List<String>
+- **Signature:** `@Deprecated @Internal @Immutable public static List<String> getIdPropNames(final Class<?> targetClass)`
 - **Summary:** Gets the ID field names for the specified entity class.
 - **Parameters:**
   - `targetClass` (`Class<?>`) — the entity class to analyze (must not be null)
 - **Returns:** an immutable list of ID field names, or empty list if no ID fields are defined
-- **Signature:** `@Deprecated @Internal @Immutable public static List<String> getIdFieldNames(final Class<?> targetClass, final boolean fakeIdForEmpty)`
+- **Signature:** `@Deprecated @Internal @Immutable public static List<String> getIdPropNames(final Class<?> targetClass, final boolean fakeIdForEmpty)`
 - **Summary:** Gets the ID field names for the specified entity class with option to return fake ID if none found.
 - **Contract:**
   - Gets the ID field names for the specified entity class with option to return fake ID if none found.
-  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Without fake ID - returns empty list when no @Id is found List<String> idFields = QueryUtil.getIdFieldNames(LogEntry.class, false); // Returns: \[\] // With fake ID - returns a synthetic ID when no @Id is found List<String> fakeIdFields = QueryUtil.getIdFieldNames(LogEntry.class, true); // Returns: \["not_defined_fake_id_in_abacus_<uuid>"\] boolean isFake = QueryUtil.isFakeId(fakeIdFields); // true // Entity with @Id returns actual IDs regardless of fakeIdForEmpty List<String> realIds = QueryUtil.getIdFieldNames(User.class, true); // Returns: \["id"\] } </pre>
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Without fake ID - returns empty list when no @Id is found List<String> idFields = QueryUtil.getIdPropNames(LogEntry.class, false); // Returns: \[\] // With fake ID - returns a synthetic ID when no @Id is found List<String> fakeIdFields = QueryUtil.getIdPropNames(LogEntry.class, true); // Returns: \["not_defined_fake_id_in_abacus_<uuid>"\] boolean isFake = QueryUtil.isFakeId(fakeIdFields); // true // Entity with @Id returns actual IDs regardless of fakeIdForEmpty List<String> realIds = QueryUtil.getIdPropNames(User.class, true); // Returns: \["id"\] } </pre>
 - **Parameters:**
   - `targetClass` (`Class<?>`) — the entity class to analyze
   - `fakeIdForEmpty` (`boolean`) — if true, returns a fake ID when no ID fields are found
@@ -2724,7 +2724,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Contract:**
   - Checks if the given ID property names represent a fake/synthetic ID.
   - Fake IDs are used internally when entities have no defined ID fields.
-  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Check if ID fields are real or synthetic List<String> idFields = QueryUtil.getIdFieldNames(User.class, true); boolean fake = QueryUtil.isFakeId(idFields); // Returns false for entities with real @Id annotations List<String> fakeFields = QueryUtil.getIdFieldNames(LogEntry.class, true); boolean isFake = QueryUtil.isFakeId(fakeFields); // Returns true for entities without @Id when fakeIdForEmpty was true } </pre>
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Check if ID fields are real or synthetic List<String> idFields = QueryUtil.getIdPropNames(User.class, true); boolean fake = QueryUtil.isFakeId(idFields); // Returns false for entities with real @Id annotations List<String> fakeFields = QueryUtil.getIdPropNames(LogEntry.class, true); boolean isFake = QueryUtil.isFakeId(fakeFields); // Returns true for entities without @Id when fakeIdForEmpty was true } </pre>
 - **Parameters:**
   - `idPropNames` (`List<String>`) — the list of ID property names to check
 - **Returns:** {@code true} if this is a fake ID

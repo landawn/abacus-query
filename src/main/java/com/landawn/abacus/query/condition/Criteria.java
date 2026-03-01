@@ -252,7 +252,7 @@ public class Criteria extends AbstractCondition {
         List<Cell> result = null;
 
         for (final Condition cond : conditionList) {
-            if (setOperators.contains(cond.getOperator())) {
+            if (setOperators.contains(cond.operator())) {
                 if (result == null) {
                     result = new ArrayList<>();
                 }
@@ -367,7 +367,7 @@ public class Criteria extends AbstractCondition {
         final List<Condition> conditions = new ArrayList<>();
 
         for (final Condition cond : conditionList) {
-            if (cond.getOperator() == operator) {
+            if (cond.operator() == operator) {
                 conditions.add(cond);
             }
         }
@@ -763,7 +763,7 @@ public class Criteria extends AbstractCondition {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (condition.getOperator() == Operator.WHERE) {
+        if (condition.operator() == Operator.WHERE) {
             add(condition);
         } else {
             add(new Where(condition));
@@ -815,7 +815,7 @@ public class Criteria extends AbstractCondition {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (condition.getOperator() == Operator.GROUP_BY) {
+        if (condition.operator() == Operator.GROUP_BY) {
             add(condition);
         } else {
             add(new GroupBy(condition));
@@ -1005,7 +1005,7 @@ public class Criteria extends AbstractCondition {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (condition.getOperator() == Operator.HAVING) {
+        if (condition.operator() == Operator.HAVING) {
             add(condition);
         } else {
             add(new Having(condition));
@@ -1138,7 +1138,7 @@ public class Criteria extends AbstractCondition {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (condition.getOperator() == Operator.ORDER_BY) {
+        if (condition.operator() == Operator.ORDER_BY) {
             add(condition);
         } else {
             add(new OrderBy(condition));
@@ -1547,15 +1547,15 @@ public class Criteria extends AbstractCondition {
         final String forUpdate = Strings.EMPTY;
 
         for (final Condition cond : conditionList) {
-            if (cond.getOperator() == Operator.WHERE) {
+            if (cond.operator() == Operator.WHERE) {
                 where += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (cond.getOperator() == Operator.ORDER_BY) {
+            } else if (cond.operator() == Operator.ORDER_BY) {
                 orderBy += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (cond.getOperator() == Operator.GROUP_BY) {
+            } else if (cond.operator() == Operator.GROUP_BY) {
                 groupBy += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (cond.getOperator() == Operator.HAVING) {
+            } else if (cond.operator() == Operator.HAVING) {
                 having += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (cond.getOperator() == Operator.LIMIT) {
+            } else if (cond.operator() == Operator.LIMIT) {
                 limit += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond instanceof Join) {
                 join += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
@@ -1621,9 +1621,9 @@ public class Criteria extends AbstractCondition {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (!CriteriaUtil.isClause(cond.getOperator())) {
+        if (!CriteriaUtil.isClause(cond.operator())) {
             throw new IllegalArgumentException(
-                    "Invalid operator '" + cond.getOperator() + "' for Criteria. Expected clause operators: WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.");
+                    "Invalid operator '" + cond.operator() + "' for Criteria. Expected clause operators: WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.");
         }
     }
 
@@ -1659,10 +1659,10 @@ public class Criteria extends AbstractCondition {
      * @param cond
      */
     private void addCondition(final Condition cond) {
-        if (cond.getOperator() == Operator.WHERE || cond.getOperator() == Operator.ORDER_BY || cond.getOperator() == Operator.GROUP_BY
-                || cond.getOperator() == Operator.HAVING || cond.getOperator() == Operator.LIMIT) {
+        if (cond.operator() == Operator.WHERE || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.GROUP_BY
+                || cond.operator() == Operator.HAVING || cond.operator() == Operator.LIMIT) {
 
-            final Condition cell = find(cond.getOperator());
+            final Condition cell = find(cond.operator());
 
             if (cell != null) {
                 conditionList.remove(cell); // NOSONAR
@@ -1683,7 +1683,7 @@ public class Criteria extends AbstractCondition {
         for (final Condition element : conditionList) {
             cond = element;
 
-            if (cond.getOperator() == operator) {
+            if (cond.operator() == operator) {
                 return cond;
             }
         }

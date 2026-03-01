@@ -16,7 +16,7 @@ public class ExpressionTest extends TestBase {
         Expression expr = new Expression("price * 0.9");
         Assertions.assertNotNull(expr);
         Assertions.assertEquals("price * 0.9", expr.getLiteral());
-        Assertions.assertEquals(Operator.EMPTY, expr.getOperator());
+        Assertions.assertEquals(Operator.EMPTY, expr.operator());
     }
 
     @Test

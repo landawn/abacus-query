@@ -39,10 +39,10 @@ public class AbstractCondition2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         AbstractCondition condition = new Equal("name", "John");
-        assertEquals(Operator.EQUAL, condition.getOperator());
+        assertEquals(Operator.EQUAL, condition.operator());
 
         AbstractCondition and = new And(new Equal("a", 1));
-        assertEquals(Operator.AND, and.getOperator());
+        assertEquals(Operator.AND, and.operator());
     }
 
     @Test
@@ -52,7 +52,7 @@ public class AbstractCondition2025Test extends TestBase {
 
         And result = cond1.and(cond2);
         assertNotNull(result);
-        assertEquals(Operator.AND, result.getOperator());
+        assertEquals(Operator.AND, result.operator());
         assertEquals(Integer.valueOf(2), result.getConditions().size());
     }
 
@@ -69,7 +69,7 @@ public class AbstractCondition2025Test extends TestBase {
 
         Or result = cond1.or(cond2);
         assertNotNull(result);
-        assertEquals(Operator.OR, result.getOperator());
+        assertEquals(Operator.OR, result.operator());
         assertEquals(Integer.valueOf(2), result.getConditions().size());
     }
 
@@ -85,7 +85,7 @@ public class AbstractCondition2025Test extends TestBase {
         Not result = cond.not();
 
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
         assertSame(cond, result.getCondition());
     }
 
@@ -166,7 +166,7 @@ public class AbstractCondition2025Test extends TestBase {
         Not not = and.not();
 
         assertNotNull(not);
-        assertEquals(Operator.NOT, not.getOperator());
+        assertEquals(Operator.NOT, not.operator());
     }
 
     @Test

@@ -103,7 +103,7 @@ public class SubQuery2025Test extends TestBase {
 
         // Condition should be wrapped in WHERE
         assertNotNull(subQuery.getCondition());
-        assertEquals(Operator.WHERE, subQuery.getCondition().getOperator());
+        assertEquals(Operator.WHERE, subQuery.getCondition().operator());
     }
 
     @Test
@@ -115,7 +115,7 @@ public class SubQuery2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery(entityName, props, condition);
 
         assertNotNull(subQuery.getCondition());
-        assertEquals(Operator.WHERE, subQuery.getCondition().getOperator());
+        assertEquals(Operator.WHERE, subQuery.getCondition().operator());
     }
 
     @Test
@@ -421,7 +421,7 @@ public class SubQuery2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM users");
 
         // SubQuery doesn't have a specific operator, verify it returns empty or null
-        Operator op = subQuery.getOperator();
+        Operator op = subQuery.operator();
         assertTrue(op == null || op.toString().isEmpty());
     }
 

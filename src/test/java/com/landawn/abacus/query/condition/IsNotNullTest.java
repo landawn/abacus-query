@@ -16,7 +16,7 @@ public class IsNotNullTest extends TestBase {
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("email", condition.getPropName());
-        Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
+        Assertions.assertEquals(Operator.IS_NOT, condition.operator());
         Assertions.assertEquals(IsNull.NULL, condition.getPropValue());
     }
 
@@ -28,7 +28,7 @@ public class IsNotNullTest extends TestBase {
             IsNotNull condition = new IsNotNull(propName);
 
             Assertions.assertEquals(propName, condition.getPropName());
-            Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
+            Assertions.assertEquals(Operator.IS_NOT, condition.operator());
             Assertions.assertEquals(IsNull.NULL, condition.getPropValue());
         }
     }
@@ -59,7 +59,7 @@ public class IsNotNullTest extends TestBase {
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
     }
 
@@ -122,7 +122,7 @@ public class IsNotNullTest extends TestBase {
 
         // Test methods inherited from IsNot
         Assertions.assertEquals("value", condition.getPropName());
-        Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
+        Assertions.assertEquals(Operator.IS_NOT, condition.operator());
         Assertions.assertNotNull(condition.getPropValue());
     }
 

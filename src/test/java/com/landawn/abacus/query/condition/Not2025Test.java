@@ -41,7 +41,7 @@ public class Not2025Test extends TestBase {
         Equal innerCondition = new Equal("status", "active");
         Not condition = new Not(innerCondition);
 
-        assertEquals(Operator.NOT, condition.getOperator());
+        assertEquals(Operator.NOT, condition.operator());
         assertSame(innerCondition, condition.getCondition());
     }
 
@@ -71,7 +71,7 @@ public class Not2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         Not condition = new Not(new Equal("field", "value"));
-        assertEquals(Operator.NOT, condition.getOperator());
+        assertEquals(Operator.NOT, condition.operator());
     }
 
     @Test
@@ -218,7 +218,7 @@ public class Not2025Test extends TestBase {
         Not result = condition.not();
 
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

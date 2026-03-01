@@ -18,7 +18,7 @@ public class ExceptTest extends TestBase {
         Except except = Filters.except(subQuery);
 
         Assertions.assertNotNull(except);
-        Assertions.assertEquals(Operator.EXCEPT, except.getOperator());
+        Assertions.assertEquals(Operator.EXCEPT, except.operator());
         Assertions.assertEquals(subQuery, except.getCondition());
     }
 
@@ -82,7 +82,7 @@ public class ExceptTest extends TestBase {
         Except copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }
@@ -182,7 +182,7 @@ public class ExceptTest extends TestBase {
 
         List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
-        Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).getOperator());
+        Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).operator());
     }
 
     @Test
@@ -194,8 +194,8 @@ public class ExceptTest extends TestBase {
         Minus minus = Filters.minus(subQuery);
 
         // Both should work similarly
-        Assertions.assertEquals(Operator.EXCEPT, except.getOperator());
-        Assertions.assertEquals(Operator.MINUS, minus.getOperator());
+        Assertions.assertEquals(Operator.EXCEPT, except.operator());
+        Assertions.assertEquals(Operator.MINUS, minus.operator());
 
         // Same subquery
         Assertions.assertEquals((Condition) except.getCondition(), minus.getCondition());

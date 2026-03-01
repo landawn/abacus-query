@@ -137,7 +137,7 @@ public class ParsedSql2025Test extends TestBase {
     @Test
     public void testGetParameterizedSql_Couchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-        String couchbaseSql = parsed.parameterizedSql(true);
+        String couchbaseSql = parsed.parameterizedSqlForCouchbase();
         assertNotNull(couchbaseSql);
         assertTrue(couchbaseSql.contains("$1"));
     }
@@ -145,7 +145,7 @@ public class ParsedSql2025Test extends TestBase {
     @Test
     public void testGetParameterizedSql_CouchbaseWithNamedParams() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :userName");
-        String couchbaseSql = parsed.parameterizedSql(true);
+        String couchbaseSql = parsed.parameterizedSqlForCouchbase();
         assertNotNull(couchbaseSql);
         assertTrue(couchbaseSql.contains("$1"));
         assertTrue(couchbaseSql.contains("$2"));
@@ -154,21 +154,21 @@ public class ParsedSql2025Test extends TestBase {
     @Test
     public void testGetParameterizedSql_NotCouchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-        String sql = parsed.parameterizedSql(false);
+        String sql = parsed.parameterizedSql();
         assertEquals("SELECT * FROM users WHERE id = ?", sql);
     }
 
     @Test
     public void testGetNamedParameters_Couchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
-        parsed.parameterizedSql(true);
-        assertNotNull(parsed.namedParameters(true));
+        parsed.parameterizedSqlForCouchbase();
+        assertNotNull(parsed.namedParametersForCouchbase());
     }
 
     @Test
     public void testGetParameterCount_Couchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = ? AND name = ?");
-        int count = parsed.parameterCount(true);
+        int count = parsed.parameterCountForCouchbase();
         assertEquals(2, count);
     }
 

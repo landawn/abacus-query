@@ -64,13 +64,8 @@ import com.landawn.abacus.util.Strings;
  */
 public class InSubQuery extends AbstractCondition {
     /**
-     * The property name for single-column IN conditions.
-     * This field is used for serialization frameworks like Kryo.
-     */
-    final String propName;
-
-    /**
-     * The property names for multi-column IN conditions.
+     * The property names for this IN condition.
+     * For single-column conditions this collection has one element.
      * This field is used for serialization frameworks like Kryo.
      */
     final Collection<String> propNames;
@@ -83,8 +78,7 @@ public class InSubQuery extends AbstractCondition {
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     InSubQuery() {
-        propName = null;
-        propNames = null;
+        propNames = Collections.emptyList();
     }
 
     /**
@@ -115,9 +109,8 @@ public class InSubQuery extends AbstractCondition {
         N.checkArgNotEmpty(propName, "propName");
         N.checkArgNotNull(subQuery, "subQuery");
 
-        this.propName = propName;
+        this.propNames = Collections.singletonList(propName);
         this.subQuery = subQuery;
-        propNames = null;
     }
 
     /**
@@ -149,35 +142,12 @@ public class InSubQuery extends AbstractCondition {
 
         this.propNames = copyAndValidatePropNames(propNames);
         this.subQuery = subQuery;
-        propName = null;
     }
 
     /**
-     * Gets the property name for single-column IN conditions.
-     * Returns null if this is a multi-column condition.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
-     * InSubQuery condition = new InSubQuery("customer_id", subQuery);
-     * String propName = condition.getPropName();
-     * // Returns: "customer_id"
-     *
-     * // For multi-column conditions, getPropName() returns null
-     * InSubQuery multiCol = new InSubQuery(Arrays.asList("dept_id", "loc_id"), subQuery);
-     * String name = multiCol.getPropName();
-     * // Returns: null
-     * }</pre>
-     *
-     * @return the property name, or null if this is a multi-column condition
-     */
-    public String getPropName() {
-        return propName;
-    }
-
-    /**
-     * Gets the property names for multi-column IN conditions.
-     * Returns null if this is a single-column condition.
+     * Gets the property names for this IN subquery condition.
+     * Always returns a non-null collection:
+     * for single-column conditions the size is 1, for multi-column conditions the size is greater than 1.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -186,13 +156,13 @@ public class InSubQuery extends AbstractCondition {
      * Collection<String> propNames = multiCol.getPropNames();
      * // Returns: ["department_id", "location_id"]
      *
-     * // For single-column conditions, getPropNames() returns null
+     * // For single-column conditions, getPropNames() contains one element
      * InSubQuery singleCol = new InSubQuery("customer_id", subQuery);
      * Collection<String> names = singleCol.getPropNames();
-     * // Returns: null
+     * // Returns: ["customer_id"]
      * }</pre>
      *
-     * @return collection of property names, or null if this is a single-column condition
+     * @return non-null immutable collection of property names
      */
     public Collection<String> getPropNames() {
         return propNames;
@@ -320,7 +290,6 @@ public class InSubQuery extends AbstractCondition {
     @Override
     public int hashCode() {
         int h = 17;
-        h = (h * 31) + N.hashCode(propName);
         h = (h * 31) + N.hashCode(propNames);
         h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         return (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
@@ -341,8 +310,7 @@ public class InSubQuery extends AbstractCondition {
         }
 
         if (obj instanceof final InSubQuery other) {
-            return N.equals(propName, other.propName) && N.equals(propNames, other.propNames) && N.equals(operator, other.operator)
-                    && N.equals(subQuery, other.subQuery);
+            return N.equals(propNames, other.propNames) && N.equals(operator, other.operator) && N.equals(subQuery, other.subQuery);
         }
 
         return false;
@@ -361,15 +329,18 @@ public class InSubQuery extends AbstractCondition {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final String subQueryString = subQuery == null ? Strings.EMPTY : subQuery.toString(effectiveNamingPolicy);
 
-        if (Strings.isNotEmpty(propName)) {
-            return effectiveNamingPolicy.convert(propName) + SK._SPACE + getOperator().toString() + SK.SPACE_PARENTHESES_L + subQueryString + SK.PARENTHESES_R;
-        } else if (propNames != null) {
+        if (N.notEmpty(propNames)) {
+            if (propNames.size() == 1) {
+                return effectiveNamingPolicy.convert(propNames.iterator().next()) + SK._SPACE + operator().toString() + SK.SPACE_PARENTHESES_L + subQueryString
+                        + SK.PARENTHESES_R;
+            }
+
             final Function<String, String> converter = effectiveNamingPolicy::convert;
 
-            return "(" + Strings.join(N.map(propNames, converter), ", ") + ") " + getOperator().toString() + SK.SPACE_PARENTHESES_L + subQueryString
+            return "(" + Strings.join(N.map(propNames, converter), ", ") + ") " + operator().toString() + SK.SPACE_PARENTHESES_L + subQueryString
                     + SK.PARENTHESES_R;
-        } else {
-            return getOperator().toString() + SK.SPACE_PARENTHESES_L + subQueryString + SK.PARENTHESES_R;
         }
+
+        return operator().toString() + SK.SPACE_PARENTHESES_L + subQueryString + SK.PARENTHESES_R;
     }
 }

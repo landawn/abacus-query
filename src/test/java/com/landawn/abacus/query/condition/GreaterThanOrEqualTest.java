@@ -15,7 +15,7 @@ public class GreaterThanOrEqualTest extends TestBase {
         Assertions.assertNotNull(ge);
         Assertions.assertEquals("age", ge.getPropName());
         Assertions.assertEquals(18, (Integer) (Integer) ge.getPropValue());
-        Assertions.assertEquals(Operator.GREATER_THAN_OR_EQUAL, ge.getOperator());
+        Assertions.assertEquals(Operator.GREATER_THAN_OR_EQUAL, ge.operator());
     }
 
     @Test
@@ -111,7 +111,7 @@ public class GreaterThanOrEqualTest extends TestBase {
         And and = ge.and(lt);
 
         Assertions.assertNotNull(and);
-        Assertions.assertEquals(Operator.AND, and.getOperator());
+        Assertions.assertEquals(Operator.AND, and.operator());
         Assertions.assertEquals(2, and.getConditions().size());
     }
 
@@ -122,7 +122,7 @@ public class GreaterThanOrEqualTest extends TestBase {
         Or or = ge.or(eq);
 
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(Operator.OR, or.getOperator());
+        Assertions.assertEquals(Operator.OR, or.operator());
         Assertions.assertEquals(2, or.getConditions().size());
     }
 
@@ -132,7 +132,7 @@ public class GreaterThanOrEqualTest extends TestBase {
         Not not = ge.not();
 
         Assertions.assertNotNull(not);
-        Assertions.assertEquals(Operator.NOT, not.getOperator());
+        Assertions.assertEquals(Operator.NOT, not.operator());
         Assertions.assertEquals(ge, not.getCondition());
     }
 }

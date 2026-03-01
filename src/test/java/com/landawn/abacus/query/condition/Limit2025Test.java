@@ -252,8 +252,8 @@ public class Limit2025Test extends TestBase {
     public void testOperatorType() {
         Limit limit = new Limit(10);
 
-        assertEquals(Operator.LIMIT, limit.getOperator());
-        assertNotEquals(Operator.WHERE, limit.getOperator());
+        assertEquals(Operator.LIMIT, limit.operator());
+        assertNotEquals(Operator.WHERE, limit.operator());
     }
 
     @Test

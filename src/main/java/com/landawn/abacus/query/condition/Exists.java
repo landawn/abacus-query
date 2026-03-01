@@ -124,6 +124,6 @@ public class Exists extends Cell {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Condition condition = getCondition();
         final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
-        return getOperator().toString() + SK._SPACE + SK._PARENTHESES_L + conditionString + SK._PARENTHESES_R;
+        return operator().toString() + SK._SPACE + SK._PARENTHESES_L + conditionString + SK._PARENTHESES_R;
     }
 }

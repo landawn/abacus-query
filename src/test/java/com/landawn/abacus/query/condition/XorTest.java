@@ -14,28 +14,28 @@ public class XorTest extends TestBase {
         Xor xor1 = Filters.xor("isPremium", true);
         Assertions.assertNotNull(xor1);
         Assertions.assertEquals("isPremium", xor1.getPropName());
-        Assertions.assertEquals(Operator.XOR, xor1.getOperator());
+        Assertions.assertEquals(Operator.XOR, xor1.operator());
         Assertions.assertEquals(true, xor1.getPropValue());
 
         // Test with string value
         Xor xor2 = Filters.xor("status", "active");
         Assertions.assertNotNull(xor2);
         Assertions.assertEquals("status", xor2.getPropName());
-        Assertions.assertEquals(Operator.XOR, xor2.getOperator());
+        Assertions.assertEquals(Operator.XOR, xor2.operator());
         Assertions.assertEquals("active", xor2.getPropValue());
 
         // Test with null value
         Xor xor3 = Filters.xor("hasDiscount", null);
         Assertions.assertNotNull(xor3);
         Assertions.assertEquals("hasDiscount", xor3.getPropName());
-        Assertions.assertEquals(Operator.XOR, xor3.getOperator());
+        Assertions.assertEquals(Operator.XOR, xor3.operator());
         Assertions.assertNull(xor3.getPropValue());
 
         // Test with numeric value
         Xor xor4 = Filters.xor("level", 5);
         Assertions.assertNotNull(xor4);
         Assertions.assertEquals("level", xor4.getPropName());
-        Assertions.assertEquals(Operator.XOR, xor4.getOperator());
+        Assertions.assertEquals(Operator.XOR, xor4.operator());
         Assertions.assertEquals(5, (Integer) xor4.getPropValue());
     }
 

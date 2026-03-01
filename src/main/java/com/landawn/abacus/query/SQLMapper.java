@@ -218,13 +218,13 @@ public final class SQLMapper {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
-     * Set<String> sqlIds = mapper.keySet();
+     * Set<String> sqlIds = mapper.sqlIds();
      * sqlIds.forEach(id -> System.out.println("Available SQL: " + id));
      * }</pre>
      *
      * @return a set view of all SQL identifiers in this mapper, maintaining insertion order
      */
-    public Set<String> keySet() {
+    public Set<String> sqlIds() {
         return sqlMap.keySet();
     }
 

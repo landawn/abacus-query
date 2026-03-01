@@ -18,8 +18,8 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery condition = Filters.notIn("userId", subQuery);
 
-        Assertions.assertEquals("userId", condition.getPropName());
-        Assertions.assertNull(condition.getPropNames());
+        Assertions.assertEquals("userId", condition.getPropNames().iterator().next());
+        Assertions.assertEquals(1, condition.getPropNames().size());
         Assertions.assertEquals(subQuery, condition.getSubQuery());
     }
 
@@ -36,7 +36,6 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
         NotInSubQuery condition = Filters.notIn(propNames, subQuery);
 
-        Assertions.assertNull(condition.getPropName());
         Assertions.assertEquals(propNames, condition.getPropNames());
         Assertions.assertEquals(subQuery, condition.getSubQuery());
     }
@@ -125,7 +124,7 @@ public class NotInSubQueryTest extends TestBase {
         NotInSubQuery copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
+        Assertions.assertEquals(original.getPropNames(), copy.getPropNames());
         Assertions.assertNotSame(original.getSubQuery(), copy.getSubQuery());
         Assertions.assertEquals(original.getSubQuery(), copy.getSubQuery());
     }

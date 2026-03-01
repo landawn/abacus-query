@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,10 +42,10 @@ public class NotInSubQuery2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
-        assertEquals("userId", condition.getPropName());
-        assertNull(condition.getPropNames());
+        assertEquals("userId", condition.getPropNames().iterator().next());
+        assertEquals(1, condition.getPropNames().size());
         assertNotNull(condition.getSubQuery());
-        assertEquals(Operator.NOT_IN, condition.getOperator());
+        assertEquals(Operator.NOT_IN, condition.operator());
     }
 
     @Test
@@ -60,7 +59,6 @@ public class NotInSubQuery2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
         NotInSubQuery condition = new NotInSubQuery(props, subQuery);
 
-        assertNull(condition.getPropName());
         assertNotNull(condition.getPropNames());
         assertEquals(2, condition.getPropNames().size());
     }
@@ -85,15 +83,16 @@ public class NotInSubQuery2025Test extends TestBase {
     }
 
     @Test
-    public void testGetPropName() {
+    public void testGetPropNames_SingleProperty() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM deleted_items");
         NotInSubQuery condition = new NotInSubQuery("itemId", subQuery);
 
-        assertEquals("itemId", condition.getPropName());
+        assertEquals(1, condition.getPropNames().size());
+        assertEquals("itemId", condition.getPropNames().iterator().next());
     }
 
     @Test
-    public void testGetPropNames() {
+    public void testGetPropNames_MultipleProperties() {
         List<String> props = Arrays.asList("country", "city");
         SubQuery subQuery = Filters.subQuery("SELECT country, city FROM restricted_locations");
         NotInSubQuery condition = new NotInSubQuery(props, subQuery);
@@ -272,6 +271,6 @@ public class NotInSubQuery2025Test extends TestBase {
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 }

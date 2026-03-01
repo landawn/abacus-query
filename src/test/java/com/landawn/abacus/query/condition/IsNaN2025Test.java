@@ -34,7 +34,7 @@ public class IsNaN2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         IsNaN condition = new IsNaN("value");
-        assertEquals(Operator.IS, condition.getOperator());
+        assertEquals(Operator.IS, condition.operator());
     }
 
     @Test

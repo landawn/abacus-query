@@ -17,7 +17,7 @@ public class IntersectTest extends TestBase {
         Intersect intersect = new Intersect(subQuery);
 
         Assertions.assertNotNull(intersect);
-        Assertions.assertEquals(Operator.INTERSECT, intersect.getOperator());
+        Assertions.assertEquals(Operator.INTERSECT, intersect.operator());
         Assertions.assertEquals(subQuery, intersect.getCondition());
     }
 
@@ -27,7 +27,7 @@ public class IntersectTest extends TestBase {
         Intersect intersect = new Intersect(subQuery);
 
         Assertions.assertNotNull(intersect);
-        Assertions.assertEquals(Operator.INTERSECT, intersect.getOperator());
+        Assertions.assertEquals(Operator.INTERSECT, intersect.operator());
         Assertions.assertNotNull(intersect.getCondition());
     }
 
@@ -70,7 +70,7 @@ public class IntersectTest extends TestBase {
         Intersect copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals(original.toString(), copy.toString());
     }

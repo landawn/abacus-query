@@ -44,7 +44,7 @@ public class In2025Test extends TestBase {
 
         assertEquals("status", condition.getPropName());
         assertEquals(3, condition.getValues().size());
-        assertEquals(Operator.IN, condition.getOperator());
+        assertEquals(Operator.IN, condition.operator());
     }
 
     @Test
@@ -339,6 +339,6 @@ public class In2025Test extends TestBase {
         In condition = new In("status", Arrays.asList("active", "pending"));
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 }

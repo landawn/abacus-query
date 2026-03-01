@@ -41,7 +41,7 @@ public class Intersect2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Intersect intersect = new Intersect(subQuery);
         assertNotNull(intersect);
-        assertEquals(Operator.INTERSECT, intersect.getOperator());
+        assertEquals(Operator.INTERSECT, intersect.operator());
     }
 
     @Test
@@ -135,7 +135,7 @@ public class Intersect2025Test extends TestBase {
         SubQuery activeUsers = Filters.subQuery("SELECT user_id FROM activity WHERE last_login > ?", "2023-01-01");
         Intersect intersect = new Intersect(activeUsers);
         assertNotNull(intersect);
-        assertEquals(Operator.INTERSECT, intersect.getOperator());
+        assertEquals(Operator.INTERSECT, intersect.operator());
     }
 
     @Test
@@ -182,7 +182,7 @@ public class Intersect2025Test extends TestBase {
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Intersect intersect = new Intersect(subQuery);
-        assertEquals(Operator.INTERSECT, intersect.getOperator());
+        assertEquals(Operator.INTERSECT, intersect.operator());
     }
 
     @Test

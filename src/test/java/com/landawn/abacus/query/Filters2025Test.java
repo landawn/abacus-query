@@ -83,7 +83,7 @@ public class Filters2025Test extends TestBase {
         Condition condition = Filters.equal("name", "John");
         Not notCondition = Filters.not(condition);
         assertNotNull(notCondition);
-        assertEquals(Operator.NOT, notCondition.getOperator());
+        assertEquals(Operator.NOT, notCondition.operator());
     }
 
     @Test
@@ -104,7 +104,7 @@ public class Filters2025Test extends TestBase {
         Binary binary = Filters.binary("age", Operator.GREATER_THAN, 18);
         assertNotNull(binary);
         assertEquals("age", binary.getPropName());
-        assertEquals(Operator.GREATER_THAN, binary.getOperator());
+        assertEquals(Operator.GREATER_THAN, binary.operator());
     }
 
     @Test
@@ -493,7 +493,7 @@ public class Filters2025Test extends TestBase {
         Condition condition = Filters.equal("status", "active");
         Where where = Filters.where(condition);
         assertNotNull(where);
-        assertEquals(Operator.WHERE, where.getOperator());
+        assertEquals(Operator.WHERE, where.operator());
     }
 
     @Test

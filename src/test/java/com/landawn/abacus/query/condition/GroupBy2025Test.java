@@ -45,7 +45,7 @@ public class GroupBy2025Test extends TestBase {
         GroupBy groupBy = new GroupBy(Filters.expr("department"));
 
         assertNotNull(groupBy);
-        assertEquals(Operator.GROUP_BY, groupBy.getOperator());
+        assertEquals(Operator.GROUP_BY, groupBy.operator());
     }
 
     @Test
@@ -208,8 +208,8 @@ public class GroupBy2025Test extends TestBase {
     public void testOperatorType() {
         GroupBy groupBy = new GroupBy("column");
 
-        assertEquals(Operator.GROUP_BY, groupBy.getOperator());
-        assertNotEquals(Operator.ORDER_BY, groupBy.getOperator());
+        assertEquals(Operator.GROUP_BY, groupBy.operator());
+        assertNotEquals(Operator.ORDER_BY, groupBy.operator());
     }
 
     @Test

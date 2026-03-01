@@ -35,7 +35,7 @@ public class IsNotNull2025Test extends TestBase {
     public void testConstructor() {
         IsNotNull condition = new IsNotNull("email");
         assertEquals("email", condition.getPropName());
-        assertEquals(Operator.IS_NOT, condition.getOperator());
+        assertEquals(Operator.IS_NOT, condition.operator());
     }
 
     @Test
@@ -114,7 +114,7 @@ public class IsNotNull2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         IsNotNull condition = new IsNotNull("field");
-        assertEquals(Operator.IS_NOT, condition.getOperator());
+        assertEquals(Operator.IS_NOT, condition.operator());
     }
 
     @Test
@@ -167,7 +167,7 @@ public class IsNotNull2025Test extends TestBase {
         IsNotNull condition = new IsNotNull("email");
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

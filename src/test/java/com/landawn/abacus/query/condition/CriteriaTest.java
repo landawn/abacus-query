@@ -22,7 +22,7 @@ public class CriteriaTest extends TestBase {
         Criteria criteria = Filters.criteria();
 
         Assertions.assertNotNull(criteria);
-        Assertions.assertEquals(Operator.EMPTY, criteria.getOperator());
+        Assertions.assertEquals(Operator.EMPTY, criteria.operator());
         Assertions.assertNotNull(criteria.getConditions());
         Assertions.assertTrue(criteria.getConditions().isEmpty());
     }
@@ -75,7 +75,7 @@ public class CriteriaTest extends TestBase {
 
         List<Join> joins = criteria.getJoins();
         Assertions.assertEquals(1, joins.size());
-        Assertions.assertEquals(Operator.JOIN, joins.get(0).getOperator());
+        Assertions.assertEquals(Operator.JOIN, joins.get(0).operator());
     }
 
     @Test
@@ -125,7 +125,7 @@ public class CriteriaTest extends TestBase {
 
         Cell where = criteria.getWhere();
         Assertions.assertNotNull(where);
-        Assertions.assertEquals(Operator.WHERE, where.getOperator());
+        Assertions.assertEquals(Operator.WHERE, where.operator());
         Assertions.assertEquals(eq, where.getCondition());
     }
 
@@ -164,7 +164,7 @@ public class CriteriaTest extends TestBase {
 
         Cell groupBy = criteria.getGroupBy();
         Assertions.assertNotNull(groupBy);
-        Assertions.assertEquals(Operator.GROUP_BY, groupBy.getOperator());
+        Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
     }
 
     @Test
@@ -218,7 +218,7 @@ public class CriteriaTest extends TestBase {
 
         Cell having = criteria.getHaving();
         Assertions.assertNotNull(having);
-        Assertions.assertEquals(Operator.HAVING, having.getOperator());
+        Assertions.assertEquals(Operator.HAVING, having.operator());
         Assertions.assertEquals(gt, having.getCondition());
     }
 
@@ -247,7 +247,7 @@ public class CriteriaTest extends TestBase {
 
         Cell orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
-        Assertions.assertEquals(Operator.ORDER_BY, orderBy.getOperator());
+        Assertions.assertEquals(Operator.ORDER_BY, orderBy.operator());
     }
 
     @Test
@@ -325,7 +325,7 @@ public class CriteriaTest extends TestBase {
 
         List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
-        Assertions.assertEquals(Operator.UNION, aggregations.get(0).getOperator());
+        Assertions.assertEquals(Operator.UNION, aggregations.get(0).operator());
     }
 
     @Test
@@ -335,7 +335,7 @@ public class CriteriaTest extends TestBase {
 
         List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
-        Assertions.assertEquals(Operator.UNION_ALL, aggregations.get(0).getOperator());
+        Assertions.assertEquals(Operator.UNION_ALL, aggregations.get(0).operator());
     }
 
     @Test
@@ -345,7 +345,7 @@ public class CriteriaTest extends TestBase {
 
         List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
-        Assertions.assertEquals(Operator.INTERSECT, aggregations.get(0).getOperator());
+        Assertions.assertEquals(Operator.INTERSECT, aggregations.get(0).operator());
     }
 
     @Test
@@ -355,7 +355,7 @@ public class CriteriaTest extends TestBase {
 
         List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
-        Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).getOperator());
+        Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).operator());
     }
 
     @Test
@@ -365,7 +365,7 @@ public class CriteriaTest extends TestBase {
 
         List<Cell> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());
-        Assertions.assertEquals(Operator.MINUS, aggregations.get(0).getOperator());
+        Assertions.assertEquals(Operator.MINUS, aggregations.get(0).operator());
     }
 
     @Test

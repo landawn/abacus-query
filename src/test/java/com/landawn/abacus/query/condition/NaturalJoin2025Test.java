@@ -40,7 +40,7 @@ public class NaturalJoin2025Test extends TestBase {
     public void testConstructor_Simple() {
         NaturalJoin join = new NaturalJoin("employees");
         assertNotNull(join);
-        assertEquals(Operator.NATURAL_JOIN, join.getOperator());
+        assertEquals(Operator.NATURAL_JOIN, join.operator());
     }
 
     @Test
@@ -48,7 +48,7 @@ public class NaturalJoin2025Test extends TestBase {
         NaturalJoin join = new NaturalJoin("departments", new Equal("status", "active"));
         assertNotNull(join);
         assertNotNull(join.getCondition());
-        assertEquals(Operator.NATURAL_JOIN, join.getOperator());
+        assertEquals(Operator.NATURAL_JOIN, join.operator());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class NaturalJoin2025Test extends TestBase {
         NaturalJoin join = new NaturalJoin(entities, new GreaterThan("totalAmount", (Object) 1000));
         assertNotNull(join);
         assertEquals(3, (int) join.getJoinEntities().size());
-        assertEquals(Operator.NATURAL_JOIN, join.getOperator());
+        assertEquals(Operator.NATURAL_JOIN, join.operator());
     }
 
     @Test
@@ -186,7 +186,7 @@ public class NaturalJoin2025Test extends TestBase {
         NaturalJoin join = new NaturalJoin("employees");
         Not result = join.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

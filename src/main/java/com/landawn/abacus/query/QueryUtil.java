@@ -349,7 +349,7 @@ public final class QueryUtil {
 
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
 
-        final Collection<String> idPropNames = getIdFieldNames(entityClass);
+        final Collection<String> idPropNames = getIdPropNames(entityClass);
 
         // Determine the base property names based on whether ID fields have default values.
         // val[2] includes ID fields, val[3] excludes them.
@@ -524,15 +524,15 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Get ID field names for an entity with @Id annotation
-     * List<String> idFields = QueryUtil.getIdFieldNames(User.class);
+     * List<String> idFields = QueryUtil.getIdPropNames(User.class);
      * // Returns: ["id"] for a class with @Id on the "id" property
      *
      * // Composite key example
-     * List<String> compositeIds = QueryUtil.getIdFieldNames(OrderItem.class);
+     * List<String> compositeIds = QueryUtil.getIdPropNames(OrderItem.class);
      * // Returns: ["orderId", "itemId"] for a composite key entity
      *
      * // Entity without @Id returns empty list
-     * List<String> noIds = QueryUtil.getIdFieldNames(LogEntry.class);
+     * List<String> noIds = QueryUtil.getIdPropNames(LogEntry.class);
      * // Returns: []
      * }</pre>
      *
@@ -544,8 +544,8 @@ public final class QueryUtil {
     @Deprecated
     @Internal
     @Immutable
-    public static List<String> getIdFieldNames(final Class<?> targetClass) {
-        return getIdFieldNames(targetClass, false);
+    public static List<String> getIdPropNames(final Class<?> targetClass) {
+        return getIdPropNames(targetClass, false);
     }
 
     /**
@@ -555,16 +555,16 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Without fake ID - returns empty list when no @Id is found
-     * List<String> idFields = QueryUtil.getIdFieldNames(LogEntry.class, false);
+     * List<String> idFields = QueryUtil.getIdPropNames(LogEntry.class, false);
      * // Returns: []
      *
      * // With fake ID - returns a synthetic ID when no @Id is found
-     * List<String> fakeIdFields = QueryUtil.getIdFieldNames(LogEntry.class, true);
+     * List<String> fakeIdFields = QueryUtil.getIdPropNames(LogEntry.class, true);
      * // Returns: ["not_defined_fake_id_in_abacus_<uuid>"]
      * boolean isFake = QueryUtil.isFakeId(fakeIdFields);  // true
      *
      * // Entity with @Id returns actual IDs regardless of fakeIdForEmpty
-     * List<String> realIds = QueryUtil.getIdFieldNames(User.class, true);
+     * List<String> realIds = QueryUtil.getIdPropNames(User.class, true);
      * // Returns: ["id"]
      * }</pre>
      *
@@ -577,7 +577,7 @@ public final class QueryUtil {
     @Deprecated
     @Internal
     @Immutable
-    public static List<String> getIdFieldNames(final Class<?> targetClass, final boolean fakeIdForEmpty) {
+    public static List<String> getIdPropNames(final Class<?> targetClass, final boolean fakeIdForEmpty) {
         N.checkArgNotNull(targetClass, ENTITY_CLASS);
 
         final ImmutableList<String> idPropNames = ParserUtil.getBeanInfo(targetClass).idPropNameList;
@@ -625,11 +625,11 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if ID fields are real or synthetic
-     * List<String> idFields = QueryUtil.getIdFieldNames(User.class, true);
+     * List<String> idFields = QueryUtil.getIdPropNames(User.class, true);
      * boolean fake = QueryUtil.isFakeId(idFields);
      * // Returns false for entities with real @Id annotations
      *
-     * List<String> fakeFields = QueryUtil.getIdFieldNames(LogEntry.class, true);
+     * List<String> fakeFields = QueryUtil.getIdPropNames(LogEntry.class, true);
      * boolean isFake = QueryUtil.isFakeId(fakeFields);
      * // Returns true for entities without @Id when fakeIdForEmpty was true
      * }</pre>

@@ -16,7 +16,7 @@ public class IsNaNTest extends TestBase {
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("calculation_result", condition.getPropName());
-        Assertions.assertEquals(Operator.IS, condition.getOperator());
+        Assertions.assertEquals(Operator.IS, condition.operator());
         Assertions.assertEquals(IsNaN.NAN, condition.getPropValue());
     }
 
@@ -56,7 +56,7 @@ public class IsNaNTest extends TestBase {
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
     }
 
@@ -116,7 +116,7 @@ public class IsNaNTest extends TestBase {
 
         // Test methods inherited from Is
         Assertions.assertEquals("value", condition.getPropName());
-        Assertions.assertEquals(Operator.IS, condition.getOperator());
+        Assertions.assertEquals(Operator.IS, condition.operator());
         Assertions.assertNotNull(condition.getPropValue());
     }
 

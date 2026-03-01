@@ -40,7 +40,7 @@ public class On2025Test extends TestBase {
     public void testConstructor_SimpleEquality() {
         On on = new On("orders.customer_id", "customers.id");
         assertNotNull(on);
-        assertEquals(Operator.ON, on.getOperator());
+        assertEquals(Operator.ON, on.operator());
     }
 
     @Test
@@ -49,7 +49,7 @@ public class On2025Test extends TestBase {
         On on = new On(condition);
         assertNotNull(on);
         assertNotNull(on.getCondition());
-        assertEquals(Operator.ON, on.getOperator());
+        assertEquals(Operator.ON, on.operator());
     }
 
     @Test
@@ -59,7 +59,7 @@ public class On2025Test extends TestBase {
         joinMap.put("emp.location_id", "dept.location_id");
         On on = new On(joinMap);
         assertNotNull(on);
-        assertEquals(Operator.ON, on.getOperator());
+        assertEquals(Operator.ON, on.operator());
     }
 
     @Test
@@ -102,7 +102,7 @@ public class On2025Test extends TestBase {
         On original = new On("orders.customer_id", "customers.id");
         On copy = original.copy();
         assertNotSame(original, copy);
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -217,6 +217,6 @@ public class On2025Test extends TestBase {
         On on = new On("orders.customer_id", "customers.id");
         Not result = on.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 }

@@ -42,7 +42,7 @@ public class Clause2025Test extends TestBase {
         Condition condition = Filters.eq("test", "value");
         TestClause clause = new TestClause(Operator.WHERE, condition);
         assertNotNull(clause);
-        assertNotNull(clause.getOperator());
+        assertNotNull(clause.operator());
         assertNotNull(clause.getCondition());
     }
 
@@ -134,7 +134,7 @@ public class Clause2025Test extends TestBase {
 
         assertNotNull(copy);
         assertNotSame(original, copy);
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
         assertNotSame(original.getCondition(), copy.getCondition());
     }
 
@@ -214,7 +214,7 @@ public class Clause2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         TestClause clause = new TestClause(Operator.GROUP_BY, Filters.eq("test", "value"));
-        assertEquals(Operator.GROUP_BY, clause.getOperator());
+        assertEquals(Operator.GROUP_BY, clause.operator());
     }
 
     @Test

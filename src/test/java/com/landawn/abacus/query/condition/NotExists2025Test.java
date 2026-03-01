@@ -41,7 +41,7 @@ public class NotExists2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = users.id");
         NotExists condition = new NotExists(subQuery);
         assertNotNull(condition);
-        assertEquals(Operator.NOT_EXISTS, condition.getOperator());
+        assertEquals(Operator.NOT_EXISTS, condition.operator());
     }
 
     @Test
@@ -56,7 +56,7 @@ public class NotExists2025Test extends TestBase {
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM products");
         NotExists condition = new NotExists(subQuery);
-        assertEquals(Operator.NOT_EXISTS, condition.getOperator());
+        assertEquals(Operator.NOT_EXISTS, condition.operator());
     }
 
     @Test
@@ -106,7 +106,7 @@ public class NotExists2025Test extends TestBase {
         NotExists copy = original.copy();
 
         assertNotSame(original, copy);
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
         assertNotSame(original.getCondition(), copy.getCondition());
     }
 
@@ -212,7 +212,7 @@ public class NotExists2025Test extends TestBase {
         NotExists condition = new NotExists(subQuery);
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

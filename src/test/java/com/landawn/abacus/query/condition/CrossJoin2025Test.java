@@ -40,7 +40,7 @@ public class CrossJoin2025Test extends TestBase {
     public void testConstructor_Simple() {
         CrossJoin join = new CrossJoin("colors");
         assertNotNull(join);
-        assertEquals(Operator.CROSS_JOIN, join.getOperator());
+        assertEquals(Operator.CROSS_JOIN, join.operator());
     }
 
     @Test
@@ -48,7 +48,7 @@ public class CrossJoin2025Test extends TestBase {
         CrossJoin join = new CrossJoin("products", new Equal("available", true));
         assertNotNull(join);
         assertNotNull(join.getCondition());
-        assertEquals(Operator.CROSS_JOIN, join.getOperator());
+        assertEquals(Operator.CROSS_JOIN, join.operator());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class CrossJoin2025Test extends TestBase {
         CrossJoin join = new CrossJoin(entities, new Equal("active", true));
         assertNotNull(join);
         assertEquals(3, (int) join.getJoinEntities().size());
-        assertEquals(Operator.CROSS_JOIN, join.getOperator());
+        assertEquals(Operator.CROSS_JOIN, join.operator());
     }
 
     @Test
@@ -186,14 +186,14 @@ public class CrossJoin2025Test extends TestBase {
         CrossJoin join = new CrossJoin("colors");
         Not result = join.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test
     public void testCartesianProduct() {
         CrossJoin join = new CrossJoin("colors");
         assertNotNull(join);
-        assertEquals(Operator.CROSS_JOIN, join.getOperator());
+        assertEquals(Operator.CROSS_JOIN, join.operator());
         assertNull(join.getCondition());
     }
 

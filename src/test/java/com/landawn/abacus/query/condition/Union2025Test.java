@@ -40,7 +40,7 @@ public class Union2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Union union = new Union(subQuery);
         assertNotNull(union);
-        assertEquals(Operator.UNION, union.getOperator());
+        assertEquals(Operator.UNION, union.operator());
     }
 
     @Test
@@ -124,7 +124,7 @@ public class Union2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM orders");
         Union union = new Union(subQuery);
         assertNotNull(union);
-        assertEquals(Operator.UNION, union.getOperator());
+        assertEquals(Operator.UNION, union.operator());
     }
 
     @Test
@@ -174,7 +174,7 @@ public class Union2025Test extends TestBase {
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Union union = new Union(subQuery);
-        assertEquals(Operator.UNION, union.getOperator());
+        assertEquals(Operator.UNION, union.operator());
     }
 
     @Test

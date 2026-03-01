@@ -25,7 +25,7 @@ public class NotInTest extends TestBase {
         Assertions.assertNotNull(notIn);
         Assertions.assertEquals("status", notIn.getPropName());
         Assertions.assertEquals(values, notIn.getValues());
-        Assertions.assertEquals(Operator.NOT_IN, notIn.getOperator());
+        Assertions.assertEquals(Operator.NOT_IN, notIn.operator());
     }
 
     @Test
@@ -103,7 +103,7 @@ public class NotInTest extends TestBase {
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertNotSame(original.getValues(), copy.getValues());
         Assertions.assertEquals(original.getValues(), copy.getValues());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
     }
 
     @Test

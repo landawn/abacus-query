@@ -17,7 +17,7 @@ public class LessThanTest extends TestBase {
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("age", condition.getPropName());
-        Assertions.assertEquals(Operator.LESS_THAN, condition.getOperator());
+        Assertions.assertEquals(Operator.LESS_THAN, condition.operator());
         Assertions.assertEquals(18, (Integer) (Integer) condition.getPropValue());
     }
 
@@ -76,7 +76,7 @@ public class LessThanTest extends TestBase {
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
     }
 

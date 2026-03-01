@@ -40,7 +40,7 @@ public class InnerJoin2025Test extends TestBase {
     public void testConstructor_Simple() {
         InnerJoin join = new InnerJoin("orders");
         assertNotNull(join);
-        assertEquals(Operator.INNER_JOIN, join.getOperator());
+        assertEquals(Operator.INNER_JOIN, join.operator());
     }
 
     @Test
@@ -48,7 +48,7 @@ public class InnerJoin2025Test extends TestBase {
         InnerJoin join = new InnerJoin("orders o", new Equal("customers.id", "o.customer_id"));
         assertNotNull(join);
         assertNotNull(join.getCondition());
-        assertEquals(Operator.INNER_JOIN, join.getOperator());
+        assertEquals(Operator.INNER_JOIN, join.operator());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class InnerJoin2025Test extends TestBase {
         InnerJoin join = new InnerJoin(entities, new Equal("o.customer_id", "c.id"));
         assertNotNull(join);
         assertEquals(2, (int) join.getJoinEntities().size());
-        assertEquals(Operator.INNER_JOIN, join.getOperator());
+        assertEquals(Operator.INNER_JOIN, join.operator());
     }
 
     @Test
@@ -186,7 +186,7 @@ public class InnerJoin2025Test extends TestBase {
         InnerJoin join = new InnerJoin("orders");
         Not result = join.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

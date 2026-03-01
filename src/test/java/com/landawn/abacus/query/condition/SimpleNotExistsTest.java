@@ -31,7 +31,7 @@ public class SimpleNotExistsTest extends TestBase {
         NotExists notExists = new NotExists(simpleSubQuery);
 
         assertNotNull(notExists);
-        assertEquals(Operator.NOT_EXISTS, notExists.getOperator());
+        assertEquals(Operator.NOT_EXISTS, notExists.operator());
     }
 
     @Test
@@ -41,7 +41,7 @@ public class SimpleNotExistsTest extends TestBase {
 
     @Test
     void testGetOperator() {
-        assertEquals(Operator.NOT_EXISTS, notExistsCondition.getOperator());
+        assertEquals(Operator.NOT_EXISTS, notExistsCondition.operator());
     }
 
     @Test
@@ -72,15 +72,15 @@ public class SimpleNotExistsTest extends TestBase {
 
         Condition and = notExistsCondition.and(other);
         assertNotNull(and);
-        assertEquals(Operator.AND, and.getOperator());
+        assertEquals(Operator.AND, and.operator());
 
         Condition or = notExistsCondition.or(other);
         assertNotNull(or);
-        assertEquals(Operator.OR, or.getOperator());
+        assertEquals(Operator.OR, or.operator());
 
         Condition not = notExistsCondition.not();
         assertNotNull(not);
-        assertEquals(Operator.NOT, not.getOperator());
+        assertEquals(Operator.NOT, not.operator());
     }
 
     @Test
@@ -88,7 +88,7 @@ public class SimpleNotExistsTest extends TestBase {
         NotExists copy = notExistsCondition.copy();
 
         assertNotNull(copy);
-        assertEquals(notExistsCondition.getOperator(), copy.getOperator());
+        assertEquals(notExistsCondition.operator(), copy.operator());
         assertEquals(notExistsCondition.getCondition().toString(), copy.getCondition().toString());
     }
 }

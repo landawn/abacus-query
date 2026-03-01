@@ -40,7 +40,7 @@ public class UnionAll2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         UnionAll unionAll = new UnionAll(subQuery);
         assertNotNull(unionAll);
-        assertEquals(Operator.UNION_ALL, unionAll.getOperator());
+        assertEquals(Operator.UNION_ALL, unionAll.operator());
     }
 
     @Test
@@ -132,14 +132,14 @@ public class UnionAll2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_transactions");
         UnionAll unionAll = new UnionAll(subQuery);
         assertNotNull(unionAll);
-        assertEquals(Operator.UNION_ALL, unionAll.getOperator());
+        assertEquals(Operator.UNION_ALL, unionAll.operator());
     }
 
     @Test
     public void testPerformance() {
         SubQuery subQuery = Filters.subQuery("SELECT id, name, 'active' as status FROM active_users");
         UnionAll unionAll = new UnionAll(subQuery);
-        assertEquals(Operator.UNION_ALL, unionAll.getOperator());
+        assertEquals(Operator.UNION_ALL, unionAll.operator());
     }
 
     @Test
@@ -178,7 +178,7 @@ public class UnionAll2025Test extends TestBase {
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         UnionAll unionAll = new UnionAll(subQuery);
-        assertEquals(Operator.UNION_ALL, unionAll.getOperator());
+        assertEquals(Operator.UNION_ALL, unionAll.operator());
     }
 
     @Test

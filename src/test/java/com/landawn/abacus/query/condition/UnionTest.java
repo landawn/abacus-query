@@ -16,7 +16,7 @@ public class UnionTest extends TestBase {
         Union union = Filters.union(subQuery);
 
         Assertions.assertNotNull(union);
-        Assertions.assertEquals(Operator.UNION, union.getOperator());
+        Assertions.assertEquals(Operator.UNION, union.operator());
         Assertions.assertEquals(subQuery, union.getCondition());
     }
 
@@ -33,7 +33,7 @@ public class UnionTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         Union union = Filters.union(subQuery);
 
-        Assertions.assertEquals(Operator.UNION, union.getOperator());
+        Assertions.assertEquals(Operator.UNION, union.operator());
     }
 
     @Test
@@ -74,7 +74,7 @@ public class UnionTest extends TestBase {
         Union copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }

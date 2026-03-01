@@ -18,7 +18,7 @@ public class NotEqualTest extends TestBase {
         Assertions.assertNotNull(notEqual);
         Assertions.assertEquals("status", notEqual.getPropName());
         Assertions.assertEquals("deleted", notEqual.getPropValue());
-        Assertions.assertEquals(Operator.NOT_EQUAL, notEqual.getOperator());
+        Assertions.assertEquals(Operator.NOT_EQUAL, notEqual.operator());
     }
 
     @Test
@@ -99,7 +99,7 @@ public class NotEqualTest extends TestBase {
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
     }
 
     @Test

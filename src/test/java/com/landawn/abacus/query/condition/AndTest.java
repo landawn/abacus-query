@@ -23,7 +23,7 @@ public class AndTest extends TestBase {
         And and = Filters.and(eq1, gt);
 
         Assertions.assertNotNull(and);
-        Assertions.assertEquals(Operator.AND, and.getOperator());
+        Assertions.assertEquals(Operator.AND, and.operator());
         Assertions.assertEquals(2, and.getConditions().size());
         Assertions.assertTrue(and.getConditions().contains(eq1));
         Assertions.assertTrue(and.getConditions().contains(gt));
@@ -159,7 +159,7 @@ public class AndTest extends TestBase {
         Or or = and.or(Filters.eq("priority", "high"));
 
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(Operator.OR, or.getOperator());
+        Assertions.assertEquals(Operator.OR, or.operator());
         Assertions.assertEquals(2, or.getConditions().size());
     }
 
@@ -170,7 +170,7 @@ public class AndTest extends TestBase {
         Not not = and.not();
 
         Assertions.assertNotNull(not);
-        Assertions.assertEquals(Operator.NOT, not.getOperator());
+        Assertions.assertEquals(Operator.NOT, not.operator());
         Assertions.assertEquals(and, not.getCondition());
     }
 

@@ -38,7 +38,7 @@ public class AbstractConditionTest extends TestBase {
 
         @Override
         public String toString(NamingPolicy namingPolicy) {
-            return getOperator().toString() + " " + value;
+            return operator().toString() + " " + value;
         }
 
         @Override
@@ -62,14 +62,14 @@ public class AbstractConditionTest extends TestBase {
         TestCondition condition = new TestCondition(Operator.EQUAL, "test");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals(Operator.EQUAL, condition.getOperator());
+        Assertions.assertEquals(Operator.EQUAL, condition.operator());
         Assertions.assertEquals("test", condition.value);
     }
 
     @Test
     public void testGetOperator() {
         TestCondition condition = new TestCondition(Operator.NOT_EQUAL, "value");
-        Assertions.assertEquals(Operator.NOT_EQUAL, condition.getOperator());
+        Assertions.assertEquals(Operator.NOT_EQUAL, condition.operator());
     }
 
     @Test
@@ -80,7 +80,7 @@ public class AbstractConditionTest extends TestBase {
         And and = cond1.and(cond2);
 
         Assertions.assertNotNull(and);
-        Assertions.assertEquals(Operator.AND, and.getOperator());
+        Assertions.assertEquals(Operator.AND, and.operator());
         Assertions.assertEquals(2, and.getConditions().size());
         Assertions.assertTrue(and.getConditions().contains(cond1));
         Assertions.assertTrue(and.getConditions().contains(cond2));
@@ -94,7 +94,7 @@ public class AbstractConditionTest extends TestBase {
         Or or = cond1.or(cond2);
 
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(Operator.OR, or.getOperator());
+        Assertions.assertEquals(Operator.OR, or.operator());
         Assertions.assertEquals(2, or.getConditions().size());
         Assertions.assertTrue(or.getConditions().contains(cond1));
         Assertions.assertTrue(or.getConditions().contains(cond2));
@@ -107,7 +107,7 @@ public class AbstractConditionTest extends TestBase {
         Not not = condition.not();
 
         Assertions.assertNotNull(not);
-        Assertions.assertEquals(Operator.NOT, not.getOperator());
+        Assertions.assertEquals(Operator.NOT, not.operator());
         Assertions.assertEquals(condition, not.getCondition());
     }
 
@@ -118,7 +118,7 @@ public class AbstractConditionTest extends TestBase {
         TestCondition copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         // Note: The value field is not copied by the base class copy method
     }
 
@@ -254,7 +254,7 @@ public class AbstractConditionTest extends TestBase {
 
         // The base implementation uses clone()
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -276,6 +276,6 @@ public class AbstractConditionTest extends TestBase {
             }
         };
 
-        Assertions.assertNull(condition.getOperator());
+        Assertions.assertNull(condition.operator());
     }
 }

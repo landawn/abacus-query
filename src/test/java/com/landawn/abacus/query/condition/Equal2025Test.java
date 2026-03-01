@@ -41,7 +41,7 @@ public class Equal2025Test extends TestBase {
         Equal condition = new Equal("age", 25);
         assertEquals("age", condition.getPropName());
         assertEquals(25, (int) condition.getPropValue());
-        assertEquals(Operator.EQUAL, condition.getOperator());
+        assertEquals(Operator.EQUAL, condition.operator());
     }
 
     @Test
@@ -83,7 +83,7 @@ public class Equal2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         Equal condition = new Equal("field", "value");
-        assertEquals(Operator.EQUAL, condition.getOperator());
+        assertEquals(Operator.EQUAL, condition.operator());
     }
 
     @Test
@@ -117,7 +117,7 @@ public class Equal2025Test extends TestBase {
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
         assertEquals((Object) original.getPropValue(), (Object) copy.getPropValue());
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -210,7 +210,7 @@ public class Equal2025Test extends TestBase {
         Equal condition = new Equal("field", "value");
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

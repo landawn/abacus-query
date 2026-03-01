@@ -18,7 +18,7 @@ public class LessThanOrEqualTest extends TestBase {
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("age", condition.getPropName());
-        Assertions.assertEquals(Operator.LESS_THAN_OR_EQUAL, condition.getOperator());
+        Assertions.assertEquals(Operator.LESS_THAN_OR_EQUAL, condition.operator());
         Assertions.assertEquals(18, (Integer) (Integer) condition.getPropValue());
     }
 
@@ -87,7 +87,7 @@ public class LessThanOrEqualTest extends TestBase {
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
     }
 
@@ -169,7 +169,7 @@ public class LessThanOrEqualTest extends TestBase {
 
         Assertions.assertEquals("salary", upperBound.getPropName());
         Assertions.assertEquals(100000, (Integer) upperBound.getPropValue());
-        Assertions.assertEquals(Operator.LESS_THAN_OR_EQUAL, upperBound.getOperator());
+        Assertions.assertEquals(Operator.LESS_THAN_OR_EQUAL, upperBound.operator());
 
         String result = upperBound.toString();
         Assertions.assertTrue(result.contains("salary <= 100000"));

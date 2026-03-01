@@ -41,14 +41,14 @@ public class Using2025Test extends TestBase {
     public void testConstructor_SingleColumn() {
         Using using = new Using("department_id");
         assertNotNull(using);
-        assertEquals(Operator.USING, using.getOperator());
+        assertEquals(Operator.USING, using.operator());
     }
 
     @Test
     public void testConstructor_MultipleColumns() {
         Using using = new Using("company_id", "branch_id");
         assertNotNull(using);
-        assertEquals(Operator.USING, using.getOperator());
+        assertEquals(Operator.USING, using.operator());
     }
 
     @Test
@@ -56,7 +56,7 @@ public class Using2025Test extends TestBase {
         Set<String> columns = new HashSet<>(Arrays.asList("tenant_id", "workspace_id"));
         Using using = new Using(columns);
         assertNotNull(using);
-        assertEquals(Operator.USING, using.getOperator());
+        assertEquals(Operator.USING, using.operator());
     }
 
     @Test
@@ -113,7 +113,7 @@ public class Using2025Test extends TestBase {
         Using original = new Using("department_id");
         Using copy = original.copy();
         assertNotSame(original, copy);
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -194,7 +194,7 @@ public class Using2025Test extends TestBase {
     public void testCompositeKeyJoin() {
         Using using = new Using("company_id", "department_id", "team_id");
         assertNotNull(using);
-        assertEquals(Operator.USING, using.getOperator());
+        assertEquals(Operator.USING, using.operator());
     }
 
     @Test
@@ -227,6 +227,6 @@ public class Using2025Test extends TestBase {
         Using using = new Using("department_id");
         Not result = using.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 }

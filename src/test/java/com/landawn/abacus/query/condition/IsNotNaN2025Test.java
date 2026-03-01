@@ -38,7 +38,7 @@ public class IsNotNaN2025Test extends TestBase {
     public void testConstructor() {
         IsNotNaN condition = new IsNotNaN("temperature");
         assertEquals("temperature", condition.getPropName());
-        assertEquals(Operator.IS_NOT, condition.getOperator());
+        assertEquals(Operator.IS_NOT, condition.operator());
     }
 
     @Test
@@ -74,7 +74,7 @@ public class IsNotNaN2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         IsNotNaN condition = new IsNotNaN("field");
-        assertEquals(Operator.IS_NOT, condition.getOperator());
+        assertEquals(Operator.IS_NOT, condition.operator());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class IsNotNaN2025Test extends TestBase {
 
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -193,7 +193,7 @@ public class IsNotNaN2025Test extends TestBase {
         IsNotNaN condition = new IsNotNaN("field");
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

@@ -82,18 +82,18 @@ public interface Condition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition eq = Filters.equal("status", "active");
-     * Operator op = eq.getOperator();   // Operator.EQUAL
+     * Operator op = eq.operator();   // Operator.EQUAL
      *
      * Condition between = Filters.between("age", 18, 65);
-     * Operator betweenOp = between.getOperator();   // Operator.BETWEEN
+     * Operator betweenOp = between.operator();   // Operator.BETWEEN
      *
      * Condition combined = eq.and(between);
-     * Operator andOp = combined.getOperator();   // Operator.AND
+     * Operator andOp = combined.operator();   // Operator.AND
      * }</pre>
      *
      * @return the operator for this condition
      */
-    Operator getOperator();
+    Operator operator();
 
     /**
      * Creates a new AND condition combining this condition with another.

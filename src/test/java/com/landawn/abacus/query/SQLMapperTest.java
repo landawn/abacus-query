@@ -31,7 +31,7 @@ public class SQLMapperTest extends TestBase {
         SQLMapper mapper = new SQLMapper();
         assertNotNull(mapper);
         assertTrue(mapper.isEmpty());
-        assertTrue(mapper.keySet().isEmpty());
+        assertTrue(mapper.sqlIds().isEmpty());
     }
 
     @Test
@@ -53,10 +53,10 @@ public class SQLMapperTest extends TestBase {
         assertFalse(mapper.isEmpty());
 
         // Verify loaded SQLs
-        assertEquals(3, mapper.keySet().size());
-        assertTrue(mapper.keySet().contains("findById"));
-        assertTrue(mapper.keySet().contains("updateName"));
-        assertTrue(mapper.keySet().contains("deleteById"));
+        assertEquals(3, mapper.sqlIds().size());
+        assertTrue(mapper.sqlIds().contains("findById"));
+        assertTrue(mapper.sqlIds().contains("updateName"));
+        assertTrue(mapper.sqlIds().contains("deleteById"));
 
         // Check SQL content
         ParsedSql findById = mapper.get("findById");
@@ -95,7 +95,7 @@ public class SQLMapperTest extends TestBase {
         String paths = xmlFile1.getAbsolutePath() + "," + xmlFile2.getAbsolutePath();
         SQLMapper mapper = SQLMapper.fromFile(paths);
 
-        assertEquals(2, mapper.keySet().size());
+        assertEquals(2, mapper.sqlIds().size());
         assertNotNull(mapper.get("findUser"));
         assertNotNull(mapper.get("findOrder"));
 
@@ -103,7 +103,7 @@ public class SQLMapperTest extends TestBase {
         paths = xmlFile1.getAbsolutePath() + ";" + xmlFile2.getAbsolutePath();
         mapper = SQLMapper.fromFile(paths);
 
-        assertEquals(2, mapper.keySet().size());
+        assertEquals(2, mapper.sqlIds().size());
         assertNotNull(mapper.get("findUser"));
         assertNotNull(mapper.get("findOrder"));
     }
@@ -125,7 +125,7 @@ public class SQLMapperTest extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM table1"));
         mapper.add("query2", ParsedSql.parse("SELECT * FROM table2"));
 
-        Set<String> keys = mapper.keySet();
+        Set<String> keys = mapper.sqlIds();
         assertEquals(2, keys.size());
         assertTrue(keys.contains("query1"));
         assertTrue(keys.contains("query2"));
@@ -234,9 +234,9 @@ public class SQLMapperTest extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
         // Test valid remove
-        assertTrue(mapper.keySet().contains("query1"));
+        assertTrue(mapper.sqlIds().contains("query1"));
         mapper.remove("query1");
-        assertFalse(mapper.keySet().contains("query1"));
+        assertFalse(mapper.sqlIds().contains("query1"));
 
         // Test remove non-existent (should not throw)
         mapper.remove("nonExistent");
@@ -262,15 +262,15 @@ public class SQLMapperTest extends TestBase {
         SQLMapper copy = mapper.copy();
 
         // Verify copy has same content
-        assertEquals(mapper.keySet(), copy.keySet());
+        assertEquals(mapper.sqlIds(), copy.sqlIds());
         assertEquals(mapper.get("query1"), copy.get("query1"));
         assertEquals(mapper.get("query2"), copy.get("query2"));
         assertEquals(mapper.getAttributes("query1"), copy.getAttributes("query1"));
 
         // Verify copy is independent
         copy.add("query3", ParsedSql.parse("SELECT * FROM products"));
-        assertFalse(mapper.keySet().contains("query3"));
-        assertTrue(copy.keySet().contains("query3"));
+        assertFalse(mapper.sqlIds().contains("query3"));
+        assertTrue(copy.sqlIds().contains("query3"));
     }
 
     @Test
@@ -290,7 +290,7 @@ public class SQLMapperTest extends TestBase {
 
         // Load saved file and verify
         SQLMapper loaded = SQLMapper.fromFile(outputFile.getAbsolutePath());
-        assertEquals(mapper.keySet(), loaded.keySet());
+        assertEquals(mapper.sqlIds(), loaded.sqlIds());
         assertEquals(mapper.get("findUser").sql(), loaded.get("findUser").sql());
         assertEquals(mapper.get("updateUser").sql(), loaded.get("updateUser").sql());
 

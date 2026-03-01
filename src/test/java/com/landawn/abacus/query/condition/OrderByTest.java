@@ -22,7 +22,7 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy = Filters.orderBy(expr);
 
         Assertions.assertNotNull(orderBy);
-        Assertions.assertEquals(Operator.ORDER_BY, orderBy.getOperator());
+        Assertions.assertEquals(Operator.ORDER_BY, orderBy.operator());
         Assertions.assertEquals(expr, orderBy.getCondition());
     }
 
@@ -30,7 +30,7 @@ public class OrderByTest extends TestBase {
     public void testConstructorWithVarArgs() {
         OrderBy orderBy = Filters.orderBy("country", "state", "city");
 
-        Assertions.assertEquals(Operator.ORDER_BY, orderBy.getOperator());
+        Assertions.assertEquals(Operator.ORDER_BY, orderBy.operator());
         String result = orderBy.toString();
         Assertions.assertTrue(result.contains("country, state, city"));
     }
@@ -145,7 +145,7 @@ public class OrderByTest extends TestBase {
         OrderBy copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }

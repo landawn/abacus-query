@@ -17,7 +17,7 @@ public class LeftJoinTest extends TestBase {
         LeftJoin join = new LeftJoin("orders");
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.LEFT_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.LEFT_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertEquals("orders", join.getJoinEntities().get(0));
         Assertions.assertNull(join.getCondition());
@@ -37,7 +37,7 @@ public class LeftJoinTest extends TestBase {
         LeftJoin join = new LeftJoin("orders", condition);
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.LEFT_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.LEFT_JOIN, join.operator());
         Assertions.assertEquals("orders", join.getJoinEntities().get(0));
         Assertions.assertEquals(condition, join.getCondition());
     }
@@ -122,7 +122,7 @@ public class LeftJoinTest extends TestBase {
         LeftJoin copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());

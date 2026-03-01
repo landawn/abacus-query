@@ -44,7 +44,7 @@ public class Or2025Test extends TestBase {
         Or junction = new Or(cond1, cond2);
 
         assertEquals(2, (int) junction.getConditions().size());
-        assertEquals(Operator.OR, junction.getOperator());
+        assertEquals(Operator.OR, junction.operator());
     }
 
     @Test
@@ -285,7 +285,7 @@ public class Or2025Test extends TestBase {
 
         assertNotNull(result);
         assertEquals(Integer.valueOf(2), result.getConditions().size());
-        assertEquals(Operator.AND, result.getOperator());
+        assertEquals(Operator.AND, result.operator());
     }
 
     @Test
@@ -294,7 +294,7 @@ public class Or2025Test extends TestBase {
         Not result = or.not();
 
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
         Or innerCondition = result.getCondition();
         assertEquals(2, (int) innerCondition.getConditions().size());
     }
@@ -334,14 +334,14 @@ public class Or2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         Or or = new Or(new Equal("a", 1));
-        assertEquals(Operator.OR, or.getOperator());
+        assertEquals(Operator.OR, or.operator());
     }
 
     @Test
     public void testGetOperator_EmptyConstructor() {
         // Empty constructor doesn't set operator (for Kryo serialization)
         Or or = new Or();
-        assertNull(or.getOperator());
+        assertNull(or.operator());
     }
 
     @Test

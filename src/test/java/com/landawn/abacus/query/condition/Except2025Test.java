@@ -41,7 +41,7 @@ public class Except2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Except except = new Except(subQuery);
         assertNotNull(except);
-        assertEquals(Operator.EXCEPT, except.getOperator());
+        assertEquals(Operator.EXCEPT, except.operator());
     }
 
     @Test
@@ -135,7 +135,7 @@ public class Except2025Test extends TestBase {
         SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Except except = new Except(customersWithOrders);
         assertNotNull(except);
-        assertEquals(Operator.EXCEPT, except.getOperator());
+        assertEquals(Operator.EXCEPT, except.operator());
     }
 
     @Test
@@ -181,7 +181,7 @@ public class Except2025Test extends TestBase {
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Except except = new Except(subQuery);
-        assertEquals(Operator.EXCEPT, except.getOperator());
+        assertEquals(Operator.EXCEPT, except.operator());
     }
 
     @Test

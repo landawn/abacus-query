@@ -32,7 +32,7 @@ public class Cell2025Test extends TestBase {
         Cell cell = new Cell(Operator.NOT, condition);
 
         assertNotNull(cell);
-        assertEquals(Operator.NOT, cell.getOperator());
+        assertEquals(Operator.NOT, cell.operator());
         assertEquals(condition, cell.getCondition());
     }
 
@@ -151,7 +151,7 @@ public class Cell2025Test extends TestBase {
 
         assertNotNull(copy);
         assertNotSame(original, copy);
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
         assertNotSame(original.getCondition(), copy.getCondition());
     }
 
@@ -338,7 +338,7 @@ public class Cell2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         Cell cell = new Cell(Operator.EXISTS, Filters.isNull("test"));
-        assertEquals(Operator.EXISTS, cell.getOperator());
+        assertEquals(Operator.EXISTS, cell.operator());
     }
 
     @Test
@@ -370,6 +370,6 @@ public class Cell2025Test extends TestBase {
         Not result = cell.not();
 
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 }

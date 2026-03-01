@@ -17,7 +17,7 @@ public class FullJoinTest extends TestBase {
         FullJoin join = Filters.fullJoin("departments");
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.FULL_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.FULL_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().contains("departments"));
         Assertions.assertNull(join.getCondition());
@@ -29,7 +29,7 @@ public class FullJoinTest extends TestBase {
         FullJoin join = Filters.fullJoin("employees", eq);
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.FULL_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.FULL_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().contains("employees"));
         Assertions.assertEquals(eq, join.getCondition());
@@ -42,7 +42,7 @@ public class FullJoinTest extends TestBase {
         FullJoin join = Filters.fullJoin(entities, eq);
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.FULL_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.FULL_JOIN, join.operator());
         Assertions.assertEquals(2, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().containsAll(entities));
         Assertions.assertEquals(eq, join.getCondition());
@@ -125,7 +125,7 @@ public class FullJoinTest extends TestBase {
         FullJoin copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());

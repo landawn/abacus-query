@@ -40,7 +40,7 @@ public class Xor2025Test extends TestBase {
         Xor condition = new Xor("field", true);
         assertEquals("field", condition.getPropName());
         assertEquals(true, condition.getPropValue());
-        assertEquals(Operator.XOR, condition.getOperator());
+        assertEquals(Operator.XOR, condition.operator());
     }
 
     @Test
@@ -69,7 +69,7 @@ public class Xor2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         Xor condition = new Xor("field", "value");
-        assertEquals(Operator.XOR, condition.getOperator());
+        assertEquals(Operator.XOR, condition.operator());
     }
 
     @Test

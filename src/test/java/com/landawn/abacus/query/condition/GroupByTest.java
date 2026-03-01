@@ -23,7 +23,7 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy(condition);
 
         Assertions.assertNotNull(groupBy);
-        Assertions.assertEquals(Operator.GROUP_BY, groupBy.getOperator());
+        Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
         Assertions.assertEquals(condition, groupBy.getCondition());
     }
 
@@ -32,7 +32,7 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy("department", "location");
 
         Assertions.assertNotNull(groupBy);
-        Assertions.assertEquals(Operator.GROUP_BY, groupBy.getOperator());
+        Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
         String result = groupBy.toString();
         Assertions.assertTrue(result.contains("department"));
         Assertions.assertTrue(result.contains("location"));
@@ -111,7 +111,7 @@ public class GroupByTest extends TestBase {
         GroupBy copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals(original.toString(), copy.toString());
     }
 

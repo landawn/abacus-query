@@ -40,7 +40,7 @@ public class Any2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
         Any condition = new Any(subQuery);
         assertNotNull(condition);
-        assertEquals(Operator.ANY, condition.getOperator());
+        assertEquals(Operator.ANY, condition.operator());
     }
 
     @Test
@@ -55,7 +55,7 @@ public class Any2025Test extends TestBase {
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT score FROM exams");
         Any condition = new Any(subQuery);
-        assertEquals(Operator.ANY, condition.getOperator());
+        assertEquals(Operator.ANY, condition.operator());
     }
 
     @Test
@@ -105,7 +105,7 @@ public class Any2025Test extends TestBase {
         Any copy = original.copy();
 
         assertNotSame(original, copy);
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
         assertNotSame(original.getCondition(), copy.getCondition());
     }
 
@@ -212,7 +212,7 @@ public class Any2025Test extends TestBase {
         Any condition = new Any(subQuery);
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

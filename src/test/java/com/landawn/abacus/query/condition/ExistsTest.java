@@ -17,7 +17,7 @@ public class ExistsTest extends TestBase {
         Exists exists = Filters.exists(subQuery);
 
         Assertions.assertNotNull(exists);
-        Assertions.assertEquals(Operator.EXISTS, exists.getOperator());
+        Assertions.assertEquals(Operator.EXISTS, exists.operator());
         Assertions.assertEquals(subQuery, exists.getCondition());
     }
 
@@ -79,7 +79,7 @@ public class ExistsTest extends TestBase {
         Exists copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }
@@ -155,7 +155,7 @@ public class ExistsTest extends TestBase {
         NotExists notExists = Filters.notExists(subQuery);
 
         Assertions.assertNotNull(notExists);
-        Assertions.assertEquals(Operator.NOT_EXISTS, notExists.getOperator());
+        Assertions.assertEquals(Operator.NOT_EXISTS, notExists.operator());
     }
 
     @Test

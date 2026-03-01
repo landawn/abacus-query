@@ -44,7 +44,7 @@ public class NotIn2025Test extends TestBase {
 
         assertEquals("status", condition.getPropName());
         assertEquals(3, condition.getValues().size());
-        assertEquals(Operator.NOT_IN, condition.getOperator());
+        assertEquals(Operator.NOT_IN, condition.operator());
     }
 
     @Test
@@ -307,6 +307,6 @@ public class NotIn2025Test extends TestBase {
         NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 }

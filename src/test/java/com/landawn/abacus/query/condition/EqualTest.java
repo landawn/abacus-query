@@ -18,7 +18,7 @@ public class EqualTest extends TestBase {
         Assertions.assertNotNull(eq);
         Assertions.assertEquals("status", eq.getPropName());
         Assertions.assertEquals("active", eq.getPropValue());
-        Assertions.assertEquals(Operator.EQUAL, eq.getOperator());
+        Assertions.assertEquals(Operator.EQUAL, eq.operator());
     }
 
     @Test
@@ -120,7 +120,7 @@ public class EqualTest extends TestBase {
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -154,7 +154,7 @@ public class EqualTest extends TestBase {
         And and = eq1.and(eq2);
 
         Assertions.assertNotNull(and);
-        Assertions.assertEquals(Operator.AND, and.getOperator());
+        Assertions.assertEquals(Operator.AND, and.operator());
         Assertions.assertEquals(2, and.getConditions().size());
         Assertions.assertTrue(and.getConditions().contains(eq1));
         Assertions.assertTrue(and.getConditions().contains(eq2));
@@ -168,7 +168,7 @@ public class EqualTest extends TestBase {
         Or or = eq1.or(eq2);
 
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(Operator.OR, or.getOperator());
+        Assertions.assertEquals(Operator.OR, or.operator());
         Assertions.assertEquals(2, or.getConditions().size());
     }
 
@@ -179,7 +179,7 @@ public class EqualTest extends TestBase {
         Not not = eq.not();
 
         Assertions.assertNotNull(not);
-        Assertions.assertEquals(Operator.NOT, not.getOperator());
+        Assertions.assertEquals(Operator.NOT, not.operator());
         Assertions.assertEquals(eq, not.getCondition());
     }
 

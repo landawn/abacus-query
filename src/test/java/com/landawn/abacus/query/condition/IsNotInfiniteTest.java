@@ -16,7 +16,7 @@ public class IsNotInfiniteTest extends TestBase {
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("price_ratio", condition.getPropName());
-        Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
+        Assertions.assertEquals(Operator.IS_NOT, condition.operator());
         Assertions.assertEquals(IsInfinite.INFINITE, condition.getPropValue());
     }
 
@@ -28,7 +28,7 @@ public class IsNotInfiniteTest extends TestBase {
             IsNotInfinite condition = new IsNotInfinite(propName);
 
             Assertions.assertEquals(propName, condition.getPropName());
-            Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
+            Assertions.assertEquals(Operator.IS_NOT, condition.operator());
             Assertions.assertEquals(IsInfinite.INFINITE, condition.getPropValue());
         }
     }
@@ -59,7 +59,7 @@ public class IsNotInfiniteTest extends TestBase {
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
     }
 
@@ -112,7 +112,7 @@ public class IsNotInfiniteTest extends TestBase {
 
         // Test methods inherited from IsNot
         Assertions.assertEquals("value", condition.getPropName());
-        Assertions.assertEquals(Operator.IS_NOT, condition.getOperator());
+        Assertions.assertEquals(Operator.IS_NOT, condition.operator());
         Assertions.assertNotNull(condition.getPropValue());
     }
 

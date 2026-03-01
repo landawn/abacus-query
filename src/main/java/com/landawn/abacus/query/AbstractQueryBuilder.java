@@ -635,7 +635,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 val[3].removeAll(nonUpdatableNonWritablePropNames);
                 val[4].removeAll(nonUpdatablePropNames);
 
-                for (final String idPropName : QueryUtil.getIdFieldNames(entityClass)) {
+                for (final String idPropName : QueryUtil.getIdPropNames(entityClass)) {
                     val[3].remove(idPropName);
 
                     final java.lang.reflect.Method getter = Beans.getPropGetter(entityClass, idPropName);
@@ -1451,24 +1451,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds a JOIN clause with a table name and entity class.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*").from("users u").join("orders", Order.class).on("u.id = orders.user_id").query();
-     * // Output: SELECT * FROM users u JOIN orders ON u.id = orders.user_id
-     * }</pre>
-     *
-     * @param tableName the table name to join
-     * @param entityClass the entity class (currently unused but reserved for future use)
-     * @return this SQLBuilder instance for method chaining
-     */
-    @Beta
-    public This join(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
-        return join(tableName);
-    }
-
-    /**
      * Adds a JOIN clause using an entity class.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1543,24 +1525,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds an INNER JOIN clause with a table name and entity class.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*").from("users u").innerJoin("orders", Order.class).on("u.id = orders.user_id").query();
-     * // Output: SELECT * FROM users u INNER JOIN orders ON u.id = orders.user_id
-     * }</pre>
-     *
-     * @param tableName the table name to join
-     * @param entityClass the entity class (currently unused but reserved for future use)
-     * @return this SQLBuilder instance for method chaining
-     */
-    @Beta
-    public This innerJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
-        return innerJoin(tableName);
-    }
-
-    /**
      * Adds an INNER JOIN clause using an entity class.
      *
      * <p><b>Usage Examples:</b></p>
@@ -1626,24 +1590,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(expr);
 
         return (This) this;
-    }
-
-    /**
-     * Adds a LEFT JOIN clause with a table name and entity class.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*").from("users u").leftJoin("orders", Order.class).on("u.id = orders.user_id").query();
-     * // Output: SELECT * FROM users u LEFT JOIN orders ON u.id = orders.user_id
-     * }</pre>
-     *
-     * @param tableName the table name to join
-     * @param entityClass the entity class (currently unused but reserved for future use)
-     * @return this SQLBuilder instance for method chaining
-     */
-    @Beta
-    public This leftJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
-        return leftJoin(tableName);
     }
 
     /**
@@ -1715,24 +1661,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds a RIGHT JOIN clause with a table name and entity class.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*").from("users u").rightJoin("orders", Order.class).on("u.id = orders.user_id").query();
-     * // Output: SELECT * FROM users u RIGHT JOIN orders ON u.id = orders.user_id
-     * }</pre>
-     *
-     * @param tableName the table name to join
-     * @param entityClass the entity class (currently unused but reserved for future use)
-     * @return this SQLBuilder instance for method chaining
-     */
-    @Beta
-    public This rightJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
-        return rightJoin(tableName);
-    }
-
-    /**
      * Adds a RIGHT JOIN clause using an entity class.
      *
      * <p><b>Usage Examples:</b></p>
@@ -1798,24 +1726,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(expr);
 
         return (This) this;
-    }
-
-    /**
-     * Adds a FULL JOIN clause with a table name and entity class.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*").from("users u").fullJoin("orders", Order.class).on("u.id = orders.user_id").query();
-     * // Output: SELECT * FROM users u FULL JOIN orders ON u.id = orders.user_id
-     * }</pre>
-     *
-     * @param tableName the table name to join
-     * @param entityClass the entity class (currently unused but reserved for future use)
-     * @return this SQLBuilder instance for method chaining
-     */
-    @Beta
-    public This fullJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
-        return fullJoin(tableName);
     }
 
     /**
@@ -1887,24 +1797,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds a CROSS JOIN clause with a table name and entity class.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*").from("users").crossJoin("orders", Order.class).query();
-     * // Output: SELECT * FROM users CROSS JOIN orders
-     * }</pre>
-     *
-     * @param tableName the table name to join
-     * @param entityClass the entity class (currently unused but reserved for future use)
-     * @return this SQLBuilder instance for method chaining
-     */
-    @Beta
-    public This crossJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
-        return crossJoin(tableName);
-    }
-
-    /**
      * Adds a CROSS JOIN clause using an entity class.
      *
      * <p><b>Usage Examples:</b></p>
@@ -1970,24 +1862,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(expr);
 
         return (This) this;
-    }
-
-    /**
-     * Adds a NATURAL JOIN clause with a table name and entity class.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*").from("users").naturalJoin("orders", Order.class).query();
-     * // Output: SELECT * FROM users NATURAL JOIN orders
-     * }</pre>
-     *
-     * @param tableName the table name to join
-     * @param entityClass the entity class (currently unused but reserved for future use)
-     * @return this SQLBuilder instance for method chaining
-     */
-    @Beta
-    public This naturalJoin(final String tableName, @SuppressWarnings("unused") final Class<?> entityClass) {
-        return naturalJoin(tableName);
     }
 
     /**
@@ -2907,7 +2781,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (N.notEmpty(joins)) {
                 for (final Join join : joins) {
-                    _sb.append(_SPACE).append(join.getOperator()).append(_SPACE);
+                    _sb.append(_SPACE).append(join.operator()).append(_SPACE);
 
                     if (join.getJoinEntities().size() == 1) {
                         _sb.append(join.getJoinEntities().get(0));
@@ -2957,7 +2831,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (N.notEmpty(aggregations)) {
                 for (final Cell aggregation : aggregations) {
-                    _sb.append(_SPACE).append(aggregation.getOperator()).append(_SPACE);
+                    _sb.append(_SPACE).append(aggregation.operator()).append(_SPACE);
                     appendCondition(aggregation.getCondition());
                 }
             }
@@ -2981,7 +2855,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
             }
         } else if (cond instanceof Clause) {
-            _sb.append(_SPACE).append(cond.getOperator()).append(_SPACE);
+            _sb.append(_SPACE).append(cond.operator()).append(_SPACE);
             appendCondition(((Clause) cond).getCondition());
         } else {
             if (!_isForConditionOnly) {

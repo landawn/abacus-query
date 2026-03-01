@@ -23,7 +23,7 @@ public class ClauseTest extends TestBase {
         TestClause clause = new TestClause(Operator.WHERE, eq);
 
         Assertions.assertNotNull(clause);
-        Assertions.assertEquals(Operator.WHERE, clause.getOperator());
+        Assertions.assertEquals(Operator.WHERE, clause.operator());
         Assertions.assertEquals(eq, clause.getCondition());
     }
 
@@ -81,7 +81,7 @@ public class ClauseTest extends TestBase {
         TestClause copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }

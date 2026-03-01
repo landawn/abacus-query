@@ -17,7 +17,7 @@ public class OnTest extends TestBase {
         On on = Filters.on(joinCondition);
 
         Assertions.assertNotNull(on);
-        Assertions.assertEquals(Operator.ON, on.getOperator());
+        Assertions.assertEquals(Operator.ON, on.operator());
         Assertions.assertEquals(joinCondition, on.getCondition());
     }
 
@@ -33,7 +33,7 @@ public class OnTest extends TestBase {
     public void testConstructorWithTwoProperties() {
         On on = Filters.on("users.id", "posts.user_id");
 
-        Assertions.assertEquals(Operator.ON, on.getOperator());
+        Assertions.assertEquals(Operator.ON, on.operator());
         Assertions.assertNotNull(on.getCondition());
         Assertions.assertTrue(on.getCondition() instanceof Equal);
     }
@@ -56,7 +56,7 @@ public class OnTest extends TestBase {
 
         On on = Filters.on(joinConditions);
 
-        Assertions.assertEquals(Operator.ON, on.getOperator());
+        Assertions.assertEquals(Operator.ON, on.operator());
         Assertions.assertNotNull(on.getCondition());
     }
 
@@ -124,7 +124,7 @@ public class OnTest extends TestBase {
     public void testGetOperator() {
         On on = Filters.on("a.id", "b.a_id");
 
-        Assertions.assertEquals(Operator.ON, on.getOperator());
+        Assertions.assertEquals(Operator.ON, on.operator());
     }
 
     @Test
@@ -144,7 +144,7 @@ public class OnTest extends TestBase {
         On copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }

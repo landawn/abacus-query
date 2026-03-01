@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,10 +42,10 @@ public class InSubQuery2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
         InSubQuery condition = new InSubQuery("customer_id", subQuery);
 
-        assertEquals("customer_id", condition.getPropName());
-        assertNull(condition.getPropNames());
+        assertEquals("customer_id", condition.getPropNames().iterator().next());
+        assertEquals(1, condition.getPropNames().size());
         assertNotNull(condition.getSubQuery());
-        assertEquals(Operator.IN, condition.getOperator());
+        assertEquals(Operator.IN, condition.operator());
     }
 
     @Test
@@ -60,7 +59,6 @@ public class InSubQuery2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT dept_id, location_id FROM dept_locations WHERE active = 'Y'");
         InSubQuery condition = new InSubQuery(columns, subQuery);
 
-        assertNull(condition.getPropName());
         assertNotNull(condition.getPropNames());
         assertEquals(2, condition.getPropNames().size());
         assertNotNull(condition.getSubQuery());
@@ -86,28 +84,12 @@ public class InSubQuery2025Test extends TestBase {
     }
 
     @Test
-    public void testGetPropName_SingleProperty() {
+    public void testGetPropNames_SingleProperty() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
-        assertEquals("user_id", condition.getPropName());
-    }
-
-    @Test
-    public void testGetPropName_MultipleProperties() {
-        List<String> columns = Arrays.asList("dept_id", "loc_id");
-        SubQuery subQuery = Filters.subQuery("SELECT department_id, location_id FROM assignments");
-        InSubQuery condition = new InSubQuery(columns, subQuery);
-
-        assertNull(condition.getPropName());
-    }
-
-    @Test
-    public void testGetPropNames_SingleProperty() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        InSubQuery condition = new InSubQuery("user_id", subQuery);
-
-        assertNull(condition.getPropNames());
+        assertEquals(1, condition.getPropNames().size());
+        assertEquals("user_id", condition.getPropNames().iterator().next());
     }
 
     @Test
@@ -366,6 +348,6 @@ public class InSubQuery2025Test extends TestBase {
         InSubQuery condition = new InSubQuery("userId", subQuery);
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 }

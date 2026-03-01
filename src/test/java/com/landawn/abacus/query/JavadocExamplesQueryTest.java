@@ -107,14 +107,14 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testParsedSql_parameterizedSqlForJdbc() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :name");
-        String jdbcSql = parsed.parameterizedSql(false);
+        String jdbcSql = parsed.parameterizedSql();
         assertEquals("SELECT * FROM users WHERE id = ? AND name = ?", jdbcSql);
     }
 
     @Test
     public void testParsedSql_parameterizedSqlForCouchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :name");
-        String couchbaseSql = parsed.parameterizedSql(true);
+        String couchbaseSql = parsed.parameterizedSqlForCouchbase();
         assertEquals("SELECT * FROM users WHERE id = $1 AND name = $2", couchbaseSql);
     }
 
@@ -133,14 +133,14 @@ public class JavadocExamplesQueryTest {
     public void testParsedSql_namedParametersWithCouchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
 
-        ImmutableList<String> params = parsed.namedParameters(false);
+        ImmutableList<String> params = parsed.namedParameters();
         assertEquals(Arrays.asList("name", "minAge"), params);
 
-        ImmutableList<String> cbParams = parsed.namedParameters(true);
+        ImmutableList<String> cbParams = parsed.namedParametersForCouchbase();
         assertEquals(Arrays.asList("name", "minAge"), cbParams);
 
         ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-        ImmutableList<String> cbParams2 = parsed2.namedParameters(true);
+        ImmutableList<String> cbParams2 = parsed2.namedParametersForCouchbase();
         assertTrue(cbParams2.isEmpty());
     }
 
@@ -158,9 +158,9 @@ public class JavadocExamplesQueryTest {
     @Test
     public void testParsedSql_parameterCountWithCouchbase() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-        int count = parsed.parameterCount(false);
+        int count = parsed.parameterCount();
         assertEquals(2, count);
-        int cbCount = parsed.parameterCount(true);
+        int cbCount = parsed.parameterCountForCouchbase();
         assertEquals(2, cbCount);
     }
 
@@ -277,11 +277,11 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testSQLMapper_keySet() {
+    public void testSQLMapper_sqlIds() {
         SQLMapper mapper = new SQLMapper();
         mapper.add("findUser", "select * from users where id = ?", null);
         mapper.add("updateUser", "update users set name = ? where id = ?", null);
-        Set<String> sqlIds = mapper.keySet();
+        Set<String> sqlIds = mapper.sqlIds();
         assertTrue(sqlIds.contains("findUser"));
         assertTrue(sqlIds.contains("updateUser"));
         assertEquals(2, sqlIds.size());

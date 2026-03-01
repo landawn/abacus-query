@@ -19,7 +19,7 @@ public class NotBetweenTest extends TestBase {
         Assertions.assertEquals("age", notBetween.getPropName());
         Assertions.assertEquals(18, (Integer) notBetween.getMinValue());
         Assertions.assertEquals(65, (Integer) notBetween.getMaxValue());
-        Assertions.assertEquals(Operator.NOT_BETWEEN, notBetween.getOperator());
+        Assertions.assertEquals(Operator.NOT_BETWEEN, notBetween.operator());
     }
 
     @Test
@@ -114,7 +114,7 @@ public class NotBetweenTest extends TestBase {
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals((Integer) original.getMinValue(), copy.getMinValue());
         Assertions.assertEquals((Integer) original.getMaxValue(), copy.getMaxValue());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
     }
 
     @Test

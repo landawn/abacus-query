@@ -17,7 +17,7 @@ public class InnerJoinTest extends TestBase {
         InnerJoin join = new InnerJoin("products");
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.INNER_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.INNER_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertEquals("products", join.getJoinEntities().get(0));
         Assertions.assertNull(join.getCondition());
@@ -37,7 +37,7 @@ public class InnerJoinTest extends TestBase {
         InnerJoin join = new InnerJoin("customers c", condition);
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.INNER_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.INNER_JOIN, join.operator());
         Assertions.assertEquals("customers c", join.getJoinEntities().get(0));
         Assertions.assertEquals(condition, join.getCondition());
     }
@@ -123,7 +123,7 @@ public class InnerJoinTest extends TestBase {
         InnerJoin copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());

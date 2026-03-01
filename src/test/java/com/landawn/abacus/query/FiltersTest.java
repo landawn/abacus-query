@@ -105,7 +105,7 @@ public class FiltersTest extends TestBase {
         Binary binary = Filters.binary("name", Operator.EQUAL, "John");
         Assertions.assertNotNull(binary);
         Assertions.assertEquals("name", binary.getPropName());
-        Assertions.assertEquals(Operator.EQUAL, binary.getOperator());
+        Assertions.assertEquals(Operator.EQUAL, binary.operator());
         Assertions.assertEquals("John", binary.getPropValue());
     }
 
@@ -639,14 +639,14 @@ public class FiltersTest extends TestBase {
         Condition cond2 = Filters.eq("b", 2);
         Junction junction1 = Filters.junction(Operator.OR, cond1, cond2);
         Assertions.assertNotNull(junction1);
-        Assertions.assertEquals(Operator.OR, junction1.getOperator());
+        Assertions.assertEquals(Operator.OR, junction1.operator());
         Assertions.assertEquals(2, junction1.getConditions().size());
 
         // Test with collection of conditions
         List<Condition> conditions = Arrays.asList(cond1, cond2);
         Junction junction2 = Filters.junction(Operator.AND, conditions);
         Assertions.assertNotNull(junction2);
-        Assertions.assertEquals(Operator.AND, junction2.getOperator());
+        Assertions.assertEquals(Operator.AND, junction2.operator());
         Assertions.assertEquals(2, junction2.getConditions().size());
     }
 
@@ -1086,7 +1086,7 @@ public class FiltersTest extends TestBase {
         Condition condition = Filters.eq("status", "active");
         Cell cell = Filters.cell(Operator.AND, condition);
         Assertions.assertNotNull(cell);
-        Assertions.assertEquals(Operator.AND, cell.getOperator());
+        Assertions.assertEquals(Operator.AND, cell.operator());
         Assertions.assertEquals(condition, cell.getCondition());
     }
 

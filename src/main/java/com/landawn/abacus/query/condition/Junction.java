@@ -495,7 +495,7 @@ public class Junction extends AbstractCondition {
 
                 if (!isFirst) {
                     sb.append(_SPACE);
-                    sb.append(getOperator().toString());
+                    sb.append(operator().toString());
                     sb.append(_SPACE);
                 }
 

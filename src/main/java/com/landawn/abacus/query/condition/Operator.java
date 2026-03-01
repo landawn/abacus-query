@@ -443,7 +443,7 @@ public enum Operator {
     //     * @deprecated Use {@link #of(String)} instead
     //     */
     //    @Deprecated
-    //    public static Operator getOperator(final String name) {
+    //    public static Operator operator(final String name) {
     //        return of(name);
     //    }
 

@@ -42,7 +42,7 @@ public class Having2025Test extends TestBase {
         Having having = new Having(condition);
 
         assertNotNull(having);
-        assertEquals(Operator.HAVING, having.getOperator());
+        assertEquals(Operator.HAVING, having.operator());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class Having2025Test extends TestBase {
 
         assertNotSame(original, copy);
         assertEquals(original, copy);
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -201,9 +201,9 @@ public class Having2025Test extends TestBase {
     public void testOperatorType() {
         Having having = new Having(Filters.gt("COUNT(*)", 0));
 
-        assertEquals(Operator.HAVING, having.getOperator());
-        assertNotEquals(Operator.WHERE, having.getOperator());
-        assertNotEquals(Operator.GROUP_BY, having.getOperator());
+        assertEquals(Operator.HAVING, having.operator());
+        assertNotEquals(Operator.WHERE, having.operator());
+        assertNotEquals(Operator.GROUP_BY, having.operator());
     }
 
     @Test
@@ -294,7 +294,7 @@ public class Having2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         Having having = new Having(Filters.gt("COUNT(*)", 0));
-        assertEquals(Operator.HAVING, having.getOperator());
+        assertEquals(Operator.HAVING, having.operator());
     }
 
     @Test

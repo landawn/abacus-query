@@ -223,9 +223,9 @@ public class SQLMapper2025Test extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
         mapper.add("query2", ParsedSql.parse("SELECT * FROM orders"));
 
-        assertEquals(2, mapper.keySet().size());
-        assertTrue(mapper.keySet().contains("query1"));
-        assertTrue(mapper.keySet().contains("query2"));
+        assertEquals(2, mapper.sqlIds().size());
+        assertTrue(mapper.sqlIds().contains("query1"));
+        assertTrue(mapper.sqlIds().contains("query2"));
     }
 
     @Test
@@ -369,8 +369,8 @@ public class SQLMapper2025Test extends TestBase {
     @Test
     public void testKeySetEmpty() {
         SQLMapper mapper = new SQLMapper();
-        assertNotNull(mapper.keySet());
-        assertTrue(mapper.keySet().isEmpty());
+        assertNotNull(mapper.sqlIds());
+        assertTrue(mapper.sqlIds().isEmpty());
     }
 
     @Test
@@ -430,7 +430,7 @@ public class SQLMapper2025Test extends TestBase {
         mapper.add("query2", ParsedSql.parse("SELECT * FROM products"));
 
         // LinkedHashMap preserves insertion order
-        assertEquals(3, mapper.keySet().size());
+        assertEquals(3, mapper.sqlIds().size());
     }
 
     @Test

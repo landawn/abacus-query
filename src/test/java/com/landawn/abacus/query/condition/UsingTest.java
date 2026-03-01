@@ -19,7 +19,7 @@ public class UsingTest extends TestBase {
         Using using = Filters.using("department_id");
 
         Assertions.assertNotNull(using);
-        Assertions.assertEquals(Operator.USING, using.getOperator());
+        Assertions.assertEquals(Operator.USING, using.operator());
         Assertions.assertNotNull(using.getCondition());
     }
 
@@ -27,7 +27,7 @@ public class UsingTest extends TestBase {
     public void testConstructorWithMultipleColumns() {
         Using using = Filters.using("company_id", "department_id");
 
-        Assertions.assertEquals(Operator.USING, using.getOperator());
+        Assertions.assertEquals(Operator.USING, using.operator());
         String result = using.toString();
         Assertions.assertTrue(result.contains("company_id"));
         Assertions.assertTrue(result.contains("department_id"));
@@ -52,7 +52,7 @@ public class UsingTest extends TestBase {
         List<String> columns = Arrays.asList("customer_id", "order_date");
         Using using = Filters.using(columns);
 
-        Assertions.assertEquals(Operator.USING, using.getOperator());
+        Assertions.assertEquals(Operator.USING, using.operator());
         String result = using.toString();
         Assertions.assertTrue(result.contains("customer_id"));
         Assertions.assertTrue(result.contains("order_date"));
@@ -65,7 +65,7 @@ public class UsingTest extends TestBase {
         columns.add("workspace_id");
         Using using = Filters.using(columns);
 
-        Assertions.assertEquals(Operator.USING, using.getOperator());
+        Assertions.assertEquals(Operator.USING, using.operator());
         Assertions.assertNotNull(using.getCondition());
     }
 
@@ -142,7 +142,7 @@ public class UsingTest extends TestBase {
     public void testGetOperator() {
         Using using = Filters.using("department_id");
 
-        Assertions.assertEquals(Operator.USING, using.getOperator());
+        Assertions.assertEquals(Operator.USING, using.operator());
     }
 
     @Test
@@ -162,7 +162,7 @@ public class UsingTest extends TestBase {
         Using copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }
@@ -198,7 +198,7 @@ public class UsingTest extends TestBase {
         Using using = Filters.using("employee_id");
 
         // Would be used like: JOIN departments USING (employee_id)
-        Assertions.assertEquals(Operator.USING, using.getOperator());
+        Assertions.assertEquals(Operator.USING, using.operator());
     }
 
     @Test

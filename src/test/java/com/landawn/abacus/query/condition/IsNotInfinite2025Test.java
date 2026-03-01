@@ -38,7 +38,7 @@ public class IsNotInfinite2025Test extends TestBase {
     public void testConstructor() {
         IsNotInfinite condition = new IsNotInfinite("priceRatio");
         assertEquals("priceRatio", condition.getPropName());
-        assertEquals(Operator.IS_NOT, condition.getOperator());
+        assertEquals(Operator.IS_NOT, condition.operator());
     }
 
     @Test
@@ -68,7 +68,7 @@ public class IsNotInfinite2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         IsNotInfinite condition = new IsNotInfinite("field");
-        assertEquals(Operator.IS_NOT, condition.getOperator());
+        assertEquals(Operator.IS_NOT, condition.operator());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class IsNotInfinite2025Test extends TestBase {
 
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -186,7 +186,7 @@ public class IsNotInfinite2025Test extends TestBase {
         IsNotInfinite condition = new IsNotInfinite("field");
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

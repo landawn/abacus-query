@@ -40,7 +40,7 @@ public class RightJoin2025Test extends TestBase {
     public void testConstructor_Simple() {
         RightJoin join = new RightJoin("departments");
         assertNotNull(join);
-        assertEquals(Operator.RIGHT_JOIN, join.getOperator());
+        assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
 
     @Test
@@ -48,7 +48,7 @@ public class RightJoin2025Test extends TestBase {
         RightJoin join = new RightJoin("departments", new Equal("employees.dept_id", "departments.id"));
         assertNotNull(join);
         assertNotNull(join.getCondition());
-        assertEquals(Operator.RIGHT_JOIN, join.getOperator());
+        assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class RightJoin2025Test extends TestBase {
         RightJoin join = new RightJoin(entities, new Equal("orders.id", "order_items.order_id"));
         assertNotNull(join);
         assertEquals(2, (int) join.getJoinEntities().size());
-        assertEquals(Operator.RIGHT_JOIN, join.getOperator());
+        assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
 
     @Test
@@ -186,7 +186,7 @@ public class RightJoin2025Test extends TestBase {
         RightJoin join = new RightJoin("orders");
         Not result = join.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test
@@ -200,7 +200,7 @@ public class RightJoin2025Test extends TestBase {
     public void testAllRightTableRows() {
         RightJoin join = new RightJoin("customers", new Equal("orders.customer_id", "customers.id"));
         assertNotNull(join);
-        assertEquals(Operator.RIGHT_JOIN, join.getOperator());
+        assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
 
     @Test
@@ -215,6 +215,6 @@ public class RightJoin2025Test extends TestBase {
     public void testFindMissingRelationships() {
         RightJoin join = new RightJoin("products p", new Equal("order_items.product_id", "p.id"));
         assertNotNull(join.getCondition());
-        assertEquals(Operator.RIGHT_JOIN, join.getOperator());
+        assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
 }

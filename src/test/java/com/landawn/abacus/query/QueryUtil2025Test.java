@@ -182,32 +182,32 @@ public class QueryUtil2025Test extends TestBase {
 
     @Test
     public void testGetIdFieldNames() {
-        List<String> ids = QueryUtil.getIdFieldNames(Account.class);
+        List<String> ids = QueryUtil.getIdPropNames(Account.class);
         assertNotNull(ids);
     }
 
     @Test
     public void testGetIdFieldNames_NullCheck() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getIdFieldNames(null);
+            QueryUtil.getIdPropNames(null);
         });
     }
 
     @Test
     public void testGetIdFieldNames_WithFakeId() {
-        List<String> ids = QueryUtil.getIdFieldNames(Account.class, false);
+        List<String> ids = QueryUtil.getIdPropNames(Account.class, false);
         assertNotNull(ids);
     }
 
     @Test
     public void testGetIdFieldNames_WithFakeIdEnabled() {
-        List<String> ids = QueryUtil.getIdFieldNames(Account.class, true);
+        List<String> ids = QueryUtil.getIdPropNames(Account.class, true);
         assertNotNull(ids);
     }
 
     @Test
     public void testIsFakeId() {
-        List<String> ids = QueryUtil.getIdFieldNames(Account.class, true);
+        List<String> ids = QueryUtil.getIdPropNames(Account.class, true);
         boolean isFake = QueryUtil.isFakeId(ids);
         // Result depends on whether Account has real ID fields
     }

@@ -39,7 +39,7 @@ public class Join2025Test extends TestBase {
     public void testConstructor_SimpleJoin() {
         Join join = new Join("orders");
         assertNotNull(join);
-        assertEquals(Operator.JOIN, join.getOperator());
+        assertEquals(Operator.JOIN, join.operator());
     }
 
     @Test
@@ -180,7 +180,7 @@ public class Join2025Test extends TestBase {
         Join join = new Join("orders");
         Not result = join.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

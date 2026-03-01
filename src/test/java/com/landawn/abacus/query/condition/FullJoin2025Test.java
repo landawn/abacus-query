@@ -40,7 +40,7 @@ public class FullJoin2025Test extends TestBase {
     public void testConstructor_Simple() {
         FullJoin join = new FullJoin("departments");
         assertNotNull(join);
-        assertEquals(Operator.FULL_JOIN, join.getOperator());
+        assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
     @Test
@@ -48,7 +48,7 @@ public class FullJoin2025Test extends TestBase {
         FullJoin join = new FullJoin("employees", new Equal("departments.id", "employees.dept_id"));
         assertNotNull(join);
         assertNotNull(join.getCondition());
-        assertEquals(Operator.FULL_JOIN, join.getOperator());
+        assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class FullJoin2025Test extends TestBase {
         FullJoin join = new FullJoin(entities, new Equal("departments.id", "person.dept_id"));
         assertNotNull(join);
         assertEquals(2, (int) join.getJoinEntities().size());
-        assertEquals(Operator.FULL_JOIN, join.getOperator());
+        assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
     @Test
@@ -186,21 +186,21 @@ public class FullJoin2025Test extends TestBase {
         FullJoin join = new FullJoin("orders");
         Not result = join.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test
     public void testAllRowsFromBothTables() {
         FullJoin join = new FullJoin("orders", new Equal("users.id", "orders.user_id"));
         assertNotNull(join);
-        assertEquals(Operator.FULL_JOIN, join.getOperator());
+        assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
     @Test
     public void testReconcileTwoDataSources() {
         FullJoin join = new FullJoin("external_users", new Equal("internal_users.email", "external_users.email"));
         assertNotNull(join.getCondition());
-        assertEquals(Operator.FULL_JOIN, join.getOperator());
+        assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
     @Test
@@ -214,6 +214,6 @@ public class FullJoin2025Test extends TestBase {
     public void testFindDataMismatches() {
         FullJoin join = new FullJoin("warehouse_inventory", new Equal("online_inventory.product_id", "warehouse_inventory.product_id"));
         assertNotNull(join.getCondition());
-        assertEquals(Operator.FULL_JOIN, join.getOperator());
+        assertEquals(Operator.FULL_JOIN, join.operator());
     }
 }

@@ -42,7 +42,7 @@ public class Where2025Test extends TestBase {
         Equal condition = new Equal("status", "active");
         Where where = new Where(condition);
         assertNotNull(where);
-        assertEquals(Operator.WHERE, where.getOperator());
+        assertEquals(Operator.WHERE, where.operator());
     }
 
     @Test
@@ -50,7 +50,7 @@ public class Where2025Test extends TestBase {
         And and = new And(new Equal("age", (Object) 25), new GreaterThan("salary", (Object) 50000));
         Where where = new Where(and);
         assertNotNull(where);
-        assertEquals(Operator.WHERE, where.getOperator());
+        assertEquals(Operator.WHERE, where.operator());
     }
 
     @Test
@@ -234,7 +234,7 @@ public class Where2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         Where where = new Where(new Equal("id", 1));
-        assertEquals(Operator.WHERE, where.getOperator());
+        assertEquals(Operator.WHERE, where.operator());
     }
 
     @Test

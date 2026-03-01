@@ -16,7 +16,7 @@ public class IsTest extends TestBase {
         Is condition = new Is("age", null);
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("age", condition.getPropName());
-        Assertions.assertEquals(Operator.IS, condition.getOperator());
+        Assertions.assertEquals(Operator.IS, condition.operator());
         Assertions.assertNull(condition.getPropValue());
     }
 
@@ -25,7 +25,7 @@ public class IsTest extends TestBase {
         Is condition = new Is("status", Filters.expr("ACTIVE"));
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("status", condition.getPropName());
-        Assertions.assertEquals(Operator.IS, condition.getOperator());
+        Assertions.assertEquals(Operator.IS, condition.operator());
         Assertions.assertNotNull(condition.getPropValue());
     }
 
@@ -63,7 +63,7 @@ public class IsTest extends TestBase {
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
     }
 

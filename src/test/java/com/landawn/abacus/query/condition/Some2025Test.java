@@ -40,7 +40,7 @@ public class Some2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
         Some condition = new Some(subQuery);
         assertNotNull(condition);
-        assertEquals(Operator.SOME, condition.getOperator());
+        assertEquals(Operator.SOME, condition.operator());
     }
 
     @Test
@@ -55,7 +55,7 @@ public class Some2025Test extends TestBase {
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT score FROM tests");
         Some condition = new Some(subQuery);
-        assertEquals(Operator.SOME, condition.getOperator());
+        assertEquals(Operator.SOME, condition.operator());
     }
 
     @Test
@@ -105,7 +105,7 @@ public class Some2025Test extends TestBase {
         Some copy = original.copy();
 
         assertNotSame(original, copy);
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
         assertNotSame(original.getCondition(), copy.getCondition());
     }
 
@@ -212,7 +212,7 @@ public class Some2025Test extends TestBase {
         Some condition = new Some(subQuery);
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

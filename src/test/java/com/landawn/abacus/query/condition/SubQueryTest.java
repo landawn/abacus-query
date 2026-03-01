@@ -25,7 +25,7 @@ public class SubQueryTest extends TestBase {
         Assertions.assertNull(subQuery.getEntityClass());
         Assertions.assertNull(subQuery.getSelectPropNames());
         Assertions.assertNull(subQuery.getCondition());
-        Assertions.assertEquals(Operator.EMPTY, subQuery.getOperator());
+        Assertions.assertEquals(Operator.EMPTY, subQuery.operator());
     }
 
     @Test

@@ -16,7 +16,7 @@ public class SomeTest extends TestBase {
         Some some = Filters.some(subQuery);
 
         Assertions.assertNotNull(some);
-        Assertions.assertEquals(Operator.SOME, some.getOperator());
+        Assertions.assertEquals(Operator.SOME, some.operator());
         Assertions.assertEquals(subQuery, some.getCondition());
     }
 
@@ -33,7 +33,7 @@ public class SomeTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM test");
         Some some = Filters.some(subQuery);
 
-        Assertions.assertEquals(Operator.SOME, some.getOperator());
+        Assertions.assertEquals(Operator.SOME, some.operator());
     }
 
     @Test
@@ -91,7 +91,7 @@ public class SomeTest extends TestBase {
         Some copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }
@@ -134,7 +134,7 @@ public class SomeTest extends TestBase {
         Some some = Filters.some(managerSalaries);
 
         // Would be used like: salary > SOME (SELECT salary FROM employees WHERE role = 'manager')
-        Assertions.assertEquals(Operator.SOME, some.getOperator());
+        Assertions.assertEquals(Operator.SOME, some.operator());
         Assertions.assertEquals(managerSalaries, some.getCondition());
     }
 

@@ -36,24 +36,24 @@ public class ConditionTest extends TestBase {
         complexCondition = Filters.and(Filters.gt("age", 18), Filters.eq("status", "active"));
     }
 
-    // Tests for getOperator() method
+    // Tests for operator() method
 
     @Test
     void testGetOperatorReturnsCorrectOperator() {
-        assertEquals(Operator.EQUAL, simpleCondition.getOperator());
-        assertEquals(Operator.AND, complexCondition.getOperator());
+        assertEquals(Operator.EQUAL, simpleCondition.operator());
+        assertEquals(Operator.AND, complexCondition.operator());
     }
 
     @Test
     void testGetOperatorNeverReturnsNull() {
-        assertNotNull(simpleCondition.getOperator());
-        assertNotNull(complexCondition.getOperator());
+        assertNotNull(simpleCondition.operator());
+        assertNotNull(complexCondition.operator());
 
         // Test with various condition types
-        assertNotNull(Filters.gt("age", 25).getOperator());
-        assertNotNull(Filters.like("name", "%john%").getOperator());
-        assertNotNull(Filters.isNull("description").getOperator());
-        assertNotNull(Filters.in("status", Arrays.asList("active", "pending")).getOperator());
+        assertNotNull(Filters.gt("age", 25).operator());
+        assertNotNull(Filters.like("name", "%john%").operator());
+        assertNotNull(Filters.isNull("description").operator());
+        assertNotNull(Filters.in("status", Arrays.asList("active", "pending")).operator());
     }
 
     @Test
@@ -61,11 +61,11 @@ public class ConditionTest extends TestBase {
         // Same condition type should always return same operator
         Condition eq1 = Filters.eq("field1", "value1");
         Condition eq2 = Filters.eq("field2", "value2");
-        assertEquals(eq1.getOperator(), eq2.getOperator());
+        assertEquals(eq1.operator(), eq2.operator());
 
         Condition gt1 = Filters.gt("field1", 10);
         Condition gt2 = Filters.gt("field2", 20);
-        assertEquals(gt1.getOperator(), gt2.getOperator());
+        assertEquals(gt1.operator(), gt2.operator());
     }
 
     // Tests for and() method
@@ -76,7 +76,7 @@ public class ConditionTest extends TestBase {
         Condition result = simpleCondition.and(other);
 
         assertNotNull(result);
-        assertEquals(Operator.AND, result.getOperator());
+        assertEquals(Operator.AND, result.operator());
         assertTrue(result instanceof And);
     }
 
@@ -94,7 +94,7 @@ public class ConditionTest extends TestBase {
         Condition result = simpleCondition.and(simpleCondition);
 
         assertNotNull(result);
-        assertEquals(Operator.AND, result.getOperator());
+        assertEquals(Operator.AND, result.operator());
         assertNotSame(simpleCondition, result);
     }
 
@@ -107,7 +107,7 @@ public class ConditionTest extends TestBase {
         Condition result = condition1.and(condition2).and(condition3);
 
         assertNotNull(result);
-        assertEquals(Operator.AND, result.getOperator());
+        assertEquals(Operator.AND, result.operator());
     }
 
     // Tests for or() method
@@ -118,7 +118,7 @@ public class ConditionTest extends TestBase {
         Condition result = simpleCondition.or(other);
 
         assertNotNull(result);
-        assertEquals(Operator.OR, result.getOperator());
+        assertEquals(Operator.OR, result.operator());
         assertTrue(result instanceof Or);
     }
 
@@ -136,7 +136,7 @@ public class ConditionTest extends TestBase {
         Condition result = simpleCondition.or(simpleCondition);
 
         assertNotNull(result);
-        assertEquals(Operator.OR, result.getOperator());
+        assertEquals(Operator.OR, result.operator());
         assertNotSame(simpleCondition, result);
     }
 
@@ -149,7 +149,7 @@ public class ConditionTest extends TestBase {
         Condition result = condition1.or(condition2).or(condition3);
 
         assertNotNull(result);
-        assertEquals(Operator.OR, result.getOperator());
+        assertEquals(Operator.OR, result.operator());
     }
 
     @Test
@@ -164,7 +164,7 @@ public class ConditionTest extends TestBase {
         Condition result = simpleCondition.not();
 
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
         assertTrue(result instanceof Not);
     }
 
@@ -180,7 +180,7 @@ public class ConditionTest extends TestBase {
         Condition doubleNegated = negated.not();
 
         assertNotNull(doubleNegated);
-        assertEquals(Operator.NOT, doubleNegated.getOperator());
+        assertEquals(Operator.NOT, doubleNegated.operator());
         assertNotSame(negated, doubleNegated);
     }
 
@@ -189,7 +189,7 @@ public class ConditionTest extends TestBase {
         Condition result = complexCondition.not();
 
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     // Tests for copy() method
@@ -200,16 +200,16 @@ public class ConditionTest extends TestBase {
 
         assertNotNull(copy);
         assertNotSame(simpleCondition, copy);
-        assertEquals(simpleCondition.getOperator(), copy.getOperator());
+        assertEquals(simpleCondition.operator(), copy.operator());
     }
 
     @Test
     void testCopyPreservesOperator() {
         Condition copy = simpleCondition.copy();
-        assertEquals(simpleCondition.getOperator(), copy.getOperator());
+        assertEquals(simpleCondition.operator(), copy.operator());
 
         Condition complexCopy = complexCondition.copy();
-        assertEquals(complexCondition.getOperator(), complexCopy.getOperator());
+        assertEquals(complexCondition.operator(), complexCopy.operator());
     }
 
     @Test
@@ -244,7 +244,7 @@ public class ConditionTest extends TestBase {
 
         assertNotNull(copy);
         assertNotSame(complex, copy);
-        assertEquals(complex.getOperator(), copy.getOperator());
+        assertEquals(complex.operator(), copy.operator());
     }
 
     // Tests for getParameters() method
@@ -364,7 +364,7 @@ public class ConditionTest extends TestBase {
         Condition result = condition1.and(condition2.or(condition3)).not();
 
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test
@@ -373,7 +373,7 @@ public class ConditionTest extends TestBase {
         Condition combined = copy.and(Filters.gt("age", 21));
 
         assertNotNull(combined);
-        assertEquals(Operator.AND, combined.getOperator());
+        assertEquals(Operator.AND, combined.operator());
 
         // Original and copy should be independent
         assertNotSame(simpleCondition, copy);
@@ -403,7 +403,7 @@ public class ConditionTest extends TestBase {
         Condition nullCondition = Filters.eq("field", null);
 
         assertNotNull(nullCondition);
-        assertEquals(Operator.EQUAL, nullCondition.getOperator());
+        assertEquals(Operator.EQUAL, nullCondition.operator());
 
         List<Object> params = nullCondition.getParameters();
         assertEquals(1, params.size());
@@ -444,7 +444,7 @@ public class ConditionTest extends TestBase {
         }
 
         assertNotNull(chain);
-        assertEquals(Operator.AND, chain.getOperator());
+        assertEquals(Operator.AND, chain.operator());
 
         // Should still be able to get parameters and copy
         List<Object> params = chain.getParameters();
@@ -460,7 +460,7 @@ public class ConditionTest extends TestBase {
     void testImmutabilityContract() {
         // Test that conditions are immutable (except for clearParameters)
         List<Object> originalParams = simpleCondition.getParameters();
-        Operator originalOperator = simpleCondition.getOperator();
+        Operator originalOperator = simpleCondition.operator();
 
         // Logical operations should not modify original
         simpleCondition.and(Filters.eq("other", "value"));
@@ -469,7 +469,7 @@ public class ConditionTest extends TestBase {
 
         // Original should remain unchanged
         assertEquals(originalParams, simpleCondition.getParameters());
-        assertEquals(originalOperator, simpleCondition.getOperator());
+        assertEquals(originalOperator, simpleCondition.operator());
     }
 
     @Test
@@ -501,6 +501,6 @@ public class ConditionTest extends TestBase {
 
         // Original condition should remain unchanged
         assertNotNull(condition.getParameters());
-        assertEquals(Operator.EQUAL, condition.getOperator());
+        assertEquals(Operator.EQUAL, condition.operator());
     }
 }

@@ -17,7 +17,7 @@ public class CrossJoinTest extends TestBase {
         CrossJoin join = Filters.crossJoin("products");
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.CROSS_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.CROSS_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().contains("products"));
     }
@@ -28,7 +28,7 @@ public class CrossJoinTest extends TestBase {
         CrossJoin join = Filters.crossJoin("products", eq);
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.CROSS_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.CROSS_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().contains("products"));
         Assertions.assertEquals(eq, join.getCondition());
@@ -41,7 +41,7 @@ public class CrossJoinTest extends TestBase {
         CrossJoin join = Filters.crossJoin(entities, eq);
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.CROSS_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.CROSS_JOIN, join.operator());
         Assertions.assertEquals(3, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().containsAll(entities));
         Assertions.assertEquals(eq, join.getCondition());
@@ -162,7 +162,7 @@ public class CrossJoinTest extends TestBase {
         Assertions.assertTrue(entities.contains("products"));
 
         // Test getOperator
-        Assertions.assertEquals(Operator.CROSS_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.CROSS_JOIN, join.operator());
     }
 
 }

@@ -250,40 +250,22 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the parameterized SQL formatted for the specified database system.
-     * When isForCouchbase is true, JDBC placeholders (?) are converted to Couchbase positional parameters ($1, $2, etc.).
-     * When false, returns standard JDBC SQL with ? placeholders.
+     * Gets the parameterized SQL formatted for Couchbase N1QL.
+     * JDBC placeholders (?) are converted to Couchbase positional parameters ($1, $2, etc.).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND name = :name");
-     *
-     * // Standard JDBC format
-     * String jdbcSql = parsed.parameterizedSql(false);
-     * // Returns: "SELECT * FROM users WHERE id = ? AND name = ?"
-     *
-     * // Couchbase N1QL format
-     * String couchbaseSql = parsed.parameterizedSql(true);
+     * String couchbaseSql = parsed.parameterizedSqlForCouchbase();
      * // Returns: "SELECT * FROM users WHERE id = $1 AND name = $2"
      * }</pre>
      *
-     * @param isForCouchbase {@code true} to get Couchbase-formatted SQL with $n parameters, {@code false} for standard JDBC format with ? placeholders
-     * @return the parameterized SQL string in the requested format
+     * @return the Couchbase-formatted parameterized SQL string
      */
-    public String parameterizedSql(final boolean isForCouchbase) {
-        if (isForCouchbase) {
-            if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                synchronized (this) {
-                    if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                        parseForCouchbase();
-                    }
-                }
-            }
+    public String parameterizedSqlForCouchbase() {
+        ensureCouchbaseParsed();
 
-            return couchbaseParameterizedSql;
-        } else {
-            return parameterizedSql;
-        }
+        return couchbaseParameterizedSql;
     }
 
     /**
@@ -309,46 +291,27 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the list of named parameters formatted for the specified database system.
-     * When isForCouchbase is true, returns parameter names suitable for Couchbase N1QL positional binding.
+     * Gets the list of named parameters formatted for Couchbase N1QL.
      * For SQL with positional parameters only (using ?), Couchbase format returns an empty list since
      * parameters are bound by position.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-     *
-     * // Standard format
-     * ImmutableList<String> params = parsed.namedParameters(false);
+     * ImmutableList<String> cbParams = parsed.namedParametersForCouchbase();
      * // Returns: ["name", "minAge"]
      *
-     * // Couchbase format
-     * ImmutableList<String> cbParams = parsed.namedParameters(true);
-     * // Returns: ["name", "minAge"]
-     *
-     * // Positional parameters return empty list for Couchbase
      * ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
-     * ImmutableList<String> cbParams2 = parsed2.namedParameters(true);
+     * ImmutableList<String> cbParams2 = parsed2.namedParametersForCouchbase();
      * // Returns: []
      * }</pre>
      *
-     * @param isForCouchbase {@code true} to get Couchbase-formatted parameter names, {@code false} for standard format
-     * @return an immutable list of parameter names
+     * @return an immutable list of Couchbase-formatted parameter names
      */
-    public ImmutableList<String> namedParameters(final boolean isForCouchbase) {
-        if (isForCouchbase) {
-            if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                synchronized (this) {
-                    if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                        parseForCouchbase();
-                    }
-                }
-            }
+    public ImmutableList<String> namedParametersForCouchbase() {
+        ensureCouchbaseParsed();
 
-            return couchbaseNamedParameters;
-        } else {
-            return namedParameters;
-        }
+        return couchbaseNamedParameters;
     }
 
     /**
@@ -373,37 +336,30 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the parameter count formatted for the specified database system.
+     * Gets the parameter count formatted for Couchbase.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
-     *
-     * // Standard parameter count
-     * int count = parsed.parameterCount(false);
-     * // Returns: 2
-     *
-     * // Couchbase parameter count
-     * int cbCount = parsed.parameterCount(true);
+     * int cbCount = parsed.parameterCountForCouchbase();
      * // Returns: 2
      * }</pre>
      *
-     * @param isForCouchbase {@code true} to get Couchbase parameter count, {@code false} for standard count
-     * @return the number of parameters
+     * @return the number of Couchbase parameters
      */
-    public int parameterCount(final boolean isForCouchbase) {
-        if (isForCouchbase) {
-            if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                synchronized (this) {
-                    if (Strings.isEmpty(couchbaseParameterizedSql)) {
-                        parseForCouchbase();
-                    }
+    public int parameterCountForCouchbase() {
+        ensureCouchbaseParsed();
+
+        return couchbaseParameterCount;
+    }
+
+    private void ensureCouchbaseParsed() {
+        if (Strings.isEmpty(couchbaseParameterizedSql)) {
+            synchronized (this) {
+                if (Strings.isEmpty(couchbaseParameterizedSql)) {
+                    parseForCouchbase();
                 }
             }
-
-            return couchbaseParameterCount;
-        } else {
-            return parameterCount;
         }
     }
 

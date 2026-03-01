@@ -16,7 +16,7 @@ public class MinusTest extends TestBase {
         Minus minus = Filters.minus(subQuery);
 
         Assertions.assertNotNull(minus);
-        Assertions.assertEquals(Operator.MINUS, minus.getOperator());
+        Assertions.assertEquals(Operator.MINUS, minus.operator());
         Assertions.assertEquals(subQuery, minus.getCondition());
     }
 
@@ -33,7 +33,7 @@ public class MinusTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM test");
         Minus minus = Filters.minus(subQuery);
 
-        Assertions.assertEquals(Operator.MINUS, minus.getOperator());
+        Assertions.assertEquals(Operator.MINUS, minus.operator());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class MinusTest extends TestBase {
         Minus copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }
@@ -136,7 +136,7 @@ public class MinusTest extends TestBase {
         Minus minus = Filters.minus(soldProducts);
 
         // This would be used with: SELECT product_id FROM inventory MINUS ...
-        Assertions.assertEquals(Operator.MINUS, minus.getOperator());
+        Assertions.assertEquals(Operator.MINUS, minus.operator());
         Assertions.assertEquals(soldProducts, minus.getCondition());
     }
 

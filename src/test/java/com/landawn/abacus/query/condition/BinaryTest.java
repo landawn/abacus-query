@@ -18,7 +18,7 @@ public class BinaryTest extends TestBase {
 
         Assertions.assertNotNull(binary);
         Assertions.assertEquals("price", binary.getPropName());
-        Assertions.assertEquals(Operator.GREATER_THAN, binary.getOperator());
+        Assertions.assertEquals(Operator.GREATER_THAN, binary.operator());
         Assertions.assertEquals(100.0, binary.getPropValue());
     }
 
@@ -108,7 +108,7 @@ public class BinaryTest extends TestBase {
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
     }
 

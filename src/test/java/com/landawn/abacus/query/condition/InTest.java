@@ -22,7 +22,7 @@ public class InTest extends TestBase {
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("status", condition.getPropName());
-        Assertions.assertEquals(Operator.IN, condition.getOperator());
+        Assertions.assertEquals(Operator.IN, condition.operator());
         Assertions.assertEquals(3, condition.getValues().size());
         Assertions.assertTrue(condition.getValues().containsAll(values));
     }
@@ -108,7 +108,7 @@ public class InTest extends TestBase {
 
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getValues(), copy.getValues());
         Assertions.assertEquals(original.getValues(), copy.getValues());
     }

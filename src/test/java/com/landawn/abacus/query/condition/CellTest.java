@@ -18,7 +18,7 @@ public class CellTest extends TestBase {
         Cell cell = new Cell(Operator.NOT, eq);
 
         Assertions.assertNotNull(cell);
-        Assertions.assertEquals(Operator.NOT, cell.getOperator());
+        Assertions.assertEquals(Operator.NOT, cell.operator());
         Assertions.assertEquals(eq, cell.getCondition());
     }
 
@@ -66,7 +66,7 @@ public class CellTest extends TestBase {
         Cell copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }

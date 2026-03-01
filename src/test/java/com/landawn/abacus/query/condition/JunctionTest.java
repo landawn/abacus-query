@@ -20,7 +20,7 @@ public class JunctionTest extends TestBase {
         Junction junction = new Junction(Operator.AND, cond1, cond2);
 
         Assertions.assertNotNull(junction);
-        Assertions.assertEquals(Operator.AND, junction.getOperator());
+        Assertions.assertEquals(Operator.AND, junction.operator());
         Assertions.assertEquals(2, junction.getConditions().size());
         Assertions.assertTrue(junction.getConditions().contains(cond1));
         Assertions.assertTrue(junction.getConditions().contains(cond2));
@@ -33,7 +33,7 @@ public class JunctionTest extends TestBase {
         Junction junction = new Junction(Operator.OR, conditions);
 
         Assertions.assertNotNull(junction);
-        Assertions.assertEquals(Operator.OR, junction.getOperator());
+        Assertions.assertEquals(Operator.OR, junction.operator());
         Assertions.assertEquals(3, junction.getConditions().size());
     }
 
@@ -169,7 +169,7 @@ public class JunctionTest extends TestBase {
         Junction copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals(original.getConditions().size(), copy.getConditions().size());
         Assertions.assertNotSame(original.getConditions(), copy.getConditions());
 

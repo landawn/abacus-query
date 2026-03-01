@@ -20,7 +20,7 @@ public class OrTest extends TestBase {
         Or or = Filters.or(eq1, eq2, eq3);
 
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(Operator.OR, or.getOperator());
+        Assertions.assertEquals(Operator.OR, or.operator());
         Assertions.assertEquals(3, or.getConditions().size());
     }
 

@@ -20,9 +20,9 @@ public class InSubQueryTest extends TestBase {
         InSubQuery condition = new InSubQuery("manager_id", subQuery);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("manager_id", condition.getPropName());
-        Assertions.assertNull(condition.getPropNames());
-        Assertions.assertEquals(Operator.IN, condition.getOperator());
+        Assertions.assertEquals("manager_id", condition.getPropNames().iterator().next());
+        Assertions.assertEquals(1, condition.getPropNames().size());
+        Assertions.assertEquals(Operator.IN, condition.operator());
         Assertions.assertEquals(subQuery, condition.getSubQuery());
     }
 
@@ -33,9 +33,8 @@ public class InSubQueryTest extends TestBase {
         InSubQuery condition = new InSubQuery(propNames, subQuery);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertNull(condition.getPropName());
         Assertions.assertEquals(propNames, condition.getPropNames());
-        Assertions.assertEquals(Operator.IN, condition.getOperator());
+        Assertions.assertEquals(Operator.IN, condition.operator());
         Assertions.assertEquals(subQuery, condition.getSubQuery());
     }
 
@@ -60,11 +59,12 @@ public class InSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testGetPropName() {
+    public void testGetPropNamesForSingleProperty() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
-        Assertions.assertEquals("user_id", condition.getPropName());
+        Assertions.assertEquals(1, condition.getPropNames().size());
+        Assertions.assertEquals("user_id", condition.getPropNames().iterator().next());
     }
 
     @Test
@@ -135,8 +135,8 @@ public class InSubQueryTest extends TestBase {
         InSubQuery copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.getPropNames(), copy.getPropNames());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getSubQuery(), copy.getSubQuery());
         Assertions.assertEquals(original.getSubQuery().toString(), copy.getSubQuery().toString());
     }

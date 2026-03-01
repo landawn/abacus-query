@@ -40,7 +40,7 @@ public class LeftJoin2025Test extends TestBase {
     public void testConstructor_Simple() {
         LeftJoin join = new LeftJoin("orders");
         assertNotNull(join);
-        assertEquals(Operator.LEFT_JOIN, join.getOperator());
+        assertEquals(Operator.LEFT_JOIN, join.operator());
     }
 
     @Test
@@ -48,7 +48,7 @@ public class LeftJoin2025Test extends TestBase {
         LeftJoin join = new LeftJoin("orders o", new Equal("customers.id", "o.customer_id"));
         assertNotNull(join);
         assertNotNull(join.getCondition());
-        assertEquals(Operator.LEFT_JOIN, join.getOperator());
+        assertEquals(Operator.LEFT_JOIN, join.operator());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class LeftJoin2025Test extends TestBase {
         LeftJoin join = new LeftJoin(entities, new And(Arrays.asList(new Equal("c.id", "o.customer_id"), new Equal("o.id", "oi.order_id"))));
         assertNotNull(join);
         assertEquals(2, (int) join.getJoinEntities().size());
-        assertEquals(Operator.LEFT_JOIN, join.getOperator());
+        assertEquals(Operator.LEFT_JOIN, join.operator());
     }
 
     @Test
@@ -186,7 +186,7 @@ public class LeftJoin2025Test extends TestBase {
         LeftJoin join = new LeftJoin("orders");
         Not result = join.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test
@@ -207,7 +207,7 @@ public class LeftJoin2025Test extends TestBase {
     public void testFindMissingRecords() {
         LeftJoin join = new LeftJoin("orders o", new Equal("c.customer_id", "o.customer_id"));
         assertNotNull(join);
-        assertEquals(Operator.LEFT_JOIN, join.getOperator());
+        assertEquals(Operator.LEFT_JOIN, join.operator());
     }
 
     @Test
@@ -222,6 +222,6 @@ public class LeftJoin2025Test extends TestBase {
     public void testPreserveLeftTableRows() {
         LeftJoin join = new LeftJoin("departments d", new Equal("employees.dept_id", "d.id"));
         assertNotNull(join.getCondition());
-        assertEquals(Operator.LEFT_JOIN, join.getOperator());
+        assertEquals(Operator.LEFT_JOIN, join.operator());
     }
 }

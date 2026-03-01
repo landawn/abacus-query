@@ -18,7 +18,7 @@ public class JoinTest extends TestBase {
         Join join = new Join("products");
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertEquals("products", join.getJoinEntities().get(0));
         Assertions.assertNull(join.getCondition());
@@ -30,7 +30,7 @@ public class JoinTest extends TestBase {
         Join join = new Join("orders o", condition);
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.JOIN, join.operator());
         Assertions.assertEquals("orders o", join.getJoinEntities().get(0));
         Assertions.assertEquals(condition, join.getCondition());
     }
@@ -67,18 +67,18 @@ public class JoinTest extends TestBase {
     public void testProtectedConstructors() {
         // Test protected constructors through a test subclass
         TestJoin join1 = new TestJoin(Operator.LEFT_JOIN, "table1");
-        Assertions.assertEquals(Operator.LEFT_JOIN, join1.getOperator());
+        Assertions.assertEquals(Operator.LEFT_JOIN, join1.operator());
         Assertions.assertEquals("table1", join1.getJoinEntities().get(0));
 
         Condition condition = Filters.eq("a", "b");
         TestJoin join2 = new TestJoin(Operator.RIGHT_JOIN, "table2", condition);
-        Assertions.assertEquals(Operator.RIGHT_JOIN, join2.getOperator());
+        Assertions.assertEquals(Operator.RIGHT_JOIN, join2.operator());
         Assertions.assertEquals("table2", join2.getJoinEntities().get(0));
         Assertions.assertEquals(condition, join2.getCondition());
 
         List<String> entities = Arrays.asList("t1", "t2");
         TestJoin join3 = new TestJoin(Operator.FULL_JOIN, entities, condition);
-        Assertions.assertEquals(Operator.FULL_JOIN, join3.getOperator());
+        Assertions.assertEquals(Operator.FULL_JOIN, join3.operator());
         Assertions.assertEquals(2, join3.getJoinEntities().size());
         Assertions.assertEquals(condition, join3.getCondition());
     }
@@ -153,7 +153,7 @@ public class JoinTest extends TestBase {
         Join copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());

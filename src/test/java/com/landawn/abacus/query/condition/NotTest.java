@@ -16,7 +16,7 @@ public class NotTest extends TestBase {
         Not notCondition = Filters.not(likeCondition);
 
         Assertions.assertNotNull(notCondition);
-        Assertions.assertEquals(Operator.NOT, notCondition.getOperator());
+        Assertions.assertEquals(Operator.NOT, notCondition.operator());
         Assertions.assertEquals(likeCondition, notCondition.getCondition());
     }
 
@@ -25,7 +25,7 @@ public class NotTest extends TestBase {
         In inCondition = Filters.in("status", Arrays.asList("active", "pending"));
         Not notIn = Filters.not(inCondition);
 
-        Assertions.assertEquals(Operator.NOT, notIn.getOperator());
+        Assertions.assertEquals(Operator.NOT, notIn.operator());
         Assertions.assertEquals(inCondition, notIn.getCondition());
     }
 
@@ -34,7 +34,7 @@ public class NotTest extends TestBase {
         Between between = Filters.between("age", 18, 65);
         Not notBetween = Filters.not(between);
 
-        Assertions.assertEquals(Operator.NOT, notBetween.getOperator());
+        Assertions.assertEquals(Operator.NOT, notBetween.operator());
         Assertions.assertEquals(between, notBetween.getCondition());
     }
 
@@ -51,7 +51,7 @@ public class NotTest extends TestBase {
         Like likeCondition = Filters.like("name", "John%");
         Not notCondition = Filters.not(likeCondition);
 
-        Assertions.assertEquals(Operator.NOT, notCondition.getOperator());
+        Assertions.assertEquals(Operator.NOT, notCondition.operator());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class NotTest extends TestBase {
         Not copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }
@@ -142,6 +142,6 @@ public class NotTest extends TestBase {
         Not doubleNot = Filters.not(notCondition);
 
         Assertions.assertEquals(notCondition, doubleNot.getCondition());
-        Assertions.assertEquals(Operator.NOT, doubleNot.getOperator());
+        Assertions.assertEquals(Operator.NOT, doubleNot.operator());
     }
 }

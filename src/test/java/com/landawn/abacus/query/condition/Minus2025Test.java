@@ -41,7 +41,7 @@ public class Minus2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Minus minus = new Minus(subQuery);
         assertNotNull(minus);
-        assertEquals(Operator.MINUS, minus.getOperator());
+        assertEquals(Operator.MINUS, minus.operator());
     }
 
     @Test
@@ -135,14 +135,14 @@ public class Minus2025Test extends TestBase {
         SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Minus minus = new Minus(customersWithOrders);
         assertNotNull(minus);
-        assertEquals(Operator.MINUS, minus.getOperator());
+        assertEquals(Operator.MINUS, minus.operator());
     }
 
     @Test
     public void testFindUnsoldProducts() {
         SubQuery soldProducts = Filters.subQuery("SELECT product_id FROM sales");
         Minus minus = new Minus(soldProducts);
-        assertEquals(Operator.MINUS, minus.getOperator());
+        assertEquals(Operator.MINUS, minus.operator());
     }
 
     @Test
@@ -188,7 +188,7 @@ public class Minus2025Test extends TestBase {
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Minus minus = new Minus(subQuery);
-        assertEquals(Operator.MINUS, minus.getOperator());
+        assertEquals(Operator.MINUS, minus.operator());
     }
 
     @Test

@@ -44,7 +44,7 @@ public class And2025Test extends TestBase {
         And junction = new And(cond1, cond2);
 
         assertEquals(2, (int) junction.getConditions().size());
-        assertEquals(Operator.AND, junction.getOperator());
+        assertEquals(Operator.AND, junction.operator());
     }
 
     @Test
@@ -285,7 +285,7 @@ public class And2025Test extends TestBase {
 
         assertNotNull(result);
         assertEquals(Integer.valueOf(2), result.getConditions().size());
-        assertEquals(Operator.OR, result.getOperator());
+        assertEquals(Operator.OR, result.operator());
     }
 
     @Test
@@ -294,7 +294,7 @@ public class And2025Test extends TestBase {
         Not result = and.not();
 
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
         And innerCondition = result.getCondition();
         assertEquals(2, (int) innerCondition.getConditions().size());
     }
@@ -335,14 +335,14 @@ public class And2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         And and = new And(new Equal("a", 1));
-        assertEquals(Operator.AND, and.getOperator());
+        assertEquals(Operator.AND, and.operator());
     }
 
     @Test
     public void testGetOperator_EmptyConstructor() {
         // Empty constructor doesn't set operator (for Kryo serialization)
         And and = new And();
-        assertNull(and.getOperator());
+        assertNull(and.operator());
     }
 
     @Test

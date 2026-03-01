@@ -17,7 +17,7 @@ public class AllTest extends TestBase {
         All all = Filters.all(subQuery);
 
         Assertions.assertNotNull(all);
-        Assertions.assertEquals(Operator.ALL, all.getOperator());
+        Assertions.assertEquals(Operator.ALL, all.operator());
         Assertions.assertEquals(subQuery, all.getCondition());
     }
 
@@ -79,7 +79,7 @@ public class AllTest extends TestBase {
         All copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }

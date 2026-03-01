@@ -17,7 +17,7 @@ public class HavingTest extends TestBase {
         Having having = new Having(innerCondition);
 
         Assertions.assertNotNull(having);
-        Assertions.assertEquals(Operator.HAVING, having.getOperator());
+        Assertions.assertEquals(Operator.HAVING, having.operator());
         Assertions.assertEquals(innerCondition, having.getCondition());
     }
 
@@ -27,7 +27,7 @@ public class HavingTest extends TestBase {
         Having having = new Having(innerCondition);
 
         Assertions.assertNotNull(having);
-        Assertions.assertEquals(Operator.HAVING, having.getOperator());
+        Assertions.assertEquals(Operator.HAVING, having.operator());
         Assertions.assertEquals(innerCondition, having.getCondition());
     }
 
@@ -73,7 +73,7 @@ public class HavingTest extends TestBase {
         Having copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals(original.getCondition().toString(), copy.getCondition().toString());
     }

@@ -17,7 +17,7 @@ public class UnionAllTest extends TestBase {
         UnionAll unionAll = Filters.unionAll(subQuery);
 
         Assertions.assertNotNull(unionAll);
-        Assertions.assertEquals(Operator.UNION_ALL, unionAll.getOperator());
+        Assertions.assertEquals(Operator.UNION_ALL, unionAll.operator());
         Assertions.assertEquals(subQuery, unionAll.getCondition());
     }
 
@@ -34,7 +34,7 @@ public class UnionAllTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM test");
         UnionAll unionAll = Filters.unionAll(subQuery);
 
-        Assertions.assertEquals(Operator.UNION_ALL, unionAll.getOperator());
+        Assertions.assertEquals(Operator.UNION_ALL, unionAll.operator());
     }
 
     @Test
@@ -94,7 +94,7 @@ public class UnionAllTest extends TestBase {
         UnionAll copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
     }
@@ -141,7 +141,7 @@ public class UnionAllTest extends TestBase {
         // SELECT * FROM transactions WHERE year = 2024
         // UNION ALL
         // SELECT * FROM archived_transactions WHERE year = 2024
-        Assertions.assertEquals(Operator.UNION_ALL, unionAll.getOperator());
+        Assertions.assertEquals(Operator.UNION_ALL, unionAll.operator());
     }
 
     @Test
@@ -173,7 +173,7 @@ public class UnionAllTest extends TestBase {
         UnionAll unionAll = Filters.unionAll(subQuery);
 
         // The operator should be UNION_ALL, not UNION
-        Assertions.assertEquals(Operator.UNION_ALL, unionAll.getOperator());
-        Assertions.assertNotEquals(Operator.UNION, unionAll.getOperator());
+        Assertions.assertEquals(Operator.UNION_ALL, unionAll.operator());
+        Assertions.assertNotEquals(Operator.UNION, unionAll.operator());
     }
 }

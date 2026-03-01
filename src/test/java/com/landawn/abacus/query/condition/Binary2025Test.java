@@ -41,7 +41,7 @@ public class Binary2025Test extends TestBase {
         Binary condition = new Binary("age", Operator.EQUAL, 25);
         assertEquals("age", condition.getPropName());
         assertEquals(25, (int) condition.getPropValue());
-        assertEquals(Operator.EQUAL, condition.getOperator());
+        assertEquals(Operator.EQUAL, condition.operator());
     }
 
     @Test
@@ -83,7 +83,7 @@ public class Binary2025Test extends TestBase {
     @Test
     public void testGetOperator() {
         Binary condition = new Binary("field", Operator.NOT_EQUAL, "value");
-        assertEquals(Operator.NOT_EQUAL, condition.getOperator());
+        assertEquals(Operator.NOT_EQUAL, condition.operator());
     }
 
     @Test
@@ -125,7 +125,7 @@ public class Binary2025Test extends TestBase {
         assertNotSame(original, copy);
         assertEquals(original.getPropName(), copy.getPropName());
         assertEquals((Object) original.getPropValue(), (Object) copy.getPropValue());
-        assertEquals(original.getOperator(), copy.getOperator());
+        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -235,7 +235,7 @@ public class Binary2025Test extends TestBase {
         Binary condition = new Binary("field", Operator.EQUAL, "value");
         Not result = condition.not();
         assertNotNull(result);
-        assertEquals(Operator.NOT, result.getOperator());
+        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test
@@ -245,10 +245,10 @@ public class Binary2025Test extends TestBase {
         Binary lt = new Binary("c", Operator.LESS_THAN, 3);
         Binary like = new Binary("d", Operator.LIKE, "%test%");
 
-        assertEquals(Operator.EQUAL, eq.getOperator());
-        assertEquals(Operator.GREATER_THAN, gt.getOperator());
-        assertEquals(Operator.LESS_THAN, lt.getOperator());
-        assertEquals(Operator.LIKE, like.getOperator());
+        assertEquals(Operator.EQUAL, eq.operator());
+        assertEquals(Operator.GREATER_THAN, gt.operator());
+        assertEquals(Operator.LESS_THAN, lt.operator());
+        assertEquals(Operator.LIKE, like.operator());
     }
 
     @Test

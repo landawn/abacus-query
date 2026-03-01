@@ -16,7 +16,7 @@ public class NaturalJoinTest extends TestBase {
         NaturalJoin join = Filters.naturalJoin("employees");
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.NATURAL_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.NATURAL_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().contains("employees"));
         Assertions.assertNull(join.getCondition());
@@ -27,7 +27,7 @@ public class NaturalJoinTest extends TestBase {
         Condition activeOnly = Filters.eq("status", "active");
         NaturalJoin join = Filters.naturalJoin("departments", activeOnly);
 
-        Assertions.assertEquals(Operator.NATURAL_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.NATURAL_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().contains("departments"));
         Assertions.assertEquals(activeOnly, join.getCondition());
@@ -39,7 +39,7 @@ public class NaturalJoinTest extends TestBase {
         Condition condition = Filters.gt("salary", 50000);
         NaturalJoin join = Filters.naturalJoin(tables, condition);
 
-        Assertions.assertEquals(Operator.NATURAL_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.NATURAL_JOIN, join.operator());
         Assertions.assertEquals(2, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().containsAll(tables));
         Assertions.assertEquals(condition, join.getCondition());
@@ -129,7 +129,7 @@ public class NaturalJoinTest extends TestBase {
         NaturalJoin copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());

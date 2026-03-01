@@ -22,7 +22,7 @@ public class BetweenTest extends TestBase {
         Assertions.assertEquals("age", between.getPropName());
         Assertions.assertEquals(18, (Integer) (Integer) between.getMinValue());
         Assertions.assertEquals(65, (Integer) between.getMaxValue());
-        Assertions.assertEquals(Operator.BETWEEN, between.getOperator());
+        Assertions.assertEquals(Operator.BETWEEN, between.operator());
     }
 
     @Test
@@ -158,7 +158,7 @@ public class BetweenTest extends TestBase {
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals((Integer) original.getMinValue(), copy.getMinValue());
         Assertions.assertEquals((Integer) original.getMaxValue(), copy.getMaxValue());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
     }
 
     @Test

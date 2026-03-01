@@ -192,9 +192,9 @@ public final class CriteriaUtil {
         //                return isClause(word) || isClause(word + D._SPACE + sqlParser.nextWord());
         //            }
         //        } else {
-        //            return isClause(condition.getOperator());
+        //            return isClause(condition.operator());
         //        }
-        return condition != null && isClause(condition.getOperator());
+        return condition != null && isClause(condition.operator());
     }
 
     /**

@@ -16,7 +16,7 @@ public class RightJoinTest extends TestBase {
         RightJoin join = Filters.rightJoin("customers");
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(Operator.RIGHT_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().contains("customers"));
         Assertions.assertNull(join.getCondition());
@@ -27,7 +27,7 @@ public class RightJoinTest extends TestBase {
         On onClause = Filters.on("order_items.product_id", "products.id");
         RightJoin join = Filters.rightJoin("products", onClause);
 
-        Assertions.assertEquals(Operator.RIGHT_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
         Assertions.assertEquals(1, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().contains("products"));
         Assertions.assertEquals(onClause, join.getCondition());
@@ -56,7 +56,7 @@ public class RightJoinTest extends TestBase {
         And joinCondition = Filters.and(Filters.on("products.category_id", "categories.id"), Filters.on("products.subcategory_id", "subcategories.id"));
         RightJoin join = Filters.rightJoin(tables, joinCondition);
 
-        Assertions.assertEquals(Operator.RIGHT_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
         Assertions.assertEquals(2, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().containsAll(tables));
         Assertions.assertEquals(joinCondition, join.getCondition());
@@ -146,7 +146,7 @@ public class RightJoinTest extends TestBase {
         RightJoin copy = original.copy();
 
         Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
         Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
         Assertions.assertNotSame(original.getCondition(), copy.getCondition());
         Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
@@ -197,7 +197,7 @@ public class RightJoinTest extends TestBase {
         RightJoin join = Filters.rightJoin("customers", onClause);
 
         // Would result in: RIGHT JOIN customers ON orders.customer_id = customers.id
-        Assertions.assertEquals(Operator.RIGHT_JOIN, join.getOperator());
+        Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
         Assertions.assertEquals("customers", join.getJoinEntities().get(0));
     }
 

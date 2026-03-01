@@ -383,7 +383,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             appendColumnName(propName);
 
             _sb.append(_SPACE);
-            _sb.append(binary.getOperator().toString());
+            _sb.append(binary.operator().toString());
             _sb.append(_SPACE);
 
             final Object propValue = binary.getPropValue();
@@ -394,7 +394,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             appendColumnName(propName);
 
             _sb.append(_SPACE);
-            _sb.append(bt.getOperator().toString());
+            _sb.append(bt.operator().toString());
             _sb.append(_SPACE);
 
             final Object minValue = bt.getMinValue();
@@ -420,7 +420,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             appendColumnName(propName);
 
             _sb.append(_SPACE);
-            _sb.append(nbt.getOperator().toString());
+            _sb.append(nbt.operator().toString());
             _sb.append(_SPACE);
 
             final Object minValue = nbt.getMinValue();
@@ -447,7 +447,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             appendColumnName(propName);
 
             _sb.append(_SPACE);
-            _sb.append(in.getOperator().toString());
+            _sb.append(in.operator().toString());
             _sb.append(SK.SPACE_PARENTHESES_L);
 
             for (int i = 0, len = params.size(); i < len; i++) {
@@ -464,16 +464,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
             _sb.append(SK._PARENTHESES_R);
         } else if (cond instanceof final InSubQuery inSubQuery) {
-            final String propName = inSubQuery.getPropName();
+            final Collection<String> propNames = inSubQuery.getPropNames();
 
-            if (Strings.isNotEmpty(propName)) {
-                appendColumnName(propName);
+            if (propNames.size() == 1) {
+                appendColumnName(propNames.iterator().next());
             } else {
                 _sb.append(SK._PARENTHESES_L);
 
                 int idx = 0;
 
-                for (final String e : inSubQuery.getPropNames()) {
+                for (final String e : propNames) {
                     if (idx++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -485,7 +485,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             }
 
             _sb.append(_SPACE);
-            _sb.append(inSubQuery.getOperator().toString());
+            _sb.append(inSubQuery.operator().toString());
 
             _sb.append(SK.SPACE_PARENTHESES_L);
 
@@ -499,7 +499,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             appendColumnName(propName);
 
             _sb.append(_SPACE);
-            _sb.append(notIn.getOperator().toString());
+            _sb.append(notIn.operator().toString());
             _sb.append(SK.SPACE_PARENTHESES_L);
 
             for (int i = 0, len = params.size(); i < len; i++) {
@@ -516,16 +516,16 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
             _sb.append(SK._PARENTHESES_R);
         } else if (cond instanceof final NotInSubQuery notInSubQuery) {
-            final String propName = notInSubQuery.getPropName();
+            final Collection<String> propNames = notInSubQuery.getPropNames();
 
-            if (Strings.isNotEmpty(propName)) {
-                appendColumnName(propName);
+            if (propNames.size() == 1) {
+                appendColumnName(propNames.iterator().next());
             } else {
                 _sb.append(SK._PARENTHESES_L);
 
                 int idx = 0;
 
-                for (final String e : notInSubQuery.getPropNames()) {
+                for (final String e : propNames) {
                     if (idx++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -537,7 +537,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             }
 
             _sb.append(_SPACE);
-            _sb.append(notInSubQuery.getOperator().toString());
+            _sb.append(notInSubQuery.operator().toString());
             _sb.append(SK.SPACE_PARENTHESES_L);
 
             appendCondition(notInSubQuery.getSubQuery());
@@ -547,13 +547,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             final Cell cell = (Cell) cond;
 
             _sb.append(_SPACE);
-            _sb.append(cell.getOperator().toString());
+            _sb.append(cell.operator().toString());
             _sb.append(_SPACE);
 
             appendCondition(cell.getCondition());
         } else if (cond instanceof final Cell cell) {
             _sb.append(_SPACE);
-            _sb.append(cell.getOperator().toString());
+            _sb.append(cell.operator().toString());
             _sb.append(_SPACE);
 
             _sb.append(_PARENTHESES_L);
@@ -563,7 +563,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
             final List<Condition> conditionList = junction.getConditions();
 
             if (N.isEmpty(conditionList)) {
-                throw new IllegalArgumentException("Junction condition (" + junction.getOperator() + ") must contain at least one element");
+                throw new IllegalArgumentException("Junction condition (" + junction.operator() + ") must contain at least one element");
             }
 
             if (conditionList.size() == 1) {
@@ -576,7 +576,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
                 for (int i = 0, size = conditionList.size(); i < size; i++) {
                     if (i > 0) {
                         _sb.append(_SPACE);
-                        _sb.append(junction.getOperator().toString());
+                        _sb.append(junction.operator().toString());
                         _sb.append(_SPACE);
                     }
 

@@ -373,24 +373,24 @@ public class QueryUtilTest extends TestBase {
     @Test
     public void testGetIdFieldNames() {
         // Test entity with ID
-        List<String> idFields = QueryUtil.getIdFieldNames(TestUser.class);
+        List<String> idFields = QueryUtil.getIdPropNames(TestUser.class);
         assertNotNull(idFields);
         assertEquals(1, idFields.size());
         assertEquals("id", idFields.get(0));
 
         // Test entity without ID
-        idFields = QueryUtil.getIdFieldNames(NoIdEntity.class);
+        idFields = QueryUtil.getIdPropNames(NoIdEntity.class);
         assertNotNull(idFields);
         assertTrue(idFields.isEmpty());
 
         // Test with fakeIdForEmpty = true
-        idFields = QueryUtil.getIdFieldNames(NoIdEntity.class, true);
+        idFields = QueryUtil.getIdPropNames(NoIdEntity.class, true);
         assertNotNull(idFields);
         assertEquals(1, idFields.size());
         assertTrue(idFields.get(0).startsWith("not_defined_fake_id_in_abacus_"));
 
         // Test with fakeIdForEmpty = false
-        idFields = QueryUtil.getIdFieldNames(NoIdEntity.class, false);
+        idFields = QueryUtil.getIdPropNames(NoIdEntity.class, false);
         assertTrue(idFields.isEmpty());
     }
 
@@ -422,8 +422,8 @@ public class QueryUtilTest extends TestBase {
         List<String> regularIds = Arrays.asList("id");
         assertFalse(QueryUtil.isFakeId(regularIds));
 
-        // Test with fake ID from getIdFieldNames
-        List<String> fakeIds = QueryUtil.getIdFieldNames(NoIdEntity.class, true);
+        // Test with fake ID from getIdPropNames
+        List<String> fakeIds = QueryUtil.getIdPropNames(NoIdEntity.class, true);
         assertTrue(QueryUtil.isFakeId(fakeIds));
 
         // Test with null

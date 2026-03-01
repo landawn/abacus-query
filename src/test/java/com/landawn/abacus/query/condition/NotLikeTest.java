@@ -16,7 +16,7 @@ public class NotLikeTest extends TestBase {
         Assertions.assertNotNull(notLike);
         Assertions.assertEquals("name", notLike.getPropName());
         Assertions.assertEquals("John%", notLike.getPropValue());
-        Assertions.assertEquals(Operator.NOT_LIKE, notLike.getOperator());
+        Assertions.assertEquals(Operator.NOT_LIKE, notLike.operator());
     }
 
     @Test
@@ -90,7 +90,7 @@ public class NotLikeTest extends TestBase {
         Assertions.assertNotSame(original, copy);
         Assertions.assertEquals(original.getPropName(), copy.getPropName());
         Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-        Assertions.assertEquals(original.getOperator(), copy.getOperator());
+        Assertions.assertEquals(original.operator(), copy.operator());
     }
 
     @Test
