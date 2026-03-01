@@ -202,7 +202,7 @@ public class Junction extends AbstractCondition {
      * @throws IllegalArgumentException if conditions array contains null elements
      */
     public final void set(final Condition... conditions) {
-        if (conditions != null) {
+        if (N.notEmpty(conditions)) {
             for (final Condition condition : conditions) {
                 if (condition == null) {
                     throw new IllegalArgumentException("Condition cannot be null");
@@ -237,7 +237,7 @@ public class Junction extends AbstractCondition {
      * @throws IllegalArgumentException if conditions collection contains null elements
      */
     public void set(final Collection<? extends Condition> conditions) {
-        if (conditions != null) {
+        if (N.notEmpty(conditions)) {
             for (final Condition condition : conditions) {
                 if (condition == null) {
                     throw new IllegalArgumentException("Condition cannot be null");
@@ -274,14 +274,17 @@ public class Junction extends AbstractCondition {
      * @throws IllegalArgumentException if conditions array contains null elements
      */
     public final void add(final Condition... conditions) {
-        if (conditions != null) {
-            for (final Condition condition : conditions) {
-                if (condition == null) {
-                    throw new IllegalArgumentException("Condition cannot be null");
-                }
-            }
-            conditionList.addAll(Arrays.asList(conditions));
+        if (N.isEmpty(conditions)) {
+            return;
         }
+
+        for (final Condition condition : conditions) {
+            if (condition == null) {
+                throw new IllegalArgumentException("Condition cannot be null");
+            }
+        }
+
+        conditionList.addAll(Arrays.asList(conditions));
     }
 
     /**
@@ -301,7 +304,7 @@ public class Junction extends AbstractCondition {
      * @throws IllegalArgumentException if conditions contains null elements
      */
     public void add(final Collection<? extends Condition> conditions) {
-        if (conditions == null) {
+        if (N.isEmpty(conditions)) {
             return;
         }
 
@@ -336,6 +339,10 @@ public class Junction extends AbstractCondition {
      */
     @Deprecated
     public final void remove(final Condition... conditions) {
+        if (N.isEmpty(conditions)) {
+            return;
+        }
+
         for (final Condition cond : conditions) {
             conditionList.remove(cond);
         }
@@ -360,6 +367,10 @@ public class Junction extends AbstractCondition {
      */
     @Deprecated
     public void remove(final Collection<? extends Condition> conditions) {
+        if (N.isEmpty(conditions)) {
+            return;
+        }
+
         conditionList.removeAll(conditions);
     }
 

@@ -206,15 +206,11 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Condition> T copy() {
-        AbstractCondition copy = null;
-
         try {
-            copy = (AbstractCondition) super.clone();
+            return (T) super.clone();
         } catch (final CloneNotSupportedException e) {
-            // ignore, won't happen.
+            throw new AssertionError("CloneNotSupportedException should never happen since AbstractCondition implements Cloneable", e);
         }
-
-        return (T) copy;
     }
 
     /**

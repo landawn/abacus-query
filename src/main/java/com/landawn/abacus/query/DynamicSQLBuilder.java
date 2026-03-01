@@ -1136,7 +1136,13 @@ public class DynamicSQLBuilder {
          * @return this Where instance for method chaining
          */
         public Where and(final String cond) {
-            sb.append(" AND ").append(cond);
+            if (sb.isEmpty()) {
+                sb.append("WHERE ");
+            } else {
+                sb.append(" AND ");
+            }
+
+            sb.append(cond);
 
             return this;
         }
@@ -1154,7 +1160,13 @@ public class DynamicSQLBuilder {
          * @return this Where instance for method chaining
          */
         public Where or(final String cond) {
-            sb.append(" OR ").append(cond);
+            if (sb.isEmpty()) {
+                sb.append("WHERE ");
+            } else {
+                sb.append(" OR ");
+            }
+
+            sb.append(cond);
 
             return this;
         }
@@ -1428,7 +1440,13 @@ public class DynamicSQLBuilder {
          * @return this Having instance for method chaining
          */
         public Having and(final String cond) {
-            sb.append(" AND ").append(cond);
+            if (sb.isEmpty()) {
+                sb.append("HAVING ");
+            } else {
+                sb.append(" AND ");
+            }
+
+            sb.append(cond);
 
             return this;
         }
@@ -1446,7 +1464,13 @@ public class DynamicSQLBuilder {
          * @return this Having instance for method chaining
          */
         public Having or(final String cond) {
-            sb.append(" OR ").append(cond);
+            if (sb.isEmpty()) {
+                sb.append("HAVING ");
+            } else {
+                sb.append(" OR ");
+            }
+
+            sb.append(cond);
 
             return this;
         }

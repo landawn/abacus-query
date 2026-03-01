@@ -116,36 +116,38 @@ public final class ParsedSql {
         if (isOpSqlPrefix) {
             final StringBuilder sb = Objectory.createStringBuilder();
 
-            for (String word : words) {
-                if (word.equals(SK.QUESTION_MARK)) {
-                    parameterCount++;
-                    type |= QUESTION_MARK_TYPE;
-                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() > 3) {
-                    namedParameterList.add(word.substring(2, word.length() - 1));
+            try {
+                for (String word : words) {
+                    if (word.equals(SK.QUESTION_MARK)) {
+                        parameterCount++;
+                        type |= QUESTION_MARK_TYPE;
+                    } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() > 3) {
+                        namedParameterList.add(word.substring(2, word.length() - 1));
 
-                    word = SK.QUESTION_MARK;
-                    parameterCount++;
-                    type |= IBATIS_PARAMETER_TYPE;
-                } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
-                    namedParameterList.add(word.substring(1));
+                        word = SK.QUESTION_MARK;
+                        parameterCount++;
+                        type |= IBATIS_PARAMETER_TYPE;
+                    } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
+                        namedParameterList.add(word.substring(1));
 
-                    word = SK.QUESTION_MARK;
-                    parameterCount++;
-                    type |= NAMED_PARAMETER_TYPE;
+                        word = SK.QUESTION_MARK;
+                        parameterCount++;
+                        type |= NAMED_PARAMETER_TYPE;
+                    }
+
+                    if (Integer.bitCount(type) > 1) {
+                        throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
+                    }
+
+                    sb.append(word);
                 }
 
-                if (Integer.bitCount(type) > 1) {
-                    throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
-                }
-
-                sb.append(word);
+                final String tmpSql = Strings.stripToEmpty(sb.toString());
+                parameterizedSql = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
+                namedParameters = ImmutableList.wrap(namedParameterList);
+            } finally {
+                Objectory.recycle(sb);
             }
-
-            final String tmpSql = Strings.stripToEmpty(sb.toString());
-            parameterizedSql = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
-            namedParameters = ImmutableList.wrap(namedParameterList);
-
-            Objectory.recycle(sb);
         } else {
             final String tmpSql = Strings.stripToEmpty(this.sql);
             parameterizedSql = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
@@ -420,65 +422,68 @@ public final class ParsedSql {
 
         if (isOpSqlPrefix) {
             final StringBuilder sb = Objectory.createStringBuilder();
-            int countOfParameter = 0;
-            int type = 0;
-            final int QUESTION_MARK_TYPE = 1;
-            final int NAMED_PARAMETER_TYPE = 2;
-            final int IBATIS_PARAMETER_TYPE = 4;
 
-            for (String word : words) {
-                if (word.equals(SK.QUESTION_MARK)) {
-                    type |= QUESTION_MARK_TYPE;
-                    countOfParameter++;
-                    word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
-                } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() > 3) {
-                    couchbaseNamedParameterList.add(word.substring(2, word.length() - 1));
+            try {
+                int countOfParameter = 0;
+                int type = 0;
+                final int QUESTION_MARK_TYPE = 1;
+                final int NAMED_PARAMETER_TYPE = 2;
+                final int IBATIS_PARAMETER_TYPE = 4;
 
-                    type |= IBATIS_PARAMETER_TYPE;
-                    countOfParameter++;
-                    word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
-                } else if (word.length() >= 2 && (word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER || word.charAt(0) == _PREFIX_OF_COUCHBASE_NAMED_PARAMETER)
-                        && isValidNamedParameterChar(word.charAt(1))) {
-                    couchbaseNamedParameterList.add(word.substring(1));
+                for (String word : words) {
+                    if (word.equals(SK.QUESTION_MARK)) {
+                        type |= QUESTION_MARK_TYPE;
+                        countOfParameter++;
+                        word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
+                    } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() > 3) {
+                        couchbaseNamedParameterList.add(word.substring(2, word.length() - 1));
 
-                    type |= NAMED_PARAMETER_TYPE;
-                    countOfParameter++;
-                    word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
+                        type |= IBATIS_PARAMETER_TYPE;
+                        countOfParameter++;
+                        word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
+                    } else if (word.length() >= 2 && (word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER || word.charAt(0) == _PREFIX_OF_COUCHBASE_NAMED_PARAMETER)
+                            && isValidNamedParameterChar(word.charAt(1))) {
+                        couchbaseNamedParameterList.add(word.substring(1));
+
+                        type |= NAMED_PARAMETER_TYPE;
+                        countOfParameter++;
+                        word = PREFIX_OF_COUCHBASE_NAMED_PARAMETER + countOfParameter;
+                    }
+
+                    if (Integer.bitCount(type) > 1) {
+                        throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
+                    }
+
+                    sb.append(word);
                 }
 
-                if (Integer.bitCount(type) > 1) {
-                    throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
-                }
+                boolean isNamedParametersByNum = true;
 
-                sb.append(word);
-            }
-
-            boolean isNamedParametersByNum = true;
-
-            for (int i = 0; i < countOfParameter && i < couchbaseNamedParameterList.size(); i++) {
-                try {
-                    if (Numbers.toInt(couchbaseNamedParameterList.get(i)) != i + 1) {
+                for (int i = 0; i < countOfParameter && i < couchbaseNamedParameterList.size(); i++) {
+                    try {
+                        if (Numbers.toInt(couchbaseNamedParameterList.get(i)) != i + 1) {
+                            isNamedParametersByNum = false;
+                            break;
+                        }
+                    } catch (final Exception e) {
+                        // ignore;
                         isNamedParametersByNum = false;
                         break;
                     }
-                } catch (final Exception e) {
-                    // ignore;
-                    isNamedParametersByNum = false;
-                    break;
                 }
+
+                if (isNamedParametersByNum && couchbaseNamedParameterList.size() == countOfParameter) {
+                    couchbaseNamedParameterList.clear();
+                }
+
+                couchbaseNamedParameters = ImmutableList.wrap(couchbaseNamedParameterList);
+                couchbaseParameterCount = countOfParameter;
+
+                final String tmpCouchbaseSql = Strings.stripToEmpty(sb.toString());
+                couchbaseParameterizedSql = tmpCouchbaseSql.endsWith(";") ? tmpCouchbaseSql.substring(0, tmpCouchbaseSql.length() - 1) : tmpCouchbaseSql;
+            } finally {
+                Objectory.recycle(sb);
             }
-
-            if (isNamedParametersByNum && couchbaseNamedParameterList.size() == countOfParameter) {
-                couchbaseNamedParameterList.clear();
-            }
-
-            couchbaseNamedParameters = ImmutableList.wrap(couchbaseNamedParameterList);
-            couchbaseParameterCount = countOfParameter;
-
-            final String tmpCouchbaseSql = Strings.stripToEmpty(sb.toString());
-            couchbaseParameterizedSql = tmpCouchbaseSql.endsWith(";") ? tmpCouchbaseSql.substring(0, tmpCouchbaseSql.length() - 1) : tmpCouchbaseSql;
-
-            Objectory.recycle(sb);
         } else {
             couchbaseNamedParameters = ImmutableList.empty();
             couchbaseParameterCount = 0;

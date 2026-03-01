@@ -58,7 +58,7 @@ import com.landawn.abacus.util.Strings;
  *
  * // Multiple columns with same direction
  * OrderBy orderBy4 = new OrderBy(Arrays.asList("created", "modified"), SortDirection.DESC);
- * // SQL: ORDER BY created, modified DESC
+ * // SQL: ORDER BY created DESC, modified DESC
  *
  * // Mixed directions using LinkedHashMap
  * Map<String, SortDirection> orders = new LinkedHashMap<>();
@@ -168,12 +168,12 @@ public class OrderBy extends Clause {
      * // Sort multiple date fields in descending order
      * List<String> dateFields = Arrays.asList("created", "updated", "published");
      * OrderBy orderBy = new OrderBy(dateFields, SortDirection.DESC);
-     * // SQL: ORDER BY created, updated, published DESC
+     * // SQL: ORDER BY created DESC, updated DESC, published DESC
      *
      * // Sort name fields in ascending order
      * List<String> nameFields = Arrays.asList("lastName", "firstName", "middleName");
      * OrderBy nameOrder = new OrderBy(nameFields, SortDirection.ASC);
-     * // SQL: ORDER BY lastName, firstName, middleName ASC
+     * // SQL: ORDER BY lastName ASC, firstName ASC, middleName ASC
      * }</pre>
      *
      * @param propNames collection of property names to sort by. Must not be null or empty.

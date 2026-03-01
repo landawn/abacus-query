@@ -363,6 +363,8 @@ public enum Operator {
      */
     private static final Map<String, Operator> operatorMap = new ConcurrentHashMap<>();
 
+    private static volatile boolean operatorMapInitialized = false;
+
     /**
      * Creates an Operator with the specified string representation.
      *
@@ -411,12 +413,12 @@ public enum Operator {
         }
 
         // Initialize map if not fully populated yet
-        final Operator[] values = Operator.values();
-
-        if (operatorMap.size() < values.length) {
-            for (final Operator value : values) {
+        if (!operatorMapInitialized) {
+            for (final Operator value : Operator.values()) {
                 operatorMap.putIfAbsent(value.name, value);
             }
+
+            operatorMapInitialized = true;
         }
 
         // Try exact match again after initialization

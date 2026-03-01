@@ -206,175 +206,178 @@ public final class SQLParser {
     public static List<String> parse(final String sql) {
         final int sqlLength = sql.length();
         final StringBuilder sb = Objectory.createStringBuilder();
-        final List<String> words = new ArrayList<>();
 
-        String temp = "";
-        char quoteChar = 0;
-        int keepComments = -1;
+        try {
+            final List<String> words = new ArrayList<>();
 
-        for (int index = 0; index < sqlLength; index++) {
-            // TODO [performance improvement]. will it improve performance if
-            // change to char array?
-            // char c = sqlCharArray[charIndex];
-            char c = sql.charAt(index);
+            String temp = "";
+            char quoteChar = 0;
+            int keepComments = -1;
 
-            if (quoteChar != 0) {
-                // is it in a quoted identifier?
-                sb.append(c);
+            for (int index = 0; index < sqlLength; index++) {
+                // TODO [performance improvement]. will it improve performance if
+                // change to char array?
+                // char c = sqlCharArray[charIndex];
+                char c = sql.charAt(index);
 
-                // end in quote.
-                if (c == quoteChar) {
-                    if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
-                        sb.append(sql.charAt(++index));
-                    } else {
-                        // Count consecutive backslashes before this quote.
-                        // Even count (including 0) means the quote is NOT escaped.
-                        int backslashCount = 0;
-
-                        for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
-                            backslashCount++;
-                        }
-
-                        if (backslashCount % 2 == 0) {
-                            words.add(sb.toString());
-                            sb.setLength(0);
-
-                            quoteChar = 0;
-                        }
-                    }
-                }
-            } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
-                if (!sb.isEmpty()) {
-                    words.add(sb.toString());
-                    sb.setLength(0);
-                }
-
-                //    if (keepComments == -1) {
-                //        keepComments = Strings.startsWithIgnoreCase(sql, "-- Keep comments") ? 1 : 0;
-                //    }
-                //
-                //    if (keepComments == 1) {
-                //        sb.append(c);
-                //
-                //        while (++index < sqlLength) {
-                //            c = sql.charAt(index);
-                //            sb.append(c);
-                //
-                //            if (c == ENTER || c == ENTER_2) {
-                //                final String tmp = sb.toString();
-                //
-                //                if (!Strings.startsWithIgnoreCase(tmp, "-- Keep comments")) {
-                //                    words.add(sb.toString());
-                //                }
-                //
-                //                sb.setLength(0);
-                //
-                //                break;
-                //            }
-                //        }
-                //    } else {
-                //        while (++index < sqlLength) {
-                //            c = sql.charAt(index);
-                //
-                //            if (c == ENTER || c == ENTER_2) {
-                //                break;
-                //            }
-                //        }
-                //    }
-
-                while (++index < sqlLength) {
-                    c = sql.charAt(index);
-
-                    if (c == ENTER || c == ENTER_2) {
-                        index--; // back up so the newline is reprocessed by the outer loop as whitespace
-                        break;
-                    }
-                }
-            } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) { // for MySQL only
-                if (!sb.isEmpty()) {
-                    words.add(sb.toString());
-                    sb.setLength(0);
-                }
-
-                while (++index < sqlLength) {
-                    c = sql.charAt(index);
-
-                    if (c == ENTER || c == ENTER_2) {
-                        index--; // back up so the newline is reprocessed by the outer loop as whitespace
-                        break;
-                    }
-                }
-            } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
-                if (!sb.isEmpty()) {
-                    words.add(sb.toString());
-                    sb.setLength(0);
-                }
-
-                if (keepComments == -1) {
-                    keepComments = Strings.startsWithIgnoreCase(sql, KEEP_COMMENTS) ? 1 : 0;
-                }
-
-                if (keepComments == 1) {
+                if (quoteChar != 0) {
+                    // is it in a quoted identifier?
                     sb.append(c);
 
+                    // end in quote.
+                    if (c == quoteChar) {
+                        if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                            sb.append(sql.charAt(++index));
+                        } else {
+                            // Count consecutive backslashes before this quote.
+                            // Even count (including 0) means the quote is NOT escaped.
+                            int backslashCount = 0;
+
+                            for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
+                                backslashCount++;
+                            }
+
+                            if (backslashCount % 2 == 0) {
+                                words.add(sb.toString());
+                                sb.setLength(0);
+
+                                quoteChar = 0;
+                            }
+                        }
+                    }
+                } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                    if (!sb.isEmpty()) {
+                        words.add(sb.toString());
+                        sb.setLength(0);
+                    }
+
+                    //    if (keepComments == -1) {
+                    //        keepComments = Strings.startsWithIgnoreCase(sql, "-- Keep comments") ? 1 : 0;
+                    //    }
+                    //
+                    //    if (keepComments == 1) {
+                    //        sb.append(c);
+                    //
+                    //        while (++index < sqlLength) {
+                    //            c = sql.charAt(index);
+                    //            sb.append(c);
+                    //
+                    //            if (c == ENTER || c == ENTER_2) {
+                    //                final String tmp = sb.toString();
+                    //
+                    //                if (!Strings.startsWithIgnoreCase(tmp, "-- Keep comments")) {
+                    //                    words.add(sb.toString());
+                    //                }
+                    //
+                    //                sb.setLength(0);
+                    //
+                    //                break;
+                    //            }
+                    //        }
+                    //    } else {
+                    //        while (++index < sqlLength) {
+                    //            c = sql.charAt(index);
+                    //
+                    //            if (c == ENTER || c == ENTER_2) {
+                    //                break;
+                    //            }
+                    //        }
+                    //    }
+
                     while (++index < sqlLength) {
                         c = sql.charAt(index);
+
+                        if (c == ENTER || c == ENTER_2) {
+                            index--; // back up so the newline is reprocessed by the outer loop as whitespace
+                            break;
+                        }
+                    }
+                } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) { // for MySQL only
+                    if (!sb.isEmpty()) {
+                        words.add(sb.toString());
+                        sb.setLength(0);
+                    }
+
+                    while (++index < sqlLength) {
+                        c = sql.charAt(index);
+
+                        if (c == ENTER || c == ENTER_2) {
+                            index--; // back up so the newline is reprocessed by the outer loop as whitespace
+                            break;
+                        }
+                    }
+                } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+                    if (!sb.isEmpty()) {
+                        words.add(sb.toString());
+                        sb.setLength(0);
+                    }
+
+                    if (keepComments == -1) {
+                        keepComments = Strings.startsWithIgnoreCase(sql, KEEP_COMMENTS) ? 1 : 0;
+                    }
+
+                    if (keepComments == 1) {
                         sb.append(c);
 
-                        if (c == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
-                            sb.append(sql.charAt(++index));
+                        while (++index < sqlLength) {
+                            c = sql.charAt(index);
+                            sb.append(c);
 
-                            words.add(sb.toString());
-                            sb.setLength(0);
+                            if (c == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+                                sb.append(sql.charAt(++index));
 
-                            break;
+                                words.add(sb.toString());
+                                sb.setLength(0);
+
+                                break;
+                            }
+                        }
+                    } else {
+                        while (++index < sqlLength) {
+                            c = sql.charAt(index);
+
+                            if (c == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+                                index++;
+                                break;
+                            }
                         }
                     }
-                } else {
-                    while (++index < sqlLength) {
-                        c = sql.charAt(index);
+                } else if (isSeparator(sql, sqlLength, index, c)) {
+                    if (!sb.isEmpty()) {
+                        words.add(sb.toString());
+                        sb.setLength(0);
+                    }
 
-                        if (c == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
-                            index++;
-                            break;
+                    temp = matchMultiCharSeparator(sql, sqlLength, index);
+
+                    if (temp != null) {
+                        words.add(temp);
+                        index += temp.length() - 1;
+                    } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
+                        if (!words.isEmpty() && !words.get(words.size() - 1).equals(SK.SPACE)) {
+                            words.add(SK.SPACE);
                         }
-                    }
-                }
-            } else if (isSeparator(sql, sqlLength, index, c)) {
-                if (!sb.isEmpty()) {
-                    words.add(sb.toString());
-                    sb.setLength(0);
-                }
-
-                temp = matchMultiCharSeparator(sql, sqlLength, index);
-
-                if (temp != null) {
-                    words.add(temp);
-                    index += temp.length() - 1;
-                } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
-                    if (!words.isEmpty() && !words.get(words.size() - 1).equals(SK.SPACE)) {
-                        words.add(SK.SPACE);
+                    } else {
+                        words.add(String.valueOf(c));
                     }
                 } else {
-                    words.add(String.valueOf(c));
-                }
-            } else {
-                sb.append(c);
+                    sb.append(c);
 
-                if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
-                    quoteChar = c;
+                    if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
+                        quoteChar = c;
+                    }
                 }
             }
+
+            if (!sb.isEmpty()) {
+                words.add(sb.toString());
+                sb.setLength(0);
+            }
+
+            return words;
+        } finally {
+            Objectory.recycle(sb);
         }
-
-        if (!sb.isEmpty()) {
-            words.add(sb.toString());
-            sb.setLength(0);
-        }
-
-        Objectory.recycle(sb);
-
-        return words;
     }
 
     /**
@@ -417,147 +420,149 @@ public final class SQLParser {
 
         //noinspection IfStatementWithIdenticalBranches
         if ((subWords == null) || (subWords.length <= 1)) {
-            int result = N.INDEX_NOT_FOUND;
-
             final StringBuilder sb = Objectory.createStringBuilder();
-            final int sqlLength = sql.length();
-            String temp = "";
-            char quoteChar = 0;
 
-            for (int index = fromIndex; index < sqlLength; index++) {
-                final char c = sql.charAt(index);
+            try {
+                int result = N.INDEX_NOT_FOUND;
+                final int sqlLength = sql.length();
+                String temp = "";
+                char quoteChar = 0;
 
-                // is it in a quoted identifier?
-                if (quoteChar != 0) {
-                    sb.append(c);
+                for (int index = fromIndex; index < sqlLength; index++) {
+                    final char c = sql.charAt(index);
 
-                    // end in quote.
-                    if (c == quoteChar) {
-                        if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
-                            sb.append(sql.charAt(++index));
-                        } else {
-                            // Count consecutive backslashes before this quote.
-                            // Even count (including 0) means the quote is NOT escaped.
-                            int backslashCount = 0;
+                    // is it in a quoted identifier?
+                    if (quoteChar != 0) {
+                        sb.append(c);
 
-                            for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
-                                backslashCount++;
-                            }
+                        // end in quote.
+                        if (c == quoteChar) {
+                            if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                                sb.append(sql.charAt(++index));
+                            } else {
+                                // Count consecutive backslashes before this quote.
+                                // Even count (including 0) means the quote is NOT escaped.
+                                int backslashCount = 0;
 
-                            if (backslashCount % 2 == 0) {
-                                temp = sb.toString();
-
-                                if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                                    result = index - word.length() + 1;
-
-                                    break;
+                                for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
+                                    backslashCount++;
                                 }
 
-                                sb.setLength(0);
-                                quoteChar = 0;
+                                if (backslashCount % 2 == 0) {
+                                    temp = sb.toString();
+
+                                    if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                        result = index - word.length() + 1;
+
+                                        break;
+                                    }
+
+                                    sb.setLength(0);
+                                    quoteChar = 0;
+                                }
                             }
                         }
-                    }
-                } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
-                    // Skip single-line comment (-- ...)
-                    if (!sb.isEmpty()) {
-                        temp = sb.toString();
-                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                            result = index - word.length();
-                            break;
+                    } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                        // Skip single-line comment (-- ...)
+                        if (!sb.isEmpty()) {
+                            temp = sb.toString();
+                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                result = index - word.length();
+                                break;
+                            }
+                            sb.setLength(0);
                         }
-                        sb.setLength(0);
-                    }
-                    while (++index < sqlLength) {
-                        final char cc = sql.charAt(index);
-                        if (cc == ENTER || cc == ENTER_2) {
-                            break;
+                        while (++index < sqlLength) {
+                            final char cc = sql.charAt(index);
+                            if (cc == ENTER || cc == ENTER_2) {
+                                break;
+                            }
                         }
-                    }
-                } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
-                    // Skip MySQL single-line comment (# ...)
-                    if (!sb.isEmpty()) {
-                        temp = sb.toString();
-                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                            result = index - word.length();
-                            break;
+                    } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
+                        // Skip MySQL single-line comment (# ...)
+                        if (!sb.isEmpty()) {
+                            temp = sb.toString();
+                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                result = index - word.length();
+                                break;
+                            }
+                            sb.setLength(0);
                         }
-                        sb.setLength(0);
-                    }
-                    while (++index < sqlLength) {
-                        final char cc = sql.charAt(index);
-                        if (cc == ENTER || cc == ENTER_2) {
-                            break;
+                        while (++index < sqlLength) {
+                            final char cc = sql.charAt(index);
+                            if (cc == ENTER || cc == ENTER_2) {
+                                break;
+                            }
                         }
-                    }
-                } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
-                    // Skip block comment (/* ... */)
-                    if (!sb.isEmpty()) {
-                        temp = sb.toString();
-                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                            result = index - word.length();
-                            break;
+                    } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+                        // Skip block comment (/* ... */)
+                        if (!sb.isEmpty()) {
+                            temp = sb.toString();
+                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                result = index - word.length();
+                                break;
+                            }
+                            sb.setLength(0);
                         }
-                        sb.setLength(0);
-                    }
-                    while (++index < sqlLength) {
-                        final char cc = sql.charAt(index);
-                        if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
-                            index++;
-                            break;
+                        while (++index < sqlLength) {
+                            final char cc = sql.charAt(index);
+                            if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+                                index++;
+                                break;
+                            }
                         }
-                    }
-                } else if (isSeparator(sql, sqlLength, index, c)) {
-                    if (!sb.isEmpty()) {
-                        temp = sb.toString();
+                    } else if (isSeparator(sql, sqlLength, index, c)) {
+                        if (!sb.isEmpty()) {
+                            temp = sb.toString();
 
-                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                            result = index - word.length();
+                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                result = index - word.length();
 
-                            break;
+                                break;
+                            }
+
+                            sb.setLength(0);
+                        } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
+                            // skip white char
+                            continue;
                         }
 
-                        sb.setLength(0);
-                    } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
-                        // skip white char
-                        continue;
-                    }
+                        temp = matchMultiCharSeparator(sql, sqlLength, index);
 
-                    temp = matchMultiCharSeparator(sql, sqlLength, index);
+                        if (temp != null) {
+                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                result = index;
 
-                    if (temp != null) {
-                        if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                break;
+                            }
+
+                            index += temp.length() - 1;
+                        } else if (word.equals(String.valueOf(c)) || (!caseSensitive && word.equalsIgnoreCase(String.valueOf(c)))) {
                             result = index;
 
                             break;
                         }
+                    } else {
+                        sb.append(c);
 
-                        index += temp.length() - 1;
-                    } else if (word.equals(String.valueOf(c)) || (!caseSensitive && word.equalsIgnoreCase(String.valueOf(c)))) {
-                        result = index;
-
-                        break;
-                    }
-                } else {
-                    sb.append(c);
-
-                    if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
-                        quoteChar = c;
+                        if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
+                            quoteChar = c;
+                        }
                     }
                 }
-            }
 
-            if (result < 0 && !sb.isEmpty()) {
-                temp = sb.toString();
+                if (result < 0 && !sb.isEmpty()) {
+                    temp = sb.toString();
 
-                if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                    result = sqlLength - word.length();
+                    if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                        result = sqlLength - word.length();
+                    }
                 }
+
+                return result;
+            } finally {
+                Objectory.recycle(sb);
             }
-
-            Objectory.recycle(sb);
-
-            return result;
         } else {
             int result = indexWord(sql, subWords[0], fromIndex, caseSensitive);
 
@@ -623,98 +628,99 @@ public final class SQLParser {
         final int sqlLength = sql.length();
         final StringBuilder sb = Objectory.createStringBuilder();
 
-        String temp = "";
-        char quoteChar = 0;
+        try {
+            String temp = "";
+            char quoteChar = 0;
 
-        for (int index = fromIndex; index < sqlLength; index++) {
-            final char c = sql.charAt(index);
+            for (int index = fromIndex; index < sqlLength; index++) {
+                final char c = sql.charAt(index);
 
-            // is it in a quoted identifier?
-            if (quoteChar != 0) {
-                sb.append(c);
+                // is it in a quoted identifier?
+                if (quoteChar != 0) {
+                    sb.append(c);
 
-                // end in quote.
-                if (c == quoteChar) {
-                    if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
-                        sb.append(sql.charAt(++index));
-                    } else {
-                        // Count consecutive backslashes before this quote.
-                        // Even count (including 0) means the quote is NOT escaped.
-                        int backslashCount = 0;
+                    // end in quote.
+                    if (c == quoteChar) {
+                        if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                            sb.append(sql.charAt(++index));
+                        } else {
+                            // Count consecutive backslashes before this quote.
+                            // Even count (including 0) means the quote is NOT escaped.
+                            int backslashCount = 0;
 
-                        for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
-                            backslashCount++;
+                            for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
+                                backslashCount++;
+                            }
+
+                            if (backslashCount % 2 == 0) {
+                                break;
+                            }
                         }
-
-                        if (backslashCount % 2 == 0) {
+                    }
+                } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                    // Skip single-line comment (-- ...)
+                    if (!sb.isEmpty()) {
+                        break;
+                    }
+                    while (++index < sqlLength) {
+                        final char cc = sql.charAt(index);
+                        if (cc == ENTER || cc == ENTER_2) {
                             break;
                         }
                     }
-                }
-            } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
-                // Skip single-line comment (-- ...)
-                if (!sb.isEmpty()) {
-                    break;
-                }
-                while (++index < sqlLength) {
-                    final char cc = sql.charAt(index);
-                    if (cc == ENTER || cc == ENTER_2) {
+                } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
+                    // Skip MySQL single-line comment (# ...)
+                    if (!sb.isEmpty()) {
                         break;
                     }
-                }
-            } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
-                // Skip MySQL single-line comment (# ...)
-                if (!sb.isEmpty()) {
-                    break;
-                }
-                while (++index < sqlLength) {
-                    final char cc = sql.charAt(index);
-                    if (cc == ENTER || cc == ENTER_2) {
+                    while (++index < sqlLength) {
+                        final char cc = sql.charAt(index);
+                        if (cc == ENTER || cc == ENTER_2) {
+                            break;
+                        }
+                    }
+                } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+                    // Skip block comment (/* ... */)
+                    if (!sb.isEmpty()) {
                         break;
                     }
-                }
-            } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
-                // Skip block comment (/* ... */)
-                if (!sb.isEmpty()) {
-                    break;
-                }
-                while (++index < sqlLength) {
-                    final char cc = sql.charAt(index);
-                    if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
-                        index++;
-                        break;
+                    while (++index < sqlLength) {
+                        final char cc = sql.charAt(index);
+                        if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+                            index++;
+                            break;
+                        }
                     }
-                }
-            } else if (isSeparator(sql, sqlLength, index, c)) {
-                if (!sb.isEmpty()) {
-                    break;
-                } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
-                    // skip white char
-                    continue;
-                }
+                } else if (isSeparator(sql, sqlLength, index, c)) {
+                    if (!sb.isEmpty()) {
+                        break;
+                    } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
+                        // skip white char
+                        continue;
+                    }
 
-                temp = matchMultiCharSeparator(sql, sqlLength, index);
+                    temp = matchMultiCharSeparator(sql, sqlLength, index);
 
-                if (temp != null) {
-                    sb.append(temp);
+                    if (temp != null) {
+                        sb.append(temp);
+                    } else {
+                        sb.append(c);
+                    }
+
+                    break;
                 } else {
                     sb.append(c);
-                }
 
-                break;
-            } else {
-                sb.append(c);
-
-                if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
-                    quoteChar = c;
+                    if ((c == SK._QUOTATION_S) || (c == SK._QUOTATION_D)) {
+                        quoteChar = c;
+                    }
                 }
             }
+
+            return (sb.isEmpty()) ? "" : sb.toString();
+        } finally {
+            Objectory.recycle(sb);
         }
-
-        final String st = (sb.isEmpty()) ? "" : sb.toString();
-        Objectory.recycle(sb);
-
-        return st;
     }
 
     /**

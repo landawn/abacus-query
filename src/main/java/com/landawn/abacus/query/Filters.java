@@ -14,6 +14,7 @@
 
 package com.landawn.abacus.query;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -57,8 +58,8 @@ import com.landawn.abacus.query.condition.IsNull;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Junction;
 import com.landawn.abacus.query.condition.LeftJoin;
-import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.LessThan;
+import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Minus;
@@ -1006,15 +1007,17 @@ public class Filters {
     public static Or eqAndOr(final Collection<?> entities, final Collection<String> selectPropNames) {
         N.checkArgNotEmpty(entities, "entities");
         N.checkArgNotEmpty(selectPropNames, "selectPropNames");
+        N.checkArgument(!N.allNull(entities), "All specified entities are null");
 
-        final Iterator<?> iter = entities.iterator();
-        final Condition[] conds = new Condition[entities.size()];
+        final List<Condition> condList = new ArrayList<>(entities.size());
 
-        for (int i = 0, size = entities.size(); i < size; i++) {
-            conds[i] = eqAnd(iter.next(), selectPropNames);
+        for (final Object entity : entities) {
+            if (entity != null) {
+                condList.add(eqAnd(entity, selectPropNames));
+            }
         }
 
-        return or(conds);
+        return or(condList);
     }
 
     /**
