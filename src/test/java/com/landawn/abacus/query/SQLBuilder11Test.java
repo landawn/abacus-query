@@ -276,7 +276,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.insert("name");
             Assertions.assertNotNull(sb);
             // Verify the SQL builder is created properly
-            Assertions.assertDoesNotThrow(() -> sb.into("account").query());
+            Assertions.assertDoesNotThrow(() -> sb.into("account").toSql());
         }
 
         @Test
@@ -284,7 +284,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.insert("name", "email", "status");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("account").query();
+            String sql = sb.into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO"));
             Assertions.assertTrue(sql.contains("account"));
@@ -296,7 +296,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.insert(columns);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("account").query();
+            String sql = sb.into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO"));
         }
@@ -310,7 +310,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.insert(props);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("account").query();
+            String sql = sb.into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO"));
         }
@@ -321,7 +321,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.insert(account);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("account").query();
+            String sql = sb.into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO"));
         }
@@ -334,7 +334,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.insert(account, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("account").query();
+            String sql = sb.into("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -343,7 +343,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.insert(Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("account").query();
+            String sql = sb.into("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -353,7 +353,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.insert(Account.class, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("account").query();
+            String sql = sb.into("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -363,7 +363,7 @@ public class SQLBuilder11Test extends TestBase {
             Assertions.assertNotNull(sb);
 
             // This should already have the table name set
-            Assertions.assertDoesNotThrow(() -> sb.query());
+            Assertions.assertDoesNotThrow(() -> sb.toSql());
         }
 
         @Test
@@ -372,7 +372,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.insertInto(Account.class, excluded);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.query());
+            Assertions.assertDoesNotThrow(() -> sb.toSql());
         }
 
         @Test
@@ -382,7 +382,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.batchInsert(accounts);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("account").query();
+            String sql = sb.into("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -391,7 +391,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.update("account");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).query();
+            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
             Assertions.assertTrue(sql.contains("account"));
@@ -402,7 +402,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.update("account", Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).query();
+            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -411,7 +411,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.update(Account.class);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).query());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).toSql());
         }
 
         @Test
@@ -420,7 +420,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.update(Account.class, excluded);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).query());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).toSql());
         }
 
         @Test
@@ -428,7 +428,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.deleteFrom("account");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(Filters.eq("status", "'DELETED'")).query();
+            String sql = sb.where(Filters.eq("status", "'DELETED'")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM"));
             Assertions.assertTrue(sql.contains("account"));
@@ -439,7 +439,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.deleteFrom("account", Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(Filters.eq("status", "'DELETED'")).query();
+            String sql = sb.where(Filters.eq("status", "'DELETED'")).toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -448,7 +448,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.deleteFrom(Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(Filters.eq("status", "'DELETED'")).query();
+            String sql = sb.where(Filters.eq("status", "'DELETED'")).toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -457,7 +457,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select("COUNT(*)");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account").query();
+            String sql = sb.from("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("COUNT(*)"));
@@ -468,7 +468,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select("firstName", "lastName", "email");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account").query();
+            String sql = sb.from("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -479,7 +479,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select(columns);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account").query();
+            String sql = sb.from("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -492,7 +492,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select(aliases);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account").query();
+            String sql = sb.from("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -501,7 +501,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select(Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account").query();
+            String sql = sb.from("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -510,7 +510,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select(Account.class, true);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account").query();
+            String sql = sb.from("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -520,7 +520,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select(Account.class, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account").query();
+            String sql = sb.from("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -530,7 +530,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select(Account.class, true, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account").query();
+            String sql = sb.from("account").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -539,7 +539,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -548,7 +548,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class, "a");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -557,7 +557,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class, true);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -566,7 +566,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class, "a", true);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -576,7 +576,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -586,7 +586,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class, "a", excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -596,7 +596,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class, true, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -606,7 +606,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class, "a", true, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -615,7 +615,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select(Account.class, "a", "account", Account.class, "b", "account2");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account a, account b").query();
+            String sql = sb.from("account a, account b").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -627,7 +627,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select(Account.class, "a", "account", excludedA, Account.class, "b", "account2", excludedB);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account a, account b").query();
+            String sql = sb.from("account a, account b").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -639,7 +639,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.select(selections);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("account a, account b").query();
+            String sql = sb.from("account a, account b").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -648,7 +648,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class, "a", "account", Account.class, "b", "account2");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -660,7 +660,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(Account.class, "a", "account", excludedA, Account.class, "b", "account2", excludedB);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -672,7 +672,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.selectFrom(selections);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -681,7 +681,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.count("account");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("count(*)"));
         }
@@ -691,7 +691,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.count(Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("count(*)"));
         }
@@ -703,7 +703,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = SCSB.parse(cond, Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             // Should contain the condition SQL
             Assertions.assertTrue(sql.contains("AND"));
@@ -736,7 +736,7 @@ public class SQLBuilder11Test extends TestBase {
                     .orderBy("lastName");
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("WHERE"));
             Assertions.assertTrue(sql.contains("ORDER BY"));
@@ -817,7 +817,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.insert("name");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO"));
         }
@@ -827,7 +827,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.insert("firstName", "lastName", "email");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO"));
         }
@@ -838,7 +838,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.insert(columns);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -852,7 +852,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.insert(props);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -864,7 +864,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.insert(user);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -876,7 +876,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.insert(user, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -885,7 +885,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.insert(User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -895,7 +895,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.insert(User.class, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -905,7 +905,7 @@ public class SQLBuilder11Test extends TestBase {
             Assertions.assertNotNull(sb);
 
             // Should be able to get SQL directly as table name is already set
-            Assertions.assertDoesNotThrow(() -> sb.query());
+            Assertions.assertDoesNotThrow(() -> sb.toSql());
         }
 
         @Test
@@ -914,7 +914,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.insertInto(User.class, excluded);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.query());
+            Assertions.assertDoesNotThrow(() -> sb.toSql());
         }
 
         @Test
@@ -924,7 +924,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.batchInsert(users);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -944,7 +944,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.batchInsert(propsList);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("users").query();
+            String sql = sb.into("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -953,7 +953,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.update("users");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).query();
+            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
         }
@@ -963,7 +963,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.update("users", User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status").where(Filters.eq("id", 1)).query();
+            String sql = sb.set("status").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -972,7 +972,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.update(User.class);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).query());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).toSql());
         }
 
         @Test
@@ -981,7 +981,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.update(User.class, excluded);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).query());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("id", 1)).toSql());
         }
 
         @Test
@@ -989,7 +989,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.deleteFrom("users");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).query();
+            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM"));
         }
@@ -999,7 +999,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.deleteFrom("users", User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).query();
+            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1008,7 +1008,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.deleteFrom(User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).query();
+            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1017,7 +1017,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select("COUNT(DISTINCT userId)");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("orders").query();
+            String sql = sb.from("orders").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("COUNT(DISTINCT"));
@@ -1028,7 +1028,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select("firstName", "lastName", "email");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users").query();
+            String sql = sb.from("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1038,7 +1038,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select(columns);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users").query();
+            String sql = sb.from("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1052,7 +1052,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select(aliases);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users").query();
+            String sql = sb.from("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1061,7 +1061,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select(User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users").query();
+            String sql = sb.from("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1070,7 +1070,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select(User.class, true);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users").query();
+            String sql = sb.from("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1080,7 +1080,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select(User.class, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users").query();
+            String sql = sb.from("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1090,7 +1090,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select(User.class, true, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users").query();
+            String sql = sb.from("users").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1099,7 +1099,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1108,7 +1108,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class, "u");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1117,7 +1117,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class, true);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1126,7 +1126,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class, "u", true);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1136,7 +1136,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1146,7 +1146,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class, "u", excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1156,7 +1156,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class, true, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1166,7 +1166,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class, "u", true, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1175,7 +1175,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select(User.class, "u1", "user1", User.class, "u2", "user2");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users u1, users u2").query();
+            String sql = sb.from("users u1, users u2").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1187,7 +1187,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select(User.class, "u1", "user1", excludedA, User.class, "u2", "user2", excludedB);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users u1, users u2").query();
+            String sql = sb.from("users u1, users u2").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1199,7 +1199,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.select(selections);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("users u1, users u2").query();
+            String sql = sb.from("users u1, users u2").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1208,7 +1208,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class, "u1", "user1", User.class, "u2", "user2");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1220,7 +1220,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(User.class, "u1", "user1", excludedA, User.class, "u2", "user2", excludedB);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1232,7 +1232,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.selectFrom(selections);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1241,7 +1241,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.count("users");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("count(*)"));
         }
@@ -1251,7 +1251,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.count(User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("count(*)"));
         }
@@ -1263,7 +1263,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = ACSB.parse(cond, User.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("OR"));
         }
@@ -1297,7 +1297,7 @@ public class SQLBuilder11Test extends TestBase {
                     .orderBy("u.lastName");
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("LEFT JOIN"));
             Assertions.assertTrue(sql.contains("GROUP BY"));
@@ -1395,7 +1395,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insert("customerName");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO"));
         }
@@ -1405,7 +1405,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insert("firstName", "lastName", "emailAddress");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO"));
         }
@@ -1416,7 +1416,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insert(columns);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1430,7 +1430,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insert(props);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1442,7 +1442,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insert(customer);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1454,7 +1454,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insert(customer, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1463,7 +1463,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insert(Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1473,7 +1473,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insert(Customer.class, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1482,7 +1482,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insertInto(Customer.class);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.query());
+            Assertions.assertDoesNotThrow(() -> sb.toSql());
         }
 
         @Test
@@ -1491,7 +1491,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.insertInto(Customer.class, excluded);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.query());
+            Assertions.assertDoesNotThrow(() -> sb.toSql());
         }
 
         @Test
@@ -1501,7 +1501,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.batchInsert(customers);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1522,7 +1522,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.batchInsert(propsList);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.into("customers").query();
+            String sql = sb.into("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1531,7 +1531,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.update("customers");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'PREMIUM'").where(Filters.gt("totalPurchases", 1000)).query();
+            String sql = sb.set("status", "'PREMIUM'").where(Filters.gt("totalPurchases", 1000)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
         }
@@ -1541,7 +1541,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.update("customers", Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status").where(Filters.eq("customerId", 100)).query();
+            String sql = sb.set("status").where(Filters.eq("customerId", 100)).toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1550,7 +1550,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.update(Customer.class);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("customerId", 100)).query());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("customerId", 100)).toSql());
         }
 
         @Test
@@ -1559,7 +1559,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.update(Customer.class, excluded);
             Assertions.assertNotNull(sb);
 
-            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("customerId", 100)).query());
+            Assertions.assertDoesNotThrow(() -> sb.set("status").where(Filters.eq("customerId", 100)).toSql());
         }
 
         @Test
@@ -1567,7 +1567,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.deleteFrom("customers");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).query();
+            String sql = sb.where(Filters.eq("status", "'INACTIVE'")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM"));
         }
@@ -1577,7 +1577,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.deleteFrom("customers", Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(Filters.lt("lastLoginDate", "2020-01-01")).query();
+            String sql = sb.where(Filters.lt("lastLoginDate", "2020-01-01")).toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1586,7 +1586,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.deleteFrom(Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.where(Filters.isNull("emailAddress")).query();
+            String sql = sb.where(Filters.isNull("emailAddress")).toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1595,7 +1595,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select("COUNT(*) as totalCount");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers").query();
+            String sql = sb.from("customers").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("totalCount"));
@@ -1606,7 +1606,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select("firstName", "lastName", "emailAddress");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers").query();
+            String sql = sb.from("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1616,7 +1616,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select(columns);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers").query();
+            String sql = sb.from("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1630,7 +1630,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select(aliases);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers").query();
+            String sql = sb.from("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1639,7 +1639,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select(Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers").query();
+            String sql = sb.from("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1648,7 +1648,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select(Customer.class, true);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers").query();
+            String sql = sb.from("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1658,7 +1658,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select(Customer.class, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers").query();
+            String sql = sb.from("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1668,7 +1668,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select(Customer.class, true, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers").query();
+            String sql = sb.from("customers").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1678,7 +1678,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(Customer.class, true, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1688,7 +1688,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(Customer.class, "c", true, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1697,7 +1697,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select(Customer.class, "c1", "customer1", Customer.class, "c2", "customer2");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers c1, customers c2").query();
+            String sql = sb.from("customers c1, customers c2").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1709,7 +1709,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select(Customer.class, "c1", "customer1", excludedA, Customer.class, "c2", "customer2", excludedB);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers c1, customers c2").query();
+            String sql = sb.from("customers c1, customers c2").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1721,7 +1721,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select(selections);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.from("customers c1, customers c2, customers c3").query();
+            String sql = sb.from("customers c1, customers c2, customers c3").toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1730,7 +1730,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(Customer.class, "c1", "customer1", Customer.class, "c2", "customer2");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1742,7 +1742,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(Customer.class, "c1", "customer1", excludedA, Customer.class, "c2", "customer2", excludedB);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1754,7 +1754,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(selections);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1763,7 +1763,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.count("customers");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("count(*)"));
         }
@@ -1773,7 +1773,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.count(Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("count(*)"));
         }
@@ -1785,7 +1785,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.parse(cond, Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("AND"));
             Assertions.assertTrue(sql.contains("BETWEEN"));
@@ -1799,7 +1799,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.parse(cond, Customer.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("OR"));
             Assertions.assertTrue(sql.contains("AND"));
@@ -1849,7 +1849,7 @@ public class SQLBuilder11Test extends TestBase {
                     .orderBy("SUM(o.amount) DESC");
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INNER JOIN"));
             Assertions.assertTrue(sql.contains("GROUP BY"));
@@ -1864,7 +1864,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select("*").from("customers").where(Filters.in("customerId", subquery));
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("IN"));
         }
@@ -1877,7 +1877,7 @@ public class SQLBuilder11Test extends TestBase {
                     .where(Filters.lt("lastLoginDate", "2020-01-01"));
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -1888,7 +1888,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select("DISTINCT status").from("customers").orderBy("status");
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DISTINCT"));
         }
@@ -1898,7 +1898,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select("*").from("customers").where(Filters.eq("status", "'ACTIVE'")).orderBy("registrationDate DESC").limit(10);
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
@@ -1908,7 +1908,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select("*").from("customers").where(Filters.eq("status", "'ACTIVE'")).orderBy("customerId").limit(20, 10);
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
@@ -1922,7 +1922,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = query1.union(query2);
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UNION"));
         }
@@ -1934,7 +1934,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.select("firstName", "lastName", caseExpr).from("customers");
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("case when"));
         }
@@ -1947,7 +1947,7 @@ public class SQLBuilder11Test extends TestBase {
                     .having(Filters.gt("COUNT(*)", 10));
 
             Assertions.assertNotNull(sb);
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("COUNT"));
             Assertions.assertTrue(sql.contains("AVG"));
@@ -1967,7 +1967,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(Customer.class, "c");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1976,7 +1976,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(Customer.class, true);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1985,7 +1985,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(Customer.class, "c", true);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -1995,7 +1995,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(Customer.class, excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
 
@@ -2005,7 +2005,7 @@ public class SQLBuilder11Test extends TestBase {
             SQLBuilder sb = LCSB.selectFrom(Customer.class, "c", excluded);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.query();
+            String sql = sb.toSql();
             Assertions.assertNotNull(sql);
         }
     }

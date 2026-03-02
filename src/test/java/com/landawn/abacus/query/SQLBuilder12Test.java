@@ -681,7 +681,7 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             // Test SQL generation
-            String sql = builder.into("account").query();
+            String sql = builder.into("account").toSql();
             assertTrue(sql.contains("INSERT INTO account"));
             assertTrue(sql.contains("first_name"));
         }
@@ -691,7 +691,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.insert("firstName", "lastName", "email");
             assertNotNull(builder);
 
-            String sql = builder.into("account").query();
+            String sql = builder.into("account").toSql();
             assertTrue(sql.contains("first_name"));
             assertTrue(sql.contains("last_name"));
             assertTrue(sql.contains("email"));
@@ -703,7 +703,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.insert(columns);
             assertNotNull(builder);
 
-            String sql = builder.into("account").query();
+            String sql = builder.into("account").toSql();
             assertTrue(sql.contains("first_name"));
             assertTrue(sql.contains("last_name"));
             assertTrue(sql.contains("email"));
@@ -719,8 +719,8 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("account").build();
-            assertTrue(pair.query.contains("first_name"));
-            assertTrue(pair.query.contains("last_name"));
+            assertTrue(pair.sql.contains("first_name"));
+            assertTrue(pair.sql.contains("last_name"));
             assertEquals(2, pair.parameters.size());
         }
 
@@ -733,10 +733,10 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("account").build();
-            assertTrue(pair.query.contains("first_name"));
-            assertTrue(pair.query.contains("last_name"));
-            assertTrue(pair.query.contains("email"));
-            assertFalse(pair.query.contains("created_date")); // ReadOnly field should be excluded
+            assertTrue(pair.sql.contains("first_name"));
+            assertTrue(pair.sql.contains("last_name"));
+            assertTrue(pair.sql.contains("email"));
+            assertFalse(pair.sql.contains("created_date")); // ReadOnly field should be excluded
         }
 
         @Test
@@ -749,9 +749,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("account").build();
-            assertTrue(pair.query.contains("first_name"));
-            assertTrue(pair.query.contains("last_name"));
-            assertFalse(pair.query.contains("email"));
+            assertTrue(pair.sql.contains("first_name"));
+            assertTrue(pair.sql.contains("last_name"));
+            assertFalse(pair.sql.contains("email"));
         }
 
         @Test
@@ -759,7 +759,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.insert(Account.class);
             assertNotNull(builder);
 
-            String sql = builder.into("account").query();
+            String sql = builder.into("account").toSql();
             assertTrue(sql.contains("first_name"));
             assertTrue(sql.contains("last_name"));
             assertTrue(sql.contains("email"));
@@ -773,7 +773,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.insert(Account.class, excludedProps);
             assertNotNull(builder);
 
-            String sql = builder.into("account").query();
+            String sql = builder.into("account").toSql();
             assertTrue(sql.contains("first_name"));
             assertTrue(sql.contains("last_name"));
             assertFalse(sql.contains("email"));
@@ -785,7 +785,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.insertInto(Account.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("INSERT INTO account"));
             assertTrue(sql.contains("first_name"));
             assertTrue(sql.contains("last_name"));
@@ -797,7 +797,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.insertInto(Account.class, excludedProps);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("INSERT INTO account"));
             assertFalse(sql.contains(" id "));
             assertFalse(sql.contains("created_date"));
@@ -811,9 +811,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("account").build();
-            assertTrue(pair.query.contains("VALUES"));
-            assertTrue(pair.query.contains("(?, ?)"));
-            assertTrue(pair.query.contains(", (?, ?)"));
+            assertTrue(pair.sql.contains("VALUES"));
+            assertTrue(pair.sql.contains("(?, ?)"));
+            assertTrue(pair.sql.contains(", (?, ?)"));
             assertEquals(4, pair.parameters.size()); // 2 accounts * 2 fields each
         }
 
@@ -822,7 +822,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.update("account");
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("UPDATE account"));
             assertTrue(sql.contains("first_name = ?"));
         }
@@ -832,7 +832,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.update("account", Account.class);
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("UPDATE account"));
             assertTrue(sql.contains("first_name = ?"));
         }
@@ -842,7 +842,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.update(Account.class);
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("UPDATE account"));
             assertTrue(sql.contains("first_name = ?"));
             // Should include updatable fields
@@ -860,7 +860,7 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             // Get the generated column names
-            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("first_name"));
             assertFalse(sql.contains("email"));
         }
@@ -870,7 +870,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.deleteFrom("account");
             assertNotNull(builder);
 
-            String sql = builder.where(Filters.eq("id", 1)).query();
+            String sql = builder.where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("DELETE FROM account"));
             assertTrue(sql.contains("WHERE"));
         }
@@ -880,7 +880,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.deleteFrom("account", Account.class);
             assertNotNull(builder);
 
-            String sql = builder.where(Filters.eq("firstName", "John")).query();
+            String sql = builder.where(Filters.eq("firstName", "John")).toSql();
             assertTrue(sql.contains("DELETE FROM account"));
             assertTrue(sql.contains("first_name = ?"));
         }
@@ -890,7 +890,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.deleteFrom(Account.class);
             assertNotNull(builder);
 
-            String sql = builder.where(Filters.eq("id", 1)).query();
+            String sql = builder.where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("DELETE FROM account"));
         }
 
@@ -899,7 +899,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.select("COUNT(*)");
             assertNotNull(builder);
 
-            String sql = builder.from("account").query();
+            String sql = builder.from("account").toSql();
             assertTrue(sql.contains("SELECT COUNT(*)"));
             assertTrue(sql.contains("FROM account"));
         }
@@ -909,7 +909,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.select("id", "firstName", "lastName");
             assertNotNull(builder);
 
-            String sql = builder.from("account").query();
+            String sql = builder.from("account").toSql();
             assertTrue(sql.contains("SELECT"));
             assertTrue(sql.contains("id"));
             assertTrue(sql.contains("first_name AS \"firstName\""));
@@ -922,7 +922,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.select(columns);
             assertNotNull(builder);
 
-            String sql = builder.from("account").query();
+            String sql = builder.from("account").toSql();
             assertTrue(sql.contains("id"));
             assertTrue(sql.contains("first_name AS \"firstName\""));
             assertTrue(sql.contains("last_name AS \"lastName\""));
@@ -937,7 +937,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.select(aliases);
             assertNotNull(builder);
 
-            String sql = builder.from("account").query();
+            String sql = builder.from("account").toSql();
             assertTrue(sql.contains("first_name AS \"fname\""));
             assertTrue(sql.contains("last_name AS \"lname\""));
         }
@@ -947,7 +947,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.select(Account.class);
             assertNotNull(builder);
 
-            String sql = builder.from("account").query();
+            String sql = builder.from("account").toSql();
             assertTrue(sql.contains("id"));
             assertTrue(sql.contains("first_name AS \"firstName\""));
             assertTrue(sql.contains("last_name AS \"lastName\""));
@@ -960,7 +960,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.select(Account.class, true);
             assertNotNull(builder);
 
-            String sql = builder.from("account").query();
+            String sql = builder.from("account").toSql();
             assertNotNull(sql);
         }
 
@@ -970,7 +970,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.select(Account.class, excludedProps);
             assertNotNull(builder);
 
-            String sql = builder.from("account").query();
+            String sql = builder.from("account").toSql();
             assertTrue(sql.contains("id"));
             assertTrue(sql.contains("first_name"));
             assertFalse(sql.contains("email"));
@@ -982,7 +982,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.selectFrom(Account.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("SELECT"));
             assertTrue(sql.contains("FROM account"));
             assertTrue(sql.contains("first_name AS \"firstName\""));
@@ -993,7 +993,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.selectFrom(Account.class, "a");
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("FROM account a"));
             assertTrue(sql.contains("a.first_name AS \"firstName\""));
         }
@@ -1003,7 +1003,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.selectFrom(Account.class, "a", "account", Account.class, "a2", "account2");
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("a.first_name AS \"account.firstName\""));
             assertTrue(sql.contains("a2.first_name AS \"account2.firstName\""));
         }
@@ -1016,7 +1016,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.select(selections);
             assertNotNull(builder);
 
-            String sql = builder.from("account a, account a2").query();
+            String sql = builder.from("account a, account a2").toSql();
             assertTrue(sql.contains("a.id AS \"account.id\""));
             assertTrue(sql.contains("a.first_name AS \"account.firstName\""));
             assertFalse(sql.contains("account2.email"));
@@ -1027,7 +1027,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.count("account");
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM account"));
         }
@@ -1037,7 +1037,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.count(Account.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM account"));
         }
@@ -1049,7 +1049,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PSC.parse(cond, Account.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("first_name = ?"));
             assertTrue(sql.contains("AND"));
             assertTrue(sql.contains("email LIKE ?"));
@@ -1069,7 +1069,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testNamingPolicy() {
             // Test that PSC uses snake_case naming
             SQLBuilder builder = PSC.select("firstName", "lastName", "emailAddress");
-            String sql = builder.from("account").query();
+            String sql = builder.from("account").toSql();
 
             assertTrue(sql.contains("first_name AS \"firstName\""));
             assertTrue(sql.contains("last_name AS \"lastName\""));
@@ -1165,7 +1165,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.insert("firstName");
             assertNotNull(builder);
 
-            String sql = builder.into("USER_ACCOUNT").query();
+            String sql = builder.into("USER_ACCOUNT").toSql();
             assertTrue(sql.contains("INSERT INTO USER_ACCOUNT"));
             assertTrue(sql.contains("FIRST_NAME"));
         }
@@ -1175,7 +1175,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.insert("firstName", "lastName", "emailAddress");
             assertNotNull(builder);
 
-            String sql = builder.into("USER_ACCOUNT").query();
+            String sql = builder.into("USER_ACCOUNT").toSql();
             assertTrue(sql.contains("FIRST_NAME"));
             assertTrue(sql.contains("LAST_NAME"));
             assertTrue(sql.contains("EMAIL_ADDRESS"));
@@ -1187,7 +1187,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.insert(columns);
             assertNotNull(builder);
 
-            String sql = builder.into("USER_ACCOUNT").query();
+            String sql = builder.into("USER_ACCOUNT").toSql();
             assertTrue(sql.contains("FIRST_NAME"));
             assertTrue(sql.contains("LAST_NAME"));
             assertTrue(sql.contains("EMAIL_ADDRESS"));
@@ -1203,8 +1203,8 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("USER_ACCOUNT").build();
-            assertTrue(pair.query.contains("FIRST_NAME"));
-            assertTrue(pair.query.contains("LAST_NAME"));
+            assertTrue(pair.sql.contains("FIRST_NAME"));
+            assertTrue(pair.sql.contains("LAST_NAME"));
             assertEquals(2, pair.parameters.size());
         }
 
@@ -1217,10 +1217,10 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("USER_ACCOUNT").build();
-            assertTrue(pair.query.contains("FIRST_NAME"));
-            assertTrue(pair.query.contains("LAST_NAME"));
-            assertTrue(pair.query.contains("EMAIL_ADDRESS"));
-            assertFalse(pair.query.contains("CREATED_DATE")); // ReadOnly
+            assertTrue(pair.sql.contains("FIRST_NAME"));
+            assertTrue(pair.sql.contains("LAST_NAME"));
+            assertTrue(pair.sql.contains("EMAIL_ADDRESS"));
+            assertFalse(pair.sql.contains("CREATED_DATE")); // ReadOnly
         }
 
         @Test
@@ -1233,9 +1233,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("USER_ACCOUNT").build();
-            assertTrue(pair.query.contains("FIRST_NAME"));
-            assertTrue(pair.query.contains("LAST_NAME"));
-            assertFalse(pair.query.contains("EMAIL_ADDRESS"));
+            assertTrue(pair.sql.contains("FIRST_NAME"));
+            assertTrue(pair.sql.contains("LAST_NAME"));
+            assertFalse(pair.sql.contains("EMAIL_ADDRESS"));
         }
 
         @Test
@@ -1243,7 +1243,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.insert(UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.into("USER_ACCOUNT").query();
+            String sql = builder.into("USER_ACCOUNT").toSql();
             assertTrue(sql.contains("FIRST_NAME"));
             assertTrue(sql.contains("LAST_NAME"));
             assertTrue(sql.contains("EMAIL_ADDRESS"));
@@ -1256,7 +1256,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.insertInto(UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("INSERT INTO USER_ACCOUNT"));
             assertTrue(sql.contains("FIRST_NAME"));
         }
@@ -1269,9 +1269,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("USER_ACCOUNT").build();
-            assertTrue(pair.query.contains("VALUES"));
-            assertTrue(pair.query.contains("(?, ?)"));
-            assertTrue(pair.query.contains(", (?, ?)"));
+            assertTrue(pair.sql.contains("VALUES"));
+            assertTrue(pair.sql.contains("(?, ?)"));
+            assertTrue(pair.sql.contains(", (?, ?)"));
         }
 
         @Test
@@ -1279,7 +1279,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.update("USER_ACCOUNT");
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("UPDATE USER_ACCOUNT"));
             assertTrue(sql.contains("FIRST_NAME = ?"));
         }
@@ -1289,7 +1289,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.update(UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("UPDATE USER_ACCOUNT"));
             assertTrue(sql.contains("FIRST_NAME = ?"));
         }
@@ -1299,7 +1299,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.deleteFrom("USER_ACCOUNT");
             assertNotNull(builder);
 
-            String sql = builder.where(Filters.eq("id", 1)).query();
+            String sql = builder.where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("DELETE FROM USER_ACCOUNT"));
         }
 
@@ -1308,7 +1308,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.deleteFrom(UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.where(Filters.eq("id", 1)).query();
+            String sql = builder.where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("DELETE FROM USER_ACCOUNT"));
         }
 
@@ -1317,7 +1317,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.select("COUNT(*)");
             assertNotNull(builder);
 
-            String sql = builder.from("USER_ACCOUNT").query();
+            String sql = builder.from("USER_ACCOUNT").toSql();
             assertTrue(sql.contains("SELECT COUNT(*)"));
             assertTrue(sql.contains("FROM USER_ACCOUNT"));
         }
@@ -1327,7 +1327,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.select("id", "firstName", "lastName");
             assertNotNull(builder);
 
-            String sql = builder.from("USER_ACCOUNT").query();
+            String sql = builder.from("USER_ACCOUNT").toSql();
             assertTrue(sql.contains("ID"));
             assertTrue(sql.contains("FIRST_NAME AS \"firstName\""));
             assertTrue(sql.contains("LAST_NAME AS \"lastName\""));
@@ -1342,7 +1342,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.select(aliases);
             assertNotNull(builder);
 
-            String sql = builder.from("USER_ACCOUNT").query();
+            String sql = builder.from("USER_ACCOUNT").toSql();
             assertTrue(sql.contains("FIRST_NAME AS \"fname\""));
             assertTrue(sql.contains("LAST_NAME AS \"lname\""));
         }
@@ -1352,7 +1352,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.select(UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.from("USER_ACCOUNT").query();
+            String sql = builder.from("USER_ACCOUNT").toSql();
             assertTrue(sql.contains("ID"));
             assertTrue(sql.contains("FIRST_NAME AS \"firstName\""));
             assertTrue(sql.contains("LAST_NAME AS \"lastName\""));
@@ -1365,7 +1365,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.selectFrom(UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("SELECT"));
             assertTrue(sql.contains("FROM USER_ACCOUNT"));
             assertTrue(sql.contains("FIRST_NAME AS \"firstName\""));
@@ -1376,7 +1376,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.selectFrom(UserAccount.class, "u");
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("FROM USER_ACCOUNT u"));
             assertTrue(sql.contains("u.FIRST_NAME AS \"firstName\""));
         }
@@ -1386,7 +1386,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.selectFrom(UserAccount.class, "u1", "user1", UserAccount.class, "u2", "user2");
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("u1.FIRST_NAME AS \"user1.firstName\""));
             assertTrue(sql.contains("u2.FIRST_NAME AS \"user2.firstName\""));
         }
@@ -1396,7 +1396,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.count("USER_ACCOUNT");
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM USER_ACCOUNT"));
         }
@@ -1406,7 +1406,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.count(UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM USER_ACCOUNT"));
         }
@@ -1418,7 +1418,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PAC.parse(cond, UserAccount.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("FIRST_NAME = ?"));
             assertTrue(sql.contains("AND"));
             assertTrue(sql.contains("ID > ?"));
@@ -1438,7 +1438,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testNamingPolicy() {
             // Test that PAC uses UPPER_CASE naming
             SQLBuilder builder = PAC.select("firstName", "lastName", "emailAddress");
-            String sql = builder.from("USER_ACCOUNT").query();
+            String sql = builder.from("USER_ACCOUNT").toSql();
 
             assertTrue(sql.contains("FIRST_NAME AS \"firstName\""));
             assertTrue(sql.contains("LAST_NAME AS \"lastName\""));
@@ -1453,7 +1453,7 @@ public class SQLBuilder12Test extends TestBase {
 
             SQLBuilder builder = PAC.select(UserAccount.class, "u1", "user1", excludeUser1, UserAccount.class, "u2", "user2", excludeUser2);
 
-            String sql = builder.from("USER_ACCOUNT u1, USER_ACCOUNT u2").where(Filters.eq("u1.id", "u2.id")).query();
+            String sql = builder.from("USER_ACCOUNT u1, USER_ACCOUNT u2").where(Filters.eq("u1.id", "u2.id")).toSql();
 
             assertTrue(sql.contains("u1.ID AS \"user1.id\""));
             assertTrue(sql.contains("u2.ID AS \"user2.id\""));
@@ -1587,7 +1587,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.insert("firstName");
             assertNotNull(builder);
 
-            String sql = builder.into("userProfile").query();
+            String sql = builder.into("userProfile").toSql();
             assertTrue(sql.contains("INSERT INTO userProfile"));
             assertTrue(sql.contains("firstName"));
         }
@@ -1597,7 +1597,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.insert("firstName", "lastName", "emailAddress");
             assertNotNull(builder);
 
-            String sql = builder.into("userProfile").query();
+            String sql = builder.into("userProfile").toSql();
             assertTrue(sql.contains("firstName"));
             assertTrue(sql.contains("lastName"));
             assertTrue(sql.contains("emailAddress"));
@@ -1609,7 +1609,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.insert(columns);
             assertNotNull(builder);
 
-            String sql = builder.into("userProfile").query();
+            String sql = builder.into("userProfile").toSql();
             assertTrue(sql.contains("firstName"));
             assertTrue(sql.contains("lastName"));
             assertTrue(sql.contains("isActive"));
@@ -1626,9 +1626,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("userProfile").build();
-            assertTrue(pair.query.contains("firstName"));
-            assertTrue(pair.query.contains("lastName"));
-            assertTrue(pair.query.contains("isActive"));
+            assertTrue(pair.sql.contains("firstName"));
+            assertTrue(pair.sql.contains("lastName"));
+            assertTrue(pair.sql.contains("isActive"));
             assertEquals(3, pair.parameters.size());
         }
 
@@ -1642,11 +1642,11 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("userProfile").build();
-            assertTrue(pair.query.contains("firstName"));
-            assertTrue(pair.query.contains("lastName"));
-            assertTrue(pair.query.contains("emailAddress"));
-            assertTrue(pair.query.contains("isActive"));
-            assertFalse(pair.query.contains("lastLoginDate")); // ReadOnly
+            assertTrue(pair.sql.contains("firstName"));
+            assertTrue(pair.sql.contains("lastName"));
+            assertTrue(pair.sql.contains("emailAddress"));
+            assertTrue(pair.sql.contains("isActive"));
+            assertFalse(pair.sql.contains("lastLoginDate")); // ReadOnly
         }
 
         @Test
@@ -1659,9 +1659,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("userProfile").build();
-            assertTrue(pair.query.contains("firstName"));
-            assertTrue(pair.query.contains("lastName"));
-            assertFalse(pair.query.contains("emailAddress"));
+            assertTrue(pair.sql.contains("firstName"));
+            assertTrue(pair.sql.contains("lastName"));
+            assertFalse(pair.sql.contains("emailAddress"));
         }
 
         @Test
@@ -1669,7 +1669,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.insert(UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.into("userProfile").query();
+            String sql = builder.into("userProfile").toSql();
             assertTrue(sql.contains("firstName"));
             assertTrue(sql.contains("lastName"));
             assertTrue(sql.contains("emailAddress"));
@@ -1683,7 +1683,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.insertInto(UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("INSERT INTO userProfile"));
             assertTrue(sql.contains("firstName"));
         }
@@ -1696,9 +1696,9 @@ public class SQLBuilder12Test extends TestBase {
             assertNotNull(builder);
 
             SP pair = builder.into("userProfile").build();
-            assertTrue(pair.query.contains("VALUES"));
-            assertTrue(pair.query.contains("(?, ?)"));
-            assertTrue(pair.query.contains(", (?, ?)"));
+            assertTrue(pair.sql.contains("VALUES"));
+            assertTrue(pair.sql.contains("(?, ?)"));
+            assertTrue(pair.sql.contains(", (?, ?)"));
         }
 
         @Test
@@ -1706,7 +1706,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.update("userProfile");
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("UPDATE userProfile"));
             assertTrue(sql.contains("firstName = ?"));
         }
@@ -1716,7 +1716,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.update(UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("UPDATE userProfile"));
             assertTrue(sql.contains("firstName = ?"));
         }
@@ -1726,7 +1726,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.deleteFrom("userProfile");
             assertNotNull(builder);
 
-            String sql = builder.where(Filters.eq("id", 1)).query();
+            String sql = builder.where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("DELETE FROM userProfile"));
         }
 
@@ -1735,7 +1735,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.deleteFrom(UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.where(Filters.eq("id", 1)).query();
+            String sql = builder.where(Filters.eq("id", 1)).toSql();
             assertTrue(sql.contains("DELETE FROM userProfile"));
         }
 
@@ -1744,7 +1744,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.select("COUNT(*)");
             assertNotNull(builder);
 
-            String sql = builder.from("userProfile").query();
+            String sql = builder.from("userProfile").toSql();
             assertTrue(sql.contains("SELECT COUNT(*)"));
             assertTrue(sql.contains("FROM userProfile"));
         }
@@ -1754,7 +1754,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.select("id", "firstName", "lastName");
             assertNotNull(builder);
 
-            String sql = builder.from("userProfile").query();
+            String sql = builder.from("userProfile").toSql();
             assertTrue(sql.contains("id"));
             assertTrue(sql.contains("firstName"));
             assertTrue(sql.contains("lastName"));
@@ -1769,7 +1769,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.select(aliases);
             assertNotNull(builder);
 
-            String sql = builder.from("userProfile").query();
+            String sql = builder.from("userProfile").toSql();
             assertTrue(sql.contains("firstName AS \"fname\""));
             assertTrue(sql.contains("lastName AS \"lname\""));
         }
@@ -1779,7 +1779,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.select(UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.from("userProfile").query();
+            String sql = builder.from("userProfile").toSql();
             assertTrue(sql.contains("id"));
             assertTrue(sql.contains("firstName"));
             assertTrue(sql.contains("lastName"));
@@ -1793,7 +1793,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.selectFrom(UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("SELECT"));
             assertTrue(sql.contains("FROM userProfile"));
             assertTrue(sql.contains("firstName"));
@@ -1804,7 +1804,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.selectFrom(UserProfile.class, "p");
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("FROM userProfile p"));
             assertTrue(sql.contains("p.firstName"));
         }
@@ -1814,7 +1814,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.selectFrom(UserProfile.class, "p1", "profile1", UserProfile.class, "p2", "profile2");
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("p1.firstName AS \"profile1.firstName\""));
             assertTrue(sql.contains("p2.firstName AS \"profile2.firstName\""));
         }
@@ -1824,7 +1824,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.count("userProfile");
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM userProfile"));
         }
@@ -1834,7 +1834,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.count(UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM userProfile"));
         }
@@ -1846,7 +1846,7 @@ public class SQLBuilder12Test extends TestBase {
             SQLBuilder builder = PLC.parse(cond, UserProfile.class);
             assertNotNull(builder);
 
-            String sql = builder.query();
+            String sql = builder.toSql();
             assertTrue(sql.contains("firstName = ?"));
             assertTrue(sql.contains("AND"));
             assertTrue(sql.contains("isActive = ?"));
@@ -1866,7 +1866,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testNamingPolicy() {
             // Test that PLC uses camelCase naming (no transformation)
             SQLBuilder builder = PLC.select("firstName", "lastName", "emailAddress", "isActive");
-            String sql = builder.from("userProfile").query();
+            String sql = builder.from("userProfile").toSql();
 
             assertTrue(sql.contains("firstName"));
             assertTrue(sql.contains("lastName"));
@@ -1889,7 +1889,7 @@ public class SQLBuilder12Test extends TestBase {
                     new Selection(UserProfile.class, "p2", "profile2", null, false, new HashSet<>(Arrays.asList("sessionData", "lastLoginDate"))));
 
             SQLBuilder builder = PLC.select(selections);
-            String sql = builder.from("userProfile p1, userProfile p2").query();
+            String sql = builder.from("userProfile p1, userProfile p2").toSql();
 
             assertTrue(sql.contains("p1.id AS \"profile1.id\""));
             assertTrue(sql.contains("p1.firstName AS \"profile1.firstName\""));

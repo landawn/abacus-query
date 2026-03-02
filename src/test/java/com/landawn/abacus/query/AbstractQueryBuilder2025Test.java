@@ -16,6 +16,7 @@
 
 package com.landawn.abacus.query;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,99 +42,115 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testPSCSelectFrom() {
-        String sql = SQLBuilder.PSC.select("id", "firstName", "lastName").from(Account.class).query();
+        String sql = SQLBuilder.PSC.select("id", "firstName", "lastName").from(Account.class).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("SELECT"));
         assertTrue(sql.contains("FROM"));
     }
 
     @Test
+    public void testToSql() {
+        String sql = SQLBuilder.PSC.select("id", "firstName").from(Account.class).where(Filters.eq("id", 1)).toSql();
+        assertNotNull(sql);
+        assertTrue(sql.contains("SELECT"));
+        assertTrue(sql.contains("WHERE"));
+    }
+
+    @Test
+    public void testToSqlAndParameters() {
+        AbstractQueryBuilder.SP sqlPair = SQLBuilder.PSC.select("id").from(Account.class).where(Filters.eq("id", 1)).toSqlAndParameters();
+        assertNotNull(sqlPair);
+        assertTrue(sqlPair.sql.contains("WHERE"));
+        assertEquals(1, sqlPair.parameters.size());
+    }
+
+    @Test
     public void testPSCWithWhere() {
-        String sql = SQLBuilder.PSC.select("id", "firstName").from(Account.class).where(Filters.eq("id", 1)).query();
+        String sql = SQLBuilder.PSC.select("id", "firstName").from(Account.class).where(Filters.eq("id", 1)).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("WHERE"));
     }
 
     @Test
     public void testPSCWithMultipleConditions() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).where(Filters.eq("status", "active").and(Filters.gt("age", 18))).query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).where(Filters.eq("status", "active").and(Filters.gt("age", 18))).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("AND"));
     }
 
     @Test
     public void testPSCWithOrderBy() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).orderBy("firstName").query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).orderBy("firstName").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
     public void testPSCWithLimit() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).limit(10).query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).limit(10).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("LIMIT"));
     }
 
     @Test
     public void testPSCWithJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users").join("orders").on("users.id = orders.user_id").query();
+        String sql = SQLBuilder.PSC.select("*").from("users").join("orders").on("users.id = orders.user_id").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("JOIN"));
     }
 
     @Test
     public void testPSCWithLeftJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users").leftJoin("orders").on("users.id = orders.user_id").query();
+        String sql = SQLBuilder.PSC.select("*").from("users").leftJoin("orders").on("users.id = orders.user_id").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("LEFT JOIN"));
     }
 
     @Test
     public void testPSCWithInnerJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users").innerJoin("orders").on("users.id = orders.user_id").query();
+        String sql = SQLBuilder.PSC.select("*").from("users").innerJoin("orders").on("users.id = orders.user_id").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("INNER JOIN"));
     }
 
     @Test
     public void testPSCWithRightJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users").rightJoin("orders").on("users.id = orders.user_id").query();
+        String sql = SQLBuilder.PSC.select("*").from("users").rightJoin("orders").on("users.id = orders.user_id").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("RIGHT JOIN"));
     }
 
     @Test
     public void testPSCWithFullJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users").fullJoin("departments").on("users.dept_id = departments.id").query();
+        String sql = SQLBuilder.PSC.select("*").from("users").fullJoin("departments").on("users.dept_id = departments.id").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("FULL JOIN"));
     }
 
     @Test
     public void testPSCWithCrossJoin() {
-        String sql = SQLBuilder.PSC.select("*").from("users").crossJoin("roles").query();
+        String sql = SQLBuilder.PSC.select("*").from("users").crossJoin("roles").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("CROSS JOIN"));
     }
 
     @Test
     public void testPSCWithGroupBy() {
-        String sql = SQLBuilder.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").query();
+        String sql = SQLBuilder.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("GROUP BY"));
     }
 
     @Test
     public void testPSCWithHaving() {
-        String sql = SQLBuilder.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).query();
+        String sql = SQLBuilder.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("HAVING"));
     }
 
     @Test
     public void testPSCWithDistinct() {
-        String sql = SQLBuilder.PSC.select("status").from(Account.class).distinct().query();
+        String sql = SQLBuilder.PSC.select("status").from(Account.class).distinct().toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("DISTINCT"));
     }
@@ -149,7 +166,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
                 .having(Filters.expr("COUNT(o.id) > 0"))
                 .orderBy("order_count", SortDirection.DESC)
                 .limit(10)
-                .query();
+                .toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("SELECT"));
         assertTrue(sql.contains("LEFT JOIN"));
@@ -162,14 +179,14 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testInsertInto() {
-        String sql = SQLBuilder.PSC.insertInto(Account.class).query();
+        String sql = SQLBuilder.PSC.insertInto(Account.class).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("INSERT INTO"));
     }
 
     @Test
     public void testUpdate() {
-        String sql = SQLBuilder.PSC.update(Account.class).set("firstName", "John").where(Filters.eq("id", 1)).query();
+        String sql = SQLBuilder.PSC.update(Account.class).set("firstName", "John").where(Filters.eq("id", 1)).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("UPDATE"));
         assertTrue(sql.contains("SET"));
@@ -177,102 +194,102 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testDeleteFrom() {
-        String sql = SQLBuilder.PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).query();
+        String sql = SQLBuilder.PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("DELETE FROM"));
     }
 
     @Test
     public void testSelectWithAlias() {
-        String sql = SQLBuilder.PSC.select("firstName AS fname", "lastName AS lname").from(Account.class).query();
+        String sql = SQLBuilder.PSC.select("firstName AS fname", "lastName AS lname").from(Account.class).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("AS"));
     }
 
     @Test
     public void testSelectWithMultipleTables() {
-        String sql = SQLBuilder.PSC.select("*").from("users", "orders").query();
+        String sql = SQLBuilder.PSC.select("*").from("users", "orders").toSql();
         assertNotNull(sql);
     }
 
     @Test
     public void testWhereWithOr() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).where(Filters.eq("status", "active").or(Filters.eq("status", "pending"))).query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).where(Filters.eq("status", "active").or(Filters.eq("status", "pending"))).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("OR"));
     }
 
     @Test
     public void testOrderByAsc() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).orderBy("firstName", SortDirection.ASC).query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).orderBy("firstName", SortDirection.ASC).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
     public void testOrderByDesc() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).orderBy("createdTime", SortDirection.DESC).query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).orderBy("createdTime", SortDirection.DESC).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
     public void testMultipleOrderBy() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).orderBy("lastName", "firstName").query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).orderBy("lastName", "firstName").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
     public void testLimitWithOffset() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).limit(20, 10).query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).limit(20, 10).toSql();
         assertNotNull(sql);
     }
 
     @Test
     public void testFromWithEntityClass() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("FROM"));
     }
 
     @Test
     public void testJoinWithEntityClass() {
-        String sql = SQLBuilder.PSC.select("*").from(Account.class).join(Account.class).on("a.id = b.parent_id").query();
+        String sql = SQLBuilder.PSC.select("*").from(Account.class).join(Account.class).on("a.id = b.parent_id").toSql();
         assertNotNull(sql);
     }
 
     @Test
     public void testIntoWithTableName() {
-        String sql = SQLBuilder.PSC.insert("id", "name").into("accounts").query();
+        String sql = SQLBuilder.PSC.insert("id", "name").into("accounts").toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("INSERT INTO"));
     }
 
     @Test
     public void testUpdateWithSet() {
-        String sql = SQLBuilder.PSC.update("accounts").set("status", "inactive").set("updated_at", "NOW()").where(Filters.eq("id", 1)).query();
+        String sql = SQLBuilder.PSC.update("accounts").set("status", "inactive").set("updated_at", "NOW()").where(Filters.eq("id", 1)).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("SET"));
     }
 
     @Test
     public void testDeleteFromWithTable() {
-        String sql = SQLBuilder.PSC.deleteFrom("accounts").where(Filters.eq("status", "deleted")).query();
+        String sql = SQLBuilder.PSC.deleteFrom("accounts").where(Filters.eq("status", "deleted")).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("DELETE FROM"));
     }
 
     @Test
     public void testSelectCount() {
-        String sql = SQLBuilder.PSC.select(AbstractQueryBuilder.COUNT_ALL).from(Account.class).query();
+        String sql = SQLBuilder.PSC.select(AbstractQueryBuilder.COUNT_ALL).from(Account.class).toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("count(*)"));
     }
 
     @Test
     public void testSelectAll() {
-        String sql = SQLBuilder.PSC.select(AbstractQueryBuilder.ALL).from(Account.class).query();
+        String sql = SQLBuilder.PSC.select(AbstractQueryBuilder.ALL).from(Account.class).toSql();
         assertNotNull(sql);
     }
 
@@ -281,7 +298,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
         String sql = SQLBuilder.PSC.select("*")
                 .from(Account.class)
                 .where(Filters.eq("status", "active").and(Filters.gt("age", 18)).or(Filters.eq("role", "admin")))
-                .query();
+                .toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("AND"));
         assertTrue(sql.contains("OR"));
@@ -295,7 +312,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
                 .on("u.id = o.user_id")
                 .leftJoin("products p")
                 .on("o.product_id = p.id")
-                .query();
+                .toSql();
         assertNotNull(sql);
         assertTrue(sql.contains("INNER JOIN"));
         assertTrue(sql.contains("LEFT JOIN"));

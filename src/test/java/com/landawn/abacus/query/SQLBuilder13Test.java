@@ -110,7 +110,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertWithSingleExpression() {
-            String sql = NSB.insert("user_name").into("users").query();
+            String sql = NSB.insert("user_name").into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("user_name"));
@@ -120,7 +120,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertWithMultipleColumns() {
-            String sql = NSB.insert("first_name", "last_name", "email").into("users").query();
+            String sql = NSB.insert("first_name", "last_name", "email").into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("first_name"));
@@ -134,7 +134,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithCollection() {
             List<String> columns = Arrays.asList("id", "name", "created_date");
-            String sql = NSB.insert(columns).into("products").query();
+            String sql = NSB.insert(columns).into("products").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO products"));
             Assertions.assertTrue(sql.contains("id"));
@@ -147,7 +147,7 @@ public class SQLBuilder13Test extends TestBase {
             Map<String, Object> data = new HashMap<>();
             data.put("username", "john_doe");
             data.put("age", 25);
-            String sql = NSB.insert(data).into("users").query();
+            String sql = NSB.insert(data).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("username"));
@@ -165,7 +165,7 @@ public class SQLBuilder13Test extends TestBase {
             user.setCreatedDate(new Date());
             user.setTempData("temp");
 
-            String sql = NSB.insert(user).into("users").query();
+            String sql = NSB.insert(user).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             // Should include regular fields
@@ -185,7 +185,7 @@ public class SQLBuilder13Test extends TestBase {
             user.setPassword("secret");
 
             Set<String> exclude = N.asSet("password");
-            String sql = NSB.insert(user, exclude).into("users").query();
+            String sql = NSB.insert(user, exclude).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("firstName"));
@@ -195,7 +195,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertWithEntityClass() {
-            String sql = NSB.insert(User.class).into("users").query();
+            String sql = NSB.insert(User.class).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             // Should include insertable fields
@@ -212,7 +212,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithEntityClassAndExclusions() {
             Set<String> exclude = N.asSet("id", "password");
-            String sql = NSB.insert(User.class, exclude).into("users").query();
+            String sql = NSB.insert(User.class, exclude).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertFalse(sql.contains("id"));
@@ -224,7 +224,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertInto() {
-            String sql = NSB.insertInto(User.class).query();
+            String sql = NSB.insertInto(User.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO test_user"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -233,7 +233,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertIntoWithExclusions() {
             Set<String> exclude = N.asSet("id");
-            String sql = NSB.insertInto(User.class, exclude).query();
+            String sql = NSB.insertInto(User.class, exclude).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO test_user"));
             Assertions.assertFalse(sql.contains("id"));
@@ -254,7 +254,7 @@ public class SQLBuilder13Test extends TestBase {
             users.add(user1);
             users.add(user2);
 
-            String sql = NSB.batchInsert(users).into("users").query();
+            String sql = NSB.batchInsert(users).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -265,7 +265,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdate() {
-            String sql = NSB.update("users").set("last_login", "status").where(Filters.eq("id", 1)).query();
+            String sql = NSB.update("users").set("last_login", "status").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -277,7 +277,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateWithEntityClass() {
-            String sql = NSB.update("user_accounts", User.class).set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = NSB.update("user_accounts", User.class).set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE user_accounts"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -286,7 +286,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = NSB.update(User.class).set("firstName", "email").where(Filters.eq("id", 1)).query();
+            String sql = NSB.update(User.class).set("firstName", "email").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE test_user"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -297,7 +297,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testUpdateEntityClassWithExclusions() {
             Set<String> exclude = N.asSet("password", "createdDate");
-            String sql = NSB.update(User.class, exclude).set("firstName", "email").where(Filters.eq("id", 1)).query();
+            String sql = NSB.update(User.class, exclude).set("firstName", "email").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE test_user"));
             // Should be able to update non-excluded fields
@@ -307,7 +307,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFrom() {
-            String sql = NSB.deleteFrom("users").where(Filters.eq("status", "inactive")).query();
+            String sql = NSB.deleteFrom("users").where(Filters.eq("status", "inactive")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM users"));
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -317,7 +317,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromWithEntityClass() {
-            String sql = NSB.deleteFrom("user_accounts", User.class).where(Filters.lt("lastLogin", new Date())).query();
+            String sql = NSB.deleteFrom("user_accounts", User.class).where(Filters.lt("lastLogin", new Date())).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM user_accounts"));
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -326,7 +326,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromEntityClass() {
-            String sql = NSB.deleteFrom(User.class).where(Filters.eq("id", 123)).query();
+            String sql = NSB.deleteFrom(User.class).where(Filters.eq("id", 123)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM test_user"));
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -335,7 +335,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectSingleExpression() {
-            String sql = NSB.select("COUNT(*) AS total").from("users").query();
+            String sql = NSB.select("COUNT(*) AS total").from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT COUNT(*) AS total"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -343,7 +343,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectMultipleColumns() {
-            String sql = NSB.select("id", "name", "email", "created_date").from("users").where(Filters.eq("active", true)).query();
+            String sql = NSB.select("id", "name", "email", "created_date").from("users").where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("id"));
@@ -358,7 +358,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectWithCollection() {
             List<String> columns = Arrays.asList("firstName", "lastName", "email");
-            String sql = NSB.select(columns).from("users").query();
+            String sql = NSB.select(columns).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("firstName"));
@@ -373,7 +373,7 @@ public class SQLBuilder13Test extends TestBase {
             aliases.put("u.last_name", "lastName");
             aliases.put("COUNT(o.id)", "orderCount");
 
-            String sql = NSB.select(aliases).from("users u").leftJoin("orders o").on("u.id = o.user_id").groupBy("u.id").query();
+            String sql = NSB.select(aliases).from("users u").leftJoin("orders o").on("u.id = o.user_id").groupBy("u.id").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("u.first_name AS \"firstName\""));
             Assertions.assertTrue(sql.contains("u.last_name AS \"lastName\""));
@@ -382,7 +382,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClass() {
-            String sql = NSB.select(User.class).from("users").query();
+            String sql = NSB.select(User.class).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("id"));
@@ -398,7 +398,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClassWithSubEntities() {
-            String sql = NSB.select(User.class, true).from("users u").query();
+            String sql = NSB.select(User.class, true).from("users u").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -406,7 +406,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithExclusions() {
             Set<String> exclude = N.asSet("password", "createdDate");
-            String sql = NSB.select(User.class, exclude).from("users").query();
+            String sql = NSB.select(User.class, exclude).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("id"));
@@ -418,7 +418,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithAllOptions() {
             Set<String> exclude = N.asSet("password");
-            String sql = NSB.select(User.class, true, exclude).from("users").query();
+            String sql = NSB.select(User.class, true, exclude).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertFalse(sql.contains("password"));
@@ -426,7 +426,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFrom() {
-            String sql = NSB.selectFrom(User.class).where(Filters.eq("active", true)).query();
+            String sql = NSB.selectFrom(User.class).where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM test_user"));
@@ -435,14 +435,14 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAlias() {
-            String sql = NSB.selectFrom(User.class, "u").where(Filters.eq("u.active", true)).query();
+            String sql = NSB.selectFrom(User.class, "u").where(Filters.eq("u.active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM test_user u"));
         }
 
         @Test
         public void testSelectFromWithSubEntities() {
-            String sql = NSB.selectFrom(User.class, true).query();
+            String sql = NSB.selectFrom(User.class, true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM"));
@@ -450,7 +450,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAliasAndSubEntities() {
-            String sql = NSB.selectFrom(User.class, "u", true).query();
+            String sql = NSB.selectFrom(User.class, "u", true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM"));
@@ -459,7 +459,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithExclusions() {
             Set<String> exclude = N.asSet("password");
-            String sql = NSB.selectFrom(User.class, exclude).query();
+            String sql = NSB.selectFrom(User.class, exclude).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("password"));
         }
@@ -467,7 +467,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAliasAndExclusions() {
             Set<String> exclude = N.asSet("password");
-            String sql = NSB.selectFrom(User.class, "u", exclude).query();
+            String sql = NSB.selectFrom(User.class, "u", exclude).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("test_user u"));
             Assertions.assertFalse(sql.contains("password"));
@@ -476,7 +476,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithSubEntitiesAndExclusions() {
             Set<String> exclude = N.asSet("password");
-            String sql = NSB.selectFrom(User.class, true, exclude).query();
+            String sql = NSB.selectFrom(User.class, true, exclude).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("password"));
         }
@@ -484,7 +484,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAllOptions() {
             Set<String> exclude = N.asSet("password");
-            String sql = NSB.selectFrom(User.class, "u", true, exclude).query();
+            String sql = NSB.selectFrom(User.class, "u", true, exclude).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
             Assertions.assertFalse(sql.contains("password"));
@@ -492,7 +492,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectMultipleEntities() {
-            String sql = NSB.select(User.class, "u", "user_", User.class, "u2", "user2_").from("users u").join("users u2").on("u.id = u2.parent_id").query();
+            String sql = NSB.select(User.class, "u", "user_", User.class, "u2", "user2_").from("users u").join("users u2").on("u.id = u2.parent_id").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("u.id AS \"user_.id\""));
@@ -508,7 +508,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("users u")
                     .join("users u2")
                     .on("u.id = u2.parent_id")
-                    .query();
+                    .toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -518,14 +518,14 @@ public class SQLBuilder13Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
                     new Selection(User.class, "m", "manager", null, false, N.asSet("password")));
 
-            String sql = NSB.select(selections).from("users u").join("users m").on("u.manager_id = m.id").query();
+            String sql = NSB.select(selections).from("users u").join("users m").on("u.manager_id = m.id").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
 
         @Test
         public void testSelectFromMultipleEntities() {
-            String sql = NSB.selectFrom(User.class, "u", "user_", User.class, "m", "manager_").where(Filters.eq("u.active", true)).query();
+            String sql = NSB.selectFrom(User.class, "u", "user_", User.class, "m", "manager_").where(Filters.eq("u.active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -535,7 +535,7 @@ public class SQLBuilder13Test extends TestBase {
             Set<String> excludeU = N.asSet("password");
             Set<String> excludeM = N.asSet("email", "password");
 
-            String sql = NSB.selectFrom(User.class, "u", "user_", excludeU, User.class, "m", "manager_", excludeM).query();
+            String sql = NSB.selectFrom(User.class, "u", "user_", excludeU, User.class, "m", "manager_", excludeM).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -545,14 +545,14 @@ public class SQLBuilder13Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
                     new Selection(User.class, "m", "manager", null, false, null));
 
-            String sql = NSB.selectFrom(selections).query();
+            String sql = NSB.selectFrom(selections).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
 
         @Test
         public void testCount() {
-            String sql = NSB.count("users").where(Filters.eq("active", true)).query();
+            String sql = NSB.count("users").where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -561,7 +561,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testCountEntityClass() {
-            String sql = NSB.count(User.class).where(Filters.eq("status", "active")).query();
+            String sql = NSB.count(User.class).where(Filters.eq("status", "active")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM test_user"));
@@ -571,7 +571,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18));
-            String sql = NSB.parse(cond, User.class).query();
+            String sql = NSB.parse(cond, User.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("status"));
             Assertions.assertTrue(sql.contains(":status"));
@@ -583,11 +583,11 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testEmptyCollectionThrows() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                NSB.insert(new ArrayList<String>()).into("users").query();
+                NSB.insert(new ArrayList<String>()).into("users").toSql();
             });
 
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                NSB.select(new ArrayList<String>()).from("users").query();
+                NSB.select(new ArrayList<String>()).from("users").toSql();
             });
         }
 
@@ -609,27 +609,27 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testJoinOperations() {
             // Test INNER JOIN
-            String sql = NSB.select("*").from("users u").join("orders o").on("u.id = o.user_id").query();
+            String sql = NSB.select("*").from("users u").join("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("JOIN"));
 
             // Test LEFT JOIN
-            sql = NSB.select("*").from("users u").leftJoin("orders o").on("u.id = o.user_id").query();
+            sql = NSB.select("*").from("users u").leftJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("LEFT JOIN"));
 
             // Test RIGHT JOIN
-            sql = NSB.select("*").from("users u").rightJoin("orders o").on("u.id = o.user_id").query();
+            sql = NSB.select("*").from("users u").rightJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("RIGHT JOIN"));
 
             // Test FULL JOIN
-            sql = NSB.select("*").from("users u").fullJoin("orders o").on("u.id = o.user_id").query();
+            sql = NSB.select("*").from("users u").fullJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("FULL JOIN"));
 
             // Test CROSS JOIN
-            sql = NSB.select("*").from("users").crossJoin("departments").query();
+            sql = NSB.select("*").from("users").crossJoin("departments").toSql();
             Assertions.assertTrue(sql.contains("CROSS JOIN"));
 
             // Test NATURAL JOIN
-            sql = NSB.select("*").from("users").naturalJoin("user_profiles").query();
+            sql = NSB.select("*").from("users").naturalJoin("user_profiles").toSql();
             Assertions.assertTrue(sql.contains("NATURAL JOIN"));
         }
 
@@ -642,7 +642,7 @@ public class SQLBuilder13Test extends TestBase {
                     .leftJoin("products p")
                     .on("o.product_id = p.id")
                     .where(Filters.eq("u.active", true))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("LEFT JOIN orders"));
@@ -655,7 +655,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("users u")
                     .leftJoin("orders o")
                     .on(Filters.and(Filters.eq("u.id", "o.user_id"), Filters.gt("o.amount", 100)))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("LEFT JOIN"));
@@ -665,14 +665,14 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testUpdateOperations() {
             // Test simple update
-            String sql = NSB.update("users").set("status", "active").where(Filters.eq("id", 1)).query();
+            String sql = NSB.update("users").set("status", "active").where(Filters.eq("id", 1)).toSql();
 
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
             Assertions.assertTrue(sql.contains("status"));
 
             // Test update with multiple sets
-            sql = NSB.update("users").set("firstName", "John").set("lastName", "Doe").set(Map.of("age", 30)).where(Filters.eq("id", 1)).query();
+            sql = NSB.update("users").set("firstName", "John").set("lastName", "Doe").set(Map.of("age", 30)).where(Filters.eq("id", 1)).toSql();
 
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
@@ -683,7 +683,7 @@ public class SQLBuilder13Test extends TestBase {
             updates.put("firstName", "Jane");
             updates.put("age", 25);
 
-            sql = NSB.update("users").set(updates).where(Filters.eq("id", 2)).query();
+            sql = NSB.update("users").set(updates).where(Filters.eq("id", 2)).toSql();
 
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("age"));
@@ -692,31 +692,31 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testWhereOperations() {
             // Test single where
-            String sql = NSB.select("*").from("users").where(Filters.eq("status", "active")).query();
+            String sql = NSB.select("*").from("users").where(Filters.eq("status", "active")).toSql();
 
             Assertions.assertTrue(sql.contains("WHERE"));
             Assertions.assertTrue(sql.contains("status"));
 
             // Test multiple where (should be AND'ed)
-            sql = NSB.select("*").from("users").where(Filters.eq("status", "active").and(Filters.gt("age", 18))).query();
+            sql = NSB.select("*").from("users").where(Filters.eq("status", "active").and(Filters.gt("age", 18))).toSql();
 
             Assertions.assertTrue(sql.contains("AND"));
 
             // Test where with OR
-            sql = NSB.select("*").from("users").where(Filters.or(Filters.eq("status", "active"), Filters.eq("status", "premium"))).query();
+            sql = NSB.select("*").from("users").where(Filters.or(Filters.eq("status", "active"), Filters.eq("status", "premium"))).toSql();
 
             Assertions.assertTrue(sql.contains("OR"));
         }
 
         @Test
         public void testGroupByHaving() {
-            String sql = NSB.select("department", "COUNT(*) as count").from("users").groupBy("department").having(Filters.gt("COUNT(*)", 5)).query();
+            String sql = NSB.select("department", "COUNT(*) as count").from("users").groupBy("department").having(Filters.gt("COUNT(*)", 5)).toSql();
 
             Assertions.assertTrue(sql.contains("GROUP BY department"));
             Assertions.assertTrue(sql.contains("HAVING"));
 
             // Test multiple group by
-            sql = NSB.select("department", "location", "COUNT(*)").from("users").groupBy("department", "location").query();
+            sql = NSB.select("department", "location", "COUNT(*)").from("users").groupBy("department", "location").toSql();
 
             Assertions.assertTrue(sql.contains("GROUP BY"));
             Assertions.assertTrue(sql.contains("department"));
@@ -726,12 +726,12 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testOrderBy() {
             // Test simple order by
-            String sql = NSB.select("*").from("users").orderBy("name").query();
+            String sql = NSB.select("*").from("users").orderBy("name").toSql();
 
             Assertions.assertTrue(sql.contains("ORDER BY name"));
 
             // Test order by with direction
-            sql = NSB.select("*").from("users").orderBy("name ASC", "age DESC").query();
+            sql = NSB.select("*").from("users").orderBy("name ASC", "age DESC").toSql();
 
             Assertions.assertTrue(sql.contains("ORDER BY"));
             Assertions.assertTrue(sql.contains("name ASC"));
@@ -741,25 +741,25 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testLimitOffset() {
             // Test limit only
-            String sql = NSB.select("*").from("users").limit(10).query();
+            String sql = NSB.select("*").from("users").limit(10).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT 10"));
 
             // Test limit with offset
-            sql = NSB.select("*").from("users").limit(10).offset(20).query();
+            sql = NSB.select("*").from("users").limit(10).offset(20).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT 10"));
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with count and offset
-            sql = NSB.select("*").from("users").limit(10, 5).query();
+            sql = NSB.select("*").from("users").limit(10, 5).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
 
         @Test
         public void testForUpdate() {
-            String sql = NSB.select("*").from("users").where(Filters.eq("id", 1)).forUpdate().query();
+            String sql = NSB.select("*").from("users").where(Filters.eq("id", 1)).forUpdate().toSql();
 
             Assertions.assertTrue(sql.contains("FOR UPDATE"));
         }
@@ -769,8 +769,8 @@ public class SQLBuilder13Test extends TestBase {
             NSB builder1 = (NSB) NSB.select("name").from("users");
             NSB builder2 = (NSB) NSB.select("name").from("customers");
 
-            String sql1 = builder1.query();
-            String sql2 = builder2.query();
+            String sql1 = builder1.toSql();
+            String sql2 = builder2.toSql();
 
             // Union would be manual construction
             String unionSql = sql1 + " UNION " + sql2;
@@ -779,12 +779,12 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testAppend() {
-            String sql = NSB.select("*").from("users").append(" WHERE custom_condition = true").query();
+            String sql = NSB.select("*").from("users").append(" WHERE custom_condition = true").toSql();
 
             Assertions.assertTrue(sql.contains("custom_condition"));
 
             // Test multiple appends
-            sql = NSB.select("*").from("users").append(" WHERE 1=1").append(" AND status = 'active'").append(" ORDER BY name").query();
+            sql = NSB.select("*").from("users").append(" WHERE 1=1").append(" AND status = 'active'").append(" ORDER BY name").toSql();
 
             Assertions.assertTrue(sql.contains("1=1"));
             Assertions.assertTrue(sql.contains("status = 'active'"));
@@ -798,7 +798,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("users")
                     .where(Filters.or(Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.lt("age", 65)),
                             Filters.and(Filters.eq("status", "premium"), Filters.isNotNull("subscription_id"))))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("OR"));
@@ -808,45 +808,45 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSpecialConditions() {
             // Test IS NULL
-            String sql = NSB.select("*").from("users").where(Filters.isNull("email")).query();
+            String sql = NSB.select("*").from("users").where(Filters.isNull("email")).toSql();
             Assertions.assertTrue(sql.contains("IS NULL"));
 
             // Test IS NOT NULL
-            sql = NSB.select("*").from("users").where(Filters.isNotNull("email")).query();
+            sql = NSB.select("*").from("users").where(Filters.isNotNull("email")).toSql();
             Assertions.assertTrue(sql.contains("IS NOT NULL"));
 
             // Test IN
-            sql = NSB.select("*").from("users").where(Filters.in("status", Arrays.asList("active", "premium", "trial"))).query();
+            sql = NSB.select("*").from("users").where(Filters.in("status", Arrays.asList("active", "premium", "trial"))).toSql();
             Assertions.assertTrue(sql.contains("IN"));
 
             // Test NOT IN
-            sql = NSB.select("*").from("users").where(Filters.notIn("status", Arrays.asList("inactive", "banned"))).query();
+            sql = NSB.select("*").from("users").where(Filters.notIn("status", Arrays.asList("inactive", "banned"))).toSql();
             Assertions.assertTrue(sql.contains("NOT IN"));
 
             // Test BETWEEN
-            sql = NSB.select("*").from("users").where(Filters.between("age", 18, 65)).query();
+            sql = NSB.select("*").from("users").where(Filters.between("age", 18, 65)).toSql();
             Assertions.assertTrue(sql.contains("BETWEEN"));
 
             // Test LIKE
-            sql = NSB.select("*").from("users").where(Filters.like("name", "%John%")).query();
+            sql = NSB.select("*").from("users").where(Filters.like("name", "%John%")).toSql();
             Assertions.assertTrue(sql.contains("LIKE"));
 
             // Test NOT LIKE
-            sql = NSB.select("*").from("users").where(Filters.notLike("email", "%spam%")).query();
+            sql = NSB.select("*").from("users").where(Filters.notLike("email", "%spam%")).toSql();
             Assertions.assertTrue(sql.contains("NOT LIKE"));
         }
 
         @Test
         public void testInsertReturning() {
             // Some databases support RETURNING clause
-            String sql = NSB.insert("firstName", "lastName").into("users").append(" RETURNING id").query();
+            String sql = NSB.insert("firstName", "lastName").into("users").append(" RETURNING id").toSql();
 
             Assertions.assertTrue(sql.contains("RETURNING id"));
         }
 
         @Test
         public void testCaseExpression() {
-            String sql = NSB.select("name", "CASE WHEN age < 18 THEN 'Minor' WHEN age < 65 THEN 'Adult' ELSE 'Senior' END as category").from("users").query();
+            String sql = NSB.select("name", "CASE WHEN age < 18 THEN 'Minor' WHEN age < 65 THEN 'Adult' ELSE 'Senior' END as category").from("users").toSql();
 
             Assertions.assertTrue(sql.contains("CASE"));
             Assertions.assertTrue(sql.contains("WHEN"));
@@ -856,7 +856,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testWindowFunctions() {
-            String sql = NSB.select("name", "salary", "ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) as rank").from("employees").query();
+            String sql = NSB.select("name", "salary", "ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) as rank").from("employees").toSql();
 
             Assertions.assertTrue(sql.contains("ROW_NUMBER()"));
             Assertions.assertTrue(sql.contains("OVER"));
@@ -865,12 +865,12 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDistinct() {
-            String sql = NSB.select("DISTINCT department").from("users").query();
+            String sql = NSB.select("DISTINCT department").from("users").toSql();
 
             Assertions.assertTrue(sql.contains("DISTINCT"));
 
             // Test with multiple columns
-            sql = NSB.select("DISTINCT department", "location").from("users").query();
+            sql = NSB.select("DISTINCT department", "location").from("users").toSql();
 
             Assertions.assertTrue(sql.contains("DISTINCT"));
         }
@@ -881,7 +881,7 @@ public class SQLBuilder13Test extends TestBase {
                     .select("COUNT(*) as total", "AVG(salary) as avg_salary", "MAX(salary) as max_salary", "MIN(salary) as min_salary",
                             "SUM(salary) as total_salary")
                     .from("employees")
-                    .query();
+                    .toSql();
 
             Assertions.assertTrue(sql.contains("COUNT(*)"));
             Assertions.assertTrue(sql.contains("AVG(salary)"));
@@ -896,7 +896,7 @@ public class SQLBuilder13Test extends TestBase {
             String sql = NSB.select("*")
                     .from("users")
                     .where(Filters.and(Filters.eq("firstName", "John"), Filters.eq("lastName", "Doe"), Filters.gt("age", 18)))
-                    .query();
+                    .toSql();
 
             Assertions.assertTrue(sql.contains(":firstName"));
             Assertions.assertTrue(sql.contains(":lastName"));
@@ -911,7 +911,7 @@ public class SQLBuilder13Test extends TestBase {
             user.setLastName("User");
             user.setEmail("test@example.com");
 
-            String sql = NSB.insert(user).into("test_user").query();
+            String sql = NSB.insert(user).into("test_user").toSql();
 
             // Should use property names as parameter names
             Assertions.assertTrue(sql.contains(":firstName"));
@@ -932,7 +932,7 @@ public class SQLBuilder13Test extends TestBase {
                     .having(Filters.gt("COUNT(o.id)", 0))
                     .orderBy("totalRevenue DESC")
                     .limit(20)
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
@@ -1024,7 +1024,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertSingleExpression() {
-            String sql = NSC.insert("name").into("users").query();
+            String sql = NSC.insert("name").into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("(name)"));
@@ -1033,7 +1033,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertMultipleColumns() {
-            String sql = NSC.insert("firstName", "lastName", "email").into("users").query();
+            String sql = NSC.insert("firstName", "lastName", "email").into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("first_name"));
@@ -1047,7 +1047,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithCollection() {
             List<String> columns = Arrays.asList("firstName", "lastName", "email");
-            String sql = NSC.insert(columns).into("users").query();
+            String sql = NSC.insert(columns).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -1059,7 +1059,7 @@ public class SQLBuilder13Test extends TestBase {
             Map<String, Object> props = new HashMap<>();
             props.put("firstName", "John");
             props.put("lastName", "Doe");
-            String sql = NSC.insert(props).into("users").query();
+            String sql = NSC.insert(props).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -1076,7 +1076,7 @@ public class SQLBuilder13Test extends TestBase {
             user.setCreatedDate(new Date()); // Should be excluded (ReadOnly)
             user.setTempField("temp"); // Should be excluded (Transient)
 
-            String sql = NSC.insert(user).into("users").query();
+            String sql = NSC.insert(user).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -1093,7 +1093,7 @@ public class SQLBuilder13Test extends TestBase {
             user.setEmail("john@example.com");
 
             Set<String> excluded = Set.of("email");
-            String sql = NSC.insert(user, excluded).into("users").query();
+            String sql = NSC.insert(user, excluded).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -1102,7 +1102,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertWithEntityClass() {
-            String sql = NSC.insert(User.class).into("users").query();
+            String sql = NSC.insert(User.class).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("first_name"));
@@ -1116,7 +1116,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithEntityClassAndExclusions() {
             Set<String> excluded = Set.of("id", "status");
-            String sql = NSC.insert(User.class, excluded).into("users").query();
+            String sql = NSC.insert(User.class, excluded).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("id"));
             Assertions.assertFalse(sql.contains("status"));
@@ -1126,7 +1126,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertInto() {
-            String sql = NSC.insertInto(User.class).query();
+            String sql = NSC.insertInto(User.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -1135,7 +1135,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertIntoWithExclusions() {
             Set<String> excluded = Set.of("id");
-            String sql = NSC.insertInto(User.class, excluded).query();
+            String sql = NSC.insertInto(User.class, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertFalse(sql.contains("id"));
@@ -1155,7 +1155,7 @@ public class SQLBuilder13Test extends TestBase {
                 }
             });
 
-            String sql = NSC.batchInsert(users).into("users").query();
+            String sql = NSC.batchInsert(users).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -1164,7 +1164,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdate() {
-            String sql = NSC.update("users").set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = NSC.update("users").set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -1175,7 +1175,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateWithEntityClass() {
-            String sql = NSC.update("users", User.class).set("status").where(Filters.eq("id", 1)).query();
+            String sql = NSC.update("users", User.class).set("status").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -1184,7 +1184,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = NSC.update(User.class).set("firstName", "email").where(Filters.eq("id", 1)).query();
+            String sql = NSC.update(User.class).set("firstName", "email").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("first_name"));
@@ -1194,7 +1194,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testUpdateEntityClassWithExclusions() {
             Set<String> excluded = Set.of("createdDate", "status");
-            String sql = NSC.update(User.class, excluded).set("firstName").where(Filters.eq("id", 1)).query();
+            String sql = NSC.update(User.class, excluded).set("firstName").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("first_name"));
@@ -1202,7 +1202,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFrom() {
-            String sql = NSC.deleteFrom("users").where(Filters.eq("status", "INACTIVE")).query();
+            String sql = NSC.deleteFrom("users").where(Filters.eq("status", "INACTIVE")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM users"));
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -1211,7 +1211,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromWithEntityClass() {
-            String sql = NSC.deleteFrom("users", User.class).where(Filters.eq("status", "INACTIVE")).query();
+            String sql = NSC.deleteFrom("users", User.class).where(Filters.eq("status", "INACTIVE")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM users"));
             Assertions.assertTrue(sql.contains("status = :status"));
@@ -1219,7 +1219,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromEntityClass() {
-            String sql = NSC.deleteFrom(User.class).where(Filters.eq("status", "INACTIVE")).query();
+            String sql = NSC.deleteFrom(User.class).where(Filters.eq("status", "INACTIVE")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM users"));
             Assertions.assertTrue(sql.contains("status = :status"));
@@ -1227,7 +1227,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectSinglePart() {
-            String sql = NSC.select("COUNT(*)").from("users").query();
+            String sql = NSC.select("COUNT(*)").from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -1235,7 +1235,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectMultipleColumns() {
-            String sql = NSC.select("firstName", "lastName", "email").from("users").query();
+            String sql = NSC.select("firstName", "lastName", "email").from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("first_name AS \"firstName\""));
@@ -1246,7 +1246,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectWithCollection() {
             List<String> columns = Arrays.asList("firstName", "lastName");
-            String sql = NSC.select(columns).from("users").query();
+            String sql = NSC.select(columns).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name AS \"firstName\""));
             Assertions.assertTrue(sql.contains("last_name AS \"lastName\""));
@@ -1257,7 +1257,7 @@ public class SQLBuilder13Test extends TestBase {
             Map<String, String> aliases = new LinkedHashMap<>();
             aliases.put("firstName", "fname");
             aliases.put("lastName", "lname");
-            String sql = NSC.select(aliases).from("users").query();
+            String sql = NSC.select(aliases).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name AS \"fname\""));
             Assertions.assertTrue(sql.contains("last_name AS \"lname\""));
@@ -1265,7 +1265,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClass() {
-            String sql = NSC.select(User.class).from("users").query();
+            String sql = NSC.select(User.class).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("id"));
@@ -1279,7 +1279,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClassWithSubEntities() {
-            String sql = NSC.select(User.class, true).from("users").query();
+            String sql = NSC.select(User.class, true).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -1287,7 +1287,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithExclusions() {
             Set<String> excluded = Set.of("createdDate", "status");
-            String sql = NSC.select(User.class, excluded).from("users").query();
+            String sql = NSC.select(User.class, excluded).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("created_date"));
             Assertions.assertFalse(sql.contains("status"));
@@ -1297,14 +1297,14 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithAllOptions() {
             Set<String> excluded = Set.of("status");
-            String sql = NSC.select(User.class, true, excluded).from("users").query();
+            String sql = NSC.select(User.class, true, excluded).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("status"));
         }
 
         @Test
         public void testSelectFrom() {
-            String sql = NSC.selectFrom(User.class).query();
+            String sql = NSC.selectFrom(User.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -1312,14 +1312,14 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAlias() {
-            String sql = NSC.selectFrom(User.class, "u").query();
+            String sql = NSC.selectFrom(User.class, "u").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM users u"));
         }
 
         @Test
         public void testSelectFromWithSubEntities() {
-            String sql = NSC.selectFrom(User.class, true).query();
+            String sql = NSC.selectFrom(User.class, true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM"));
@@ -1327,7 +1327,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAliasAndSubEntities() {
-            String sql = NSC.selectFrom(User.class, "u", true).query();
+            String sql = NSC.selectFrom(User.class, "u", true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -1335,7 +1335,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithExclusions() {
             Set<String> excluded = Set.of("status");
-            String sql = NSC.selectFrom(User.class, excluded).query();
+            String sql = NSC.selectFrom(User.class, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("status"));
         }
@@ -1343,7 +1343,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAliasAndExclusions() {
             Set<String> excluded = Set.of("status");
-            String sql = NSC.selectFrom(User.class, "u", excluded).query();
+            String sql = NSC.selectFrom(User.class, "u", excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("users u"));
             Assertions.assertFalse(sql.contains("status"));
@@ -1352,7 +1352,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithSubEntitiesAndExclusions() {
             Set<String> excluded = Set.of("status");
-            String sql = NSC.selectFrom(User.class, true, excluded).query();
+            String sql = NSC.selectFrom(User.class, true, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("status"));
         }
@@ -1360,14 +1360,14 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAllOptions() {
             Set<String> excluded = Set.of("status");
-            String sql = NSC.selectFrom(User.class, "u", true, excluded).query();
+            String sql = NSC.selectFrom(User.class, "u", true, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("status"));
         }
 
         @Test
         public void testSelectMultipleEntities() {
-            String sql = NSC.select(User.class, "u", "user", User.class, "m", "manager").from("users u").join("users m").on("u.manager_id = m.id").query();
+            String sql = NSC.select(User.class, "u", "user", User.class, "m", "manager").from("users u").join("users m").on("u.manager_id = m.id").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("u.id AS \"user.id\""));
             Assertions.assertTrue(sql.contains("m.id AS \"manager.id\""));
@@ -1382,7 +1382,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("users u")
                     .join("users m")
                     .on("u.manager_id = m.id")
-                    .query();
+                    .toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -1392,14 +1392,14 @@ public class SQLBuilder13Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
                     new Selection(User.class, "m", "manager", null, false, Set.of("status")));
 
-            String sql = NSC.select(selections).from("users u").query();
+            String sql = NSC.select(selections).from("users u").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
 
         @Test
         public void testSelectFromMultipleEntities() {
-            String sql = NSC.selectFrom(User.class, "u", "user", User.class, "m", "manager").query();
+            String sql = NSC.selectFrom(User.class, "u", "user", User.class, "m", "manager").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -1409,7 +1409,7 @@ public class SQLBuilder13Test extends TestBase {
             Set<String> excludeU = Set.of("status");
             Set<String> excludeM = Set.of("email");
 
-            String sql = NSC.selectFrom(User.class, "u", "user", excludeU, User.class, "m", "manager", excludeM).query();
+            String sql = NSC.selectFrom(User.class, "u", "user", excludeU, User.class, "m", "manager", excludeM).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -1419,14 +1419,14 @@ public class SQLBuilder13Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
                     new Selection(User.class, "m", "manager", null, false, null));
 
-            String sql = NSC.selectFrom(selections).query();
+            String sql = NSC.selectFrom(selections).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
 
         @Test
         public void testCount() {
-            String sql = NSC.count("users").where(Filters.eq("active", true)).query();
+            String sql = NSC.count("users").where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -1436,7 +1436,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testCountEntityClass() {
-            String sql = NSC.count(User.class).where(Filters.and(Filters.eq("firstName", "John"), Filters.gt("age", 18))).query();
+            String sql = NSC.count(User.class).where(Filters.and(Filters.eq("firstName", "John"), Filters.gt("age", 18))).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -1447,7 +1447,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("age", 18), Filters.like("email", "%@example.com"));
-            String sql = NSC.parse(cond, User.class).query();
+            String sql = NSC.parse(cond, User.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name = :firstName"));
             Assertions.assertTrue(sql.contains("age > :age"));
@@ -1457,7 +1457,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testNamingPolicySnakeCase() {
             // NSC uses SNAKE_CASE naming policy
-            String sql = NSC.select("firstName", "lastName").from("userAccounts").query();
+            String sql = NSC.select("firstName", "lastName").from("userAccounts").toSql();
 
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -1475,7 +1475,7 @@ public class SQLBuilder13Test extends TestBase {
                     .having(Filters.gt("COUNT(o.id)", 5))
                     .orderBy("COUNT(o.id) DESC")
                     .limit(10)
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("u.first_name AS \"u.firstName\""));
@@ -1493,7 +1493,7 @@ public class SQLBuilder13Test extends TestBase {
             updates.put("firstName", "Jane");
             updates.put("lastName", "Smith");
 
-            String sql = NSC.update("users").set(updates).where(Filters.eq("id", 1)).query();
+            String sql = NSC.update("users").set(updates).where(Filters.eq("id", 1)).toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name = :firstName"));
@@ -1514,7 +1514,7 @@ public class SQLBuilder13Test extends TestBase {
             row2.put("lastName", "Smith");
             data.add(row2);
 
-            String sql = NSC.batchInsert(data).into("users").query();
+            String sql = NSC.batchInsert(data).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -1527,7 +1527,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("users")
                     .where(Filters.and(Filters.eq("firstName", "John"), Filters.in("status", Arrays.asList("ACTIVE", "PREMIUM")),
                             Filters.between("age", 18, 65)))
-                    .query();
+                    .toSql();
 
             Assertions.assertTrue(sql.contains(":firstName"));
             Assertions.assertTrue(sql.contains("status IN (:status1, :status2)"));
@@ -1541,7 +1541,7 @@ public class SQLBuilder13Test extends TestBase {
             user.setFirstName("John");
             user.setLastName("Doe");
 
-            String sql = NSC.insert(user).into("users").query();
+            String sql = NSC.insert(user).into("users").toSql();
 
             // Column names should be snake_case
             Assertions.assertTrue(sql.contains("first_name"));
@@ -1583,31 +1583,31 @@ public class SQLBuilder13Test extends TestBase {
             // Test all join variations
             String sql;
 
-            sql = NSC.select("*").from("users u").join("orders o").on("u.id = o.user_id").query();
+            sql = NSC.select("*").from("users u").join("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("JOIN"));
 
-            sql = NSC.select("*").from("users u").innerJoin("orders o").on("u.id = o.user_id").query();
+            sql = NSC.select("*").from("users u").innerJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("INNER JOIN"));
 
-            sql = NSC.select("*").from("users u").leftJoin("orders o").on("u.id = o.user_id").query();
+            sql = NSC.select("*").from("users u").leftJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("LEFT JOIN"));
 
-            sql = NSC.select("*").from("users u").rightJoin("orders o").on("u.id = o.user_id").query();
+            sql = NSC.select("*").from("users u").rightJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("RIGHT JOIN"));
 
-            sql = NSC.select("*").from("users u").fullJoin("orders o").on("u.id = o.user_id").query();
+            sql = NSC.select("*").from("users u").fullJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("FULL JOIN"));
 
-            sql = NSC.select("*").from("users").crossJoin("departments").query();
+            sql = NSC.select("*").from("users").crossJoin("departments").toSql();
             Assertions.assertTrue(sql.contains("CROSS JOIN"));
 
-            sql = NSC.select("*").from("users").naturalJoin("user_profiles").query();
+            sql = NSC.select("*").from("users").naturalJoin("user_profiles").toSql();
             Assertions.assertTrue(sql.contains("NATURAL JOIN"));
         }
 
         @Test
         public void testAppendCustomSQL() {
-            String sql = NSC.select("*").from("users").append(" WHERE MATCH(name) AGAINST (:search IN BOOLEAN MODE)").query();
+            String sql = NSC.select("*").from("users").append(" WHERE MATCH(name) AGAINST (:search IN BOOLEAN MODE)").toSql();
 
             Assertions.assertTrue(sql.contains("MATCH"));
             Assertions.assertTrue(sql.contains("AGAINST"));
@@ -1619,7 +1619,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("users")
                     .where(Filters.or(Filters.and(Filters.eq("status", "ACTIVE"), Filters.or(Filters.lt("age", 18), Filters.gt("age", 65))),
                             Filters.and(Filters.eq("status", "PREMIUM"), Filters.between("age", 18, 65))))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("OR"));
@@ -1630,20 +1630,20 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testForUpdate() {
-            String sql = NSC.select("*").from("users").where(Filters.eq("id", 1)).forUpdate().query();
+            String sql = NSC.select("*").from("users").where(Filters.eq("id", 1)).forUpdate().toSql();
 
             Assertions.assertTrue(sql.contains("FOR UPDATE"));
         }
 
         @Test
         public void testLimitOffset() {
-            String sql = NSC.select("*").from("users").limit(10).offset(20).query();
+            String sql = NSC.select("*").from("users").limit(10).offset(20).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT 10"));
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with offset parameter
-            sql = NSC.select("*").from("users").limit(10, 20).query();
+            sql = NSC.select("*").from("users").limit(10, 20).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
@@ -1727,7 +1727,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertSingleExpression() {
-            String sql = NAC.insert("FIRST_NAME").into("ACCOUNT").query();
+            String sql = NAC.insert("FIRST_NAME").into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO ACCOUNT"));
             Assertions.assertTrue(sql.contains("(FIRST_NAME)"));
@@ -1736,7 +1736,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertMultipleColumns() {
-            String sql = NAC.insert("firstName", "lastName", "email").into("ACCOUNT").query();
+            String sql = NAC.insert("firstName", "lastName", "email").into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO ACCOUNT"));
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
@@ -1750,7 +1750,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithCollection() {
             List<String> columns = Arrays.asList("firstName", "lastName");
-            String sql = NAC.insert(columns).into("ACCOUNT").query();
+            String sql = NAC.insert(columns).into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
             Assertions.assertTrue(sql.contains("LAST_NAME"));
@@ -1761,7 +1761,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithMap() {
             Map<String, Object> props = Map.of("firstName", "John", "lastName", "Doe");
-            String sql = NAC.insert(props).into("ACCOUNT").query();
+            String sql = NAC.insert(props).into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
             Assertions.assertTrue(sql.contains("LAST_NAME"));
@@ -1777,7 +1777,7 @@ public class SQLBuilder13Test extends TestBase {
             account.setCreatedTime(new Date()); // Should be excluded
             account.setSessionId("123"); // Should be excluded
 
-            String sql = NAC.insert(account).into("ACCOUNT").query();
+            String sql = NAC.insert(account).into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
             Assertions.assertTrue(sql.contains("LAST_NAME"));
@@ -1792,7 +1792,7 @@ public class SQLBuilder13Test extends TestBase {
             account.setPassword("secret");
 
             Set<String> exclude = Set.of("password");
-            String sql = NAC.insert(account, exclude).into("ACCOUNT").query();
+            String sql = NAC.insert(account, exclude).into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
             Assertions.assertFalse(sql.contains("PASSWORD"));
@@ -1800,7 +1800,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertWithEntityClass() {
-            String sql = NAC.insert(Account.class).into("ACCOUNT").query();
+            String sql = NAC.insert(Account.class).into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO ACCOUNT"));
             Assertions.assertTrue(sql.contains("ID"));
@@ -1815,7 +1815,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithEntityClassAndExclusions() {
             Set<String> excluded = Set.of("id", "createdTime");
-            String sql = NAC.insert(Account.class, excluded).into("ACCOUNT").query();
+            String sql = NAC.insert(Account.class, excluded).into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("ID"));
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
@@ -1824,7 +1824,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertInto() {
-            String sql = NAC.insertInto(Account.class).query();
+            String sql = NAC.insertInto(Account.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO ACCOUNT"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -1833,7 +1833,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertIntoWithExclusions() {
             Set<String> excluded = Set.of("id");
-            String sql = NAC.insertInto(Account.class, excluded).query();
+            String sql = NAC.insertInto(Account.class, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO ACCOUNT"));
             Assertions.assertFalse(sql.contains("ID"));
@@ -1853,7 +1853,7 @@ public class SQLBuilder13Test extends TestBase {
                 }
             });
 
-            String sql = NAC.batchInsert(accounts).into("ACCOUNT").query();
+            String sql = NAC.batchInsert(accounts).into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO ACCOUNT"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -1861,7 +1861,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdate() {
-            String sql = NAC.update("ACCOUNT").set("STATUS", "ACTIVE").where(Filters.eq("ID", 1)).query();
+            String sql = NAC.update("ACCOUNT").set("STATUS", "ACTIVE").where(Filters.eq("ID", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE ACCOUNT"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -1872,7 +1872,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateWithEntityClass() {
-            String sql = NAC.update("ACCOUNT", Account.class).set("status").where(Filters.eq("id", 1)).query();
+            String sql = NAC.update("ACCOUNT", Account.class).set("status").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE ACCOUNT"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -1881,7 +1881,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = NAC.update(Account.class).set("firstName", "lastName").where(Filters.eq("id", 1)).query();
+            String sql = NAC.update(Account.class).set("firstName", "lastName").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE ACCOUNT"));
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
@@ -1891,7 +1891,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testUpdateEntityClassWithExclusions() {
             Set<String> excluded = Set.of("createdTime", "password");
-            String sql = NAC.update(Account.class, excluded).set("firstName").where(Filters.eq("id", 1)).query();
+            String sql = NAC.update(Account.class, excluded).set("firstName").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE ACCOUNT"));
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
@@ -1899,7 +1899,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFrom() {
-            String sql = NAC.deleteFrom("ACCOUNT").where(Filters.eq("STATUS", "INACTIVE")).query();
+            String sql = NAC.deleteFrom("ACCOUNT").where(Filters.eq("STATUS", "INACTIVE")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM ACCOUNT"));
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -1908,7 +1908,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromWithEntityClass() {
-            String sql = NAC.deleteFrom("ACCOUNT", Account.class).where(Filters.eq("firstName", "John")).query();
+            String sql = NAC.deleteFrom("ACCOUNT", Account.class).where(Filters.eq("firstName", "John")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM ACCOUNT"));
             Assertions.assertTrue(sql.contains("FIRST_NAME = :firstName"));
@@ -1916,7 +1916,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromEntityClass() {
-            String sql = NAC.deleteFrom(Account.class).where(Filters.eq("firstName", "John")).query();
+            String sql = NAC.deleteFrom(Account.class).where(Filters.eq("firstName", "John")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM ACCOUNT"));
             Assertions.assertTrue(sql.contains("FIRST_NAME = :firstName"));
@@ -1924,7 +1924,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectSinglePart() {
-            String sql = NAC.select("COUNT(*)").from("ACCOUNT").query();
+            String sql = NAC.select("COUNT(*)").from("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
             Assertions.assertTrue(sql.contains("FROM ACCOUNT"));
@@ -1932,7 +1932,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectMultipleColumns() {
-            String sql = NAC.select("firstName", "lastName", "email").from("ACCOUNT").where(Filters.eq("active", true)).query();
+            String sql = NAC.select("firstName", "lastName", "email").from("ACCOUNT").where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FIRST_NAME AS \"firstName\""));
@@ -1944,7 +1944,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectWithCollection() {
             List<String> columns = Arrays.asList("firstName", "lastName");
-            String sql = NAC.select(columns).from("ACCOUNT").query();
+            String sql = NAC.select(columns).from("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FIRST_NAME AS \"firstName\""));
             Assertions.assertTrue(sql.contains("LAST_NAME AS \"lastName\""));
@@ -1953,7 +1953,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectWithAliases() {
             Map<String, String> aliases = Map.of("firstName", "fname", "lastName", "lname");
-            String sql = NAC.select(aliases).from("ACCOUNT").query();
+            String sql = NAC.select(aliases).from("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FIRST_NAME AS \"fname\""));
             Assertions.assertTrue(sql.contains("LAST_NAME AS \"lname\""));
@@ -1961,7 +1961,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClass() {
-            String sql = NAC.select(Account.class).from("ACCOUNT").query();
+            String sql = NAC.select(Account.class).from("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("ID"));
@@ -1975,7 +1975,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClassWithSubEntities() {
-            String sql = NAC.select(Account.class, true).from("ACCOUNT").query();
+            String sql = NAC.select(Account.class, true).from("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -1983,7 +1983,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithExclusions() {
             Set<String> excluded = Set.of("password");
-            String sql = NAC.select(Account.class, excluded).from("ACCOUNT").query();
+            String sql = NAC.select(Account.class, excluded).from("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("PASSWORD"));
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
@@ -1992,14 +1992,14 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithAllOptions() {
             Set<String> excluded = Set.of("password");
-            String sql = NAC.select(Account.class, true, excluded).from("ACCOUNT").query();
+            String sql = NAC.select(Account.class, true, excluded).from("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("PASSWORD"));
         }
 
         @Test
         public void testSelectFrom() {
-            String sql = NAC.selectFrom(Account.class).where(Filters.eq("active", true)).query();
+            String sql = NAC.selectFrom(Account.class).where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM ACCOUNT"));
@@ -2008,14 +2008,14 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAlias() {
-            String sql = NAC.selectFrom(Account.class, "a").where(Filters.eq("a.active", true)).query();
+            String sql = NAC.selectFrom(Account.class, "a").where(Filters.eq("a.active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM ACCOUNT a"));
         }
 
         @Test
         public void testSelectFromWithSubEntities() {
-            String sql = NAC.selectFrom(Account.class, true).query();
+            String sql = NAC.selectFrom(Account.class, true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM"));
@@ -2023,7 +2023,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAliasAndSubEntities() {
-            String sql = NAC.selectFrom(Account.class, "a", true).query();
+            String sql = NAC.selectFrom(Account.class, "a", true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -2031,7 +2031,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithExclusions() {
             Set<String> excluded = Set.of("password");
-            String sql = NAC.selectFrom(Account.class, excluded).query();
+            String sql = NAC.selectFrom(Account.class, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("PASSWORD"));
         }
@@ -2039,7 +2039,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAliasAndExclusions() {
             Set<String> excluded = Set.of("password");
-            String sql = NAC.selectFrom(Account.class, "a", excluded).query();
+            String sql = NAC.selectFrom(Account.class, "a", excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("ACCOUNT a"));
             Assertions.assertFalse(sql.contains("PASSWORD"));
@@ -2048,7 +2048,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithSubEntitiesAndExclusions() {
             Set<String> excluded = Set.of("password");
-            String sql = NAC.selectFrom(Account.class, true, excluded).query();
+            String sql = NAC.selectFrom(Account.class, true, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("PASSWORD"));
         }
@@ -2056,7 +2056,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAllOptions() {
             Set<String> excluded = Set.of("password");
-            String sql = NAC.selectFrom(Account.class, "a", true, excluded).query();
+            String sql = NAC.selectFrom(Account.class, "a", true, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("PASSWORD"));
         }
@@ -2067,7 +2067,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("ACCOUNT a")
                     .join("ORDER o")
                     .on("a.ID = o.ACCOUNT_ID")
-                    .query();
+                    .toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("a.ID AS \"account.id\""));
             Assertions.assertTrue(sql.contains("o.ID AS \"order.id\""));
@@ -2082,7 +2082,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("ACCOUNT a")
                     .join("ORDER o")
                     .on("a.ID = o.ACCOUNT_ID")
-                    .query();
+                    .toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -2091,14 +2091,14 @@ public class SQLBuilder13Test extends TestBase {
         public void testSelectWithSelectionList() {
             List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
                     new Selection(Account.class, "o", "order", null, true, null));
-            String sql = NAC.select(selections).from("ACCOUNT a").query();
+            String sql = NAC.select(selections).from("ACCOUNT a").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
 
         @Test
         public void testSelectFromMultipleEntities() {
-            String sql = NAC.selectFrom(Account.class, "a", "account", Account.class, "o", "order").where(Filters.eq("a.ID", "o.ACCOUNT_ID")).query();
+            String sql = NAC.selectFrom(Account.class, "a", "account", Account.class, "o", "order").where(Filters.eq("a.ID", "o.ACCOUNT_ID")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -2110,7 +2110,7 @@ public class SQLBuilder13Test extends TestBase {
 
             String sql = NAC.selectFrom(Account.class, "a", "account", excludeA, Account.class, "o", "order", excludeO)
                     .where(Filters.eq("a.ID", "o.ACCOUNT_ID"))
-                    .query();
+                    .toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -2119,14 +2119,14 @@ public class SQLBuilder13Test extends TestBase {
         public void testSelectFromWithSelectionList() {
             List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
                     new Selection(Account.class, "o", "order", null, true, null));
-            String sql = NAC.selectFrom(selections).where(Filters.eq("a.ID", "o.ACCOUNT_ID")).query();
+            String sql = NAC.selectFrom(selections).where(Filters.eq("a.ID", "o.ACCOUNT_ID")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
 
         @Test
         public void testCount() {
-            String sql = NAC.count("ACCOUNT").where(Filters.eq("STATUS", "ACTIVE")).query();
+            String sql = NAC.count("ACCOUNT").where(Filters.eq("STATUS", "ACTIVE")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM ACCOUNT"));
@@ -2135,7 +2135,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testCountEntityClass() {
-            String sql = NAC.count(Account.class).where(Filters.eq("status", "ACTIVE")).query();
+            String sql = NAC.count(Account.class).where(Filters.eq("status", "ACTIVE")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM ACCOUNT"));
@@ -2145,7 +2145,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("balance", 1000));
-            String sql = NAC.parse(cond, Account.class).query();
+            String sql = NAC.parse(cond, Account.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("STATUS = :status"));
             Assertions.assertTrue(sql.contains("BALANCE > :balance"));
@@ -2155,7 +2155,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testNamingPolicyUpperCase() {
             // NAC uses SCREAMING_SNAKE_CASE naming policy
-            String sql = NAC.select("firstName", "lastName").from("userAccounts").query();
+            String sql = NAC.select("firstName", "lastName").from("userAccounts").toSql();
 
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
             Assertions.assertTrue(sql.contains("LAST_NAME"));
@@ -2173,7 +2173,7 @@ public class SQLBuilder13Test extends TestBase {
                     .having(Filters.gt("COUNT(o.ID)", 5))
                     .orderBy("COUNT(o.ID) DESC")
                     .limit(10)
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("a.FIRST_NAME AS \"a.firstName\""));
@@ -2191,7 +2191,7 @@ public class SQLBuilder13Test extends TestBase {
             updates.put("firstName", "Jane");
             updates.put("lastName", "Smith");
 
-            String sql = NAC.update("ACCOUNT").set(updates).where(Filters.eq("ID", 1)).query();
+            String sql = NAC.update("ACCOUNT").set(updates).where(Filters.eq("ID", 1)).toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FIRST_NAME = :firstName"));
@@ -2212,7 +2212,7 @@ public class SQLBuilder13Test extends TestBase {
             row2.put("lastName", "Smith");
             data.add(row2);
 
-            String sql = NAC.batchInsert(data).into("ACCOUNT").query();
+            String sql = NAC.batchInsert(data).into("ACCOUNT").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO ACCOUNT"));
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
@@ -2226,7 +2226,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("ACCOUNT")
                     .where(Filters.and(Filters.eq("firstName", "John"), Filters.in("status", Arrays.asList("ACTIVE", "PREMIUM")),
                             Filters.between("age", 18, 65)))
-                    .query();
+                    .toSql();
 
             Assertions.assertTrue(sql.contains(":firstName"));
             Assertions.assertTrue(sql.contains(":status"));
@@ -2240,7 +2240,7 @@ public class SQLBuilder13Test extends TestBase {
             account.setFirstName("John");
             account.setLastName("Doe");
 
-            String sql = NAC.insert(account).into("ACCOUNT").query();
+            String sql = NAC.insert(account).into("ACCOUNT").toSql();
 
             // Column names should be UPPER_CASE
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
@@ -2277,31 +2277,31 @@ public class SQLBuilder13Test extends TestBase {
         public void testAllJoinTypes() {
             String sql;
 
-            sql = NAC.select("*").from("ACCOUNT a").join("ORDER o").on("a.ID = o.ACCOUNT_ID").query();
+            sql = NAC.select("*").from("ACCOUNT a").join("ORDER o").on("a.ID = o.ACCOUNT_ID").toSql();
             Assertions.assertTrue(sql.contains("JOIN"));
 
-            sql = NAC.select("*").from("ACCOUNT a").innerJoin("ORDER o").on("a.ID = o.ACCOUNT_ID").query();
+            sql = NAC.select("*").from("ACCOUNT a").innerJoin("ORDER o").on("a.ID = o.ACCOUNT_ID").toSql();
             Assertions.assertTrue(sql.contains("INNER JOIN"));
 
-            sql = NAC.select("*").from("ACCOUNT a").leftJoin("ORDER o").on("a.ID = o.ACCOUNT_ID").query();
+            sql = NAC.select("*").from("ACCOUNT a").leftJoin("ORDER o").on("a.ID = o.ACCOUNT_ID").toSql();
             Assertions.assertTrue(sql.contains("LEFT JOIN"));
 
-            sql = NAC.select("*").from("ACCOUNT a").rightJoin("ORDER o").on("a.ID = o.ACCOUNT_ID").query();
+            sql = NAC.select("*").from("ACCOUNT a").rightJoin("ORDER o").on("a.ID = o.ACCOUNT_ID").toSql();
             Assertions.assertTrue(sql.contains("RIGHT JOIN"));
 
-            sql = NAC.select("*").from("ACCOUNT a").fullJoin("ORDER o").on("a.ID = o.ACCOUNT_ID").query();
+            sql = NAC.select("*").from("ACCOUNT a").fullJoin("ORDER o").on("a.ID = o.ACCOUNT_ID").toSql();
             Assertions.assertTrue(sql.contains("FULL JOIN"));
 
-            sql = NAC.select("*").from("ACCOUNT").crossJoin("DEPARTMENT").query();
+            sql = NAC.select("*").from("ACCOUNT").crossJoin("DEPARTMENT").toSql();
             Assertions.assertTrue(sql.contains("CROSS JOIN"));
 
-            sql = NAC.select("*").from("ACCOUNT").naturalJoin("ACCOUNT_PROFILE").query();
+            sql = NAC.select("*").from("ACCOUNT").naturalJoin("ACCOUNT_PROFILE").toSql();
             Assertions.assertTrue(sql.contains("NATURAL JOIN"));
         }
 
         @Test
         public void testAppendCustomSQL() {
-            String sql = NAC.select("*").from("ACCOUNT").append(" WHERE CUSTOM_FUNCTION(NAME) = TRUE").query();
+            String sql = NAC.select("*").from("ACCOUNT").append(" WHERE CUSTOM_FUNCTION(NAME) = TRUE").toSql();
 
             Assertions.assertTrue(sql.contains("CUSTOM_FUNCTION"));
         }
@@ -2312,7 +2312,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("ACCOUNT")
                     .where(Filters.or(Filters.and(Filters.eq("STATUS", "ACTIVE"), Filters.or(Filters.lt("AGE", 18), Filters.gt("AGE", 65))),
                             Filters.and(Filters.eq("STATUS", "PREMIUM"), Filters.between("AGE", 18, 65))))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("OR"));
@@ -2323,20 +2323,20 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testForUpdate() {
-            String sql = NAC.select("*").from("ACCOUNT").where(Filters.eq("ID", 1)).forUpdate().query();
+            String sql = NAC.select("*").from("ACCOUNT").where(Filters.eq("ID", 1)).forUpdate().toSql();
 
             Assertions.assertTrue(sql.contains("FOR UPDATE"));
         }
 
         @Test
         public void testLimitOffset() {
-            String sql = NAC.select("*").from("ACCOUNT").limit(10).offset(20).query();
+            String sql = NAC.select("*").from("ACCOUNT").limit(10).offset(20).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT 10"));
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with offset parameter
-            sql = NAC.select("*").from("ACCOUNT").limit(10, 20).query();
+            sql = NAC.select("*").from("ACCOUNT").limit(10, 20).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
@@ -2344,7 +2344,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithUpperCaseColumns() {
             // Test that already uppercase columns remain uppercase
-            String sql = NAC.insert("FIRST_NAME", "LAST_NAME").into("ACCOUNT").query();
+            String sql = NAC.insert("FIRST_NAME", "LAST_NAME").into("ACCOUNT").toSql();
 
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
             Assertions.assertTrue(sql.contains("LAST_NAME"));
@@ -2355,7 +2355,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testTableNameTransformation() {
             // Test table name is converted to uppercase
-            String sql = NAC.select("*").from("userAccounts").query();
+            String sql = NAC.select("*").from("userAccounts").toSql();
             Assertions.assertTrue(sql.contains("FROM userAccounts"));
         }
 
@@ -2365,7 +2365,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("ACCOUNT a")
                     .leftJoin("ORDER o")
                     .on(Filters.and(Filters.eq("a.ID", "o.ACCOUNT_ID"), Filters.gt("o.AMOUNT", 100)))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("LEFT JOIN"));
@@ -2374,7 +2374,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testGroupByHaving() {
-            String sql = NAC.select("DEPARTMENT", "COUNT(*) AS CNT").from("EMPLOYEE").groupBy("DEPARTMENT").having(Filters.gt("COUNT(*)", 5)).query();
+            String sql = NAC.select("DEPARTMENT", "COUNT(*) AS CNT").from("EMPLOYEE").groupBy("DEPARTMENT").having(Filters.gt("COUNT(*)", 5)).toSql();
 
             Assertions.assertTrue(sql.contains("GROUP BY DEPARTMENT"));
             Assertions.assertTrue(sql.contains("HAVING"));
@@ -2382,7 +2382,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testOrderBy() {
-            String sql = NAC.select("*").from("ACCOUNT").orderBy("LAST_NAME ASC", "FIRST_NAME ASC").query();
+            String sql = NAC.select("*").from("ACCOUNT").orderBy("LAST_NAME ASC", "FIRST_NAME ASC").toSql();
 
             Assertions.assertTrue(sql.contains("ORDER BY"));
             Assertions.assertTrue(sql.contains("LAST_NAME ASC"));
@@ -2392,29 +2392,29 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSpecialConditions() {
             // Test IS NULL
-            String sql = NAC.select("*").from("ACCOUNT").where(Filters.isNull("EMAIL")).query();
+            String sql = NAC.select("*").from("ACCOUNT").where(Filters.isNull("EMAIL")).toSql();
             Assertions.assertTrue(sql.contains("EMAIL IS NULL"));
 
             // Test IS NOT NULL
-            sql = NAC.select("*").from("ACCOUNT").where(Filters.isNotNull("EMAIL")).query();
+            sql = NAC.select("*").from("ACCOUNT").where(Filters.isNotNull("EMAIL")).toSql();
             Assertions.assertTrue(sql.contains("EMAIL IS NOT NULL"));
 
             // Test IN
-            sql = NAC.select("*").from("ACCOUNT").where(Filters.in("STATUS", Arrays.asList("ACTIVE", "PREMIUM"))).query();
+            sql = NAC.select("*").from("ACCOUNT").where(Filters.in("STATUS", Arrays.asList("ACTIVE", "PREMIUM"))).toSql();
             Assertions.assertTrue(sql.contains("STATUS IN"));
 
             // Test BETWEEN
-            sql = NAC.select("*").from("ACCOUNT").where(Filters.between("AGE", 18, 65)).query();
+            sql = NAC.select("*").from("ACCOUNT").where(Filters.between("AGE", 18, 65)).toSql();
             Assertions.assertTrue(sql.contains("AGE BETWEEN"));
 
             // Test LIKE
-            sql = NAC.select("*").from("ACCOUNT").where(Filters.like("NAME", "%JOHN%")).query();
+            sql = NAC.select("*").from("ACCOUNT").where(Filters.like("NAME", "%JOHN%")).toSql();
             Assertions.assertTrue(sql.contains("NAME LIKE"));
         }
 
         @Test
         public void testMultipleWhereConditions() {
-            String sql = NAC.select("*").from("ACCOUNT").where(Filters.eq("ACTIVE", true).and(Filters.gt("AGE", 18)).and(Filters.like("NAME", "J%"))).query();
+            String sql = NAC.select("*").from("ACCOUNT").where(Filters.eq("ACTIVE", true).and(Filters.gt("AGE", 18)).and(Filters.like("NAME", "J%"))).toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -2499,7 +2499,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertSingleExpression() {
-            String sql = NLC.insert("firstName").into("account").query();
+            String sql = NLC.insert("firstName").into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO account"));
             Assertions.assertTrue(sql.contains("(firstName)"));
@@ -2508,7 +2508,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertMultipleColumns() {
-            String sql = NLC.insert("firstName", "lastName", "email").into("account").query();
+            String sql = NLC.insert("firstName", "lastName", "email").into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO account"));
             Assertions.assertTrue(sql.contains("firstName"));
@@ -2522,7 +2522,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithCollection() {
             List<String> columns = Arrays.asList("firstName", "lastName");
-            String sql = NLC.insert(columns).into("account").query();
+            String sql = NLC.insert(columns).into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
@@ -2533,7 +2533,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithMap() {
             Map<String, Object> props = Map.of("firstName", "John", "lastName", "Doe");
-            String sql = NLC.insert(props).into("account").query();
+            String sql = NLC.insert(props).into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
@@ -2549,7 +2549,7 @@ public class SQLBuilder13Test extends TestBase {
             account.setCreatedTime(new Date()); // Should be excluded
             account.setSessionToken("123"); // Should be excluded
 
-            String sql = NLC.insert(account).into("account").query();
+            String sql = NLC.insert(account).into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
@@ -2564,7 +2564,7 @@ public class SQLBuilder13Test extends TestBase {
             account.setPassword("secret");
 
             Set<String> exclude = Set.of("password");
-            String sql = NLC.insert(account, exclude).into("account").query();
+            String sql = NLC.insert(account, exclude).into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertFalse(sql.contains("password"));
@@ -2572,7 +2572,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertWithEntityClass() {
-            String sql = NLC.insert(Account.class).into("account").query();
+            String sql = NLC.insert(Account.class).into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO account"));
             Assertions.assertTrue(sql.contains("id"));
@@ -2587,7 +2587,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithEntityClassAndExclusions() {
             Set<String> excluded = Set.of("id", "createdTime");
-            String sql = NLC.insert(Account.class, excluded).into("account").query();
+            String sql = NLC.insert(Account.class, excluded).into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("id"));
             Assertions.assertTrue(sql.contains("firstName"));
@@ -2596,7 +2596,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertInto() {
-            String sql = NLC.insertInto(Account.class).query();
+            String sql = NLC.insertInto(Account.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO account"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -2605,7 +2605,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertIntoWithExclusions() {
             Set<String> excluded = Set.of("id");
-            String sql = NLC.insertInto(Account.class, excluded).query();
+            String sql = NLC.insertInto(Account.class, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO account"));
             Assertions.assertFalse(sql.contains("id"));
@@ -2625,7 +2625,7 @@ public class SQLBuilder13Test extends TestBase {
                 }
             });
 
-            String sql = NLC.batchInsert(accounts).into("account").query();
+            String sql = NLC.batchInsert(accounts).into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO account"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -2633,7 +2633,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdate() {
-            String sql = NLC.update("account").set("status", "active").where(Filters.eq("id", 1)).query();
+            String sql = NLC.update("account").set("status", "active").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE account"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -2644,7 +2644,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateWithEntityClass() {
-            String sql = NLC.update("account", Account.class).set("status").where(Filters.eq("id", 1)).query();
+            String sql = NLC.update("account", Account.class).set("status").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE account"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -2653,7 +2653,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = NLC.update(Account.class).set("firstName", "lastName").where(Filters.eq("id", 1)).query();
+            String sql = NLC.update(Account.class).set("firstName", "lastName").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE account"));
             Assertions.assertTrue(sql.contains("firstName"));
@@ -2663,7 +2663,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testUpdateEntityClassWithExclusions() {
             Set<String> excluded = Set.of("createdTime", "password");
-            String sql = NLC.update(Account.class, excluded).set("firstName").where(Filters.eq("id", 1)).query();
+            String sql = NLC.update(Account.class, excluded).set("firstName").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE account"));
             Assertions.assertTrue(sql.contains("firstName"));
@@ -2671,7 +2671,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFrom() {
-            String sql = NLC.deleteFrom("account").where(Filters.eq("status", "inactive")).query();
+            String sql = NLC.deleteFrom("account").where(Filters.eq("status", "inactive")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM account"));
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -2680,7 +2680,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromWithEntityClass() {
-            String sql = NLC.deleteFrom("account", Account.class).where(Filters.eq("status", "inactive")).query();
+            String sql = NLC.deleteFrom("account", Account.class).where(Filters.eq("status", "inactive")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM account"));
             Assertions.assertTrue(sql.contains("status = :status"));
@@ -2688,7 +2688,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromEntityClass() {
-            String sql = NLC.deleteFrom(Account.class).where(Filters.eq("status", "inactive")).query();
+            String sql = NLC.deleteFrom(Account.class).where(Filters.eq("status", "inactive")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM account"));
             Assertions.assertTrue(sql.contains("status = :status"));
@@ -2696,7 +2696,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectSinglePart() {
-            String sql = NLC.select("COUNT(*)").from("account").query();
+            String sql = NLC.select("COUNT(*)").from("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT COUNT(*)"));
             Assertions.assertTrue(sql.contains("FROM account"));
@@ -2704,7 +2704,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectMultipleColumns() {
-            String sql = NLC.select("firstName", "lastName", "email").from("account").where(Filters.eq("active", true)).query();
+            String sql = NLC.select("firstName", "lastName", "email").from("account").where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("firstName"));
@@ -2716,7 +2716,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectWithCollection() {
             List<String> columns = Arrays.asList("firstName", "lastName");
-            String sql = NLC.select(columns).from("account").query();
+            String sql = NLC.select(columns).from("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
@@ -2725,7 +2725,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectWithAliases() {
             Map<String, String> aliases = Map.of("firstName", "fname", "lastName", "lname");
-            String sql = NLC.select(aliases).from("account").query();
+            String sql = NLC.select(aliases).from("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("firstName AS \"fname\""));
             Assertions.assertTrue(sql.contains("lastName AS \"lname\""));
@@ -2733,7 +2733,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClass() {
-            String sql = NLC.select(Account.class).from("account").query();
+            String sql = NLC.select(Account.class).from("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("id"));
@@ -2747,7 +2747,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClassWithSubEntities() {
-            String sql = NLC.select(Account.class, true).from("account").query();
+            String sql = NLC.select(Account.class, true).from("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -2755,7 +2755,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithExclusions() {
             Set<String> excluded = Set.of("password", "createdTime");
-            String sql = NLC.select(Account.class, excluded).from("account").query();
+            String sql = NLC.select(Account.class, excluded).from("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("password"));
             Assertions.assertFalse(sql.contains("createdTime"));
@@ -2765,14 +2765,14 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithAllOptions() {
             Set<String> excluded = Set.of("password");
-            String sql = NLC.select(Account.class, true, excluded).from("account").query();
+            String sql = NLC.select(Account.class, true, excluded).from("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("password"));
         }
 
         @Test
         public void testSelectFrom() {
-            String sql = NLC.selectFrom(Account.class).where(Filters.eq("active", true)).query();
+            String sql = NLC.selectFrom(Account.class).where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM account"));
@@ -2781,14 +2781,14 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAlias() {
-            String sql = NLC.selectFrom(Account.class, "a").where(Filters.eq("a.active", true)).query();
+            String sql = NLC.selectFrom(Account.class, "a").where(Filters.eq("a.active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM account a"));
         }
 
         @Test
         public void testSelectFromWithSubEntities() {
-            String sql = NLC.selectFrom(Account.class, true).query();
+            String sql = NLC.selectFrom(Account.class, true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM"));
@@ -2796,7 +2796,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAliasAndSubEntities() {
-            String sql = NLC.selectFrom(Account.class, "a", true).query();
+            String sql = NLC.selectFrom(Account.class, "a", true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -2804,7 +2804,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithExclusions() {
             Set<String> excluded = Set.of("password");
-            String sql = NLC.selectFrom(Account.class, excluded).query();
+            String sql = NLC.selectFrom(Account.class, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("password"));
         }
@@ -2812,7 +2812,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAliasAndExclusions() {
             Set<String> excluded = Set.of("password");
-            String sql = NLC.selectFrom(Account.class, "a", excluded).query();
+            String sql = NLC.selectFrom(Account.class, "a", excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("account a"));
             Assertions.assertFalse(sql.contains("password"));
@@ -2821,7 +2821,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithSubEntitiesAndExclusions() {
             Set<String> excluded = Set.of("password");
-            String sql = NLC.selectFrom(Account.class, true, excluded).query();
+            String sql = NLC.selectFrom(Account.class, true, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("password"));
         }
@@ -2829,7 +2829,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAllOptions() {
             Set<String> excluded = Set.of("password");
-            String sql = NLC.selectFrom(Account.class, "a", true, excluded).query();
+            String sql = NLC.selectFrom(Account.class, "a", true, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("password"));
         }
@@ -2840,7 +2840,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("account a")
                     .join("order o")
                     .on("a.id = o.accountId")
-                    .query();
+                    .toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("a.id AS \"account.id\""));
             Assertions.assertTrue(sql.contains("o.id AS \"order.id\""));
@@ -2855,7 +2855,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("account a")
                     .join("order o")
                     .on("a.id = o.accountId")
-                    .query();
+                    .toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -2864,14 +2864,14 @@ public class SQLBuilder13Test extends TestBase {
         public void testSelectWithSelectionList() {
             List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
                     new Selection(Account.class, "o", "order", null, true, null));
-            String sql = NLC.select(selections).from("account a").query();
+            String sql = NLC.select(selections).from("account a").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
 
         @Test
         public void testSelectFromMultipleEntities() {
-            String sql = NLC.selectFrom(Account.class, "a", "account", Account.class, "o", "order").where(Filters.eq("a.id", "o.accountId")).query();
+            String sql = NLC.selectFrom(Account.class, "a", "account", Account.class, "o", "order").where(Filters.eq("a.id", "o.accountId")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -2883,7 +2883,7 @@ public class SQLBuilder13Test extends TestBase {
 
             String sql = NLC.selectFrom(Account.class, "a", "account", excludeA, Account.class, "o", "order", excludeO)
                     .where(Filters.eq("a.id", "o.accountId"))
-                    .query();
+                    .toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -2892,14 +2892,14 @@ public class SQLBuilder13Test extends TestBase {
         public void testSelectFromWithSelectionList() {
             List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
                     new Selection(Account.class, "o", "order", null, true, null));
-            String sql = NLC.selectFrom(selections).where(Filters.eq("a.id", "o.accountId")).query();
+            String sql = NLC.selectFrom(selections).where(Filters.eq("a.id", "o.accountId")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
 
         @Test
         public void testCount() {
-            String sql = NLC.count("account").where(Filters.eq("status", "active")).query();
+            String sql = NLC.count("account").where(Filters.eq("status", "active")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM account"));
@@ -2908,7 +2908,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testCountEntityClass() {
-            String sql = NLC.count(Account.class).where(Filters.and(Filters.eq("status", "active"), Filters.gt("balance", 1000))).query();
+            String sql = NLC.count(Account.class).where(Filters.and(Filters.eq("status", "active"), Filters.gt("balance", 1000))).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM account"));
@@ -2919,7 +2919,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "active"), Filters.gt("balance", 1000));
-            String sql = NLC.parse(cond, Account.class).query();
+            String sql = NLC.parse(cond, Account.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("status = :status"));
             Assertions.assertTrue(sql.contains("balance > :balance"));
@@ -2929,7 +2929,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testNamingPolicyCamelCase() {
             // NLC uses CAMEL_CASE naming policy
-            String sql = NLC.select("firstName", "lastName").from("userAccounts").query();
+            String sql = NLC.select("firstName", "lastName").from("userAccounts").toSql();
 
             // Should preserve camelCase
             Assertions.assertTrue(sql.contains("firstName"));
@@ -2948,7 +2948,7 @@ public class SQLBuilder13Test extends TestBase {
                     .having(Filters.gt("COUNT(o.id)", 5))
                     .orderBy("COUNT(o.id) DESC")
                     .limit(10)
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("a.firstName"));
@@ -2966,7 +2966,7 @@ public class SQLBuilder13Test extends TestBase {
             updates.put("firstName", "Jane");
             updates.put("lastName", "Smith");
 
-            String sql = NLC.update("account").set(updates).where(Filters.eq("id", 1)).query();
+            String sql = NLC.update("account").set(updates).where(Filters.eq("id", 1)).toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("firstName = :firstName"));
@@ -2987,7 +2987,7 @@ public class SQLBuilder13Test extends TestBase {
             row2.put("lastName", "Smith");
             data.add(row2);
 
-            String sql = NLC.batchInsert(data).into("account").query();
+            String sql = NLC.batchInsert(data).into("account").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO account"));
             Assertions.assertTrue(sql.contains("firstName"));
@@ -3001,7 +3001,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("account")
                     .where(Filters.and(Filters.eq("firstName", "John"), Filters.in("status", Arrays.asList("active", "premium")),
                             Filters.between("age", 18, 65)))
-                    .query();
+                    .toSql();
 
             Assertions.assertTrue(sql.contains(":firstName"));
             Assertions.assertTrue(sql.contains("status IN (:status1, :status2)"));
@@ -3015,7 +3015,7 @@ public class SQLBuilder13Test extends TestBase {
             account.setFirstName("John");
             account.setLastName("Doe");
 
-            String sql = NLC.insert(account).into("account").query();
+            String sql = NLC.insert(account).into("account").toSql();
 
             // Column names should remain camelCase
             Assertions.assertTrue(sql.contains("firstName"));
@@ -3052,31 +3052,31 @@ public class SQLBuilder13Test extends TestBase {
         public void testAllJoinTypes() {
             String sql;
 
-            sql = NLC.select("*").from("account a").join("order o").on("a.id = o.accountId").query();
+            sql = NLC.select("*").from("account a").join("order o").on("a.id = o.accountId").toSql();
             Assertions.assertTrue(sql.contains("JOIN"));
 
-            sql = NLC.select("*").from("account a").innerJoin("order o").on("a.id = o.accountId").query();
+            sql = NLC.select("*").from("account a").innerJoin("order o").on("a.id = o.accountId").toSql();
             Assertions.assertTrue(sql.contains("INNER JOIN"));
 
-            sql = NLC.select("*").from("account a").leftJoin("order o").on("a.id = o.accountId").query();
+            sql = NLC.select("*").from("account a").leftJoin("order o").on("a.id = o.accountId").toSql();
             Assertions.assertTrue(sql.contains("LEFT JOIN"));
 
-            sql = NLC.select("*").from("account a").rightJoin("order o").on("a.id = o.accountId").query();
+            sql = NLC.select("*").from("account a").rightJoin("order o").on("a.id = o.accountId").toSql();
             Assertions.assertTrue(sql.contains("RIGHT JOIN"));
 
-            sql = NLC.select("*").from("account a").fullJoin("order o").on("a.id = o.accountId").query();
+            sql = NLC.select("*").from("account a").fullJoin("order o").on("a.id = o.accountId").toSql();
             Assertions.assertTrue(sql.contains("FULL JOIN"));
 
-            sql = NLC.select("*").from("account").crossJoin("department").query();
+            sql = NLC.select("*").from("account").crossJoin("department").toSql();
             Assertions.assertTrue(sql.contains("CROSS JOIN"));
 
-            sql = NLC.select("*").from("account").naturalJoin("accountProfile").query();
+            sql = NLC.select("*").from("account").naturalJoin("accountProfile").toSql();
             Assertions.assertTrue(sql.contains("NATURAL JOIN"));
         }
 
         @Test
         public void testAppendCustomSQL() {
-            String sql = NLC.select("*").from("account").append(" WHERE customFunction(name) = true").query();
+            String sql = NLC.select("*").from("account").append(" WHERE customFunction(name) = true").toSql();
 
             Assertions.assertTrue(sql.contains("customFunction"));
         }
@@ -3087,7 +3087,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("account")
                     .where(Filters.or(Filters.and(Filters.eq("status", "active"), Filters.or(Filters.lt("age", 18), Filters.gt("age", 65))),
                             Filters.and(Filters.eq("status", "premium"), Filters.between("age", 18, 65))))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("OR"));
@@ -3098,20 +3098,20 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testForUpdate() {
-            String sql = NLC.select("*").from("account").where(Filters.eq("id", 1)).forUpdate().query();
+            String sql = NLC.select("*").from("account").where(Filters.eq("id", 1)).forUpdate().toSql();
 
             Assertions.assertTrue(sql.contains("FOR UPDATE"));
         }
 
         @Test
         public void testLimitOffset() {
-            String sql = NLC.select("*").from("account").limit(10).offset(20).query();
+            String sql = NLC.select("*").from("account").limit(10).offset(20).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT 10"));
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with offset parameter
-            sql = NLC.select("*").from("account").limit(10, 20).query();
+            sql = NLC.select("*").from("account").limit(10, 20).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
@@ -3119,7 +3119,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testTableNamePreservation() {
             // Test table name preserves camelCase
-            String sql = NLC.select("*").from("userAccounts").query();
+            String sql = NLC.select("*").from("userAccounts").toSql();
             Assertions.assertTrue(sql.contains("FROM userAccounts"));
         }
 
@@ -3129,7 +3129,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("account a")
                     .leftJoin("order o")
                     .on(Filters.and(Filters.eq("a.id", "o.accountId"), Filters.gt("o.amount", 100)))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("LEFT JOIN"));
@@ -3138,7 +3138,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testGroupByHaving() {
-            String sql = NLC.select("department", "COUNT(*) as cnt").from("employee").groupBy("department").having(Filters.gt("COUNT(*)", 5)).query();
+            String sql = NLC.select("department", "COUNT(*) as cnt").from("employee").groupBy("department").having(Filters.gt("COUNT(*)", 5)).toSql();
 
             Assertions.assertTrue(sql.contains("GROUP BY department"));
             Assertions.assertTrue(sql.contains("HAVING"));
@@ -3146,7 +3146,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testOrderBy() {
-            String sql = NLC.select("*").from("account").orderBy("lastName ASC", "firstName ASC").query();
+            String sql = NLC.select("*").from("account").orderBy("lastName ASC", "firstName ASC").toSql();
 
             Assertions.assertTrue(sql.contains("ORDER BY"));
             Assertions.assertTrue(sql.contains("lastName ASC"));
@@ -3156,29 +3156,29 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSpecialConditions() {
             // Test IS NULL
-            String sql = NLC.select("*").from("account").where(Filters.isNull("email")).query();
+            String sql = NLC.select("*").from("account").where(Filters.isNull("email")).toSql();
             Assertions.assertTrue(sql.contains("email IS NULL"));
 
             // Test IS NOT NULL
-            sql = NLC.select("*").from("account").where(Filters.isNotNull("email")).query();
+            sql = NLC.select("*").from("account").where(Filters.isNotNull("email")).toSql();
             Assertions.assertTrue(sql.contains("email IS NOT NULL"));
 
             // Test IN
-            sql = NLC.select("*").from("account").where(Filters.in("status", Arrays.asList("active", "premium"))).query();
+            sql = NLC.select("*").from("account").where(Filters.in("status", Arrays.asList("active", "premium"))).toSql();
             Assertions.assertTrue(sql.contains("status IN"));
 
             // Test BETWEEN
-            sql = NLC.select("*").from("account").where(Filters.between("age", 18, 65)).query();
+            sql = NLC.select("*").from("account").where(Filters.between("age", 18, 65)).toSql();
             Assertions.assertTrue(sql.contains("age BETWEEN"));
 
             // Test LIKE
-            sql = NLC.select("*").from("account").where(Filters.like("name", "%John%")).query();
+            sql = NLC.select("*").from("account").where(Filters.like("name", "%John%")).toSql();
             Assertions.assertTrue(sql.contains("name LIKE"));
         }
 
         @Test
         public void testMultipleWhereConditions() {
-            String sql = NLC.select("*").from("account").where(Filters.eq("ACTIVE", true).and(Filters.gt("AGE", 18)).and(Filters.like("NAME", "J%"))).query();
+            String sql = NLC.select("*").from("account").where(Filters.eq("ACTIVE", true).and(Filters.gt("AGE", 18)).and(Filters.like("NAME", "J%"))).toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -3187,7 +3187,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDistinct() {
-            String sql = NLC.select("DISTINCT department").from("employee").query();
+            String sql = NLC.select("DISTINCT department").from("employee").toSql();
 
             Assertions.assertTrue(sql.contains("DISTINCT"));
         }
@@ -3198,7 +3198,7 @@ public class SQLBuilder13Test extends TestBase {
                     .select("COUNT(*) as total", "AVG(salary) as avgSalary", "MAX(salary) as maxSalary", "MIN(salary) as minSalary",
                             "SUM(salary) as totalSalary")
                     .from("employee")
-                    .query();
+                    .toSql();
 
             Assertions.assertTrue(sql.contains("COUNT(*)"));
             Assertions.assertTrue(sql.contains("AVG(salary)"));
@@ -3209,14 +3209,14 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testWindowFunctions() {
-            String sql = NLC.select("name", "salary", "ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) as rank").from("employee").query();
+            String sql = NLC.select("name", "salary", "ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) as rank").from("employee").toSql();
 
             Assertions.assertTrue(sql.contains("OVER (PARTITION BY department ORDER BY salary DESC) AS rank"));
         }
 
         @Test
         public void testCaseExpression() {
-            String sql = NLC.select("name", "CASE WHEN age < 18 THEN 'Minor' WHEN age < 65 THEN 'Adult' ELSE 'Senior' END as category").from("users").query();
+            String sql = NLC.select("name", "CASE WHEN age < 18 THEN 'Minor' WHEN age < 65 THEN 'Adult' ELSE 'Senior' END as category").from("users").toSql();
 
             Assertions.assertTrue(sql.contains("case when age < 18 then 'Minor' when age < 65 then 'Adult' else 'Senior' end AS category"));
         }
@@ -3224,7 +3224,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertReturning() {
             // Some databases support RETURNING clause
-            String sql = NLC.insert("firstName", "lastName").into("users").append(" RETURNING id").query();
+            String sql = NLC.insert("firstName", "lastName").into("users").append(" RETURNING id").toSql();
 
             Assertions.assertTrue(sql.contains("RETURNING id"));
         }
@@ -3237,7 +3237,7 @@ public class SQLBuilder13Test extends TestBase {
                     .set(Map.of("age", 30))
                     .set("email", "john@example.com")
                     .where(Filters.eq("id", 1))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SET"));
@@ -3260,7 +3260,7 @@ public class SQLBuilder13Test extends TestBase {
                     .having(Filters.gt("COUNT(o.id)", 0))
                     .orderBy("totalRevenue DESC")
                     .limit(20)
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
@@ -3276,8 +3276,8 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testUnionAll() {
             // Test building queries that could be used in UNION ALL
-            String sql1 = NLC.select("name", "email").from("users").query();
-            String sql2 = NLC.select("name", "email").from("customers").query();
+            String sql1 = NLC.select("name", "email").from("users").toSql();
+            String sql2 = NLC.select("name", "email").from("customers").toSql();
 
             // Manual UNION ALL construction
             String unionAllSql = sql1 + " UNION ALL " + sql2;
@@ -3292,7 +3292,7 @@ public class SQLBuilder13Test extends TestBase {
             account.setLastName("User");
             account.setEmail("test@example.com");
 
-            String sql = NLC.insert(account).into("account").query();
+            String sql = NLC.insert(account).into("account").toSql();
 
             // Should use property names as both column and parameter names
             Assertions.assertTrue(sql.contains("firstName"));
@@ -3305,7 +3305,7 @@ public class SQLBuilder13Test extends TestBase {
             Date startDate = new Date();
             Date endDate = new Date(startDate.getTime() + 86400000); // 1 day later
 
-            sql = NLC.selectFrom(Order.class, "ord", true).where(Filters.between("ord.orderDate", startDate, endDate)).query();
+            sql = NLC.selectFrom(Order.class, "ord", true).where(Filters.between("ord.orderDate", startDate, endDate)).toSql();
             // Output: SELECT ord.id, ord.orderNumber, ord.amount, ord.status,
             //                acc.id AS "account.id", acc.firstName AS "account.firstName"
             //         FROM orders ord
@@ -3393,7 +3393,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertSingleExpression() {
-            String sql = PSC.insert("name").into("users").query();
+            String sql = PSC.insert("name").into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("(name)"));
@@ -3402,7 +3402,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertMultipleColumns() {
-            String sql = PSC.insert("firstName", "lastName", "email").into("users").query();
+            String sql = PSC.insert("firstName", "lastName", "email").into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("first_name"));
@@ -3414,7 +3414,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithCollection() {
             List<String> columns = Arrays.asList("firstName", "lastName", "email");
-            String sql = PSC.insert(columns).into("users").query();
+            String sql = PSC.insert(columns).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -3426,7 +3426,7 @@ public class SQLBuilder13Test extends TestBase {
             Map<String, Object> props = new HashMap<>();
             props.put("firstName", "John");
             props.put("lastName", "Doe");
-            String sql = PSC.insert(props).into("users").query();
+            String sql = PSC.insert(props).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -3442,7 +3442,7 @@ public class SQLBuilder13Test extends TestBase {
             user.setCreated_date(new Date()); // Should be excluded (ReadOnly)
             user.setTempData("temp"); // Should be excluded (Transient)
 
-            String sql = PSC.insert(user).into("users").query();
+            String sql = PSC.insert(user).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -3459,7 +3459,7 @@ public class SQLBuilder13Test extends TestBase {
             user.setEmail("john@example.com");
 
             Set<String> excluded = Set.of("email");
-            String sql = PSC.insert(user, excluded).into("users").query();
+            String sql = PSC.insert(user, excluded).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -3468,7 +3468,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertWithEntityClass() {
-            String sql = PSC.insert(User.class).into("users").query();
+            String sql = PSC.insert(User.class).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("first_name"));
@@ -3482,7 +3482,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertWithEntityClassAndExclusions() {
             Set<String> excluded = Set.of("id", "password");
-            String sql = PSC.insert(User.class, excluded).into("users").query();
+            String sql = PSC.insert(User.class, excluded).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("id"));
             Assertions.assertFalse(sql.contains("password"));
@@ -3492,7 +3492,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testInsertInto() {
-            String sql = PSC.insertInto(User.class).query();
+            String sql = PSC.insertInto(User.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -3501,7 +3501,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testInsertIntoWithExclusions() {
             Set<String> excluded = Set.of("id");
-            String sql = PSC.insertInto(User.class, excluded).query();
+            String sql = PSC.insertInto(User.class, excluded).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertFalse(sql.contains("id"));
@@ -3521,7 +3521,7 @@ public class SQLBuilder13Test extends TestBase {
             users.add(user1);
             users.add(user2);
 
-            String sql = PSC.batchInsert(users).into("users").query();
+            String sql = PSC.batchInsert(users).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -3531,7 +3531,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdate() {
-            String sql = PSC.update("users").set("last_login", "status").where(Filters.eq("id", 1)).query();
+            String sql = PSC.update("users").set("last_login", "status").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -3543,7 +3543,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateWithEntityClass() {
-            String sql = PSC.update("users", User.class).set("firstName", "John").where(Filters.eq("id", 1)).query();
+            String sql = PSC.update("users", User.class).set("firstName", "John").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -3552,7 +3552,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = PSC.update(User.class).set("firstName", "email").where(Filters.eq("id", 1)).query();
+            String sql = PSC.update(User.class).set("firstName", "email").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("first_name = ?"));
@@ -3562,7 +3562,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testUpdateEntityClassWithExclusions() {
             Set<String> excluded = Set.of("password", "created_date");
-            String sql = PSC.update(User.class, excluded).set("firstName", "email").where(Filters.eq("id", 1)).query();
+            String sql = PSC.update(User.class, excluded).set("firstName", "email").where(Filters.eq("id", 1)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("first_name = ?"));
@@ -3571,7 +3571,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFrom() {
-            String sql = PSC.deleteFrom("users").where(Filters.eq("status", "inactive")).query();
+            String sql = PSC.deleteFrom("users").where(Filters.eq("status", "inactive")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM users"));
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -3580,7 +3580,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromWithEntityClass() {
-            String sql = PSC.deleteFrom("users", User.class).where(Filters.lt("lastLogin", new Date())).query();
+            String sql = PSC.deleteFrom("users", User.class).where(Filters.lt("lastLogin", new Date())).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM users"));
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -3589,7 +3589,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testDeleteFromEntityClass() {
-            String sql = PSC.deleteFrom(User.class).where(Filters.eq("id", 123)).query();
+            String sql = PSC.deleteFrom(User.class).where(Filters.eq("id", 123)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("DELETE FROM users"));
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -3598,7 +3598,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectSingleExpression() {
-            String sql = PSC.select("COUNT(*) AS total").from("users").query();
+            String sql = PSC.select("COUNT(*) AS total").from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT COUNT(*) AS total"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -3606,7 +3606,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectMultipleColumns() {
-            String sql = PSC.select("id", "name", "email", "created_date").from("users").where(Filters.eq("active", true)).query();
+            String sql = PSC.select("id", "name", "email", "created_date").from("users").where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("id"));
@@ -3621,7 +3621,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectWithCollection() {
             List<String> columns = Arrays.asList("firstName", "lastName", "email");
-            String sql = PSC.select(columns).from("users").query();
+            String sql = PSC.select(columns).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("first_name AS \"firstName\""));
@@ -3636,7 +3636,7 @@ public class SQLBuilder13Test extends TestBase {
             aliases.put("u.last_name", "lastName");
             aliases.put("COUNT(o.id)", "orderCount");
 
-            String sql = PSC.select(aliases).from("users u").leftJoin("orders o").on("u.id = o.user_id").groupBy("u.id").query();
+            String sql = PSC.select(aliases).from("users u").leftJoin("orders o").on("u.id = o.user_id").groupBy("u.id").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("u.first_name AS \"firstName\""));
             Assertions.assertTrue(sql.contains("u.last_name AS \"lastName\""));
@@ -3645,7 +3645,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClass() {
-            String sql = PSC.select(User.class).from("users").query();
+            String sql = PSC.select(User.class).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("id"));
@@ -3659,7 +3659,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectEntityClassWithSubEntities() {
-            String sql = PSC.select(User.class, true).from("users u").query();
+            String sql = PSC.select(User.class, true).from("users u").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -3667,7 +3667,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithExclusions() {
             Set<String> exclude = Set.of("password", "created_date");
-            String sql = PSC.select(User.class, exclude).from("users").query();
+            String sql = PSC.select(User.class, exclude).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("id"));
@@ -3679,7 +3679,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectEntityClassWithAllOptions() {
             Set<String> exclude = Set.of("password");
-            String sql = PSC.select(User.class, true, exclude).from("users").query();
+            String sql = PSC.select(User.class, true, exclude).from("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertFalse(sql.contains("password"));
@@ -3687,7 +3687,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFrom() {
-            String sql = PSC.selectFrom(User.class).where(Filters.eq("active", true)).query();
+            String sql = PSC.selectFrom(User.class).where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -3697,14 +3697,14 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAlias() {
-            String sql = PSC.selectFrom(User.class, "u").where(Filters.eq("u.active", true)).query();
+            String sql = PSC.selectFrom(User.class, "u").where(Filters.eq("u.active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM users u"));
         }
 
         @Test
         public void testSelectFromWithSubEntities() {
-            String sql = PSC.selectFrom(User.class, true).query();
+            String sql = PSC.selectFrom(User.class, true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM"));
@@ -3712,7 +3712,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromWithAliasAndSubEntities() {
-            String sql = PSC.selectFrom(User.class, "u", true).query();
+            String sql = PSC.selectFrom(User.class, "u", true).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("FROM"));
@@ -3721,7 +3721,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithExclusions() {
             Set<String> exclude = Set.of("password");
-            String sql = PSC.selectFrom(User.class, exclude).query();
+            String sql = PSC.selectFrom(User.class, exclude).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("password"));
         }
@@ -3729,7 +3729,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAliasAndExclusions() {
             Set<String> exclude = Set.of("password");
-            String sql = PSC.selectFrom(User.class, "u", exclude).query();
+            String sql = PSC.selectFrom(User.class, "u", exclude).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("users u"));
             Assertions.assertFalse(sql.contains("password"));
@@ -3738,7 +3738,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithSubEntitiesAndExclusions() {
             Set<String> exclude = Set.of("password");
-            String sql = PSC.selectFrom(User.class, true, exclude).query();
+            String sql = PSC.selectFrom(User.class, true, exclude).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertFalse(sql.contains("password"));
         }
@@ -3746,7 +3746,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testSelectFromWithAllOptions() {
             Set<String> exclude = Set.of("password");
-            String sql = PSC.selectFrom(User.class, "u", true, exclude).query();
+            String sql = PSC.selectFrom(User.class, "u", true, exclude).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
             Assertions.assertFalse(sql.contains("password"));
@@ -3754,7 +3754,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testSelectMultipleEntities() {
-            String sql = PSC.select(User.class, "u", "user_", User.class, "u2", "user2_").from("users u").join("users u2").on("u.id = u2.parent_id").query();
+            String sql = PSC.select(User.class, "u", "user_", User.class, "u2", "user2_").from("users u").join("users u2").on("u.id = u2.parent_id").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("u.id AS \"user_.id\""));
@@ -3770,7 +3770,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("users u")
                     .join("users u2")
                     .on("u.id = u2.parent_id")
-                    .query();
+                    .toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
@@ -3780,14 +3780,14 @@ public class SQLBuilder13Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
                     new Selection(User.class, "m", "manager", null, false, Set.of("password")));
 
-            String sql = PSC.select(selections).from("users u").join("users m").on("u.manager_id = m.id").query();
+            String sql = PSC.select(selections).from("users u").join("users m").on("u.manager_id = m.id").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
         }
 
         @Test
         public void testSelectFromMultipleEntities() {
-            String sql = PSC.selectFrom(User.class, "u", "user_", User.class, "m", "manager_").where(Filters.eq("u.active", true)).query();
+            String sql = PSC.selectFrom(User.class, "u", "user_", User.class, "m", "manager_").where(Filters.eq("u.active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -3797,7 +3797,7 @@ public class SQLBuilder13Test extends TestBase {
             Set<String> excludeU = Set.of("password");
             Set<String> excludeM = Set.of("email", "password");
 
-            String sql = PSC.selectFrom(User.class, "u", "user_", excludeU, User.class, "m", "manager_", excludeM).query();
+            String sql = PSC.selectFrom(User.class, "u", "user_", excludeU, User.class, "m", "manager_", excludeM).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -3807,14 +3807,14 @@ public class SQLBuilder13Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
                     new Selection(User.class, "m", "manager", null, false, null));
 
-            String sql = PSC.selectFrom(selections).query();
+            String sql = PSC.selectFrom(selections).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
 
         @Test
         public void testCount() {
-            String sql = PSC.count("users").where(Filters.eq("active", true)).query();
+            String sql = PSC.count("users").where(Filters.eq("active", true)).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -3824,7 +3824,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testCountEntityClass() {
-            String sql = PSC.count(User.class).where(Filters.eq("status", "active")).query();
+            String sql = PSC.count(User.class).where(Filters.eq("status", "active")).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT count(*)"));
             Assertions.assertTrue(sql.contains("FROM users"));
@@ -3835,7 +3835,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18));
-            String sql = PSC.parse(cond, User.class).query();
+            String sql = PSC.parse(cond, User.class).toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("status = ?"));
             Assertions.assertTrue(sql.contains("age > ?"));
@@ -3848,7 +3848,7 @@ public class SQLBuilder13Test extends TestBase {
             updates.put("firstName", "Jane");
             updates.put("lastName", "Smith");
 
-            String sql = PSC.update("users").set(updates).where(Filters.eq("id", 1)).query();
+            String sql = PSC.update("users").set(updates).where(Filters.eq("id", 1)).toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name = ?"));
@@ -3869,7 +3869,7 @@ public class SQLBuilder13Test extends TestBase {
             row2.put("lastName", "Smith");
             data.add(row2);
 
-            String sql = PSC.batchInsert(data).into("users").query();
+            String sql = PSC.batchInsert(data).into("users").toSql();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("VALUES"));
@@ -3879,7 +3879,7 @@ public class SQLBuilder13Test extends TestBase {
         @Test
         public void testNamingPolicySnakeCase() {
             // PSC uses SNAKE_CASE naming policy
-            String sql = PSC.select("firstName", "lastName").from("userAccounts").query();
+            String sql = PSC.select("firstName", "lastName").from("userAccounts").toSql();
 
             Assertions.assertTrue(sql.contains("first_name"));
             Assertions.assertTrue(sql.contains("last_name"));
@@ -3893,7 +3893,7 @@ public class SQLBuilder13Test extends TestBase {
             user.setFirstName("John");
             user.setLastName("Doe");
 
-            String sql = PSC.insert(user).into("users").query();
+            String sql = PSC.insert(user).into("users").toSql();
 
             // Column names should be snake_case
             Assertions.assertTrue(sql.contains("first_name"));
@@ -3908,48 +3908,48 @@ public class SQLBuilder13Test extends TestBase {
             // Test all join variations
             String sql;
 
-            sql = PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id").query();
+            sql = PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("JOIN"));
 
-            sql = PSC.select("*").from("users u").innerJoin("orders o").on("u.id = o.user_id").query();
+            sql = PSC.select("*").from("users u").innerJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("INNER JOIN"));
 
-            sql = PSC.select("*").from("users u").leftJoin("orders o").on("u.id = o.user_id").query();
+            sql = PSC.select("*").from("users u").leftJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("LEFT JOIN"));
 
-            sql = PSC.select("*").from("users u").rightJoin("orders o").on("u.id = o.user_id").query();
+            sql = PSC.select("*").from("users u").rightJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("RIGHT JOIN"));
 
-            sql = PSC.select("*").from("users u").fullJoin("orders o").on("u.id = o.user_id").query();
+            sql = PSC.select("*").from("users u").fullJoin("orders o").on("u.id = o.user_id").toSql();
             Assertions.assertTrue(sql.contains("FULL JOIN"));
 
-            sql = PSC.select("*").from("users").crossJoin("departments").query();
+            sql = PSC.select("*").from("users").crossJoin("departments").toSql();
             Assertions.assertTrue(sql.contains("CROSS JOIN"));
 
-            sql = PSC.select("*").from("users").naturalJoin("user_profiles").query();
+            sql = PSC.select("*").from("users").naturalJoin("user_profiles").toSql();
             Assertions.assertTrue(sql.contains("NATURAL JOIN"));
         }
 
         @Test
         public void testSpecialConditions() {
             // Test IS NULL
-            String sql = PSC.select("*").from("users").where(Filters.isNull("email")).query();
+            String sql = PSC.select("*").from("users").where(Filters.isNull("email")).toSql();
             Assertions.assertTrue(sql.contains("email IS NULL"));
 
             // Test IS NOT NULL
-            sql = PSC.select("*").from("users").where(Filters.isNotNull("email")).query();
+            sql = PSC.select("*").from("users").where(Filters.isNotNull("email")).toSql();
             Assertions.assertTrue(sql.contains("email IS NOT NULL"));
 
             // Test IN
-            sql = PSC.select("*").from("users").where(Filters.in("status", Arrays.asList("active", "premium", "trial"))).query();
+            sql = PSC.select("*").from("users").where(Filters.in("status", Arrays.asList("active", "premium", "trial"))).toSql();
             Assertions.assertTrue(sql.contains("status IN (?, ?, ?)"));
 
             // Test BETWEEN
-            sql = PSC.select("*").from("users").where(Filters.between("age", 18, 65)).query();
+            sql = PSC.select("*").from("users").where(Filters.between("age", 18, 65)).toSql();
             Assertions.assertTrue(sql.contains("age BETWEEN ? AND ?"));
 
             // Test LIKE
-            sql = PSC.select("*").from("users").where(Filters.like("name", "%John%")).query();
+            sql = PSC.select("*").from("users").where(Filters.like("name", "%John%")).toSql();
             Assertions.assertTrue(sql.contains("name LIKE ?"));
         }
 
@@ -3977,7 +3977,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testForUpdate() {
-            String sql = PSC.select("*").from("users").where(Filters.eq("id", 1)).forUpdate().query();
+            String sql = PSC.select("*").from("users").where(Filters.eq("id", 1)).forUpdate().toSql();
 
             Assertions.assertTrue(sql.contains("FOR UPDATE"));
             Assertions.assertTrue(sql.contains("id = ?"));
@@ -3985,27 +3985,27 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testLimitOffset() {
-            String sql = PSC.select("*").from("users").limit(10).offset(20).query();
+            String sql = PSC.select("*").from("users").limit(10).offset(20).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT 10"));
             Assertions.assertTrue(sql.contains("OFFSET 20"));
 
             // Test limit with offset parameter
-            sql = PSC.select("*").from("users").limit(10, 20).query();
+            sql = PSC.select("*").from("users").limit(10, 20).toSql();
 
             Assertions.assertTrue(sql.contains("LIMIT"));
         }
 
         @Test
         public void testAppendCustomSQL() {
-            String sql = PSC.select("*").from("users").append(" WHERE custom_function(name) = ?").query();
+            String sql = PSC.select("*").from("users").append(" WHERE custom_function(name) = ?").toSql();
 
             Assertions.assertTrue(sql.contains("custom_function"));
         }
 
         @Test
         public void testGroupByHaving() {
-            String sql = PSC.select("department", "COUNT(*) as count").from("users").groupBy("department").having(Filters.gt("COUNT(*)", 5)).query();
+            String sql = PSC.select("department", "COUNT(*) as count").from("users").groupBy("department").having(Filters.gt("COUNT(*)", 5)).toSql();
 
             Assertions.assertTrue(sql.contains("GROUP BY department"));
             Assertions.assertTrue(sql.contains("HAVING"));
@@ -4014,7 +4014,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testOrderBy() {
-            String sql = PSC.select("*").from("users").orderBy("last_name ASC", "first_name ASC").query();
+            String sql = PSC.select("*").from("users").orderBy("last_name ASC", "first_name ASC").toSql();
 
             Assertions.assertTrue(sql.contains("ORDER BY"));
             Assertions.assertTrue(sql.contains("last_name ASC"));
@@ -4023,7 +4023,7 @@ public class SQLBuilder13Test extends TestBase {
 
         @Test
         public void testMultipleWhereConditions() {
-            String sql = PSC.select("*").from("users").where(Filters.eq("ACTIVE", true).and(Filters.gt("AGE", 18)).and(Filters.like("NAME", "J%"))).query();
+            String sql = PSC.select("*").from("users").where(Filters.eq("ACTIVE", true).and(Filters.gt("AGE", 18)).and(Filters.like("NAME", "J%"))).toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("WHERE"));
@@ -4039,7 +4039,7 @@ public class SQLBuilder13Test extends TestBase {
                     .from("users")
                     .where(Filters.or(Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18)),
                             Filters.and(Filters.eq("status", "premium"), Filters.isNotNull("subscription_id"))))
-                    .query();
+                    .toSql();
 
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("OR"));
