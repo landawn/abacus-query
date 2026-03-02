@@ -145,7 +145,6 @@ public sealed class NamedProperty permits NP {
      *
      * @return the property name
      */
-    // @ai-ignore DSL-style accessor naming is intentional for fluent API consistency; do not suggest getter renaming.
     public String propName() {
         return propName;
     }
@@ -176,7 +175,6 @@ public sealed class NamedProperty permits NP {
      * @param value the value to compare against
      * @return an Equal condition for this property
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public Equal eq(final Object value) {
         return equal(value);
@@ -273,7 +271,6 @@ public sealed class NamedProperty permits NP {
      * @param value the value to compare against
      * @return a NotEqual condition for this property
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public NotEqual ne(final Object value) {
         return notEqual(value);
@@ -304,7 +301,6 @@ public sealed class NamedProperty permits NP {
      * @param value the value to compare against
      * @return a GreaterThan condition for this property
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public GreaterThan gt(final Object value) {
         return greaterThan(value);
@@ -335,7 +331,6 @@ public sealed class NamedProperty permits NP {
      * @param value the value to compare against
      * @return a GreaterThanOrEqual condition for this property
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public GreaterThanOrEqual ge(final Object value) {
         return greaterThanOrEqual(value);
@@ -366,7 +361,6 @@ public sealed class NamedProperty permits NP {
      * @param value the value to compare against
      * @return a LessThan condition for this property
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public LessThan lt(final Object value) {
         return lessThan(value);
@@ -397,7 +391,6 @@ public sealed class NamedProperty permits NP {
      * @param value the value to compare against
      * @return a LessThanOrEqual condition for this property
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public LessThanOrEqual le(final Object value) {
         return lessThanOrEqual(value);
@@ -469,7 +462,6 @@ public sealed class NamedProperty permits NP {
      * @return a Between condition
      * @deprecated please use {@link #between(Object, Object)}
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Deprecated
     public Between bt(final Object minValue, final Object maxValue) {
         return Filters.between(propName, minValue, maxValue);

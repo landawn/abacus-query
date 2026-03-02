@@ -1,6 +1,10 @@
 package com.landawn.abacus.query;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,6 +15,8 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.query.SQLBuilder.NSC;
+import com.landawn.abacus.query.SQLBuilder.PSC;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
@@ -20,8 +26,8 @@ import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Exists;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.FullJoin;
-import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GreaterThan;
+import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GroupBy;
 import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.InSubQuery;
@@ -30,8 +36,8 @@ import com.landawn.abacus.query.condition.IsNotNull;
 import com.landawn.abacus.query.condition.IsNull;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.LeftJoin;
-import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.LessThan;
+import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.NamedProperty;
@@ -39,7 +45,6 @@ import com.landawn.abacus.query.condition.NaturalJoin;
 import com.landawn.abacus.query.condition.Not;
 import com.landawn.abacus.query.condition.NotBetween;
 import com.landawn.abacus.query.condition.NotEqual;
-import com.landawn.abacus.query.condition.NotExists;
 import com.landawn.abacus.query.condition.NotIn;
 import com.landawn.abacus.query.condition.NotInSubQuery;
 import com.landawn.abacus.query.condition.NotLike;
@@ -49,8 +54,6 @@ import com.landawn.abacus.query.condition.OrderBy;
 import com.landawn.abacus.query.condition.RightJoin;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Where;
-import com.landawn.abacus.query.SQLBuilder.PSC;
-import com.landawn.abacus.query.SQLBuilder.NSC;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
 
@@ -348,12 +351,12 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testSQLOperation_sqlText() {
+    public void testSQLOperation_sqlToken() {
         SQLOperation op = SQLOperation.SELECT;
-        String sqlKeyword = op.getName();
+        String sqlKeyword = op.sqlToken();
         assertEquals("SELECT", sqlKeyword);
         SQLOperation txOp = SQLOperation.BEGIN_TRANSACTION;
-        String txText = txOp.getName();
+        String txText = txOp.sqlToken();
         assertEquals("BEGIN TRANSACTION", txText);
     }
 

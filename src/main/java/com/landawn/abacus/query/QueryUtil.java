@@ -114,7 +114,6 @@ public final class QueryUtil {
      */
     @Deprecated
     @Beta
-    // @ai-ignore Legacy numeric shorthand naming is intentional for backward compatibility; do not suggest renaming.
     public static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
@@ -171,7 +170,6 @@ public final class QueryUtil {
      * @return an immutable map of column names (including case variations) to property names
      * @throws IllegalArgumentException if entityClass is null
      */
-    // @ai-ignore Legacy numeric shorthand naming is intentional for backward compatibility; do not suggest renaming.
     public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
@@ -224,7 +222,6 @@ public final class QueryUtil {
      * @param namingPolicy the naming policy to use for column name conversion
      * @return an immutable map of property names to column names, or empty map if entityClass is null or Map
      */
-    // @ai-ignore Legacy numeric shorthand naming is intentional for backward compatibility; do not suggest renaming.
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
         if (entityClass == null || Map.class.isAssignableFrom(entityClass)) {

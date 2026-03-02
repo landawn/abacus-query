@@ -249,7 +249,6 @@ public class Expression extends LogicalCondition {
      * @param value the right-hand side value
      * @return a string representation of the equality expression
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String eq(final String literal, final Object value) {
         return equal(literal, value);
@@ -289,7 +288,6 @@ public class Expression extends LogicalCondition {
      * @param value the right-hand side value
      * @return a string representation of the not-equal expression
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String ne(final String literal, final Object value) {
         return notEqual(literal, value);
@@ -329,7 +327,6 @@ public class Expression extends LogicalCondition {
      * @param value the right-hand side value
      * @return a string representation of the greater-than expression
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String gt(final String literal, final Object value) {
         return greaterThan(literal, value);
@@ -366,7 +363,6 @@ public class Expression extends LogicalCondition {
      * @param value the right-hand side value
      * @return a string representation of the greater-than-or-equal expression
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String ge(final String literal, final Object value) {
         return greaterThanOrEqual(literal, value);
@@ -403,7 +399,6 @@ public class Expression extends LogicalCondition {
      * @param value the right-hand side value
      * @return a string representation of the less-than expression
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String lt(final String literal, final Object value) {
         return lessThan(literal, value);
@@ -440,7 +435,6 @@ public class Expression extends LogicalCondition {
      * @param value the right-hand side value
      * @return a string representation of the less-than-or-equal expression
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static String le(final String literal, final Object value) {
         return lessThanOrEqual(literal, value);
@@ -483,7 +477,6 @@ public class Expression extends LogicalCondition {
      * @return a string representation of the BETWEEN expression
      * @deprecated please use {@link #between(String, Object, Object)}
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Deprecated
     public static String bt(final String literal, final Object min, final Object max) {
         return between(literal, min, max);
@@ -568,14 +561,14 @@ public class Expression extends LogicalCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.isNotNullOrEmpty("name");      // Returns: "name IS NOT BLANK"
-     * String expr2 = Expression.isNotNullOrEmpty("comment");   // Returns: "comment IS NOT BLANK"
+     * String expr = Expression.isNotNullAndNotEmpty("name");      // Returns: "name IS NOT BLANK"
+     * String expr2 = Expression.isNotNullAndNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
      * }</pre>
      *
      * @param literal the literal to check for non-emptiness
      * @return a string representation of the IS NOT EMPTY expression
      */
-    public static String isNotNullOrEmpty(final String literal) {
+    public static String isNotNullAndNotEmpty(final String literal) {
         return link2(Operator.IS_NOT, literal, EMPTY);
     }
 
@@ -825,7 +818,7 @@ public class Expression extends LogicalCondition {
         try {
             sb.append(literal);
             sb.append(SK._SPACE);
-            sb.append(operator.getName());
+            sb.append(operator.sqlToken());
             sb.append(SK._SPACE);
             sb.append(normalize(value));
 
@@ -850,7 +843,7 @@ public class Expression extends LogicalCondition {
         try {
             sb.append(literal);
             sb.append(SK._SPACE);
-            sb.append(operator.getName());
+            sb.append(operator.sqlToken());
             sb.append(SK._SPACE);
             sb.append(normalize(min));
             sb.append(SK._SPACE);
@@ -878,7 +871,7 @@ public class Expression extends LogicalCondition {
         try {
             sb.append(literal);
             sb.append(SK._SPACE);
-            sb.append(operator.getName());
+            sb.append(operator.sqlToken());
             sb.append(SK._SPACE);
             sb.append(operatorPostfix);
 
@@ -902,7 +895,7 @@ public class Expression extends LogicalCondition {
             for (int i = 0; i < literals.length; i++) {
                 if (i > 0) {
                     sb.append(SK._SPACE);
-                    sb.append(operator.getName());
+                    sb.append(operator.sqlToken());
                     sb.append(SK._SPACE);
                 }
 

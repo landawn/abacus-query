@@ -315,9 +315,9 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
     /**
      * Constructs a new SQLBuilder with the specified naming policy and SQL policy.
-     * 
+     *
      * @param namingPolicy the naming policy for column names, defaults to SNAKE_CASE if null
-     * @param sqlPolicy the SQL generation policy, defaults to SQL if null
+     * @param sqlPolicy the SQL generation policy, defaults to RAW_SQL if null
      */
     protected SQLBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         super(namingPolicy, sqlPolicy);
@@ -2547,7 +2547,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <pre>{@code
          * String sql = ACSB.select("firstName", "lastName", "age")
          *                  .from("users")
-         *                  .where(Filters.gte("age", 18))
+         *                  .where(Filters.ge("age", 18))
          *                  .toSql();
          * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age" 
          * //         FROM USERS WHERE AGE >= 18
@@ -2739,7 +2739,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.selectFrom(User.class)
-         *                  .where(Filters.gte("age", 18))
+         *                  .where(Filters.ge("age", 18))
          *                  .toSql();
          * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" 
          * //         FROM USER WHERE AGE >= 18
@@ -2762,7 +2762,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.selectFrom(User.class, "u")
-         *                  .where(Filters.gte("u.AGE", 18))
+         *                  .where(Filters.ge("u.AGE", 18))
          *                  .toSql();
          * // Output: SELECT u.ID AS "id", u.FIRST_NAME AS "firstName", u.LAST_NAME AS "lastName", u.AGE AS "age", u.EMAIL AS "email" 
          * //         FROM USER u WHERE u.AGE >= 18
@@ -3171,7 +3171,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.count(User.class)
-         *                  .where(Filters.gte("AGE", 18))
+         *                  .where(Filters.ge("AGE", 18))
          *                  .toSql();
          * // Output: SELECT count(*) FROM USER WHERE AGE >= 18
          * }</pre>
@@ -5785,8 +5785,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * // Batch INSERT
      * List<Account> accounts = Arrays.asList(account1, account2, account3);
      * SP sqlPair = PSC.batchInsert(accounts).into("account").build();
-     * // sqlPair.sql: INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?), (?, ?)
-     * // sqlPair.parameters: ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
+     * // sqlPair.sql(): INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?), (?, ?)
+     * // sqlPair.parameters(): ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
      * 
      * // Complex JOIN query
      * String sql = PSC.select("a.id", "a.firstName", "COUNT(o.id) AS orderCount")
@@ -5917,8 +5917,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * props.put("firstName", "John");
          * props.put("lastName", "Doe");
          * SP sqlPair = PSC.insert(props).into("account").build();
-         * // sqlPair.sql: INSERT INTO account (first_name, last_name) VALUES (?, ?)
-         * // sqlPair.parameters: ["John", "Doe"]
+         * // sqlPair.sql(): INSERT INTO account (first_name, last_name) VALUES (?, ?)
+         * // sqlPair.parameters(): ["John", "Doe"]
          * }</pre>
          * 
          * @param props map of property names to their values
@@ -5951,8 +5951,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * account.setEmail("john.doe@example.com");
          * 
          * SP sqlPair = PSC.insert(account).into("account").build();
-         * // sqlPair.sql: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com"]
+         * // sqlPair.sql(): INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
+         * // sqlPair.parameters(): ["John", "Doe", "john.doe@example.com"]
          * }</pre>
          * 
          * @param entity the entity object to insert
@@ -5980,8 +5980,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * Set<String> excluded = N.asSet("createdDate");
          * SP sqlPair = PSC.insert(account, excluded).into("account").build();
-         * // sqlPair.sql: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com"]
+         * // sqlPair.sql(): INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
+         * // sqlPair.parameters(): ["John", "Doe", "john.doe@example.com"]
          * }</pre>
          * 
          * @param entity the entity object to insert
@@ -6113,14 +6113,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * 
          * SP sqlPair = PSC.batchInsert(accounts).into("account").build();
-         * // sqlPair.sql: INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?), (?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
+         * // sqlPair.sql(): INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?), (?, ?)
+         * // sqlPair.parameters(): ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
          * }</pre>
          * 
          * @param propsList list of entities or property maps to insert
          * @return a new SQLBuilder instance for method chaining
          * @throws IllegalArgumentException if propsList is null or empty
-         * @deprecated This feature is in beta and may change in future versions
          */
         @Beta
         public static SQLBuilder batchInsert(final Collection<?> propsList) {
@@ -6142,11 +6141,11 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
         /**
          * Creates an UPDATE statement for a table.
-         * 
+         *
          * <p>This method starts building an UPDATE statement. Use the {@code set()} method to specify
          * which columns to update and their values. Property names in subsequent operations will be
          * converted to snake_case format.</p>
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.update("account")
@@ -8376,7 +8375,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
      * String sql = PLC.selectFrom(UserProfile.class)
      *                 .where(Filters.and(
      *                     Filters.equal("isActive", true),
-     *                     Filters.gte("lastLoginDate", lastWeek)
+     *                     Filters.ge("lastLoginDate", lastWeek)
      *                 ))
      *                 .orderBy("lastLoginDate DESC")
      *                 .toSql();
@@ -8450,8 +8449,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .into("account")
          *                 .values("John", "Doe", "john@example.com")
          *                 .build();
-         * // sqlPair.sql: INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "john@example.com"]
+         * // sqlPair.sql(): INSERT INTO account (firstName, lastName, email) VALUES (?, ?, ?)
+         * // sqlPair.parameters(): ["John", "Doe", "john@example.com"]
          * }</pre>
          * 
          * @param propOrColumnNames the property or column names to insert
@@ -8516,8 +8515,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * props.put("isActive", true);
          * 
          * SP sqlPair = PLC.insert(props).into("account").build();
-         * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress, isActive) VALUES (?, ?, ?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com", true]
+         * // sqlPair.sql(): INSERT INTO account (firstName, lastName, emailAddress, isActive) VALUES (?, ?, ?, ?)
+         * // sqlPair.parameters(): ["John", "Doe", "john.doe@example.com", true]
          * 
          * // With null values (will be included)
          * props.put("middleName", null);
@@ -8557,8 +8556,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * account.setCreatedDate(new Date());
          * 
          * SP sqlPair = PLC.insert(account).into("account").build();
-         * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress, createdDate) VALUES (?, ?, ?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "john.doe@example.com", Date object]
+         * // sqlPair.sql(): INSERT INTO account (firstName, lastName, emailAddress, createdDate) VALUES (?, ?, ?, ?)
+         * // sqlPair.parameters(): ["John", "Doe", "john.doe@example.com", Date object]
          * 
          * // Entity with @ReadOnly fields (will be excluded)
          * @Table("userProfile")
@@ -8596,8 +8595,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * 
          * Set<String> excluded = N.asSet("createdDate", "internalNotes");
          * SP sqlPair = PLC.insert(account, excluded).into("account").build();
-         * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress) VALUES (?, ?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "john@example.com"]
+         * // sqlPair.sql(): INSERT INTO account (firstName, lastName, emailAddress) VALUES (?, ?, ?)
+         * // sqlPair.parameters(): ["John", "Doe", "john@example.com"]
          * 
          * // Exclude all audit fields
          * Set<String> auditFields = N.asSet("createdBy", "createdDate", "modifiedBy", "modifiedDate");
@@ -8753,8 +8752,8 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          * );
          * 
          * SP sqlPair = PLC.batchInsert(accounts).into("account").build();
-         * // sqlPair.sql: INSERT INTO account (firstName, lastName, emailAddress) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?)
-         * // sqlPair.parameters: ["John", "Doe", "john@example.com", "Jane", "Smith", "jane@example.com", "Bob", "Johnson", "bob@example.com"]
+         * // sqlPair.sql(): INSERT INTO account (firstName, lastName, emailAddress) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?)
+         * // sqlPair.parameters(): ["John", "Doe", "john@example.com", "Jane", "Smith", "jane@example.com", "Bob", "Johnson", "bob@example.com"]
          * 
          * // With maps
          * List<Map<String, Object>> data = Arrays.asList(
@@ -8842,7 +8841,7 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
          *                 .set(account)
          *                 .where(Filters.equal("id", account.getId()))
          *                 .build();
-         * // sqlPair.sql: UPDATE account SET firstName = ?, lastName = ?, modifiedDate = ? WHERE id = ?
+         * // sqlPair.sql(): UPDATE account SET firstName = ?, lastName = ?, modifiedDate = ? WHERE id = ?
          * }</pre>
          * 
          * @param tableName the name of the table to update

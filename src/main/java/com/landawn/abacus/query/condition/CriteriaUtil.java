@@ -104,7 +104,7 @@ public final class CriteriaUtil {
      * // LIMIT, UNION_ALL, UNION, INTERSECT, EXCEPT, MINUS
      *
      * for (Operator op : clauseOps) {
-     *     System.out.println(op.getName());
+     *     System.out.println(op.sqlToken());
      * }
      * }</pre>
      *

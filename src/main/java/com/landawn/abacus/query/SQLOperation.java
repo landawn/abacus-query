@@ -18,6 +18,7 @@ package com.landawn.abacus.query;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import com.landawn.abacus.annotation.Internal;
@@ -137,10 +138,10 @@ public enum SQLOperation {
      */
     UNKNOWN("UNKNOWN");
 
-    private final String name;
+    private final String sqlToken;
 
-    SQLOperation(final String name) {
-        this.name = name;
+    SQLOperation(final String sqlToken) {
+        this.sqlToken = sqlToken;
     }
 
     private static final Map<String, SQLOperation> operationMap;
@@ -150,8 +151,10 @@ public enum SQLOperation {
         final Map<String, SQLOperation> tempMap = new HashMap<>();
 
         for (final SQLOperation value : values) {
-            tempMap.put(value.name, value);
+            tempMap.put(value.sqlToken, value);
+            tempMap.put(value.sqlToken.toLowerCase(Locale.ROOT), value);
             tempMap.put(value.name(), value);
+            tempMap.put(value.name().toLowerCase(Locale.ROOT), value);
         }
 
         operationMap = Collections.unmodifiableMap(tempMap);
@@ -159,7 +162,7 @@ public enum SQLOperation {
 
     /**
      * Retrieves the SQLOperation enum value corresponding to the given operation name.
-     * The lookup is case-sensitive and matches against both the SQL text representation
+     * The lookup is case-insensitive and matches against both the SQL token representation
      * and the enum constant name.
      *
      * <p><b>Usage Examples:</b></p>
@@ -170,11 +173,22 @@ public enum SQLOperation {
      * SQLOperation unknownOp = SQLOperation.of("TRUNCATE");   // returns null (not supported)
      * }</pre>
      *
-     * @param name the SQL operation name to look up (case-sensitive)
+     * @param name the SQL operation name to look up (case-insensitive)
      * @return the corresponding SQLOperation enum value, or {@code null} if no matching operation is found
+     * @throws IllegalArgumentException if name is null
      */
     public static SQLOperation of(final String name) {
-        return operationMap.get(name);
+        if (name == null) {
+            throw new IllegalArgumentException("SQLOperation name cannot be null");
+        }
+
+        SQLOperation value = operationMap.get(name);
+
+        if (value == null) {
+            return operationMap.get(name.toLowerCase(Locale.ROOT));
+        }
+
+        return value;
     }
 
     /**
@@ -188,26 +202,26 @@ public enum SQLOperation {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SQLOperation op = SQLOperation.SELECT;
-     * String sqlKeyword = op.getName();   // Returns "SELECT"
+     * String sqlKeyword = op.sqlToken();   // Returns "SELECT"
      *
      * SQLOperation txOp = SQLOperation.BEGIN_TRANSACTION;
-     * String txText = txOp.getName();   // Returns "BEGIN TRANSACTION"
+     * String txText = txOp.sqlToken();   // Returns "BEGIN TRANSACTION"
      * }</pre>
      *
      * @return the SQL keyword string representation of this operation, never {@code null}
      */
-    public String getName() {
-        return name;
+    public String sqlToken() {
+        return sqlToken;
     }
 
     /**
      * Returns the string representation of this SQL operation.
-     * This method returns the same value as {@link #getName()}.
+     * This method returns the same value as {@link #sqlToken()}.
      *
      * @return the operation name as a string
      */
     @Override
     public String toString() {
-        return name;
+        return sqlToken;
     }
 }

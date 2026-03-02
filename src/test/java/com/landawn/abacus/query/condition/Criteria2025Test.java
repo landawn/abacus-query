@@ -731,6 +731,19 @@ public class Criteria2025Test extends TestBase {
     }
 
     @Test
+    public void testWhereRejectsJoinCondition() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> criteria.where(new Join("orders", Filters.on("users.id", "orders.user_id"))));
+    }
+
+    @Test
+    public void testWhereRejectsNestedCriteriaCondition() {
+        Criteria criteria = new Criteria();
+        Criteria nested = new Criteria().where(Filters.equal("status", "active"));
+        assertThrows(IllegalArgumentException.class, () -> criteria.where(nested));
+    }
+
+    @Test
     public void testGroupByRejectsMismatchedClauseCondition() {
         Criteria criteria = new Criteria();
         assertThrows(IllegalArgumentException.class, () -> criteria.groupBy(Filters.where(Filters.equal("status", "active"))));

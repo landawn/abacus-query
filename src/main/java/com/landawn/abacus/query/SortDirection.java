@@ -52,10 +52,6 @@ public enum SortDirection {
      */
     DESC;
 
-    /**
-     * Private constructor for enum constants. This is automatically invoked during enum initialization
-     * and should not be called directly.
-     */
     SortDirection() {
     }
 

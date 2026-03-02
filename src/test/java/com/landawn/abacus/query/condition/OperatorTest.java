@@ -9,12 +9,12 @@ public class OperatorTest extends TestBase {
 
     @Test
     public void testGetName() {
-        Assertions.assertEquals("=", Operator.EQUAL.getName());
-        Assertions.assertEquals("!=", Operator.NOT_EQUAL.getName());
-        Assertions.assertEquals("AND", Operator.AND.getName());
-        Assertions.assertEquals("OR", Operator.OR.getName());
-        Assertions.assertEquals("BETWEEN", Operator.BETWEEN.getName());
-        Assertions.assertEquals("LIKE", Operator.LIKE.getName());
+        Assertions.assertEquals("=", Operator.EQUAL.sqlToken());
+        Assertions.assertEquals("!=", Operator.NOT_EQUAL.sqlToken());
+        Assertions.assertEquals("AND", Operator.AND.sqlToken());
+        Assertions.assertEquals("OR", Operator.OR.sqlToken());
+        Assertions.assertEquals("BETWEEN", Operator.BETWEEN.sqlToken());
+        Assertions.assertEquals("LIKE", Operator.LIKE.sqlToken());
     }
 
     @Test
@@ -94,7 +94,7 @@ public class OperatorTest extends TestBase {
     public void testAllOperatorValues() {
         // Test that all operators have non-empty names
         for (Operator op : Operator.values()) {
-            Assertions.assertNotNull(op.getName());
+            Assertions.assertNotNull(op.sqlToken());
             Assertions.assertNotNull(op.toString());
         }
     }
@@ -102,62 +102,62 @@ public class OperatorTest extends TestBase {
     @Test
     public void testSpecificOperators() {
         // Comparison operators
-        Assertions.assertEquals("=", Operator.EQUAL.getName());
-        Assertions.assertEquals("!=", Operator.NOT_EQUAL.getName());
-        Assertions.assertEquals("<>", Operator.NOT_EQUAL_ANSI.getName());
-        Assertions.assertEquals(">", Operator.GREATER_THAN.getName());
-        Assertions.assertEquals(">=", Operator.GREATER_THAN_OR_EQUAL.getName());
-        Assertions.assertEquals("<", Operator.LESS_THAN.getName());
-        Assertions.assertEquals("<=", Operator.LESS_THAN_OR_EQUAL.getName());
+        Assertions.assertEquals("=", Operator.EQUAL.sqlToken());
+        Assertions.assertEquals("!=", Operator.NOT_EQUAL.sqlToken());
+        Assertions.assertEquals("<>", Operator.NOT_EQUAL_ANSI.sqlToken());
+        Assertions.assertEquals(">", Operator.GREATER_THAN.sqlToken());
+        Assertions.assertEquals(">=", Operator.GREATER_THAN_OR_EQUAL.sqlToken());
+        Assertions.assertEquals("<", Operator.LESS_THAN.sqlToken());
+        Assertions.assertEquals("<=", Operator.LESS_THAN_OR_EQUAL.sqlToken());
 
         // Logical operators
-        Assertions.assertEquals("AND", Operator.AND.getName());
-        Assertions.assertEquals("OR", Operator.OR.getName());
-        Assertions.assertEquals("NOT", Operator.NOT.getName());
-        Assertions.assertEquals("XOR", Operator.XOR.getName());
+        Assertions.assertEquals("AND", Operator.AND.sqlToken());
+        Assertions.assertEquals("OR", Operator.OR.sqlToken());
+        Assertions.assertEquals("NOT", Operator.NOT.sqlToken());
+        Assertions.assertEquals("XOR", Operator.XOR.sqlToken());
 
         // Range/Set operators
-        Assertions.assertEquals("BETWEEN", Operator.BETWEEN.getName());
-        Assertions.assertEquals("NOT BETWEEN", Operator.NOT_BETWEEN.getName());
-        Assertions.assertEquals("IN", Operator.IN.getName());
-        Assertions.assertEquals("NOT IN", Operator.NOT_IN.getName());
-        Assertions.assertEquals("LIKE", Operator.LIKE.getName());
-        Assertions.assertEquals("NOT LIKE", Operator.NOT_LIKE.getName());
+        Assertions.assertEquals("BETWEEN", Operator.BETWEEN.sqlToken());
+        Assertions.assertEquals("NOT BETWEEN", Operator.NOT_BETWEEN.sqlToken());
+        Assertions.assertEquals("IN", Operator.IN.sqlToken());
+        Assertions.assertEquals("NOT IN", Operator.NOT_IN.sqlToken());
+        Assertions.assertEquals("LIKE", Operator.LIKE.sqlToken());
+        Assertions.assertEquals("NOT LIKE", Operator.NOT_LIKE.sqlToken());
 
         // Join operators
-        Assertions.assertEquals("JOIN", Operator.JOIN.getName());
-        Assertions.assertEquals("LEFT JOIN", Operator.LEFT_JOIN.getName());
-        Assertions.assertEquals("RIGHT JOIN", Operator.RIGHT_JOIN.getName());
-        Assertions.assertEquals("FULL JOIN", Operator.FULL_JOIN.getName());
-        Assertions.assertEquals("CROSS JOIN", Operator.CROSS_JOIN.getName());
-        Assertions.assertEquals("INNER JOIN", Operator.INNER_JOIN.getName());
-        Assertions.assertEquals("NATURAL JOIN", Operator.NATURAL_JOIN.getName());
+        Assertions.assertEquals("JOIN", Operator.JOIN.sqlToken());
+        Assertions.assertEquals("LEFT JOIN", Operator.LEFT_JOIN.sqlToken());
+        Assertions.assertEquals("RIGHT JOIN", Operator.RIGHT_JOIN.sqlToken());
+        Assertions.assertEquals("FULL JOIN", Operator.FULL_JOIN.sqlToken());
+        Assertions.assertEquals("CROSS JOIN", Operator.CROSS_JOIN.sqlToken());
+        Assertions.assertEquals("INNER JOIN", Operator.INNER_JOIN.sqlToken());
+        Assertions.assertEquals("NATURAL JOIN", Operator.NATURAL_JOIN.sqlToken());
 
         // Clauses
-        Assertions.assertEquals("WHERE", Operator.WHERE.getName());
-        Assertions.assertEquals("HAVING", Operator.HAVING.getName());
-        Assertions.assertEquals("GROUP BY", Operator.GROUP_BY.getName());
-        Assertions.assertEquals("ORDER BY", Operator.ORDER_BY.getName());
-        Assertions.assertEquals("LIMIT", Operator.LIMIT.getName());
-        Assertions.assertEquals("OFFSET", Operator.OFFSET.getName());
+        Assertions.assertEquals("WHERE", Operator.WHERE.sqlToken());
+        Assertions.assertEquals("HAVING", Operator.HAVING.sqlToken());
+        Assertions.assertEquals("GROUP BY", Operator.GROUP_BY.sqlToken());
+        Assertions.assertEquals("ORDER BY", Operator.ORDER_BY.sqlToken());
+        Assertions.assertEquals("LIMIT", Operator.LIMIT.sqlToken());
+        Assertions.assertEquals("OFFSET", Operator.OFFSET.sqlToken());
 
         // Set operations
-        Assertions.assertEquals("UNION", Operator.UNION.getName());
-        Assertions.assertEquals("UNION ALL", Operator.UNION_ALL.getName());
-        Assertions.assertEquals("INTERSECT", Operator.INTERSECT.getName());
-        Assertions.assertEquals("EXCEPT", Operator.EXCEPT.getName());
-        Assertions.assertEquals("MINUS", Operator.MINUS.getName());
+        Assertions.assertEquals("UNION", Operator.UNION.sqlToken());
+        Assertions.assertEquals("UNION ALL", Operator.UNION_ALL.sqlToken());
+        Assertions.assertEquals("INTERSECT", Operator.INTERSECT.sqlToken());
+        Assertions.assertEquals("EXCEPT", Operator.EXCEPT.sqlToken());
+        Assertions.assertEquals("MINUS", Operator.MINUS.sqlToken());
 
         // Special operators
-        Assertions.assertEquals("", Operator.EMPTY.getName());
-        Assertions.assertEquals("IS", Operator.IS.getName());
-        Assertions.assertEquals("IS NOT", Operator.IS_NOT.getName());
-        Assertions.assertEquals("EXISTS", Operator.EXISTS.getName());
-        Assertions.assertEquals("ANY", Operator.ANY.getName());
-        Assertions.assertEquals("SOME", Operator.SOME.getName());
-        Assertions.assertEquals("ALL", Operator.ALL.getName());
-        Assertions.assertEquals("ON", Operator.ON.getName());
-        Assertions.assertEquals("USING", Operator.USING.getName());
+        Assertions.assertEquals("", Operator.EMPTY.sqlToken());
+        Assertions.assertEquals("IS", Operator.IS.sqlToken());
+        Assertions.assertEquals("IS NOT", Operator.IS_NOT.sqlToken());
+        Assertions.assertEquals("EXISTS", Operator.EXISTS.sqlToken());
+        Assertions.assertEquals("ANY", Operator.ANY.sqlToken());
+        Assertions.assertEquals("SOME", Operator.SOME.sqlToken());
+        Assertions.assertEquals("ALL", Operator.ALL.sqlToken());
+        Assertions.assertEquals("ON", Operator.ON.sqlToken());
+        Assertions.assertEquals("USING", Operator.USING.sqlToken());
     }
 
     @Test
@@ -166,7 +166,7 @@ public class OperatorTest extends TestBase {
         Operator[] operators = Operator.values();
         for (int i = 0; i < operators.length; i++) {
             for (int j = i + 1; j < operators.length; j++) {
-                if (operators[i].getName().equals(operators[j].getName())) {
+                if (operators[i].sqlToken().equals(operators[j].sqlToken())) {
                     // Only EXCEPT and MINUS should have the same name
                     Assertions.assertTrue(
                             (operators[i] == Operator.EXCEPT && operators[j] == Operator.MINUS)

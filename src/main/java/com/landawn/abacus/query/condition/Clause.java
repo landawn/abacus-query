@@ -19,10 +19,9 @@ package com.landawn.abacus.query.condition;
  * Clauses represent major SQL query components like WHERE, HAVING, GROUP BY, ORDER BY, etc.
  * Unlike regular conditions, clauses typically cannot be combined using AND/OR/NOT operations.
  * 
- * <p>A Clause is a special type of {@link Clause} that represents a complete SQL clause.
+ * <p>A Clause is a special type of {@link Cell} that represents a complete SQL clause.
  * While regular conditions can be combined with logical operators (AND, OR, NOT),
- * clauses are standalone components that structure the query. Attempting to use
- * logical operations on clauses will result in {@link UnsupportedOperationException}.</p>
+ * clauses are standalone components that structure the query.</p>
  * 
  * <p>This design enforces proper SQL structure - you cannot, for example, AND two
  * WHERE clauses together. Instead, you combine the conditions within a single WHERE clause.</p>

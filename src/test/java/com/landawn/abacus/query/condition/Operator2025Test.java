@@ -128,14 +128,14 @@ public class Operator2025Test extends TestBase {
 
     @Test
     public void testGetName() {
-        assertEquals("=", Operator.EQUAL.getName());
-        assertEquals("!=", Operator.NOT_EQUAL.getName());
-        assertEquals("AND", Operator.AND.getName());
-        assertEquals("OR", Operator.OR.getName());
-        assertEquals("LIKE", Operator.LIKE.getName());
-        assertEquals("BETWEEN", Operator.BETWEEN.getName());
-        assertEquals("WHERE", Operator.WHERE.getName());
-        assertEquals("LEFT JOIN", Operator.LEFT_JOIN.getName());
+        assertEquals("=", Operator.EQUAL.sqlToken());
+        assertEquals("!=", Operator.NOT_EQUAL.sqlToken());
+        assertEquals("AND", Operator.AND.sqlToken());
+        assertEquals("OR", Operator.OR.sqlToken());
+        assertEquals("LIKE", Operator.LIKE.sqlToken());
+        assertEquals("BETWEEN", Operator.BETWEEN.sqlToken());
+        assertEquals("WHERE", Operator.WHERE.sqlToken());
+        assertEquals("LEFT JOIN", Operator.LEFT_JOIN.sqlToken());
     }
 
     @Test

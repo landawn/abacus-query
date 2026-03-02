@@ -16,6 +16,7 @@
 
 package com.landawn.abacus.query;
 
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -55,34 +56,34 @@ public class SQLOperation2025Test extends TestBase {
         assertNull(SQLOperation.of("INVALID"));
         assertNull(SQLOperation.of("TRUNCATE"));
         assertNull(SQLOperation.of(""));
-        assertNull(SQLOperation.of("select"));
-        assertNull(SQLOperation.of("Select"));
+        assertEquals(SQLOperation.SELECT, SQLOperation.of("select"));
+        assertEquals(SQLOperation.SELECT, SQLOperation.of("Select"));
     }
 
     @Test
     public void testOf_NullInput() {
-        assertNull(SQLOperation.of(null));
+        assertThrows(IllegalArgumentException.class, () -> SQLOperation.of(null));
     }
 
     @Test
     public void testSqlText() {
-        assertEquals("SELECT", SQLOperation.SELECT.getName());
-        assertEquals("INSERT", SQLOperation.INSERT.getName());
-        assertEquals("UPDATE", SQLOperation.UPDATE.getName());
-        assertEquals("DELETE", SQLOperation.DELETE.getName());
-        assertEquals("MERGE", SQLOperation.MERGE.getName());
-        assertEquals("CREATE", SQLOperation.CREATE.getName());
-        assertEquals("DROP", SQLOperation.DROP.getName());
-        assertEquals("ALTER", SQLOperation.ALTER.getName());
-        assertEquals("SHOW", SQLOperation.SHOW.getName());
-        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.getName());
-        assertEquals("USE", SQLOperation.USE.getName());
-        assertEquals("RENAME", SQLOperation.RENAME.getName());
-        assertEquals("BEGIN TRANSACTION", SQLOperation.BEGIN_TRANSACTION.getName());
-        assertEquals("COMMIT", SQLOperation.COMMIT.getName());
-        assertEquals("ROLLBACK", SQLOperation.ROLLBACK.getName());
-        assertEquals("CALL", SQLOperation.CALL.getName());
-        assertEquals("UNKNOWN", SQLOperation.UNKNOWN.getName());
+        assertEquals("SELECT", SQLOperation.SELECT.sqlToken());
+        assertEquals("INSERT", SQLOperation.INSERT.sqlToken());
+        assertEquals("UPDATE", SQLOperation.UPDATE.sqlToken());
+        assertEquals("DELETE", SQLOperation.DELETE.sqlToken());
+        assertEquals("MERGE", SQLOperation.MERGE.sqlToken());
+        assertEquals("CREATE", SQLOperation.CREATE.sqlToken());
+        assertEquals("DROP", SQLOperation.DROP.sqlToken());
+        assertEquals("ALTER", SQLOperation.ALTER.sqlToken());
+        assertEquals("SHOW", SQLOperation.SHOW.sqlToken());
+        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.sqlToken());
+        assertEquals("USE", SQLOperation.USE.sqlToken());
+        assertEquals("RENAME", SQLOperation.RENAME.sqlToken());
+        assertEquals("BEGIN TRANSACTION", SQLOperation.BEGIN_TRANSACTION.sqlToken());
+        assertEquals("COMMIT", SQLOperation.COMMIT.sqlToken());
+        assertEquals("ROLLBACK", SQLOperation.ROLLBACK.sqlToken());
+        assertEquals("CALL", SQLOperation.CALL.sqlToken());
+        assertEquals("UNKNOWN", SQLOperation.UNKNOWN.sqlToken());
     }
 
     @Test
@@ -96,7 +97,7 @@ public class SQLOperation2025Test extends TestBase {
         assertEquals("DROP", SQLOperation.DROP.toString());
         assertEquals("ALTER", SQLOperation.ALTER.toString());
         assertEquals("SHOW", SQLOperation.SHOW.toString());
-        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.getName());
+        assertEquals("DESCRIBE", SQLOperation.DESCRIBE.sqlToken());
         assertEquals("USE", SQLOperation.USE.toString());
         assertEquals("RENAME", SQLOperation.RENAME.toString());
         assertEquals("BEGIN TRANSACTION", SQLOperation.BEGIN_TRANSACTION.toString());
@@ -125,7 +126,7 @@ public class SQLOperation2025Test extends TestBase {
     @Test
     public void testToStringMatchesSqlText() {
         for (SQLOperation op : SQLOperation.values()) {
-            assertEquals(op.getName(), op.toString());
+            assertEquals(op.sqlToken(), op.toString());
         }
     }
 }

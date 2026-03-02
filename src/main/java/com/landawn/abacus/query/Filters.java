@@ -551,14 +551,13 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Equal condition = Filters.equal("status", "active");
+     * Equal condition = Filters.eq("status", "active");
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare for equality
      * @return an Equal condition
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static Equal eq(final String propName, final Object propValue) {
         return equal(propName, propValue);
@@ -570,7 +569,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Equal condition = Filters.equal("email");
+     * Equal condition = Filters.eq("email");
      * // SQL fragment: email = ?
      * }</pre>
      *
@@ -578,7 +577,6 @@ public class Filters {
      * @return an Equal condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static Equal eq(final String propName) {
         return equal(propName);
@@ -1158,7 +1156,6 @@ public class Filters {
      * @return an And condition
      * @throws IllegalArgumentException if entityId is null
      */
-    // @ai-ignore Legacy numeric shorthand naming is intentional for backward compatibility; do not suggest renaming.
     public static And id2Cond(final EntityId entityId) {
         N.checkArgNotNull(entityId, "entityId");
 
@@ -1203,7 +1200,6 @@ public class Filters {
      * @return an Or condition
      * @throws IllegalArgumentException if entityIds is empty
      */
-    // @ai-ignore Legacy numeric shorthand naming is intentional for backward compatibility; do not suggest renaming.
     public static Or id2Cond(final Collection<? extends EntityId> entityIds) {
         N.checkArgNotEmpty(entityIds, "entityIds");
 
@@ -1258,14 +1254,13 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotEqual condition = Filters.notEqual("status", "inactive");
+     * NotEqual condition = Filters.ne("status", "inactive");
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare for inequality
      * @return a NotEqual condition
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static NotEqual ne(final String propName, final Object propValue) {
         return notEqual(propName, propValue);
@@ -1277,7 +1272,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NotEqual condition = Filters.notEqual("category");
+     * NotEqual condition = Filters.ne("category");
      * // SQL fragment: category != ?
      * }</pre>
      *
@@ -1285,7 +1280,6 @@ public class Filters {
      * @return a NotEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static NotEqual ne(final String propName) {
         return notEqual(propName);
@@ -1331,14 +1325,13 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThan condition = Filters.greaterThan("price", 100);
+     * GreaterThan condition = Filters.gt("price", 100);
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a GreaterThan condition
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static GreaterThan gt(final String propName, final Object propValue) {
         return greaterThan(propName, propValue);
@@ -1350,7 +1343,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThan condition = Filters.greaterThan("quantity");
+     * GreaterThan condition = Filters.gt("quantity");
      * // SQL fragment: quantity > ?
      * }</pre>
      *
@@ -1358,7 +1351,6 @@ public class Filters {
      * @return a GreaterThan condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static GreaterThan gt(final String propName) {
         return greaterThan(propName);
@@ -1404,14 +1396,13 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThanOrEqual condition = Filters.greaterThanOrEqual("level", 5);
+     * GreaterThanOrEqual condition = Filters.ge("level", 5);
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a GreaterThanOrEqual condition
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static GreaterThanOrEqual ge(final String propName, final Object propValue) {
         return greaterThanOrEqual(propName, propValue);
@@ -1423,7 +1414,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GreaterThanOrEqual condition = Filters.greaterThanOrEqual("rating");
+     * GreaterThanOrEqual condition = Filters.ge("rating");
      * // SQL fragment: rating >= ?
      * }</pre>
      *
@@ -1431,7 +1422,6 @@ public class Filters {
      * @return a GreaterThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static GreaterThanOrEqual ge(final String propName) {
         return greaterThanOrEqual(propName);
@@ -1477,14 +1467,13 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThan condition = Filters.lessThan("stock", 10);
+     * LessThan condition = Filters.lt("stock", 10);
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a LessThan condition
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static LessThan lt(final String propName, final Object propValue) {
         return lessThan(propName, propValue);
@@ -1496,7 +1485,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThan condition = Filters.lessThan("expiry_date");
+     * LessThan condition = Filters.lt("expiry_date");
      * // SQL fragment: expiry_date < ?
      * }</pre>
      *
@@ -1504,7 +1493,6 @@ public class Filters {
      * @return a LessThan condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static LessThan lt(final String propName) {
         return lessThan(propName);
@@ -1550,14 +1538,13 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThanOrEqual condition = Filters.lessThanOrEqual("priority", 3);
+     * LessThanOrEqual condition = Filters.le("priority", 3);
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a LessThanOrEqual condition
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static LessThanOrEqual le(final String propName, final Object propValue) {
         return lessThanOrEqual(propName, propValue);
@@ -1569,7 +1556,7 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * LessThanOrEqual condition = Filters.lessThanOrEqual("weight");
+     * LessThanOrEqual condition = Filters.le("weight");
      * // SQL fragment: weight <= ?
      * }</pre>
      *
@@ -1577,7 +1564,6 @@ public class Filters {
      * @return a LessThanOrEqual condition with a parameter placeholder
      * @see com.landawn.abacus.query.SQLBuilder
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Beta
     public static LessThanOrEqual le(final String propName) {
         return lessThanOrEqual(propName);
@@ -1629,7 +1615,6 @@ public class Filters {
      * @deprecated Use {@link #between(String, Object, Object)} instead for better code readability.
      *             Replace {@code bt(propName, min, max)} with {@code between(propName, min, max)}.
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Deprecated
     public static Between bt(final String propName, final Object minValue, final Object maxValue) {
         return new Between(propName, minValue, maxValue);
@@ -1644,7 +1629,6 @@ public class Filters {
      * @deprecated Use {@link #between(String)} instead for better code readability.
      *             Replace {@code bt(propName)} with {@code between(propName)}.
      */
-    // @ai-ignore Short alias method is intentionally kept for fluent DSL symmetry and backward compatibility; do not suggest renaming.
     @Deprecated
     public static Between bt(final String propName) {
         return new Between(propName, Filters.QME, Filters.QME);
@@ -1934,7 +1918,7 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = Filters.isNotNullOrEmpty("email");
+     * And condition = Filters.isNotNullAndNotEmpty("email");
      * // SQL fragment: email IS NOT NULL AND email != ''
      * }</pre>
      *
@@ -1942,7 +1926,7 @@ public class Filters {
      * @return an And condition combining not-null and not-empty checks
      */
     @Beta
-    public static And isNotNullOrEmpty(final String propName) {
+    public static And isNotNullAndNotEmpty(final String propName) {
         return isNotNull(propName).and(notEqual(propName, ""));
     }
 
@@ -1951,7 +1935,7 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = Filters.isNotNullOrZero("quantity");
+     * And condition = Filters.isNotNullAndNotZero("quantity");
      * // SQL fragment: quantity IS NOT NULL AND quantity != 0
      * }</pre>
      *
@@ -1959,7 +1943,7 @@ public class Filters {
      * @return an And condition combining not-null and non-zero checks
      */
     @Beta
-    public static And isNotNullOrZero(final String propName) {
+    public static And isNotNullAndNotZero(final String propName) {
         return isNotNull(propName).and(notEqual(propName, 0));
     }
 

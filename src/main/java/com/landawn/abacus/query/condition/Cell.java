@@ -205,10 +205,11 @@ public class Cell extends AbstractCondition {
             return true;
         }
 
-        if (obj instanceof final Cell other) {
-            return N.equals(operator, other.operator) && N.equals(condition, other.condition);
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
 
-        return false;
+        final Cell other = (Cell) obj;
+        return N.equals(operator, other.operator) && N.equals(condition, other.condition);
     }
 }

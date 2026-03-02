@@ -687,6 +687,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return subEntityPropNames;
     }
 
+    /**
+     * Gets the table names for a SELECT query involving the specified entity class and its sub-entities.
+     * Returns a list of table names (with aliases if defined) for the main entity and its sub-entity properties.
+     *
+     * @param entityClass the entity class
+     * @param alias the table alias for the main entity (can be null or empty)
+     * @param excludedPropNames sub-entity property names to exclude (can be null)
+     * @param namingPolicy the naming policy for table name conversion
+     * @return a list of table name expressions, or an empty list if there are no sub-entity properties
+     */
     protected static List<String> getSelectTableNames(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames,
             final NamingPolicy namingPolicy) {
         final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
@@ -4075,19 +4085,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Returns the list of parameter values for the generated SQL.
      * For parameterized SQL (using ?), this list contains the actual values in order.
-     * For named SQL, this list contains the values corresponding to named parameters
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SQLBuilder builder = PSC.select("*")
-     *                        .from("account")
-     *                        .where(Filters.and(
-     *                            Filters.equal("name", "John"),
-     *                            Filters.greaterThan("age", 25)
-     *                        ));
-     * List<Object> params = builder.parameters();
-     * // params contains: ["John", 25]
-     * }</pre>
+     * For named SQL, this list contains the values corresponding to named parameters.
+     *
+     * <p>This method is used internally by set operations such as {@code union()}, {@code unionAll()},
+     * {@code intersect()}, and {@code except()} to merge parameters from sub-queries. To retrieve
+     * the SQL and parameters together, use the {@link #build()} method which returns an {@link SP} record.</p>
      *
      * @return an unmodifiable view of the parameter values
      */
@@ -4098,7 +4100,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Generates the final SQL query string and releases resources.
      * This method should be called only once. After calling this method, the SQLBuilder instance cannot be used again.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -4109,6 +4111,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @return the generated SQL query string
+     * @throws IllegalStateException if this method is called after the builder has already been closed by a prior call to {@code toSql()} or {@code build()}
      */
     public String toSql() {
         if (_sb == null) {
@@ -4138,18 +4141,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Generates both the SQL string and its parameters as a pair.
      * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SP sqlPair = PSC.select("*")
      *                 .from("account")
      *                 .where(Filters.equal("status", "ACTIVE"))
      *                 .build();
-     * // sqlPair.sql contains: "SELECT * FROM account WHERE status = ?"
-     * // sqlPair.parameters contains: ["ACTIVE"]
+     * // sqlPair.sql() returns: "SELECT * FROM account WHERE status = ?"
+     * // sqlPair.parameters() returns: ["ACTIVE"]
      * }</pre>
      *
      * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
+     * @throws IllegalStateException if this method is called after the builder has already been closed by a prior call to {@code toSql()} or {@code build()}
      */
     public SP build() {
         final String sql = toSql();
@@ -4188,7 +4192,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * List<Account> accounts = PSC.select("*")
      *     .from("account")
      *     .where(Filters.equal("status", "ACTIVE"))
-     *     .apply(sp -> jdbcTemplate.query(sp.sql, sp.parameters, accountRowMapper));
+     *     .apply(sp -> jdbcTemplate.query(sp.sql(), sp.parameters(), accountRowMapper));
      * }</pre>
      *
      * @param <T> the return type of the function
@@ -4235,7 +4239,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * PSC.insert("name", "email", "status")
      *    .into("account")
-     *    .accept(sp -> jdbcTemplate.update(sp.sql, sp.parameters.toArray()));
+     *    .accept(sp -> jdbcTemplate.update(sp.sql(), sp.parameters().toArray()));
      * }</pre>
      *
      * @param <E> the exception type that may be thrown
@@ -5431,7 +5435,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Represents a SQL string and its associated parameters.
-     * This class is used to encapsulate the generated SQL and the parameters required for execution.
+     * This record is used to encapsulate the generated SQL and the parameters required for execution.
      * It is immutable, meaning once created, the SQL and parameters cannot be changed.
      *
      * <p><b>Usage Examples:</b></p>
@@ -5443,12 +5447,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build();
      *
      * // Access SQL and parameters
-     * String sql = sqlPair.sql;
+     * String sql = sqlPair.sql();
      * // "SELECT first_name AS \"firstName\", last_name AS \"lastName\" FROM users WHERE id = ?"
      *
-     * List<Object> params = sqlPair.parameters;
+     * List<Object> params = sqlPair.parameters();
      * // [123]
      * }</pre>
+     *
+     * @param sql the generated SQL query string
+     * @param parameters the immutable list of parameter values corresponding to placeholders in the SQL
      */
     public static final record SP(String sql, ImmutableList<Object> parameters) {
     }

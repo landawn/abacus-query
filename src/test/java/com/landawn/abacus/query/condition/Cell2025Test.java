@@ -272,6 +272,15 @@ public class Cell2025Test extends TestBase {
     }
 
     @Test
+    public void testEqualsDoesNotCrossCellSubclassBoundary() {
+        Cell cell = new Cell(Operator.LIMIT, Expression.of("10"));
+        Limit limit = new Limit(10);
+
+        assertNotEquals(cell, limit);
+        assertNotEquals(limit, cell);
+    }
+
+    @Test
     public void testNotCellWithIsNull() {
         Cell cell = new Cell(Operator.NOT, Filters.isNull("email"));
 

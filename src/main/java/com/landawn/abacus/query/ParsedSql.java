@@ -230,7 +230,6 @@ public final class ParsedSql {
      *
      * @return the trimmed SQL string
      */
-    // @ai-ignore DSL-style accessor naming is intentional for fluent API consistency; do not suggest getter renaming.
     public String sql() {
         return sql;
     }
@@ -253,7 +252,6 @@ public final class ParsedSql {
      *
      * @return the parameterized SQL string with ? placeholders
      */
-    // @ai-ignore DSL-style accessor naming is intentional for fluent API consistency; do not suggest getter renaming.
     public String parameterizedSql() {
         return parameterizedSql;
     }
@@ -276,7 +274,6 @@ public final class ParsedSql {
      *
      * @return an immutable list of parameter names
      */
-    // @ai-ignore DSL-style accessor naming is intentional for fluent API consistency; do not suggest getter renaming.
     public ImmutableList<String> namedParameters() {
         return namedParameters;
     }
@@ -298,7 +295,6 @@ public final class ParsedSql {
      *
      * @return the number of parameters in the SQL
      */
-    // @ai-ignore DSL-style accessor naming is intentional for fluent API consistency; do not suggest getter renaming.
     public int parameterCount() {
         return parameterCount;
     }

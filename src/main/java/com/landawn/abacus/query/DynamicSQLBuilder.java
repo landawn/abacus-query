@@ -95,7 +95,7 @@ public class DynamicSQLBuilder {
      * // Generates: SELECT id, name AS user_name
      * }</pre>
      *
-     * @return the Select clause builder for method chaining
+     * @return the {@link SelectClause} builder for method chaining
      */
     public SelectClause select() {
         return selectClause;
@@ -112,7 +112,7 @@ public class DynamicSQLBuilder {
      * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
-     * @return the From clause builder for method chaining
+     * @return the {@link FromClause} builder for method chaining
      */
     public FromClause from() {
         return fromClause;
@@ -129,7 +129,7 @@ public class DynamicSQLBuilder {
      * // Generates: WHERE status = ? AND created_date > ?
      * }</pre>
      *
-     * @return the Where clause builder for method chaining
+     * @return the {@link WhereClause} builder for method chaining
      */
     public WhereClause where() {
         if (whereClause == null) {
@@ -150,7 +150,7 @@ public class DynamicSQLBuilder {
      * // Generates: GROUP BY department, year
      * }</pre>
      *
-     * @return the GroupBy clause builder for method chaining
+     * @return the {@link GroupByClause} builder for method chaining
      */
     public GroupByClause groupBy() {
         if (groupByClause == null) {
@@ -171,7 +171,7 @@ public class DynamicSQLBuilder {
      * // Generates: HAVING COUNT(*) > ? AND SUM(amount) < ?
      * }</pre>
      *
-     * @return the Having clause builder for method chaining
+     * @return the {@link HavingClause} builder for method chaining
      */
     public HavingClause having() {
         if (havingClause == null) {
@@ -192,7 +192,7 @@ public class DynamicSQLBuilder {
      * // Generates: ORDER BY created_date DESC, name ASC
      * }</pre>
      *
-     * @return the OrderBy clause builder for method chaining
+     * @return the {@link OrderByClause} builder for method chaining
      */
     public OrderByClause orderBy() {
         if (orderByClause == null) {
@@ -620,7 +620,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param column the column name to select (must not be null)
-         * @return this Select instance for method chaining
+         * @return this SelectClause instance for method chaining
          */
         public SelectClause append(final String column) {
             if (!sb.isEmpty()) {
@@ -646,7 +646,7 @@ public class DynamicSQLBuilder {
          *
          * @param column the column name to select (must not be null)
          * @param alias the alias for the column (must not be null)
-         * @return this Select instance for method chaining
+         * @return this SelectClause instance for method chaining
          */
         public SelectClause append(final String column, final String alias) {
             if (!sb.isEmpty()) {
@@ -671,7 +671,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param columns collection of column names to select (must not be null)
-         * @return this Select instance for method chaining
+         * @return this SelectClause instance for method chaining
          */
         public SelectClause append(final Collection<String> columns) {
             if (N.isEmpty(columns)) {
@@ -703,7 +703,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param columnsAndAliasMap map where keys are column names and values are aliases (must not be null)
-         * @return this Select instance for method chaining
+         * @return this SelectClause instance for method chaining
          */
         public SelectClause append(final Map<String, String> columnsAndAliasMap) {
             if (N.isEmpty(columnsAndAliasMap)) {
@@ -733,7 +733,7 @@ public class DynamicSQLBuilder {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this Select instance for method chaining
+         * @return this SelectClause instance for method chaining
          */
         public SelectClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -763,7 +763,7 @@ public class DynamicSQLBuilder {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this Select instance for method chaining
+         * @return this SelectClause instance for method chaining
          */
         public SelectClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -816,7 +816,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param table the table name to add (must not be null)
-         * @return this From instance for method chaining
+         * @return this FromClause instance for method chaining
          */
         public FromClause append(final String table) {
             if (!sb.isEmpty()) {
@@ -842,7 +842,7 @@ public class DynamicSQLBuilder {
          *
          * @param table the table name to add (must not be null)
          * @param alias the alias for the table (must not be null)
-         * @return this From instance for method chaining
+         * @return this FromClause instance for method chaining
          */
         public FromClause append(final String table, final String alias) {
             if (!sb.isEmpty()) {
@@ -867,7 +867,7 @@ public class DynamicSQLBuilder {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this From instance for method chaining
+         * @return this FromClause instance for method chaining
          */
         public FromClause join(final String table, final String on) {
             requireFromInitialized();
@@ -888,7 +888,7 @@ public class DynamicSQLBuilder {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this From instance for method chaining
+         * @return this FromClause instance for method chaining
          */
         public FromClause innerJoin(final String table, final String on) {
             requireFromInitialized();
@@ -909,7 +909,7 @@ public class DynamicSQLBuilder {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this From instance for method chaining
+         * @return this FromClause instance for method chaining
          */
         public FromClause leftJoin(final String table, final String on) {
             requireFromInitialized();
@@ -930,7 +930,7 @@ public class DynamicSQLBuilder {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this From instance for method chaining
+         * @return this FromClause instance for method chaining
          */
         public FromClause rightJoin(final String table, final String on) {
             requireFromInitialized();
@@ -951,7 +951,7 @@ public class DynamicSQLBuilder {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this From instance for method chaining
+         * @return this FromClause instance for method chaining
          */
         public FromClause fullJoin(final String table, final String on) {
             requireFromInitialized();
@@ -977,7 +977,7 @@ public class DynamicSQLBuilder {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this From instance for method chaining
+         * @return this FromClause instance for method chaining
          */
         public FromClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1005,7 +1005,7 @@ public class DynamicSQLBuilder {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this From instance for method chaining
+         * @return this FromClause instance for method chaining
          */
         public FromClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -1066,7 +1066,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param cond the condition to append (must not be null)
-         * @return this Where instance for method chaining
+         * @return this WhereClause instance for method chaining
          */
         public WhereClause append(final String cond) {
             if (!sb.isEmpty()) {
@@ -1091,7 +1091,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param placeholderCount the number of question marks to append
-         * @return this Where instance for method chaining
+         * @return this WhereClause instance for method chaining
          * @throws IllegalArgumentException if placeholderCount is negative
          */
         public WhereClause repeatQuestionMark(final int placeholderCount) {
@@ -1121,7 +1121,7 @@ public class DynamicSQLBuilder {
          * @param placeholderCount the number of question marks to append
          * @param prefix the string to add before the question marks
          * @param postfix the string to add after the question marks
-         * @return this Where instance for method chaining
+         * @return this WhereClause instance for method chaining
          * @throws IllegalArgumentException if placeholderCount is negative
          */
         public WhereClause repeatQuestionMark(final int placeholderCount, final String prefix, final String postfix) {
@@ -1154,7 +1154,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param cond the condition to add with AND (must not be null)
-         * @return this Where instance for method chaining
+         * @return this WhereClause instance for method chaining
          */
         public WhereClause and(final String cond) {
             if (sb.isEmpty()) {
@@ -1178,7 +1178,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param cond the condition to add with OR (must not be null)
-         * @return this Where instance for method chaining
+         * @return this WhereClause instance for method chaining
          */
         public WhereClause or(final String cond) {
             if (sb.isEmpty()) {
@@ -1204,7 +1204,7 @@ public class DynamicSQLBuilder {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this Where instance for method chaining
+         * @return this WhereClause instance for method chaining
          */
         public WhereClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1234,7 +1234,7 @@ public class DynamicSQLBuilder {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this Where instance for method chaining
+         * @return this WhereClause instance for method chaining
          */
         public WhereClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -1294,7 +1294,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param column the column name to group by (must not be null)
-         * @return this GroupBy instance for method chaining
+         * @return this GroupByClause instance for method chaining
          */
         public GroupByClause append(final String column) {
             if (!sb.isEmpty()) {
@@ -1319,7 +1319,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param columns collection of column names to group by (must not be null)
-         * @return this GroupBy instance for method chaining
+         * @return this GroupByClause instance for method chaining
          */
         public GroupByClause append(final Collection<String> columns) {
             if (!sb.isEmpty()) {
@@ -1345,7 +1345,7 @@ public class DynamicSQLBuilder {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this GroupBy instance for method chaining
+         * @return this GroupByClause instance for method chaining
          */
         public GroupByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1375,7 +1375,7 @@ public class DynamicSQLBuilder {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this GroupBy instance for method chaining
+         * @return this GroupByClause instance for method chaining
          */
         public GroupByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -1434,7 +1434,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param cond the condition to append (must not be null)
-         * @return this Having instance for method chaining
+         * @return this HavingClause instance for method chaining
          */
         public HavingClause append(final String cond) {
             if (!sb.isEmpty()) {
@@ -1458,7 +1458,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param cond the condition to add with AND (must not be null)
-         * @return this Having instance for method chaining
+         * @return this HavingClause instance for method chaining
          */
         public HavingClause and(final String cond) {
             if (sb.isEmpty()) {
@@ -1482,7 +1482,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param cond the condition to add with OR (must not be null)
-         * @return this Having instance for method chaining
+         * @return this HavingClause instance for method chaining
          */
         public HavingClause or(final String cond) {
             if (sb.isEmpty()) {
@@ -1508,7 +1508,7 @@ public class DynamicSQLBuilder {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this Having instance for method chaining
+         * @return this HavingClause instance for method chaining
          */
         public HavingClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1538,7 +1538,7 @@ public class DynamicSQLBuilder {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this Having instance for method chaining
+         * @return this HavingClause instance for method chaining
          */
         public HavingClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -1598,7 +1598,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param column the column name with optional ASC/DESC (must not be null)
-         * @return this OrderBy instance for method chaining
+         * @return this OrderByClause instance for method chaining
          */
         public OrderByClause append(final String column) {
             if (!sb.isEmpty()) {
@@ -1623,7 +1623,7 @@ public class DynamicSQLBuilder {
          * }</pre>
          *
          * @param columns collection of column names with optional sort directions (must not be null)
-         * @return this OrderBy instance for method chaining
+         * @return this OrderByClause instance for method chaining
          */
         public OrderByClause append(final Collection<String> columns) {
             if (!sb.isEmpty()) {
@@ -1649,7 +1649,7 @@ public class DynamicSQLBuilder {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this OrderBy instance for method chaining
+         * @return this OrderByClause instance for method chaining
          */
         public OrderByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1679,7 +1679,7 @@ public class DynamicSQLBuilder {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this OrderBy instance for method chaining
+         * @return this OrderByClause instance for method chaining
          */
         public OrderByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {

@@ -138,7 +138,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testIsNotEmpty() {
-        String result = Expression.isNotNullOrEmpty("title");
+        String result = Expression.isNotNullAndNotEmpty("title");
         Assertions.assertEquals("title IS NOT BLANK", result);
     }
 

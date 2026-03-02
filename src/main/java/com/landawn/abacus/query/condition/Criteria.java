@@ -1444,9 +1444,19 @@ public class Criteria extends AbstractCondition {
     }
 
     private static void validateClauseCondition(final Condition cond, final Operator expectedOperator, final String methodName) {
-        if (cond instanceof Clause && cond.operator() != expectedOperator) {
-            throw new IllegalArgumentException(
-                    "Invalid condition for " + methodName + ": expected " + expectedOperator + " or non-clause condition, but got " + cond.operator());
+        if (cond instanceof Criteria) {
+            throw new IllegalArgumentException("Invalid condition for " + methodName + ": nested Criteria is not supported");
+        }
+
+        if (CriteriaUtil.isClause(cond.operator())) {
+            if (cond.operator() != expectedOperator) {
+                throw new IllegalArgumentException(
+                        "Invalid condition for " + methodName + ": expected " + expectedOperator + " or non-clause condition, but got " + cond.operator());
+            }
+
+            if (!(cond instanceof Clause)) {
+                throw new IllegalArgumentException("Invalid condition for " + methodName + ": operator " + expectedOperator + " requires a Clause");
+            }
         }
     }
 

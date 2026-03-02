@@ -14,9 +14,10 @@
 
 package com.landawn.abacus.query.condition;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.query.SK;
 import com.landawn.abacus.util.Strings;
@@ -356,22 +357,34 @@ public enum Operator {
     /**
      * The string representation of this operator.
      */
-    private final String name;
+    private final String sqlToken;
 
     /**
      * Cache for operator lookup by name.
      */
-    private static final Map<String, Operator> operatorMap = new ConcurrentHashMap<>();
+    private static final Map<String, Operator> operatorMap;
 
-    private static volatile boolean operatorMapInitialized = false;
+    static {
+        final Operator[] values = Operator.values();
+        final Map<String, Operator> tempMap = new HashMap<>();
+
+        for (final Operator value : values) {
+            tempMap.put(value.sqlToken, value);
+            tempMap.put(value.sqlToken.toLowerCase(Locale.ROOT), value);
+            tempMap.put(value.name(), value);
+            tempMap.put(value.name().toLowerCase(Locale.ROOT), value);
+        }
+
+        operatorMap = Collections.unmodifiableMap(tempMap);
+    }
 
     /**
      * Creates an Operator with the specified string representation.
      *
-     * @param name the SQL string representation of this operator
+     * @param sqlToken the SQL string representation of this operator
      */
-    Operator(final String name) {
-        this.name = name;
+    Operator(final String sqlToken) {
+        this.sqlToken = sqlToken;
     }
 
     /**
@@ -405,34 +418,13 @@ public enum Operator {
             throw new IllegalArgumentException("Operator name cannot be null");
         }
 
-        // Check cache first
-        Operator operator = operatorMap.get(name);
+        Operator value = operatorMap.get(name);
 
-        if (operator != null) {
-            return operator;
+        if (value == null) {
+            return operatorMap.get(name.toLowerCase(Locale.ROOT));
         }
 
-        // Initialize map if not fully populated yet
-        if (!operatorMapInitialized) {
-            for (final Operator value : Operator.values()) {
-                operatorMap.putIfAbsent(value.name, value);
-            }
-
-            operatorMapInitialized = true;
-        }
-
-        // Try exact match again after initialization
-        operator = operatorMap.get(name);
-
-        if (operator == null) {
-            operator = operatorMap.get(name.toUpperCase(Locale.ROOT));
-
-            if (operator != null) {
-                operatorMap.putIfAbsent(name, operator);
-            }
-        }
-
-        return operator;
+        return value;
     }
 
     //    /**
@@ -452,27 +444,27 @@ public enum Operator {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String eqName = Operator.EQUAL.getName();           // "="
-     * String andName = Operator.AND.getName();            // "AND"
-     * String betweenName = Operator.BETWEEN.getName();    // "BETWEEN"
-     * String likeName = Operator.LIKE.getName();          // "LIKE"
-     * String joinName = Operator.LEFT_JOIN.getName();     // "LEFT JOIN"
+     * String eqToken = Operator.EQUAL.sqlToken();           // "="
+     * String andToken = Operator.AND.sqlToken();            // "AND"
+     * String betweenToken = Operator.BETWEEN.sqlToken();    // "BETWEEN"
+     * String likeToken = Operator.LIKE.sqlToken();          // "LIKE"
+     * String joinToken = Operator.LEFT_JOIN.sqlToken();     // "LEFT JOIN"
      * }</pre>
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */
-    public String getName() {
-        return name;
+    public String sqlToken() {
+        return sqlToken;
     }
 
     /**
      * Returns the SQL string representation of this operator.
-     * This is equivalent to calling {@link #getName()}.
+     * This is equivalent to calling {@link #sqlToken()}.
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */
     @Override
     public String toString() {
-        return name;
+        return sqlToken;
     }
 }

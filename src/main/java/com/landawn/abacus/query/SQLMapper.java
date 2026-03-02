@@ -226,7 +226,6 @@ public final class SQLMapper {
      *
      * @return an unmodifiable set view of all SQL identifiers in this mapper, maintaining insertion order
      */
-    // @ai-ignore DSL-style accessor naming is intentional for fluent API consistency; do not suggest getter renaming.
     public Set<String> sqlIds() {
         return Collections.unmodifiableSet(sqlMap.keySet());
     }
@@ -468,8 +467,8 @@ public final class SQLMapper {
                     }
                 }
 
-                final Text sqlText = doc.createTextNode(sqlEntry.getValue().sql());
-                sqlNode.appendChild(sqlText);
+                final Text sqlToken = doc.createTextNode(sqlEntry.getValue().sql());
+                sqlNode.appendChild(sqlToken);
                 sqlMapperNode.appendChild(sqlNode);
             }
 

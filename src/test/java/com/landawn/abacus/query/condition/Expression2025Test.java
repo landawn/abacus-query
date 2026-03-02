@@ -213,7 +213,7 @@ public class Expression2025Test extends TestBase {
 
     @Test
     public void testIsNotEmpty() {
-        String result = Expression.isNotNullOrEmpty("name");
+        String result = Expression.isNotNullAndNotEmpty("name");
 
         assertTrue(result.contains("name"));
         assertTrue(result.contains("IS NOT"));
