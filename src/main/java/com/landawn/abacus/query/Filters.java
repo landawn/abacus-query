@@ -102,10 +102,9 @@ import com.landawn.abacus.util.N;
  * and ensuring database security through parameterized query generation.</p>
  *
  * <p><b>⚠️ IMPORTANT - SQL Injection Prevention:</b>
- * All condition methods in this factory generate parameterized SQL with proper value binding,
- * ensuring complete protection against SQL injection attacks. Never concatenate user input
- * directly into condition values - always use the provided parameter binding mechanisms
- * for secure database operations in production environments.</p>
+ * Value-based condition methods in this factory generate parameterized SQL with proper value binding.
+ * APIs that accept raw SQL fragments (for example {@code expr(...)} or string clause overloads)
+ * do not sanitize SQL syntax and must not be built from untrusted input.</p>
  *
  * <p><b>Key Features and Capabilities:</b>
  * <ul>
@@ -121,7 +120,7 @@ import com.landawn.abacus.util.N;
  *
  * <p><b>Design Philosophy:</b>
  * <ul>
- *   <li><b>Security First:</b> All operations generate parameterized SQL preventing injection attacks</li>
+ *   <li><b>Security First:</b> Value-based operations generate parameterized SQL to reduce injection risk</li>
  *   <li><b>Type Safety Priority:</b> Strong typing ensures compile-time validation of query construction</li>
  *   <li><b>Fluent Interface:</b> Method chaining enables readable, expressive query building patterns</li>
  *   <li><b>Performance Optimized:</b> Generated SQL is optimized for database execution plan efficiency</li>
@@ -667,6 +666,7 @@ public class Filters {
      * @throws IllegalArgumentException if selectPropNames is empty
      */
     public static Or anyEqual(final Object entity, final Collection<String> selectPropNames) {
+        N.checkArgNotNull(entity, "entity");
         N.checkArgNotEmpty(selectPropNames, "selectPropNames"); //NOSONAR
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
@@ -817,6 +817,7 @@ public class Filters {
      * @throws IllegalArgumentException if selectPropNames is empty
      */
     public static And allEqual(final Object entity, final Collection<String> selectPropNames) {
+        N.checkArgNotNull(entity, "entity");
         N.checkArgNotEmpty(selectPropNames, "selectPropNames");
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
@@ -2216,6 +2217,8 @@ public class Filters {
      * @return a Where clause
      */
     public static Where where(final String condition) {
+        N.checkArgNotEmpty(condition, "condition");
+
         return new Where(expr(condition));
     }
 

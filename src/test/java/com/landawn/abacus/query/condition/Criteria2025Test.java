@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -721,6 +722,30 @@ public class Criteria2025Test extends TestBase {
         com.landawn.abacus.query.condition.OrderBy orderBy = new com.landawn.abacus.query.condition.OrderBy(Filters.expr("name ASC"));
         criteria.orderBy(orderBy);
         assertNotNull(criteria.getOrderBy());
+    }
+
+    @Test
+    public void testWhereRejectsMismatchedClauseCondition() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> criteria.where(Filters.orderBy("name")));
+    }
+
+    @Test
+    public void testGroupByRejectsMismatchedClauseCondition() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> criteria.groupBy(Filters.where(Filters.equal("status", "active"))));
+    }
+
+    @Test
+    public void testHavingRejectsMismatchedClauseCondition() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> criteria.having(Filters.groupBy("department")));
+    }
+
+    @Test
+    public void testOrderByRejectsMismatchedClauseCondition() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> criteria.orderBy(Filters.where(Filters.equal("status", "active"))));
     }
 
     @Test

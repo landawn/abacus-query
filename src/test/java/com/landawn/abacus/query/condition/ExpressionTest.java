@@ -225,6 +225,18 @@ public class ExpressionTest extends TestBase {
     }
 
     @Test
+    public void testNormalizeSubQueryCondition() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+        Assertions.assertEquals("(SELECT id FROM users)", Expression.normalize(subQuery));
+    }
+
+    @Test
+    public void testEqualWithSubQueryCondition() {
+        String result = Expression.equal("id", Filters.subQuery("SELECT id FROM users"));
+        Assertions.assertEquals("id = (SELECT id FROM users)", result);
+    }
+
+    @Test
     public void testCount() {
         String result = Expression.count("*");
         Assertions.assertEquals("COUNT(*)", result);

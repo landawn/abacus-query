@@ -18,12 +18,14 @@ package com.landawn.abacus.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.entity.Account;
 
 @Tag("2025")
@@ -316,5 +318,26 @@ public class AbstractQueryBuilder2025Test extends TestBase {
         assertNotNull(sql);
         assertTrue(sql.contains("INNER JOIN"));
         assertTrue(sql.contains("LEFT JOIN"));
+    }
+
+    @Test
+    public void testLimitWithOffsetRejectsSecondOffset() {
+        assertThrows(IllegalStateException.class, () -> SQLBuilder.PSC.select("*").from("users").limit(10, 5).offset(2));
+    }
+
+    @Test
+    public void testAppendLimitConditionWithExpression() {
+        String sql = SQLBuilder.PSC.select("*").from("users").append(new Limit("10 OFFSET 20")).toSql();
+        assertTrue(sql.endsWith("LIMIT 10 OFFSET 20"));
+    }
+
+    @Test
+    public void testOrderByRejectsCommentToken() {
+        assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.select("*").from("users").orderBy("id--").toSql());
+    }
+
+    @Test
+    public void testWhereRejectsNullStringExpression() {
+        assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.select("*").from("users").where((String) null));
     }
 }

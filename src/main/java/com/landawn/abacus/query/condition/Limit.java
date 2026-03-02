@@ -140,23 +140,11 @@ public class Limit extends Clause {
      * @throws IllegalArgumentException if expr is null or empty
      */
     public Limit(final String expr) {
-        this(Integer.MAX_VALUE, 0);
+        super(Operator.LIMIT, Expression.of(normalizeConditionExpr(expr)));
 
-        if (Strings.isEmpty(expr)) {
-            throw new IllegalArgumentException("Limit expression cannot be null or empty");
-        }
-
-        final String trimmed = expr.trim();
-
-        if (Strings.isEmpty(trimmed)) {
-            throw new IllegalArgumentException("Limit expression cannot be null or empty");
-        }
-
-        if (Character.isDigit(trimmed.charAt(0))) {
-            this.expr = SK.LIMIT + _SPACE + trimmed;
-        } else {
-            this.expr = trimmed;
-        }
+        this.expr = normalizeExpression(expr);
+        this.count = Integer.MAX_VALUE;
+        this.offset = 0;
     }
 
     /**
@@ -330,5 +318,35 @@ public class Limit extends Clause {
         }
 
         return false;
+    }
+
+    private static String normalizeExpression(final String expr) {
+        if (Strings.isEmpty(expr)) {
+            throw new IllegalArgumentException("Limit expression cannot be null or empty");
+        }
+
+        final String trimmed = expr.trim();
+
+        if (Strings.isEmpty(trimmed)) {
+            throw new IllegalArgumentException("Limit expression cannot be null or empty");
+        }
+
+        return shouldPrefixLimit(trimmed) ? SK.LIMIT + _SPACE + trimmed : trimmed;
+    }
+
+    private static String normalizeConditionExpr(final String expr) {
+        final String normalizedExpr = normalizeExpression(expr);
+
+        if (Strings.startsWithIgnoreCase(normalizedExpr, SK.LIMIT + _SPACE)) {
+            return normalizedExpr.substring(SK.LIMIT.length() + 1).trim();
+        }
+
+        return normalizedExpr;
+    }
+
+    private static boolean shouldPrefixLimit(final String expr) {
+        final char firstChar = expr.charAt(0);
+
+        return Character.isDigit(firstChar) || firstChar == '?' || firstChar == ':' || (firstChar == '#' && expr.length() > 1 && expr.charAt(1) == '{');
     }
 }

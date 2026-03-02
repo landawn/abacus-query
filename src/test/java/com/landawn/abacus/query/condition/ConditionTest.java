@@ -214,16 +214,6 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
-    void testDoubleNegation() {
-        Not negated = simpleCondition.not();
-        Not doubleNegated = negated.not();
-
-        assertNotNull(doubleNegated);
-        assertEquals(Operator.NOT, doubleNegated.operator());
-        assertNotSame(negated, doubleNegated);
-    }
-
-    @Test
     void testNotWithComplexCondition() {
         Condition result = complexCondition.not();
 

@@ -187,35 +187,6 @@ public class Exists2025Test extends TestBase {
     }
 
     @Test
-    public void testAnd() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders");
-        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM products");
-        Exists cond1 = new Exists(subQuery1);
-        Exists cond2 = new Exists(subQuery2);
-        And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testOr() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders");
-        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM products");
-        Exists cond1 = new Exists(subQuery1);
-        Exists cond2 = new Exists(subQuery2);
-        Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
-        Exists condition = new Exists(subQuery);
-        Not result = condition.not();
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
-    }
-
-    @Test
     public void testInheritance() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         Exists condition = new Exists(subQuery);

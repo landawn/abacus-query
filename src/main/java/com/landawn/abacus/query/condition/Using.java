@@ -184,7 +184,7 @@ public class Using extends Cell {
             N.checkArgNotEmpty(columnName, "columnName in columnNames");
         }
 
-        return Filters.expr(concatPropNames(columnNames));
+        return Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
     }
 
     /**
@@ -216,6 +216,14 @@ public class Using extends Cell {
             N.checkArgNotEmpty(columnName, "columnName in columnNames");
         }
 
-        return Filters.expr(concatPropNames(columnNames));
+        return Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
+    }
+
+    private static String parenthesizeColumnNames(final String columnNamesExpr) {
+        if (columnNamesExpr.startsWith("(") && columnNamesExpr.endsWith(")")) {
+            return columnNamesExpr;
+        }
+
+        return "(" + columnNamesExpr + ")";
     }
 }

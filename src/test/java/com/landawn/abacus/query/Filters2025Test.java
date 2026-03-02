@@ -19,6 +19,7 @@ package com.landawn.abacus.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -162,6 +163,11 @@ public class Filters2025Test extends TestBase {
     }
 
     @Test
+    public void testAnyEqualEntityWithSelectPropsRejectsNullEntity() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(null, Arrays.asList("id")));
+    }
+
+    @Test
     public void testAnyEqualTwoProps() {
         Or or = Filters.anyEqual("name", "John", "age", 30);
         assertNotNull(or);
@@ -191,6 +197,11 @@ public class Filters2025Test extends TestBase {
         Account account = new Account();
         And and = Filters.allEqual(account);
         assertNotNull(and);
+    }
+
+    @Test
+    public void testAllEqualEntityWithSelectPropsRejectsNullEntity() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(null, Arrays.asList("id")));
     }
 
     @Test

@@ -982,6 +982,14 @@ public class Expression extends LogicalCondition {
             return value.toString();
         } else if (value instanceof Expression) {
             return ((Expression) value).getLiteral();
+        } else if (value instanceof Condition) {
+            final String conditionStr = value.toString();
+
+            if (value instanceof SubQuery) {
+                return SK.PARENTHESIS_L + conditionStr + SK.PARENTHESIS_R;
+            }
+
+            return conditionStr;
         } else {
             return (_SINGLE_QUOTE + Strings.quoteEscaped(N.stringOf(value)) + _SINGLE_QUOTE);
         }

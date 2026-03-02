@@ -133,7 +133,9 @@ public class IsNaN extends Is {
     }
 
     /**
-     * @param propValue
+     * Not supported because the prop value of {@code IsNaN} is fixed.
+     *
+     * @param propValue ignored
      * @throws UnsupportedOperationException always
      * @deprecated the prop value of {@code IsNaN} is always {@code NAN} and cannot be changed.
      */

@@ -114,43 +114,6 @@ public class AnyTest extends TestBase {
     }
 
     @Test
-    public void testAnd() {
-        SubQuery subQuery = Filters.subQuery("SELECT min_salary FROM positions");
-        Any any = Filters.any(subQuery);
-        Equal eq = Filters.eq("department", "Sales");
-
-        And and = any.and(eq);
-
-        Assertions.assertNotNull(and);
-        Assertions.assertEquals(2, and.getConditions().size());
-        Assertions.assertTrue(and.getConditions().contains(any));
-        Assertions.assertTrue(and.getConditions().contains(eq));
-    }
-
-    @Test
-    public void testOr() {
-        SubQuery subQuery = Filters.subQuery("SELECT threshold FROM limits");
-        Any any = Filters.any(subQuery);
-        GreaterThan gt = Filters.gt("priority", 5);
-
-        Or or = any.or(gt);
-
-        Assertions.assertNotNull(or);
-        Assertions.assertEquals(2, or.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        SubQuery subQuery = Filters.subQuery("SELECT restricted_id FROM blacklist");
-        Any any = Filters.any(subQuery);
-
-        Not not = any.not();
-
-        Assertions.assertNotNull(not);
-        Assertions.assertEquals(any, not.getCondition());
-    }
-
-    @Test
     public void testSetCondition() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");

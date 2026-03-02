@@ -355,6 +355,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected final List<Object> _parameters = new ArrayList<>(); //NOSONAR
 
+    protected final Map<String, Integer> _namedParameterNameOccurrences = new HashMap<>(); //NOSONAR
+
     protected StringBuilder _sb; //NOSONAR
 
     protected Class<?> _entityClass; //NOSONAR
@@ -1476,6 +1478,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This join(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         _sb.append(_SPACE_JOIN_SPACE);
 
         _sb.append(expr);
@@ -1550,6 +1554,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This innerJoin(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         _sb.append(_SPACE_INNER_JOIN_SPACE);
 
         _sb.append(expr);
@@ -1618,6 +1624,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This leftJoin(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         _sb.append(_SPACE_LEFT_JOIN_SPACE);
 
         _sb.append(expr);
@@ -1686,6 +1694,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This rightJoin(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         _sb.append(_SPACE_RIGHT_JOIN_SPACE);
 
         _sb.append(expr);
@@ -1754,6 +1764,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This fullJoin(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         _sb.append(_SPACE_FULL_JOIN_SPACE);
 
         _sb.append(expr);
@@ -1822,6 +1834,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This crossJoin(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         _sb.append(_SPACE_CROSS_JOIN_SPACE);
 
         _sb.append(expr);
@@ -1890,6 +1904,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This naturalJoin(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         _sb.append(_SPACE_NATURAL_JOIN_SPACE);
 
         _sb.append(expr);
@@ -1959,6 +1975,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This on(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         _sb.append(_SPACE_ON_SPACE);
 
         appendStringExpr(expr, false);
@@ -2006,9 +2024,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This using(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
+        if (containsSqlCommentToken(expr)) {
+            throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + expr);
+        }
+
         _sb.append(_SPACE_USING_SPACE);
 
-        final String trimmedExpr = expr == null ? null : expr.trim();
+        final String trimmedExpr = expr.trim();
 
         if (Strings.isNotEmpty(trimmedExpr) && trimmedExpr.startsWith(SK.PARENTHESIS_L) && trimmedExpr.endsWith(SK.PARENTHESIS_R)) {
             appendStringExpr(trimmedExpr, false);
@@ -2037,6 +2061,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This where(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         checkIfAlreadyCalled(SK.WHERE);
 
         init(true);
@@ -2092,6 +2118,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This groupBy(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         checkIfAlreadyCalled(SK.GROUP_BY);
 
         _sb.append(_SPACE_GROUP_BY_SPACE);
@@ -2281,6 +2309,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This having(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         checkIfAlreadyCalled(SK.HAVING);
 
         _sb.append(_SPACE_HAVING_SPACE);
@@ -2333,6 +2363,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This orderBy(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         checkIfAlreadyCalled(SK.ORDER_BY);
 
         _sb.append(_SPACE_ORDER_BY_SPACE);
@@ -2678,6 +2710,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This limit(final int count, final int offset) {
         checkIfAlreadyCalled(SK.LIMIT);
+        checkIfAlreadyCalled(SK.OFFSET);
 
         _sb.append(_SPACE_LIMIT_SPACE);
 
@@ -2896,8 +2929,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
             }
         } else if (cond instanceof Clause) {
-            _sb.append(_SPACE).append(cond.operator()).append(_SPACE);
-            appendCondition(((Clause) cond).getCondition());
+            if (cond instanceof final Limit limit) {
+                if (Strings.isNotEmpty(limit.getExpression())) {
+                    _sb.append(_SPACE).append(limit.getExpression());
+                } else if (limit.getOffset() > 0) {
+                    limit(limit.getCount(), limit.getOffset());
+                } else {
+                    limit(limit.getCount());
+                }
+            } else {
+                _sb.append(_SPACE).append(cond.operator()).append(_SPACE);
+                appendCondition(((Clause) cond).getCondition());
+            }
         } else {
             if (!_isForConditionOnly) {
                 _sb.append(_SPACE_WHERE_SPACE);
@@ -2925,6 +2968,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This append(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         _sb.append(expr);
 
         return (This) this;
@@ -4114,6 +4159,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Generates both the SQL string and parameters.
+     *
+     * @return the generated SQL-parameters pair
      * @deprecated Use {@link #toSqlAndParameters()} instead.
      */
     @Deprecated
@@ -4684,11 +4732,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected void setParameterForNamedSQL(final String propName, final Object propValue) {
         if (Filters.QME.equals(propValue)) {
-            _handlerForNamedParameter.accept(_sb, propName);
+            final String namedPropName = nextNamedParameterName(propName);
+            _handlerForNamedParameter.accept(_sb, namedPropName);
         } else if (propValue instanceof Condition) {
             appendConditionAsParameter((Condition) propValue);
         } else {
-            _handlerForNamedParameter.accept(_sb, propName);
+            final String namedPropName = nextNamedParameterName(propName);
+            _handlerForNamedParameter.accept(_sb, namedPropName);
 
             _parameters.add(propValue);
         }
@@ -4702,18 +4752,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected void setParameterForIbatisNamedSQL(final String propName, final Object propValue) {
         if (Filters.QME.equals(propValue)) {
+            final String namedPropName = nextNamedParameterName(propName);
             _sb.append("#{");
-            _sb.append(propName);
+            _sb.append(namedPropName);
             _sb.append('}');
         } else if (propValue instanceof Condition) {
             appendConditionAsParameter((Condition) propValue);
         } else {
+            final String namedPropName = nextNamedParameterName(propName);
             _sb.append("#{");
-            _sb.append(propName);
+            _sb.append(namedPropName);
             _sb.append('}');
 
             _parameters.add(propValue);
         }
+    }
+
+    protected String nextNamedParameterName(final String propName) {
+        final int occurrence = _namedParameterNameOccurrences.compute(propName, (k, v) -> v == null ? 1 : v + 1);
+        return occurrence == 1 ? propName : propName + "_" + occurrence;
     }
 
     /**
@@ -4855,10 +4912,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     protected void appendStringExpr(final String expr, final boolean isFromAppendColumn) {
+        N.checkArgNotEmpty(expr, "expr");
+
+        if (isFromAppendColumn && containsSqlCommentToken(expr)) {
+            throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + expr);
+        }
+
         // TODO performance improvement.
 
         if (expr.length() < 16) {
-            final boolean matched = QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(expr).find();
+            final boolean matched = QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(expr).matches();
 
             if (matched) {
                 if (isFromAppendColumn) {
@@ -4886,7 +4949,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     protected void appendColumnName(final String propName) {
+        N.checkArgNotEmpty(propName, "propName");
+
+        if (containsSqlCommentToken(propName)) {
+            throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + propName);
+        }
+
         appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, propName, null, false, null, false, true);
+    }
+
+    private static boolean containsSqlCommentToken(final String expr) {
+        return expr.indexOf("--") >= 0 || expr.indexOf("/*") >= 0 || expr.indexOf('#') >= 0;
     }
 
     protected void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo,
@@ -5214,8 +5287,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             final Class<?> currentEntityClass = entity.getClass();
             final Collection<String> currentPropNames = QueryUtil.getInsertPropNames(currentEntityClass, null);
-            N.checkArgument(propNames.equals(currentPropNames), "All non-null entities in propsList must have the same insertable property set. First entity class: "
-                    + entityClass.getName() + ", current entity class: " + currentEntityClass.getName());
+            N.checkArgument(propNames.equals(currentPropNames),
+                    "All non-null entities in propsList must have the same insertable property set. First entity class: " + entityClass.getName()
+                            + ", current entity class: " + currentEntityClass.getName());
 
             final BeanInfo beanInfo = ParserUtil.getBeanInfo(currentEntityClass);
             final Map<String, Object> props = N.newHashMap(propNames.size());

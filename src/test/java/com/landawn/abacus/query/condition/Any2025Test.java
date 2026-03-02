@@ -187,35 +187,6 @@ public class Any2025Test extends TestBase {
     }
 
     @Test
-    public void testAnd() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT price FROM products");
-        SubQuery subQuery2 = Filters.subQuery("SELECT cost FROM items");
-        Any cond1 = new Any(subQuery1);
-        Any cond2 = new Any(subQuery2);
-        And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testOr() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT price FROM products");
-        SubQuery subQuery2 = Filters.subQuery("SELECT cost FROM items");
-        Any cond1 = new Any(subQuery1);
-        Any cond2 = new Any(subQuery2);
-        Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        SubQuery subQuery = Filters.subQuery("SELECT value FROM table1");
-        Any condition = new Any(subQuery);
-        Not result = condition.not();
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
-    }
-
-    @Test
     public void testInheritance() {
         SubQuery subQuery = Filters.subQuery("SELECT value FROM table1");
         Any condition = new Any(subQuery);

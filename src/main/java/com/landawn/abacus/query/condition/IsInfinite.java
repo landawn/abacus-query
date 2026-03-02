@@ -128,7 +128,9 @@ public class IsInfinite extends Is {
     }
 
     /**
-     * @param propValue
+     * Not supported because the prop value of {@code IsInfinite} is fixed.
+     *
+     * @param propValue ignored
      * @throws UnsupportedOperationException always
      * @deprecated the prop value of {@code IsInfinite} is always {@code INFINITE} and cannot be changed.
      */

@@ -66,24 +66,6 @@ public class SimpleNotExistsTest extends TestBase {
     }
 
     @Test
-    void testLogicalOperations() {
-        // Test that logical operations work (inherited from Condition)
-        Condition other = Filters.eq("status", "active");
-
-        Condition and = notExistsCondition.and(other);
-        assertNotNull(and);
-        assertEquals(Operator.AND, and.operator());
-
-        Condition or = notExistsCondition.or(other);
-        assertNotNull(or);
-        assertEquals(Operator.OR, or.operator());
-
-        Condition not = notExistsCondition.not();
-        assertNotNull(not);
-        assertEquals(Operator.NOT, not.operator());
-    }
-
-    @Test
     void testCopy() {
         NotExists copy = notExistsCondition.copy();
 

@@ -18,7 +18,6 @@ package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -192,33 +191,6 @@ public class Not2025Test extends TestBase {
 
         List<Object> params = condition.getParameters();
         assertEquals(2, (int) params.size());
-    }
-
-    @Test
-    public void testAnd() {
-        Not cond1 = new Not(new Equal("a", 1));
-        Equal cond2 = new Equal("b", 2);
-
-        And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testOr() {
-        Not cond1 = new Not(new Equal("a", 1));
-        Equal cond2 = new Equal("b", 2);
-
-        Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        Not condition = new Not(new Equal("a", 1));
-        Not result = condition.not();
-
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
     }
 
     @Test

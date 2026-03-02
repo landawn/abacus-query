@@ -45,6 +45,12 @@ public class LimitTest extends TestBase {
     }
 
     @Test
+    public void testConstructorWithPlaceholderExpression() {
+        Limit limit = Filters.limit("? OFFSET ?");
+        Assertions.assertEquals(SK.LIMIT + SK.SPACE + "? OFFSET ?", limit.getExpression());
+    }
+
+    @Test
     public void testConstructorWithWhitespaceExpressionThrows() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.limit("   "));
     }
@@ -76,6 +82,12 @@ public class LimitTest extends TestBase {
         Limit limit = Filters.limit(50, 20);
         String result = limit.toString(NamingPolicy.CAMEL_CASE);
         Assertions.assertEquals("LIMIT 50 OFFSET 20", result);
+    }
+
+    @Test
+    public void testConditionReflectsExpressionValue() {
+        Limit limit = Filters.limit("10 OFFSET 20");
+        Assertions.assertEquals("10 OFFSET 20", limit.getCondition().toString());
     }
 
     @Test

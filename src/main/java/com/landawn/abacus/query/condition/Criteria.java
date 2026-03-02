@@ -1051,6 +1051,8 @@ public class Criteria extends AbstractCondition {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
+        validateClauseCondition(cond, Operator.WHERE, "where");
+
         if (cond.operator() == Operator.WHERE) {
             add(cond);
         } else {
@@ -1102,6 +1104,8 @@ public class Criteria extends AbstractCondition {
         if (cond == null) {
             throw new IllegalArgumentException("Condition cannot be null");
         }
+
+        validateClauseCondition(cond, Operator.GROUP_BY, "groupBy");
 
         if (cond.operator() == Operator.GROUP_BY) {
             add(cond);
@@ -1293,6 +1297,8 @@ public class Criteria extends AbstractCondition {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
+        validateClauseCondition(cond, Operator.HAVING, "having");
+
         if (cond.operator() == Operator.HAVING) {
             add(cond);
         } else {
@@ -1426,6 +1432,8 @@ public class Criteria extends AbstractCondition {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
+        validateClauseCondition(cond, Operator.ORDER_BY, "orderBy");
+
         if (cond.operator() == Operator.ORDER_BY) {
             add(cond);
         } else {
@@ -1433,6 +1441,13 @@ public class Criteria extends AbstractCondition {
         }
 
         return this;
+    }
+
+    private static void validateClauseCondition(final Condition cond, final Operator expectedOperator, final String methodName) {
+        if (cond instanceof Clause && cond.operator() != expectedOperator) {
+            throw new IllegalArgumentException(
+                    "Invalid condition for " + methodName + ": expected " + expectedOperator + " or non-clause condition, but got " + cond.operator());
+        }
     }
 
     /**

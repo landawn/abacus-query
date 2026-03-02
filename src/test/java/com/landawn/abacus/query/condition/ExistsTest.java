@@ -113,43 +113,6 @@ public class ExistsTest extends TestBase {
     }
 
     @Test
-    public void testAnd() {
-        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM permissions WHERE user_id = u.id");
-        Exists exists = Filters.exists(subQuery);
-        Equal eq = Filters.eq("active", true);
-
-        And and = exists.and(eq);
-
-        Assertions.assertNotNull(and);
-        Assertions.assertEquals(2, and.getConditions().size());
-        Assertions.assertTrue(and.getConditions().contains(exists));
-        Assertions.assertTrue(and.getConditions().contains(eq));
-    }
-
-    @Test
-    public void testOr() {
-        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM admins WHERE user_id = u.id");
-        Exists exists = Filters.exists(subQuery);
-        Equal eq = Filters.eq("superuser", true);
-
-        Or or = exists.or(eq);
-
-        Assertions.assertNotNull(or);
-        Assertions.assertEquals(2, or.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM blacklist WHERE user_id = u.id");
-        Exists exists = Filters.exists(subQuery);
-
-        Not not = exists.not();
-
-        Assertions.assertNotNull(not);
-        Assertions.assertEquals(exists, not.getCondition());
-    }
-
-    @Test
     public void testNotExists() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM blocked_users WHERE id = users.id");
         NotExists notExists = Filters.notExists(subQuery);

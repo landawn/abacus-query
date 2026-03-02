@@ -187,35 +187,6 @@ public class Some2025Test extends TestBase {
     }
 
     @Test
-    public void testAnd() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT price FROM products");
-        SubQuery subQuery2 = Filters.subQuery("SELECT cost FROM items");
-        Some cond1 = new Some(subQuery1);
-        Some cond2 = new Some(subQuery2);
-        And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testOr() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT price FROM products");
-        SubQuery subQuery2 = Filters.subQuery("SELECT cost FROM items");
-        Some cond1 = new Some(subQuery1);
-        Some cond2 = new Some(subQuery2);
-        Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        SubQuery subQuery = Filters.subQuery("SELECT value FROM table1");
-        Some condition = new Some(subQuery);
-        Not result = condition.not();
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
-    }
-
-    @Test
     public void testInheritance() {
         SubQuery subQuery = Filters.subQuery("SELECT value FROM table1");
         Some condition = new Some(subQuery);

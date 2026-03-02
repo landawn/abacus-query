@@ -206,30 +206,4 @@ public class On2025Test extends TestBase {
         On on = new On(filteredJoin);
         assertEquals(2, (int) on.getParameters().size());
     }
-
-    @Test
-    public void testAnd() {
-        On on1 = new On("orders.customer_id", "customers.id");
-        On on2 = new On("orders.product_id", "products.id");
-        And result = on1.and(on2);
-        assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testOr() {
-        On on1 = new On("orders.customer_id", "customers.id");
-        On on2 = new On("orders.product_id", "products.id");
-        Or result = on1.or(on2);
-        assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        On on = new On("orders.customer_id", "customers.id");
-        Not result = on.not();
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
-    }
 }

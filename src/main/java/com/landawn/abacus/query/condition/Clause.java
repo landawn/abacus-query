@@ -96,40 +96,4 @@ public abstract class Clause extends Cell {
     public Clause(final Operator operator, final Condition cond) {
         super(operator, cond);
     }
-
-    /**
-     * Not supported for structural clauses.
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public Not not() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Not supported for structural clauses.
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public And and(final Condition cond) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Not supported for structural clauses.
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public Or or(final Condition cond) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Not supported for structural clauses.
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public Or xor(final Condition cond) {
-        throw new UnsupportedOperationException();
-    }
 }

@@ -44,7 +44,7 @@ import com.landawn.abacus.util.Strings;
  * @see Condition
  * @see Operator
  */
-public class Cell extends LogicalCondition {
+public class Cell extends AbstractCondition {
 
     private Condition condition;
 

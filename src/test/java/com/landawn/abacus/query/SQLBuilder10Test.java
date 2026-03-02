@@ -1269,6 +1269,17 @@ public class SQLBuilder10Test extends TestBase {
     }
 
     @Test
+    public void testNamedSQLWithRepeatedPropertyUsesUniqueParameterNames() {
+        String sql = NSC.select("*").from("users").where(Filters.eq("status", "ACTIVE").and(Filters.ne("status", "DELETED"))).toSql();
+
+        assertTrue(sql.contains("status = :status"));
+        assertTrue(sql.contains("status != :status_2"));
+
+        List<Object> params = NSC.select("*").from("users").where(Filters.eq("status", "ACTIVE").and(Filters.ne("status", "DELETED"))).parameters();
+        assertEquals(Arrays.asList("ACTIVE", "DELETED"), params);
+    }
+
+    @Test
     public void testComplexJoinConditions() {
         String sql = PSC.select("*")
                 .from("users u")
