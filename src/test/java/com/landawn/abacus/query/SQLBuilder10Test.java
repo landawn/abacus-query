@@ -1481,6 +1481,15 @@ public class SQLBuilder10Test extends TestBase {
     }
 
     @Test
+    public void testBatchInsertWithMixedEntityTypesThrows() {
+        List<Object> entities = new ArrayList<>();
+        entities.add(new Account());
+        entities.add(new Order());
+
+        assertThrows(IllegalArgumentException.class, () -> PSC.batchInsert(entities));
+    }
+
+    @Test
     public void testDeleteFromWithMultipleConditions() {
         String sql = PSC.deleteFrom("users").where(Filters.and(Filters.eq("status", "DELETED"), Filters.lt("deletedDate", new Date()))).toSql();
 

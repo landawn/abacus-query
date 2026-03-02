@@ -5204,7 +5204,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         final Class<?> entityClass = first.get().getClass();
         final Collection<String> propNames = QueryUtil.getInsertPropNames(entityClass, null);
-        final BeanInfo beanInfo = ParserUtil.getBeanInfo(entityClass);
+        final BeanInfo firstEntityBeanInfo = ParserUtil.getBeanInfo(entityClass);
         final List<Map<String, Object>> newPropsList = new ArrayList<>(propsList.size());
 
         for (final Object entity : propsList) {
@@ -5212,6 +5212,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 continue;
             }
 
+            final Class<?> currentEntityClass = entity.getClass();
+            final Collection<String> currentPropNames = QueryUtil.getInsertPropNames(currentEntityClass, null);
+            N.checkArgument(propNames.equals(currentPropNames), "All non-null entities in propsList must have the same insertable property set. First entity class: "
+                    + entityClass.getName() + ", current entity class: " + currentEntityClass.getName());
+
+            final BeanInfo beanInfo = ParserUtil.getBeanInfo(currentEntityClass);
             final Map<String, Object> props = N.newHashMap(propNames.size());
 
             for (final String propName : propNames) {
@@ -5221,7 +5227,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             newPropsList.add(props);
         }
 
-        final ImmutableList<String> idPropNameList = beanInfo.idPropNameList;
+        final ImmutableList<String> idPropNameList = firstEntityBeanInfo.idPropNameList;
 
         final List<String> nullPropToRemove = Stream.of(propNames).filter(propName -> Stream.of(newPropsList).allMatch(map -> {
             Object propValue = map.get(propName);
