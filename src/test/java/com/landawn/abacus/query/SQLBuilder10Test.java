@@ -401,12 +401,29 @@ public class SQLBuilder10Test extends TestBase {
     }
 
     @Test
+    public void testFromRejectsNullOrBlankTableNames() {
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from((String) null));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(new String[] { "users", null }));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(new String[] { "users", "   " }));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(Arrays.asList("users", null)));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(Arrays.asList("users", "  ")));
+    }
+
+    @Test
     public void testFromWithExpression() {
         String sql = PSC.select("*").from("(SELECT * FROM users) t").toSql();
         assertEquals("SELECT * FROM (SELECT * FROM users) t", sql);
 
         sql = PSC.select("*").from("users u, orders o").toSql();
         assertEquals("SELECT * FROM users u, orders o", sql);
+    }
+
+    @Test
+    public void testFromWithAsAliasAndEntityClass() {
+        String sql = PSC.select("firstName").from("test_account AS a", Account.class).toSql();
+        assertTrue(sql.contains("a.first_name"));
+        assertTrue(sql.contains("FROM test_account AS a"));
     }
 
     @Test
@@ -721,6 +738,9 @@ public class SQLBuilder10Test extends TestBase {
         sql = PSC.select("id", "name").from("users").union(Arrays.asList("id", "name")).from("customers").toSql();
 
         assertEquals("SELECT id, name FROM users UNION SELECT id, name FROM customers", sql);
+
+        SQLBuilder self = PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> self.union(self));
     }
 
     @Test
@@ -730,6 +750,9 @@ public class SQLBuilder10Test extends TestBase {
 
         String sql = query1.unionAll(query2).toSql();
         assertEquals("SELECT id, name FROM users UNION ALL SELECT id, name FROM customers", sql);
+
+        SQLBuilder self = PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> self.unionAll(self));
     }
 
     @Test
@@ -739,6 +762,9 @@ public class SQLBuilder10Test extends TestBase {
 
         String sql = query1.intersect(query2).toSql();
         assertEquals("SELECT id, name FROM users INTERSECT SELECT id, name FROM customers", sql);
+
+        SQLBuilder self = PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> self.intersect(self));
     }
 
     @Test
@@ -748,6 +774,9 @@ public class SQLBuilder10Test extends TestBase {
 
         String sql = query1.except(query2).toSql();
         assertEquals("SELECT id, name FROM users EXCEPT SELECT id, name FROM customers", sql);
+
+        SQLBuilder self = PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> self.except(self));
     }
 
     @Test
@@ -757,6 +786,9 @@ public class SQLBuilder10Test extends TestBase {
 
         String sql = query1.minus(query2).toSql();
         assertEquals("SELECT id, name FROM users MINUS SELECT id, name FROM customers", sql);
+
+        SQLBuilder self = PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> self.minus(self));
     }
 
     @Test

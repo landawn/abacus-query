@@ -369,6 +369,10 @@ public class SubQuery extends LogicalCondition {
             throw new IllegalArgumentException("Property names cannot be null");
         }
 
+        if (propNames.isEmpty()) {
+            throw new IllegalArgumentException("Property names cannot be empty");
+        }
+
         final List<String> result = new ArrayList<>(propNames.size());
 
         for (final String propName : propNames) {

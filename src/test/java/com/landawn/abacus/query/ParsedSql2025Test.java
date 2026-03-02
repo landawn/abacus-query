@@ -303,6 +303,14 @@ public class ParsedSql2025Test extends TestBase {
     }
 
     @Test
+    public void testParse_ExplainAnalyzeSelectPrefix() {
+        ParsedSql parsed = ParsedSql.parse("EXPLAIN ANALYZE SELECT * FROM users WHERE id = :id");
+        assertEquals("EXPLAIN ANALYZE SELECT * FROM users WHERE id = ?", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals("id", parsed.namedParameters().get(0));
+    }
+
+    @Test
     public void testParse_ValuesPrefix() {
         ParsedSql parsed = ParsedSql.parse("VALUES(:id, :name)");
         assertEquals("VALUES(?, ?)", parsed.parameterizedSql());
@@ -317,5 +325,21 @@ public class ParsedSql2025Test extends TestBase {
         assertEquals("SELECT * FROM users WHERE id = ?", parsed.parameterizedSql());
         assertEquals(1, parsed.parameterCount());
         assertEquals("user_id_123", parsed.namedParameters().get(0));
+    }
+
+    @Test
+    public void testParse_NamedParameterWithSuffix() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :id::int");
+        assertEquals("SELECT * FROM users WHERE id = ?::int", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals("id", parsed.namedParameters().get(0));
+    }
+
+    @Test
+    public void testParse_IbatisNamedParameterWithSuffix() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = #{id}::int");
+        assertEquals("SELECT * FROM users WHERE id = ?::int", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals("id", parsed.namedParameters().get(0));
     }
 }

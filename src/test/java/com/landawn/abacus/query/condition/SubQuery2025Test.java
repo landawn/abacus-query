@@ -80,6 +80,11 @@ public class SubQuery2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorWithEntityNameAndEmptyPropertiesThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList(), (Condition) null));
+    }
+
+    @Test
     public void testConstructorWithEntityClassPropertiesCondition() {
         Collection<String> props = Arrays.asList("id", "name");
         Condition condition = Filters.like("name", "%test%");
@@ -91,6 +96,11 @@ public class SubQuery2025Test extends TestBase {
         assertEquals(TestEntity.class, subQuery.getEntityClass());
         assertEquals(props, subQuery.getSelectPropNames());
         assertNotNull(subQuery.getCondition());
+    }
+
+    @Test
+    public void testConstructorWithEntityClassAndEmptyPropertiesThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(TestEntity.class, Arrays.asList(), null));
     }
 
     @Test

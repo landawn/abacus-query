@@ -1104,12 +1104,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This from(final String... tableNames) {
         N.checkArgNotEmpty(tableNames, "tableNames");
 
-        if (tableNames.length == 1) {
-            return from(tableNames[0].trim());
+        final List<String> normalizedTableNames = new ArrayList<>(tableNames.length);
+
+        for (int i = 0; i < tableNames.length; i++) {
+            final String tableName = tableNames[i];
+            N.checkArgNotEmpty(tableName, "tableNames[" + i + "]");
+            final String normalizedTableName = tableName.trim();
+            N.checkArgNotEmpty(normalizedTableName, "tableNames[" + i + "]");
+            normalizedTableNames.add(normalizedTableName);
         }
 
-        final String localTableName = tableNames[0].trim();
-        return from(localTableName, Strings.join(tableNames, SK.COMMA_SPACE));
+        if (normalizedTableNames.size() == 1) {
+            return from(normalizedTableNames.get(0));
+        }
+
+        final String localTableName = normalizedTableNames.get(0);
+        return from(localTableName, Strings.join(normalizedTableNames, SK.COMMA_SPACE));
     }
 
     /**
@@ -1128,12 +1138,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This from(final Collection<String> tableNames) {
         N.checkArgNotEmpty(tableNames, "tableNames");
 
-        if (tableNames.size() == 1) {
-            return from(tableNames.iterator().next().trim());
+        final List<String> normalizedTableNames = new ArrayList<>(tableNames.size());
+        int idx = 0;
+
+        for (final String tableName : tableNames) {
+            N.checkArgNotEmpty(tableName, "tableNames[" + idx + "]");
+            final String normalizedTableName = tableName.trim();
+            N.checkArgNotEmpty(normalizedTableName, "tableNames[" + idx + "]");
+            normalizedTableNames.add(normalizedTableName);
+            idx++;
         }
 
-        final String localTableName = tableNames.iterator().next().trim();
-        return from(localTableName, Strings.join(tableNames, SK.COMMA_SPACE));
+        if (normalizedTableNames.size() == 1) {
+            return from(normalizedTableNames.get(0));
+        }
+
+        final String localTableName = normalizedTableNames.get(0);
+        return from(localTableName, Strings.join(normalizedTableNames, SK.COMMA_SPACE));
     }
 
     /**
@@ -1153,7 +1174,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This from(String expr) {
+        N.checkArgNotEmpty(expr, "expr");
         expr = expr.trim();
+        N.checkArgNotEmpty(expr, "expr");
 
         int depth = 0;
         int commaIdx = -1;
@@ -1390,7 +1413,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         if (idx > 0) {
             _tableName = trimmedTableName.substring(0, idx).trim();
-            _tableAlias = trimmedTableName.substring(idx + 1).trim();
+            _tableAlias = normalizeTableAlias(trimmedTableName.substring(idx + 1).trim());
         } else {
             _tableName = trimmedTableName;
         }
@@ -1423,6 +1446,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         _aliasPropColumnNameMap.put(alias, Beans.isBeanClass(entityClass) ? prop2ColumnNameMap(entityClass, _namingPolicy) : _propColumnNameMap);
+    }
+
+    private static String normalizeTableAlias(final String tableAlias) {
+        if (Strings.isEmpty(tableAlias)) {
+            return tableAlias;
+        }
+
+        if (Strings.startsWithIgnoreCase(tableAlias, SK.AS + SK._SPACE)) {
+            return tableAlias.substring(3).trim();
+        }
+
+        return tableAlias;
     }
 
     /**
@@ -3053,6 +3088,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This union(final This sqlBuilder) {
+        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+        N.checkArgument(sqlBuilder != this, "Cannot apply UNION with the same SQLBuilder instance");
+
         final String sql = sqlBuilder.toSql();
 
         if (N.notEmpty(sqlBuilder.parameters())) {
@@ -3170,6 +3208,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This unionAll(final This sqlBuilder) {
+        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+        N.checkArgument(sqlBuilder != this, "Cannot apply UNION ALL with the same SQLBuilder instance");
+
         final String sql = sqlBuilder.toSql();
 
         if (N.notEmpty(sqlBuilder.parameters())) {
@@ -3288,6 +3329,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This intersect(final This sqlBuilder) {
+        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+        N.checkArgument(sqlBuilder != this, "Cannot apply INTERSECT with the same SQLBuilder instance");
+
         final String sql = sqlBuilder.toSql();
 
         if (N.notEmpty(sqlBuilder.parameters())) {
@@ -3406,6 +3450,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This except(final This sqlBuilder) {
+        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+        N.checkArgument(sqlBuilder != this, "Cannot apply EXCEPT with the same SQLBuilder instance");
+
         final String sql = sqlBuilder.toSql();
 
         if (N.notEmpty(sqlBuilder.parameters())) {
@@ -3525,6 +3572,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This minus(final This sqlBuilder) {
+        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+        N.checkArgument(sqlBuilder != this, "Cannot apply MINUS with the same SQLBuilder instance");
+
         final String sql = sqlBuilder.toSql();
 
         if (N.notEmpty(sqlBuilder.parameters())) {

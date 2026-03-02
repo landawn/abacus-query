@@ -64,6 +64,15 @@ public class NotInSubQuery2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructor_RejectsArityMismatch() {
+        SubQuery twoColumns = Filters.subQuery("users", Arrays.asList("id", "name"), (Condition) null);
+        assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery("userId", twoColumns));
+
+        SubQuery oneColumn = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
+        assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery(Arrays.asList("firstName", "lastName"), oneColumn));
+    }
+
+    @Test
     public void testConstructor_EmptyPropNames() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery(Arrays.asList(), subQuery));
@@ -130,6 +139,15 @@ public class NotInSubQuery2025Test extends TestBase {
         condition.setSubQuery(subQuery2);
 
         assertEquals(subQuery2, condition.getSubQuery());
+    }
+
+    @Test
+    public void testSetSubQuery_RejectsArityMismatch() {
+        NotInSubQuery condition = new NotInSubQuery(Arrays.asList("firstName", "lastName"),
+                Filters.subQuery("users", Arrays.asList("id", "name"), (Condition) null));
+        SubQuery mismatch = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
+
+        assertThrows(IllegalArgumentException.class, () -> condition.setSubQuery(mismatch));
     }
 
     @Test

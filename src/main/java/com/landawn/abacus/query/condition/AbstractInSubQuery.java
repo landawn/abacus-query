@@ -68,6 +68,7 @@ public abstract class AbstractInSubQuery extends LogicalCondition {
         N.checkArgNotNull(subQuery, "subQuery");
 
         this.propNames = Collections.singletonList(propName);
+        validateSubQuerySelectArity(this.propNames, subQuery);
         this.subQuery = subQuery;
     }
 
@@ -85,6 +86,7 @@ public abstract class AbstractInSubQuery extends LogicalCondition {
         N.checkArgNotNull(subQuery, "subQuery");
 
         this.propNames = copyAndValidatePropNames(propNames);
+        validateSubQuerySelectArity(this.propNames, subQuery);
         this.subQuery = subQuery;
     }
 
@@ -129,8 +131,18 @@ public abstract class AbstractInSubQuery extends LogicalCondition {
     @Deprecated
     public void setSubQuery(final SubQuery subQuery) {
         N.checkArgNotNull(subQuery, "subQuery");
+        validateSubQuerySelectArity(propNames, subQuery);
 
         this.subQuery = subQuery;
+    }
+
+    private static void validateSubQuerySelectArity(final Collection<String> propNames, final SubQuery subQuery) {
+        final Collection<String> subQuerySelectPropNames = subQuery.getSelectPropNames();
+
+        if (subQuerySelectPropNames != null && subQuerySelectPropNames.size() != propNames.size()) {
+            throw new IllegalArgumentException("The number of selected properties in subQuery (" + subQuerySelectPropNames.size()
+                    + ") must match the number of left-hand properties (" + propNames.size() + ")");
+        }
     }
 
     /**

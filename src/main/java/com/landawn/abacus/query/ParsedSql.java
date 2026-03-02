@@ -121,7 +121,10 @@ public final class ParsedSql {
 
                             if (Strings.isNotEmpty(namedParameter)) {
                                 namedParameterList.add(namedParameter);
-                                word = SK.QUESTION_MARK;
+                                final String suffix = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1)
+                                        : Strings.EMPTY;
+
+                                word = SK.QUESTION_MARK + suffix;
                                 parameterCount++;
                                 type |= IBATIS_PARAMETER_TYPE;
                             } else {
@@ -131,9 +134,10 @@ public final class ParsedSql {
                             word = ibatisToken;
                         }
                     } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
-                        namedParameterList.add(word.substring(1));
+                        final int parameterEndIndex = findNamedParameterEndIndex(word, 1);
+                        namedParameterList.add(word.substring(1, parameterEndIndex));
 
-                        word = SK.QUESTION_MARK;
+                        word = SK.QUESTION_MARK + word.substring(parameterEndIndex);
                         parameterCount++;
                         type |= NAMED_PARAMETER_TYPE;
                     }
@@ -321,11 +325,31 @@ public final class ParsedSql {
         }
 
         if ("EXPLAIN".equalsIgnoreCase(opWord)) {
-            final int explainedIndex = nextNonCommentWord(words, nextIndex);
-            return explainedIndex < 0 ? opWord : words.get(explainedIndex);
+            int explainedIndex = nextNonCommentWord(words, nextIndex);
+
+            while (explainedIndex >= 0) {
+                final String explainedOpWord = words.get(explainedIndex);
+
+                if (Strings.isNotEmpty(explainedOpWord) && opSqlPrefixSet.contains(explainedOpWord.toUpperCase(Locale.ROOT))
+                        && !"EXPLAIN".equalsIgnoreCase(explainedOpWord)) {
+                    return explainedOpWord;
+                }
+
+                explainedIndex = nextNonCommentWord(words, explainedIndex + 1);
+            }
         }
 
         return opWord;
+    }
+
+    private static int findNamedParameterEndIndex(final String token, final int fromIndex) {
+        int index = fromIndex;
+
+        while (index < token.length() && isValidNamedParameterChar(token.charAt(index))) {
+            index++;
+        }
+
+        return index;
     }
 
     private static int nextNonCommentWord(final List<String> words, final int fromIndex) {
@@ -355,7 +379,7 @@ public final class ParsedSql {
 
     private static boolean isValidNamedParameterChar(final char ch) {
         // https://www.cs.cmu.edu/~pattis/15-1XX/common/handouts/ascii.html
-        return ch == '_' || !(ch < '0' || (ch > '9' && ch < 'A') || (ch > 'Z' && ch < 'a') || (ch > 'z' && ch < 128));
+        return ch == '_' || ch == '.' || !(ch < '0' || (ch > '9' && ch < 'A') || (ch > 'Z' && ch < 'a') || (ch > 'z' && ch < 128));
     }
 
     /**

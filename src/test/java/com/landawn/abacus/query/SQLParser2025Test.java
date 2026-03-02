@@ -192,6 +192,13 @@ public class SQLParser2025Test extends TestBase {
     }
 
     @Test
+    public void testIndexWordWithNegativeFromIndex() {
+        String sql = "SELECT * FROM users WHERE age > 18";
+        int index = SQLParser.indexOfWord(sql, "SELECT", -5, false);
+        assertEquals(0, index);
+    }
+
+    @Test
     public void testNextWord() {
         String sql = "SELECT * FROM users";
         String word = SQLParser.nextWord(sql, 7);
@@ -223,6 +230,13 @@ public class SQLParser2025Test extends TestBase {
     }
 
     @Test
+    public void testNextWordWithNegativeFromIndex() {
+        String sql = "SELECT * FROM users";
+        String word = SQLParser.nextWord(sql, -3);
+        assertEquals("SELECT", word);
+    }
+
+    @Test
     public void testRegisterSeparatorChar() {
         SQLParser.registerSeparator('$');
         // Test that it doesn't throw
@@ -239,6 +253,12 @@ public class SQLParser2025Test extends TestBase {
         SQLParser.registerSeparator("$$");
         List<String> words = SQLParser.parse("SELECT$$FROM$$users");
         assertEquals(Arrays.asList("SELECT", "$$", "FROM", "$$", "users"), words);
+    }
+
+    @Test
+    public void testParseWithDoubleHashOperator() {
+        List<String> words = SQLParser.parse("SELECT 1 ## 2");
+        assertTrue(words.contains("##"));
     }
 
     @Test

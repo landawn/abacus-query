@@ -65,6 +65,15 @@ public class InSubQuery2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructor_RejectsArityMismatch() {
+        SubQuery twoColumns = Filters.subQuery("users", Arrays.asList("id", "name"), (Condition) null);
+        assertThrows(IllegalArgumentException.class, () -> new InSubQuery("user_id", twoColumns));
+
+        SubQuery oneColumn = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
+        assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("user_id", "user_name"), oneColumn));
+    }
+
+    @Test
     public void testConstructor_EmptyPropNames() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList(), subQuery));
@@ -131,6 +140,14 @@ public class InSubQuery2025Test extends TestBase {
         condition.setSubQuery(subQuery2);
 
         assertEquals(subQuery2, condition.getSubQuery());
+    }
+
+    @Test
+    public void testSetSubQuery_RejectsArityMismatch() {
+        InSubQuery condition = new InSubQuery(Arrays.asList("user_id", "user_name"), Filters.subQuery("users", Arrays.asList("id", "name"), (Condition) null));
+        SubQuery mismatch = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
+
+        assertThrows(IllegalArgumentException.class, () -> condition.setSubQuery(mismatch));
     }
 
     @Test

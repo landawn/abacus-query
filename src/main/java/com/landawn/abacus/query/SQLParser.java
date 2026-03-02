@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
@@ -51,7 +52,7 @@ public final class SQLParser {
 
     private static final Set<Object> separators = ConcurrentHashMap.newKeySet();
 
-    private static volatile int maxSeparatorLength = 1;
+    private static final AtomicInteger maxSeparatorLength = new AtomicInteger(1);
 
     static {
         separators.add(TAB);
@@ -135,8 +136,8 @@ public final class SQLParser {
         separators.add("|*=");
 
         for (final Object separator : separators) {
-            if (separator instanceof final String separatorStr && separatorStr.length() > maxSeparatorLength) {
-                maxSeparatorLength = separatorStr.length();
+            if (separator instanceof final String separatorStr && separatorStr.length() > maxSeparatorLength.get()) {
+                maxSeparatorLength.set(separatorStr.length());
             }
         }
     }
@@ -292,7 +293,7 @@ public final class SQLParser {
                             break;
                         }
                     }
-                } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) { // for MySQL only
+                } else if (isHashCommentStart(sql, sqlLength, index)) { // for MySQL only
                     if (!sb.isEmpty()) {
                         words.add(sb.toString());
                         sb.setLength(0);
@@ -428,7 +429,7 @@ public final class SQLParser {
                 String temp = "";
                 char quoteChar = 0;
 
-                for (int index = fromIndex; index < sqlLength; index++) {
+                for (int index = Math.max(0, fromIndex); index < sqlLength; index++) {
                     final char c = sql.charAt(index);
 
                     // is it in a quoted identifier?
@@ -478,7 +479,7 @@ public final class SQLParser {
                                 break;
                             }
                         }
-                    } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
+                    } else if (isHashCommentStart(sql, sqlLength, index)) {
                         // Skip MySQL single-line comment (# ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
@@ -632,7 +633,7 @@ public final class SQLParser {
             String temp = "";
             char quoteChar = 0;
 
-            for (int index = fromIndex; index < sqlLength; index++) {
+            for (int index = Math.max(0, fromIndex); index < sqlLength; index++) {
                 final char c = sql.charAt(index);
 
                 // is it in a quoted identifier?
@@ -668,7 +669,7 @@ public final class SQLParser {
                             break;
                         }
                     }
-                } else if (c == '#' && (index == sqlLength - 1 || sql.charAt(index + 1) != '{')) {
+                } else if (isHashCommentStart(sql, sqlLength, index)) {
                     // Skip MySQL single-line comment (# ...)
                     if (!sb.isEmpty()) {
                         break;
@@ -767,8 +768,12 @@ public final class SQLParser {
             separators.add(separator.charAt(0));
         }
 
-        if (separator.length() > maxSeparatorLength) {
-            maxSeparatorLength = separator.length();
+        if (separator.length() > maxSeparatorLength.get()) {
+            int currentMax = maxSeparatorLength.get();
+
+            while (separator.length() > currentMax && !maxSeparatorLength.compareAndSet(currentMax, separator.length())) {
+                currentMax = maxSeparatorLength.get();
+            }
         }
     }
 
@@ -802,8 +807,22 @@ public final class SQLParser {
         return matchMultiCharSeparator(str, len, index) != null;
     }
 
+    private static boolean isHashCommentStart(final String str, final int len, final int index) {
+        if (str.charAt(index) != '#') {
+            return false;
+        }
+
+        // for Ibatis/Mybatis
+        if (index < len - 1 && str.charAt(index + 1) == '{') {
+            return false;
+        }
+
+        final String multiCharSeparator = matchMultiCharSeparator(str, len, index);
+        return multiCharSeparator == null || multiCharSeparator.length() == 1;
+    }
+
     private static String matchMultiCharSeparator(final String str, final int len, final int index) {
-        final int maxLen = Math.min(maxSeparatorLength, len - index);
+        final int maxLen = Math.min(maxSeparatorLength.get(), len - index);
 
         for (int sepLen = maxLen; sepLen > 1; sepLen--) {
             final String separator = str.substring(index, index + sepLen);
