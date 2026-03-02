@@ -204,8 +204,8 @@ public abstract class AbstractBetween extends LogicalCondition {
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
 
-        return effectiveNamingPolicy.convert(propName) + SK._SPACE + operator().toString() + SK._SPACE + parameter2String(minValue, effectiveNamingPolicy)
-                + SK._SPACE + SK.AND + SK._SPACE + parameter2String(maxValue, effectiveNamingPolicy);
+        return effectiveNamingPolicy.convert(propName) + SK._SPACE + operator().toString() + SK._SPACE + formatParameter(minValue, effectiveNamingPolicy)
+                + SK._SPACE + SK.AND + SK._SPACE + formatParameter(maxValue, effectiveNamingPolicy);
     }
 
     /**

@@ -162,17 +162,17 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * parameter2String("John", NamingPolicy.NO_CHANGE);         // Returns: 'John'
-     * parameter2String(123, NamingPolicy.NO_CHANGE);            // Returns: 123
-     * parameter2String(null, NamingPolicy.NO_CHANGE);           // Returns: null
-     * parameter2String(subCondition, NamingPolicy.NO_CHANGE);   // Returns: subCondition.toString(policy)
+     * formatParameter("John", NamingPolicy.NO_CHANGE);         // Returns: 'John'
+     * formatParameter(123, NamingPolicy.NO_CHANGE);            // Returns: 123
+     * formatParameter(null, NamingPolicy.NO_CHANGE);           // Returns: null
+     * formatParameter(subCondition, NamingPolicy.NO_CHANGE);   // Returns: subCondition.toString(policy)
      * }</pre>
      *
      * @param parameter the parameter value to convert
      * @param namingPolicy the naming policy to apply to property names within conditions
      * @return the string representation of the parameter, or null if parameter is null
      */
-    protected static String parameter2String(final Object parameter, final NamingPolicy namingPolicy) {
+    protected static String formatParameter(final Object parameter, final NamingPolicy namingPolicy) {
         if (parameter == null) {
             return null;
         }
@@ -208,16 +208,16 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * joinPropNames("name");            // Returns: name
-     * joinPropNames("city", "state");   // Returns: (city, state)
-     * joinPropNames("a", "b", "c");     // Returns: (a, b, c)
-     * joinPropNames();                  // Returns: ""
+     * concatPropNames("name");            // Returns: name
+     * concatPropNames("city", "state");   // Returns: (city, state)
+     * concatPropNames("a", "b", "c");     // Returns: (a, b, c)
+     * concatPropNames();                  // Returns: ""
      * }</pre>
      *
      * @param propNames the property names to concatenate (varargs, can be empty)
      * @return a formatted string of property names, empty string if no names provided
      */
-    protected static String joinPropNames(final String... propNames) {
+    protected static String concatPropNames(final String... propNames) {
         if (N.isEmpty(propNames)) {
             return Strings.EMPTY;
         }
@@ -275,19 +275,19 @@ public abstract class AbstractCondition implements Condition, Cloneable {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> names = Arrays.asList("city", "state", "zip");
-     * joinPropNames(names);   // Returns: (city, state, zip)
+     * concatPropNames(names);   // Returns: (city, state, zip)
      *
      * Set<String> single = Collections.singleton("id");
-     * joinPropNames(single);   // Returns: id
+     * concatPropNames(single);   // Returns: id
      *
      * List<String> empty = Collections.emptyList();
-     * joinPropNames(empty);   // Returns: ""
+     * concatPropNames(empty);   // Returns: ""
      * }</pre>
      *
      * @param propNames the collection of property names to concatenate (can be empty)
      * @return a formatted string of property names, empty string if collection is empty
      */
-    protected static String joinPropNames(final Collection<String> propNames) {
+    protected static String concatPropNames(final Collection<String> propNames) {
         if (N.isEmpty(propNames)) {
             return Strings.EMPTY;
         }

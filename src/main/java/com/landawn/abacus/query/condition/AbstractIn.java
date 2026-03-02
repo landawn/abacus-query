@@ -156,7 +156,7 @@ public abstract class AbstractIn extends LogicalCondition {
                 if (i > 0) {
                     sb.append(SK.COMMA_SPACE);
                 }
-                sb.append(parameter2String(values.get(i), effectiveNamingPolicy));
+                sb.append(formatParameter(values.get(i), effectiveNamingPolicy));
             }
         }
 

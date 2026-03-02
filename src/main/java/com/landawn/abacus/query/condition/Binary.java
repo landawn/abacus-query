@@ -235,7 +235,7 @@ public class Binary extends LogicalCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        return effectiveNamingPolicy.convert(propName) + SK._SPACE + operator().toString() + SK._SPACE + parameter2String(propValue, effectiveNamingPolicy);
+        return effectiveNamingPolicy.convert(propName) + SK._SPACE + operator().toString() + SK._SPACE + formatParameter(propValue, effectiveNamingPolicy);
     }
 
     /**

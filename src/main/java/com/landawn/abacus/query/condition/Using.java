@@ -180,7 +180,7 @@ public class Using extends Cell {
     static Condition createUsingCondition(final String... columnNames) {
         N.checkArgNotEmpty(columnNames, "columnNames");
 
-        return Filters.expr(joinPropNames(columnNames));
+        return Filters.expr(concatPropNames(columnNames));
     }
 
     /**
@@ -208,6 +208,6 @@ public class Using extends Cell {
     static Condition createUsingCondition(final Collection<String> columnNames) {
         N.checkArgNotEmpty(columnNames, "columnNames");
 
-        return Filters.expr(joinPropNames(columnNames));
+        return Filters.expr(concatPropNames(columnNames));
     }
 }

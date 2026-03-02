@@ -384,7 +384,7 @@ public class Join extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        return operator().toString() + _SPACE + joinPropNames(joinEntities)
+        return operator().toString() + _SPACE + concatPropNames(joinEntities)
                 + ((condition == null) ? Strings.EMPTY : (_SPACE + condition.toString(namingPolicy)));
     }
 
