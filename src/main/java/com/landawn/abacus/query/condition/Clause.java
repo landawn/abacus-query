@@ -14,13 +14,6 @@
 
 package com.landawn.abacus.query.condition;
 
-import java.util.List;
-
-import com.landawn.abacus.query.SK;
-import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Strings;
-
 /**
  * Abstract base class for SQL clause conditions.
  * Clauses represent major SQL query components like WHERE, HAVING, GROUP BY, ORDER BY, etc.
@@ -73,9 +66,7 @@ import com.landawn.abacus.util.Strings;
  * @see Condition
  * @see Criteria
  */
-public abstract class Clause extends AbstractCondition {
-
-    private Condition condition;
+public abstract class Clause extends Cell {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -103,141 +94,42 @@ public abstract class Clause extends AbstractCondition {
      * @param cond the condition to wrap (must not be null)
      */
     public Clause(final Operator operator, final Condition cond) {
-        super(operator);
-        this.condition = N.checkArgNotNull(cond, "cond");
+        super(operator, cond);
     }
 
     /**
-     * Gets the wrapped condition.
-     * The returned condition can be cast to its specific type if needed.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Create a NOT clause wrapping an equality condition
-     * Clause notClause = new Clause(Operator.NOT, Filters.equal("status", "active"));
-     * Condition inner = notClause.getCondition();   // the Equal condition for status = 'active'
-     *
-     * // Create an EXISTS clause with a subquery
-     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
-     * Clause existsClause = new Clause(Operator.EXISTS, subQuery);
-     * SubQuery sq = existsClause.getCondition();   // the SubQuery instance
-     * }</pre>
-     *
-     * @param <T> the type of condition to return
-     * @return the wrapped condition, cast to the specified type
-     */
-    @SuppressWarnings("unchecked")
-    public <T extends Condition> T getCondition() {
-        return (T) condition;
-    }
-
-    /**
-     * Sets the wrapped condition.
-     * This method should generally not be used as conditions should be immutable.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Deprecated: prefer creating a new Clause instead
-     * Clause notClause = new Clause(Operator.NOT, Filters.equal("status", "active"));
-     * notClause.setCondition(Filters.equal("status", "inactive"));   // Not recommended
-     *
-     * // Preferred approach: create a new Clause
-     * Clause newNotClause = new Clause(Operator.NOT, Filters.equal("status", "inactive"));
-     * }</pre>
-     *
-     * @param cond the new condition to wrap
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     */
-    @Deprecated
-    public void setCondition(final Condition cond) {
-        this.condition = cond;
-    }
-
-    /**
-     * Gets the parameters from the wrapped condition.
-     * This method delegates to the wrapped condition's getParameters method.
-     * 
-     * @return a list of parameters from the wrapped condition, or an empty list if no condition is set
+     * Not supported for structural clauses.
+     * @throws UnsupportedOperationException always
      */
     @Override
-    public List<Object> getParameters() {
-        return (condition == null) ? N.emptyList() : condition.getParameters();
+    public Not not() {
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * This method delegates to the wrapped condition's clearParameters method.
-     *
+     * Not supported for structural clauses.
+     * @throws UnsupportedOperationException always
      */
     @Override
-    public void clearParameters() {
-        if (condition != null) {
-            condition.clearParameters();
-        }
+    public And and(final Condition cond) {
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * Creates a deep copy of this Clause.
-     * The wrapped condition is also copied if present, ensuring complete independence
-     * between the original and the copy.
-     * 
-     * @param <T> the type of condition to return
-     * @return a new Clause instance with copied values
+     * Not supported for structural clauses.
+     * @throws UnsupportedOperationException always
      */
-    @SuppressWarnings("unchecked")
     @Override
-    public <T extends Condition> T copy() {
-        final Clause copy = super.copy();
-
-        if (condition != null) {
-            copy.condition = condition.copy();
-        }
-
-        return (T) copy;
+    public Or or(final Condition cond) {
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * Converts this Clause condition to its string representation using the specified naming policy.
-     * The output format is: OPERATOR condition_string
-     * 
-     * @param namingPolicy the naming policy to apply to property names
-     * @return a string representation of this Clause
+     * Not supported for structural clauses.
+     * @throws UnsupportedOperationException always
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
-        return operator().toString() + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(namingPolicy));
-    }
-
-    /**
-     * Returns the hash code of this Clause.
-     * The hash code is computed based on the operator and wrapped condition.
-     * 
-     * @return hash code based on operator and wrapped condition
-     */
-    @Override
-    public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        return (h * 31) + ((condition == null) ? 0 : condition.hashCode());
-    }
-
-    /**
-     * Checks if this Clause is equal to another object.
-     * Two Clauses are equal if they have the same operator and wrapped condition.
-     * 
-     * @param obj the object to compare with
-     * @return {@code true} if the objects are equal, {@code false} otherwise
-     */
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-
-        if (obj instanceof final Clause other) {
-            return N.equals(operator, other.operator) && N.equals(condition, other.condition);
-        }
-
-        return false;
+    public Or xor(final Condition cond) {
+        throw new UnsupportedOperationException();
     }
 }

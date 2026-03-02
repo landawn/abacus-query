@@ -569,4 +569,155 @@ public class CriteriaTest extends TestBase {
         Clause orderBy = criteria.getOrderBy();
         Assertions.assertNotNull(orderBy);
     }
+
+    // ---- Convenience join method tests ----
+
+    @Test
+    public void testInnerJoin() {
+        // entity-only overload
+        Criteria criteria1 = Filters.criteria().innerJoin("orders");
+        List<Join> joins1 = criteria1.getJoins();
+        Assertions.assertEquals(1, joins1.size());
+        Assertions.assertEquals(Operator.INNER_JOIN, joins1.get(0).operator());
+
+        // entity + condition overload
+        Equal eq = Filters.eq("users.id", "orders.user_id");
+        Criteria criteria2 = Filters.criteria().innerJoin("orders", eq);
+        List<Join> joins2 = criteria2.getJoins();
+        Assertions.assertEquals(1, joins2.size());
+        Assertions.assertEquals(Operator.INNER_JOIN, joins2.get(0).operator());
+        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+
+        // multi-entity overload
+        List<String> tables = Arrays.asList("orders", "order_items");
+        Criteria criteria3 = Filters.criteria().innerJoin(tables, eq);
+        List<Join> joins3 = criteria3.getJoins();
+        Assertions.assertEquals(1, joins3.size());
+        Assertions.assertEquals(Operator.INNER_JOIN, joins3.get(0).operator());
+        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+    }
+
+    @Test
+    public void testLeftJoin() {
+        Criteria criteria1 = Filters.criteria().leftJoin("orders");
+        List<Join> joins1 = criteria1.getJoins();
+        Assertions.assertEquals(1, joins1.size());
+        Assertions.assertEquals(Operator.LEFT_JOIN, joins1.get(0).operator());
+
+        Equal eq = Filters.eq("users.id", "orders.user_id");
+        Criteria criteria2 = Filters.criteria().leftJoin("orders", eq);
+        List<Join> joins2 = criteria2.getJoins();
+        Assertions.assertEquals(1, joins2.size());
+        Assertions.assertEquals(Operator.LEFT_JOIN, joins2.get(0).operator());
+        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+
+        List<String> tables = Arrays.asList("orders", "order_items");
+        Criteria criteria3 = Filters.criteria().leftJoin(tables, eq);
+        List<Join> joins3 = criteria3.getJoins();
+        Assertions.assertEquals(1, joins3.size());
+        Assertions.assertEquals(Operator.LEFT_JOIN, joins3.get(0).operator());
+        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+    }
+
+    @Test
+    public void testRightJoin() {
+        Criteria criteria1 = Filters.criteria().rightJoin("orders");
+        List<Join> joins1 = criteria1.getJoins();
+        Assertions.assertEquals(1, joins1.size());
+        Assertions.assertEquals(Operator.RIGHT_JOIN, joins1.get(0).operator());
+
+        Equal eq = Filters.eq("users.id", "orders.user_id");
+        Criteria criteria2 = Filters.criteria().rightJoin("orders", eq);
+        List<Join> joins2 = criteria2.getJoins();
+        Assertions.assertEquals(1, joins2.size());
+        Assertions.assertEquals(Operator.RIGHT_JOIN, joins2.get(0).operator());
+        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+
+        List<String> tables = Arrays.asList("orders", "order_items");
+        Criteria criteria3 = Filters.criteria().rightJoin(tables, eq);
+        List<Join> joins3 = criteria3.getJoins();
+        Assertions.assertEquals(1, joins3.size());
+        Assertions.assertEquals(Operator.RIGHT_JOIN, joins3.get(0).operator());
+        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+    }
+
+    @Test
+    public void testFullJoin() {
+        Criteria criteria1 = Filters.criteria().fullJoin("orders");
+        List<Join> joins1 = criteria1.getJoins();
+        Assertions.assertEquals(1, joins1.size());
+        Assertions.assertEquals(Operator.FULL_JOIN, joins1.get(0).operator());
+
+        Equal eq = Filters.eq("users.id", "orders.user_id");
+        Criteria criteria2 = Filters.criteria().fullJoin("orders", eq);
+        List<Join> joins2 = criteria2.getJoins();
+        Assertions.assertEquals(1, joins2.size());
+        Assertions.assertEquals(Operator.FULL_JOIN, joins2.get(0).operator());
+        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+
+        List<String> tables = Arrays.asList("orders", "order_items");
+        Criteria criteria3 = Filters.criteria().fullJoin(tables, eq);
+        List<Join> joins3 = criteria3.getJoins();
+        Assertions.assertEquals(1, joins3.size());
+        Assertions.assertEquals(Operator.FULL_JOIN, joins3.get(0).operator());
+        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+    }
+
+    @Test
+    public void testCrossJoin() {
+        Criteria criteria1 = Filters.criteria().crossJoin("colors");
+        List<Join> joins1 = criteria1.getJoins();
+        Assertions.assertEquals(1, joins1.size());
+        Assertions.assertEquals(Operator.CROSS_JOIN, joins1.get(0).operator());
+
+        Equal eq = Filters.eq("active", true);
+        Criteria criteria2 = Filters.criteria().crossJoin("colors", eq);
+        List<Join> joins2 = criteria2.getJoins();
+        Assertions.assertEquals(1, joins2.size());
+        Assertions.assertEquals(Operator.CROSS_JOIN, joins2.get(0).operator());
+        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+
+        List<String> tables = Arrays.asList("sizes", "colors");
+        Criteria criteria3 = Filters.criteria().crossJoin(tables, eq);
+        List<Join> joins3 = criteria3.getJoins();
+        Assertions.assertEquals(1, joins3.size());
+        Assertions.assertEquals(Operator.CROSS_JOIN, joins3.get(0).operator());
+        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+    }
+
+    @Test
+    public void testNaturalJoin() {
+        Criteria criteria1 = Filters.criteria().naturalJoin("employees");
+        List<Join> joins1 = criteria1.getJoins();
+        Assertions.assertEquals(1, joins1.size());
+        Assertions.assertEquals(Operator.NATURAL_JOIN, joins1.get(0).operator());
+
+        Equal eq = Filters.eq("status", "active");
+        Criteria criteria2 = Filters.criteria().naturalJoin("employees", eq);
+        List<Join> joins2 = criteria2.getJoins();
+        Assertions.assertEquals(1, joins2.size());
+        Assertions.assertEquals(Operator.NATURAL_JOIN, joins2.get(0).operator());
+        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+
+        List<String> tables = Arrays.asList("employees", "departments");
+        Criteria criteria3 = Filters.criteria().naturalJoin(tables, eq);
+        List<Join> joins3 = criteria3.getJoins();
+        Assertions.assertEquals(1, joins3.size());
+        Assertions.assertEquals(Operator.NATURAL_JOIN, joins3.get(0).operator());
+        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+    }
+
+    @Test
+    public void testMixedJoinChaining() {
+        Criteria criteria = Filters.criteria()
+                .innerJoin("orders", Filters.eq("users.id", "orders.user_id"))
+                .leftJoin("payments", Filters.eq("orders.id", "payments.order_id"))
+                .where(Filters.eq("users.status", "active"));
+
+        List<Join> joins = criteria.getJoins();
+        Assertions.assertEquals(2, joins.size());
+        Assertions.assertEquals(Operator.INNER_JOIN, joins.get(0).operator());
+        Assertions.assertEquals(Operator.LEFT_JOIN, joins.get(1).operator());
+        Assertions.assertNotNull(criteria.getWhere());
+    }
 }

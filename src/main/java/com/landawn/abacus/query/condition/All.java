@@ -114,6 +114,12 @@ public class All extends Cell {
         super(Operator.ALL, subQuery);
     }
 
+    /**
+     * Returns this condition as SQL text using the specified naming policy.
+     *
+     * @param namingPolicy the naming policy for property/column names. If {@code null}, {@link NamingPolicy#NO_CHANGE} is applied
+     * @return SQL in the form {@code ALL (...)}
+     */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;

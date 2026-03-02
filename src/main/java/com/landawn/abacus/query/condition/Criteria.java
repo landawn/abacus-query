@@ -736,6 +736,300 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
+     * Adds an INNER JOIN to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .innerJoin("orders")
+     *     .where(Filters.eq("users.id", "orders.user_id"));
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria innerJoin(final String joinEntity) {
+        add(new InnerJoin(joinEntity));
+
+        return this;
+    }
+
+    /**
+     * Adds an INNER JOIN with a condition to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .innerJoin("orders", Filters.on("users.id", "orders.user_id"));
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria innerJoin(final String joinEntity, final Condition cond) {
+        add(new InnerJoin(joinEntity, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds an INNER JOIN with multiple entities and a condition.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"));
+     * }</pre>
+     *
+     * @param joinEntities the collection of tables/entities to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria innerJoin(final Collection<String> joinEntities, final Condition cond) {
+        add(new InnerJoin(joinEntities, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a LEFT JOIN to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .leftJoin("orders");
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria leftJoin(final String joinEntity) {
+        add(new LeftJoin(joinEntity));
+
+        return this;
+    }
+
+    /**
+     * Adds a LEFT JOIN with a condition to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .leftJoin("orders", Filters.on("users.id", "orders.user_id"));
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria leftJoin(final String joinEntity, final Condition cond) {
+        add(new LeftJoin(joinEntity, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a LEFT JOIN with multiple entities and a condition.
+     *
+     * @param joinEntities the collection of tables/entities to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria leftJoin(final Collection<String> joinEntities, final Condition cond) {
+        add(new LeftJoin(joinEntities, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a RIGHT JOIN to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .rightJoin("orders");
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria rightJoin(final String joinEntity) {
+        add(new RightJoin(joinEntity));
+
+        return this;
+    }
+
+    /**
+     * Adds a RIGHT JOIN with a condition to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .rightJoin("orders", Filters.on("users.id", "orders.user_id"));
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria rightJoin(final String joinEntity, final Condition cond) {
+        add(new RightJoin(joinEntity, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a RIGHT JOIN with multiple entities and a condition.
+     *
+     * @param joinEntities the collection of tables/entities to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria rightJoin(final Collection<String> joinEntities, final Condition cond) {
+        add(new RightJoin(joinEntities, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a FULL JOIN to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .fullJoin("orders");
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria fullJoin(final String joinEntity) {
+        add(new FullJoin(joinEntity));
+
+        return this;
+    }
+
+    /**
+     * Adds a FULL JOIN with a condition to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .fullJoin("orders", Filters.on("users.id", "orders.user_id"));
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria fullJoin(final String joinEntity, final Condition cond) {
+        add(new FullJoin(joinEntity, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a FULL JOIN with multiple entities and a condition.
+     *
+     * @param joinEntities the collection of tables/entities to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria fullJoin(final Collection<String> joinEntities, final Condition cond) {
+        add(new FullJoin(joinEntities, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a CROSS JOIN to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .crossJoin("colors");
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria crossJoin(final String joinEntity) {
+        add(new CrossJoin(joinEntity));
+
+        return this;
+    }
+
+    /**
+     * Adds a CROSS JOIN with a condition to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .crossJoin("colors", Filters.eq("active", true));
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria crossJoin(final String joinEntity, final Condition cond) {
+        add(new CrossJoin(joinEntity, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a CROSS JOIN with multiple entities and a condition.
+     *
+     * @param joinEntities the collection of tables/entities to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria crossJoin(final Collection<String> joinEntities, final Condition cond) {
+        add(new CrossJoin(joinEntities, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a NATURAL JOIN to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .naturalJoin("employees");
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria naturalJoin(final String joinEntity) {
+        add(new NaturalJoin(joinEntity));
+
+        return this;
+    }
+
+    /**
+     * Adds a NATURAL JOIN with a condition to this criteria.
+     *
+     * <pre>{@code
+     * Criteria criteria = Filters.criteria()
+     *     .naturalJoin("employees", Filters.eq("status", "active"));
+     * }</pre>
+     *
+     * @param joinEntity the table or entity to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria naturalJoin(final String joinEntity, final Condition cond) {
+        add(new NaturalJoin(joinEntity, cond));
+
+        return this;
+    }
+
+    /**
+     * Adds a NATURAL JOIN with multiple entities and a condition.
+     *
+     * @param joinEntities the collection of tables/entities to join
+     * @param cond the join condition
+     * @return this Criteria instance for method chaining
+     */
+    public Criteria naturalJoin(final Collection<String> joinEntities, final Condition cond) {
+        add(new NaturalJoin(joinEntities, cond));
+
+        return this;
+    }
+
+    /**
      * Sets or replaces the WHERE clause.
      * If a WHERE clause already exists, it will be replaced.
      * 

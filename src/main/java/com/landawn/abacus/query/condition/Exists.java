@@ -119,6 +119,12 @@ public class Exists extends Cell {
         super(Operator.EXISTS, subQuery);
     }
 
+    /**
+     * Returns this condition as SQL text using the specified naming policy.
+     *
+     * @param namingPolicy the naming policy for property/column names. If {@code null}, {@link NamingPolicy#NO_CHANGE} is applied
+     * @return SQL in the form {@code EXISTS (...)}
+     */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;

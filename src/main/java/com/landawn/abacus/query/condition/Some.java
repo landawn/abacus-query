@@ -104,6 +104,12 @@ public class Some extends Cell {
         super(Operator.SOME, subQuery);
     }
 
+    /**
+     * Returns this condition as SQL text using the specified naming policy.
+     *
+     * @param namingPolicy the naming policy for property/column names. If {@code null}, {@link NamingPolicy#NO_CHANGE} is applied
+     * @return SQL in the form {@code SOME (...)}
+     */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
