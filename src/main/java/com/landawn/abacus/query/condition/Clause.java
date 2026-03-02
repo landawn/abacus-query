@@ -61,7 +61,6 @@ package com.landawn.abacus.query.condition;
  * );
  * }</pre>
  * 
- * @see Clause
  * @see Condition
  * @see Criteria
  */
@@ -81,12 +80,11 @@ public abstract class Clause extends Cell {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Create a NOT clause that negates a condition
-     * Clause notClause = new Clause(Operator.NOT, Filters.isNull("email"));
+     * // WHERE clause wrapping a condition
+     * Where where = new Where(Filters.equal("status", "active"));
      *
-     * // Create an EXISTS clause for a subquery
-     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM products WHERE price > 100");
-     * Clause existsClause = new Clause(Operator.EXISTS, subQuery);
+     * // HAVING clause wrapping an aggregate condition
+     * Having having = new Having(Filters.greaterThan("COUNT(*)", 5));
      * }</pre>
      *
      * @param operator the operator to apply to the condition

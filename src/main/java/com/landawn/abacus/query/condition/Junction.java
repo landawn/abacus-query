@@ -161,8 +161,8 @@ public class Junction extends LogicalCondition {
 
     /**
      * Gets the list of conditions contained in this junction.
-     * The returned list is the internal representation and modifications to it
-     * will affect the junction. Use with caution.
+     * The returned list is an unmodifiable view; attempts to modify it
+     * will throw {@link UnsupportedOperationException}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -175,7 +175,7 @@ public class Junction extends LogicalCondition {
      * // Returns: 2
      * }</pre>
      *
-     * @return an unmodifiable view of the list of conditions in this junction.
+     * @return an unmodifiable view of the list of conditions in this junction
      */
     public List<Condition> getConditions() {
         return Collections.unmodifiableList(conditions);

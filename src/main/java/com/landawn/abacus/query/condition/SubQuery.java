@@ -44,7 +44,7 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>IN/NOT IN conditions for set membership tests</li>
  *   <li>EXISTS/NOT EXISTS for existence checks</li>
- *   <li>Scalar subqueries in comparisons (=, &gt;, &lt;, etc.)
+ *   <li>Scalar subqueries in comparisons (=, &gt;, &lt;, etc.)</li>
  *   <li>ANY/ALL/SOME for multi-row comparisons</li>
  *   <li>FROM clause for derived tables</li>
  * </ul>
@@ -87,9 +87,7 @@ public class SubQuery extends LogicalCondition {
     // For Kryo
     final String sql;
 
-    /**
-     * Field condition.
-     */
+    /** The WHERE condition for structured subqueries, or {@code null} for raw SQL subqueries. */
     private Condition condition;
 
     /**
@@ -155,7 +153,7 @@ public class SubQuery extends LogicalCondition {
      */
     public SubQuery(final String entityName, final String sql) {
         super(Operator.EMPTY);
-        this.entityName = entityName;
+        this.entityName = entityName == null ? Strings.EMPTY : entityName;
         entityClass = null;
 
         if (Strings.isEmpty(sql)) {
@@ -203,7 +201,7 @@ public class SubQuery extends LogicalCondition {
         this.entityClass = null;
         this.propNames = copyAndValidatePropNames(propNames);
 
-        if (cond == null || CriteriaUtil.isClause(cond)) {
+        if (cond == null || cond instanceof Criteria || CriteriaUtil.isClause(cond)) {
             this.condition = cond;
         } else {
             this.condition = Filters.where(cond);
@@ -254,7 +252,7 @@ public class SubQuery extends LogicalCondition {
         this.entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
         this.propNames = copyAndValidatePropNames(propNames);
-        if (cond == null || CriteriaUtil.isClause(cond)) {
+        if (cond == null || cond instanceof Criteria || CriteriaUtil.isClause(cond)) {
             this.condition = cond;
         } else {
             this.condition = Filters.where(cond);

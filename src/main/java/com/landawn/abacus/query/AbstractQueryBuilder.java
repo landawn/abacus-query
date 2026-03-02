@@ -870,6 +870,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if called on non-INSERT/SELECT operation or if columns/values not set
      */
     public This into(final String tableName) {
+        N.checkArgNotEmpty(tableName, "tableName");
+
         if (!(_op == OperationType.ADD || _op == OperationType.QUERY)) {
             throw new IllegalStateException("Invalid operation for into(): " + _op + ". Expected ADD or QUERY");
         }
@@ -2154,6 +2156,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This groupBy(final String... propOrColumnNames) {
+        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+
         checkIfAlreadyCalled(SK.GROUP_BY);
 
         _sb.append(_SPACE_GROUP_BY_SPACE);
@@ -2210,6 +2214,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This groupBy(final Collection<String> propOrColumnNames) {
+        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+
         checkIfAlreadyCalled(SK.GROUP_BY);
 
         _sb.append(_SPACE_GROUP_BY_SPACE);
@@ -2244,6 +2250,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
+        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+
         checkIfAlreadyCalled(SK.GROUP_BY);
 
         _sb.append(_SPACE_GROUP_BY_SPACE);
@@ -2281,6 +2289,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This groupBy(final Map<String, SortDirection> orders) {
+        N.checkArgNotEmpty(orders, "orders");
+
         checkIfAlreadyCalled(SK.GROUP_BY);
 
         _sb.append(_SPACE_GROUP_BY_SPACE);
@@ -2399,6 +2409,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This orderBy(final String... propOrColumnNames) {
+        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+
         checkIfAlreadyCalled(SK.ORDER_BY);
 
         _sb.append(_SPACE_ORDER_BY_SPACE);
@@ -2456,6 +2468,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This orderBy(final Collection<String> propOrColumnNames) {
+        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+
         checkIfAlreadyCalled(SK.ORDER_BY);
 
         _sb.append(_SPACE_ORDER_BY_SPACE);
@@ -2490,6 +2504,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
+        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+
         checkIfAlreadyCalled(SK.ORDER_BY);
 
         _sb.append(_SPACE_ORDER_BY_SPACE);
@@ -2528,6 +2544,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This orderBy(final Map<String, SortDirection> orders) {
+        N.checkArgNotEmpty(orders, "orders");
+
         checkIfAlreadyCalled(SK.ORDER_BY);
 
         _sb.append(_SPACE_ORDER_BY_SPACE);
@@ -2757,7 +2775,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds an OFFSET ROWS clause (SQL Server syntax).
+     * Adds an OFFSET ROWS clause (SQL:2008 standard syntax).
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2782,7 +2800,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds a FETCH NEXT N ROWS ONLY clause (SQL Server syntax).
+     * Adds a FETCH NEXT N ROWS ONLY clause (SQL:2008 standard syntax).
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

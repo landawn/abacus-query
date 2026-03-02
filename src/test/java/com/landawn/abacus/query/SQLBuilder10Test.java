@@ -1579,14 +1579,20 @@ public class SQLBuilder10Test extends TestBase {
     public void testNullParameters() {
         String sql = PSC.select("*").from("users").where(Filters.eq("deletedBy", null)).toSql();
 
-        assertEquals("SELECT * FROM users WHERE deleted_by = ?", sql);
+        assertEquals("SELECT * FROM users WHERE deleted_by IS NULL", sql);
 
         SQLBuilder builder = PSC.select("*").from("users").where(Filters.eq("deletedBy", null));
         builder.toSql();
 
         List<Object> params = builder.parameters();
-        assertEquals(1, params.size());
-        assertNull(params.get(0));
+        assertTrue(params.isEmpty());
+
+        String sql2 = PSC.select("*").from("users").where(Filters.ne("deletedBy", null)).toSql();
+        assertEquals("SELECT * FROM users WHERE deleted_by IS NOT NULL", sql2);
+
+        SQLBuilder builder2 = PSC.select("*").from("users").where(Filters.ne("deletedBy", null));
+        builder2.toSql();
+        assertTrue(builder2.parameters().isEmpty());
     }
 
     @Test

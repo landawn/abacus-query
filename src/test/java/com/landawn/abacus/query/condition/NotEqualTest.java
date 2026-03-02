@@ -81,6 +81,14 @@ public class NotEqualTest extends TestBase {
     }
 
     @Test
+    public void testToStringWithNull() {
+        NotEqual notEqual = Filters.ne("status", null);
+
+        String result = notEqual.toString();
+        Assertions.assertEquals("status IS NOT NULL", result);
+    }
+
+    @Test
     public void testToStringWithNamingPolicy() {
         NotEqual notEqual = Filters.ne("user_status", "banned");
 

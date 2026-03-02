@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -329,6 +330,16 @@ public class DynamicSQLBuilder2025Test extends TestBase {
     }
 
     @Test
+    public void testGroupByAppendEmptyCollectionNoOp() {
+        DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().append(Collections.emptyList());
+        String sql = builder.build();
+        assertEquals("SELECT * FROM sales", sql);
+    }
+
+    @Test
     public void testGroupByAppendIf() {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
         builder.select().append("*");
@@ -431,6 +442,16 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         builder.orderBy().append(Arrays.asList("category", "price DESC", "name"));
         String sql = builder.build();
         assertEquals("SELECT * FROM products ORDER BY category, price DESC, name", sql);
+    }
+
+    @Test
+    public void testOrderByAppendEmptyCollectionNoOp() {
+        DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+        builder.select().append("*");
+        builder.from().append("products");
+        builder.orderBy().append(Collections.emptyList());
+        String sql = builder.build();
+        assertEquals("SELECT * FROM products", sql);
     }
 
     @Test

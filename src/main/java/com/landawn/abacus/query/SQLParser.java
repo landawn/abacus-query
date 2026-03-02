@@ -110,6 +110,8 @@ public final class SQLParser {
         separators.add("|/");
         separators.add("||/");
         separators.add("->");
+        separators.add("#>");
+        separators.add("#>>");
         separators.add("##");
         separators.add("@@");
         separators.add("@-@");

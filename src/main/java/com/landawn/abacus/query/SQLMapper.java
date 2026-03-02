@@ -502,7 +502,7 @@ public final class SQLMapper {
 
     /**
      * Returns the hash code value for this SQLMapper.
-     * The hash code is based on the internal SQL map.
+     * The hash code is based on the internal SQL map and the attributes map.
      *
      * @return the hash code value
      */
@@ -513,7 +513,7 @@ public final class SQLMapper {
 
     /**
      * Compares this SQLMapper to another object for equality.
-     * Two SQLMappers are considered equal if they contain the same SQL definitions.
+     * Two SQLMappers are considered equal if they contain the same SQL definitions and attributes.
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

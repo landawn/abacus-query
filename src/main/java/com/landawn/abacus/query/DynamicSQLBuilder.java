@@ -1322,6 +1322,10 @@ public class DynamicSQLBuilder {
          * @return this GroupByClause instance for method chaining
          */
         public GroupByClause append(final Collection<String> columns) {
+            if (N.isEmpty(columns)) {
+                return this;
+            }
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1626,6 +1630,10 @@ public class DynamicSQLBuilder {
          * @return this OrderByClause instance for method chaining
          */
         public OrderByClause append(final Collection<String> columns) {
+            if (N.isEmpty(columns)) {
+                return this;
+            }
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {

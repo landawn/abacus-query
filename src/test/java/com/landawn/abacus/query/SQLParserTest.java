@@ -119,6 +119,18 @@ public class SQLParserTest extends TestBase {
     }
 
     @Test
+    public void testParseHashJsonOperatorsAreNotComments() {
+        String sql = "SELECT payload #> '{meta,status}' AS status_json FROM docs WHERE payload #>> '{meta,status}' = 'active'";
+        List<String> words = SQLParser.parse(sql);
+
+        assertTrue(words.contains("#>"));
+        assertTrue(words.contains("#>>"));
+        assertTrue(words.contains("FROM"));
+        assertTrue(words.contains("WHERE"));
+        assertTrue(words.contains("'active'"));
+    }
+
+    @Test
     public void testParseOperators() {
         // Test various operators
         String sql = "SELECT * FROM users WHERE age >= 18 AND status != 'inactive' OR role IN ('admin', 'user')";

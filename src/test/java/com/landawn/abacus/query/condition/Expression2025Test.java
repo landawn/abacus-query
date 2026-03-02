@@ -67,6 +67,12 @@ public class Expression2025Test extends TestBase {
     }
 
     @Test
+    public void testEqualWithNull() {
+        String result = Expression.equal("middleName", null);
+        assertEquals("middleName IS NULL", result);
+    }
+
+    @Test
     public void testEq() {
         String result = Expression.eq("status", "active");
 
@@ -82,6 +88,12 @@ public class Expression2025Test extends TestBase {
         assertTrue(result.contains("status"));
         assertTrue(result.contains("!="));
         assertTrue(result.contains("'inactive'"));
+    }
+
+    @Test
+    public void testNotEqualWithNull() {
+        String result = Expression.notEqual("deleted", null);
+        assertEquals("deleted IS NOT NULL", result);
     }
 
     @Test

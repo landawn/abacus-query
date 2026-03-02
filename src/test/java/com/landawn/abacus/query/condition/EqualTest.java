@@ -84,7 +84,7 @@ public class EqualTest extends TestBase {
     public void testToStringWithNull() {
         Equal eq = Filters.eq("middleName", null);
         String result = eq.toString();
-        Assertions.assertEquals("middleName = null", result);
+        Assertions.assertEquals("middleName IS NULL", result);
     }
 
     @Test

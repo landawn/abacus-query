@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collections;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -269,6 +271,11 @@ public class AbstractQueryBuilder2025Test extends TestBase {
     }
 
     @Test
+    public void testIntoRejectsEmptyTableName() {
+        assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.insert("id").into("").toSql());
+    }
+
+    @Test
     public void testUpdateWithSet() {
         String sql = SQLBuilder.PSC.update("accounts").set("status", "inactive").set("updated_at", "NOW()").where(Filters.eq("id", 1)).toSql();
         assertNotNull(sql);
@@ -334,6 +341,18 @@ public class AbstractQueryBuilder2025Test extends TestBase {
     @Test
     public void testOrderByRejectsCommentToken() {
         assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.select("*").from("users").orderBy("id--").toSql());
+    }
+
+    @Test
+    public void testGroupByRejectsEmptyInputs() {
+        assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.select("*").from("users").groupBy().toSql());
+        assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.select("*").from("users").groupBy(Collections.emptyList()).toSql());
+    }
+
+    @Test
+    public void testOrderByRejectsEmptyInputs() {
+        assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.select("*").from("users").orderBy().toSql());
+        assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.select("*").from("users").orderBy(Collections.emptyList()).toSql());
     }
 
     @Test

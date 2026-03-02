@@ -35,6 +35,12 @@ public class ExpressionTest extends TestBase {
     }
 
     @Test
+    public void testEqualWithNull() {
+        String result = Expression.equal("middleName", null);
+        Assertions.assertEquals("middleName IS NULL", result);
+    }
+
+    @Test
     public void testEq() {
         String result = Expression.eq("status", "active");
         Assertions.assertEquals("status = 'active'", result);
@@ -44,6 +50,12 @@ public class ExpressionTest extends TestBase {
     public void testNotEqual() {
         String result = Expression.notEqual("type", "temp");
         Assertions.assertEquals("type != 'temp'", result);
+    }
+
+    @Test
+    public void testNotEqualWithNull() {
+        String result = Expression.notEqual("deleted", null);
+        Assertions.assertEquals("deleted IS NOT NULL", result);
     }
 
     @Test

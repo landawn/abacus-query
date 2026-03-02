@@ -144,7 +144,15 @@ public class BinaryTest extends TestBase {
         Binary binary = Filters.binary("deleted", Operator.EQUAL, null);
         String result = binary.toString();
 
-        Assertions.assertEquals("deleted = null", result);
+        Assertions.assertEquals("deleted IS NULL", result);
+    }
+
+    @Test
+    public void testToStringWithNullAndNotEqual() {
+        Binary binary = Filters.binary("deleted", Operator.NOT_EQUAL, null);
+        String result = binary.toString();
+
+        Assertions.assertEquals("deleted IS NOT NULL", result);
     }
 
     @Test

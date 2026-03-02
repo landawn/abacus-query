@@ -813,6 +813,14 @@ public class Expression extends LogicalCondition {
      * @return a string representation of the linked expression
      */
     static String link(final Operator operator, final String literal, final Object value) {
+        if (value == null) {
+            if (operator == Operator.EQUAL) {
+                return isNull(literal);
+            } else if (operator == Operator.NOT_EQUAL || operator == Operator.NOT_EQUAL_ANSI) {
+                return isNotNull(literal);
+            }
+        }
+
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -1690,12 +1698,12 @@ public class Expression extends LogicalCondition {
 
     /**
      * A simplified alias class for {@link Expression}.
-     * <p>
-     * This class provides the same functionality as the parent {@code Expression} class
+     *
+     * <p>This class provides the same functionality as the parent {@code Expression} class
      * but with a more concise class name. It can be used interchangeably with {@code Expression}
      * in contexts where a shorter name is preferred for readability or brevity.
-     * <p>
-     * Since this class inherits all methods and behavior from {@code Expression}, it can be
+     *
+     * <p>Since this class inherits all methods and behavior from {@code Expression}, it can be
      * used in all the same contexts with identical functionality.
      *
      * <p><b>Usage Examples:</b></p>
@@ -1708,10 +1716,10 @@ public class Expression extends LogicalCondition {
     public static class Expr extends Expression {
         /**
          * Constructs a new Expr (Expression alias) with the specified SQL literal.
-         * <p>
-         * This constructor creates a new Expression instance using the shortened Expr alias.
+         *
+         * <p>This constructor creates a new Expression instance using the shortened Expr alias.
          * It passes the provided literal directly to the parent Expression constructor.
-         * <p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Expression.Expr expr = new Expression.Expr("price * quantity");

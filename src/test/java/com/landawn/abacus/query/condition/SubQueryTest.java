@@ -120,6 +120,24 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
+    public void testCriteriaConditionNotDoubleWrappedInWhere() {
+        List<String> props = Arrays.asList("id");
+        Criteria criteria = Filters.criteria().where(Filters.eq("active", true));
+        SubQuery subQuery = Filters.subQuery("users", props, criteria);
+
+        String result = subQuery.toString();
+        Assertions.assertFalse(result.contains("WHERE  WHERE"));
+        Assertions.assertFalse(result.contains("WHERE WHERE"));
+        Assertions.assertTrue(result.contains("WHERE"));
+    }
+
+    @Test
+    public void testConstructorWithNullEntityNameAndRawSqlUsesEmptyEntityName() {
+        SubQuery subQuery = new SubQuery((String) null, "SELECT id FROM users");
+        Assertions.assertEquals("", subQuery.getEntityName());
+    }
+
+    @Test
     public void testExpressionConditionWrappedInWhere() {
         List<String> props = Arrays.asList("id");
         Expression expression = Filters.expr("status = 'active'");

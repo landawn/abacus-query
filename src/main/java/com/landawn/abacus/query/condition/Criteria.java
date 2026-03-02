@@ -111,16 +111,16 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Gets the selectModifier modifier (e.g., DISTINCT, DISTINCTROW).
-     * The selectModifier modifier appears before the SELECT columns in SQL.
-     * 
+     * Gets the SELECT modifier (e.g., DISTINCT, DISTINCTROW).
+     * The modifier appears before the column list in a SELECT statement.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = new Criteria().distinct();
      * String modifier = criteria.getSelectModifier();   // Returns "DISTINCT"
      * }</pre>
-     * 
-     * @return the selectModifier modifier, or null if not set
+     *
+     * @return the SELECT modifier, or null if not set
      */
     public String getSelectModifier() {
         return selectModifier;
@@ -243,7 +243,7 @@ public class Criteria extends AbstractCondition {
      * // Returns an unmodifiable list of 2 set operation conditions (UNION and UNION ALL)
      *
      * Criteria noSetOps = new Criteria().where(Filters.equal("status", "active"));
-     * List<Clause> empty = noAgg.getSetOperations();
+     * List<Clause> empty = noSetOps.getSetOperations();
      * // Returns an empty list
      * }</pre>
      *
@@ -606,7 +606,7 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets a custom selectModifier modifier.
+     * Sets a custom SELECT modifier.
      * This allows for database-specific modifiers not covered by other methods.
      *
      * <p><b>Usage Examples:</b></p>
@@ -620,7 +620,7 @@ public class Criteria extends AbstractCondition {
      * criteria.selectModifier("SQL_NO_CACHE");
      * }</pre>
      *
-     * @param selectModifier the custom selectModifier modifier
+     * @param selectModifier the custom SELECT modifier
      * @return this Criteria instance for method chaining
      */
     public Criteria selectModifier(final String selectModifier) {

@@ -695,8 +695,8 @@ public final class QueryUtil {
      * Gets the table alias from the @Table annotation on the entity class.
      * The alias can be used in SQL queries to reference the table with a shorter name.
      *
-     * <p>If no @Table annotation exists or if the alias is not specified in the annotation,
-     * this method returns null.</p>
+     * <p>If no @Table annotation exists, this method returns {@code null}. If @Table is present
+     * but the alias attribute is not specified, this method returns an empty string.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -714,7 +714,7 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param entityClass the entity class to check (must not be null)
-     * @return the table alias if defined in @Table annotation, null otherwise
+     * @return the table alias if defined in @Table annotation, empty string if @Table is present but alias is not set, or {@code null} if no @Table annotation exists
      * @throws IllegalArgumentException if entityClass is null
      */
     public static String getTableAlias(final Class<?> entityClass) {

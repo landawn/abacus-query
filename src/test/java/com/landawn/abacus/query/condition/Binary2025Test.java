@@ -155,6 +155,20 @@ public class Binary2025Test extends TestBase {
     }
 
     @Test
+    public void testToStringWithNullAndEqualOperator() {
+        Binary condition = new Binary("deletedAt", Operator.EQUAL, null);
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertEquals("deletedAt IS NULL", result);
+    }
+
+    @Test
+    public void testToStringWithNullAndNotEqualOperator() {
+        Binary condition = new Binary("deletedAt", Operator.NOT_EQUAL, null);
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertEquals("deletedAt IS NOT NULL", result);
+    }
+
+    @Test
     public void testToString_WithSubQueryAddsParentheses() {
         Binary condition = new Binary("userId", Operator.EQUAL, Filters.subQuery("SELECT id FROM users"));
         String result = condition.toString(NamingPolicy.NO_CHANGE);
