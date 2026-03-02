@@ -275,7 +275,7 @@ public class Join extends AbstractCondition {
 
     /**
      * Gets the list of tables or entities involved in this join.
-     * Returns a defensive copy of the tables that are being joined, including any aliases.
+     * Returns an unmodifiable view of the tables that are being joined, including any aliases.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -291,10 +291,10 @@ public class Join extends AbstractCondition {
      * // Returns: ["orders o", "order_items oi"]
      * }</pre>
      *
-     * @return a copy of the list of join entities
+     * @return an unmodifiable view of the list of join entities
      */
     public List<String> getJoinEntities() {
-        return joinEntities == null ? N.emptyList() : new ArrayList<>(joinEntities);
+        return joinEntities == null ? N.emptyList() : Collections.unmodifiableList(joinEntities);
     }
 
     /**

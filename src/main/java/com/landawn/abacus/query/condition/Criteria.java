@@ -145,7 +145,7 @@ public class Criteria extends AbstractCondition {
      * // Returns an empty list
      * }</pre>
      *
-     * @return a list of Join conditions, empty list if none exist
+     * @return an unmodifiable list of Join conditions, empty list if none exist
      */
     public List<Join> getJoins() {
         final List<Join> joins = new ArrayList<>();
@@ -156,7 +156,7 @@ public class Criteria extends AbstractCondition {
             }
         }
 
-        return joins;
+        return Collections.unmodifiableList(joins);
     }
 
     /**
@@ -240,14 +240,14 @@ public class Criteria extends AbstractCondition {
      *     .unionAll(tempUsers);
      *
      * List<Clause> setOperations = criteria.getSetOperations();
-     * // Returns a list of 2 aggregation conditions (UNION and UNION ALL)
+     * // Returns an unmodifiable list of 2 set operation conditions (UNION and UNION ALL)
      *
-     * Criteria noAgg = new Criteria().where(Filters.equal("status", "active"));
+     * Criteria noSetOps = new Criteria().where(Filters.equal("status", "active"));
      * List<Clause> empty = noAgg.getSetOperations();
      * // Returns an empty list
      * }</pre>
      *
-     * @return a list of aggregation conditions, empty if none exist
+     * @return an unmodifiable list of set operation conditions, empty if none exist
      */
     public List<Clause> getSetOperations() {
         List<Clause> result = null;
@@ -262,11 +262,7 @@ public class Criteria extends AbstractCondition {
             }
         }
 
-        if (result == null) {
-            result = N.emptyList();
-        }
-
-        return result;
+        return result == null ? N.emptyList() : Collections.unmodifiableList(result);
     }
 
     /**
@@ -362,7 +358,7 @@ public class Criteria extends AbstractCondition {
      * }</pre>
      *
      * @param operator the operator to filter by (must not be null)
-     * @return a list of conditions with the specified operator, empty list if none found
+     * @return an unmodifiable list of conditions with the specified operator, empty list if none found
      */
     public List<Condition> findConditions(final Operator operator) {
         final List<Condition> conditions = new ArrayList<>();
@@ -373,7 +369,7 @@ public class Criteria extends AbstractCondition {
             }
         }
 
-        return conditions;
+        return Collections.unmodifiableList(conditions);
     }
 
     /**
