@@ -85,6 +85,15 @@ public class ParsedSql2025Test extends TestBase {
     }
 
     @Test
+    public void testParse_WithIBatisParameterOptions() {
+        ParsedSql parsed = ParsedSql.parse("INSERT INTO users (id) VALUES (#{id,jdbcType=INTEGER})");
+        assertEquals("INSERT INTO users (id) VALUES (?)", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals(1, parsed.namedParameters().size());
+        assertEquals("id", parsed.namedParameters().get(0));
+    }
+
+    @Test
     public void testParse_MixedParametersThrows() {
         assertThrows(IllegalArgumentException.class, () -> {
             ParsedSql.parse("SELECT * FROM users WHERE id = ? AND name = :name");
@@ -275,6 +284,31 @@ public class ParsedSql2025Test extends TestBase {
         ParsedSql parsed = ParsedSql.parse("-- Comment\nSELECT * FROM users WHERE id = :id");
         assertNotNull(parsed.parameterizedSql());
         assertEquals(1, parsed.parameterCount());
+    }
+
+    @Test
+    public void testParse_ParenthesizedSelectPrefix() {
+        ParsedSql parsed = ParsedSql.parse("(SELECT :id)");
+        assertEquals("(SELECT ?)", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals("id", parsed.namedParameters().get(0));
+    }
+
+    @Test
+    public void testParse_ExplainSelectPrefix() {
+        ParsedSql parsed = ParsedSql.parse("EXPLAIN SELECT * FROM users WHERE id = :id");
+        assertEquals("EXPLAIN SELECT * FROM users WHERE id = ?", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals("id", parsed.namedParameters().get(0));
+    }
+
+    @Test
+    public void testParse_ValuesPrefix() {
+        ParsedSql parsed = ParsedSql.parse("VALUES(:id, :name)");
+        assertEquals("VALUES(?, ?)", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertEquals("id", parsed.namedParameters().get(0));
+        assertEquals("name", parsed.namedParameters().get(1));
     }
 
     @Test

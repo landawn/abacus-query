@@ -674,6 +674,10 @@ public class DynamicSQLBuilder {
          * @return this Select instance for method chaining
          */
         public SelectClause append(final Collection<String> columns) {
+            if (N.isEmpty(columns)) {
+                return this;
+            }
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -702,6 +706,10 @@ public class DynamicSQLBuilder {
          * @return this Select instance for method chaining
          */
         public SelectClause append(final Map<String, String> columnsAndAliasMap) {
+            if (N.isEmpty(columnsAndAliasMap)) {
+                return this;
+            }
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -862,6 +870,7 @@ public class DynamicSQLBuilder {
          * @return this From instance for method chaining
          */
         public FromClause join(final String table, final String on) {
+            requireFromInitialized();
             sb.append(" JOIN ").append(table).append(" ON ").append(on);
 
             return this;
@@ -882,6 +891,7 @@ public class DynamicSQLBuilder {
          * @return this From instance for method chaining
          */
         public FromClause innerJoin(final String table, final String on) {
+            requireFromInitialized();
             sb.append(" INNER JOIN ").append(table).append(" ON ").append(on);
 
             return this;
@@ -902,6 +912,7 @@ public class DynamicSQLBuilder {
          * @return this From instance for method chaining
          */
         public FromClause leftJoin(final String table, final String on) {
+            requireFromInitialized();
             sb.append(" LEFT JOIN ").append(table).append(" ON ").append(on);
 
             return this;
@@ -922,6 +933,7 @@ public class DynamicSQLBuilder {
          * @return this From instance for method chaining
          */
         public FromClause rightJoin(final String table, final String on) {
+            requireFromInitialized();
             sb.append(" RIGHT JOIN ").append(table).append(" ON ").append(on);
 
             return this;
@@ -942,9 +954,16 @@ public class DynamicSQLBuilder {
          * @return this From instance for method chaining
          */
         public FromClause fullJoin(final String table, final String on) {
+            requireFromInitialized();
             sb.append(" FULL JOIN ").append(table).append(" ON ").append(on);
 
             return this;
+        }
+
+        private void requireFromInitialized() {
+            if (sb.isEmpty()) {
+                throw new IllegalStateException("FROM clause must be initialized by append(...) before join operations");
+            }
         }
 
         /**

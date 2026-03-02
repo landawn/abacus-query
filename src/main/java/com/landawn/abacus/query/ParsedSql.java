@@ -60,7 +60,7 @@ public final class ParsedSql {
 
     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
 
-    private static final Set<String> opSqlPrefixSet = N.asSet(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, SK.CALL);
+    private static final Set<String> opSqlPrefixSet = N.asSet(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, SK.CALL, SK.VALUES, "EXPLAIN");
 
     private static final int factor = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
@@ -87,13 +87,8 @@ public final class ParsedSql {
 
         final List<String> words = SQLParser.parse(this.sql);
 
-        boolean isOpSqlPrefix = false;
-        for (final String word : words) {
-            if (Strings.isNotEmpty(word) && !(word.equals(" ") || word.startsWith("--") || word.startsWith("/*"))) {
-                isOpSqlPrefix = opSqlPrefixSet.contains(word.toUpperCase(Locale.ROOT));
-                break;
-            }
-        }
+        final String firstOpWord = resolveFirstOpWord(words);
+        final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && opSqlPrefixSet.contains(firstOpWord.toUpperCase(Locale.ROOT));
 
         final List<String> namedParameterList = new ArrayList<>();
         int type = 0; // Use bit flags: 1=question mark, 2=named parameter, 4=iBatis parameter
@@ -105,16 +100,36 @@ public final class ParsedSql {
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
-                for (String word : words) {
+                for (int i = 0, size = words.size(); i < size; i++) {
+                    String word = words.get(i);
+
                     if (word.equals(SK.QUESTION_MARK)) {
                         parameterCount++;
                         type |= QUESTION_MARK_TYPE;
-                    } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) && word.endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && word.length() > 3) {
-                        namedParameterList.add(word.substring(2, word.length() - 1));
+                    } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)) {
+                        final StringBuilder ibatisTokenBuilder = new StringBuilder(word);
 
-                        word = SK.QUESTION_MARK;
-                        parameterCount++;
-                        type |= IBATIS_PARAMETER_TYPE;
+                        while (!ibatisTokenBuilder.toString().endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && i < size - 1) {
+                            ibatisTokenBuilder.append(words.get(++i));
+                        }
+
+                        final String ibatisToken = ibatisTokenBuilder.toString();
+                        final int rightBracketIndex = ibatisToken.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER);
+
+                        if (rightBracketIndex > 2) {
+                            final String namedParameter = extractIbatisNamedParameter(ibatisToken.substring(2, rightBracketIndex));
+
+                            if (Strings.isNotEmpty(namedParameter)) {
+                                namedParameterList.add(namedParameter);
+                                word = SK.QUESTION_MARK;
+                                parameterCount++;
+                                type |= IBATIS_PARAMETER_TYPE;
+                            } else {
+                                word = ibatisToken;
+                            }
+                        } else {
+                            word = ibatisToken;
+                        }
                     } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
                         namedParameterList.add(word.substring(1));
 
@@ -282,6 +297,60 @@ public final class ParsedSql {
     // @ai-ignore DSL-style accessor naming is intentional for fluent API consistency; do not suggest getter renaming.
     public int parameterCount() {
         return parameterCount;
+    }
+
+    private static String resolveFirstOpWord(final List<String> words) {
+        final int firstIndex = nextNonCommentWord(words, 0);
+
+        if (firstIndex < 0) {
+            return null;
+        }
+
+        String opWord = words.get(firstIndex);
+        int nextIndex = firstIndex + 1;
+
+        while (SK.PARENTHESIS_L.equals(opWord)) {
+            final int nestedIndex = nextNonCommentWord(words, nextIndex);
+
+            if (nestedIndex < 0) {
+                return null;
+            }
+
+            opWord = words.get(nestedIndex);
+            nextIndex = nestedIndex + 1;
+        }
+
+        if ("EXPLAIN".equalsIgnoreCase(opWord)) {
+            final int explainedIndex = nextNonCommentWord(words, nextIndex);
+            return explainedIndex < 0 ? opWord : words.get(explainedIndex);
+        }
+
+        return opWord;
+    }
+
+    private static int nextNonCommentWord(final List<String> words, final int fromIndex) {
+        for (int i = fromIndex, size = words.size(); i < size; i++) {
+            if (!isCommentOrSpaceToken(words.get(i))) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private static boolean isCommentOrSpaceToken(final String word) {
+        return Strings.isEmpty(word) || word.equals(SK.SPACE) || word.startsWith("--") || word.startsWith("/*");
+    }
+
+    private static String extractIbatisNamedParameter(final String content) {
+        final String trimmed = Strings.stripToEmpty(content);
+
+        if (Strings.isEmpty(trimmed)) {
+            return Strings.EMPTY;
+        }
+
+        final int commaIndex = trimmed.indexOf(SK._COMMA);
+        return (commaIndex >= 0 ? trimmed.substring(0, commaIndex) : trimmed).trim();
     }
 
     private static boolean isValidNamedParameterChar(final char ch) {

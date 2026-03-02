@@ -348,6 +348,8 @@ public final class QueryUtil {
      */
     @Internal
     public static Collection<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames) {
+        N.checkArgNotNull(entity, "entity");
+
         final Class<?> entityClass = entity.getClass();
 
         final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);

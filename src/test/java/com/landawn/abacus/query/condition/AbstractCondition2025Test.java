@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -116,6 +117,13 @@ public class AbstractCondition2025Test extends TestBase {
     }
 
     @Test
+    public void testParameter2String_StringEscapesQuote() {
+        Equal condition = new Equal("name", "O'Brien");
+        String str = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("O\\'Brien"));
+    }
+
+    @Test
     public void testParameter2String_Null() {
         Equal condition = new Equal("name", null);
         List<Object> params = condition.getParameters();
@@ -192,6 +200,14 @@ public class AbstractCondition2025Test extends TestBase {
         String str = outerCondition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("userId"));
         assertTrue(str.contains("id"));
+    }
+
+    @Test
+    public void testParameter2String_WithSubQueryAddsParentheses() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+        Equal outerCondition = new Equal("userId", subQuery);
+        String str = outerCondition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("= (SELECT id FROM users)"));
     }
 
     @Test

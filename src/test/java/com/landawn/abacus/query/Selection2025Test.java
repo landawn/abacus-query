@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -198,6 +199,19 @@ public class Selection2025Test extends TestBase {
 
         assertNotNull(selections);
         assertEquals(2, selections.size());
+    }
+
+    @Test
+    public void testMultiSelectionBuilder_BuildReturnsSnapshot() {
+        Selection.MultiSelectionBuilder builder = Selection.multiSelectionBuilder().add(String.class);
+        List<Selection> firstBuild = builder.build();
+
+        builder.add(Integer.class);
+        List<Selection> secondBuild = builder.build();
+
+        assertEquals(1, firstBuild.size());
+        assertEquals(2, secondBuild.size());
+        assertThrows(UnsupportedOperationException.class, () -> firstBuild.add(new Selection()));
     }
 
     @Test

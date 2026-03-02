@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.LinkedHashMap;
@@ -153,6 +154,11 @@ public class On2025Test extends TestBase {
     }
 
     @Test
+    public void testCreateOnCondition_ThrowsOnEmptyRightPropName() {
+        assertThrows(IllegalArgumentException.class, () -> On.createOnCondition("users.id", ""));
+    }
+
+    @Test
     public void testCreateOnCondition_Map_SingleEntry() {
         Map<String, String> map = new LinkedHashMap<>();
         map.put("a.id", "b.id");
@@ -169,6 +175,13 @@ public class On2025Test extends TestBase {
         Condition condition = On.createOnCondition(map);
         assertNotNull(condition);
         assertTrue(condition instanceof And);
+    }
+
+    @Test
+    public void testCreateOnCondition_Map_ThrowsOnEmptyRightValue() {
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("a.id", "");
+        assertThrows(IllegalArgumentException.class, () -> On.createOnCondition(map));
     }
 
     @Test

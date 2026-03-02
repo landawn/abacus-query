@@ -18,6 +18,7 @@ package com.landawn.abacus.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -524,5 +525,27 @@ public class SQLMapper2025Test extends TestBase {
         assertNotNull(copiedAttrs);
         assertEquals("100", copiedAttrs.get("batchSize"));
         assertEquals("30", copiedAttrs.get("timeout"));
+    }
+
+    @Test
+    public void testEquals_DifferentAttributesAreNotEqual() {
+        SQLMapper firstMapper = new SQLMapper();
+        firstMapper.add("query1", "SELECT * FROM users", Map.of("timeout", "10"));
+
+        SQLMapper secondMapper = new SQLMapper();
+        secondMapper.add("query1", "SELECT * FROM users", Map.of("timeout", "30"));
+
+        assertNotEquals(firstMapper, secondMapper);
+    }
+
+    @Test
+    public void testHashCode_DifferentAttributesAreDifferent() {
+        SQLMapper firstMapper = new SQLMapper();
+        firstMapper.add("query1", "SELECT * FROM users", Map.of("timeout", "10"));
+
+        SQLMapper secondMapper = new SQLMapper();
+        secondMapper.add("query1", "SELECT * FROM users", Map.of("timeout", "30"));
+
+        assertNotEquals(firstMapper.hashCode(), secondMapper.hashCode());
     }
 }

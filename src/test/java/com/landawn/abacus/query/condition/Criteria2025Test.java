@@ -682,6 +682,16 @@ public class Criteria2025Test extends TestBase {
     }
 
     @Test
+    public void testGetParametersIncludesGroupByAndOrderByConditions() {
+        Criteria criteria = new Criteria();
+        criteria.groupBy(Filters.equal("department", "Engineering"));
+        criteria.orderBy(Filters.equal("priority", "HIGH"));
+
+        List<Object> params = criteria.getParameters();
+        assertEquals(Arrays.asList("Engineering", "HIGH"), params);
+    }
+
+    @Test
     public void testWhereWithWhereOperator() {
         Criteria criteria = new Criteria();
         Where where = new Where(Filters.equal("status", "active"));

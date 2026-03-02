@@ -125,6 +125,11 @@ public class QueryUtil2025Test extends TestBase {
     }
 
     @Test
+    public void testGetInsertPropNames_WithEntityNullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.getInsertPropNames((Object) null, Collections.emptySet()));
+    }
+
+    @Test
     public void testGetInsertPropNames_WithClassAndExcluded() {
         Set<String> excluded = new HashSet<>();
         excluded.add("createdTime");

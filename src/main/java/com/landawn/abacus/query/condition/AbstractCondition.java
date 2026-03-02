@@ -178,14 +178,20 @@ public abstract class AbstractCondition implements Condition, Cloneable {
         }
 
         if (parameter instanceof String) {
-            return SK._SINGLE_QUOTE + parameter.toString() + SK._SINGLE_QUOTE;
+            return SK._SINGLE_QUOTE + Strings.quoteEscaped(parameter.toString()) + SK._SINGLE_QUOTE;
         }
 
         if (parameter instanceof Condition) {
             if (parameter == IsNull.NULL || parameter == IsNaN.NAN || parameter == IsInfinite.INFINITE) { //NOSONAR
                 return parameter.toString();
             } else {
-                return ((Condition) parameter).toString(namingPolicy);
+                final String conditionString = ((Condition) parameter).toString(namingPolicy);
+
+                if (parameter instanceof SubQuery) {
+                    return SK.PARENTHESIS_L + conditionString + SK.PARENTHESIS_R;
+                }
+
+                return conditionString;
             }
         }
 

@@ -222,6 +222,9 @@ public class On extends Cell {
      * @return an Equal condition comparing the two columns
      */
     static Condition createOnCondition(final String propName, final String anotherPropName) {
+        N.checkArgNotEmpty(propName, "propName");
+        N.checkArgNotEmpty(anotherPropName, "anotherPropName");
+
         return new Equal(propName, Filters.expr(anotherPropName));
     }
 

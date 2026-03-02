@@ -473,12 +473,11 @@ public class Criteria extends AbstractCondition {
                 parameters.addAll(where.getParameters());
             }
 
-            // group by no parameters.
-            /*
-             * Clause groupBy = getGroupBy();
-             *
-             * if (groupBy != null) { parameters.addAll(groupBy.getParameters()); }
-             */
+            final Clause groupBy = getGroupBy();
+
+            if (groupBy != null) {
+                parameters.addAll(groupBy.getParameters());
+            }
             final Clause having = getHaving();
 
             if (having != null) {
@@ -491,19 +490,17 @@ public class Criteria extends AbstractCondition {
                 parameters.addAll(cond.getParameters());
             }
 
-            // order by no parameters.
-            /*
-             * Clause orderBy = getOrderBy();
-             *
-             * if (orderBy != null) { parameters.addAll(orderBy.getParameters()); }
-             */
+            final Clause orderBy = getOrderBy();
 
-            // limit no parameters.
-            /*
-             * Clause limit = getLimit();
-             *
-             * if (limit != null) { parameters.addAll(limit.getParameters()); }
-             */
+            if (orderBy != null) {
+                parameters.addAll(orderBy.getParameters());
+            }
+
+            final Clause limit = getLimit();
+
+            if (limit != null) {
+                parameters.addAll(limit.getParameters());
+            }
             return ImmutableList.wrap(parameters);
         } else {
             return N.emptyList();
@@ -1621,6 +1618,19 @@ public class Criteria extends AbstractCondition {
         if (!CriteriaUtil.isClause(cond.operator())) {
             throw new IllegalArgumentException(
                     "Invalid operator '" + cond.operator() + "' for Criteria. Expected clause operators: WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.");
+        }
+
+        if ((cond.operator() == Operator.WHERE || cond.operator() == Operator.GROUP_BY || cond.operator() == Operator.HAVING
+                || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.LIMIT || cond.operator() == Operator.UNION
+                || cond.operator() == Operator.UNION_ALL || cond.operator() == Operator.INTERSECT || cond.operator() == Operator.EXCEPT
+                || cond.operator() == Operator.MINUS) && !(cond instanceof Clause)) {
+            throw new IllegalArgumentException("Condition with operator '" + cond.operator() + "' must be an instance of Clause");
+        }
+
+        if ((cond.operator() == Operator.JOIN || cond.operator() == Operator.LEFT_JOIN || cond.operator() == Operator.RIGHT_JOIN
+                || cond.operator() == Operator.FULL_JOIN || cond.operator() == Operator.CROSS_JOIN || cond.operator() == Operator.INNER_JOIN
+                || cond.operator() == Operator.NATURAL_JOIN) && !(cond instanceof Join)) {
+            throw new IllegalArgumentException("Condition with operator '" + cond.operator() + "' must be an instance of Join");
         }
     }
 

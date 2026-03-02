@@ -155,6 +155,13 @@ public class Binary2025Test extends TestBase {
     }
 
     @Test
+    public void testToString_WithSubQueryAddsParentheses() {
+        Binary condition = new Binary("userId", Operator.EQUAL, Filters.subQuery("SELECT id FROM users"));
+        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("= (SELECT id FROM users)"));
+    }
+
+    @Test
     public void testHashCode() {
         Binary cond1 = new Binary("age", Operator.EQUAL, 25);
         Binary cond2 = new Binary("age", Operator.EQUAL, 25);

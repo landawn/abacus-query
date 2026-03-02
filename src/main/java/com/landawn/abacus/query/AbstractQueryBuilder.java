@@ -57,6 +57,7 @@ import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Limit;
+import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.ClassUtil;
@@ -976,7 +977,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         _sb.append(SK._PARENTHESIS_L);
                     }
 
-                    appendInsertProps(localProps, insertColumnNames);
+                    appendInsertProps(localProps, insertColumnNames, i - 1);
                 }
             }
 
@@ -1227,9 +1228,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SQLBuilder instance for method chaining
      */
     public This from(final Class<?> entityClass, final String alias) {
-        if (_entityClass == null) {
-            setEntityClass(entityClass);
-        }
+        setEntityClass(entityClass);
 
         if (Strings.isEmpty(alias)) {
             return from(getTableName(entityClass, _namingPolicy));
@@ -1239,9 +1238,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     protected This from(final Class<?> entityClass, final Collection<String> tableNames) {
-        if (_entityClass == null) {
-            setEntityClass(entityClass);
-        }
+        setEntityClass(entityClass);
 
         return from(tableNames);
     }
@@ -1976,7 +1973,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This using(final String expr) {
         _sb.append(_SPACE_USING_SPACE);
 
-        appendColumnName(expr);
+        final String trimmedExpr = expr == null ? null : expr.trim();
+
+        if (Strings.isNotEmpty(trimmedExpr) && trimmedExpr.startsWith(SK.PARENTHESIS_L) && trimmedExpr.endsWith(SK.PARENTHESIS_R)) {
+            appendStringExpr(trimmedExpr, false);
+        } else {
+            _sb.append(SK._PARENTHESIS_L);
+            appendColumnName(expr);
+            _sb.append(SK._PARENTHESIS_R);
+        }
 
         return (This) this;
     }
@@ -4598,7 +4603,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (Filters.QME.equals(propValue)) {
             _sb.append(SK._QUESTION_MARK);
         } else if (propValue instanceof Condition) {
-            appendCondition((Condition) propValue);
+            appendConditionAsParameter((Condition) propValue);
         } else {
             _sb.append(Expression.normalize(propValue));
         }
@@ -4613,7 +4618,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (Filters.QME.equals(propValue)) {
             _sb.append(SK._QUESTION_MARK);
         } else if (propValue instanceof Condition) {
-            appendCondition((Condition) propValue);
+            appendConditionAsParameter((Condition) propValue);
         } else {
             _sb.append(SK._QUESTION_MARK);
 
@@ -4631,7 +4636,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (Filters.QME.equals(propValue)) {
             _handlerForNamedParameter.accept(_sb, propName);
         } else if (propValue instanceof Condition) {
-            appendCondition((Condition) propValue);
+            appendConditionAsParameter((Condition) propValue);
         } else {
             _handlerForNamedParameter.accept(_sb, propName);
 
@@ -4651,7 +4656,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             _sb.append(propName);
             _sb.append('}');
         } else if (propValue instanceof Condition) {
-            appendCondition((Condition) propValue);
+            appendConditionAsParameter((Condition) propValue);
         } else {
             _sb.append("#{");
             _sb.append(propName);
@@ -4704,7 +4709,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param props a map of property names to values to be inserted
      */
     protected void appendInsertProps(final Map<String, Object> props) {
-        appendInsertProps(props, props.keySet());
+        appendInsertProps(props, props.keySet(), -1);
     }
 
     /**
@@ -4714,6 +4719,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propNames the ordered column names
      */
     protected void appendInsertProps(final Map<String, Object> props, final Collection<String> propNames) {
+        appendInsertProps(props, propNames, -1);
+    }
+
+    /**
+     * Appends the values for an INSERT operation in the specified column order.
+     *
+     * @param props a map of property names to values to be inserted
+     * @param propNames the ordered column names
+     * @param rowIndex zero-based row index in batch insert mode; negative for single-row insert
+     */
+    protected void appendInsertProps(final Map<String, Object> props, final Collection<String> propNames, final int rowIndex) {
         switch (_sqlPolicy) {
             case RAW_SQL: {
                 int i = 0;
@@ -4750,7 +4766,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         _sb.append(_COMMA_SPACE);
                     }
 
-                    setParameterForNamedSQL(propName, props.get(propName));
+                    final String namedPropName = rowIndex >= 0 ? propName + "_" + rowIndex : propName;
+                    setParameterForNamedSQL(namedPropName, props.get(propName));
                 }
 
                 break;
@@ -4763,7 +4780,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         _sb.append(_COMMA_SPACE);
                     }
 
-                    setParameterForIbatisNamedSQL(propName, props.get(propName));
+                    final String namedPropName = rowIndex >= 0 ? propName + "_" + rowIndex : propName;
+                    setParameterForIbatisNamedSQL(namedPropName, props.get(propName));
                 }
 
                 break;
@@ -4775,6 +4793,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     protected abstract void appendCondition(final Condition cond);
+
+    protected void appendConditionAsParameter(final Condition cond) {
+        if (cond instanceof SubQuery) {
+            _sb.append(SK._PARENTHESIS_L);
+            appendCondition(cond);
+            _sb.append(SK._PARENTHESIS_R);
+        } else {
+            appendCondition(cond);
+        }
+    }
 
     protected void appendStringExpr(final String expr, final boolean isFromAppendColumn) {
         // TODO performance improvement.
@@ -5106,10 +5134,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final Optional<?> first = N.firstNonNull(propsList);
 
         if (first.isPresent() && first.get() instanceof Map) {
-            if (propsList instanceof List) {
-                return (List<Map<String, Object>>) propsList;
+            final List<Map<String, Object>> newPropsList = new ArrayList<>(propsList.size());
+
+            for (final Object props : propsList) {
+                if (props == null) {
+                    continue;
+                }
+
+                N.checkArgument(props instanceof Map, "All elements in propsList must be Map when the first non-null element is Map");
+                newPropsList.add((Map<String, Object>) props);
             }
-            return new ArrayList<>((Collection<Map<String, Object>>) propsList);
+
+            N.checkArgument(N.notEmpty(newPropsList), "All elements in propsList are null");
+
+            return newPropsList;
         }
 
         N.checkArgument(first.isPresent(), "All elements in propsList are null");

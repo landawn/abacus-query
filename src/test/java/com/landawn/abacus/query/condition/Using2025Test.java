@@ -177,6 +177,11 @@ public class Using2025Test extends TestBase {
     }
 
     @Test
+    public void testCreateUsingCondition_ThrowsOnEmptyElementInArray() {
+        assertThrows(IllegalArgumentException.class, () -> Using.createUsingCondition("id", ""));
+    }
+
+    @Test
     public void testCreateUsingCondition_ThrowsOnNullCollection() {
         assertThrows(IllegalArgumentException.class, () -> {
             Using.createUsingCondition((List<String>) null);
@@ -188,6 +193,11 @@ public class Using2025Test extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> {
             Using.createUsingCondition(Arrays.asList());
         });
+    }
+
+    @Test
+    public void testCreateUsingCondition_ThrowsOnNullElementInCollection() {
+        assertThrows(IllegalArgumentException.class, () -> Using.createUsingCondition(Arrays.asList("id", null)));
     }
 
     @Test

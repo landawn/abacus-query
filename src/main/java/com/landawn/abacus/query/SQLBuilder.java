@@ -34,6 +34,7 @@ import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Cell;
+import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Having;
@@ -495,13 +496,13 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
             _sb.append(SK._PARENTHESIS_R);
         } else if (cond instanceof Where || cond instanceof Having) {
-            final Cell cell = (Cell) cond;
+            final Clause clause = (Clause) cond;
 
             _sb.append(_SPACE);
-            _sb.append(cell.operator().toString());
+            _sb.append(clause.operator().toString());
             _sb.append(_SPACE);
 
-            appendCondition(cell.getCondition());
+            appendCondition(clause.getCondition());
         } else if (cond instanceof final Cell cell) {
             _sb.append(_SPACE);
             _sb.append(cell.operator().toString());

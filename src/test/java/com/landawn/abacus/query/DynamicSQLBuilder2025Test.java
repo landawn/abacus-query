@@ -17,6 +17,7 @@
 package com.landawn.abacus.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -73,6 +74,15 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         builder.from().append("users");
         String sql = builder.build();
         assertEquals("SELECT id, name, email FROM users", sql);
+    }
+
+    @Test
+    public void testSelectAppendEmptyCollectionDoesNotCreateSkeleton() {
+        DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+        builder.select().append(Arrays.asList());
+        builder.from().append("users");
+        String sql = builder.build();
+        assertFalse(sql.contains("SELECT  FROM"));
     }
 
     @Test
@@ -149,6 +159,13 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         builder.from().append("users", "u").join("orders o", "u.id = o.user_id");
         String sql = builder.build();
         assertEquals("SELECT * FROM users u JOIN orders o ON u.id = o.user_id", sql);
+    }
+
+    @Test
+    public void testFromJoin_ThrowsWhenFromNotInitialized() {
+        DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+        builder.select().append("*");
+        assertThrows(IllegalStateException.class, () -> builder.from().join("orders o", "u.id = o.user_id"));
     }
 
     @Test

@@ -333,7 +333,7 @@ public class SQLBuilder2025Test extends TestBase {
 
         AbstractQueryBuilder.SP sP = SQLBuilder.NSC.batchInsert(rows).into("users").build();
 
-        assertEquals("INSERT INTO users (first_name, last_name) VALUES (:firstName, :lastName), (:firstName, :lastName)", sP.sql);
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sP.sql);
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sP.parameters);
     }
 
@@ -353,7 +353,28 @@ public class SQLBuilder2025Test extends TestBase {
 
         AbstractQueryBuilder.SP sP = SQLBuilder.NLC.batchInsert(rows).into("users").build();
 
-        assertEquals("INSERT INTO users (firstName, lastName) VALUES (:firstName, :lastName), (:firstName, :lastName)", sP.sql);
+        assertEquals("INSERT INTO users (firstName, lastName) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sP.sql);
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sP.parameters);
+    }
+
+    @Test
+    public void testBatchInsertWithNullMapRows() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        row2.put("lastName", "Smith");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(null);
+        rows.add(row2);
+
+        AbstractQueryBuilder.SP sP = SQLBuilder.PSC.batchInsert(rows).into("users").build();
+
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sP.sql);
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sP.parameters);
     }
 
@@ -650,7 +671,13 @@ public class SQLBuilder2025Test extends TestBase {
     @Test
     public void testJoinUsing() {
         String sql = SQLBuilder.PSC.select("*").from("users").join("orders").using("user_id").toSql();
-        assertTrue(sql.contains("USING"));
+        assertTrue(sql.contains("USING (user_id)"));
+    }
+
+    @Test
+    public void testBinaryWithSubQueryRhsIsParenthesized() {
+        String sql = SQLBuilder.PSC.select("*").from("users").where(Filters.equal("id", Filters.subQuery("SELECT MAX(user_id) FROM orders"))).toSql();
+        assertTrue(sql.contains("id = (SELECT MAX(user_id) FROM orders)"));
     }
 
     // Offset tests

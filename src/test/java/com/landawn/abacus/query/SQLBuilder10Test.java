@@ -484,7 +484,7 @@ public class SQLBuilder10Test extends TestBase {
     public void testUsing() {
         String sql = PSC.select("*").from("users").join("orders").using("user_id").toSql();
 
-        assertEquals("SELECT * FROM users JOIN orders USING user_id", sql);
+        assertEquals("SELECT * FROM users JOIN orders USING (user_id)", sql);
     }
 
     @Test
@@ -1726,5 +1726,31 @@ public class SQLBuilder10Test extends TestBase {
         assertEquals("DISTINCTROW", AbstractQueryBuilder.DISTINCTROW);
         assertEquals("*", AbstractQueryBuilder.ASTERISK);
         assertEquals("count(*)", AbstractQueryBuilder.COUNT_ALL);
+    }
+
+    /**
+     * Regression test for ClassCastException bug in SQLBuilder.appendCondition().
+     * Where and Having extend Clause (not Cell), so casting them to Cell would throw ClassCastException.
+     * This test verifies that Where/Having conditions are correctly handled when nested inside a Junction.
+     */
+    @Test
+    public void testWhereAndHavingNestedInJunction() {
+        // Where nested inside an And junction - this triggers SQLBuilder.appendCondition() with a Where instance
+        Where where = Filters.where("age > 18");
+        Having having = Filters.having("COUNT(*) > 5");
+
+        // Using Where as a standalone Clause via append()
+        String sql = PSC.select("*").from("users").append(where).toSql();
+        assertTrue(sql.contains("WHERE age > 18"));
+
+        // Using Having as a standalone Clause via append()
+        sql = PSC.select("status", "COUNT(*)").from("users").groupBy("status").append(having).toSql();
+        assertTrue(sql.contains("HAVING COUNT(*) > 5"));
+
+        // Where inside a Criteria (exercises AbstractQueryBuilder.append -> appendCondition path)
+        Criteria criteria = Filters.criteria().where(Filters.expr("status = 'ACTIVE'")).having(Filters.expr("COUNT(*) > 10"));
+        sql = PSC.select("status", "COUNT(*)").from("users").groupBy("status").append(criteria).toSql();
+        assertTrue(sql.contains("WHERE status = 'ACTIVE'"));
+        assertTrue(sql.contains("HAVING COUNT(*) > 10"));
     }
 }

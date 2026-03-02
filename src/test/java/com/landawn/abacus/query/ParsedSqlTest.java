@@ -162,6 +162,17 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
+    public void testParse_withIbatisParameterOptions() {
+        String sql = "INSERT INTO users (id) VALUES (#{id,jdbcType=INTEGER})";
+        ParsedSql parsed = ParsedSql.parse(sql);
+
+        Assertions.assertEquals("INSERT INTO users (id) VALUES (?)", parsed.parameterizedSql());
+        List<String> namedParams = parsed.namedParameters();
+        Assertions.assertEquals(1, namedParams.size());
+        Assertions.assertEquals("id", namedParams.get(0));
+    }
+
+    @Test
     public void testParse_nonOperationSql() {
         String sql = "SET @variable = :value";
         ParsedSql parsed = ParsedSql.parse(sql);
@@ -182,6 +193,16 @@ public class ParsedSqlTest extends TestBase {
         Assertions.assertEquals("status", namedParams.get(0));
         Assertions.assertEquals("id", namedParams.get(1));
         Assertions.assertEquals(2, parsed.parameterCount());
+    }
+
+    @Test
+    public void testParse_parenthesizedSelectPrefix() {
+        String sql = "(SELECT :id)";
+        ParsedSql parsed = ParsedSql.parse(sql);
+
+        Assertions.assertEquals("(SELECT ?)", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertEquals("id", parsed.namedParameters().get(0));
     }
 
     @Test

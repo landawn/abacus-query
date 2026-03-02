@@ -214,8 +214,8 @@ public class SQLBuilder14Test extends TestBase {
             String sql = MSB.batchInsert(propsList).into("users").toSql();
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("VALUES"));
-            Assertions.assertTrue(sql.contains("#{name}"));
-            Assertions.assertTrue(sql.contains("#{name}"));
+            Assertions.assertTrue(sql.contains("#{name_0}"));
+            Assertions.assertTrue(sql.contains("#{name_1}"));
         }
 
         @Test
@@ -572,7 +572,7 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("INSERT INTO users"));
             Assertions.assertTrue(sql.contains("(first_name, last_name)"));
             Assertions.assertTrue(sql.contains("VALUES"));
-            Assertions.assertTrue(sql.contains("#{firstName}"));
+            Assertions.assertTrue(sql.contains("#{firstName_0}"));
         }
 
         @Test
@@ -1011,8 +1011,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("INSERT INTO ACCOUNT"));
             Assertions.assertTrue(sql.contains("(FIRST_NAME, LAST_NAME)"));
             Assertions.assertTrue(sql.contains("VALUES"));
-            Assertions.assertTrue(sql.contains("#{firstName}"));
-            Assertions.assertTrue(sql.contains("#{lastName}"));
+            Assertions.assertTrue(sql.contains("#{firstName_0}"));
+            Assertions.assertTrue(sql.contains("#{lastName_1}"));
         }
 
         @Test
@@ -1484,8 +1484,8 @@ public class SQLBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("INSERT INTO account"));
             Assertions.assertTrue(sql.contains("(firstName, lastName)"));
             Assertions.assertTrue(sql.contains("VALUES"));
-            Assertions.assertTrue(sql.contains("#{firstName}"));
-            Assertions.assertTrue(sql.contains("#{lastName}"));
+            Assertions.assertTrue(sql.contains("#{firstName_0}"));
+            Assertions.assertTrue(sql.contains("#{lastName_1}"));
         }
 
         @Test

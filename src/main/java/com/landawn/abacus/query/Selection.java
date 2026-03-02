@@ -272,7 +272,7 @@ public final class Selection {
          * @return an unmodifiable list of Selection objects
          */
         public List<Selection> build() {
-            return Collections.unmodifiableList(selections);
+            return Collections.unmodifiableList(new ArrayList<>(selections));
         }
 
         /**
