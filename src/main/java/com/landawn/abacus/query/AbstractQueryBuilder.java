@@ -88,7 +88,7 @@ import com.landawn.abacus.util.stream.Stream;
  *   <li>Complex joins, subqueries, and conditions</li>
  * </ul>
  * 
- * <p>The builder must be finalized by calling {@code toSql()} or {@code toSqlAndParameters()} to generate
+ * <p>The builder must be finalized by calling {@code toSql()} or {@code build()} to generate
  * the SQL string and release resources.</p>
  * 
  * <p><b>Usage Examples:</b></p>
@@ -400,8 +400,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
-            logger.error("Too many(" + activeStringBuilderCounter.get()
-                    + ") StringBuilder instances are created in SQLBuilder. The method toSql()/toSqlAndParameters()"
+            logger.error("Too many(" + activeStringBuilderCounter.get() + ") StringBuilder instances are created in SQLBuilder. The method toSql()/build()"
                     + " must be called to release resources and close SQLBuilder");
         }
 
@@ -4113,7 +4112,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public String toSql() {
         if (_sb == null) {
-            throw new IllegalStateException("SQLBuilder is closed and cannot be reused after toSql()/toSqlAndParameters() was called");
+            throw new IllegalStateException("SQLBuilder is closed and cannot be reused after toSql()/build() was called");
         }
 
         String sql = null;
@@ -4145,28 +4144,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * SP sqlPair = PSC.select("*")
      *                 .from("account")
      *                 .where(Filters.equal("status", "ACTIVE"))
-     *                 .toSqlAndParameters();
+     *                 .build();
      * // sqlPair.sql contains: "SELECT * FROM account WHERE status = ?"
      * // sqlPair.parameters contains: ["ACTIVE"]
      * }</pre>
      *
      * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
      */
-    public SP toSqlAndParameters() {
+    public SP build() {
         final String sql = toSql();
 
-        return new SP(sql, _parameters);
-    }
-
-    /**
-     * Generates both the SQL string and parameters.
-     *
-     * @return the generated SQL-parameters pair
-     * @deprecated Use {@link #toSqlAndParameters()} instead.
-     */
-    @Deprecated
-    public SP build() {
-        return toSqlAndParameters();
+        return new SP(sql, ImmutableList.wrap(_parameters));
     }
 
     //    /**
@@ -4211,7 +4199,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> func) throws E {
-        return func.apply(toSqlAndParameters());
+        return func.apply(build());
     }
 
     /**
@@ -4234,7 +4222,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> func) throws E {
-        final SP sP = toSqlAndParameters();
+        final SP sP = build();
 
         return func.apply(sP.sql, sP.parameters);
     }
@@ -4256,7 +4244,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E {
-        consumer.accept(toSqlAndParameters());
+        consumer.accept(build());
     }
 
     /**
@@ -4279,7 +4267,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E {
-        final SP sP = toSqlAndParameters();
+        final SP sP = build();
 
         consumer.accept(sP.sql, sP.parameters);
     }
@@ -5462,72 +5450,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // [123]
      * }</pre>
      */
-    public static final class SP {
-        /**
-         * The generated SQL string with parameter placeholders.
-         * For parameterized SQL, placeholders are '?'.
-         * For named SQL, placeholders are ':paramName' or '#{paramName}'.
-         */
-        public final String sql;
-
-        /**
-         * The list of parameter values in the order they appear in the SQL.
-         * This list is immutable and cannot be modified after creation.
-         */
-        public final ImmutableList<Object> parameters;
-
-        /**
-         * Creates a new SQL-Parameters pair.
-         * Internal constructor - instances are created by SQLBuilder.
-         * 
-         * @param sql the SQL string
-         * @param parameters the parameter values
-         */
-        SP(final String sql, final List<Object> parameters) {
-            this.sql = sql;
-            this.parameters = ImmutableList.wrap(parameters);
-        }
-
-        /**
-         * Returns a hash code value for this SP object.
-         * The hash code is computed based on both the SQL string and parameters.
-         *
-         * @return a hash code value for this object
-         */
-        @Override
-        public int hashCode() {
-            return N.hashCode(sql) * 31 + N.hashCode(parameters);
-        }
-
-        /**
-         * Indicates whether some other object is "equal to" this one.
-         * Two SP objects are equal if they have the same SQL string and parameters.
-         *
-         * @param obj the reference object with which to compare
-         * @return {@code true} if this object is the same as the obj argument; false otherwise
-         */
-        @Override
-        public boolean equals(final Object obj) {
-            if (this == obj) {
-                return true;
-            }
-
-            if (obj instanceof final SP other) {
-                return N.equals(other.sql, sql) && N.equals(other.parameters, parameters);
-            }
-
-            return false;
-        }
-
-        /**
-         * Returns a string representation of this SP object.
-         * The string contains both the SQL and parameters for debugging purposes.
-         *
-         * @return a string representation of the object
-         */
-        @Override
-        public String toString() {
-            return "{sql=" + sql + ", parameters=" + N.toString(parameters) + "}";
-        }
+    public static final record SP(String sql, ImmutableList<Object> parameters) {
     }
 }

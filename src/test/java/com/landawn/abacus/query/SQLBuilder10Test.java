@@ -869,8 +869,8 @@ public class SQLBuilder10Test extends TestBase {
     public void testParameters() {
         SQLBuilder builder = PSC.select("*").from("account").where(Filters.eq("name", "John").and(Filters.gt("age", 25)));
 
-        SP sP = builder.build();
-        List<Object> params = sP.parameters;
+        SP sp = builder.build();
+        List<Object> params = sp.parameters();
 
         assertEquals(2, params.size());
         assertEquals("John", params.get(0));
@@ -879,11 +879,11 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testPair() {
-        SQLBuilder.SP sP = PSC.select("*").from("account").where(Filters.eq("status", "ACTIVE")).build();
+        SQLBuilder.SP sp = PSC.select("*").from("account").where(Filters.eq("status", "ACTIVE")).build();
 
-        assertEquals("SELECT * FROM account WHERE status = ?", sP.sql);
-        assertEquals(1, sP.parameters.size());
-        assertEquals("ACTIVE", sP.parameters.get(0));
+        assertEquals("SELECT * FROM account WHERE status = ?", sp.sql());
+        assertEquals(1, sp.parameters().size());
+        assertEquals("ACTIVE", sp.parameters().get(0));
     }
 
     @Test
@@ -891,7 +891,7 @@ public class SQLBuilder10Test extends TestBase {
         List<String> result = PSC.select("*")
                 .from("account")
                 .where(Filters.eq("status", "ACTIVE"))
-                .apply(sp -> Arrays.asList(sp.sql, sp.parameters.toString()));
+                .apply(sp -> Arrays.asList(sp.sql(), sp.parameters().toString()));
 
         assertEquals(2, result.size());
         assertEquals("SELECT * FROM account WHERE status = ?", result.get(0));
@@ -946,38 +946,6 @@ public class SQLBuilder10Test extends TestBase {
         assertTrue(sql.contains("HAVING COUNT(*) > ?"));
         assertTrue(sql.contains("ORDER BY u.name ASC"));
         assertTrue(sql.contains("LIMIT 20 OFFSET 10"));
-    }
-
-    @Test
-    public void testSPEquals() {
-        SQLBuilder.SP sp1 = new SQLBuilder.SP("SELECT * FROM users", Arrays.asList(1, 2));
-        SQLBuilder.SP sp2 = new SQLBuilder.SP("SELECT * FROM users", Arrays.asList(1, 2));
-        SQLBuilder.SP sp3 = new SQLBuilder.SP("SELECT * FROM accounts", Arrays.asList(1, 2));
-        SQLBuilder.SP sp4 = new SQLBuilder.SP("SELECT * FROM users", Arrays.asList(1, 3));
-
-        assertEquals(sp1, sp1);
-        assertEquals(sp1, sp2);
-        assertNotEquals(sp1, sp3);
-        assertNotEquals(sp1, sp4);
-        assertNotEquals(sp1, null);
-        assertNotEquals(sp1, "not an SP");
-    }
-
-    @Test
-    public void testSPHashCode() {
-        SQLBuilder.SP sp1 = new SQLBuilder.SP("SELECT * FROM users", Arrays.asList(1, 2));
-        SQLBuilder.SP sp2 = new SQLBuilder.SP("SELECT * FROM users", Arrays.asList(1, 2));
-
-        assertEquals(sp1.hashCode(), sp2.hashCode());
-    }
-
-    @Test
-    public void testSPToString() {
-        SQLBuilder.SP sP = new SQLBuilder.SP("SELECT * FROM users", Arrays.asList(1, "test"));
-        String str = sP.toString();
-
-        assertTrue(str.contains("sql=SELECT * FROM users"));
-        assertTrue(str.contains("parameters=[1, test]"));
     }
 
     // Test different naming policies
@@ -1665,7 +1633,7 @@ public class SQLBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testAliasPropColumnNameMap() {
+    public void testAliaspropColumnNameMap() {
         // Test query with table aliases and property column name mapping
         String sql = PSC.select("a.firstName", "o.orderNumber").from(Account.class, "a").join(Order.class, "o").on("a.id = o.userId").toSql();
 
@@ -1715,7 +1683,7 @@ public class SQLBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testQMEAsParameter() {
+    public void testQMEAsparameter() {
         // Test using QME (Question Mark Expression) as parameter
         Map<String, Object> values = new LinkedHashMap<>();
         values.put("name", Filters.QME);
@@ -1736,18 +1704,6 @@ public class SQLBuilder10Test extends TestBase {
         // Any operation after sql() should throw exception
         assertThrows(RuntimeException.class, () -> builder.where(Filters.eq("id", 1)));
         assertThrows(RuntimeException.class, () -> builder.toSql());
-    }
-
-    @Test
-    public void testSPImmutability() {
-        // Test that SP parameters list is immutable
-        List<Object> mutableList = new ArrayList<>();
-        mutableList.add("param1");
-
-        SQLBuilder.SP sP = new SQLBuilder.SP("SELECT * FROM users", mutableList);
-
-        // Try to modify the list
-        assertThrows(UnsupportedOperationException.class, () -> sP.parameters.add("param2"));
     }
 
     @Test

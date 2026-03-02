@@ -70,7 +70,7 @@ import com.landawn.abacus.util.u.Optional;
  *
  * <p><b>⚠️ IMPORTANT - Resource Management:</b>
  * All SQLBuilder instances must be properly finalized by calling {@code toSql()} or
- * {@code toSqlAndParameters()} to generate the final SQL string and release internal resources. Failure to finalize
+ * {@code build()} to generate the final SQL string and release internal resources. Failure to finalize
  * builder instances may result in memory leaks in long-running applications. Always use try-with-resources
  * or ensure proper cleanup in production environments.</p>
  *
@@ -259,7 +259,7 @@ import com.landawn.abacus.util.u.Optional;
  *
  * <p><b>Best Practices and Recommendations:</b>
  * <ul>
- *   <li>Always finalize builders with {@code toSql()} or {@code toSqlAndParameters()} method calls</li>
+ *   <li>Always finalize builders with {@code toSql()} or {@code build()} method calls</li>
  *   <li>Use appropriate naming convention classes (PSC, PAC, PLC, NSC, NAC, NLC) for your environment</li>
  *   <li>Leverage entity mapping annotations for maintainable database-to-object mapping</li>
  *   <li>Use parameterized queries exclusively to prevent SQL injection attacks</li>
@@ -623,10 +623,10 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
                 final SP subSP = subBuilder.build();
 
-                _sb.append(subSP.sql);
+                _sb.append(subSP.sql());
 
-                if (N.notEmpty(subSP.parameters)) {
-                    _parameters.addAll(subSP.parameters);
+                if (N.notEmpty(subSP.parameters())) {
+                    _parameters.addAll(subSP.parameters());
                 }
             }
         } else if (cond instanceof Expression) {

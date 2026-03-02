@@ -59,11 +59,11 @@ public class AbstractQueryBuilder2025Test extends TestBase {
     }
 
     @Test
-    public void testToSqlAndParameters() {
-        AbstractQueryBuilder.SP sqlPair = SQLBuilder.PSC.select("id").from(Account.class).where(Filters.eq("id", 1)).toSqlAndParameters();
+    public void testBuild() {
+        AbstractQueryBuilder.SP sqlPair = SQLBuilder.PSC.select("id").from(Account.class).where(Filters.eq("id", 1)).build();
         assertNotNull(sqlPair);
-        assertTrue(sqlPair.sql.contains("WHERE"));
-        assertEquals(1, sqlPair.parameters.size());
+        assertTrue(sqlPair.sql().contains("WHERE"));
+        assertEquals(1, sqlPair.parameters().size());
     }
 
     @Test

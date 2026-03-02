@@ -311,10 +311,10 @@ public class SQLBuilder2025Test extends TestBase {
         rows.add(row1);
         rows.add(row2);
 
-        AbstractQueryBuilder.SP sP = SQLBuilder.PSC.batchInsert(rows).into("users").build();
+        AbstractQueryBuilder.SP sp = SQLBuilder.PSC.batchInsert(rows).into("users").build();
 
-        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sP.sql);
-        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sP.parameters);
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sp.sql());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
     }
 
     @Test
@@ -331,10 +331,10 @@ public class SQLBuilder2025Test extends TestBase {
         rows.add(row1);
         rows.add(row2);
 
-        AbstractQueryBuilder.SP sP = SQLBuilder.NSC.batchInsert(rows).into("users").build();
+        AbstractQueryBuilder.SP sp = SQLBuilder.NSC.batchInsert(rows).into("users").build();
 
-        assertEquals("INSERT INTO users (first_name, last_name) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sP.sql);
-        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sP.parameters);
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sp.sql());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
     }
 
     @Test
@@ -351,10 +351,10 @@ public class SQLBuilder2025Test extends TestBase {
         rows.add(row1);
         rows.add(row2);
 
-        AbstractQueryBuilder.SP sP = SQLBuilder.NLC.batchInsert(rows).into("users").build();
+        AbstractQueryBuilder.SP sp = SQLBuilder.NLC.batchInsert(rows).into("users").build();
 
-        assertEquals("INSERT INTO users (firstName, lastName) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sP.sql);
-        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sP.parameters);
+        assertEquals("INSERT INTO users (firstName, lastName) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sp.sql());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
     }
 
     @Test
@@ -372,10 +372,10 @@ public class SQLBuilder2025Test extends TestBase {
         rows.add(null);
         rows.add(row2);
 
-        AbstractQueryBuilder.SP sP = SQLBuilder.PSC.batchInsert(rows).into("users").build();
+        AbstractQueryBuilder.SP sp = SQLBuilder.PSC.batchInsert(rows).into("users").build();
 
-        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sP.sql);
-        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sP.parameters);
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sp.sql());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
     }
 
     // Complex query tests
@@ -418,10 +418,10 @@ public class SQLBuilder2025Test extends TestBase {
     @Test
     public void testPairWithParameters() {
         SQLBuilder builder = SQLBuilder.PSC.select("*").from("users").where(Filters.eq("id", 1));
-        AbstractQueryBuilder.SP pair = builder.build();
-        assertNotNull(pair);
-        assertNotNull(pair.sql);
-        assertNotNull(pair.parameters);
+        AbstractQueryBuilder.SP sp = builder.build();
+        assertNotNull(sp);
+        assertNotNull(sp.sql());
+        assertNotNull(sp.parameters());
     }
 
     // Subquery tests
@@ -490,9 +490,9 @@ public class SQLBuilder2025Test extends TestBase {
     // Build method tests
     @Test
     public void testBuildMethod() {
-        AbstractQueryBuilder.SP sP = SQLBuilder.PSC.select("*").from("users").build();
-        assertNotNull(sP);
-        assertNotNull(sP.sql);
+        AbstractQueryBuilder.SP sp = SQLBuilder.PSC.select("*").from("users").build();
+        assertNotNull(sp);
+        assertNotNull(sp.sql());
     }
 
     // Multiple where conditions with different operators
