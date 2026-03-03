@@ -57,6 +57,7 @@ import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Limit;
+import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
@@ -593,8 +594,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 val[4] = N.newLinkedHashSet(entityPropNames);
 
                 final Table tableAnno = entityClass.getAnnotation(Table.class);
-                final Set<String> columnFields = tableAnno == null ? N.emptySet() : N.asSet(tableAnno.columnFields());
-                final Set<String> nonColumnFields = tableAnno == null ? N.emptySet() : N.asSet(tableAnno.nonColumnFields());
+                final Set<String> columnFields = tableAnno == null ? N.emptySet() : N.toSet(tableAnno.columnFields());
+                final Set<String> nonColumnFields = tableAnno == null ? N.emptySet() : N.toSet(tableAnno.nonColumnFields());
                 final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
                 Class<?> subEntityClass = null;
                 Set<String> subEntityPropNameList = null;
@@ -616,7 +617,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 final Set<String> transientPropNames = N.newHashSet();
 
                 for (final PropInfo propInfo : entityInfo.propInfoList) {
-                    if (propInfo.isAnnotationPresent(ReadOnly.class) || propInfo.isAnnotationPresent(ReadOnlyId.class) || propInfo.isMarkedToReadOnlyId) {
+                    if (propInfo.isAnnotationPresent(ReadOnly.class) || propInfo.isAnnotationPresent(ReadOnlyId.class) || propInfo.isMarkedAsReadOnlyId) {
                         nonUpdatableNonWritablePropNames.add(propInfo.name);
                     }
 
@@ -2605,7 +2606,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public This orderByAsc(final String... propOrColumnNames) {
-        return orderBy(N.asList(propOrColumnNames), SortDirection.ASC);
+        return orderBy(N.toList(propOrColumnNames), SortDirection.ASC);
     }
 
     /**
@@ -2669,7 +2670,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public This orderByDesc(final String... propOrColumnNames) {
-        return orderBy(N.asList(propOrColumnNames), SortDirection.DESC);
+        return orderBy(N.toList(propOrColumnNames), SortDirection.DESC);
     }
 
     /**
@@ -2910,6 +2911,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final Clause where = criteria.getWhere();
 
             if ((where != null)) {
+                checkIfAlreadyCalled(SK.WHERE);
                 _sb.append(_SPACE_WHERE_SPACE);
                 appendCondition(where.getCondition());
             }
@@ -2917,6 +2919,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final Clause groupBy = criteria.getGroupBy();
 
             if (groupBy != null) {
+                checkIfAlreadyCalled(SK.GROUP_BY);
                 _sb.append(_SPACE_GROUP_BY_SPACE);
                 appendCondition(groupBy.getCondition());
             }
@@ -2924,6 +2927,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final Clause having = criteria.getHaving();
 
             if (having != null) {
+                checkIfAlreadyCalled(SK.HAVING);
                 _sb.append(_SPACE_HAVING_SPACE);
                 appendCondition(having.getCondition());
             }
@@ -2940,6 +2944,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final Clause orderBy = criteria.getOrderBy();
 
             if (orderBy != null) {
+                checkIfAlreadyCalled(SK.ORDER_BY);
                 _sb.append(_SPACE_ORDER_BY_SPACE);
                 appendCondition(orderBy.getCondition());
             }
@@ -2948,6 +2953,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (limit != null) {
                 if (Strings.isNotEmpty(limit.getExpression())) {
+                    checkIfAlreadyCalled(SK.LIMIT);
                     _sb.append(_SPACE).append(limit.getExpression());
                 } else if (limit.getOffset() > 0) {
                     limit(limit.getCount(), limit.getOffset());
@@ -2958,6 +2964,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         } else if (cond instanceof Clause) {
             if (cond instanceof final Limit limit) {
                 if (Strings.isNotEmpty(limit.getExpression())) {
+                    checkIfAlreadyCalled(SK.LIMIT);
                     _sb.append(_SPACE).append(limit.getExpression());
                 } else if (limit.getOffset() > 0) {
                     limit(limit.getCount(), limit.getOffset());
@@ -2965,11 +2972,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     limit(limit.getCount());
                 }
             } else {
+                if (cond.operator() == Operator.WHERE) {
+                    checkIfAlreadyCalled(SK.WHERE);
+                } else if (cond.operator() == Operator.GROUP_BY) {
+                    checkIfAlreadyCalled(SK.GROUP_BY);
+                } else if (cond.operator() == Operator.HAVING) {
+                    checkIfAlreadyCalled(SK.HAVING);
+                } else if (cond.operator() == Operator.ORDER_BY) {
+                    checkIfAlreadyCalled(SK.ORDER_BY);
+                }
+
                 _sb.append(_SPACE).append(cond.operator()).append(_SPACE);
                 appendCondition(((Clause) cond).getCondition());
             }
         } else {
             if (!_isForConditionOnly) {
+                checkIfAlreadyCalled(SK.WHERE);
                 _sb.append(_SPACE_WHERE_SPACE);
             }
 
@@ -4203,8 +4221,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Applies a function to the SQL-Parameters pair and returns the result.
-     * This is useful for executing the SQL directly with a data access framework
-     * 
+     * This is useful for executing the SQL directly with a data access framework.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Account> accounts = PSC.select("*")

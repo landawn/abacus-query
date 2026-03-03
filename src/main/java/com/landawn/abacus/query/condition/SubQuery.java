@@ -170,7 +170,7 @@ public class SubQuery extends LogicalCondition {
      * This approach provides type safety and automatic SQL generation.
      *
      * <p>The generated SQL follows the pattern: SELECT [properties] FROM [entity] WHERE [condition].
-     * If the condition is not already a clause (like WHERE), it will be automatically wrapped in a WHERE clause.</p>
+     * If the condition is not already a {@link Criteria} or a clause (like WHERE), it will be automatically wrapped in a WHERE clause.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -186,7 +186,7 @@ public class SubQuery extends LogicalCondition {
      *
      * @param entityName the entity/table name
      * @param propNames collection of property names to select
-     * @param cond the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
+     * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE)
      * @throws IllegalArgumentException if entityName is null or empty, if propNames is null,
      *             or if propNames contains null/empty names
      */
@@ -238,7 +238,7 @@ public class SubQuery extends LogicalCondition {
      *
      * @param entityClass the entity class
      * @param propNames collection of property names to select
-     * @param cond the WHERE condition (if it's not already a clause, it will be wrapped in WHERE)
+     * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE)
      * @throws IllegalArgumentException if entityClass is null, if propNames is null,
      *             or if propNames contains null/empty names
      */

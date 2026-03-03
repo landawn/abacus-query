@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -138,6 +140,16 @@ public class Selection2025Test extends TestBase {
     }
 
     @Test
+    public void testMultiSelectionBuilder_DefensiveCopyForSelectPropNames() {
+        List<String> propNames = new ArrayList<>(Arrays.asList("id", "name"));
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class, "t", "alias", propNames).build();
+
+        propNames.add("mutated");
+
+        assertEquals(Arrays.asList("id", "name"), selections.get(0).selectPropNames());
+    }
+
+    @Test
     public void testMultiSelectionBuilder_AddWithSubEntity() {
         Set<String> excluded = new HashSet<>(Arrays.asList("password"));
 
@@ -164,6 +176,16 @@ public class Selection2025Test extends TestBase {
         assertTrue(selections.get(0).includeSubEntityProperties());
         assertEquals(excluded, selections.get(0).excludedPropNames());
         assertNull(selections.get(0).selectPropNames());
+    }
+
+    @Test
+    public void testMultiSelectionBuilder_DefensiveCopyForExcludedPropNames() {
+        Set<String> excluded = new LinkedHashSet<>(Arrays.asList("password", "token"));
+        List<Selection> selections = Selection.multiSelectionBuilder().add(String.class, "t", "alias", true, excluded).build();
+
+        excluded.add("mutated");
+
+        assertEquals(new LinkedHashSet<>(Arrays.asList("password", "token")), selections.get(0).excludedPropNames());
     }
 
     @Test

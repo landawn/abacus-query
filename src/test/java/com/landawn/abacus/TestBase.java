@@ -55,7 +55,7 @@ public abstract class TestBase {
     }
 
     public static <T> void assertHaveSameElements(Collection<? extends T> expected, T[] actual) {
-        assertHaveSameElements(expected, N.asList(actual));
+        assertHaveSameElements(expected, N.toList(actual));
     }
 
     public static <T> void assertHaveSameElements(Collection<? extends T> expected, Collection<? extends T> actual) {

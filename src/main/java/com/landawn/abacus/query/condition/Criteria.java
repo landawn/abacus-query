@@ -452,9 +452,8 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Gets all parameters from all conditions in the proper order.
-     * The order follows SQL clause precedence: JOIN, WHERE, HAVING, setOperations.
-     * Parameters from GROUP BY, ORDER BY, and LIMIT are not included as they typically don't have parameters.
-     * 
+     * The order follows SQL clause precedence: JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
+     *
      * @return a list of all parameters from all conditions
      */
     @Override
@@ -509,7 +508,7 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Clears all parameter values by setting them to null to free memory.
-     * This clears parameters from all conditions in this criteria (JOIN, WHERE, HAVING, setOperations).
+     * This clears parameters from all conditions in this criteria.
      *
      * <p>The parameter list size remains unchanged, but all elements become null.
      * Use this method to release large objects when the condition is no longer needed.</p>

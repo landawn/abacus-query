@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.entity.Account;
 
@@ -336,6 +337,33 @@ public class AbstractQueryBuilder2025Test extends TestBase {
     public void testAppendLimitConditionWithExpression() {
         String sql = SQLBuilder.PSC.select("*").from("users").append(new Limit("10 OFFSET 20")).toSql();
         assertTrue(sql.endsWith("LIMIT 10 OFFSET 20"));
+    }
+
+    @Test
+    public void testAppendConditionAfterWhereThrowsDuplicateWhere() {
+        assertThrows(IllegalStateException.class,
+                () -> SQLBuilder.PSC.select("*").from("users").where(Filters.eq("id", 1)).append(Filters.eq("name", "Alice")).toSql());
+    }
+
+    @Test
+    public void testAppendWhereClauseAfterWhereThrows() {
+        assertThrows(IllegalStateException.class, () -> SQLBuilder.PSC.select("*")
+                .from("users")
+                .where(Filters.eq("id", 1))
+                .append(Filters.where(Filters.eq("name", "Alice")))
+                .toSql());
+    }
+
+    @Test
+    public void testAppendCriteriaAfterWhereThrowsWhenCriteriaHasWhere() {
+        Criteria criteria = Filters.criteria().where(Filters.eq("name", "Alice"));
+
+        assertThrows(IllegalStateException.class, () -> SQLBuilder.PSC.select("*").from("users").where(Filters.eq("id", 1)).append(criteria).toSql());
+    }
+
+    @Test
+    public void testAppendLimitExpressionAfterLimitThrows() {
+        assertThrows(IllegalStateException.class, () -> SQLBuilder.PSC.select("*").from("users").limit(10).append(new Limit("5")).toSql());
     }
 
     @Test

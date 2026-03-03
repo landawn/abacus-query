@@ -18,6 +18,7 @@ import java.util.Map;
 
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
+import com.landawn.abacus.query.DynamicSQLBuilder.DSB;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
@@ -47,7 +48,7 @@ import com.landawn.abacus.util.Strings;
  * }</pre>
  */
 @SuppressWarnings("java:S1192")
-public class DynamicSQLBuilder {
+public sealed class DynamicSQLBuilder permits DSB {
 
     static final Logger logger = LoggerFactory.getLogger(DynamicSQLBuilder.class);
 

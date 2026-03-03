@@ -149,7 +149,8 @@ public class Limit extends Clause {
 
     /**
      * Returns the custom expression string if one was provided.
-     * This method returns the raw expression string passed to the string constructor,
+     * This method returns the normalized expression string from the string constructor
+     * (which may have "LIMIT " prepended if the input starts with a digit, '?', or ':'),
      * or {@code null} if the Limit was created with count/offset parameters.
      *
      * <p><b>Usage Examples:</b></p>

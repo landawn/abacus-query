@@ -23,6 +23,7 @@ import java.util.function.Function;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.SQLBuilder.NSC;
 import com.landawn.abacus.query.SQLBuilder.PSC;
+import com.landawn.abacus.util.N;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -209,7 +210,7 @@ public final class Selection {
          */
         public MultiSelectionBuilder add(final Class<?> entityClass, final String tableAlias, final String classAlias,
                 final Collection<String> selectPropNames) {
-            selections.add(new Selection(entityClass, tableAlias, classAlias, selectPropNames, false, null));
+            selections.add(new Selection(entityClass, tableAlias, classAlias, selectPropNames == null ? null : N.newArrayList(selectPropNames), false, null));
 
             return this;
         }
@@ -253,7 +254,8 @@ public final class Selection {
          */
         public MultiSelectionBuilder add(final Class<?> entityClass, final String tableAlias, final String classAlias, final boolean includeSubEntityProperties,
                 final Set<String> excludedPropNames) {
-            selections.add(new Selection(entityClass, tableAlias, classAlias, null, includeSubEntityProperties, excludedPropNames));
+            selections.add(new Selection(entityClass, tableAlias, classAlias, null, includeSubEntityProperties,
+                    excludedPropNames == null ? null : N.newHashSet(excludedPropNames)));
 
             return this;
         }
