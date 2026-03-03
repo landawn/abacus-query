@@ -14,6 +14,8 @@
 
 package com.landawn.abacus.query.condition;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
@@ -246,7 +248,6 @@ public class On extends Cell {
      * @param propNamePair map of column name pairs
      * @return a single Equal condition or an And condition combining multiple equalities
      */
-    @SuppressWarnings("deprecation")
     static Condition createOnCondition(final Map<String, String> propNamePair) {
         N.checkArgNotEmpty(propNamePair, "propNamePair");
 
@@ -255,13 +256,13 @@ public class On extends Cell {
 
             return createOnCondition(entry.getKey(), entry.getValue());
         } else {
-            final And and = Filters.and();
+            final List<Condition> conds = new ArrayList<>(propNamePair.size());
 
             for (final Map.Entry<String, String> entry : propNamePair.entrySet()) {
-                and.add(createOnCondition(entry.getKey(), entry.getValue()));
+                conds.add(createOnCondition(entry.getKey(), entry.getValue()));
             }
 
-            return and;
+            return Filters.and(conds);
         }
     }
 }
