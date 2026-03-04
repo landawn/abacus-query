@@ -19,7 +19,6 @@ import static com.landawn.abacus.util.SK._PARENTHESIS_R;
 import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -129,7 +128,7 @@ public class Junction extends LogicalCondition {
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
         this.conditions = new ArrayList<>();
-        add(conditions);
+        appendConditions(conditions);
     }
 
     /**
@@ -156,7 +155,7 @@ public class Junction extends LogicalCondition {
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
         this.conditions = new ArrayList<>();
-        add(conditions); // NOSONAR
+        appendConditions(conditions); // NOSONAR
     }
 
     /**
@@ -205,16 +204,8 @@ public class Junction extends LogicalCondition {
      */
     @Deprecated
     public final void set(final Condition... conditions) {
-        if (N.notEmpty(conditions)) {
-            for (final Condition condition : conditions) {
-                if (condition == null) {
-                    throw new IllegalArgumentException("Condition cannot be null");
-                }
-            }
-        }
-
         this.conditions.clear();
-        add(conditions);
+        appendConditions(conditions);
     }
 
     /**
@@ -242,45 +233,11 @@ public class Junction extends LogicalCondition {
      */
     @Deprecated
     public void set(final Collection<? extends Condition> conditions) {
-        if (N.notEmpty(conditions)) {
-            for (final Condition condition : conditions) {
-                if (condition == null) {
-                    throw new IllegalArgumentException("Condition cannot be null");
-                }
-            }
-        }
-
         this.conditions.clear();
-        add(conditions);
+        appendConditions(conditions);
     }
 
-    /**
-     * Adds the specified conditions to this junction.
-     * The conditions are appended to the existing list of conditions.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND);
-     *
-     * // Add initial conditions
-     * junction.add(
-     *     new Equal("status", "active"),
-     *     new GreaterThan("score", 0)
-     * );
-     *
-     * // Add more conditions later
-     * junction.add(
-     *     new LessThan("price", 100),
-     *     new Equal("inStock", true)
-     * );
-     * }</pre>
-     *
-     * @param conditions the conditions to add
-     * @throws IllegalArgumentException if conditions array contains null elements
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     */
-    @Deprecated
-    public final void add(final Condition... conditions) {
+    private void appendConditions(final Condition... conditions) {
         if (N.isEmpty(conditions)) {
             return;
         }
@@ -291,28 +248,10 @@ public class Junction extends LogicalCondition {
             }
         }
 
-        this.conditions.addAll(Arrays.asList(conditions));
+        Collections.addAll(this.conditions, conditions);
     }
 
-    /**
-     * Adds the specified collection of conditions to this junction.
-     * The conditions are appended to the existing list of conditions.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.OR);
-     *
-     * // Add conditions from another source
-     * List<Condition> userConditions = getUserDefinedConditions();
-     * junction.add(userConditions);
-     * }</pre>
-     *
-     * @param conditions the collection of conditions to add
-     * @throws IllegalArgumentException if conditions contains null elements
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     */
-    @Deprecated
-    public void add(final Collection<? extends Condition> conditions) {
+    private void appendConditions(final Collection<? extends Condition> conditions) {
         if (N.isEmpty(conditions)) {
             return;
         }
@@ -326,89 +265,161 @@ public class Junction extends LogicalCondition {
         this.conditions.addAll(conditions);
     }
 
-    /**
-     * Removes the specified conditions from this junction.
-     * Only exact object matches are removed, not logically equivalent conditions.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND);
-     * Condition cond1 = new Equal("status", "active");
-     * Condition cond2 = new Equal("type", "premium");
-     * junction.add(cond1, cond2);
-     *
-     * // Remove specific condition
-     * junction.remove(cond1);
-     * }</pre>
-     *
-     * @param conditions the conditions to remove
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Instead of modifying an existing junction, create a new junction with the desired conditions.
-     *             For example, use {@code new Junction(operator, desiredConditions)} instead of
-     *             {@code junction.remove(unwantedConditions)}.
-     */
-    @Deprecated
-    public final void remove(final Condition... conditions) {
-        if (N.isEmpty(conditions)) {
-            return;
-        }
+    //    /**
+    //     * Adds the specified conditions to this junction.
+    //     * The conditions are appended to the existing list of conditions.
+    //     *
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Junction junction = new Junction(Operator.AND);
+    //     *
+    //     * // Add initial conditions
+    //     * junction.add(
+    //     *     new Equal("status", "active"),
+    //     *     new GreaterThan("score", 0)
+    //     * );
+    //     *
+    //     * // Add more conditions later
+    //     * junction.add(
+    //     *     new LessThan("price", 100),
+    //     *     new Equal("inStock", true)
+    //     * );
+    //     * }</pre>
+    //     *
+    //     * @param conditions the conditions to add
+    //     * @throws IllegalArgumentException if conditions array contains null elements
+    //     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+    //     */
+    //    @Deprecated
+    //    public final void add(final Condition... conditions) {
+    //        if (N.isEmpty(conditions)) {
+    //            return;
+    //        }
+    //
+    //        for (final Condition condition : conditions) {
+    //            if (condition == null) {
+    //                throw new IllegalArgumentException("Condition cannot be null");
+    //            }
+    //        }
+    //
+    //        this.conditions.addAll(Arrays.asList(conditions));
+    //    }
+    //
+    //    /**
+    //     * Adds the specified collection of conditions to this junction.
+    //     * The conditions are appended to the existing list of conditions.
+    //     *
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Junction junction = new Junction(Operator.OR);
+    //     *
+    //     * // Add conditions from another source
+    //     * List<Condition> userConditions = getUserDefinedConditions();
+    //     * junction.add(userConditions);
+    //     * }</pre>
+    //     *
+    //     * @param conditions the collection of conditions to add
+    //     * @throws IllegalArgumentException if conditions contains null elements
+    //     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+    //     */
+    //    @Deprecated
+    //    public void add(final Collection<? extends Condition> conditions) {
+    //        if (N.isEmpty(conditions)) {
+    //            return;
+    //        }
+    //
+    //        for (final Condition condition : conditions) {
+    //            if (condition == null) {
+    //                throw new IllegalArgumentException("Condition cannot be null");
+    //            }
+    //        }
+    //
+    //        this.conditions.addAll(conditions);
+    //    }
 
-        for (final Condition cond : conditions) {
-            this.conditions.remove(cond);
-        }
-    }
-
-    /**
-     * Removes the specified collection of conditions from this junction.
-     * Only exact object matches are removed, not logically equivalent conditions.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND);
-     * List<Condition> toRemove = getObsoleteConditions();
-     * junction.remove(toRemove);
-     * }</pre>
-     *
-     * @param conditions the collection of conditions to remove
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Instead of modifying an existing junction, create a new junction with the desired conditions.
-     *             For example, use {@code new Junction(operator, desiredConditions)} instead of
-     *             {@code junction.remove(unwantedConditions)}.
-     */
-    @Deprecated
-    public void remove(final Collection<? extends Condition> conditions) {
-        if (N.isEmpty(conditions)) {
-            return;
-        }
-
-        this.conditions.removeAll(conditions);
-    }
-
-    /**
-     * Removes all conditions from this junction.
-     * After this operation, the junction will be empty but can still accept new conditions.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND,
-     *     new Equal("status", "active"),
-     *     new GreaterThan("age", 18));
-     *
-     * // Remove all conditions
-     * junction.clear();
-     * // junction.getConditions().size() returns 0
-     *
-     * // Junction can still accept new conditions after clearing
-     * junction.add(new Equal("role", "admin"));
-     * }</pre>
-     *
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Instead of modifying an existing junction, create a new junction with the desired conditions.
-     */
-    @Deprecated
-    public void clear() {
-        conditions.clear();
-    }
+    //    /**
+    //     * Removes the specified conditions from this junction.
+    //     * Only exact object matches are removed, not logically equivalent conditions.
+    //     *
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Junction junction = new Junction(Operator.AND);
+    //     * Condition cond1 = new Equal("status", "active");
+    //     * Condition cond2 = new Equal("type", "premium");
+    //     * junction.add(cond1, cond2);
+    //     *
+    //     * // Remove specific condition
+    //     * junction.remove(cond1);
+    //     * }</pre>
+    //     *
+    //     * @param conditions the conditions to remove
+    //     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+    //     *             Instead of modifying an existing junction, create a new junction with the desired conditions.
+    //     *             For example, use {@code new Junction(operator, desiredConditions)} instead of
+    //     *             {@code junction.remove(unwantedConditions)}.
+    //     */
+    //    @Deprecated
+    //    public final void remove(final Condition... conditions) {
+    //        if (N.isEmpty(conditions)) {
+    //            return;
+    //        }
+    //
+    //        for (final Condition cond : conditions) {
+    //            this.conditions.remove(cond);
+    //        }
+    //    }
+    //
+    //    /**
+    //     * Removes the specified collection of conditions from this junction.
+    //     * Only exact object matches are removed, not logically equivalent conditions.
+    //     *
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Junction junction = new Junction(Operator.AND);
+    //     * List<Condition> toRemove = getObsoleteConditions();
+    //     * junction.remove(toRemove);
+    //     * }</pre>
+    //     *
+    //     * @param conditions the collection of conditions to remove
+    //     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+    //     *             Instead of modifying an existing junction, create a new junction with the desired conditions.
+    //     *             For example, use {@code new Junction(operator, desiredConditions)} instead of
+    //     *             {@code junction.remove(unwantedConditions)}.
+    //     */
+    //    @Deprecated
+    //    public void remove(final Collection<? extends Condition> conditions) {
+    //        if (N.isEmpty(conditions)) {
+    //            return;
+    //        }
+    //
+    //        this.conditions.removeAll(conditions);
+    //    }
+    //
+    //    /**
+    //     * Removes all conditions from this junction.
+    //     * After this operation, the junction will be empty but can still accept new conditions.
+    //     *
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Junction junction = new Junction(Operator.AND,
+    //     *     new Equal("status", "active"),
+    //     *     new GreaterThan("age", 18));
+    //     *
+    //     * // Remove all conditions
+    //     * junction.clear();
+    //     * // junction.getConditions().size() returns 0
+    //     *
+    //     * // Junction can still accept new conditions after clearing
+    //     * junction.add(new Equal("role", "admin"));
+    //     * }</pre>
+    //     *
+    //     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
+    //     *             Instead of modifying an existing junction, create a new junction with the desired conditions.
+    //     */
+    //    @Deprecated
+    //    public void clear() {
+    //        conditions.clear();
+    //    }
 
     /**
      * Gets all parameters from all conditions in this junction.

@@ -14,7 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -203,17 +205,16 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
-    @SuppressWarnings("deprecation")
     public Or anyEqual(final Object... values) {
         N.checkArgNotEmpty(values, "values");
 
-        final Or or = Filters.or();
+        final List<Condition> conditions = new ArrayList<>(values.length);
 
         for (final Object propValue : values) {
-            or.add(Filters.equal(propName, propValue));
+            conditions.add(Filters.equal(propName, propValue));
         }
 
-        return or;
+        return new Or(conditions);
     }
 
     /**
@@ -222,17 +223,16 @@ public sealed class NamedProperty permits NP {
      * @param values primitive int values to check
      * @return an Or condition containing multiple Equal conditions
      */
-    @SuppressWarnings("deprecation")
     public Or anyEqual(final int[] values) {
         N.checkArgNotEmpty(values, "values");
 
-        final Or or = Filters.or();
+        final List<Condition> conditions = new ArrayList<>(values.length);
 
         for (final int propValue : values) {
-            or.add(Filters.equal(propName, propValue));
+            conditions.add(Filters.equal(propName, propValue));
         }
 
-        return or;
+        return new Or(conditions);
     }
 
     /**
@@ -241,17 +241,16 @@ public sealed class NamedProperty permits NP {
      * @param values primitive long values to check
      * @return an Or condition containing multiple Equal conditions
      */
-    @SuppressWarnings("deprecation")
     public Or anyEqual(final long[] values) {
         N.checkArgNotEmpty(values, "values");
 
-        final Or or = Filters.or();
+        final List<Condition> conditions = new ArrayList<>(values.length);
 
         for (final long propValue : values) {
-            or.add(Filters.equal(propName, propValue));
+            conditions.add(Filters.equal(propName, propValue));
         }
 
-        return or;
+        return new Or(conditions);
     }
 
     /**
@@ -260,17 +259,16 @@ public sealed class NamedProperty permits NP {
      * @param values primitive double values to check
      * @return an Or condition containing multiple Equal conditions
      */
-    @SuppressWarnings("deprecation")
     public Or anyEqual(final double[] values) {
         N.checkArgNotEmpty(values, "values");
 
-        final Or or = Filters.or();
+        final List<Condition> conditions = new ArrayList<>(values.length);
 
         for (final double propValue : values) {
-            or.add(Filters.equal(propName, propValue));
+            conditions.add(Filters.equal(propName, propValue));
         }
 
-        return or;
+        return new Or(conditions);
     }
 
     /**
@@ -294,17 +292,16 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
-    @SuppressWarnings("deprecation")
     public Or anyEqual(final Collection<?> values) {
         N.checkArgNotEmpty(values, "values");
 
-        final Or or = Filters.or();
+        final List<Condition> conditions = new ArrayList<>(values.size());
 
         for (final Object propValue : values) {
-            or.add(Filters.equal(propName, propValue));
+            conditions.add(Filters.equal(propName, propValue));
         }
 
-        return or;
+        return new Or(conditions);
     }
 
     /**
