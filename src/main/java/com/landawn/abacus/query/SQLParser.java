@@ -51,10 +51,10 @@ public final class SQLParser {
 
     private static final char ENTER_2 = '\r';
 
-    private static final Set<Object> separators = ConcurrentHashMap.newKeySet();
-
     private static final AtomicInteger maxSeparatorLength = new AtomicInteger(1);
     private static final Set<String> hashIdentifierContextKeywords = N.asSet(SK.FROM, SK.JOIN, SK.INTO, SK.UPDATE, "TABLE");
+
+    private static final Set<Object> separators = ConcurrentHashMap.newKeySet();
 
     static {
         separators.add(TAB);
