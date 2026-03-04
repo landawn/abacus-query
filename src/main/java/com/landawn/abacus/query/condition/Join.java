@@ -14,7 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
-import static com.landawn.abacus.query.SK._SPACE;
+import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.ArrayList;
 import java.util.Collection;

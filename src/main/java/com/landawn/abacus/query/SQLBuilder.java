@@ -16,9 +16,9 @@
 
 package com.landawn.abacus.query;
 
-import static com.landawn.abacus.query.SK._PARENTHESIS_L;
-import static com.landawn.abacus.query.SK._PARENTHESIS_R;
-import static com.landawn.abacus.query.SK._SPACE;
+import static com.landawn.abacus.util.SK._PARENTHESIS_L;
+import static com.landawn.abacus.util.SK._PARENTHESIS_R;
+import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.Collection;
 import java.util.List;
@@ -52,6 +52,7 @@ import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.OperationType;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.u.Optional;
 
@@ -336,11 +337,12 @@ public abstract class SQLBuilder extends AbstractQueryBuilder<SQLBuilder> { // N
 
             appendColumnName(propName);
 
-            if (propValue == null && binary.operator() == Operator.EQUAL) {
+            if (propValue == null && (binary.operator() == Operator.EQUAL || binary.operator() == Operator.IS)) {
                 _sb.append(_SPACE);
                 _sb.append(SK.IS_NULL);
                 return;
-            } else if (propValue == null && (binary.operator() == Operator.NOT_EQUAL || binary.operator() == Operator.NOT_EQUAL_ANSI)) {
+            } else if (propValue == null
+                    && (binary.operator() == Operator.NOT_EQUAL || binary.operator() == Operator.NOT_EQUAL_ANSI || binary.operator() == Operator.IS_NOT)) {
                 _sb.append(_SPACE);
                 _sb.append(SK.IS_NOT_NULL);
                 return;

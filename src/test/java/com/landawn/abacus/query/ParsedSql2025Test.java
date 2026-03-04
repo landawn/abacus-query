@@ -272,6 +272,15 @@ public class ParsedSql2025Test extends TestBase {
     }
 
     @Test
+    public void testParse_ReplaceStatement() {
+        ParsedSql parsed = ParsedSql.parse("REPLACE INTO users (id, name) VALUES (:id, :name)");
+        assertEquals("REPLACE INTO users (id, name) VALUES (?, ?)", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertEquals("id", parsed.namedParameters().get(0));
+        assertEquals("name", parsed.namedParameters().get(1));
+    }
+
+    @Test
     public void testParse_NonQueryStatement() {
         ParsedSql parsed = ParsedSql.parse("CREATE TABLE users (id INT)");
         assertEquals("CREATE TABLE users (id INT)", parsed.parameterizedSql());

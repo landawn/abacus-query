@@ -347,11 +347,8 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testAppendWhereClauseAfterWhereThrows() {
-        assertThrows(IllegalStateException.class, () -> SQLBuilder.PSC.select("*")
-                .from("users")
-                .where(Filters.eq("id", 1))
-                .append(Filters.where(Filters.eq("name", "Alice")))
-                .toSql());
+        assertThrows(IllegalStateException.class,
+                () -> SQLBuilder.PSC.select("*").from("users").where(Filters.eq("id", 1)).append(Filters.where(Filters.eq("name", "Alice"))).toSql());
     }
 
     @Test
@@ -369,6 +366,24 @@ public class AbstractQueryBuilder2025Test extends TestBase {
     @Test
     public void testOrderByRejectsCommentToken() {
         assertThrows(IllegalArgumentException.class, () -> SQLBuilder.PSC.select("*").from("users").orderBy("id--").toSql());
+    }
+
+    @Test
+    public void testSelectAllowsHashJsonOperators() {
+        String sql = SQLBuilder.PSC.select("payload #>> '{meta,status}'").from("docs").toSql();
+        assertTrue(sql.contains("#>>"));
+    }
+
+    @Test
+    public void testSelectAllowsCommentLikeTokenInsideQuotedLiteral() {
+        String sql = SQLBuilder.PSC.select("CASE WHEN note = '--literal' THEN 1 ELSE 0 END").from("docs").toSql();
+        assertTrue(sql.contains("'--literal'"));
+    }
+
+    @Test
+    public void testUpdateAllowsIbatisPlaceholderExpression() {
+        String sql = SQLBuilder.PSC.update("users").set("name = #{name}").where(Filters.eq("id", 1)).toSql();
+        assertTrue(sql.contains("#{name}"));
     }
 
     @Test

@@ -197,6 +197,18 @@ public class Criteria2025Test extends TestBase {
     }
 
     @Test
+    public void testJoinVarargsNullArray() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> criteria.join((Join[]) null));
+    }
+
+    @Test
+    public void testJoinCollectionNull() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> criteria.join((java.util.Collection<Join>) null));
+    }
+
+    @Test
     public void testJoinEntity() {
         Criteria criteria = new Criteria();
         Criteria result = criteria.join("orders");
@@ -737,6 +749,12 @@ public class Criteria2025Test extends TestBase {
     }
 
     @Test
+    public void testWhereRejectsOnCondition() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> criteria.where(Filters.on("users.id", "orders.user_id")));
+    }
+
+    @Test
     public void testWhereRejectsNestedCriteriaCondition() {
         Criteria criteria = new Criteria();
         Criteria nested = new Criteria().where(Filters.equal("status", "active"));
@@ -759,6 +777,12 @@ public class Criteria2025Test extends TestBase {
     public void testOrderByRejectsMismatchedClauseCondition() {
         Criteria criteria = new Criteria();
         assertThrows(IllegalArgumentException.class, () -> criteria.orderBy(Filters.where(Filters.equal("status", "active"))));
+    }
+
+    @Test
+    public void testOrderByRejectsUsingCondition() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> criteria.orderBy(Filters.using("id")));
     }
 
     @Test

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.SK;
 
 /**
  * Unit tests for the SK (String and Keywords) constants class.
@@ -227,7 +228,6 @@ public class SKTest extends TestBase {
         assertEquals("FETCH NEXT", SK.FETCH_NEXT);
         assertEquals("ROWS", SK.ROWS);
         assertEquals("ROWS ONLY", SK.ROWS_ONLY);
-        assertEquals("ROW_NEXT", SK.ROW_NEXT);
         assertEquals("ROWNUM", SK.ROWNUM);
     }
 

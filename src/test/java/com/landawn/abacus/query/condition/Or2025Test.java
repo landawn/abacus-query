@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -262,9 +263,26 @@ public class Or2025Test extends TestBase {
     }
 
     @Test
+    public void testOrMethodDoesNotShareExistingOperands() {
+        Or original = new Or(new Equal("a", 1));
+        Or extended = original.or(new Equal("b", 2));
+
+        original.clearParameters();
+
+        Equal copiedFirst = (Equal) extended.getConditions().get(0);
+        assertEquals(Integer.valueOf(1), copiedFirst.getPropValue());
+    }
+
+    @Test
     public void testOrMethod_NullCondition() {
         Or junction = new Or(new Equal("a", 1));
         assertThrows(IllegalArgumentException.class, () -> junction.or(null));
+    }
+
+    @Test
+    public void testOrMethod_RejectsClauseCondition() {
+        Or junction = new Or(new Equal("a", 1));
+        assertThrows(IllegalArgumentException.class, () -> junction.or(Filters.orderBy("b")));
     }
 
     @Test

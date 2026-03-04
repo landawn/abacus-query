@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -1308,7 +1307,7 @@ public class SQLBuilder10Test extends TestBase {
     public void testMultipleGroupByWithDifferentSortDirections() {
         String sql = PSC.select("category", "brand", "COUNT(*)")
                 .from("products")
-                .groupBy(N.asLinkedHashMap("brand", SortDirection.DESC, "category", SortDirection.ASC))
+                .groupBy(N.asMap("brand", SortDirection.DESC, "category", SortDirection.ASC))
                 .toSql();
 
         // Note: This test shows that each groupBy call replaces the previous one

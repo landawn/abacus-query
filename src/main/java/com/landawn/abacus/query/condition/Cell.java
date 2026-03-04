@@ -16,7 +16,7 @@ package com.landawn.abacus.query.condition;
 
 import java.util.List;
 
-import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;

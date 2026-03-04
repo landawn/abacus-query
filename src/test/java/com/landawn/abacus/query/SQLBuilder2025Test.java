@@ -17,6 +17,7 @@
 package com.landawn.abacus.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -137,6 +138,20 @@ public class SQLBuilder2025Test extends TestBase {
     public void testWhereIsNotNull() {
         String sql = SQLBuilder.PSC.select("*").from("users").where(Filters.isNotNull("email")).toSql();
         assertTrue(sql.contains("IS NOT NULL"));
+    }
+
+    @Test
+    public void testWhereIsWithNullValue() {
+        String sql = SQLBuilder.PSC.select("*").from("users").where(Filters.is("deleted_at", null)).toSql();
+        assertTrue(sql.contains("IS NULL"));
+        assertFalse(sql.contains("IS ?"));
+    }
+
+    @Test
+    public void testWhereIsNotWithNullValue() {
+        String sql = SQLBuilder.PSC.select("*").from("users").where(Filters.isNot("deleted_at", null)).toSql();
+        assertTrue(sql.contains("IS NOT NULL"));
+        assertFalse(sql.contains("IS NOT ?"));
     }
 
     // JOIN tests

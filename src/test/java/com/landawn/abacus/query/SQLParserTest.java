@@ -119,6 +119,17 @@ public class SQLParserTest extends TestBase {
     }
 
     @Test
+    public void testParseHashTempTableIsNotComment() {
+        String sql = "SELECT * FROM #tmp WHERE id = :id";
+        List<String> words = SQLParser.parse(sql);
+        String joined = String.join("", words);
+
+        assertTrue(joined.contains("#tmp"));
+        assertTrue(words.contains("WHERE"));
+        assertTrue(words.contains(":id"));
+    }
+
+    @Test
     public void testParseHashJsonOperatorsAreNotComments() {
         String sql = "SELECT payload #> '{meta,status}' AS status_json FROM docs WHERE payload #>> '{meta,status}' = 'active'";
         List<String> words = SQLParser.parse(sql);

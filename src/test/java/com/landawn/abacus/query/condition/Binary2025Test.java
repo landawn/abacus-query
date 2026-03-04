@@ -252,6 +252,24 @@ public class Binary2025Test extends TestBase {
     }
 
     @Test
+    public void testAndRejectsClauseOperand() {
+        Binary cond = new Binary("a", Operator.EQUAL, 1);
+        assertThrows(IllegalArgumentException.class, () -> cond.and(Filters.where(Filters.equal("b", 2))));
+    }
+
+    @Test
+    public void testOrRejectsClauseOperand() {
+        Binary cond = new Binary("a", Operator.EQUAL, 1);
+        assertThrows(IllegalArgumentException.class, () -> cond.or(Filters.orderBy("b")));
+    }
+
+    @Test
+    public void testXorRejectsClauseOperand() {
+        Binary cond = new Binary("a", Operator.EQUAL, 1);
+        assertThrows(IllegalArgumentException.class, () -> cond.xor(Filters.limit(1)));
+    }
+
+    @Test
     public void testNot() {
         Binary condition = new Binary("field", Operator.EQUAL, "value");
         Not result = condition.not();

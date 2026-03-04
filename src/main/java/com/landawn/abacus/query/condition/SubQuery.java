@@ -14,8 +14,8 @@
 
 package com.landawn.abacus.query.condition;
 
-import static com.landawn.abacus.query.SK.COMMA_SPACE;
-import static com.landawn.abacus.query.SK._SPACE;
+import static com.landawn.abacus.util.SK.COMMA_SPACE;
+import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -200,12 +200,7 @@ public class SubQuery extends LogicalCondition {
         this.entityName = entityName;
         this.entityClass = null;
         this.propNames = copyAndValidatePropNames(propNames);
-
-        if (cond == null || cond instanceof Criteria || CriteriaUtil.isClause(cond)) {
-            this.condition = cond;
-        } else {
-            this.condition = Filters.where(cond);
-        }
+        this.condition = normalizeCondition(cond);
 
         sql = null;
     }
@@ -252,11 +247,7 @@ public class SubQuery extends LogicalCondition {
         this.entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
         this.propNames = copyAndValidatePropNames(propNames);
-        if (cond == null || cond instanceof Criteria || CriteriaUtil.isClause(cond)) {
-            this.condition = cond;
-        } else {
-            this.condition = Filters.where(cond);
-        }
+        this.condition = normalizeCondition(cond);
 
         sql = null;
     }
@@ -381,6 +372,22 @@ public class SubQuery extends LogicalCondition {
         }
 
         return result;
+    }
+
+    private static Condition normalizeCondition(final Condition cond) {
+        if (cond == null || cond instanceof Criteria || CriteriaUtil.isClause(cond)) {
+            return cond;
+        }
+
+        if (cond instanceof Expression && Strings.isBlank(((Expression) cond).getLiteral())) {
+            return null;
+        }
+
+        if (cond.operator() == Operator.ON || cond.operator() == Operator.USING) {
+            throw new IllegalArgumentException("ON/USING conditions are not valid subquery filters");
+        }
+
+        return Filters.where(cond);
     }
 
     /**

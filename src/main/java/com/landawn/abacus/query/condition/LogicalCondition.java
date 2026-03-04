@@ -65,6 +65,7 @@ public abstract class LogicalCondition extends AbstractCondition {
      */
     public And and(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
+        validateLogicalOperand(cond, "and");
 
         return new And(this, cond);
     }
@@ -79,6 +80,7 @@ public abstract class LogicalCondition extends AbstractCondition {
      */
     public Or or(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
+        validateLogicalOperand(cond, "or");
 
         return new Or(this, cond);
     }
@@ -94,7 +96,16 @@ public abstract class LogicalCondition extends AbstractCondition {
      */
     public Or xor(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
+        validateLogicalOperand(cond, "xor");
 
         return new Or(new And(this, new Not(cond)), new And(new Not(this), cond));
+    }
+
+    private static void validateLogicalOperand(final Condition cond, final String methodName) {
+        final Operator operator = cond.operator();
+
+        if (CriteriaUtil.isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
+            throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in logical method '" + methodName + "'");
+        }
     }
 }

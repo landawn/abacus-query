@@ -22,11 +22,11 @@ import java.util.Map;
 import java.util.Set;
 
 import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.query.SK;
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -410,6 +410,8 @@ public class Criteria extends AbstractCondition {
      * @param conditions the conditions to remove
      */
     void remove(final Condition... conditions) {
+        N.checkArgNotNull(conditions, "conditions");
+
         for (final Condition cond : conditions) {
             conditionList.remove(cond); // NOSONAR
         }
@@ -422,6 +424,8 @@ public class Criteria extends AbstractCondition {
      * @param conditions the collection of conditions to remove
      */
     void remove(final Collection<? extends Condition> conditions) {
+        N.checkArgNotNull(conditions, "conditions");
+
         conditionList.removeAll(conditions);
     }
 
@@ -1175,7 +1179,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
-        groupBy(N.asLinkedHashMap(propName, direction, propName2, direction2));
+        groupBy(N.asMap(propName, direction, propName2, direction2));
 
         return this;
     }
@@ -1201,7 +1205,7 @@ public class Criteria extends AbstractCondition {
      */
     public Criteria groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
-        groupBy(N.asLinkedHashMap(propName, direction, propName2, direction2, propName3, direction3));
+        groupBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
 
         return this;
     }
@@ -1447,6 +1451,10 @@ public class Criteria extends AbstractCondition {
             throw new IllegalArgumentException("Invalid condition for " + methodName + ": nested Criteria is not supported");
         }
 
+        if (cond.operator() == Operator.ON || cond.operator() == Operator.USING) {
+            throw new IllegalArgumentException("Invalid condition for " + methodName + ": ON/USING conditions are not supported");
+        }
+
         if (CriteriaUtil.isClause(cond.operator())) {
             if (cond.operator() != expectedOperator) {
                 throw new IllegalArgumentException(
@@ -1519,7 +1527,7 @@ public class Criteria extends AbstractCondition {
      * @return this Criteria instance for method chaining
      */
     public Criteria orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
-        orderBy(N.asLinkedHashMap(propName, direction, propName2, direction2));
+        orderBy(N.asMap(propName, direction, propName2, direction2));
 
         return this;
     }
@@ -1545,7 +1553,7 @@ public class Criteria extends AbstractCondition {
      */
     public Criteria orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
-        orderBy(N.asLinkedHashMap(propName, direction, propName2, direction2, propName3, direction3));
+        orderBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
 
         return this;
     }
@@ -1909,6 +1917,8 @@ public class Criteria extends AbstractCondition {
      * @param conditions the conditions to validate
      */
     private void checkConditions(final Collection<? extends Condition> conditions) {
+        N.checkArgNotNull(conditions, "conditions");
+
         for (final Condition cond : conditions) {
             checkCondition(cond);
         }
@@ -1919,6 +1929,8 @@ public class Criteria extends AbstractCondition {
      * @param conditions the conditions to validate
      */
     private void checkConditions(final Condition... conditions) {
+        N.checkArgNotNull(conditions, "conditions");
+
         for (final Condition cond : conditions) {
             checkCondition(cond);
         }
@@ -1958,6 +1970,11 @@ public class Criteria extends AbstractCondition {
      * @param conditions the conditions to add
      */
     private void addConditions(final Collection<? extends Condition> conditions) {
+        if (conditions == null || conditions.isEmpty()) {
+            checkConditions(conditions);
+            return;
+        }
+
         checkConditions(conditions);
 
         for (final Condition cond : conditions) {
@@ -1971,6 +1988,11 @@ public class Criteria extends AbstractCondition {
      * @param conditions the conditions to add
      */
     private void addConditions(final Condition... conditions) {
+        if (conditions == null || conditions.length == 0) {
+            checkConditions(conditions);
+            return;
+        }
+
         checkConditions(conditions);
 
         for (final Condition cond : conditions) {

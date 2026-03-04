@@ -290,6 +290,13 @@ public class SQLParser2025Test extends TestBase {
     }
 
     @Test
+    public void testIsSeparatorHashForTempTable() {
+        String sql = "SELECT * FROM #tmp";
+        int hashIndex = sql.indexOf('#');
+        assertFalse(SQLParser.isSeparator(sql, sql.length(), hashIndex, '#'));
+    }
+
+    @Test
     public void testIsFunctionName() {
         List<String> words = SQLParser.parse("SELECT COUNT(*) FROM users");
         int countIndex = -1;

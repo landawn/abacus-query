@@ -14,7 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**

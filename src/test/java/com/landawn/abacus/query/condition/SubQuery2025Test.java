@@ -117,6 +117,16 @@ public class SubQuery2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsOnCondition() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("products", Arrays.asList("id"), Filters.on("a", "b")));
+    }
+
+    @Test
+    public void testConstructorRejectsUsingCondition() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("products", Arrays.asList("id"), Filters.using("id")));
+    }
+
+    @Test
     public void testConstructorDoesNotWrapWhereCondition() {
         String entityName = "products";
         Collection<String> props = Arrays.asList("id");
@@ -136,6 +146,12 @@ public class SubQuery2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery(entityName, props, (Condition) null);
 
         assertNotNull(subQuery);
+        assertNull(subQuery.getCondition());
+    }
+
+    @Test
+    public void testConstructorWithBlankStringConditionTreatsAsNoCondition() {
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), "   ");
         assertNull(subQuery.getCondition());
     }
 

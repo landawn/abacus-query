@@ -338,6 +338,12 @@ public class Selection2025Test extends TestBase {
     }
 
     @Test
+    public void testMultiSelectionBuilder_ApplyRejectsNullFunction() {
+        Selection.MultiSelectionBuilder builder = Selection.multiSelectionBuilder().add(String.class);
+        assertThrows(IllegalArgumentException.class, () -> builder.apply(null));
+    }
+
+    @Test
     public void testSelectionEquality() {
         List<String> propNames = Arrays.asList("id", "name");
 

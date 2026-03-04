@@ -220,6 +220,9 @@ public final class CriteriaUtil {
      * @param conditions the conditions to add
      */
     public static void add(final Criteria criteria, final Condition... conditions) {
+        N.checkArgNotNull(criteria, "criteria");
+        N.checkArgNotNull(conditions, "conditions");
+
         criteria.add(conditions);
     }
 
@@ -242,6 +245,9 @@ public final class CriteriaUtil {
      * @param conditions the collection of conditions to add
      */
     public static void add(final Criteria criteria, final Collection<Condition> conditions) {
+        N.checkArgNotNull(criteria, "criteria");
+        N.checkArgNotNull(conditions, "conditions");
+
         criteria.add(conditions);
     }
 
@@ -265,6 +271,9 @@ public final class CriteriaUtil {
      * @param operator the operator of conditions to remove
      */
     public static void remove(final Criteria criteria, final Operator operator) {
+        N.checkArgNotNull(criteria, "criteria");
+        N.checkArgNotNull(operator, "operator");
+
         criteria.remove(operator);
     }
 
@@ -288,6 +297,9 @@ public final class CriteriaUtil {
      * @param conditions the conditions to remove
      */
     public static void remove(final Criteria criteria, final Condition... conditions) {
+        N.checkArgNotNull(criteria, "criteria");
+        N.checkArgNotNull(conditions, "conditions");
+
         criteria.remove(conditions);
     }
 
@@ -314,6 +326,9 @@ public final class CriteriaUtil {
      * @param conditions the collection of conditions to remove
      */
     public static void remove(final Criteria criteria, final Collection<Condition> conditions) {
+        N.checkArgNotNull(criteria, "criteria");
+        N.checkArgNotNull(conditions, "conditions");
+
         criteria.remove(conditions);
     }
 }

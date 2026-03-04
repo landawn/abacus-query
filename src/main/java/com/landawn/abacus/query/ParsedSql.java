@@ -28,6 +28,7 @@ import com.landawn.abacus.util.IOUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -60,7 +61,8 @@ public final class ParsedSql {
 
     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
 
-    private static final Set<String> opSqlPrefixSet = N.asSet(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, SK.CALL, SK.VALUES, "EXPLAIN");
+    private static final Set<String> opSqlPrefixSet = Set.of(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, SK.CALL, SK.VALUES, "EXPLAIN",
+            "REPLACE");
 
     private static final int factor = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
@@ -86,7 +88,6 @@ public final class ParsedSql {
         this.sql = sql.trim();
 
         final List<String> words = SQLParser.parse(this.sql);
-
         final String firstOpWord = resolveFirstOpWord(words);
         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && opSqlPrefixSet.contains(firstOpWord.toUpperCase(Locale.ROOT));
 
@@ -96,13 +97,13 @@ public final class ParsedSql {
         final int NAMED_PARAMETER_TYPE = 2;
         final int IBATIS_PARAMETER_TYPE = 4;
 
-        if (isOpSqlPrefix) {
-            final StringBuilder sb = Objectory.createStringBuilder();
+        final StringBuilder sb = Objectory.createStringBuilder();
 
-            try {
-                for (int i = 0, size = words.size(); i < size; i++) {
-                    String word = words.get(i);
+        try {
+            for (int i = 0, size = words.size(); i < size; i++) {
+                String word = words.get(i);
 
+                if (isOpSqlPrefix) {
                     if (word.equals(SK.QUESTION_MARK)) {
                         parameterCount++;
                         type |= QUESTION_MARK_TYPE;
@@ -145,20 +146,16 @@ public final class ParsedSql {
                     if (Integer.bitCount(type) > 1) {
                         throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
                     }
-
-                    sb.append(word);
                 }
 
-                final String tmpSql = Strings.stripToEmpty(sb.toString());
-                parameterizedSql = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
-                namedParameters = ImmutableList.wrap(namedParameterList);
-            } finally {
-                Objectory.recycle(sb);
+                sb.append(word);
             }
-        } else {
-            final String tmpSql = Strings.stripToEmpty(this.sql);
+
+            final String tmpSql = Strings.stripToEmpty(isOpSqlPrefix ? sb.toString() : this.sql);
             parameterizedSql = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
-            namedParameters = ImmutableList.empty();
+            namedParameters = isOpSqlPrefix ? ImmutableList.wrap(namedParameterList) : ImmutableList.empty();
+        } finally {
+            Objectory.recycle(sb);
         }
     }
 

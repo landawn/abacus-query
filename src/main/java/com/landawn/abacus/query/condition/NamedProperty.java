@@ -103,6 +103,10 @@ public sealed class NamedProperty permits NP {
      */
     public NamedProperty(final String propName) {
         this.propName = N.requireNonNull(propName, "propName");
+
+        if (Strings.isEmpty(this.propName)) {
+            throw new IllegalArgumentException("Property name cannot be null or empty");
+        }
     }
 
     /**
@@ -206,6 +210,63 @@ public sealed class NamedProperty permits NP {
         final Or or = Filters.or();
 
         for (final Object propValue : values) {
+            or.add(Filters.equal(propName, propValue));
+        }
+
+        return or;
+    }
+
+    /**
+     * Creates an OR condition with multiple EQUAL checks for this property using primitive int values.
+     *
+     * @param values primitive int values to check
+     * @return an Or condition containing multiple Equal conditions
+     */
+    @SuppressWarnings("deprecation")
+    public Or anyEqual(final int[] values) {
+        N.checkArgNotEmpty(values, "values");
+
+        final Or or = Filters.or();
+
+        for (final int propValue : values) {
+            or.add(Filters.equal(propName, propValue));
+        }
+
+        return or;
+    }
+
+    /**
+     * Creates an OR condition with multiple EQUAL checks for this property using primitive long values.
+     *
+     * @param values primitive long values to check
+     * @return an Or condition containing multiple Equal conditions
+     */
+    @SuppressWarnings("deprecation")
+    public Or anyEqual(final long[] values) {
+        N.checkArgNotEmpty(values, "values");
+
+        final Or or = Filters.or();
+
+        for (final long propValue : values) {
+            or.add(Filters.equal(propName, propValue));
+        }
+
+        return or;
+    }
+
+    /**
+     * Creates an OR condition with multiple EQUAL checks for this property using primitive double values.
+     *
+     * @param values primitive double values to check
+     * @return an Or condition containing multiple Equal conditions
+     */
+    @SuppressWarnings("deprecation")
+    public Or anyEqual(final double[] values) {
+        N.checkArgNotEmpty(values, "values");
+
+        final Or or = Filters.or();
+
+        for (final double propValue : values) {
             or.add(Filters.equal(propName, propValue));
         }
 
@@ -662,6 +723,36 @@ public sealed class NamedProperty permits NP {
     }
 
     /**
+     * Creates an IN condition for this property with primitive int values.
+     *
+     * @param values primitive int values to check membership against
+     * @return an In condition for this property
+     */
+    public In in(final int[] values) {
+        return Filters.in(propName, values);
+    }
+
+    /**
+     * Creates an IN condition for this property with primitive long values.
+     *
+     * @param values primitive long values to check membership against
+     * @return an In condition for this property
+     */
+    public In in(final long[] values) {
+        return Filters.in(propName, values);
+    }
+
+    /**
+     * Creates an IN condition for this property with primitive double values.
+     *
+     * @param values primitive double values to check membership against
+     * @return an In condition for this property
+     */
+    public In in(final double[] values) {
+        return Filters.in(propName, values);
+    }
+
+    /**
      * Creates an IN condition for this property with a collection of values.
      * This is similar to {@link #in(Object...)} but accepts a collection instead of varargs.
      * Useful when the values are already in a collection or list.
@@ -705,6 +796,36 @@ public sealed class NamedProperty permits NP {
      * @see Filters#notIn(String, Object[])
      */
     public NotIn notIn(final Object... values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with primitive int values.
+     *
+     * @param values primitive int values to check non-membership against
+     * @return a NotIn condition for this property
+     */
+    public NotIn notIn(final int[] values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with primitive long values.
+     *
+     * @param values primitive long values to check non-membership against
+     * @return a NotIn condition for this property
+     */
+    public NotIn notIn(final long[] values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with primitive double values.
+     *
+     * @param values primitive double values to check non-membership against
+     * @return a NotIn condition for this property
+     */
+    public NotIn notIn(final double[] values) {
         return Filters.notIn(propName, values);
     }
 

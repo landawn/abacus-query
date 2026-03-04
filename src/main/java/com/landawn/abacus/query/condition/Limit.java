@@ -14,11 +14,11 @@
 
 package com.landawn.abacus.query.condition;
 
-import static com.landawn.abacus.query.SK._SPACE;
+import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.List;
 
-import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;

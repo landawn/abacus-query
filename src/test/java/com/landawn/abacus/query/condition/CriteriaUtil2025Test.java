@@ -18,6 +18,7 @@ package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -304,6 +305,24 @@ public class CriteriaUtil2025Test extends TestBase {
         CriteriaUtil.add(criteria, condition);
 
         assertFalse(criteria.getConditions().isEmpty());
+    }
+
+    @Test
+    public void testAddRejectsNullCriteria() {
+        Condition condition = new Where(Filters.equal("status", "active"));
+        assertThrows(IllegalArgumentException.class, () -> CriteriaUtil.add(null, condition));
+    }
+
+    @Test
+    public void testAddRejectsNullVarargs() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> CriteriaUtil.add(criteria, (Condition[]) null));
+    }
+
+    @Test
+    public void testRemoveRejectsNullOperator() {
+        Criteria criteria = new Criteria();
+        assertThrows(IllegalArgumentException.class, () -> CriteriaUtil.remove(criteria, (Operator) null));
     }
 
     @Test

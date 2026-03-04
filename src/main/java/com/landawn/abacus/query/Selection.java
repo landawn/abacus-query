@@ -306,6 +306,7 @@ public final class Selection {
          */
         @Beta
         public SQLBuilder apply(final Function<? super List<Selection>, SQLBuilder> func) {
+            N.checkArgNotNull(func, "func");
             return func.apply(build());
         }
     }

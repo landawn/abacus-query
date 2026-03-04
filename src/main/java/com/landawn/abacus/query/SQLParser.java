@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Splitter;
 import com.landawn.abacus.util.Strings;
 
@@ -53,6 +54,7 @@ public final class SQLParser {
     private static final Set<Object> separators = ConcurrentHashMap.newKeySet();
 
     private static final AtomicInteger maxSeparatorLength = new AtomicInteger(1);
+    private static final Set<String> hashIdentifierContextKeywords = N.asSet(SK.FROM, SK.JOIN, SK.INTO, SK.UPDATE, "TABLE");
 
     static {
         separators.add(TAB);
@@ -802,6 +804,10 @@ public final class SQLParser {
             return false;
         }
 
+        if (ch == '#' && isLikelyHashPrefixedIdentifier(str, len, index)) {
+            return false;
+        }
+
         if (separators.contains(ch)) {
             return true;
         }
@@ -820,7 +826,50 @@ public final class SQLParser {
         }
 
         final String multiCharSeparator = matchMultiCharSeparator(str, len, index);
-        return multiCharSeparator == null || multiCharSeparator.length() == 1;
+        if (multiCharSeparator != null && multiCharSeparator.length() > 1) {
+            return false;
+        }
+
+        return !isLikelyHashPrefixedIdentifier(str, len, index);
+    }
+
+    private static boolean isLikelyHashPrefixedIdentifier(final String str, final int len, final int index) {
+        if (index >= len - 1) {
+            return false;
+        }
+
+        final char next = str.charAt(index + 1);
+
+        if (!isIdentifierChar(next)) {
+            return false;
+        }
+
+        int left = index - 1;
+
+        while (left >= 0 && Character.isWhitespace(str.charAt(left))) {
+            left--;
+        }
+
+        if (left < 0) {
+            return false;
+        }
+
+        int end = left;
+
+        while (left >= 0 && isIdentifierChar(str.charAt(left))) {
+            left--;
+        }
+
+        if (end < left + 1) {
+            return false;
+        }
+
+        final String prevWord = str.substring(left + 1, end + 1).toUpperCase(Locale.ROOT);
+        return hashIdentifierContextKeywords.contains(prevWord);
+    }
+
+    private static boolean isIdentifierChar(final char ch) {
+        return ch == '_' || ch == '$' || Character.isLetterOrDigit(ch);
     }
 
     private static String matchMultiCharSeparator(final String str, final int len, final int index) {

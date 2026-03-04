@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.SK;
 
 @Tag("2025")
 public class SK2025Test extends TestBase {
@@ -194,7 +195,6 @@ public class SK2025Test extends TestBase {
         assertEquals("FETCH NEXT", SK.FETCH_NEXT);
         assertEquals("ROWS", SK.ROWS);
         assertEquals("ROWS ONLY", SK.ROWS_ONLY);
-        assertEquals("ROW_NEXT", SK.ROW_NEXT);
         assertEquals("ROWNUM", SK.ROWNUM);
     }
 

@@ -26,6 +26,13 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
+    public void testConstructorWithEmptyString() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            new NamedProperty("");
+        });
+    }
+
+    @Test
     public void testOfMethod() {
         NamedProperty prop = NamedProperty.of("username");
         Assertions.assertNotNull(prop);
@@ -79,6 +86,15 @@ public class NamedPropertyTest extends TestBase {
         Or condition = prop.anyEqual(cities);
 
         Assertions.assertEquals(3, condition.getConditions().size());
+    }
+
+    @Test
+    public void testAnyEqualWithPrimitiveArray() {
+        NamedProperty prop = NamedProperty.of("priority");
+        Or condition = prop.anyEqual(new int[] { 1, 2, 3 });
+
+        Assertions.assertEquals(3, condition.getConditions().size());
+        Assertions.assertEquals(Integer.valueOf(1), ((Equal) condition.getConditions().get(0)).getPropValue());
     }
 
     @Test
@@ -242,6 +258,22 @@ public class NamedPropertyTest extends TestBase {
 
         Assertions.assertEquals("id", condition.getPropName());
         Assertions.assertEquals(5, condition.getValues().size());
+    }
+
+    @Test
+    public void testInWithPrimitiveArray() {
+        NamedProperty prop = NamedProperty.of("id");
+        In condition = prop.in(new int[] { 1, 2, 3 });
+
+        Assertions.assertEquals(Arrays.asList(1, 2, 3), condition.getParameters());
+    }
+
+    @Test
+    public void testNotInWithPrimitiveArray() {
+        NamedProperty prop = NamedProperty.of("id");
+        NotIn condition = prop.notIn(new int[] { 4, 5, 6 });
+
+        Assertions.assertEquals(Arrays.asList(4, 5, 6), condition.getParameters());
     }
 
     @Test

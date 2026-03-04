@@ -16,7 +16,7 @@
 
 package com.landawn.abacus.query;
 
-import static com.landawn.abacus.query.SK._SPACE;
+import static com.landawn.abacus.util.SK._SPACE;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -71,6 +71,7 @@ import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.ObjectPool;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.OperationType;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.Throwables;
 import com.landawn.abacus.util.Tuple.Tuple2;
@@ -4987,7 +4988,58 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     private static boolean containsSqlCommentToken(final String expr) {
-        return expr.indexOf("--") >= 0 || expr.indexOf("/*") >= 0 || expr.indexOf('#') >= 0;
+        char quoteChar = 0;
+
+        for (int i = 0, len = expr.length(); i < len; i++) {
+            final char ch = expr.charAt(i);
+
+            if (quoteChar != 0) {
+                if (ch == quoteChar) {
+                    if (i < len - 1 && expr.charAt(i + 1) == quoteChar) {
+                        i++;
+                    } else {
+                        int backslashCount = 0;
+
+                        for (int k = i - 1; k >= 0 && expr.charAt(k) == '\\'; k--) {
+                            backslashCount++;
+                        }
+
+                        if (backslashCount % 2 == 0) {
+                            quoteChar = 0;
+                        }
+                    }
+                }
+
+                continue;
+            }
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE) {
+                quoteChar = ch;
+                continue;
+            }
+
+            if (ch == '-' && i < len - 1 && expr.charAt(i + 1) == '-') {
+                return true;
+            }
+
+            if (ch == '/' && i < len - 1 && expr.charAt(i + 1) == '*') {
+                return true;
+            }
+
+            if (ch == '#') {
+                if (i < len - 1) {
+                    final char nextChar = expr.charAt(i + 1);
+
+                    if (nextChar == '>' || nextChar == '#' || nextChar == '{') {
+                        continue;
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo,

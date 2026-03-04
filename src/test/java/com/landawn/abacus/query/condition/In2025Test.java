@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -143,6 +144,15 @@ public class In2025Test extends TestBase {
     }
 
     @Test
+    public void testGetParameters_WithNestedConditionValues() {
+        Equal nested = Filters.equal("status", "active");
+        In condition = new In("id", Arrays.asList(nested, 2));
+
+        List<Object> params = condition.getParameters();
+        assertEquals(Arrays.asList("active", 2), params);
+    }
+
+    @Test
     public void testClearParameters() {
         In condition = new In("status", Arrays.asList("active", "pending"));
         condition.clearParameters();
@@ -151,6 +161,16 @@ public class In2025Test extends TestBase {
         assertEquals(2, values.size());
         assertEquals(null, values.get(0));
         assertEquals(null, values.get(1));
+    }
+
+    @Test
+    public void testClearParameters_WithNestedConditionValues() {
+        In condition = new In("id", Arrays.asList(Filters.equal("status", "active"), 2));
+        condition.clearParameters();
+
+        List<Object> params = condition.getParameters();
+        assertEquals(Arrays.asList(null, null), params);
+        assertTrue(condition.getValues().get(0) instanceof Condition);
     }
 
     @Test
@@ -176,6 +196,16 @@ public class In2025Test extends TestBase {
 
         // Copy should not be affected
         assertEquals("active", copy.getValues().get(0));
+    }
+
+    @Test
+    public void testCopy_DeepCopyForNestedConditionValues() {
+        In original = new In("id", Arrays.asList(Filters.equal("status", "active")));
+        In copy = original.copy();
+
+        original.clearParameters();
+
+        assertEquals(Arrays.asList("active"), copy.getParameters());
     }
 
     @Test

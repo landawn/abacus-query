@@ -87,6 +87,7 @@ import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.EntityId;
 import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.SK;
 
 /**
  * A comprehensive, enterprise-grade factory class providing a complete suite of SQL condition builders
@@ -1160,6 +1161,7 @@ public class Filters {
         N.checkArgNotNull(entityId, "entityId");
 
         final Collection<String> selectPropNames = entityId.keySet();
+        N.checkArgNotEmpty(selectPropNames, "entityId");
         final Iterator<String> iter = selectPropNames.iterator();
 
         if (selectPropNames.size() == 1) {
@@ -2290,7 +2292,7 @@ public class Filters {
      * @return a GroupBy clause
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
-        return groupBy(N.asLinkedHashMap(propName1, direction1, propName2, direction2));
+        return groupBy(N.asMap(propName1, direction1, propName2, direction2));
     }
 
     /**
@@ -2311,7 +2313,7 @@ public class Filters {
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
-        return groupBy(N.asLinkedHashMap(propName1, direction1, propName2, direction2, propName3, direction3));
+        return groupBy(N.asMap(propName1, direction1, propName2, direction2, propName3, direction3));
     }
 
     /**
@@ -2531,7 +2533,7 @@ public class Filters {
      * @return an OrderBy clause
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
-        return orderBy(N.asLinkedHashMap(propName1, direction1, propName2, direction2));
+        return orderBy(N.asMap(propName1, direction1, propName2, direction2));
     }
 
     /**
@@ -2552,7 +2554,7 @@ public class Filters {
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
-        return orderBy(N.asLinkedHashMap(propName1, direction1, propName2, direction2, propName3, direction3));
+        return orderBy(N.asMap(propName1, direction1, propName2, direction2, propName3, direction3));
     }
 
     /**

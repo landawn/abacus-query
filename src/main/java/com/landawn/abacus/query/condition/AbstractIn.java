@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import com.landawn.abacus.query.SK;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -109,17 +109,39 @@ public abstract class AbstractIn extends LogicalCondition {
      */
     @Override
     public List<Object> getParameters() {
-        return values == null ? N.emptyList() : ImmutableList.wrap((List<Object>) values);
+        if (values == null) {
+            return N.emptyList();
+        }
+
+        final List<Object> parameters = new ArrayList<>(values.size());
+
+        for (final Object value : values) {
+            if (value instanceof Condition) {
+                parameters.addAll(((Condition) value).getParameters());
+            } else {
+                parameters.add(value);
+            }
+        }
+
+        return ImmutableList.wrap(parameters);
     }
 
     /**
      * Clears all parameter values by setting them to null to free memory.
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings("unchecked")
     @Override
     public void clearParameters() {
         if (N.notEmpty(values)) {
-            N.fill((List) values, null);
+            for (int i = 0, size = values.size(); i < size; i++) {
+                final Object value = values.get(i);
+
+                if (value instanceof Condition) {
+                    ((Condition) value).clearParameters();
+                } else {
+                    ((List<Object>) values).set(i, null);
+                }
+            }
         }
     }
 
@@ -134,7 +156,17 @@ public abstract class AbstractIn extends LogicalCondition {
     public <T extends Condition> T copy() {
         final AbstractIn copy = super.copy();
 
-        copy.values = values == null ? null : new ArrayList<>(values);
+        if (values == null) {
+            copy.values = null;
+        } else {
+            final List<Object> copiedValues = new ArrayList<>(values.size());
+
+            for (final Object value : values) {
+                copiedValues.add(value instanceof Condition ? ((Condition) value).copy() : value);
+            }
+
+            copy.values = copiedValues;
+        }
 
         return (T) copy;
     }
