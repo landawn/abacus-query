@@ -88,16 +88,6 @@ public class NotInSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testSetSubQuery() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM active_users");
-        NotInSubQuery condition = Filters.notIn("userId", subQuery1);
-
-        condition.setSubQuery(subQuery2);
-        Assertions.assertEquals(subQuery2, condition.getSubQuery());
-    }
-
-    @Test
     public void testGetParameters() {
         SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
         NotInSubQuery condition = Filters.notIn("userId", subQuery);

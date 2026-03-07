@@ -30,7 +30,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * similar to how {@link Binary} serves as the base for {@link Equal}, {@link NotEqual}, etc.
  *
  * <p>The only difference between {@link In} and {@link NotIn} is the operator
- * ({@code IN} vs {@code NOT IN}). All fields, getters, setters, and methods
+ * ({@code IN} vs {@code NOT IN}). All fields, getters, and methods
  * for parameters, copying, string rendering, hashing, and equality are identical.</p>
  *
  * @see In

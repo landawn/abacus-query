@@ -28,7 +28,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * similar to how {@link Binary} serves as the base for {@link Equal}, {@link NotEqual}, etc.
  *
  * <p>The only difference between {@link Between} and {@link NotBetween} is the operator
- * ({@code BETWEEN} vs {@code NOT BETWEEN}). All fields, getters, setters, and methods
+ * ({@code BETWEEN} vs {@code NOT BETWEEN}). All fields, getters, and methods
  * for parameters, copying, string rendering, hashing, and equality are identical.</p>
  *
  * @see Between

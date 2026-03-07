@@ -31,7 +31,7 @@ import com.landawn.abacus.util.Strings;
  * similar to how {@link Binary} serves as the base for {@link Equal}, {@link NotEqual}, etc.
  *
  * <p>The only difference between {@link InSubQuery} and {@link NotInSubQuery} is the operator
- * ({@code IN} vs {@code NOT IN}). All fields, getters, setters, and methods
+ * ({@code IN} vs {@code NOT IN}). All fields, getters, and methods
  * for parameters, copying, string rendering, hashing, and equality are identical.</p>
  *
  * @see InSubQuery
@@ -119,21 +119,6 @@ public abstract class AbstractInSubQuery extends LogicalCondition {
      */
     public SubQuery getSubQuery() {
         return subQuery;
-    }
-
-    /**
-     * Sets a new subquery for this condition.
-     *
-     * @param subQuery the new subquery (must not be null)
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Create a new instance instead.
-     */
-    @Deprecated
-    public void setSubQuery(final SubQuery subQuery) {
-        N.checkArgNotNull(subQuery, "subQuery");
-        validateSubQuerySelectArity(propNames, subQuery);
-
-        this.subQuery = subQuery;
     }
 
     private static void validateSubQuerySelectArity(final Collection<String> propNames, final SubQuery subQuery) {

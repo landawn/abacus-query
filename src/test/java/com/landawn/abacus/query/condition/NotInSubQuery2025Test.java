@@ -131,26 +131,6 @@ public class NotInSubQuery2025Test extends TestBase {
     }
 
     @Test
-    public void testSetSubQuery() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users WHERE active = false");
-        NotInSubQuery condition = new NotInSubQuery("userId", subQuery1);
-
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM users WHERE deleted = true");
-        condition.setSubQuery(subQuery2);
-
-        assertEquals(subQuery2, condition.getSubQuery());
-    }
-
-    @Test
-    public void testSetSubQuery_RejectsArityMismatch() {
-        NotInSubQuery condition = new NotInSubQuery(Arrays.asList("firstName", "lastName"),
-                Filters.subQuery("users", Arrays.asList("id", "name"), (Condition) null));
-        SubQuery mismatch = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
-
-        assertThrows(IllegalArgumentException.class, () -> condition.setSubQuery(mismatch));
-    }
-
-    @Test
     public void testGetParameters() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);

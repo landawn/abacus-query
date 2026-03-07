@@ -85,18 +85,6 @@ public class InSubQueryTest extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetSubQuery() {
-        SubQuery originalSubQuery = Filters.subQuery("SELECT id FROM table1");
-        SubQuery newSubQuery = Filters.subQuery("SELECT id FROM table2");
-        InSubQuery condition = new InSubQuery("id", originalSubQuery);
-
-        condition.setSubQuery(newSubQuery);
-
-        Assertions.assertEquals(newSubQuery, condition.getSubQuery());
-    }
-
-    @Test
     public void testGetParameters() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE status = ?", "active");
         InSubQuery condition = new InSubQuery("user_id", subQuery);

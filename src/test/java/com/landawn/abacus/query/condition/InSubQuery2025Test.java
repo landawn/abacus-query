@@ -132,25 +132,6 @@ public class InSubQuery2025Test extends TestBase {
     }
 
     @Test
-    public void testSetSubQuery() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users WHERE status = 'active'");
-        InSubQuery condition = new InSubQuery("user_id", subQuery1);
-
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM users WHERE status = 'inactive'");
-        condition.setSubQuery(subQuery2);
-
-        assertEquals(subQuery2, condition.getSubQuery());
-    }
-
-    @Test
-    public void testSetSubQuery_RejectsArityMismatch() {
-        InSubQuery condition = new InSubQuery(Arrays.asList("user_id", "user_name"), Filters.subQuery("users", Arrays.asList("id", "name"), (Condition) null));
-        SubQuery mismatch = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
-
-        assertThrows(IllegalArgumentException.class, () -> condition.setSubQuery(mismatch));
-    }
-
-    @Test
     public void testGetParameters() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
