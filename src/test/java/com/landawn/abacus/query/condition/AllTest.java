@@ -113,18 +113,6 @@ public class AllTest extends TestBase {
     }
 
     @Test
-    public void testSetCondition() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
-        All all = Filters.all(subQuery1);
-
-        Assertions.assertEquals(subQuery1, all.getCondition());
-
-        all.setCondition(subQuery2);
-        Assertions.assertEquals(subQuery2, all.getCondition());
-    }
-
-    @Test
     public void testAllOperatorBehaviors() {
         // Test > ALL (greater than maximum)
         SubQuery maxQuery = Filters.subQuery("SELECT MAX(price) FROM products WHERE category = 'Budget'");

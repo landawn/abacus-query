@@ -114,18 +114,6 @@ public class AnyTest extends TestBase {
     }
 
     @Test
-    public void testSetCondition() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
-        Any any = Filters.any(subQuery1);
-
-        Assertions.assertEquals(subQuery1, any.getCondition());
-
-        any.setCondition(subQuery2);
-        Assertions.assertEquals(subQuery2, any.getCondition());
-    }
-
-    @Test
     public void testComplexSubQuery() {
         // Test with a complex subquery
         SubQuery complexSubQuery = Filters.subQuery("departments", Arrays.asList("budget"),

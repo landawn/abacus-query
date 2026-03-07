@@ -149,31 +149,6 @@ public class Binary extends LogicalCondition {
     }
 
     /**
-     * Sets the value being compared against.
-     * This method should generally not be used as conditions should be immutable.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Deprecated: prefer creating a new condition instead
-     * Binary eq = new Equal("status", "active");
-     * eq.setPropValue("inactive");   // Not recommended
-     *
-     * // Preferred approach: create a new condition
-     * Binary newEq = new Equal("status", "inactive");
-     * }</pre>
-     *
-     * @param propValue the new property value
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Instead of modifying an existing condition, create a new condition with the desired value.
-     *             For example, use {@code new Equal(propName, newValue)} instead of
-     *             {@code existingCondition.setPropValue(newValue)}.
-     */
-    @Deprecated
-    public void setPropValue(final Object propValue) {
-        this.propValue = propValue;
-    }
-
-    /**
      * Gets the parameters for this condition.
      * If the value is a Condition (subquery), returns its parameters.
      * Otherwise, returns a list containing the single value.

@@ -180,63 +180,6 @@ public class Junction extends LogicalCondition {
         return Collections.unmodifiableList(conditions);
     }
 
-    /**
-     * Replaces all conditions in this junction with the specified conditions.
-     * This method clears existing conditions before adding the new ones.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.AND,
-     *     new Equal("status", "active"));
-     *
-     * // Replace all conditions with new ones
-     * junction.set(
-     *     new Equal("status", "pending"),
-     *     new GreaterThan("priority", 5),
-     *     new IsNotNull("assignee")
-     * );
-     * // Junction now contains only the three new conditions
-     * }</pre>
-     *
-     * @param conditions the new conditions to set. Existing conditions will be cleared.
-     * @throws IllegalArgumentException if conditions array contains null elements
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     */
-    @Deprecated
-    public final void set(final Condition... conditions) {
-        this.conditions.clear();
-        appendConditions(conditions);
-    }
-
-    /**
-     * Replaces all conditions in this junction with the specified collection of conditions.
-     * This method clears existing conditions before adding the new ones.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Junction junction = new Junction(Operator.OR);
-     *
-     * // Build conditions dynamically
-     * List<Condition> newConditions = new ArrayList<>();
-     * newConditions.add(new Equal("region", "US"));
-     * newConditions.add(new Equal("region", "EU"));
-     * newConditions.add(new Equal("region", "APAC"));
-     *
-     * // Replace all existing conditions with the new collection
-     * junction.set(newConditions);
-     * // Junction now contains: region = 'US' OR region = 'EU' OR region = 'APAC'
-     * }</pre>
-     *
-     * @param conditions the new collection of conditions to set. Existing conditions will be cleared.
-     * @throws IllegalArgumentException if conditions collection contains null elements
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     */
-    @Deprecated
-    public void set(final Collection<? extends Condition> conditions) {
-        this.conditions.clear();
-        appendConditions(conditions);
-    }
-
     private void appendConditions(final Condition... conditions) {
         if (N.isEmpty(conditions)) {
             return;

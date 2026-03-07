@@ -91,18 +91,6 @@ public abstract class AbstractBetween extends LogicalCondition {
     }
 
     /**
-     * Sets the minimum value of the range.
-     *
-     * @param minValue the new minimum value
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Create a new instance instead.
-     */
-    @Deprecated
-    public void setMinValue(final Object minValue) {
-        this.minValue = minValue;
-    }
-
-    /**
      * Gets the maximum value of the range.
      *
      * @param <T> the expected type of the maximum value
@@ -111,18 +99,6 @@ public abstract class AbstractBetween extends LogicalCondition {
     @SuppressWarnings("unchecked")
     public <T> T getMaxValue() {
         return (T) maxValue;
-    }
-
-    /**
-     * Sets the maximum value of the range.
-     *
-     * @param maxValue the new maximum value
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Create a new instance instead.
-     */
-    @Deprecated
-    public void setMaxValue(final Object maxValue) {
-        this.maxValue = maxValue;
     }
 
     /**

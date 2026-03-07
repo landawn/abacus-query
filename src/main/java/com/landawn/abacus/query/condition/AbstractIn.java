@@ -88,21 +88,6 @@ public abstract class AbstractIn extends LogicalCondition {
     }
 
     /**
-     * Sets new values for this condition.
-     *
-     * @param values the new list of values (must not be null or empty)
-     * @throws IllegalArgumentException if values is null or empty
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     *             Create a new instance instead.
-     */
-    @Deprecated
-    public void setValues(final List<?> values) {
-        N.checkArgNotEmpty(values, "values");
-
-        this.values = new ArrayList<>(values);
-    }
-
-    /**
      * Gets the parameter values for this condition.
      *
      * @return an immutable list of values as parameters, or an empty list if no values are set

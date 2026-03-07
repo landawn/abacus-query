@@ -212,22 +212,6 @@ public class NotLike2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue() {
-        NotLike condition = new NotLike("field", "%exclude%");
-        condition.setPropValue("%avoid%");
-        assertEquals("%avoid%", condition.getPropValue());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue_ChangeType() {
-        NotLike condition = new NotLike("field", "%pattern%");
-        condition.setPropValue(777);
-        assertEquals(Integer.valueOf(777), condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         NotLike condition = new NotLike("filename", "%.tmp");
         String result = condition.toString();

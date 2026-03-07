@@ -103,28 +103,6 @@ public class Cell extends AbstractCondition {
     }
 
     /**
-     * Sets the wrapped condition.
-     * This method should generally not be used as conditions should be immutable.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Deprecated: prefer creating a new Cell instead
-     * Cell notCell = new Cell(Operator.NOT, Filters.equal("status", "active"));
-     * notCell.setCondition(Filters.equal("status", "inactive"));   // Not recommended
-     *
-     * // Preferred approach: create a new Cell
-     * Cell newNotCell = new Cell(Operator.NOT, Filters.equal("status", "inactive"));
-     * }</pre>
-     *
-     * @param cond the new condition to wrap
-     * @deprecated Condition should be immutable except using {@code clearParameters()} to release resources.
-     */
-    @Deprecated
-    public void setCondition(final Condition cond) {
-        this.condition = cond;
-    }
-
-    /**
      * Gets the parameters from the wrapped condition.
      * This method delegates to the wrapped condition's getParameters method.
      * 

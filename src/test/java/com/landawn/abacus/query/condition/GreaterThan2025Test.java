@@ -212,22 +212,6 @@ public class GreaterThan2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue() {
-        GreaterThan condition = new GreaterThan("field", 100);
-        condition.setPropValue(200);
-        assertEquals(Integer.valueOf(200), condition.getPropValue());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue_ChangeType() {
-        GreaterThan condition = new GreaterThan("field", 100);
-        condition.setPropValue("newValue");
-        assertEquals("newValue", condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         GreaterThan condition = new GreaterThan("age", 18);
         String result = condition.toString();

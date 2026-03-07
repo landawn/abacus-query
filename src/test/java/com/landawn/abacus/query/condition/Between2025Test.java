@@ -233,20 +233,6 @@ public class Between2025Test extends TestBase {
     }
 
     @Test
-    public void testSetMinValue() {
-        Between condition = new Between("age", 18, 65);
-        condition.setMinValue(21);
-        assertEquals(Integer.valueOf(21), condition.getMinValue());
-    }
-
-    @Test
-    public void testSetMaxValue() {
-        Between condition = new Between("age", 18, 65);
-        condition.setMaxValue(70);
-        assertEquals(Integer.valueOf(70), condition.getMaxValue());
-    }
-
-    @Test
     public void testCopy_DeepCopy() {
         Between original = new Between("price", 10.0, 50.0);
         Between copy = original.copy();

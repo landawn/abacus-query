@@ -1,7 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import static org.junit.Assert.assertThrows;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -55,30 +53,12 @@ public class NotInTest extends TestBase {
     }
 
     @Test
-    public void testSetValues() {
-        List<String> originalValues = Arrays.asList("a", "b", "c");
-        List<String> newValues = Arrays.asList("x", "y", "z");
-
-        NotIn notIn = Filters.notIn("type", originalValues);
-        notIn.setValues(newValues);
-
-        Assertions.assertEquals(newValues, notIn.getValues());
-    }
-
-    @Test
     public void testGetParameters() {
         List<Integer> values = Arrays.asList(10, 20, 30);
         NotIn notIn = Filters.notIn("amount", values);
 
         List<Object> params = notIn.getParameters();
         Assertions.assertEquals(values, params);
-    }
-
-    @Test
-    public void testGetParametersWithNull() {
-        List<String> values = Arrays.asList("a", "b");
-        NotIn notIn = Filters.notIn("code", values);
-        assertThrows(IllegalArgumentException.class, () -> notIn.setValues(null));
     }
 
     @Test

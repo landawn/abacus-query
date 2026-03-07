@@ -83,35 +83,6 @@ public class And2025Test extends TestBase {
     }
 
     @Test
-    public void testSet_VarArgs() {
-        And junction = new And();
-        Equal cond1 = new Equal("a", 1);
-        Equal cond2 = new Equal("b", 2);
-
-        junction.set(cond1, cond2);
-        assertEquals(2, (int) junction.getConditions().size());
-    }
-
-    @Test
-    public void testSet_Collection() {
-        And junction = new And();
-        List<Condition> conditions = Arrays.asList(new Equal("a", 1), new Equal("b", 2));
-
-        junction.set(conditions);
-        assertEquals(2, (int) junction.getConditions().size());
-    }
-
-    @Test
-    public void testSet_ReplacesExisting() {
-        And junction = new And(new Equal("old", 1));
-        junction.set(new Equal("new", 2));
-
-        assertEquals((Object) Integer.valueOf(1), junction.getConditions().size());
-        Equal condition = (Equal) junction.getConditions().get(0);
-        assertEquals("new", condition.getPropName());
-    }
-
-    @Test
     public void testAdd_VarArgs() {
         // Commented out: Junction.add(...) APIs are currently commented out.
     }
@@ -331,14 +302,6 @@ public class And2025Test extends TestBase {
     }
 
     @Test
-    public void testSet_NullConditionInArray() {
-        And and = new And(new Equal("old", 1));
-        assertThrows(IllegalArgumentException.class, () -> {
-            and.set(new Equal("a", 1), null);
-        });
-    }
-
-    @Test
     public void testGetOperator() {
         And and = new And(new Equal("a", 1));
         assertEquals(Operator.AND, and.operator());
@@ -369,16 +332,6 @@ public class And2025Test extends TestBase {
     @Test
     public void testAdd_NullCollection() {
         // Commented out: Junction.add(...) APIs are currently commented out.
-    }
-
-    @Test
-    public void testSet_NullConditionInCollection() {
-        And and = new And(new Equal("old", 1));
-        List<Condition> conditions = new java.util.ArrayList<>();
-        conditions.add(null);
-        assertThrows(IllegalArgumentException.class, () -> {
-            and.set(conditions);
-        });
     }
 
     @Test

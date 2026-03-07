@@ -46,22 +46,6 @@ public class NotBetweenTest extends TestBase {
     }
 
     @Test
-    public void testSetMinValue() {
-        NotBetween notBetween = Filters.notBetween("price", 100, 1000);
-        notBetween.setMinValue(200);
-
-        Assertions.assertEquals(200, (Integer) notBetween.getMinValue());
-    }
-
-    @Test
-    public void testSetMaxValue() {
-        NotBetween notBetween = Filters.notBetween("price", 100, 1000);
-        notBetween.setMaxValue(2000);
-
-        Assertions.assertEquals(2000, (Integer) notBetween.getMaxValue());
-    }
-
-    @Test
     public void testGetParameters() {
         NotBetween notBetween = Filters.notBetween("salary", 30000, 80000);
 

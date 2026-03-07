@@ -235,22 +235,6 @@ public class Equal2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue() {
-        Equal condition = new Equal("field", "oldValue");
-        condition.setPropValue("newValue");
-        assertEquals("newValue", condition.getPropValue());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue_ChangeType() {
-        Equal condition = new Equal("field", "stringValue");
-        condition.setPropValue(123);
-        assertEquals(Integer.valueOf(123), condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         Equal condition = new Equal("name", "value");
         String result = condition.toString();

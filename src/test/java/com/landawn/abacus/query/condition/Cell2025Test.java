@@ -1,12 +1,10 @@
 package com.landawn.abacus.query.condition;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,16 +62,6 @@ public class Cell2025Test extends TestBase {
     }
 
     @Test
-    public void testSetCondition() {
-        Cell cell = new Cell(Operator.NOT, Filters.eq("old", "value"));
-
-        Condition newCondition = Filters.eq("new", "value");
-        cell.setCondition(newCondition);
-
-        assertEquals(newCondition, cell.getCondition());
-    }
-
-    @Test
     public void testGetParameters() {
         Condition condition = Filters.eq("name", "John");
         Cell cell = new Cell(Operator.NOT, condition);
@@ -109,18 +97,6 @@ public class Cell2025Test extends TestBase {
     }
 
     @Test
-    public void testGetParametersNullCondition() {
-        Cell cell = new Cell(Operator.NOT, Filters.isNull("test"));
-        // Set condition to null via deprecated method
-        cell.setCondition(null);
-
-        List<Object> params = cell.getParameters();
-
-        assertNotNull(params);
-        assertEquals(0, params.size());
-    }
-
-    @Test
     public void testClearParameters() {
         Condition condition = Filters.eq("status", "active");
         Cell cell = new Cell(Operator.NOT, condition);
@@ -134,15 +110,6 @@ public class Cell2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParametersWithNullCondition() {
-        Cell cell = new Cell(Operator.NOT, Filters.isNull("test"));
-        cell.setCondition(null);
-
-        // Should not throw exception
-        assertDoesNotThrow(() -> cell.clearParameters());
-    }
-
-    @Test
     public void testCopy() {
         Condition condition = Filters.eq("status", "active");
         Cell original = new Cell(Operator.NOT, condition);
@@ -153,18 +120,6 @@ public class Cell2025Test extends TestBase {
         assertNotSame(original, copy);
         assertEquals(original.operator(), copy.operator());
         assertNotSame(original.getCondition(), copy.getCondition());
-    }
-
-    @Test
-    public void testCopyWithNullCondition() {
-        Cell original = new Cell(Operator.NOT, Filters.isNull("test"));
-        original.setCondition(null);
-
-        Cell copy = original.copy();
-
-        assertNotNull(copy);
-        assertNotSame(original, copy);
-        assertNull(copy.getCondition());
     }
 
     @Test
@@ -188,16 +143,6 @@ public class Cell2025Test extends TestBase {
 
         assertTrue(result.startsWith("EXISTS"));
         assertTrue(result.contains("SELECT"));
-    }
-
-    @Test
-    public void testToStringWithNullCondition() {
-        Cell cell = new Cell(Operator.NOT, Filters.isNull("test"));
-        cell.setCondition(null);
-
-        String result = cell.toString(NamingPolicy.NO_CHANGE);
-
-        assertEquals("NOT", result);
     }
 
     @Test

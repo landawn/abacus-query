@@ -235,14 +235,4 @@ public class Exists2025Test extends TestBase {
         assertTrue(copyParams.size() == 1 && copyParams.stream().allMatch(param -> param == null));
     }
 
-    @Test
-    public void testSetCondition() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders");
-        Exists exists = new Exists(subQuery1);
-
-        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM products");
-        exists.setCondition(subQuery2);
-
-        assertEquals(subQuery2, exists.getCondition());
-    }
 }

@@ -194,20 +194,6 @@ public class Not2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetCondition() {
-        Equal originalCondition = new Equal("name", "John");
-        Not condition = new Not(originalCondition);
-
-        Equal newCondition = new Equal("age", 30);
-        condition.setCondition(newCondition);
-
-        Condition retrieved = condition.getCondition();
-        assertEquals(newCondition, retrieved);
-        assertEquals("age", ((Equal) retrieved).getPropName());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         Not condition = new Not(new Equal("status", "active"));
         String result = condition.toString();

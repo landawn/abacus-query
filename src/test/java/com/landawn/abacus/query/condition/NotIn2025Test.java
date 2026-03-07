@@ -91,15 +91,6 @@ public class NotIn2025Test extends TestBase {
     }
 
     @Test
-    public void testSetValues() {
-        NotIn condition = new NotIn("status", Arrays.asList("deleted"));
-        List<String> newValues = Arrays.asList("inactive", "archived");
-
-        condition.setValues(newValues);
-        assertEquals(2, condition.getValues().size());
-    }
-
-    @Test
     public void testGetParameters() {
         List<String> values = Arrays.asList("deleted", "archived");
         NotIn condition = new NotIn("status", values);
@@ -255,18 +246,6 @@ public class NotIn2025Test extends TestBase {
 
         assertEquals(3, notIn.getParameters().size());
         assertTrue(notIn.toString(NamingPolicy.NO_CHANGE).contains("category"));
-    }
-
-    @Test
-    public void testSetValues_Null() {
-        NotIn condition = new NotIn("status", Arrays.asList("deleted"));
-        assertThrows(IllegalArgumentException.class, () -> condition.setValues(null));
-    }
-
-    @Test
-    public void testSetValues_Empty() {
-        NotIn condition = new NotIn("status", Arrays.asList("deleted"));
-        assertThrows(IllegalArgumentException.class, () -> condition.setValues(Arrays.asList()));
     }
 
     @Test

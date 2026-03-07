@@ -159,15 +159,6 @@ public class Minus2025Test extends TestBase {
     }
 
     @Test
-    public void testSetCondition() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
-        Minus minus = new Minus(subQuery1);
-        minus.setCondition(subQuery2);
-        assertEquals(subQuery2, minus.getCondition());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         SubQuery subQuery = Filters.subQuery("SELECT product_id FROM inventory");
         Minus minus = new Minus(subQuery);

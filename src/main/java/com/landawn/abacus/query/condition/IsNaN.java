@@ -132,16 +132,4 @@ public class IsNaN extends Is {
         super(propName, NAN);
     }
 
-    /**
-     * Not supported because the prop value of {@code IsNaN} is fixed.
-     *
-     * @param propValue ignored
-     * @throws UnsupportedOperationException always
-     * @deprecated the prop value of {@code IsNaN} is always {@code NAN} and cannot be changed.
-     */
-    @Deprecated
-    @Override
-    public void setPropValue(final Object propValue) {
-        throw new UnsupportedOperationException();
-    }
 }

@@ -83,35 +83,6 @@ public class Or2025Test extends TestBase {
     }
 
     @Test
-    public void testSet_VarArgs() {
-        Or junction = new Or();
-        Equal cond1 = new Equal("a", 1);
-        Equal cond2 = new Equal("b", 2);
-
-        junction.set(cond1, cond2);
-        assertEquals(2, (int) junction.getConditions().size());
-    }
-
-    @Test
-    public void testSet_Collection() {
-        Or junction = new Or();
-        List<Condition> conditions = Arrays.asList(new Equal("a", 1), new Equal("b", 2));
-
-        junction.set(conditions);
-        assertEquals(2, (int) junction.getConditions().size());
-    }
-
-    @Test
-    public void testSet_ReplacesExisting() {
-        Or junction = new Or(new Equal("old", 1));
-        junction.set(new Equal("new", 2));
-
-        assertEquals((Object) Integer.valueOf(1), junction.getConditions().size());
-        Equal condition = (Equal) junction.getConditions().get(0);
-        assertEquals("new", condition.getPropName());
-    }
-
-    @Test
     public void testAdd_VarArgs() {
         // Commented out: Junction.add(...) APIs are currently commented out.
     }
@@ -330,14 +301,6 @@ public class Or2025Test extends TestBase {
     }
 
     @Test
-    public void testSet_NullConditionInArray() {
-        Or or = new Or(new Equal("old", 1));
-        assertThrows(IllegalArgumentException.class, () -> {
-            or.set(new Equal("a", 1), null);
-        });
-    }
-
-    @Test
     public void testGetOperator() {
         Or or = new Or(new Equal("a", 1));
         assertEquals(Operator.OR, or.operator());
@@ -368,16 +331,6 @@ public class Or2025Test extends TestBase {
     @Test
     public void testAdd_NullCollection() {
         // Commented out: Junction.add(...) APIs are currently commented out.
-    }
-
-    @Test
-    public void testSet_NullConditionInCollection() {
-        Or or = new Or(new Equal("old", 1));
-        List<Condition> conditions = new java.util.ArrayList<>();
-        conditions.add(null);
-        assertThrows(IllegalArgumentException.class, () -> {
-            or.set(conditions);
-        });
     }
 
     @Test

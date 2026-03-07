@@ -111,16 +111,4 @@ public class IsNotNull extends IsNot {
         super(propName, NULL);
     }
 
-    /**
-     * Not supported because the prop value of {@code IsNotNull} is fixed.
-     *
-     * @param propValue ignored
-     * @throws UnsupportedOperationException always
-     * @deprecated the prop value of {@code IsNotNull} is always {@code NULL} and cannot be changed.
-     */
-    @Deprecated
-    @Override
-    public void setPropValue(final Object propValue) {
-        throw new UnsupportedOperationException();
-    }
 }

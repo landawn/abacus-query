@@ -185,15 +185,6 @@ public class GreaterThanTest extends TestBase {
     }
 
     @Test
-    public void testSetPropValue() {
-        GreaterThan gt = Filters.gt("price", 100);
-        Assertions.assertEquals(100, (Integer) gt.getPropValue());
-
-        gt.setPropValue(200);
-        Assertions.assertEquals(200, (Integer) gt.getPropValue());
-    }
-
-    @Test
     public void testComplexComparison() {
         // Test chaining multiple conditions
         GreaterThan salary = Filters.gt("salary", 50000);

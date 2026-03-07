@@ -212,22 +212,6 @@ public class Like2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue() {
-        Like condition = new Like("field", "%old%");
-        condition.setPropValue("%new%");
-        assertEquals("%new%", condition.getPropValue());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue_ChangeType() {
-        Like condition = new Like("field", "%pattern%");
-        condition.setPropValue(999);
-        assertEquals(Integer.valueOf(999), condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         Like condition = new Like("name", "%John%");
         String result = condition.toString();

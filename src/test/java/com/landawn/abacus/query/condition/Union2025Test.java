@@ -145,15 +145,6 @@ public class Union2025Test extends TestBase {
     }
 
     @Test
-    public void testSetCondition() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
-        Union union = new Union(subQuery1);
-        union.setCondition(subQuery2);
-        assertEquals(subQuery2, union.getCondition());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM customers");
         Union union = new Union(subQuery);

@@ -184,20 +184,6 @@ public class Where2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetCondition() {
-        Equal originalCondition = new Equal("status", "active");
-        Where where = new Where(originalCondition);
-
-        Equal newCondition = new Equal("status", "inactive");
-        where.setCondition(newCondition);
-
-        Condition retrieved = where.getCondition();
-        assertEquals(newCondition, retrieved);
-        assertEquals("inactive", ((Equal) retrieved).getPropValue());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         Where where = new Where(new Equal("name", "John"));
         String result = where.toString();

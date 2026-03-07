@@ -319,17 +319,6 @@ public class OrderBy2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetCondition() {
-        OrderBy orderBy = new OrderBy(Filters.expr("name ASC"));
-        Expression newCondition = Filters.expr("age DESC");
-        orderBy.setCondition(newCondition);
-
-        Condition retrieved = orderBy.getCondition();
-        assertEquals(newCondition, retrieved);
-    }
-
-    @Test
     public void testGetCondition() {
         Expression condition = Filters.expr("name ASC, age DESC");
         OrderBy orderBy = new OrderBy(condition);

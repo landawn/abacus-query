@@ -101,27 +101,6 @@ public class In2025Test extends TestBase {
     }
 
     @Test
-    public void testSetValues() {
-        In condition = new In("status", Arrays.asList("active"));
-        List<String> newValues = Arrays.asList("inactive", "deleted");
-
-        condition.setValues(newValues);
-        assertEquals(2, condition.getValues().size());
-    }
-
-    @Test
-    public void testSetValues_Null() {
-        In condition = new In("status", Arrays.asList("active"));
-        assertThrows(IllegalArgumentException.class, () -> condition.setValues(null));
-    }
-
-    @Test
-    public void testSetValues_Empty() {
-        In condition = new In("status", Arrays.asList("active"));
-        assertThrows(IllegalArgumentException.class, () -> condition.setValues(Arrays.asList()));
-    }
-
-    @Test
     public void testGetParameters() {
         List<String> values = Arrays.asList("active", "pending", "approved");
         In condition = new In("status", values);

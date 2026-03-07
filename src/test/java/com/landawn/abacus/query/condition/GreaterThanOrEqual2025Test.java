@@ -212,22 +212,6 @@ public class GreaterThanOrEqual2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue() {
-        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", 50);
-        condition.setPropValue(75);
-        assertEquals(Integer.valueOf(75), condition.getPropValue());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue_ChangeType() {
-        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", 50);
-        condition.setPropValue("updatedValue");
-        assertEquals("updatedValue", condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("score", 60);
         String result = condition.toString();

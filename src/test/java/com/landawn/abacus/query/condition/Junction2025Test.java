@@ -73,36 +73,6 @@ public class Junction2025Test extends TestBase {
     }
 
     @Test
-    public void testSetConditionsArray() {
-        Junction junction = new Junction(Operator.AND);
-
-        Equal newCond1 = Filters.eq("status", "pending");
-        Equal newCond2 = Filters.eq("verified", true);
-
-        junction.set(newCond1, newCond2);
-
-        assertEquals(2, junction.getConditions().size());
-        assertTrue(junction.getConditions().contains(newCond1));
-        assertTrue(junction.getConditions().contains(newCond2));
-    }
-
-    @Test
-    public void testSetConditionsArrayReplaces() {
-        // Commented out: Junction.add(...) API is currently commented out.
-    }
-
-    @Test
-    public void testSetConditionsCollection() {
-        Junction junction = new Junction(Operator.AND);
-
-        List<Condition> newConditions = Arrays.asList(Filters.eq("type", "A"), Filters.eq("type", "B"));
-
-        junction.set(newConditions);
-
-        assertEquals(2, junction.getConditions().size());
-    }
-
-    @Test
     public void testAddConditionsArray() {
         // Commented out: Junction.add(...) APIs are currently commented out.
     }
@@ -367,25 +337,6 @@ public class Junction2025Test extends TestBase {
     @Test
     public void testAddConditions_NullCollection() {
         // Commented out: Junction.add(...) APIs are currently commented out.
-    }
-
-    @Test
-    public void testSetConditions_WithNullElement() {
-        Junction junction = new Junction(Operator.AND, Filters.eq("old", "value"));
-        assertThrows(IllegalArgumentException.class, () -> {
-            junction.set(Filters.eq("a", 1), null);
-        });
-    }
-
-    @Test
-    public void testSetConditions_CollectionWithNullElement() {
-        Junction junction = new Junction(Operator.OR);
-        List<Condition> conditions = new java.util.ArrayList<>();
-        conditions.add(null);
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            junction.set(conditions);
-        });
     }
 
     @Test

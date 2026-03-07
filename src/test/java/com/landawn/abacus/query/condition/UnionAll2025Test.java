@@ -149,15 +149,6 @@ public class UnionAll2025Test extends TestBase {
     }
 
     @Test
-    public void testSetCondition() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
-        UnionAll unionAll = new UnionAll(subQuery1);
-        unionAll.setCondition(subQuery2);
-        assertEquals(subQuery2, unionAll.getCondition());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM transactions");
         UnionAll unionAll = new UnionAll(subQuery);

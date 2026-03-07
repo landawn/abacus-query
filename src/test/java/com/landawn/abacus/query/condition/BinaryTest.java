@@ -58,13 +58,6 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
-    public void testSetPropValue() {
-        Binary binary = Filters.binary("status", Operator.EQUAL, "active");
-        binary.setPropValue("inactive");
-        Assertions.assertEquals("inactive", binary.getPropValue());
-    }
-
-    @Test
     public void testGetParametersWithLiteralValue() {
         Binary binary = Filters.binary("score", Operator.LESS_THAN, 80.5);
         List<Object> params = binary.getParameters();

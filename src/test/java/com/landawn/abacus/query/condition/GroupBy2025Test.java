@@ -267,17 +267,6 @@ public class GroupBy2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetCondition() {
-        GroupBy groupBy = new GroupBy(Filters.expr("department"));
-        Expression newCondition = Filters.expr("location");
-        groupBy.setCondition(newCondition);
-
-        Condition retrieved = groupBy.getCondition();
-        assertEquals(newCondition, retrieved);
-    }
-
-    @Test
     public void testGetCondition() {
         Expression condition = Filters.expr("department, location");
         GroupBy groupBy = new GroupBy(condition);

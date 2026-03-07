@@ -56,17 +56,6 @@ public class Clause2025Test extends TestBase {
     }
 
     @Test
-    public void testSetCondition() {
-        Condition initial = Filters.eq("old", "value");
-        TestClause clause = new TestClause(Operator.HAVING, initial);
-
-        Condition newCondition = Filters.gt("count", 5);
-        clause.setCondition(newCondition);
-
-        assertEquals(newCondition, clause.getCondition());
-    }
-
-    @Test
     public void testGetParameters() {
         Condition condition = Filters.between("age", 18, 65);
         TestClause clause = new TestClause(Operator.WHERE, condition);

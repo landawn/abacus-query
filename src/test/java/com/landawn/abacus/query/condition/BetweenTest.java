@@ -87,24 +87,6 @@ public class BetweenTest extends TestBase {
     }
 
     @Test
-    public void testSetMinValue() {
-        Between between = Filters.between("range", 10, 20);
-        Assertions.assertEquals(10, (Integer) between.getMinValue());
-
-        between.setMinValue(5);
-        Assertions.assertEquals(5, (Integer) between.getMinValue());
-    }
-
-    @Test
-    public void testSetMaxValue() {
-        Between between = Filters.between("range", 10, 20);
-        Assertions.assertEquals(20, (Integer) between.getMaxValue());
-
-        between.setMaxValue(30);
-        Assertions.assertEquals(30, (Integer) between.getMaxValue());
-    }
-
-    @Test
     public void testGetParameters() {
         Between between = Filters.between("salary", 40000, 80000);
         List<Object> params = between.getParameters();

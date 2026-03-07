@@ -196,15 +196,6 @@ public class EqualTest extends TestBase {
     }
 
     @Test
-    public void testSetPropValue() {
-        Equal eq = Filters.eq("status", "pending");
-        Assertions.assertEquals("pending", eq.getPropValue());
-
-        eq.setPropValue("approved");
-        Assertions.assertEquals("approved", eq.getPropValue());
-    }
-
-    @Test
     public void testWithExpression() {
         Expression expr = Expression.of("CURRENT_TIMESTAMP");
         Equal eq = new Equal("lastModified", expr);

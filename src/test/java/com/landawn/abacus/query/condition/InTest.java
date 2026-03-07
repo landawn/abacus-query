@@ -65,18 +65,6 @@ public class InTest extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetValues() {
-        In condition = new In("type", Arrays.asList("old1", "old2"));
-        List<String> newValues = Arrays.asList("new1", "new2", "new3");
-
-        condition.setValues(newValues);
-
-        Assertions.assertEquals(3, condition.getValues().size());
-        Assertions.assertTrue(condition.getValues().containsAll(newValues));
-    }
-
-    @Test
     public void testGetParameters() {
         List<Integer> values = Arrays.asList(10, 20, 30);
         In condition = new In("value", values);
@@ -168,16 +156,6 @@ public class InTest extends TestBase {
     public void testConstructorWithEmptyCollection() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             new In("field", new ArrayList<>());
-        });
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testSetValuesWithEmpty() {
-        In condition = new In("field", Arrays.asList("value"));
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            condition.setValues(new ArrayList<>());
         });
     }
 

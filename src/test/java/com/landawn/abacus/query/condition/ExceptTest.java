@@ -116,18 +116,6 @@ public class ExceptTest extends TestBase {
     }
 
     @Test
-    public void testSetCondition() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table2");
-        Except except = Filters.except(subQuery1);
-
-        Assertions.assertEquals(subQuery1, except.getCondition());
-
-        except.setCondition(subQuery2);
-        Assertions.assertEquals(subQuery2, except.getCondition());
-    }
-
-    @Test
     public void testComplexExceptScenarios() {
         // Find active customers who haven't placed orders
         SubQuery customersWithOrders = Filters.subQuery("orders", Arrays.asList("DISTINCT customer_id"), Filters.ge("order_date", "2023-01-01"));

@@ -55,29 +55,6 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testSet() {
-        Junction junction = new Junction(Operator.AND, Filters.eq("old", 1));
-
-        junction.set(Filters.eq("new1", 2), Filters.eq("new2", 3));
-
-        Assertions.assertEquals(2, junction.getConditions().size());
-        String result = junction.toString();
-        Assertions.assertTrue(result.contains("new1"));
-        Assertions.assertTrue(result.contains("new2"));
-        Assertions.assertFalse(result.contains("old"));
-    }
-
-    @Test
-    public void testSetWithCollection() {
-        Junction junction = new Junction(Operator.OR);
-        List<Condition> newConditions = Arrays.asList(Filters.gt("price", 100), Filters.lt("price", 500));
-
-        junction.set(newConditions);
-
-        Assertions.assertEquals(2, junction.getConditions().size());
-    }
-
-    @Test
     public void testAdd() {
         // Commented out: Junction.add(...) APIs are currently commented out.
     }

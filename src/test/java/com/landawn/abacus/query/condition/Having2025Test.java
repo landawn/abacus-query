@@ -244,20 +244,6 @@ public class Having2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetCondition() {
-        Equal originalCondition = Filters.eq("COUNT(*)", 5);
-        Having having = new Having(originalCondition);
-
-        Equal newCondition = Filters.eq("COUNT(*)", 10);
-        having.setCondition(newCondition);
-
-        Condition retrieved = having.getCondition();
-        assertEquals(newCondition, retrieved);
-        assertEquals(10, (int) ((Equal) retrieved).getPropValue());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         Having having = new Having(Filters.gt("SUM(sales)", 50000));
         String result = having.toString();

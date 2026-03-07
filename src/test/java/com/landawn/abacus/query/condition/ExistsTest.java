@@ -122,18 +122,6 @@ public class ExistsTest extends TestBase {
     }
 
     @Test
-    public void testSetCondition() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM table1");
-        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM table2");
-        Exists exists = Filters.exists(subQuery1);
-
-        Assertions.assertEquals(subQuery1, exists.getCondition());
-
-        exists.setCondition(subQuery2);
-        Assertions.assertEquals(subQuery2, exists.getCondition());
-    }
-
-    @Test
     public void testComplexExistsScenarios() {
         // Test customers with orders
         SubQuery hasOrders = Filters.subQuery("orders", Arrays.asList("1"),

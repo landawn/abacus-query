@@ -212,22 +212,6 @@ public class LessThanOrEqual2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue() {
-        LessThanOrEqual condition = new LessThanOrEqual("field", 80);
-        condition.setPropValue(90);
-        assertEquals(Integer.valueOf(90), condition.getPropValue());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue_ChangeType() {
-        LessThanOrEqual condition = new LessThanOrEqual("field", 80);
-        condition.setPropValue("modifiedValue");
-        assertEquals("modifiedValue", condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         LessThanOrEqual condition = new LessThanOrEqual("quantity", 100);
         String result = condition.toString();

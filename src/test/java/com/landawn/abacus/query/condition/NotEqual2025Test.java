@@ -212,22 +212,6 @@ public class NotEqual2025Test extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue() {
-        NotEqual condition = new NotEqual("field", "oldValue");
-        condition.setPropValue("newValue");
-        assertEquals("newValue", condition.getPropValue());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testSetPropValue_ChangeType() {
-        NotEqual condition = new NotEqual("field", "stringValue");
-        condition.setPropValue(456);
-        assertEquals(Integer.valueOf(456), condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoArgs() {
         NotEqual condition = new NotEqual("name", "value");
         String result = condition.toString();
