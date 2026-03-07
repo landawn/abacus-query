@@ -420,7 +420,7 @@ public class SubQuery extends LogicalCondition {
      * These are the parameter values that will be bound to the prepared statement placeholders
      * when the query is executed. For raw SQL subqueries, this returns an empty list.
      *
-     * @return list of parameter values, or an empty list if no condition or raw SQL subquery
+     * @return an immutable list of parameter values, or an empty immutable list if no condition or raw SQL subquery
      */
     @Override
     public List<Object> getParameters() {
@@ -440,29 +440,6 @@ public class SubQuery extends LogicalCondition {
         if (condition != null) {
             condition.clearParameters();
         }
-    }
-
-    /**
-     * Creates a deep copy of this subquery.
-     * The copy includes deep copies of property names and conditions to ensure complete independence.
-     *
-     * @param <T> the type of condition to return
-     * @return a new SubQuery instance with deeply copied values
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T extends Condition> T copy() {
-        final SubQuery result = super.copy();
-
-        if (propNames != null) {
-            result.propNames = new ArrayList<>(propNames);
-        }
-
-        if (condition != null) {
-            result.condition = condition.copy();
-        }
-
-        return (T) result;
     }
 
     /**

@@ -102,17 +102,6 @@ public class GreaterThanTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        GreaterThan original = Filters.gt("level", 5);
-        GreaterThan copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-        Assertions.assertEquals(original.operator(), copy.operator());
-    }
-
-    @Test
     public void testEquals() {
         GreaterThan gt1 = Filters.gt("age", 21);
         GreaterThan gt2 = Filters.gt("age", 21);

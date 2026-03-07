@@ -107,19 +107,6 @@ public class NotInSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-        NotInSubQuery original = Filters.notIn("userId", subQuery);
-
-        NotInSubQuery copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropNames(), copy.getPropNames());
-        Assertions.assertNotSame(original.getSubQuery(), copy.getSubQuery());
-        Assertions.assertEquals(original.getSubQuery(), copy.getSubQuery());
-    }
-
-    @Test
     public void testHashCodeWithSingleProperty() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery condition1 = Filters.notIn("userId", subQuery);

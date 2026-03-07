@@ -116,20 +116,6 @@ public class LeftJoinTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Condition condition = Filters.eq("a.id", "b.a_id");
-        LeftJoin original = new LeftJoin("table_b b", condition);
-        LeftJoin copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals(original.toString(), copy.toString());
-    }
-
-    @Test
     public void testToString() {
         LeftJoin join = new LeftJoin("orders");
         String result = join.toString();

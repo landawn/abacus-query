@@ -90,7 +90,7 @@ public abstract class AbstractIn extends LogicalCondition {
     /**
      * Gets the parameter values for this condition.
      *
-     * @return an immutable list of values as parameters, or an empty list if no values are set
+     * @return an immutable list of parameter values, or an empty immutable list if no values are set
      */
     @Override
     public List<Object> getParameters() {
@@ -128,32 +128,6 @@ public abstract class AbstractIn extends LogicalCondition {
                 }
             }
         }
-    }
-
-    /**
-     * Creates a deep copy of this condition.
-     *
-     * @param <T> the type of the condition
-     * @return a new instance with a copy of all values
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends Condition> T copy() {
-        final AbstractIn copy = super.copy();
-
-        if (values == null) {
-            copy.values = null;
-        } else {
-            final List<Object> copiedValues = new ArrayList<>(values.size());
-
-            for (final Object value : values) {
-                copiedValues.add(value instanceof Condition ? ((Condition) value).copy() : value);
-            }
-
-            copy.values = copiedValues;
-        }
-
-        return (T) copy;
     }
 
     /**

@@ -119,17 +119,6 @@ public class AndTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        And original = Filters.and(Filters.eq("active", true), Filters.gt("score", 80));
-
-        And copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getConditions().size(), copy.getConditions().size());
-        Assertions.assertNotSame(original.getConditions(), copy.getConditions());
-    }
-
-    @Test
     public void testEquals() {
         And and1 = Filters.and(Filters.eq("name", "Test"), Filters.gt("value", 10));
 

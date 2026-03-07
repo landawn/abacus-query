@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -69,15 +71,6 @@ public class Except2025Test extends TestBase {
         except.clearParameters();
         List<Object> params = except.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        Except original = new Except(subQuery);
-        Except copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -157,20 +150,6 @@ public class Except2025Test extends TestBase {
         Except except = new Except(subQuery);
         String result = except.toString();
         assertTrue(result.contains("EXCEPT"));
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        SubQuery subQuery = Filters.subQuery("employees", List.of("employee_id"), new Equal("is_manager", "true"));
-        Except original = new Except(subQuery);
-        Except copy = original.copy();
-
-        // Modify original's subquery
-        original.clearParameters();
-
-        // Copy should not be affected
-        List<Object> copyParams = copy.getParameters();
-        assertEquals("true", copyParams.get(0));
     }
 
     @Test

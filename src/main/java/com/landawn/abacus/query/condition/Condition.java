@@ -244,31 +244,6 @@ public interface Condition {
     //    }
 
     /**
-     * Creates a copy of this condition.
-     *
-     * <p>The exact copy depth depends on the concrete implementation. Implementations should
-     * ensure copied instances are safe to use independently for query construction.</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition original = Filters.equal("name", "John");
-     * Condition copied = original.copy();
-     *
-     * // The copy is independent of the original
-     * original.clearParameters();
-     * List<Object> copiedParams = copied.getParameters();   // ["John"] - still intact
-     *
-     * // Copy a complex condition
-     * Condition complex = Filters.and(Filters.greaterThan("age", 18), Filters.equal("status", "active"));
-     * Condition complexCopy = complex.copy();
-     * }</pre>
-     *
-     * @param <T> the type of condition to return
-     * @return a copy of this condition
-     */
-    <T extends Condition> T copy();
-
-    /**
      * Gets the list of parameter values associated with this condition.
      * Parameters are the actual values used in comparisons (e.g., the "John" in name = "John").
      *
@@ -284,7 +259,7 @@ public interface Condition {
      * List<Object> allParams = combined.getParameters();   // ["John", 18, 65]
      * }</pre>
      *
-     * @return a list of parameter values, never null
+     * @return an immutable list of parameter values, never null
      */
     List<Object> getParameters();
 

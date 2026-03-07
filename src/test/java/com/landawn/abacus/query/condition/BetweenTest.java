@@ -132,33 +132,6 @@ public class BetweenTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Between original = Filters.between("level", 1, 10);
-        Between copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals((Integer) original.getMinValue(), copy.getMinValue());
-        Assertions.assertEquals((Integer) original.getMaxValue(), copy.getMaxValue());
-        Assertions.assertEquals(original.operator(), copy.operator());
-    }
-
-    @Test
-    public void testCopyWithConditionValues() {
-        SubQuery minQuery = Filters.subQuery("SELECT MIN(value) FROM table");
-        SubQuery maxQuery = Filters.subQuery("SELECT MAX(value) FROM table");
-        Between original = new Between("value", minQuery, maxQuery);
-
-        Between copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertNotSame(original.getMinValue(), copy.getMinValue());
-        Assertions.assertNotSame(original.getMaxValue(), copy.getMaxValue());
-        Assertions.assertEquals((Object) original.getMinValue(), copy.getMinValue());
-        Assertions.assertEquals((Object) original.getMaxValue(), copy.getMaxValue());
-    }
-
-    @Test
     public void testToString() {
         Between between = Filters.between("age", 18, 65);
         String result = between.toString();

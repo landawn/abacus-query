@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -96,14 +95,6 @@ public class On2025Test extends TestBase {
         on.clearParameters();
         List<Object> params = on.getParameters();
         assertTrue(params.size() == 2 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        On original = new On("orders.customer_id", "customers.id");
-        On copy = original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.operator(), copy.operator());
     }
 
     @Test

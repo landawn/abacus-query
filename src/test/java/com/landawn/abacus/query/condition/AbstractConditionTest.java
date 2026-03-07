@@ -112,17 +112,6 @@ public class AbstractConditionTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        TestCondition original = new TestCondition(Operator.BETWEEN, "range");
-
-        TestCondition copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        // Note: The value field is not copied by the base class copy method
-    }
-
-    @Test
     public void testToString() {
         TestCondition condition = new TestCondition(Operator.IN, "list");
 
@@ -244,17 +233,6 @@ public class AbstractConditionTest extends TestBase {
         Not notComplex = complex.not();
         Assertions.assertNotNull(notComplex);
         Assertions.assertEquals(complex, notComplex.getCondition());
-    }
-
-    @Test
-    public void testCloneableSupport() {
-        // Verify that copy() works through Cloneable
-        TestCondition original = new TestCondition(Operator.LIKE, "pattern");
-        TestCondition copy = original.copy();
-
-        // The base implementation uses clone()
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
     }
 
     @Test

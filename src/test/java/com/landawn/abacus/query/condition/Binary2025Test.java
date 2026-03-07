@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -115,27 +116,6 @@ public class Binary2025Test extends TestBase {
         Binary condition = new Binary("userId", Operator.EQUAL, innerCond);
         condition.clearParameters();
         assertNull(innerCond.getPropValue());
-    }
-
-    @Test
-    public void testCopy() {
-        Binary original = new Binary("name", Operator.EQUAL, "John");
-        Binary copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object) original.getPropValue(), (Object) copy.getPropValue());
-        assertEquals(original.operator(), copy.operator());
-    }
-
-    @Test
-    public void testCopy_WithCondition() {
-        Equal innerCond = new Equal("id", 100);
-        Binary original = new Binary("userId", Operator.EQUAL, innerCond);
-        Binary copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertNotSame(innerCond, copy.getPropValue());
     }
 
     @Test

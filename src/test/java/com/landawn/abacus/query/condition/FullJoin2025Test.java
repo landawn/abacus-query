@@ -108,15 +108,6 @@ public class FullJoin2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        FullJoin original = new FullJoin("products", new Equal("category_id", (Object) 111));
-        FullJoin copy = (FullJoin) original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
-    }
-
-    @Test
     public void testToString_Simple() {
         FullJoin join = new FullJoin("departments");
         String result = join.toString(NamingPolicy.NO_CHANGE);

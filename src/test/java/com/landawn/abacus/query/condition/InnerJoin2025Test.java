@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -105,15 +104,6 @@ public class InnerJoin2025Test extends TestBase {
         join.clearParameters();
         List<Object> params = join.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        InnerJoin original = new InnerJoin("orders o", new Equal("customer_id", (Object) 123));
-        InnerJoin copy = (InnerJoin) original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
     }
 
     @Test

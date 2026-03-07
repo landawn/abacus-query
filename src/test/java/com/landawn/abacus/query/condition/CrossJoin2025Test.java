@@ -108,15 +108,6 @@ public class CrossJoin2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        CrossJoin original = new CrossJoin("products", new Equal("category_id", (Object) 222));
-        CrossJoin copy = (CrossJoin) original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
-    }
-
-    @Test
     public void testToString_Simple() {
         CrossJoin join = new CrossJoin("colors");
         String result = join.toString(NamingPolicy.NO_CHANGE);

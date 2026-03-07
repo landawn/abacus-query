@@ -81,17 +81,6 @@ public class LessThanOrEqualTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        LessThanOrEqual original = new LessThanOrEqual("score", 85.5);
-        LessThanOrEqual copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testToString() {
         LessThanOrEqual condition = new LessThanOrEqual("amount", 1000);
         String result = condition.toString();

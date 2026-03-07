@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -58,15 +57,6 @@ public class Union2025Test extends TestBase {
         List<Object> params = union.getParameters();
         assertEquals(1, (int) params.size());
         assertEquals("active", params.get(0));
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        Union original = new Union(subQuery);
-        Union copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -150,20 +140,6 @@ public class Union2025Test extends TestBase {
         Union union = new Union(subQuery);
         String result = union.toString();
         assertTrue(result.contains("UNION"));
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("status", "active"));
-        Union original = new Union(subQuery);
-        Union copy = original.copy();
-
-        // Modify original's subquery
-        original.clearParameters();
-
-        // Copy should not be affected
-        List<Object> copyParams = copy.getParameters();
-        assertEquals("active", copyParams.get(0));
     }
 
     @Test

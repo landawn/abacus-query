@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
@@ -79,19 +80,6 @@ public class Clause2025Test extends TestBase {
 
         java.util.List<Object> params = clause.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        Condition condition = Filters.eq("field", "value");
-        TestClause original = new TestClause(Operator.WHERE, condition);
-
-        TestClause copy = original.copy();
-
-        assertNotNull(copy);
-        assertNotSame(original, copy);
-        assertEquals(original.operator(), copy.operator());
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -182,14 +170,4 @@ public class Clause2025Test extends TestBase {
         assertEquals(2, params.size());
     }
 
-    @Test
-    public void testCopyPreservesValues() {
-        TestClause original = new TestClause(Operator.WHERE, Filters.eq("test", "value"));
-
-        TestClause copy = original.copy();
-        copy.clearParameters();
-
-        // Original should still have parameters
-        assertFalse(original.getParameters().isEmpty());
-    }
 }

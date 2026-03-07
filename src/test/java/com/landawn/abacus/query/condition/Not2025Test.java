@@ -18,7 +18,6 @@ package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -101,27 +100,6 @@ public class Not2025Test extends TestBase {
 
         condition.clearParameters();
         assertNull(innerCondition.getPropValue());
-    }
-
-    @Test
-    public void testCopy() {
-        Equal innerCondition = new Equal("name", "Alice");
-        Not original = new Not(innerCondition);
-
-        Not copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getCondition(), copy.getCondition());
-    }
-
-    @Test
-    public void testCopy_PreservesValues() {
-        Equal innerCondition = new Equal("age", 30);
-        Not original = new Not(innerCondition);
-
-        Not copy = original.copy();
-        Equal copiedInner = copy.getCondition();
-        assertEquals("age", copiedInner.getPropName());
-        assertEquals(30, (int) copiedInner.getPropValue());
     }
 
     @Test
@@ -211,17 +189,4 @@ public class Not2025Test extends TestBase {
         assertNull(params.get(0));
     }
 
-    @Test
-    public void testCopy_Independence() {
-        Equal innerCondition = new Equal("name", "Alice");
-        Not original = new Not(innerCondition);
-        Not copy = original.copy();
-
-        // Modify original's inner condition
-        innerCondition.clearParameters();
-
-        // Copy should still have the value
-        Equal copiedInner = copy.getCondition();
-        assertEquals("Alice", copiedInner.getPropValue());
-    }
 }

@@ -107,17 +107,6 @@ public class Between2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Between original = new Between("age", 18, 65);
-        Between copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object) original.getMinValue(), (Object) copy.getMinValue());
-        assertEquals((Object) original.getMaxValue(), (Object) copy.getMaxValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         Between condition = new Between("age", 18, 65);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -230,21 +219,6 @@ public class Between2025Test extends TestBase {
         Between condition = new Between("score", 0, 100);
         assertEquals(Integer.valueOf(0), condition.getMinValue());
         assertEquals(Integer.valueOf(100), condition.getMaxValue());
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        Between original = new Between("price", 10.0, 50.0);
-        Between copy = original.copy();
-
-        assertNotSame(original, copy);
-
-        // Modify original
-        original.clearParameters();
-
-        // Copy should not be affected
-        assertEquals(10.0, copy.getMinValue());
-        assertEquals(50.0, copy.getMaxValue());
     }
 
     @Test

@@ -59,19 +59,6 @@ public class CellTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Equal eq = Filters.eq("status", "active");
-        Cell original = new Cell(Operator.NOT, eq);
-
-        Cell copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testToString() {
         Equal eq = Filters.eq("name", "John");
         Cell cell = new Cell(Operator.NOT, eq);

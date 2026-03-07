@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,16 +83,6 @@ public class IsInfinite2025Test extends TestBase {
         IsInfinite condition = new IsInfinite("value");
         condition.clearParameters();
         assertNotNull(condition);
-    }
-
-    @Test
-    public void testCopy() {
-        IsInfinite original = new IsInfinite("overflowValue");
-        IsInfinite copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -213,17 +202,6 @@ public class IsInfinite2025Test extends TestBase {
         assertEquals("calculation.result.value", condition.getPropName());
         String str = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("calculation.result.value"));
-    }
-
-    @Test
-    public void testCopyIndependence() {
-        IsInfinite original = new IsInfinite("value");
-        IsInfinite copy = original.copy();
-
-        copy.clearParameters();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
     }
 
     @Test

@@ -113,20 +113,6 @@ public class CrossJoinTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Like like = Filters.like("name", "%test%");
-        CrossJoin original = Filters.crossJoin("products", like);
-
-        CrossJoin copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testEquals() {
         Equal eq1 = Filters.eq("active", true);
         Equal eq2 = Filters.eq("active", true);

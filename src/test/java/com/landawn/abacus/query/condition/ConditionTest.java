@@ -221,61 +221,6 @@ public class ConditionTest extends TestBase {
         assertEquals(Operator.NOT, result.operator());
     }
 
-    // Tests for copy() method
-
-    @Test
-    void testCopyCreatesNewInstance() {
-        Condition copy = simpleCondition.copy();
-
-        assertNotNull(copy);
-        assertNotSame(simpleCondition, copy);
-        assertEquals(simpleCondition.operator(), copy.operator());
-    }
-
-    @Test
-    void testCopyPreservesOperator() {
-        Condition copy = simpleCondition.copy();
-        assertEquals(simpleCondition.operator(), copy.operator());
-
-        Condition complexCopy = complexCondition.copy();
-        assertEquals(complexCondition.operator(), complexCopy.operator());
-    }
-
-    @Test
-    void testCopyPreservesParameters() {
-        List<Object> originalParams = simpleCondition.getParameters();
-        Condition copy = simpleCondition.copy();
-        List<Object> copyParams = copy.getParameters();
-
-        assertEquals(originalParams, copyParams);
-
-        // Verify it's a deep copy by checking independence
-        assertNotSame(originalParams, copyParams);
-    }
-
-    @Test
-    void testCopyIndependence() {
-        Condition copy = simpleCondition.copy();
-
-        // Modify original shouldn't affect copy
-        copy.clearParameters();
-
-        // Original should still have parameters
-        assertFalse(simpleCondition.getParameters().isEmpty());
-    }
-
-    @Test
-    void testCopyWithComplexConditions() {
-        // Test copying conditions with nested structures
-        Condition complex = Filters.and(Filters.or(Filters.eq("status", "active"), Filters.eq("status", "pending")), Filters.gt("created_date", "2023-01-01"));
-
-        Condition copy = complex.copy();
-
-        assertNotNull(copy);
-        assertNotSame(complex, copy);
-        assertEquals(complex.operator(), copy.operator());
-    }
-
     // Tests for getParameters() method
 
     @Test
@@ -397,19 +342,6 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
-    void testCopyAndLogicalOperations() {
-        LogicalCondition copy = simpleCondition.copy();
-        Condition combined = copy.and(Filters.gt("age", 21));
-
-        assertNotNull(combined);
-        assertEquals(Operator.AND, combined.operator());
-
-        // Original and copy should be independent
-        assertNotSame(simpleCondition, copy);
-        assertNotSame(copy, combined);
-    }
-
-    @Test
     void testParameterManagementWithLogicalOperations() {
         LogicalCondition condition1 = Filters.eq("name", "John");
         LogicalCondition condition2 = Filters.gt("age", 25);
@@ -457,10 +389,6 @@ public class ConditionTest extends TestBase {
 
         List<Object> params = inCondition.getParameters();
         assertEquals(largeList.size(), params.size());
-
-        // Test copy with large parameter list
-        Condition copy = inCondition.copy();
-        assertEquals(params.size(), copy.getParameters().size());
     }
 
     @Test
@@ -475,12 +403,9 @@ public class ConditionTest extends TestBase {
         assertNotNull(chain);
         assertEquals(Operator.AND, chain.operator());
 
-        // Should still be able to get parameters and copy
+        // Should still be able to get parameters
         List<Object> params = chain.getParameters();
         assertEquals(100, params.size());
-
-        Condition copy = chain.copy();
-        assertEquals(chain.getParameters().size(), copy.getParameters().size());
     }
 
     // Contract Validation Tests

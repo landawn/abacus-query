@@ -235,7 +235,7 @@ public class Limit extends Clause {
      * are typically part of the SQL structure itself, not parameterized values.
      * This method always returns an empty list.
      * 
-     * @return an empty list as LIMIT has no parameters
+     * @return an empty immutable list as LIMIT has no parameters
      */
     @Override
     public List<Object> getParameters() {

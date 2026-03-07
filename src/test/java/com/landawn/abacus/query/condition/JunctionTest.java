@@ -109,23 +109,6 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Junction original = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 21));
-
-        Junction copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals(original.getConditions().size(), copy.getConditions().size());
-        Assertions.assertNotSame(original.getConditions(), copy.getConditions());
-
-        // Verify deep copy of conditions
-        for (int i = 0; i < original.getConditions().size(); i++) {
-            Assertions.assertNotSame(original.getConditions().get(i), copy.getConditions().get(i));
-        }
-    }
-
-    @Test
     public void testToString() {
         Junction junction = new Junction(Operator.AND, Filters.eq("active", true), Filters.isNotNull("email"));
 

@@ -50,17 +50,6 @@ public class IsNaNTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        IsNaN original = new IsNaN("measurement");
-        IsNaN copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testToString() {
         IsNaN condition = new IsNaN("calculation_result");
         String result = condition.toString();

@@ -20,8 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -86,15 +84,6 @@ public class Where2025Test extends TestBase {
         where.clearParameters();
         List<Object> params = where.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        Equal condition = new Equal("name", "Alice");
-        Where original = new Where(condition);
-        Where copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -196,19 +185,6 @@ public class Where2025Test extends TestBase {
     public void testGetOperator() {
         Where where = new Where(new Equal("id", 1));
         assertEquals(Operator.WHERE, where.operator());
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        Equal innerCondition = new Equal("status", "active");
-        Where original = new Where(innerCondition);
-        Where copy = original.copy();
-
-        innerCondition.clearParameters();
-        assertNull(innerCondition.getPropValue());
-
-        Equal copiedCondition = copy.getCondition();
-        assertEquals("active", copiedCondition.getPropValue());
     }
 
     @Test

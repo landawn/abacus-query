@@ -156,18 +156,6 @@ public class UsingTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Using original = Filters.using("customer_id", "region_id");
-
-        Using copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testHashCode() {
         Using using1 = Filters.using("department_id");
         Using using2 = Filters.using("department_id");

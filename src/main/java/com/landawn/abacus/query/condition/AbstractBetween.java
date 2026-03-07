@@ -106,7 +106,7 @@ public abstract class AbstractBetween extends LogicalCondition {
      * Returns a list containing the minimum and maximum values.
      * If either value is a Condition (subquery), its parameters are included instead.
      *
-     * @return a list containing [minValue, maxValue] or their parameters if they are Conditions
+     * @return an immutable list containing [minValue, maxValue] or their parameters if they are Conditions
      */
     @Override
     public List<Object> getParameters() {
@@ -144,29 +144,6 @@ public abstract class AbstractBetween extends LogicalCondition {
         } else {
             maxValue = null;
         }
-    }
-
-    /**
-     * Creates a deep copy of this condition.
-     * If minValue or maxValue are Conditions, they are also copied to ensure complete independence.
-     *
-     * @param <T> the type of condition to return
-     * @return a new instance with copied values
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends Condition> T copy() {
-        final AbstractBetween copy = super.copy();
-
-        if (minValue instanceof Condition) {
-            copy.minValue = ((Condition) minValue).copy();
-        }
-
-        if (maxValue instanceof Condition) {
-            copy.maxValue = ((Condition) maxValue).copy();
-        }
-
-        return (T) copy;
     }
 
     /**

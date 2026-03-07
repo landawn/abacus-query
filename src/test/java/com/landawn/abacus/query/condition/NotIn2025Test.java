@@ -113,31 +113,6 @@ public class NotIn2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        List<String> values = Arrays.asList("A", "B", "C");
-        NotIn original = new NotIn("status", values);
-
-        NotIn copy = original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals(original.getValues().size(), copy.getValues().size());
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        NotIn original = new NotIn("status", Arrays.asList("deleted", "archived"));
-        NotIn copy = original.copy();
-
-        assertNotSame(original.getValues(), copy.getValues());
-
-        // Modify original
-        original.clearParameters();
-
-        // Copy should not be affected
-        assertEquals("deleted", copy.getValues().get(0));
-    }
-
-    @Test
     public void testToString_NoChange() {
         NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
         String result = condition.toString(NamingPolicy.NO_CHANGE);

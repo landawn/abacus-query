@@ -65,12 +65,4 @@ public class SimpleNotExistsTest extends TestBase {
         // Note: specific format may vary based on implementation
     }
 
-    @Test
-    void testCopy() {
-        NotExists copy = notExistsCondition.copy();
-
-        assertNotNull(copy);
-        assertEquals(notExistsCondition.operator(), copy.operator());
-        assertEquals(notExistsCondition.getCondition().toString(), copy.getCondition().toString());
-    }
 }

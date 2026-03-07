@@ -182,10 +182,10 @@ public class Or extends Junction {
         final List<Condition> conditionList = new ArrayList<>(this.conditions.size() + 1);
 
         for (final Condition condition : this.conditions) {
-            conditionList.add(condition == null ? null : condition.copy());
+            conditionList.add(condition);
         }
 
-        conditionList.add(cond.copy());
+        conditionList.add(cond);
 
         return new Or(conditionList);
     }

@@ -1581,7 +1581,7 @@ public class Expression extends LogicalCondition {
      * Returns an empty list as expressions have no parameters.
      * Expressions are literal SQL strings and don't have bindable parameters.
      *
-     * @return an empty list
+     * @return an empty immutable list
      */
     @Override
     public List<Object> getParameters() {

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -250,32 +249,6 @@ public class SubQuery2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Condition condition = Filters.eq("active", true);
-        SubQuery original = Filters.subQuery("users", Arrays.asList("id", "name"), condition);
-
-        SubQuery copy = original.copy();
-
-        assertNotNull(copy);
-        assertNotSame(original, copy);
-        assertEquals(original.getEntityName(), copy.getEntityName());
-        assertEquals(original.getSelectPropNames().size(), copy.getSelectPropNames().size());
-        assertNotSame(original.getSelectPropNames(), copy.getSelectPropNames());
-        assertNotSame(original.getCondition(), copy.getCondition());
-    }
-
-    @Test
-    public void testCopyRawSQL() {
-        SubQuery original = Filters.subQuery("SELECT * FROM users");
-
-        SubQuery copy = original.copy();
-
-        assertNotNull(copy);
-        assertNotSame(original, copy);
-        assertEquals(original.sql(), copy.sql());
-    }
-
-    @Test
     public void testToStringRawSQL() {
         String sql = "SELECT id FROM users WHERE status = 'active'";
         SubQuery subQuery = Filters.subQuery(sql);
@@ -449,19 +422,6 @@ public class SubQuery2025Test extends TestBase {
         // SubQuery doesn't have a specific operator, verify it returns empty or null
         Operator op = subQuery.operator();
         assertTrue(op == null || op.toString().isEmpty());
-    }
-
-    @Test
-    public void testCopyWithEntityClass() {
-        Collection<String> props = Arrays.asList("id");
-        Condition condition = Filters.eq("active", true);
-
-        SubQuery original = Filters.subQuery(TestEntity.class, props, condition);
-        SubQuery copy = original.copy();
-
-        assertNotNull(copy);
-        assertNotSame(original, copy);
-        assertEquals(original.getEntityClass(), copy.getEntityClass());
     }
 
     @Test

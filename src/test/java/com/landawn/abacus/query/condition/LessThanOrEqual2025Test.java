@@ -19,7 +19,7 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
+
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -106,17 +106,6 @@ public class LessThanOrEqual2025Test extends TestBase {
         LessThanOrEqual condition = new LessThanOrEqual("field", "value");
         condition.clearParameters();
         assertNull(condition.getPropValue());
-    }
-
-    @Test
-    public void testCopy() {
-        LessThanOrEqual original = new LessThanOrEqual("name", "John");
-        LessThanOrEqual copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object) original.getPropValue(), (Object) copy.getPropValue());
-        assertEquals(original.operator(), copy.operator());
     }
 
     @Test

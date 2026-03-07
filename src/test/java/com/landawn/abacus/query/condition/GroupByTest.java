@@ -106,16 +106,6 @@ public class GroupByTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        GroupBy original = new GroupBy("department", SortDirection.DESC);
-        GroupBy copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals(original.toString(), copy.toString());
-    }
-
-    @Test
     public void testToString() {
         GroupBy groupBy = new GroupBy("product_category");
         String result = groupBy.toString();

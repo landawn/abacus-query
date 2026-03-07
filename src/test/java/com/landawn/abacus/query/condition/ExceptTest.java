@@ -75,19 +75,6 @@ public class ExceptTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM temp_users");
-        Except original = Filters.except(subQuery);
-
-        Except copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testEquals() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM excluded");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM excluded");

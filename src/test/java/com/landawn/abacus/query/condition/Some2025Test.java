@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -96,17 +95,6 @@ public class Some2025Test extends TestBase {
         condition.clearParameters();
         List<Object> params = condition.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT price FROM competitor_products");
-        Some original = new Some(subQuery);
-        Some copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.operator(), copy.operator());
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -254,16 +242,4 @@ public class Some2025Test extends TestBase {
         assertNotNull(condition);
     }
 
-    @Test
-    public void testCopyIndependence() {
-        Condition whereCondition = new Equal("category", "Premium");
-        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), whereCondition);
-        Some original = new Some(subQuery);
-        Some copy = original.copy();
-
-        copy.clearParameters();
-        assertEquals(1, (int) original.getParameters().size());
-        List<Object> copyParams = copy.getParameters();
-        assertTrue(copyParams.size() == 1 && copyParams.stream().allMatch(param -> param == null));
-    }
 }

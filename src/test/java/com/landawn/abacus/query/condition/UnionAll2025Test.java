@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -66,15 +65,6 @@ public class UnionAll2025Test extends TestBase {
         UnionAll unionAll = new UnionAll(subQuery);
         // SubQuery with raw SQL doesn't have parameters - test condition instead
         assertTrue(unionAll.getParameters().isEmpty());
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        UnionAll original = new UnionAll(subQuery);
-        UnionAll copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -154,20 +144,6 @@ public class UnionAll2025Test extends TestBase {
         UnionAll unionAll = new UnionAll(subQuery);
         String result = unionAll.toString();
         assertTrue(result.contains("UNION"));
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("region", "EAST"));
-        UnionAll original = new UnionAll(subQuery);
-        UnionAll copy = original.copy();
-
-        // Modify original's subquery
-        original.clearParameters();
-
-        // Copy should not be affected
-        List<Object> copyParams = copy.getParameters();
-        assertEquals("EAST", copyParams.get(0));
     }
 
     @Test

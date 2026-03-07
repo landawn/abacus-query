@@ -92,14 +92,6 @@ public class IsNotNull2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        IsNotNull original = new IsNotNull("email");
-        IsNotNull copy = original.copy();
-        assertNotNull(copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-    }
-
-    @Test
     public void testUseCaseScenario_RequiredEmail() {
         IsNotNull emailCheck = new IsNotNull("email");
         assertTrue(emailCheck.toString(NamingPolicy.NO_CHANGE).contains("IS NOT NULL"));

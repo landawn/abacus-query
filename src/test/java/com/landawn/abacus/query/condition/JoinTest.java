@@ -147,30 +147,6 @@ public class JoinTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Condition condition = Filters.eq("a.id", "b.a_id");
-        Join original = new Join("table_b b", condition);
-        Join copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals(original.toString(), copy.toString());
-    }
-
-    @Test
-    public void testCopyWithoutCondition() {
-        Join original = new Join("products");
-        Join copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNull(copy.getCondition());
-    }
-
-    @Test
     public void testToString() {
         Join join = new Join("orders");
         String result = join.toString();

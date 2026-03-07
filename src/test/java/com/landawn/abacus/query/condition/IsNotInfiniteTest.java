@@ -53,17 +53,6 @@ public class IsNotInfiniteTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        IsNotInfinite original = new IsNotInfinite("calculation");
-        IsNotInfinite copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testToString() {
         IsNotInfinite condition = new IsNotInfinite("calculation_result");
         String result = condition.toString();

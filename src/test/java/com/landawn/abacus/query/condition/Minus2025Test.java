@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -69,15 +69,6 @@ public class Minus2025Test extends TestBase {
         minus.clearParameters();
         List<Object> params = minus.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        Minus original = new Minus(subQuery);
-        Minus copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -164,20 +155,6 @@ public class Minus2025Test extends TestBase {
         Minus minus = new Minus(subQuery);
         String result = minus.toString();
         assertTrue(result.contains("MINUS"));
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        SubQuery subQuery = Filters.subQuery("sales", List.of("product_id"), new Equal("region", "WEST"));
-        Minus original = new Minus(subQuery);
-        Minus copy = original.copy();
-
-        // Modify original's subquery
-        original.clearParameters();
-
-        // Copy should not be affected
-        List<Object> copyParams = copy.getParameters();
-        assertEquals("WEST", copyParams.get(0));
     }
 
     @Test

@@ -117,22 +117,6 @@ public class FullJoinTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Like like = Filters.like("name", "%Corp%");
-        List<String> entities = Arrays.asList("companies", "subsidiaries");
-        FullJoin original = Filters.fullJoin(entities, like);
-
-        FullJoin copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testEquals() {
         Equal eq1 = Filters.eq("dept.id", "emp.dept_id");
         Equal eq2 = Filters.eq("dept.id", "emp.dept_id");

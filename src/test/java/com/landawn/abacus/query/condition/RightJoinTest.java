@@ -139,31 +139,6 @@ public class RightJoinTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        On condition = Filters.on("orders.customer_id", "customers.id");
-        RightJoin original = Filters.rightJoin("customers", condition);
-
-        RightJoin copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
-    public void testCopyWithoutCondition() {
-        RightJoin original = Filters.rightJoin("categories");
-
-        RightJoin copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNull(copy.getCondition());
-    }
-
-    @Test
     public void testHashCode() {
         RightJoin join1 = Filters.rightJoin("products");
         RightJoin join2 = Filters.rightJoin("products");

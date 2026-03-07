@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
+
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -105,15 +105,6 @@ public class NaturalJoin2025Test extends TestBase {
         join.clearParameters();
         List<Object> params = join.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        NaturalJoin original = new NaturalJoin("customers", new Equal("type", "VIP"));
-        NaturalJoin copy = (NaturalJoin) original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
     }
 
     @Test

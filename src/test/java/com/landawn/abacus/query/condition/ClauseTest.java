@@ -47,19 +47,6 @@ public class ClauseTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Between between = Filters.between("age", 18, 65);
-        TestClause original = new TestClause(Operator.WHERE, between);
-
-        TestClause copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testToString() {
         Equal eq = Filters.eq("status", "active");
         TestClause clause = new TestClause(Operator.WHERE, eq);

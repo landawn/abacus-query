@@ -21,17 +21,17 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.landawn.abacus.util.SK;
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
  * Abstract base class for all condition implementations.
  * This class provides common functionality for conditions including logical operations
- * (AND, OR, NOT), cloning support, and utility methods for string representation.
+ * (AND, OR, NOT) and utility methods for string representation.
  * 
  * <p>AbstractCondition serves as the foundation for the condition hierarchy, implementing
  * the {@link Condition} interface and providing default implementations for common operations.
@@ -42,7 +42,7 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>Immutable operator storage</li>
  *   <li>Default implementations for logical operations (and, or, not)</li>
- *   <li>Cloneable support for creating deep copies</li>
+ *   <li>Immutable after construction</li>
  *   <li>Utility methods for parameter and property name formatting</li>
  *   <li>Standard toString() implementation</li>
  * </ul>
@@ -65,7 +65,7 @@ import com.landawn.abacus.util.Strings;
  * @see Condition
  * @see Operator
  */
-public abstract class AbstractCondition implements Condition, Cloneable {
+public abstract class AbstractCondition implements Condition {
 
     /**
      * The operator for this condition.
@@ -112,24 +112,6 @@ public abstract class AbstractCondition implements Condition, Cloneable {
     @Override
     public Operator operator() {
         return operator;
-    }
-
-    /**
-     * Creates a shallow copy of this condition using object cloning.
-     * Subclasses should override this method to provide deep copying
-     * of their specific fields to ensure complete independence between copies.
-     *
-     * @param <T> the type of condition to return
-     * @return a shallow copy of this condition
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends Condition> T copy() {
-        try {
-            return (T) super.clone();
-        } catch (final CloneNotSupportedException e) {
-            throw new AssertionError("CloneNotSupportedException should never happen since AbstractCondition implements Cloneable", e);
-        }
     }
 
     /**

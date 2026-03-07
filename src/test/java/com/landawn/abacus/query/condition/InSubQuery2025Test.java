@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -159,27 +158,6 @@ public class InSubQuery2025Test extends TestBase {
         condition.clearParameters();
         // SubQuery parameters should be cleared
         assertNotNull(condition.getSubQuery());
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE status = 'active'");
-        InSubQuery original = new InSubQuery("user_id", subQuery);
-
-        InSubQuery copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getSubQuery(), copy.getSubQuery());
-    }
-
-    @Test
-    public void testCopy_MultipleProperties() {
-        List<String> columns = Arrays.asList("dept_id", "loc_id");
-        SubQuery subQuery = Filters.subQuery("SELECT department_id, location_id FROM assignments");
-        InSubQuery original = new InSubQuery(columns, subQuery);
-
-        InSubQuery copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getSubQuery(), copy.getSubQuery());
     }
 
     @Test

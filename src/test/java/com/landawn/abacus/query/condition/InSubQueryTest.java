@@ -117,31 +117,6 @@ public class InSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = ?");
-        InSubQuery original = new InSubQuery("user_id", subQuery);
-        InSubQuery copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropNames(), copy.getPropNames());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getSubQuery(), copy.getSubQuery());
-        Assertions.assertEquals(original.getSubQuery().toString(), copy.getSubQuery().toString());
-    }
-
-    @Test
-    public void testCopyWithMultiplePropNames() {
-        List<String> propNames = Arrays.asList("col1", "col2");
-        SubQuery subQuery = Filters.subQuery("SELECT a, b FROM table");
-        InSubQuery original = new InSubQuery(propNames, subQuery);
-        InSubQuery copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropNames(), copy.getPropNames());
-        Assertions.assertNotSame(original.getSubQuery(), copy.getSubQuery());
-    }
-
-    @Test
     public void testHashCode() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table");

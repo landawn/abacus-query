@@ -117,20 +117,6 @@ public class InnerJoinTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Condition condition = Filters.eq("a.id", "b.a_id");
-        InnerJoin original = new InnerJoin("table_b b", condition);
-        InnerJoin copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals(original.toString(), copy.toString());
-    }
-
-    @Test
     public void testToString() {
         InnerJoin join = new InnerJoin("products");
         String result = join.toString();

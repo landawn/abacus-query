@@ -82,18 +82,6 @@ public class NotLikeTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        NotLike original = Filters.notLike("email", "%@temp.com");
-
-        NotLike copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-        Assertions.assertEquals(original.operator(), copy.operator());
-    }
-
-    @Test
     public void testHashCode() {
         NotLike notLike1 = Filters.notLike("name", "%test%");
         NotLike notLike2 = Filters.notLike("name", "%test%");

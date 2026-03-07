@@ -17,7 +17,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -222,15 +221,6 @@ public class OrderBy2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        OrderBy original = new OrderBy("name", "age");
-        OrderBy copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original, copy);
-    }
-
-    @Test
     public void testOperatorType() {
         OrderBy orderBy = new OrderBy("column");
 
@@ -334,16 +324,6 @@ public class OrderBy2025Test extends TestBase {
 
         assertTrue(result.contains("name"));
         assertTrue(result.contains("age"));
-    }
-
-    @Test
-    public void testCopy_Independence() {
-        OrderBy original = new OrderBy("name", "age");
-        OrderBy copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original, copy);
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test

@@ -17,8 +17,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
@@ -130,16 +128,6 @@ public class Having2025Test extends TestBase {
         int hash2 = having.hashCode();
 
         assertEquals(hash1, hash2);
-    }
-
-    @Test
-    public void testCopy() {
-        Having original = new Having(Filters.gt("AVG(score)", 75));
-        Having copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original, copy);
-        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -256,19 +244,6 @@ public class Having2025Test extends TestBase {
     public void testGetOperator() {
         Having having = new Having(Filters.gt("COUNT(*)", 0));
         assertEquals(Operator.HAVING, having.operator());
-    }
-
-    @Test
-    public void testCopy_Independence() {
-        Equal innerCondition = Filters.eq("COUNT(*)", 5);
-        Having original = new Having(innerCondition);
-        Having copy = original.copy();
-
-        innerCondition.clearParameters();
-        assertNull(innerCondition.getPropValue());
-
-        Equal copiedCondition = copy.getCondition();
-        assertEquals(5, (int) copiedCondition.getPropValue());
     }
 
     @Test

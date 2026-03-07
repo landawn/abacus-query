@@ -139,18 +139,6 @@ public class OrderByTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        OrderBy original = Filters.orderBy("created", SortDirection.DESC);
-
-        OrderBy copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testHashCode() {
         OrderBy orderBy1 = Filters.orderBy("name", "age");
         OrderBy orderBy2 = Filters.orderBy("name", "age");

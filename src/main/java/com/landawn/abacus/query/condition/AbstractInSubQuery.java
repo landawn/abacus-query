@@ -133,7 +133,7 @@ public abstract class AbstractInSubQuery extends LogicalCondition {
     /**
      * Gets the list of parameters from the subquery.
      *
-     * @return list of parameter values from the subquery
+     * @return an immutable list of parameter values from the subquery
      */
     @Override
     public List<Object> getParameters() {
@@ -148,24 +148,6 @@ public abstract class AbstractInSubQuery extends LogicalCondition {
         if (subQuery != null) {
             subQuery.clearParameters();
         }
-    }
-
-    /**
-     * Creates a deep copy of this condition.
-     *
-     * @param <T> the type of condition to return
-     * @return a new instance with a deep copy of the subquery
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends Condition> T copy() {
-        final AbstractInSubQuery copy = super.copy();
-
-        if (subQuery != null) {
-            copy.subQuery = subQuery.copy();
-        }
-
-        return (T) copy;
     }
 
     /**

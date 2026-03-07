@@ -73,20 +73,6 @@ public class NotInTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        List<String> values = Arrays.asList("temp", "draft", "test");
-        NotIn original = Filters.notIn("documentType", values);
-
-        NotIn copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertNotSame(original.getValues(), copy.getValues());
-        Assertions.assertEquals(original.getValues(), copy.getValues());
-        Assertions.assertEquals(original.operator(), copy.operator());
-    }
-
-    @Test
     public void testToString() {
         List<String> values = Arrays.asList("A", "B", "C");
         NotIn notIn = Filters.notIn("category", values);

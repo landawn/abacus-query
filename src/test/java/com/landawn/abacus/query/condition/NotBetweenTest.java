@@ -89,34 +89,6 @@ public class NotBetweenTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        NotBetween original = Filters.notBetween("temperature", -10, 40);
-
-        NotBetween copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals((Integer) original.getMinValue(), copy.getMinValue());
-        Assertions.assertEquals((Integer) original.getMaxValue(), copy.getMaxValue());
-        Assertions.assertEquals(original.operator(), copy.operator());
-    }
-
-    @Test
-    public void testCopyWithConditionValues() {
-        Expression minExpr = Filters.expr("MIN_VALUE");
-        Expression maxExpr = Filters.expr("MAX_VALUE");
-        NotBetween original = Filters.notBetween("value", minExpr, maxExpr);
-
-        NotBetween copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertNotSame(original.getMinValue(), copy.getMinValue());
-        Assertions.assertNotSame(original.getMaxValue(), copy.getMaxValue());
-        Assertions.assertEquals((Object) original.getMinValue(), copy.getMinValue());
-        Assertions.assertEquals((Object) original.getMaxValue(), copy.getMaxValue());
-    }
-
-    @Test
     public void testToString() {
         NotBetween notBetween = Filters.notBetween("age", 18, 65);
 

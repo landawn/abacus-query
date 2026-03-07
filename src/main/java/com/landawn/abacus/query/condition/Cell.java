@@ -106,7 +106,7 @@ public class Cell extends AbstractCondition {
      * Gets the parameters from the wrapped condition.
      * This method delegates to the wrapped condition's getParameters method.
      * 
-     * @return a list of parameters from the wrapped condition, or an empty list if no condition is set
+     * @return an immutable list of parameters from the wrapped condition, or an empty immutable list if no condition is set
      */
     @Override
     public List<Object> getParameters() {
@@ -123,26 +123,6 @@ public class Cell extends AbstractCondition {
         if (condition != null) {
             condition.clearParameters();
         }
-    }
-
-    /**
-     * Creates a deep copy of this Cell.
-     * The wrapped condition is also copied if present, ensuring complete independence
-     * between the original and the copy.
-     * 
-     * @param <T> the type of condition to return
-     * @return a new Cell instance with copied values
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends Condition> T copy() {
-        final Cell copy = super.copy();
-
-        if (condition != null) {
-            copy.condition = condition.copy();
-        }
-
-        return (T) copy;
     }
 
     /**

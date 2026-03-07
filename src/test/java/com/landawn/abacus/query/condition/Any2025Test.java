@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -96,17 +97,6 @@ public class Any2025Test extends TestBase {
         condition.clearParameters();
         List<Object> params = condition.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE in_stock = true");
-        Any original = new Any(subQuery);
-        Any copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.operator(), copy.operator());
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test

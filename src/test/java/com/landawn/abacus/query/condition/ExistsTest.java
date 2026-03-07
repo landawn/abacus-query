@@ -72,19 +72,6 @@ public class ExistsTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM items WHERE active = true");
-        Exists original = Filters.exists(subQuery);
-
-        Exists copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testEquals() {
         SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = 100");
         SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = 100");

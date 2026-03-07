@@ -67,18 +67,6 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Condition innerCondition = Filters.gt("AVG(rating)", 4.5);
-        Having original = new Having(innerCondition);
-        Having copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals(original.getCondition().toString(), copy.getCondition().toString());
-    }
-
-    @Test
     public void testToString() {
         Condition innerCondition = Filters.gt("COUNT(*)", 5);
         Having having = new Having(innerCondition);

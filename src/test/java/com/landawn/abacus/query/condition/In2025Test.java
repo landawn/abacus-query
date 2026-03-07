@@ -153,41 +153,6 @@ public class In2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        List<String> values = Arrays.asList("A", "B", "C");
-        In original = new In("grade", values);
-
-        In copy = original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals(original.getValues().size(), copy.getValues().size());
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        In original = new In("status", Arrays.asList("active", "pending"));
-        In copy = original.copy();
-
-        assertNotSame(original.getValues(), copy.getValues());
-
-        // Modify original
-        original.clearParameters();
-
-        // Copy should not be affected
-        assertEquals("active", copy.getValues().get(0));
-    }
-
-    @Test
-    public void testCopy_DeepCopyForNestedConditionValues() {
-        In original = new In("id", Arrays.asList(Filters.equal("status", "active")));
-        In copy = original.copy();
-
-        original.clearParameters();
-
-        assertEquals(Arrays.asList("active"), copy.getParameters());
-    }
-
-    @Test
     public void testToString_NoChange() {
         In condition = new In("status", Arrays.asList("active", "pending"));
         String result = condition.toString(NamingPolicy.NO_CHANGE);

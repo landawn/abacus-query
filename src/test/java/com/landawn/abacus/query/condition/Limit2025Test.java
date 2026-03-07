@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
+
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -261,25 +261,6 @@ public class Limit2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Limit original = new Limit(10, 30);
-        Limit copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getCount(), copy.getCount());
-        assertEquals(original.getOffset(), copy.getOffset());
-    }
-
-    @Test
-    public void testCopyWithExpression() {
-        Limit original = new Limit("LIMIT 20");
-        Limit copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getExpression(), copy.getExpression());
-    }
-
-    @Test
     public void testPagination() {
         // Page 1: First 10 records
         Limit page1 = new Limit(10, 0);
@@ -332,16 +313,6 @@ public class Limit2025Test extends TestBase {
         String result = limit.toString();
 
         assertEquals("FIRST 5 ROWS", result);
-    }
-
-    @Test
-    public void testCopy_PreservesAllFields() {
-        Limit original = new Limit(25, 50);
-        Limit copy = original.copy();
-
-        assertEquals(original.getCount(), copy.getCount());
-        assertEquals(original.getOffset(), copy.getOffset());
-        assertEquals(original.getExpression(), copy.getExpression());
     }
 
     @Test

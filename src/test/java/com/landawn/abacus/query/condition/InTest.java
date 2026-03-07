@@ -90,18 +90,6 @@ public class InTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        In original = new In("status", Arrays.asList("A", "B", "C"));
-        In copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getValues(), copy.getValues());
-        Assertions.assertEquals(original.getValues(), copy.getValues());
-    }
-
-    @Test
     public void testToString() {
         In condition = new In("category", Arrays.asList("electronics", "computers", "phones"));
         String result = condition.toString();

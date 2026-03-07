@@ -17,7 +17,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -181,15 +180,6 @@ public class GroupBy2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        GroupBy original = new GroupBy("department", "location");
-        GroupBy copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original, copy);
-    }
-
-    @Test
     public void testWithThreeProperties() {
         Map<String, SortDirection> orders = new LinkedHashMap<>();
         orders.put("year", SortDirection.DESC);
@@ -282,16 +272,6 @@ public class GroupBy2025Test extends TestBase {
 
         assertTrue(result.contains("category"));
         assertTrue(result.contains("region"));
-    }
-
-    @Test
-    public void testCopy_Independence() {
-        GroupBy original = new GroupBy("department", "location");
-        GroupBy copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original, copy);
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test

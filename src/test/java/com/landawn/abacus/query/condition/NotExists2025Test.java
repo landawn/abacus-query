@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -97,17 +96,6 @@ public class NotExists2025Test extends TestBase {
         condition.clearParameters();
         List<Object> params = condition.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM reviews WHERE rating < 3");
-        NotExists original = new NotExists(subQuery);
-        NotExists copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.operator(), copy.operator());
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -211,19 +199,6 @@ public class NotExists2025Test extends TestBase {
         NotExists condition = new NotExists(subQuery);
         List<Object> params = condition.getParameters();
         assertEquals(2, (int) params.size());
-    }
-
-    @Test
-    public void testCopyIndependence() {
-        Condition whereCondition = new Equal("deleted", true);
-        SubQuery subQuery = Filters.subQuery("records", Arrays.asList("id"), whereCondition);
-        NotExists original = new NotExists(subQuery);
-        NotExists copy = original.copy();
-
-        copy.clearParameters();
-        assertFalse(original.getParameters().isEmpty());
-        List<Object> copyParams = copy.getParameters();
-        assertTrue(copyParams.size() == 1 && copyParams.stream().allMatch(param -> param == null));
     }
 
     @Test

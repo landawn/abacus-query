@@ -57,17 +57,6 @@ public class IsTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Is original = new Is("age", 25);
-        Is copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testToString() {
         Is condition = new Is("status", null);
         String result = condition.toString();

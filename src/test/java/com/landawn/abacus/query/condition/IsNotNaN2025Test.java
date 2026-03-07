@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -91,16 +90,6 @@ public class IsNotNaN2025Test extends TestBase {
         condition.clearParameters();
         // Should not throw exception
         assertNotNull(condition);
-    }
-
-    @Test
-    public void testCopy() {
-        IsNotNaN original = new IsNotNaN("temperature");
-        IsNotNaN copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -217,17 +206,6 @@ public class IsNotNaN2025Test extends TestBase {
         assertEquals("user.profile.score", condition.getPropName());
         String str = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("user.profile.score"));
-    }
-
-    @Test
-    public void testCopyIndependence() {
-        IsNotNaN original = new IsNotNaN("value");
-        IsNotNaN copy = original.copy();
-
-        copy.clearParameters();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
     }
 
     @Test

@@ -86,19 +86,6 @@ public class MinusTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("product_id"), Filters.eq("returned", true));
-        Minus original = Filters.minus(subQuery);
-
-        Minus copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testHashCode() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM test");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM test");

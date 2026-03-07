@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -107,19 +108,6 @@ public class Cell2025Test extends TestBase {
 
         List<Object> params = cell.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        Condition condition = Filters.eq("status", "active");
-        Cell original = new Cell(Operator.NOT, condition);
-
-        Cell copy = original.copy();
-
-        assertNotNull(copy);
-        assertNotSame(original, copy);
-        assertEquals(original.operator(), copy.operator());
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -265,17 +253,6 @@ public class Cell2025Test extends TestBase {
 
         List<Object> params = cell.getParameters();
         assertEquals(2, params.size());
-    }
-
-    @Test
-    public void testCellCopyPreservesValues() {
-        Cell original = new Cell(Operator.NOT, Filters.eq("test", "value"));
-
-        Cell copy = original.copy();
-        copy.clearParameters();
-
-        // Original should still have parameters
-        assertFalse(original.getParameters().isEmpty());
     }
 
     @Test

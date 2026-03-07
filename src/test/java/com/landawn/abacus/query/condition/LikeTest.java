@@ -77,17 +77,6 @@ public class LikeTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Like original = new Like("description", "%important%");
-        Like copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testToString() {
         Like condition = new Like("code", "A_B_C");
         String result = condition.toString();

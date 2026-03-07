@@ -563,23 +563,6 @@ public class Criteria2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Criteria original = new Criteria();
-        original.distinct().where(Filters.equal("status", "active")).groupBy("department").having("COUNT(*) > 5").orderBy("name").limit(10);
-
-        Criteria copy = original.copy();
-
-        assertNotNull(copy);
-        assertEquals(original.getSelectModifier(), copy.getSelectModifier());
-        assertEquals(original.getConditions().size(), copy.getConditions().size());
-
-        // Verify it's a deep copy
-        copy.clear();
-        assertTrue(copy.getConditions().isEmpty());
-        assertFalse(original.getConditions().isEmpty());
-    }
-
-    @Test
     public void testToStringWithNamingPolicy() {
         Criteria criteria = new Criteria();
         criteria.distinct().where(Filters.equal("isActive", true)).orderBy("createdDate", SortDirection.DESC);

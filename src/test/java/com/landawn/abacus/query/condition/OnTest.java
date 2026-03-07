@@ -138,18 +138,6 @@ public class OnTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        On original = Filters.on("t1.id", "t2.foreign_id");
-
-        On copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testHashCode() {
         On on1 = Filters.on("a.id", "b.a_id");
         On on2 = Filters.on("a.id", "b.a_id");

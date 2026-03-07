@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -158,42 +157,6 @@ public class NotBetween2025Test extends TestBase {
         // Expressions should have their parameters cleared
         assertNotNull(condition.getMinValue());
         assertNotNull(condition.getMaxValue());
-    }
-
-    @Test
-    public void testCopy() {
-        NotBetween original = new NotBetween("age", 18, 65);
-        NotBetween copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object) original.getMinValue(), (Object) copy.getMinValue());
-        assertEquals((Object) original.getMaxValue(), (Object) copy.getMaxValue());
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        NotBetween original = new NotBetween("score", 60, 80);
-        NotBetween copy = original.copy();
-
-        // Modify original
-        original.clearParameters();
-
-        // Copy should not be affected
-        assertEquals(Integer.valueOf(60), copy.getMinValue());
-        assertEquals(Integer.valueOf(80), copy.getMaxValue());
-    }
-
-    @Test
-    public void testCopy_WithConditionValues() {
-        Expression minExpr = new Expression("MIN(age)");
-        Expression maxExpr = new Expression("MAX(age)");
-        NotBetween original = new NotBetween("score", minExpr, maxExpr);
-
-        NotBetween copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getMinValue(), copy.getMinValue());
-        assertNotSame(original.getMaxValue(), copy.getMaxValue());
     }
 
     @Test

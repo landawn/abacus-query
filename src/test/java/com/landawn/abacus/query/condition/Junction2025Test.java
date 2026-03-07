@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -152,24 +151,6 @@ public class Junction2025Test extends TestBase {
 
         List<Object> params = junction.getParameters();
         assertTrue(params.size() == 4 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        Equal cond1 = Filters.eq("status", "active");
-        GreaterThan cond2 = Filters.gt("age", 18);
-
-        Junction original = new Junction(Operator.AND, cond1, cond2);
-        Junction copy = original.copy();
-
-        assertNotNull(copy);
-        assertNotSame(original, copy);
-        assertEquals(original.operator(), copy.operator());
-        assertEquals(original.getConditions().size(), copy.getConditions().size());
-
-        // Verify deep copy
-        assertNotSame(original.getConditions(), copy.getConditions());
-        assertNotSame(original.getConditions().get(0), copy.getConditions().get(0));
     }
 
     @Test

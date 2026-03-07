@@ -3,7 +3,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Tag;
@@ -54,23 +53,6 @@ public class IsNaN2025Test extends TestBase {
         IsNaN condition = new IsNaN("value");
         condition.clearParameters();
         assertTrue(condition.getParameters().isEmpty());
-    }
-
-    @Test
-    public void testCopy() {
-        IsNaN original = new IsNaN("value");
-        IsNaN copy = (IsNaN) original.copy();
-        assertNotNull(copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertNotSame(original, copy);
-    }
-
-    @Test
-    public void testCopy_Independence() {
-        IsNaN original = new IsNaN("value");
-        IsNaN copy = (IsNaN) original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
     }
 
     @Test

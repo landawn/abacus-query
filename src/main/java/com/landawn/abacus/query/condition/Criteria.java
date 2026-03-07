@@ -458,7 +458,7 @@ public class Criteria extends AbstractCondition {
      * Gets all parameters from all conditions in the proper order.
      * The order follows SQL clause precedence: JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
      *
-     * @return a list of all parameters from all conditions
+     * @return an immutable list of all parameters from all conditions
      */
     @Override
     public List<Object> getParameters() {
@@ -1822,28 +1822,6 @@ public class Criteria extends AbstractCondition {
         add(new Minus(subQuery));
 
         return this;
-    }
-
-    /**
-     * Creates a deep copy of this Criteria.
-     * All conditions are also copied, ensuring complete independence between
-     * the original and the copy.
-     * 
-     * @param <T> the type of condition to return
-     * @return a new Criteria instance with copied values
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T extends Condition> T copy() {
-        final Criteria result = super.copy();
-
-        result.conditionList = new ArrayList<>();
-
-        for (final Condition cond : conditionList) {
-            result.conditionList.add(cond.copy());
-        }
-
-        return (T) result;
     }
 
     /**

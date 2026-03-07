@@ -498,15 +498,6 @@ public class ExpressionTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Expression original = Expression.of("status = 'active'");
-        Expression copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getLiteral(), copy.getLiteral());
-    }
-
-    @Test
     public void testExprClass() {
         Expression.Expr expr = new Expression.Expr("test expression");
         Assertions.assertEquals("test expression", expr.getLiteral());

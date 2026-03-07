@@ -130,31 +130,6 @@ public class And2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Equal cond1 = new Equal("a", 1);
-        Equal cond2 = new Equal("b", 2);
-        And original = new And(cond1, cond2);
-
-        And copy = original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.getConditions().size(), copy.getConditions().size());
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        Equal cond = new Equal("a", 1);
-        And original = new And(cond);
-        And copy = original.copy();
-
-        // Modify original condition
-        cond.clearParameters();
-
-        // Copy should not be affected
-        Equal copiedCond = (Equal) copy.getConditions().get(0);
-        assertEquals(1, (int) copiedCond.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         And junction = new And(new Equal("a", 1), new Equal("b", 2));
         String result = junction.toString(NamingPolicy.NO_CHANGE);
@@ -222,17 +197,6 @@ public class And2025Test extends TestBase {
 
         assertEquals(Integer.valueOf(3), extended.getConditions().size());
         assertEquals(2, (int) original.getConditions().size());
-    }
-
-    @Test
-    public void testAndMethodDoesNotShareExistingOperands() {
-        And original = new And(new Equal("a", 1));
-        And extended = original.and(new Equal("b", 2));
-
-        original.clearParameters();
-
-        Equal copiedFirst = (Equal) extended.getConditions().get(0);
-        assertEquals(Integer.valueOf(1), copiedFirst.getPropValue());
     }
 
     @Test

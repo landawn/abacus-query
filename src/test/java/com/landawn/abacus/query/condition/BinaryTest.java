@@ -95,28 +95,6 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Binary original = Filters.binary("temperature", Operator.LESS_THAN_OR_EQUAL, 32.0);
-        Binary copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
-    public void testCopyWithConditionValue() {
-        In in = Filters.in("id", Arrays.asList(1, 2, 3));
-        Binary original = Filters.binary("ids", Operator.EQUAL, in);
-        Binary copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertNotSame(original.getPropValue(), copy.getPropValue());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testToString() {
         Binary binary = Filters.binary("name", Operator.NOT_EQUAL, "Test");
         String result = binary.toString();

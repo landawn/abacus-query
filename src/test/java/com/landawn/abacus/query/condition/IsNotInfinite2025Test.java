@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,16 +83,6 @@ public class IsNotInfinite2025Test extends TestBase {
         IsNotInfinite condition = new IsNotInfinite("value");
         condition.clearParameters();
         assertNotNull(condition);
-    }
-
-    @Test
-    public void testCopy() {
-        IsNotInfinite original = new IsNotInfinite("calculatedValue");
-        IsNotInfinite copy = original.copy();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals(original.operator(), copy.operator());
     }
 
     @Test
@@ -213,17 +202,6 @@ public class IsNotInfinite2025Test extends TestBase {
         assertEquals("stats.calculation.result", condition.getPropName());
         String str = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("stats.calculation.result"));
-    }
-
-    @Test
-    public void testCopyIndependence() {
-        IsNotInfinite original = new IsNotInfinite("value");
-        IsNotInfinite copy = original.copy();
-
-        copy.clearParameters();
-
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
     }
 
     @Test

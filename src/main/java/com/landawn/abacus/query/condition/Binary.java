@@ -153,7 +153,7 @@ public class Binary extends LogicalCondition {
      * If the value is a Condition (subquery), returns its parameters.
      * Otherwise, returns a list containing the single value.
      *
-     * @return a list of parameter values
+     * @return an immutable list of parameter values
      */
     @Override
     public List<Object> getParameters() {
@@ -179,25 +179,6 @@ public class Binary extends LogicalCondition {
         } else {
             propValue = null;
         }
-    }
-
-    /**
-     * Creates a deep copy of this Binary condition.
-     * If the value is a Condition, it is also copied to ensure complete independence.
-     * 
-     * @param <T> the type of condition to return
-     * @return a new Binary instance with copied values
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends Condition> T copy() {
-        final Binary copy = super.copy();
-
-        if (propValue instanceof Condition) {
-            copy.propValue = ((Condition) propValue).copy();
-        }
-
-        return (T) copy;
     }
 
     /**

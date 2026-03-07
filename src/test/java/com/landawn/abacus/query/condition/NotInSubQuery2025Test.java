@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -147,16 +146,6 @@ public class NotInSubQuery2025Test extends TestBase {
 
         condition.clearParameters();
         assertNotNull(condition.getSubQuery());
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
-        NotInSubQuery original = new NotInSubQuery("userId", subQuery);
-
-        NotInSubQuery copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getSubQuery(), copy.getSubQuery());
     }
 
     @Test

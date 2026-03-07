@@ -187,32 +187,6 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        List<String> props = Arrays.asList("id", "name");
-        Equal condition = Filters.eq("active", true);
-        SubQuery original = Filters.subQuery("users", props, condition);
-
-        SubQuery copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getEntityName(), copy.getEntityName());
-        Assertions.assertNotSame(original.getSelectPropNames(), copy.getSelectPropNames());
-        Assertions.assertEquals(original.getSelectPropNames(), copy.getSelectPropNames());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
-    public void testCopyWithRawSql() {
-        SubQuery original = Filters.subQuery("SELECT id FROM users");
-
-        SubQuery copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.sql(), copy.sql());
-    }
-
-    @Test
     public void testToStringWithRawSql() {
         String sql = "SELECT MAX(salary) FROM employees";
         SubQuery subQuery = Filters.subQuery(sql);

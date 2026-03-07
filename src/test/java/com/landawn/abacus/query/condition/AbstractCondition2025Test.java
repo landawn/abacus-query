@@ -91,17 +91,6 @@ public class AbstractCondition2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Equal original = new Equal("name", "John");
-        Equal copy = original.copy();
-
-        assertNotNull(copy);
-        assertNotSame(original, copy);
-        assertEquals(original.getPropName(), copy.getPropName());
-        assertEquals((Object) original.getPropValue(), (Object) copy.getPropValue());
-    }
-
-    @Test
     public void testToString_DefaultNamingPolicy() {
         Equal condition = new Equal("userName", "John");
         String result = condition.toString();

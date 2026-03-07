@@ -113,17 +113,6 @@ public class EqualTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Equal original = Filters.eq("department", "Sales");
-        Equal copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-        Assertions.assertEquals(original.operator(), copy.operator());
-    }
-
-    @Test
     public void testEquals() {
         Equal eq1 = Filters.eq("status", "active");
         Equal eq2 = Filters.eq("status", "active");

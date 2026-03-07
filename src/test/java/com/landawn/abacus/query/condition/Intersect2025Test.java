@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -69,15 +68,6 @@ public class Intersect2025Test extends TestBase {
         intersect.clearParameters();
         List<Object> params = intersect.getParameters();
         assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        Intersect original = new Intersect(subQuery);
-        Intersect copy = original.copy();
-        assertNotSame(original, copy);
-        assertNotSame(original.getCondition(), copy.getCondition());
     }
 
     @Test
@@ -158,20 +148,6 @@ public class Intersect2025Test extends TestBase {
         Intersect intersect = new Intersect(subQuery);
         String result = intersect.toString();
         assertTrue(result.contains("INTERSECT"));
-    }
-
-    @Test
-    public void testCopy_DeepCopy() {
-        SubQuery subQuery = Filters.subQuery("activity", List.of("user_id"), new GreaterThan("last_login", "2024-01-01"));
-        Intersect original = new Intersect(subQuery);
-        Intersect copy = original.copy();
-
-        // Modify original's subquery
-        original.clearParameters();
-
-        // Copy should not be affected
-        List<Object> copyParams = copy.getParameters();
-        assertEquals("2024-01-01", copyParams.get(0));
     }
 
     @Test

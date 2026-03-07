@@ -77,17 +77,6 @@ public class GreaterThanOrEqualTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        GreaterThanOrEqual original = Filters.ge("score", 80.5);
-        GreaterThanOrEqual copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testGetParameters() {
         GreaterThanOrEqual ge = Filters.ge("price", 100.0);
         var params = ge.getParameters();

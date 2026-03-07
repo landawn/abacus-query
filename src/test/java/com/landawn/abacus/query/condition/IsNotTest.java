@@ -57,17 +57,6 @@ public class IsNotTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        IsNot original = new IsNot("age", 25);
-        IsNot copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testToString() {
         IsNot condition = new IsNot("status", null);
         String result = condition.toString();

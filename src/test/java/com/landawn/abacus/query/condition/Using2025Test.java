@@ -19,7 +19,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -106,14 +105,6 @@ public class Using2025Test extends TestBase {
         Using using = new Using("order_id");
         using.clearParameters();
         assertTrue(using.getParameters().isEmpty());
-    }
-
-    @Test
-    public void testCopy() {
-        Using original = new Using("department_id");
-        Using copy = original.copy();
-        assertNotSame(original, copy);
-        assertEquals(original.operator(), copy.operator());
     }
 
     @Test

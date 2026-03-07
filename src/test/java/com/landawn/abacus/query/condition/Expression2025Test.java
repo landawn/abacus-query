@@ -935,17 +935,6 @@ public class Expression2025Test extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Expression original = new Expression("test_expr");
-
-        Expression copy = original.copy();
-
-        assertNotNull(copy);
-        assertNotSame(original, copy);
-        assertEquals(original.getLiteral(), copy.getLiteral());
-    }
-
-    @Test
     public void testEqualsWithNullLiterals() {
         Expression expr1 = new Expression(null);
         Expression expr2 = new Expression(null);

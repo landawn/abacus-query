@@ -329,7 +329,7 @@ public class Join extends AbstractCondition {
      * Returns any bound parameters used in the join condition. Returns an empty
      * list if there's no condition or the condition has no parameters.
      * 
-     * @return the list of parameters from the condition, or an empty list if no condition
+     * @return an immutable list of parameters from the condition, or an empty immutable list if no condition
      */
     @Override
     public List<Object> getParameters() {
@@ -348,30 +348,6 @@ public class Join extends AbstractCondition {
         if (condition != null) {
             condition.clearParameters();
         }
-    }
-
-    /**
-     * Creates a deep copy of this JOIN clause.
-     * The copy includes copies of all join entities and the condition,
-     * ensuring that modifications to the copy don't affect the original.
-     * 
-     * @param <T> the type of the condition
-     * @return a new Join instance with copies of all entities and condition
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T extends Condition> T copy() {
-        final Join copy = super.copy();
-
-        if (joinEntities != null) {
-            copy.joinEntities = new ArrayList<>(joinEntities);
-        }
-
-        if (condition != null) {
-            copy.condition = condition.copy();
-        }
-
-        return (T) copy;
     }
 
     /**

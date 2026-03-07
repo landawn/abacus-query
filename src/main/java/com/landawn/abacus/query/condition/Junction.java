@@ -214,7 +214,7 @@ public class Junction extends LogicalCondition {
      * including those in nested junctions. The order of parameters matches
      * the order they would appear in the generated SQL.
      * 
-     * @return a list containing all parameters from all conditions
+     * @return an immutable list containing all parameters from all conditions
      */
     @Override
     public List<Object> getParameters() {
@@ -244,30 +244,6 @@ public class Junction extends LogicalCondition {
                 condition.clearParameters();
             }
         }
-    }
-
-    /**
-     * Creates a deep copy of this junction including all its conditions.
-     * The copy includes copies of all contained conditions, ensuring that
-     * modifications to the copy don't affect the original.
-     * 
-     * @param <T> the type of the condition
-     * @return a new Junction instance with copies of all conditions
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T extends Condition> T copy() {
-        final Junction result = super.copy();
-
-        result.conditions = new ArrayList<>();
-
-        for (final Condition cond : conditions) {
-            if (cond != null) {
-                result.conditions.add(cond.copy());
-            }
-        }
-
-        return (T) result;
     }
 
     /**

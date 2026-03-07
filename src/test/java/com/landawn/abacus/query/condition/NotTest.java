@@ -86,19 +86,6 @@ public class NotTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Between between = Filters.between("salary", 30000, 80000);
-        Not original = Filters.not(between);
-
-        Not copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testHashCode() {
         Like likeCondition1 = Filters.like("name", "%test%");
         Like likeCondition2 = Filters.like("name", "%test%");

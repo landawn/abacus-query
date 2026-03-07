@@ -99,18 +99,6 @@ public class NotEqualTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        NotEqual original = Filters.ne("role", "guest");
-
-        NotEqual copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-        Assertions.assertEquals(original.operator(), copy.operator());
-    }
-
-    @Test
     public void testHashCode() {
         NotEqual notEqual1 = Filters.ne("status", "deleted");
         NotEqual notEqual2 = Filters.ne("status", "deleted");

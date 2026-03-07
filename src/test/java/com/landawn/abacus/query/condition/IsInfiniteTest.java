@@ -53,17 +53,6 @@ public class IsInfiniteTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        IsInfinite original = new IsInfinite("measurement");
-        IsInfinite copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testToString() {
         IsInfinite condition = new IsInfinite("calculated_ratio");
         String result = condition.toString();

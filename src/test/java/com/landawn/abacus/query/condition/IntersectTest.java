@@ -64,18 +64,6 @@ public class IntersectTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM products WHERE price > ?");
-        Intersect original = new Intersect(subQuery);
-        Intersect copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals(original.toString(), copy.toString());
-    }
-
-    @Test
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM orders WHERE order_date > '2023-01-01'");
         Intersect intersect = new Intersect(subQuery);

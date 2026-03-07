@@ -428,29 +428,6 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Criteria original = Filters.criteria()
-                .distinct()
-                .join("orders", Filters.eq("users.id", "orders.user_id"))
-                .where(Filters.eq("active", true))
-                .groupBy("department")
-                .having(Filters.gt("COUNT(*)", 5))
-                .orderBy("name")
-                .limit(10);
-
-        Criteria copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getSelectModifier(), copy.getSelectModifier());
-        Assertions.assertEquals(original.getConditions().size(), copy.getConditions().size());
-        Assertions.assertNotSame(original.getConditions(), copy.getConditions());
-
-        // Verify deep copy
-        Assertions.assertNotNull(copy.getWhere());
-        Assertions.assertNotSame(original.getWhere(), copy.getWhere());
-    }
-
-    @Test
     public void testToString() {
         Criteria criteria = Filters.criteria()
                 .distinct()

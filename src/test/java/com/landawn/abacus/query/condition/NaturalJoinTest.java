@@ -122,31 +122,6 @@ public class NaturalJoinTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Equal condition = Filters.eq("status", "active");
-        NaturalJoin original = Filters.naturalJoin("departments", condition);
-
-        NaturalJoin copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
-    public void testCopyWithoutCondition() {
-        NaturalJoin original = Filters.naturalJoin("employees");
-
-        NaturalJoin copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getJoinEntities(), copy.getJoinEntities());
-        Assertions.assertNull(copy.getCondition());
-    }
-
-    @Test
     public void testHashCode() {
         NaturalJoin join1 = Filters.naturalJoin("employees");
         NaturalJoin join2 = Filters.naturalJoin("employees");

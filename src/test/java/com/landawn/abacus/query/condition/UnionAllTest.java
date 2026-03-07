@@ -87,19 +87,6 @@ public class UnionAllTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        SubQuery subQuery = Filters.subQuery("transactions", Arrays.asList("id", "amount"), Filters.eq("status", "completed"));
-        UnionAll original = Filters.unionAll(subQuery);
-
-        UnionAll copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertNotSame(original.getCondition(), copy.getCondition());
-        Assertions.assertEquals((Condition) original.getCondition(), copy.getCondition());
-    }
-
-    @Test
     public void testHashCode() {
         SubQuery subQuery1 = Filters.subQuery("SELECT * FROM table1");
         SubQuery subQuery2 = Filters.subQuery("SELECT * FROM table1");

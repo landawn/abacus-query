@@ -70,17 +70,6 @@ public class LessThanTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        LessThan original = new LessThan("score", 85.5);
-        LessThan copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getPropName(), copy.getPropName());
-        Assertions.assertEquals(original.operator(), copy.operator());
-        Assertions.assertEquals((Object) original.getPropValue(), copy.getPropValue());
-    }
-
-    @Test
     public void testToString() {
         LessThan condition = new LessThan("amount", 1000);
         String result = condition.toString();

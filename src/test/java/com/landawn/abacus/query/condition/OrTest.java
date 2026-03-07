@@ -104,17 +104,6 @@ public class OrTest extends TestBase {
     }
 
     @Test
-    public void testCopy() {
-        Or original = Filters.or(Filters.eq("status", "active"), Filters.gt("age", 18));
-
-        Or copy = original.copy();
-
-        Assertions.assertNotSame(original, copy);
-        Assertions.assertEquals(original.getConditions().size(), copy.getConditions().size());
-        Assertions.assertNotSame(original.getConditions(), copy.getConditions());
-    }
-
-    @Test
     public void testHashCode() {
         Or or1 = Filters.or(Filters.eq("status", "active"), Filters.eq("status", "pending"));
         Or or2 = Filters.or(Filters.eq("status", "active"), Filters.eq("status", "pending"));
