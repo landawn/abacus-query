@@ -36,7 +36,6 @@ import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.type.Type;
 import com.landawn.abacus.util.ClassUtil;
-import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.InternalUtil;
 import com.landawn.abacus.util.N;
@@ -548,44 +547,9 @@ public final class QueryUtil {
     @Internal
     @Immutable
     public static List<String> getIdPropNames(final Class<?> entityClass) {
-        return getIdPropNames(entityClass, false);
-    }
-
-    /**
-     * Gets the ID field names for the specified entity class with option to return fake ID if none found.
-     * This is useful for entities without explicit ID fields where a synthetic ID is needed.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Without fake ID - returns empty list when no @Id is found
-     * List<String> idFields = QueryUtil.getIdPropNames(LogEntry.class, false);
-     * // Returns: []
-     *
-     * // With fake ID - returns a synthetic ID when no @Id is found
-     * List<String> fakeIdFields = QueryUtil.getIdPropNames(LogEntry.class, true);
-     * // Returns: ["not_defined_fake_id_in_abacus_<uuid>"]
-     * boolean isFake = QueryUtil.isFakeId(fakeIdFields);  // true
-     *
-     * // Entity with @Id returns actual IDs regardless of fakeIdForEmpty
-     * List<String> realIds = QueryUtil.getIdPropNames(User.class, true);
-     * // Returns: ["id"]
-     * }</pre>
-     *
-     * @param entityClass the entity class to analyze
-     * @param fakeIdForEmpty if true, returns a fake ID when no ID fields are found
-     * @return an immutable list of ID field names or fake ID if requested and none found
-     * @throws IllegalArgumentException if entityClass is null
-     * @deprecated for internal only.
-     */
-    @Deprecated
-    @Internal
-    @Immutable
-    public static List<String> getIdPropNames(final Class<?> entityClass, final boolean fakeIdForEmpty) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
-        final ImmutableList<String> idPropNames = ParserUtil.getBeanInfo(entityClass).idPropNameList;
-
-        return N.isEmpty(idPropNames) && fakeIdForEmpty ? fakeIds : idPropNames;
+        return ParserUtil.getBeanInfo(entityClass).idPropNameList;
     }
 
     /**
@@ -617,34 +581,6 @@ public final class QueryUtil {
     public static boolean isNonColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
         return propInfo.isTransient || propInfo.isAnnotationPresent(NonColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
                 || (N.notEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
-    }
-
-    private static final ImmutableList<String> fakeIds = ImmutableList.of("not_defined_fake_id_in_abacus_" + Strings.uuid());
-
-    /**
-     * Checks if the given ID property names represent a fake/synthetic ID.
-     * Fake IDs are used internally when entities have no defined ID fields.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Check if ID fields are real or synthetic
-     * List<String> idFields = QueryUtil.getIdPropNames(User.class, true);
-     * boolean fake = QueryUtil.isFakeId(idFields);
-     * // Returns false for entities with real @Id annotations
-     *
-     * List<String> fakeFields = QueryUtil.getIdPropNames(LogEntry.class, true);
-     * boolean isFake = QueryUtil.isFakeId(fakeFields);
-     * // Returns true for entities without @Id when fakeIdForEmpty was true
-     * }</pre>
-     *
-     * @param idPropNames the list of ID property names to check
-     * @return {@code true} if this is a fake ID
-     * @deprecated for internal only.
-     */
-    @Deprecated
-    @Internal
-    public static boolean isFakeId(final List<String> idPropNames) {
-        return idPropNames != null && idPropNames.size() == 1 && fakeIds.get(0).equals(idPropNames.get(0));
     }
 
     private static final Map<Integer, String> QM_CACHE = new HashMap<>();

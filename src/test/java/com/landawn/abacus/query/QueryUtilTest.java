@@ -382,16 +382,6 @@ public class QueryUtilTest extends TestBase {
         idFields = QueryUtil.getIdPropNames(NoIdEntity.class);
         assertNotNull(idFields);
         assertTrue(idFields.isEmpty());
-
-        // Test with fakeIdForEmpty = true
-        idFields = QueryUtil.getIdPropNames(NoIdEntity.class, true);
-        assertNotNull(idFields);
-        assertEquals(1, idFields.size());
-        assertTrue(idFields.get(0).startsWith("not_defined_fake_id_in_abacus_"));
-
-        // Test with fakeIdForEmpty = false
-        idFields = QueryUtil.getIdPropNames(NoIdEntity.class, false);
-        assertTrue(idFields.isEmpty());
     }
 
     @Test
@@ -414,26 +404,6 @@ public class QueryUtilTest extends TestBase {
         // Test normal column
         PropInfo nameProp = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("name");
         assertFalse(QueryUtil.isNonColumn(columnFields, Collections.emptySet(), nameProp));
-    }
-
-    @Test
-    public void testIsFakeId() {
-        // Test with regular ID list
-        List<String> regularIds = Arrays.asList("id");
-        assertFalse(QueryUtil.isFakeId(regularIds));
-
-        // Test with fake ID from getIdPropNames
-        List<String> fakeIds = QueryUtil.getIdPropNames(NoIdEntity.class, true);
-        assertTrue(QueryUtil.isFakeId(fakeIds));
-
-        // Test with null
-        assertFalse(QueryUtil.isFakeId(null));
-
-        // Test with empty list
-        assertFalse(QueryUtil.isFakeId(Collections.emptyList()));
-
-        // Test with multiple IDs
-        assertFalse(QueryUtil.isFakeId(Arrays.asList("id1", "id2")));
     }
 
     @Test
