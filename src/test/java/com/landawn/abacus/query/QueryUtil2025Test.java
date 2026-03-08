@@ -200,25 +200,25 @@ public class QueryUtil2025Test extends TestBase {
 
     @Test
     public void testRepeatQuestionMark() {
-        String qm = QueryUtil.repeatQuestionMark(3);
+        String qm = QueryUtil.placeholders(3);
         assertEquals("?, ?, ?", qm);
     }
 
     @Test
     public void testRepeatQuestionMark_One() {
-        String qm = QueryUtil.repeatQuestionMark(1);
+        String qm = QueryUtil.placeholders(1);
         assertEquals("?", qm);
     }
 
     @Test
     public void testRepeatQuestionMark_Zero() {
-        String qm = QueryUtil.repeatQuestionMark(0);
+        String qm = QueryUtil.placeholders(0);
         assertEquals("", qm);
     }
 
     @Test
     public void testRepeatQuestionMark_Large() {
-        String qm = QueryUtil.repeatQuestionMark(100);
+        String qm = QueryUtil.placeholders(100);
         assertNotNull(qm);
         assertTrue(qm.contains("?"));
     }
@@ -226,24 +226,24 @@ public class QueryUtil2025Test extends TestBase {
     @Test
     public void testRepeatQuestionMark_Negative() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.repeatQuestionMark(-1);
+            QueryUtil.placeholders(-1);
         });
     }
 
     @Test
     public void testRepeatQuestionMark_Cached() {
-        String qm1 = QueryUtil.repeatQuestionMark(5);
-        String qm2 = QueryUtil.repeatQuestionMark(5);
+        String qm1 = QueryUtil.placeholders(5);
+        String qm2 = QueryUtil.placeholders(5);
         assertEquals(qm1, qm2);
     }
 
     @Test
     public void testRepeatQuestionMark_SpecialCachedValues() {
-        assertNotNull(QueryUtil.repeatQuestionMark(100));
-        assertNotNull(QueryUtil.repeatQuestionMark(200));
-        assertNotNull(QueryUtil.repeatQuestionMark(300));
-        assertNotNull(QueryUtil.repeatQuestionMark(500));
-        assertNotNull(QueryUtil.repeatQuestionMark(1000));
+        assertNotNull(QueryUtil.placeholders(100));
+        assertNotNull(QueryUtil.placeholders(200));
+        assertNotNull(QueryUtil.placeholders(300));
+        assertNotNull(QueryUtil.placeholders(500));
+        assertNotNull(QueryUtil.placeholders(1000));
     }
 
     @Test
@@ -329,7 +329,7 @@ public class QueryUtil2025Test extends TestBase {
     @Test
     public void testRepeatQuestionMark_AllCachedValues() {
         for (int i = 0; i <= 30; i++) {
-            String result = QueryUtil.repeatQuestionMark(i);
+            String result = QueryUtil.placeholders(i);
             assertNotNull(result);
             if (i == 0) {
                 assertEquals("", result);
@@ -343,7 +343,7 @@ public class QueryUtil2025Test extends TestBase {
 
     @Test
     public void testRepeatQuestionMark_NonCachedValue() {
-        String result = QueryUtil.repeatQuestionMark(50);
+        String result = QueryUtil.placeholders(50);
         assertNotNull(result);
         assertEquals(148, result.length()); // "?, " * 50 = 150 - 2 = 148 characters
     }

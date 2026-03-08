@@ -1038,7 +1038,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *     .append("status = ?")
      *     .and("age >= ?")
      *     .or("vip = true")
-     *     .and("city IN ").repeatQuestionMark(3, "(", ")");
+     *     .and("city IN ").placeholders(3, "(", ")");
      * // Generates: WHERE status = ? AND age >= ? OR vip = true AND city IN (?, ?, ?)
      * }</pre>
      */
@@ -1087,7 +1087,7 @@ public sealed class DynamicSQLBuilder permits DSB {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * where.append("id IN (").repeatQuestionMark(3).append(")");
+         * where.append("id IN (").placeholders(3).append(")");
          * // Generates: id IN (?, ?, ?)
          * }</pre>
          *
@@ -1095,7 +1095,7 @@ public sealed class DynamicSQLBuilder permits DSB {
          * @return this WhereClause instance for method chaining
          * @throws IllegalArgumentException if placeholderCount is negative
          */
-        public WhereClause repeatQuestionMark(final int placeholderCount) {
+        public WhereClause placeholders(final int placeholderCount) {
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
 
             for (int i = 0; i < placeholderCount; i++) {
@@ -1115,7 +1115,7 @@ public sealed class DynamicSQLBuilder permits DSB {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * where.append("status IN ").repeatQuestionMark(3, "(", ")");
+         * where.append("status IN ").placeholders(3, "(", ")");
          * // Generates: status IN (?, ?, ?)
          * }</pre>
          *
@@ -1125,7 +1125,7 @@ public sealed class DynamicSQLBuilder permits DSB {
          * @return this WhereClause instance for method chaining
          * @throws IllegalArgumentException if placeholderCount is negative
          */
-        public WhereClause repeatQuestionMark(final int placeholderCount, final String prefix, final String postfix) {
+        public WhereClause placeholders(final int placeholderCount, final String prefix, final String postfix) {
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
 
             if (placeholderCount > 0) {

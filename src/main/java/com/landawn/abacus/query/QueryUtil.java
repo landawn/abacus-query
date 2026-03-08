@@ -606,7 +606,7 @@ public final class QueryUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String placeholders = QueryUtil.repeatQuestionMark(3);
+     * String placeholders = QueryUtil.placeholders(3);
      * // Returns: "?, ?, ?"
      * String sql = "INSERT INTO users (name, email, age) VALUES (" + placeholders + ")";
      * // Result: "INSERT INTO users (name, email, age) VALUES (?, ?, ?)"
@@ -616,7 +616,7 @@ public final class QueryUtil {
      * @return a string containing n question marks separated by ", ", or empty string if n is 0
      * @throws IllegalArgumentException if n is negative
      */
-    public static String repeatQuestionMark(final int n) {
+    public static String placeholders(final int n) {
         N.checkArgNotNegative(n, "count");
 
         String result = QM_CACHE.get(n);

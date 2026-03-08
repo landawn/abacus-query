@@ -149,7 +149,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testQueryUtil_RepeatQuestionMark() {
-        String placeholders = QueryUtil.repeatQuestionMark(3);
+        String placeholders = QueryUtil.placeholders(3);
         assertEquals("?, ?, ?", placeholders);
         String sql = "INSERT INTO users (name, email, age) VALUES (" + placeholders + ")";
         assertEquals("INSERT INTO users (name, email, age) VALUES (?, ?, ?)", sql);
@@ -157,7 +157,7 @@ public class JavadocExamplesQueryTest {
 
     @Test
     public void testQueryUtil_RepeatQuestionMark_zero() {
-        String placeholders = QueryUtil.repeatQuestionMark(0);
+        String placeholders = QueryUtil.placeholders(0);
         assertEquals("", placeholders);
     }
 

@@ -264,7 +264,7 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
         builder.select().append("*");
         builder.from().append("users");
-        builder.where().append("id IN (").repeatQuestionMark(3).append(")");
+        builder.where().append("id IN (").placeholders(3).append(")");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE id IN (?, ?, ? )", sql);
     }
@@ -274,7 +274,7 @@ public class DynamicSQLBuilder2025Test extends TestBase {
         DynamicSQLBuilder builder = DynamicSQLBuilder.create();
         builder.select().append("*");
         builder.from().append("users");
-        builder.where().append("status IN ").repeatQuestionMark(2, "(", ")");
+        builder.where().append("status IN ").placeholders(2, "(", ")");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE status IN (?, ?)", sql);
     }
@@ -679,7 +679,7 @@ public class DynamicSQLBuilder2025Test extends TestBase {
             DynamicSQLBuilder builder = DynamicSQLBuilder.create();
             builder.select().append("*");
             builder.from().append("users");
-            builder.where().append("id IN (").repeatQuestionMark(-1).append(")");
+            builder.where().append("id IN (").placeholders(-1).append(")");
             builder.build();
         });
     }
