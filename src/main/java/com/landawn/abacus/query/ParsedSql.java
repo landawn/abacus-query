@@ -23,7 +23,7 @@ import java.util.Set;
 import com.landawn.abacus.pool.KeyedObjectPool;
 import com.landawn.abacus.pool.PoolFactory;
 import com.landawn.abacus.pool.Poolable;
-import com.landawn.abacus.pool.PoolableWrapper;
+import com.landawn.abacus.pool.PoolableAdapter;
 import com.landawn.abacus.util.IOUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -66,7 +66,7 @@ public final class ParsedSql {
 
     private static final int factor = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
-    private static final KeyedObjectPool<String, PoolableWrapper<ParsedSql>> pool = PoolFactory.createKeyedObjectPool(1000 * factor, EVICT_TIME);
+    private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = PoolFactory.createKeyedObjectPool(1000 * factor, EVICT_TIME);
 
     private static final String PREFIX_OF_NAMED_PARAMETER = ":";
 
@@ -196,7 +196,7 @@ public final class ParsedSql {
         N.checkArgNotEmpty(sql, "sql");
 
         ParsedSql result = null;
-        PoolableWrapper<ParsedSql> w = pool.get(sql);
+        PoolableAdapter<ParsedSql> w = pool.get(sql);
 
         if ((w == null) || (w.value() == null)) {
             synchronized (pool) {

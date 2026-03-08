@@ -603,7 +603,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 for (final String subEntityPropName : subEntityPropNames) {
                     final PropInfo propInfo = entityInfo.getPropInfo(subEntityPropName);
-                    subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
+                    subEntityClass = (propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType();
 
                     subEntityPropNameList = N.newLinkedHashSet(Beans.getPropNameList(subEntityClass));
                     subEntityPropNameList.removeAll(getSubEntityPropNames(subEntityClass));
@@ -727,7 +727,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             propInfo = entityInfo.getPropInfo(subEntityPropName);
-            subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
+            subEntityClass = (propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType();
             tableAlias = getTableAlias(subEntityClass);
 
             if (Strings.isEmpty(tableAlias)) {
@@ -5079,7 +5079,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final PropInfo propInfo = entityInfo.getPropInfo(propName);
 
             if (propInfo != null && propInfo.isSubEntity) {
-                final Class<?> propEntityClass = propInfo.type.isCollection() ? propInfo.type.getElementType().clazz() : propInfo.clazz;
+                final Class<?> propEntityClass = propInfo.type.isCollection() ? propInfo.type.elementType().javaType() : propInfo.clazz;
 
                 final String propEntityTableAliasOrName = getTableAliasOrName(propEntityClass, _namingPolicy);
 
@@ -5499,7 +5499,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         }
 
                         propInfo = entityInfo.getPropInfo(subEntityPropName);
-                        subEntityClass = (propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type).clazz();
+                        subEntityClass = (propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType();
 
                         sb.append(_COMMA_SPACE).append(getTableName(subEntityClass, namingPolicy));
 

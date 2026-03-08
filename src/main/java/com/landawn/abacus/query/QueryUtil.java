@@ -267,16 +267,16 @@ public final class QueryUtil {
             } else {
                 propColumnNameMap.put(propInfo.name, SQLBuilder.normalizeColumnName(propInfo.name, namingPolicy));
 
-                final Type<?> propType = propInfo.type.isCollection() ? propInfo.type.getElementType() : propInfo.type;
+                final Type<?> propType = propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type;
 
-                if (propType.isBean() && (registeringClasses == null || !registeringClasses.contains(propType.clazz()))) {
+                if (propType.isBean() && (registeringClasses == null || !registeringClasses.contains(propType.javaType()))) {
                     final Set<Class<?>> newRegisteringClasses = registeringClasses == null ? N.newLinkedHashSet() : new LinkedHashSet<>(registeringClasses);
                     newRegisteringClasses.add(entityClass);
 
-                    final Map<String, String> subPropColumnNameMap = registerEntityPropColumnNameMap(propType.clazz(), namingPolicy, newRegisteringClasses);
+                    final Map<String, String> subPropColumnNameMap = registerEntityPropColumnNameMap(propType.javaType(), namingPolicy, newRegisteringClasses);
 
                     if (N.notEmpty(subPropColumnNameMap)) {
-                        final String subTableAliasOrName = SQLBuilder.getTableAliasOrName(propType.clazz(), namingPolicy);
+                        final String subTableAliasOrName = SQLBuilder.getTableAliasOrName(propType.javaType(), namingPolicy);
 
                         for (final Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
                             propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(), subTableAliasOrName + SK.PERIOD + entry.getValue());
