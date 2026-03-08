@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.util.ImmutableList;
@@ -105,9 +106,10 @@ public class Criteria extends AbstractCondition {
      *         .limit(10);
      * }</pre>
      */
-    public Criteria() {
+    Criteria(String selectModifier, List<Condition> conditionList) {
         super(Operator.EMPTY);
-        conditionList = new ArrayList<>();
+        this.selectModifier = selectModifier;
+        this.conditionList = conditionList;
     }
 
     /**
@@ -373,88 +375,6 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Adds conditions to this criteria.
-     * Package-private method used internally and by CriteriaUtil for framework operations.
-     *
-     * @param conditions the conditions to add
-     */
-    void add(final Condition... conditions) {
-        addConditions(conditions);
-    }
-
-    /**
-     * Adds conditions to this criteria.
-     * Package-private method used internally and by CriteriaUtil for framework operations.
-     *
-     * @param conditions the collection of conditions to add
-     */
-    void add(final Collection<? extends Condition> conditions) {
-        addConditions(conditions);
-    }
-
-    /**
-     * Removes all conditions with the specified operator.
-     * Package-private method used internally and by CriteriaUtil for framework operations.
-     *
-     * @param operator the operator of conditions to remove
-     */
-    void remove(final Operator operator) {
-        final List<Condition> conditions = findConditions(operator);
-        remove(conditions);
-    }
-
-    /**
-     * Removes specific conditions from this criteria.
-     * Package-private method used internally and by CriteriaUtil for framework operations.
-     *
-     * @param conditions the conditions to remove
-     */
-    void remove(final Condition... conditions) {
-        N.checkArgNotNull(conditions, "conditions");
-
-        for (final Condition cond : conditions) {
-            conditionList.remove(cond); // NOSONAR
-        }
-    }
-
-    /**
-     * Removes specific conditions from this criteria.
-     * Package-private method used internally and by CriteriaUtil for framework operations.
-     *
-     * @param conditions the collection of conditions to remove
-     */
-    void remove(final Collection<? extends Condition> conditions) {
-        N.checkArgNotNull(conditions, "conditions");
-
-        conditionList.removeAll(conditions);
-    }
-
-    /**
-     * Clears all conditions from this criteria.
-     * After calling this method, the criteria will be empty and can be rebuilt.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.equal("status", "active"))
-     *     .orderBy("name")
-     *     .limit(10);
-     *
-     * criteria.clear();
-     * // criteria is now empty; selectModifier is also reset to null
-     *
-     * // Rebuild the criteria with new conditions
-     * criteria.where(Filters.greaterThan("age", 21))
-     *         .limit(20);
-     * }</pre>
-     *
-     */
-    public void clear() {
-        selectModifier = null;
-        conditionList.clear();
-    }
-
-    /**
      * Gets all parameters from all conditions in the proper order.
      * The order follows SQL clause precedence: JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
      *
@@ -526,1305 +446,6 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Sets the DISTINCT modifier for the query.
-     * DISTINCT removes duplicate rows from the result set.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .distinct()
-     *     .where(Filters.equal("status", "active"));
-     * // Results in: SELECT DISTINCT ... WHERE status = 'active'
-     * }</pre>
-     * 
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria distinct() {
-        selectModifier = SK.DISTINCT;
-
-        return this;
-    }
-
-    /**
-     * Sets the DISTINCT modifier with specific columns.
-     * Only the specified columns are considered for duplicate removal.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .distinctBy("department, location");
-     * // Results in: SELECT DISTINCT(department, location) ...
-     * 
-     * // Or with column list
-     * criteria.distinctBy("city");
-     * // Results in: SELECT DISTINCT(city) ...
-     * }</pre>
-     * 
-     * @param columnNames the columns to apply DISTINCT to
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria distinctBy(final String columnNames) {
-        selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCT : SK.DISTINCT + "(" + columnNames + ")";
-
-        return this;
-    }
-
-    /**
-     * Sets the DISTINCTROW modifier for the query.
-     * DISTINCTROW is similar to DISTINCT but may have database-specific behavior.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .distinctRow()
-     *     .where(Filters.equal("active", true));
-     * // Results in: SELECT DISTINCTROW ... WHERE active = true
-     * }</pre>
-     * 
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria distinctRow() {
-        selectModifier = SK.DISTINCTROW;
-
-        return this;
-    }
-
-    /**
-     * Sets the DISTINCTROW modifier with specific columns.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .distinctRowBy("category, subcategory");
-     * // Results in: SELECT DISTINCTROW(category, subcategory) ...
-     * }</pre>
-     * 
-     * @param columnNames the columns to apply DISTINCTROW to
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria distinctRowBy(final String columnNames) {
-        selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
-
-        return this;
-    }
-
-    /**
-     * Sets a custom SELECT modifier.
-     * This allows for database-specific modifiers not covered by other methods.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .selectModifier("SQL_CALC_FOUND_ROWS")
-     *     .where(Filters.equal("active", true));
-     * // Results in: SELECT SQL_CALC_FOUND_ROWS ... WHERE active = true
-     *
-     * // MySQL-specific modifier
-     * criteria.selectModifier("SQL_NO_CACHE");
-     * }</pre>
-     *
-     * @param selectModifier the custom SELECT modifier
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria selectModifier(final String selectModifier) {
-        this.selectModifier = selectModifier;
-
-        return this;
-    }
-
-    /**
-     * Adds JOIN clauses to this criteria.
-     * Multiple joins can be added in a single call.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .join(
-     *         new LeftJoin("orders", new On("users.id", "orders.user_id")),
-     *         new InnerJoin("products", new On("orders.product_id", "products.id"))
-     *     );
-     * }</pre>
-     * 
-     * @param joins the JOIN clauses to add
-     * @return this Criteria instance for method chaining
-     */
-    public final Criteria join(final Join... joins) {
-        add(joins);
-
-        return this;
-    }
-
-    /**
-     * Adds JOIN clauses to this criteria.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<Join> joins = Arrays.asList(
-     *     new LeftJoin("orders", condition1),
-     *     new RightJoin("payments", condition2)
-     * );
-     * criteria.join(joins);
-     * }</pre>
-     * 
-     * @param joins the collection of JOIN clauses to add
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria join(final Collection<Join> joins) {
-        add(joins);
-
-        return this;
-    }
-
-    /**
-     * Adds a simple INNER JOIN to this criteria.
-     * This creates a join without an explicit condition.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .join("orders")
-     *     .where(Filters.equal("users.id", "orders.user_id"));
-     * // Results in: JOIN orders WHERE users.id = orders.user_id
-     * }</pre>
-     * 
-     * @param joinEntity the table or entity to join
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria join(final String joinEntity) {
-        add(new Join(joinEntity));
-
-        return this;
-    }
-
-    /**
-     * Adds an INNER JOIN with a condition to this criteria.
-     * This is the most common form of join.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .join("orders", new On("users.id", "orders.user_id"))
-     *     .where(Filters.equal("users.status", "active"));
-     * // Results in: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
-     * }</pre>
-     * 
-     * @param joinEntity the table or entity to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria join(final String joinEntity, final Condition cond) {
-        add(new Join(joinEntity, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds an INNER JOIN with multiple entities and a condition.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Collection<String> tables = Arrays.asList("orders", "order_items");
-     * Criteria criteria = new Criteria()
-     *     .join(tables, new On("id", "order_id"));
-     * }</pre>
-     * 
-     * @param joinEntities the collection of tables/entities to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria join(final Collection<String> joinEntities, final Condition cond) {
-        add(new Join(joinEntities, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds an INNER JOIN to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .innerJoin("orders")
-     *     .where(Filters.eq("users.id", "orders.user_id"));
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria innerJoin(final String joinEntity) {
-        add(new InnerJoin(joinEntity));
-
-        return this;
-    }
-
-    /**
-     * Adds an INNER JOIN with a condition to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .innerJoin("orders", Filters.on("users.id", "orders.user_id"));
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria innerJoin(final String joinEntity, final Condition cond) {
-        add(new InnerJoin(joinEntity, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds an INNER JOIN with multiple entities and a condition.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"));
-     * }</pre>
-     *
-     * @param joinEntities the collection of tables/entities to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria innerJoin(final Collection<String> joinEntities, final Condition cond) {
-        add(new InnerJoin(joinEntities, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a LEFT JOIN to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .leftJoin("orders");
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria leftJoin(final String joinEntity) {
-        add(new LeftJoin(joinEntity));
-
-        return this;
-    }
-
-    /**
-     * Adds a LEFT JOIN with a condition to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .leftJoin("orders", Filters.on("users.id", "orders.user_id"));
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria leftJoin(final String joinEntity, final Condition cond) {
-        add(new LeftJoin(joinEntity, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a LEFT JOIN with multiple entities and a condition.
-     *
-     * @param joinEntities the collection of tables/entities to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria leftJoin(final Collection<String> joinEntities, final Condition cond) {
-        add(new LeftJoin(joinEntities, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a RIGHT JOIN to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .rightJoin("orders");
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria rightJoin(final String joinEntity) {
-        add(new RightJoin(joinEntity));
-
-        return this;
-    }
-
-    /**
-     * Adds a RIGHT JOIN with a condition to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .rightJoin("orders", Filters.on("users.id", "orders.user_id"));
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria rightJoin(final String joinEntity, final Condition cond) {
-        add(new RightJoin(joinEntity, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a RIGHT JOIN with multiple entities and a condition.
-     *
-     * @param joinEntities the collection of tables/entities to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria rightJoin(final Collection<String> joinEntities, final Condition cond) {
-        add(new RightJoin(joinEntities, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a FULL JOIN to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .fullJoin("orders");
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria fullJoin(final String joinEntity) {
-        add(new FullJoin(joinEntity));
-
-        return this;
-    }
-
-    /**
-     * Adds a FULL JOIN with a condition to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .fullJoin("orders", Filters.on("users.id", "orders.user_id"));
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria fullJoin(final String joinEntity, final Condition cond) {
-        add(new FullJoin(joinEntity, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a FULL JOIN with multiple entities and a condition.
-     *
-     * @param joinEntities the collection of tables/entities to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria fullJoin(final Collection<String> joinEntities, final Condition cond) {
-        add(new FullJoin(joinEntities, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a CROSS JOIN to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .crossJoin("colors");
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria crossJoin(final String joinEntity) {
-        add(new CrossJoin(joinEntity));
-
-        return this;
-    }
-
-    /**
-     * Adds a CROSS JOIN with a condition to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .crossJoin("colors", Filters.eq("active", true));
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria crossJoin(final String joinEntity, final Condition cond) {
-        add(new CrossJoin(joinEntity, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a CROSS JOIN with multiple entities and a condition.
-     *
-     * @param joinEntities the collection of tables/entities to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria crossJoin(final Collection<String> joinEntities, final Condition cond) {
-        add(new CrossJoin(joinEntities, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a NATURAL JOIN to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .naturalJoin("employees");
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria naturalJoin(final String joinEntity) {
-        add(new NaturalJoin(joinEntity));
-
-        return this;
-    }
-
-    /**
-     * Adds a NATURAL JOIN with a condition to this criteria.
-     *
-     * <pre>{@code
-     * Criteria criteria = Filters.criteria()
-     *     .naturalJoin("employees", Filters.eq("status", "active"));
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria naturalJoin(final String joinEntity, final Condition cond) {
-        add(new NaturalJoin(joinEntity, cond));
-
-        return this;
-    }
-
-    /**
-     * Adds a NATURAL JOIN with multiple entities and a condition.
-     *
-     * @param joinEntities the collection of tables/entities to join
-     * @param cond the join condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria naturalJoin(final Collection<String> joinEntities, final Condition cond) {
-        add(new NaturalJoin(joinEntities, cond));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the WHERE clause.
-     * If a WHERE clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.and(
-     *         Filters.equal("status", "active"),
-     *         Filters.greaterThan("age", 18),
-     *         Filters.like("email", "%@company.com")
-     *     ));
-     * }</pre>
-     * 
-     * @param cond the WHERE condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria where(final Condition cond) {
-        if (cond == null) {
-            throw new IllegalArgumentException("Condition cannot be null");
-        }
-
-        validateClauseCondition(cond, Operator.WHERE, "where");
-
-        if (cond.operator() == Operator.WHERE) {
-            add(cond);
-        } else {
-            add(new Where(cond));
-        }
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the WHERE clause using a string expression.
-     * Useful for complex conditions that are easier to express as SQL.
-     * If a WHERE clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where("age > 18 AND status = 'active'");
-     * 
-     * // Complex expression
-     * criteria.where("YEAR(created_date) = 2024 OR special_flag = true");
-     * }</pre>
-     * 
-     * @param condition the WHERE condition as a string
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria where(final String condition) {
-        N.checkArgNotEmpty(condition, "condition");
-
-        add(new Where(Filters.expr(condition)));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the GROUP BY clause.
-     * If a GROUP BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .groupBy(Filters.expr("YEAR(order_date), MONTH(order_date)"));
-     * }</pre>
-     * 
-     * @param cond the GROUP BY condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria groupBy(final Condition cond) {
-        if (cond == null) {
-            throw new IllegalArgumentException("Condition cannot be null");
-        }
-
-        validateClauseCondition(cond, Operator.GROUP_BY, "groupBy");
-
-        if (cond.operator() == Operator.GROUP_BY) {
-            add(cond);
-        } else {
-            add(new GroupBy(cond));
-        }
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the GROUP BY clause with property names.
-     * Groups results by the specified columns in ascending order.
-     * If a GROUP BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .groupBy("department", "location", "role");
-     * // Results in: GROUP BY department, location, role
-     * }</pre>
-     * 
-     * @param propNames the property names to group by
-     * @return this Criteria instance for method chaining
-     */
-    public final Criteria groupBy(final String... propNames) {
-        add(new GroupBy(propNames));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the GROUP BY clause with a property and sort direction.
-     * If a GROUP BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .groupBy("total_sales", SortDirection.DESC);
-     * // Results in: GROUP BY total_sales DESC
-     * }</pre>
-     * 
-     * @param propName the property name to group by
-     * @param direction the sort direction
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria groupBy(final String propName, final SortDirection direction) {
-        add(new GroupBy(propName, direction));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the GROUP BY clause with two properties and their sort directions.
-     * If a GROUP BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
-     * // Results in: GROUP BY year DESC, month ASC
-     * }</pre>
-     * 
-     * @param propName the first property name to group by
-     * @param direction the sort direction for the first property
-     * @param propName2 the second property name to group by
-     * @param direction2 the sort direction for the second property
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
-        groupBy(N.asMap(propName, direction, propName2, direction2));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the GROUP BY clause with three properties and their sort directions.
-     * If a GROUP BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
-     * // Results in: GROUP BY country ASC, state ASC, city DESC
-     * }</pre>
-     * 
-     * @param propName the first property name to group by
-     * @param direction the sort direction for the first property
-     * @param propName2 the second property name to group by
-     * @param direction2 the sort direction for the second property
-     * @param propName3 the third property name to group by
-     * @param direction3 the sort direction for the third property
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
-            final String propName3, final SortDirection direction3) {
-        groupBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the GROUP BY clause with multiple properties.
-     * All properties will be sorted in ascending order.
-     * If a GROUP BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> groupCols = Arrays.asList("region", "product_type");
-     * Criteria criteria = new Criteria()
-     *     .groupBy(groupCols);
-     * // Results in: GROUP BY region, product_type
-     * }</pre>
-     * 
-     * @param propNames the collection of property names to group by
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria groupBy(final Collection<String> propNames) {
-        return groupBy(propNames, SortDirection.ASC);
-    }
-
-    /**
-     * Sets or replaces the GROUP BY clause with multiple properties and sort direction.
-     * All properties will use the same sort direction.
-     * If a GROUP BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Set<String> groupCols = new HashSet<>(Arrays.asList("category", "brand"));
-     * Criteria criteria = new Criteria()
-     *     .groupBy(groupCols, SortDirection.DESC);
-     * // Results in: GROUP BY category DESC, brand DESC
-     * }</pre>
-     * 
-     * @param propNames the collection of property names to group by
-     * @param direction the sort direction for all properties
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria groupBy(final Collection<String> propNames, final SortDirection direction) {
-        add(new GroupBy(propNames, direction));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the GROUP BY clause with custom sort directions per property.
-     * The map should be a LinkedHashMap to preserve order.
-     * If a GROUP BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Map<String, SortDirection> grouping = new LinkedHashMap<>();
-     * grouping.put("department", SortDirection.ASC);
-     * grouping.put("salary_range", SortDirection.DESC);
-     * grouping.put("years_experience", SortDirection.DESC);
-     * Criteria criteria = new Criteria()
-     *     .groupBy(grouping);
-     * }</pre>
-     * 
-     * @param orders a map of property names to sort directions
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria groupBy(final Map<String, SortDirection> orders) {
-        add(new GroupBy(orders));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the HAVING clause.
-     * HAVING is used to filter grouped results after GROUP BY.
-     * If a HAVING clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .groupBy("department")
-     *     .having(Filters.and(
-     *         Filters.greaterThan("COUNT(*)", 10),
-     *         Filters.lessThan("AVG(salary)", 100000)
-     *     ));
-     * }</pre>
-     * 
-     * @param cond the HAVING condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria having(final Condition cond) {
-        if (cond == null) {
-            throw new IllegalArgumentException("Condition cannot be null");
-        }
-
-        validateClauseCondition(cond, Operator.HAVING, "having");
-
-        if (cond.operator() == Operator.HAVING) {
-            add(cond);
-        } else {
-            add(new Having(cond));
-        }
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the HAVING clause using a string expression.
-     * Useful for aggregate function conditions.
-     * If a HAVING clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .groupBy("product_category")
-     *     .having("SUM(revenue) > 10000 AND COUNT(*) > 5");
-     * }</pre>
-     * 
-     * @param condition the HAVING condition as a string
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria having(final String condition) {
-        N.checkArgNotEmpty(condition, "condition");
-
-        add(new Having(Filters.expr(condition)));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with ascending order.
-     * Convenience method that sorts all specified columns in ascending order.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .orderByAsc("lastName", "firstName", "middleName");
-     * // Results in: ORDER BY lastName ASC, firstName ASC, middleName ASC
-     * }</pre>
-     * 
-     * @param propNames the property names to order by ascending
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderByAsc(final String... propNames) {
-        add(Filters.orderByAsc(propNames));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with ascending order.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> sortCols = Arrays.asList("country", "state", "city");
-     * Criteria criteria = new Criteria()
-     *     .orderByAsc(sortCols);
-     * }</pre>
-     * 
-     * @param propNames the collection of property names to order by ascending
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderByAsc(final Collection<String> propNames) {
-        add(Filters.orderByAsc(propNames));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with descending order.
-     * Convenience method that sorts all specified columns in descending order.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .orderByDesc("score", "createdDate");
-     * // Results in: ORDER BY score DESC, createdDate DESC
-     * }</pre>
-     * 
-     * @param propNames the property names to order by descending
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderByDesc(final String... propNames) {
-        add(Filters.orderByDesc(propNames));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with descending order.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Set<String> sortCols = new HashSet<>(Arrays.asList("revenue", "profit"));
-     * Criteria criteria = new Criteria()
-     *     .orderByDesc(sortCols);
-     * }</pre>
-     * 
-     * @param propNames the collection of property names to order by descending
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderByDesc(final Collection<String> propNames) {
-        add(Filters.orderByDesc(propNames));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Complex ordering expression
-     * Criteria criteria = new Criteria()
-     *     .orderBy(Filters.expr("CASE WHEN priority = 'HIGH' THEN 1 ELSE 2 END, created_date DESC"));
-     * }</pre>
-     * 
-     * @param cond the ORDER BY condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderBy(final Condition cond) {
-        if (cond == null) {
-            throw new IllegalArgumentException("Condition cannot be null");
-        }
-
-        validateClauseCondition(cond, Operator.ORDER_BY, "orderBy");
-
-        if (cond.operator() == Operator.ORDER_BY) {
-            add(cond);
-        } else {
-            add(new OrderBy(cond));
-        }
-
-        return this;
-    }
-
-    private static void validateClauseCondition(final Condition cond, final Operator expectedOperator, final String methodName) {
-        if (cond instanceof Criteria) {
-            throw new IllegalArgumentException("Invalid condition for " + methodName + ": nested Criteria is not supported");
-        }
-
-        if (cond.operator() == Operator.ON || cond.operator() == Operator.USING) {
-            throw new IllegalArgumentException("Invalid condition for " + methodName + ": ON/USING conditions are not supported");
-        }
-
-        if (CriteriaUtil.isClause(cond.operator())) {
-            if (cond.operator() != expectedOperator) {
-                throw new IllegalArgumentException(
-                        "Invalid condition for " + methodName + ": expected " + expectedOperator + " or non-clause condition, but got " + cond.operator());
-            }
-
-            if (!(cond instanceof Clause)) {
-                throw new IllegalArgumentException("Invalid condition for " + methodName + ": operator " + expectedOperator + " requires a Clause");
-            }
-        }
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with property names.
-     * Orders by the specified columns in ascending order.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .orderBy("department", "lastName", "firstName");
-     * // Results in: ORDER BY department, lastName, firstName
-     * }</pre>
-     * 
-     * @param propNames the property names to order by
-     * @return this Criteria instance for method chaining
-     */
-    public final Criteria orderBy(final String... propNames) {
-        add(new OrderBy(propNames));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with a property and sort direction.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .orderBy("createdDate", SortDirection.DESC);
-     * // Results in: ORDER BY createdDate DESC
-     * }</pre>
-     * 
-     * @param propName the property name to order by
-     * @param direction the sort direction
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderBy(final String propName, final SortDirection direction) {
-        add(new OrderBy(propName, direction));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with two properties and their sort directions.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .orderBy("priority", SortDirection.DESC, "createdDate", SortDirection.ASC);
-     * // Results in: ORDER BY priority DESC, createdDate ASC
-     * }</pre>
-     * 
-     * @param propName the first property name to order by
-     * @param direction the sort direction for the first property
-     * @param propName2 the second property name to order by
-     * @param direction2 the sort direction for the second property
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
-        orderBy(N.asMap(propName, direction, propName2, direction2));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with three properties and their sort directions.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .orderBy("category", SortDirection.ASC, "price", SortDirection.DESC, "name", SortDirection.ASC);
-     * // Results in: ORDER BY category ASC, price DESC, name ASC
-     * }</pre>
-     * 
-     * @param propName the first property name to order by
-     * @param direction the sort direction for the first property
-     * @param propName2 the second property name to order by
-     * @param direction2 the sort direction for the second property
-     * @param propName3 the third property name to order by
-     * @param direction3 the sort direction for the third property
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
-            final String propName3, final SortDirection direction3) {
-        orderBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with multiple properties.
-     * All properties will be sorted in ascending order.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> sortCols = Arrays.asList("country", "state", "city");
-     * Criteria criteria = new Criteria()
-     *     .orderBy(sortCols);
-     * // Results in: ORDER BY country, state, city
-     * }</pre>
-     * 
-     * @param propNames the collection of property names to order by
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderBy(final Collection<String> propNames) {
-        return orderBy(propNames, SortDirection.ASC);
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with multiple properties and sort direction.
-     * All properties will use the same sort direction.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Set<String> sortCols = new HashSet<>(Arrays.asList("score", "rating"));
-     * Criteria criteria = new Criteria()
-     *     .orderBy(sortCols, SortDirection.DESC);
-     * // Results in: ORDER BY score DESC, rating DESC
-     * }</pre>
-     * 
-     * @param propNames the collection of property names to order by
-     * @param direction the sort direction for all properties
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderBy(final Collection<String> propNames, final SortDirection direction) {
-        add(new OrderBy(propNames, direction));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the ORDER BY clause with custom sort directions per property.
-     * The map should be a LinkedHashMap to preserve order.
-     * If an ORDER BY clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Map<String, SortDirection> ordering = new LinkedHashMap<>();
-     * ordering.put("priority", SortDirection.DESC);
-     * ordering.put("createdDate", SortDirection.DESC);
-     * ordering.put("name", SortDirection.ASC);
-     * Criteria criteria = new Criteria()
-     *     .orderBy(ordering);
-     * }</pre>
-     * 
-     * @param orders a map of property names to sort directions
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria orderBy(final Map<String, SortDirection> orders) {
-        add(new OrderBy(orders));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the LIMIT clause.
-     * If a LIMIT clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Limit customLimit = Filters.limit(100);
-     * Criteria criteria = new Criteria()
-     *     .limit(customLimit);
-     * }</pre>
-     * 
-     * @param condition the LIMIT condition
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria limit(final Limit condition) {
-        add(condition);
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the LIMIT clause with a count.
-     * Limits the number of rows returned by the query.
-     * If a LIMIT clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.equal("status", "active"))
-     *     .limit(10);
-     * // Results in: WHERE status = 'active' LIMIT 10
-     * }</pre>
-     * 
-     * @param count the maximum number of results to return
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria limit(final int count) {
-        add(Filters.limit(count));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the LIMIT clause with count and offset.
-     * Used for pagination - returns up to 'count' rows, skipping 'offset' rows.
-     * If a LIMIT clause already exists, it will be replaced.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Page 3 with 20 items per page (take 20, skip 40)
-     * Criteria criteria = new Criteria()
-     *     .orderBy("id")
-     *     .limit(20, 40);
-     * // Results in: ORDER BY id LIMIT 20 OFFSET 40
-     * }</pre>
-     *
-     * @param count the maximum number of results to return
-     * @param offset the number of rows to skip
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria limit(final int count, final int offset) {
-        add(Filters.limit(count, offset));
-
-        return this;
-    }
-
-    /**
-     * Sets or replaces the LIMIT clause using a string expression.
-     * Allows for database-specific limit syntax.
-     * If a LIMIT clause already exists, it will be replaced.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .limit("10 OFFSET 20");
-     * 
-     * // Or with parameters
-     * criteria.limit("? OFFSET ?");
-     * }</pre>
-     * 
-     * @param expr the LIMIT expression as a string
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria limit(final String expr) {
-        add(Filters.limit(expr));
-
-        return this;
-    }
-
-    /**
-     * Adds a UNION operation with a subquery.
-     * UNION combines results and removes duplicates.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users WHERE active = true");
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.equal("status", "active"))
-     *     .union(archivedUsers);
-     * // Returns active users from both current and archived tables
-     * }</pre>
-     * 
-     * @param subQuery the subquery to union with
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria union(final SubQuery subQuery) {
-        add(new Union(subQuery));
-
-        return this;
-    }
-
-    /**
-     * Adds a UNION ALL operation with a subquery.
-     * UNION ALL combines results and keeps duplicates.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery pendingOrders = Filters.subQuery("SELECT * FROM pending_orders");
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.equal("status", "completed"))
-     *     .unionAll(pendingOrders);
-     * // Returns all orders, including duplicates if any exist
-     * }</pre>
-     * 
-     * @param subQuery the subquery to union with
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria unionAll(final SubQuery subQuery) {
-        add(new UnionAll(subQuery));
-
-        return this;
-    }
-
-    /**
-     * Adds an INTERSECT operation with a subquery.
-     * INTERSECT returns only rows that appear in both result sets.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery premiumUsers = Filters.subQuery("SELECT user_id FROM premium_members");
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.equal("active", true))
-     *     .intersect(premiumUsers);
-     * // Returns only active users who are also premium members
-     * }</pre>
-     * 
-     * @param subQuery the subquery to intersect with
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria intersect(final SubQuery subQuery) {
-        add(new Intersect(subQuery));
-
-        return this;
-    }
-
-    /**
-     * Adds an EXCEPT operation with a subquery.
-     * EXCEPT returns rows from the first query that don't appear in the second.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery excludedUsers = Filters.subQuery("SELECT user_id FROM blacklist");
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.equal("status", "active"))
-     *     .except(excludedUsers);
-     * // Returns active users who are not in the blacklist
-     * }</pre>
-     * 
-     * @param subQuery the subquery to except
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria except(final SubQuery subQuery) {
-        add(new Except(subQuery));
-
-        return this;
-    }
-
-    /**
-     * Adds a MINUS operation with a subquery.
-     * MINUS is equivalent to EXCEPT in some databases (like Oracle).
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id FROM inactive_users");
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.equal("registered", true))
-     *     .minus(inactiveUsers);
-     * // Returns registered users minus inactive ones
-     * }</pre>
-     * 
-     * @param subQuery the subquery to minus
-     * @return this Criteria instance for method chaining
-     */
-    public Criteria minus(final SubQuery subQuery) {
-        add(new Minus(subQuery));
-
-        return this;
-    }
-
-    /**
      * Returns a string representation of this Criteria using the specified naming policy.
      * The output follows SQL clause ordering conventions and includes all conditions.
      *
@@ -1890,119 +511,11 @@ public class Criteria extends AbstractCondition {
                 && N.equals(((Criteria) obj).conditionList, conditionList));
     }
 
-    /**
-     *
-     * @param conditions the conditions to validate
-     */
-    private void checkConditions(final Collection<? extends Condition> conditions) {
-        N.checkArgNotNull(conditions, "conditions");
-
-        for (final Condition cond : conditions) {
-            checkCondition(cond);
-        }
-    }
-
-    /**
-     *
-     * @param conditions the conditions to validate
-     */
-    private void checkConditions(final Condition... conditions) {
-        N.checkArgNotNull(conditions, "conditions");
-
-        for (final Condition cond : conditions) {
-            checkCondition(cond);
-        }
-    }
-
-    /**
-     *
-     * @param cond
-     */
-    private void checkCondition(final Condition cond) {
-        if (cond == null) {
-            throw new IllegalArgumentException("Condition cannot be null");
-        }
-
-        if (!CriteriaUtil.isClause(cond.operator())) {
-            throw new IllegalArgumentException(
-                    "Invalid operator '" + cond.operator() + "' for Criteria. Expected clause operators: WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.");
-        }
-
-        if ((cond.operator() == Operator.WHERE || cond.operator() == Operator.GROUP_BY || cond.operator() == Operator.HAVING
-                || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.LIMIT || cond.operator() == Operator.UNION
-                || cond.operator() == Operator.UNION_ALL || cond.operator() == Operator.INTERSECT || cond.operator() == Operator.EXCEPT
-                || cond.operator() == Operator.MINUS) && !(cond instanceof Clause)) {
-            throw new IllegalArgumentException("Condition with operator '" + cond.operator() + "' must be an instance of Clause");
-        }
-
-        if ((cond.operator() == Operator.JOIN || cond.operator() == Operator.LEFT_JOIN || cond.operator() == Operator.RIGHT_JOIN
-                || cond.operator() == Operator.FULL_JOIN || cond.operator() == Operator.CROSS_JOIN || cond.operator() == Operator.INNER_JOIN
-                || cond.operator() == Operator.NATURAL_JOIN) && !(cond instanceof Join)) {
-            throw new IllegalArgumentException("Condition with operator '" + cond.operator() + "' must be an instance of Join");
-        }
-    }
-
-    /**
-     * Adds the conditions.
-     *
-     * @param conditions the conditions to add
-     */
-    private void addConditions(final Collection<? extends Condition> conditions) {
-        if (conditions == null || conditions.isEmpty()) {
-            checkConditions(conditions);
-            return;
-        }
-
-        checkConditions(conditions);
-
-        for (final Condition cond : conditions) {
-            addCondition(cond);
-        }
-    }
-
-    /**
-     * Adds the conditions.
-     *
-     * @param conditions the conditions to add
-     */
-    private void addConditions(final Condition... conditions) {
-        if (conditions == null || conditions.length == 0) {
-            checkConditions(conditions);
-            return;
-        }
-
-        checkConditions(conditions);
-
-        for (final Condition cond : conditions) {
-            addCondition(cond);
-        }
-    }
-
-    /**
-     * Adds the condition.
-     *
-     * @param cond
-     */
-    private void addCondition(final Condition cond) {
-        if (cond.operator() == Operator.WHERE || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.GROUP_BY
-                || cond.operator() == Operator.HAVING || cond.operator() == Operator.LIMIT) {
-
-            final Condition clause = find(cond.operator());
-
-            if (clause != null) {
-                conditionList.remove(clause); // NOSONAR
-            }
-        }
-
-        conditionList.add(cond);
-    }
-
-    /**
-     *
-     * @param operator
-     * @return
-     */
     private Condition find(final Operator operator) {
+        return findConditionByOperator(conditionList, operator);
+    }
+
+    private static Condition findConditionByOperator(final List<Condition> conditionList, final Operator operator) {
         Condition cond = null;
 
         for (final Condition element : conditionList) {
@@ -2014,5 +527,1441 @@ public class Criteria extends AbstractCondition {
         }
 
         return null;
+
+    }
+
+    public static final CriteriaBuilder builder() {
+        return new CriteriaBuilder();
+    }
+
+    /**
+     * A utility class for building Criteria objects with a fluent interface.
+     * CB (Criteria Builder) provides static methods that create and return
+     * Criteria instances with initial conditions already applied.
+     * 
+     * <p>This class is designed for convenient one-line criteria building
+     * without needing to call criteria() first.</p>
+     * 
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Instead of: Filters.criteria().where(condition)
+     * Criteria c = CriteriaBuilder.where(Filters.equal("status", "active"));
+     * 
+     * // Chain multiple operations
+     * Criteria c = CriteriaBuilder.where("age > 18")
+     *     .orderBy("name")
+     *     .limit(50);
+     * }</pre>
+     */
+    @Beta
+    public static final class CriteriaBuilder {
+
+        private String selectModifier = null;
+
+        private List<Condition> conditionList;
+
+        /**
+         * Sets the DISTINCT modifier for the query.
+         * DISTINCT removes duplicate rows from the result set.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .distinct()
+         *     .where(Filters.equal("status", "active"));
+         * // Results in: SELECT DISTINCT ... WHERE status = 'active'
+         * }</pre>
+         * 
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder distinct() {
+            selectModifier = SK.DISTINCT;
+
+            return this;
+        }
+
+        /**
+         * Sets the DISTINCT modifier with specific columns.
+         * Only the specified columns are considered for duplicate removal.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .distinctBy("department, location");
+         * // Results in: SELECT DISTINCT(department, location) ...
+         * 
+         * // Or with column list
+         * criteria.distinctBy("city");
+         * // Results in: SELECT DISTINCT(city) ...
+         * }</pre>
+         * 
+         * @param columnNames the columns to apply DISTINCT to
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder distinctBy(final String columnNames) {
+            selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCT : SK.DISTINCT + "(" + columnNames + ")";
+
+            return this;
+        }
+
+        /**
+         * Sets the DISTINCTROW modifier for the query.
+         * DISTINCTROW is similar to DISTINCT but may have database-specific behavior.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .distinctRow()
+         *     .where(Filters.equal("active", true));
+         * // Results in: SELECT DISTINCTROW ... WHERE active = true
+         * }</pre>
+         * 
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder distinctRow() {
+            selectModifier = SK.DISTINCTROW;
+
+            return this;
+        }
+
+        /**
+         * Sets the DISTINCTROW modifier with specific columns.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .distinctRowBy("category, subcategory");
+         * // Results in: SELECT DISTINCTROW(category, subcategory) ...
+         * }</pre>
+         * 
+         * @param columnNames the columns to apply DISTINCTROW to
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder distinctRowBy(final String columnNames) {
+            selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
+
+            return this;
+        }
+
+        /**
+         * Sets a custom SELECT modifier.
+         * This allows for database-specific modifiers not covered by other methods.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .selectModifier("SQL_CALC_FOUND_ROWS")
+         *     .where(Filters.equal("active", true));
+         * // Results in: SELECT SQL_CALC_FOUND_ROWS ... WHERE active = true
+         *
+         * // MySQL-specific modifier
+         * criteria.selectModifier("SQL_NO_CACHE");
+         * }</pre>
+         *
+         * @param selectModifier the custom SELECT modifier
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder selectModifier(final String selectModifier) {
+            this.selectModifier = selectModifier;
+
+            return this;
+        }
+
+        /**
+         * Adds JOIN clauses to this criteria.
+         * Multiple joins can be added in a single call.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .join(
+         *         new LeftJoin("orders", new On("users.id", "orders.user_id")),
+         *         new InnerJoin("products", new On("orders.product_id", "products.id"))
+         *     );
+         * }</pre>
+         * 
+         * @param joins the JOIN clauses to add
+         * @return this Criteria instance for method chaining
+         */
+        public final CriteriaBuilder join(final Join... joins) {
+            add(joins);
+
+            return this;
+        }
+
+        /**
+         * Adds JOIN clauses to this criteria.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Join> joins = Arrays.asList(
+         *     new LeftJoin("orders", condition1),
+         *     new RightJoin("payments", condition2)
+         * );
+         * criteria.join(joins);
+         * }</pre>
+         * 
+         * @param joins the collection of JOIN clauses to add
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder join(final Collection<Join> joins) {
+            add(joins);
+
+            return this;
+        }
+
+        /**
+         * Adds a simple INNER JOIN to this criteria.
+         * This creates a join without an explicit condition.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .join("orders")
+         *     .where(Filters.equal("users.id", "orders.user_id"));
+         * // Results in: JOIN orders WHERE users.id = orders.user_id
+         * }</pre>
+         * 
+         * @param joinEntity the table or entity to join
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder join(final String joinEntity) {
+            add(new Join(joinEntity));
+
+            return this;
+        }
+
+        /**
+         * Adds an INNER JOIN with a condition to this criteria.
+         * This is the most common form of join.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .join("orders", new On("users.id", "orders.user_id"))
+         *     .where(Filters.equal("users.status", "active"));
+         * // Results in: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
+         * }</pre>
+         * 
+         * @param joinEntity the table or entity to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder join(final String joinEntity, final Condition cond) {
+            add(new Join(joinEntity, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds an INNER JOIN with multiple entities and a condition.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Collection<String> tables = Arrays.asList("orders", "order_items");
+         * Criteria criteria = new Criteria()
+         *     .join(tables, new On("id", "order_id"));
+         * }</pre>
+         * 
+         * @param joinEntities the collection of tables/entities to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder join(final Collection<String> joinEntities, final Condition cond) {
+            add(new Join(joinEntities, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds an INNER JOIN to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .innerJoin("orders")
+         *     .where(Filters.eq("users.id", "orders.user_id"));
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder innerJoin(final String joinEntity) {
+            add(new InnerJoin(joinEntity));
+
+            return this;
+        }
+
+        /**
+         * Adds an INNER JOIN with a condition to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .innerJoin("orders", Filters.on("users.id", "orders.user_id"));
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder innerJoin(final String joinEntity, final Condition cond) {
+            add(new InnerJoin(joinEntity, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds an INNER JOIN with multiple entities and a condition.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"));
+         * }</pre>
+         *
+         * @param joinEntities the collection of tables/entities to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder innerJoin(final Collection<String> joinEntities, final Condition cond) {
+            add(new InnerJoin(joinEntities, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a LEFT JOIN to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .leftJoin("orders");
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder leftJoin(final String joinEntity) {
+            add(new LeftJoin(joinEntity));
+
+            return this;
+        }
+
+        /**
+         * Adds a LEFT JOIN with a condition to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .leftJoin("orders", Filters.on("users.id", "orders.user_id"));
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder leftJoin(final String joinEntity, final Condition cond) {
+            add(new LeftJoin(joinEntity, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a LEFT JOIN with multiple entities and a condition.
+         *
+         * @param joinEntities the collection of tables/entities to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder leftJoin(final Collection<String> joinEntities, final Condition cond) {
+            add(new LeftJoin(joinEntities, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a RIGHT JOIN to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .rightJoin("orders");
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder rightJoin(final String joinEntity) {
+            add(new RightJoin(joinEntity));
+
+            return this;
+        }
+
+        /**
+         * Adds a RIGHT JOIN with a condition to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .rightJoin("orders", Filters.on("users.id", "orders.user_id"));
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder rightJoin(final String joinEntity, final Condition cond) {
+            add(new RightJoin(joinEntity, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a RIGHT JOIN with multiple entities and a condition.
+         *
+         * @param joinEntities the collection of tables/entities to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder rightJoin(final Collection<String> joinEntities, final Condition cond) {
+            add(new RightJoin(joinEntities, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a FULL JOIN to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .fullJoin("orders");
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder fullJoin(final String joinEntity) {
+            add(new FullJoin(joinEntity));
+
+            return this;
+        }
+
+        /**
+         * Adds a FULL JOIN with a condition to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .fullJoin("orders", Filters.on("users.id", "orders.user_id"));
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder fullJoin(final String joinEntity, final Condition cond) {
+            add(new FullJoin(joinEntity, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a FULL JOIN with multiple entities and a condition.
+         *
+         * @param joinEntities the collection of tables/entities to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder fullJoin(final Collection<String> joinEntities, final Condition cond) {
+            add(new FullJoin(joinEntities, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a CROSS JOIN to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .crossJoin("colors");
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder crossJoin(final String joinEntity) {
+            add(new CrossJoin(joinEntity));
+
+            return this;
+        }
+
+        /**
+         * Adds a CROSS JOIN with a condition to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .crossJoin("colors", Filters.eq("active", true));
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder crossJoin(final String joinEntity, final Condition cond) {
+            add(new CrossJoin(joinEntity, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a CROSS JOIN with multiple entities and a condition.
+         *
+         * @param joinEntities the collection of tables/entities to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder crossJoin(final Collection<String> joinEntities, final Condition cond) {
+            add(new CrossJoin(joinEntities, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a NATURAL JOIN to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .naturalJoin("employees");
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder naturalJoin(final String joinEntity) {
+            add(new NaturalJoin(joinEntity));
+
+            return this;
+        }
+
+        /**
+         * Adds a NATURAL JOIN with a condition to this criteria.
+         *
+         * <pre>{@code
+         * Criteria criteria = Filters.criteria()
+         *     .naturalJoin("employees", Filters.eq("status", "active"));
+         * }</pre>
+         *
+         * @param joinEntity the table or entity to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder naturalJoin(final String joinEntity, final Condition cond) {
+            add(new NaturalJoin(joinEntity, cond));
+
+            return this;
+        }
+
+        /**
+         * Adds a NATURAL JOIN with multiple entities and a condition.
+         *
+         * @param joinEntities the collection of tables/entities to join
+         * @param cond the join condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder naturalJoin(final Collection<String> joinEntities, final Condition cond) {
+            add(new NaturalJoin(joinEntities, cond));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the WHERE clause.
+         * If a WHERE clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .where(Filters.and(
+         *         Filters.equal("status", "active"),
+         *         Filters.greaterThan("age", 18),
+         *         Filters.like("email", "%@company.com")
+         *     ));
+         * }</pre>
+         * 
+         * @param cond the WHERE condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder where(final Condition cond) {
+            if (cond == null) {
+                throw new IllegalArgumentException("Condition cannot be null");
+            }
+
+            validateClauseCondition(cond, Operator.WHERE, "where");
+
+            if (cond.operator() == Operator.WHERE) {
+                add(cond);
+            } else {
+                add(new Where(cond));
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the WHERE clause using a string expression.
+         * Useful for complex conditions that are easier to express as SQL.
+         * If a WHERE clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .where("age > 18 AND status = 'active'");
+         * 
+         * // Complex expression
+         * criteria.where("YEAR(created_date) = 2024 OR special_flag = true");
+         * }</pre>
+         * 
+         * @param condition the WHERE condition as a string
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder where(final String condition) {
+            N.checkArgNotEmpty(condition, "condition");
+
+            add(new Where(Filters.expr(condition)));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause.
+         * If a GROUP BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .groupBy(Filters.expr("YEAR(order_date), MONTH(order_date)"));
+         * }</pre>
+         * 
+         * @param cond the GROUP BY condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder groupBy(final Condition cond) {
+            if (cond == null) {
+                throw new IllegalArgumentException("Condition cannot be null");
+            }
+
+            validateClauseCondition(cond, Operator.GROUP_BY, "groupBy");
+
+            if (cond.operator() == Operator.GROUP_BY) {
+                add(cond);
+            } else {
+                add(new GroupBy(cond));
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with property names.
+         * Groups results by the specified columns in ascending order.
+         * If a GROUP BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .groupBy("department", "location", "role");
+         * // Results in: GROUP BY department, location, role
+         * }</pre>
+         * 
+         * @param propNames the property names to group by
+         * @return this Criteria instance for method chaining
+         */
+        public final CriteriaBuilder groupBy(final String... propNames) {
+            add(new GroupBy(propNames));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with a property and sort direction.
+         * If a GROUP BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .groupBy("total_sales", SortDirection.DESC);
+         * // Results in: GROUP BY total_sales DESC
+         * }</pre>
+         * 
+         * @param propName the property name to group by
+         * @param direction the sort direction
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder groupBy(final String propName, final SortDirection direction) {
+            add(new GroupBy(propName, direction));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with two properties and their sort directions.
+         * If a GROUP BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
+         * // Results in: GROUP BY year DESC, month ASC
+         * }</pre>
+         * 
+         * @param propName the first property name to group by
+         * @param direction the sort direction for the first property
+         * @param propName2 the second property name to group by
+         * @param direction2 the sort direction for the second property
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+            groupBy(N.asMap(propName, direction, propName2, direction2));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with three properties and their sort directions.
+         * If a GROUP BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
+         * // Results in: GROUP BY country ASC, state ASC, city DESC
+         * }</pre>
+         * 
+         * @param propName the first property name to group by
+         * @param direction the sort direction for the first property
+         * @param propName2 the second property name to group by
+         * @param direction2 the sort direction for the second property
+         * @param propName3 the third property name to group by
+         * @param direction3 the sort direction for the third property
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
+                final String propName3, final SortDirection direction3) {
+            groupBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with multiple properties.
+         * All properties will be sorted in ascending order.
+         * If a GROUP BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<String> groupCols = Arrays.asList("region", "product_type");
+         * Criteria criteria = new Criteria()
+         *     .groupBy(groupCols);
+         * // Results in: GROUP BY region, product_type
+         * }</pre>
+         * 
+         * @param propNames the collection of property names to group by
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder groupBy(final Collection<String> propNames) {
+            return groupBy(propNames, SortDirection.ASC);
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with multiple properties and sort direction.
+         * All properties will use the same sort direction.
+         * If a GROUP BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> groupCols = new HashSet<>(Arrays.asList("category", "brand"));
+         * Criteria criteria = new Criteria()
+         *     .groupBy(groupCols, SortDirection.DESC);
+         * // Results in: GROUP BY category DESC, brand DESC
+         * }</pre>
+         * 
+         * @param propNames the collection of property names to group by
+         * @param direction the sort direction for all properties
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder groupBy(final Collection<String> propNames, final SortDirection direction) {
+            add(new GroupBy(propNames, direction));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with custom sort directions per property.
+         * The map should be a LinkedHashMap to preserve order.
+         * If a GROUP BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Map<String, SortDirection> grouping = new LinkedHashMap<>();
+         * grouping.put("department", SortDirection.ASC);
+         * grouping.put("salary_range", SortDirection.DESC);
+         * grouping.put("years_experience", SortDirection.DESC);
+         * Criteria criteria = new Criteria()
+         *     .groupBy(grouping);
+         * }</pre>
+         * 
+         * @param orders a map of property names to sort directions
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder groupBy(final Map<String, SortDirection> orders) {
+            add(new GroupBy(orders));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the HAVING clause.
+         * HAVING is used to filter grouped results after GROUP BY.
+         * If a HAVING clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .groupBy("department")
+         *     .having(Filters.and(
+         *         Filters.greaterThan("COUNT(*)", 10),
+         *         Filters.lessThan("AVG(salary)", 100000)
+         *     ));
+         * }</pre>
+         * 
+         * @param cond the HAVING condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder having(final Condition cond) {
+            if (cond == null) {
+                throw new IllegalArgumentException("Condition cannot be null");
+            }
+
+            validateClauseCondition(cond, Operator.HAVING, "having");
+
+            if (cond.operator() == Operator.HAVING) {
+                add(cond);
+            } else {
+                add(new Having(cond));
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the HAVING clause using a string expression.
+         * Useful for aggregate function conditions.
+         * If a HAVING clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .groupBy("product_category")
+         *     .having("SUM(revenue) > 10000 AND COUNT(*) > 5");
+         * }</pre>
+         * 
+         * @param condition the HAVING condition as a string
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder having(final String condition) {
+            N.checkArgNotEmpty(condition, "condition");
+
+            add(new Having(Filters.expr(condition)));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with ascending order.
+         * Convenience method that sorts all specified columns in ascending order.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .orderByAsc("lastName", "firstName", "middleName");
+         * // Results in: ORDER BY lastName ASC, firstName ASC, middleName ASC
+         * }</pre>
+         * 
+         * @param propNames the property names to order by ascending
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderByAsc(final String... propNames) {
+            add(Filters.orderByAsc(propNames));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with ascending order.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<String> sortCols = Arrays.asList("country", "state", "city");
+         * Criteria criteria = new Criteria()
+         *     .orderByAsc(sortCols);
+         * }</pre>
+         * 
+         * @param propNames the collection of property names to order by ascending
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderByAsc(final Collection<String> propNames) {
+            add(Filters.orderByAsc(propNames));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with descending order.
+         * Convenience method that sorts all specified columns in descending order.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .orderByDesc("score", "createdDate");
+         * // Results in: ORDER BY score DESC, createdDate DESC
+         * }</pre>
+         * 
+         * @param propNames the property names to order by descending
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderByDesc(final String... propNames) {
+            add(Filters.orderByDesc(propNames));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with descending order.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> sortCols = new HashSet<>(Arrays.asList("revenue", "profit"));
+         * Criteria criteria = new Criteria()
+         *     .orderByDesc(sortCols);
+         * }</pre>
+         * 
+         * @param propNames the collection of property names to order by descending
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderByDesc(final Collection<String> propNames) {
+            add(Filters.orderByDesc(propNames));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * // Complex ordering expression
+         * Criteria criteria = new Criteria()
+         *     .orderBy(Filters.expr("CASE WHEN priority = 'HIGH' THEN 1 ELSE 2 END, created_date DESC"));
+         * }</pre>
+         * 
+         * @param cond the ORDER BY condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderBy(final Condition cond) {
+            if (cond == null) {
+                throw new IllegalArgumentException("Condition cannot be null");
+            }
+
+            validateClauseCondition(cond, Operator.ORDER_BY, "orderBy");
+
+            if (cond.operator() == Operator.ORDER_BY) {
+                add(cond);
+            } else {
+                add(new OrderBy(cond));
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with property names.
+         * Orders by the specified columns in ascending order.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .orderBy("department", "lastName", "firstName");
+         * // Results in: ORDER BY department, lastName, firstName
+         * }</pre>
+         * 
+         * @param propNames the property names to order by
+         * @return this Criteria instance for method chaining
+         */
+        public final CriteriaBuilder orderBy(final String... propNames) {
+            add(new OrderBy(propNames));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with a property and sort direction.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .orderBy("createdDate", SortDirection.DESC);
+         * // Results in: ORDER BY createdDate DESC
+         * }</pre>
+         * 
+         * @param propName the property name to order by
+         * @param direction the sort direction
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderBy(final String propName, final SortDirection direction) {
+            add(new OrderBy(propName, direction));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with two properties and their sort directions.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .orderBy("priority", SortDirection.DESC, "createdDate", SortDirection.ASC);
+         * // Results in: ORDER BY priority DESC, createdDate ASC
+         * }</pre>
+         * 
+         * @param propName the first property name to order by
+         * @param direction the sort direction for the first property
+         * @param propName2 the second property name to order by
+         * @param direction2 the sort direction for the second property
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+            orderBy(N.asMap(propName, direction, propName2, direction2));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with three properties and their sort directions.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .orderBy("category", SortDirection.ASC, "price", SortDirection.DESC, "name", SortDirection.ASC);
+         * // Results in: ORDER BY category ASC, price DESC, name ASC
+         * }</pre>
+         * 
+         * @param propName the first property name to order by
+         * @param direction the sort direction for the first property
+         * @param propName2 the second property name to order by
+         * @param direction2 the sort direction for the second property
+         * @param propName3 the third property name to order by
+         * @param direction3 the sort direction for the third property
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
+                final String propName3, final SortDirection direction3) {
+            orderBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with multiple properties.
+         * All properties will be sorted in ascending order.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<String> sortCols = Arrays.asList("country", "state", "city");
+         * Criteria criteria = new Criteria()
+         *     .orderBy(sortCols);
+         * // Results in: ORDER BY country, state, city
+         * }</pre>
+         * 
+         * @param propNames the collection of property names to order by
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderBy(final Collection<String> propNames) {
+            return orderBy(propNames, SortDirection.ASC);
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with multiple properties and sort direction.
+         * All properties will use the same sort direction.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Set<String> sortCols = new HashSet<>(Arrays.asList("score", "rating"));
+         * Criteria criteria = new Criteria()
+         *     .orderBy(sortCols, SortDirection.DESC);
+         * // Results in: ORDER BY score DESC, rating DESC
+         * }</pre>
+         * 
+         * @param propNames the collection of property names to order by
+         * @param direction the sort direction for all properties
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderBy(final Collection<String> propNames, final SortDirection direction) {
+            add(new OrderBy(propNames, direction));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with custom sort directions per property.
+         * The map should be a LinkedHashMap to preserve order.
+         * If an ORDER BY clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Map<String, SortDirection> ordering = new LinkedHashMap<>();
+         * ordering.put("priority", SortDirection.DESC);
+         * ordering.put("createdDate", SortDirection.DESC);
+         * ordering.put("name", SortDirection.ASC);
+         * Criteria criteria = new Criteria()
+         *     .orderBy(ordering);
+         * }</pre>
+         * 
+         * @param orders a map of property names to sort directions
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder orderBy(final Map<String, SortDirection> orders) {
+            add(new OrderBy(orders));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the LIMIT clause.
+         * If a LIMIT clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Limit customLimit = Filters.limit(100);
+         * Criteria criteria = new Criteria()
+         *     .limit(customLimit);
+         * }</pre>
+         * 
+         * @param condition the LIMIT condition
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder limit(final Limit condition) {
+            add(condition);
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the LIMIT clause with a count.
+         * Limits the number of rows returned by the query.
+         * If a LIMIT clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .where(Filters.equal("status", "active"))
+         *     .limit(10);
+         * // Results in: WHERE status = 'active' LIMIT 10
+         * }</pre>
+         * 
+         * @param count the maximum number of results to return
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder limit(final int count) {
+            add(Filters.limit(count));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the LIMIT clause with count and offset.
+         * Used for pagination - returns up to 'count' rows, skipping 'offset' rows.
+         * If a LIMIT clause already exists, it will be replaced.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * // Page 3 with 20 items per page (take 20, skip 40)
+         * Criteria criteria = new Criteria()
+         *     .orderBy("id")
+         *     .limit(20, 40);
+         * // Results in: ORDER BY id LIMIT 20 OFFSET 40
+         * }</pre>
+         *
+         * @param count the maximum number of results to return
+         * @param offset the number of rows to skip
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder limit(final int count, final int offset) {
+            add(Filters.limit(count, offset));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the LIMIT clause using a string expression.
+         * Allows for database-specific limit syntax.
+         * If a LIMIT clause already exists, it will be replaced.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = new Criteria()
+         *     .limit("10 OFFSET 20");
+         * 
+         * // Or with parameters
+         * criteria.limit("? OFFSET ?");
+         * }</pre>
+         * 
+         * @param expr the LIMIT expression as a string
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder limit(final String expr) {
+            add(Filters.limit(expr));
+
+            return this;
+        }
+
+        /**
+         * Adds a UNION operation with a subquery.
+         * UNION combines results and removes duplicates.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users WHERE active = true");
+         * Criteria criteria = new Criteria()
+         *     .where(Filters.equal("status", "active"))
+         *     .union(archivedUsers);
+         * // Returns active users from both current and archived tables
+         * }</pre>
+         * 
+         * @param subQuery the subquery to union with
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder union(final SubQuery subQuery) {
+            add(new Union(subQuery));
+
+            return this;
+        }
+
+        /**
+         * Adds a UNION ALL operation with a subquery.
+         * UNION ALL combines results and keeps duplicates.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * SubQuery pendingOrders = Filters.subQuery("SELECT * FROM pending_orders");
+         * Criteria criteria = new Criteria()
+         *     .where(Filters.equal("status", "completed"))
+         *     .unionAll(pendingOrders);
+         * // Returns all orders, including duplicates if any exist
+         * }</pre>
+         * 
+         * @param subQuery the subquery to union with
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder unionAll(final SubQuery subQuery) {
+            add(new UnionAll(subQuery));
+
+            return this;
+        }
+
+        /**
+         * Adds an INTERSECT operation with a subquery.
+         * INTERSECT returns only rows that appear in both result sets.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * SubQuery premiumUsers = Filters.subQuery("SELECT user_id FROM premium_members");
+         * Criteria criteria = new Criteria()
+         *     .where(Filters.equal("active", true))
+         *     .intersect(premiumUsers);
+         * // Returns only active users who are also premium members
+         * }</pre>
+         * 
+         * @param subQuery the subquery to intersect with
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder intersect(final SubQuery subQuery) {
+            add(new Intersect(subQuery));
+
+            return this;
+        }
+
+        /**
+         * Adds an EXCEPT operation with a subquery.
+         * EXCEPT returns rows from the first query that don't appear in the second.
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * SubQuery excludedUsers = Filters.subQuery("SELECT user_id FROM blacklist");
+         * Criteria criteria = new Criteria()
+         *     .where(Filters.equal("status", "active"))
+         *     .except(excludedUsers);
+         * // Returns active users who are not in the blacklist
+         * }</pre>
+         * 
+         * @param subQuery the subquery to except
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder except(final SubQuery subQuery) {
+            add(new Except(subQuery));
+
+            return this;
+        }
+
+        /**
+         * Adds a MINUS operation with a subquery.
+         * MINUS is equivalent to EXCEPT in some databases (like Oracle).
+         * 
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id FROM inactive_users");
+         * Criteria criteria = new Criteria()
+         *     .where(Filters.equal("registered", true))
+         *     .minus(inactiveUsers);
+         * // Returns registered users minus inactive ones
+         * }</pre>
+         * 
+         * @param subQuery the subquery to minus
+         * @return this Criteria instance for method chaining
+         */
+        public CriteriaBuilder minus(final SubQuery subQuery) {
+            add(new Minus(subQuery));
+
+            return this;
+        }
+
+        private void validateClauseCondition(final Condition cond, final Operator expectedOperator, final String methodName) {
+            if (cond instanceof Criteria) {
+                throw new IllegalArgumentException("Invalid condition for " + methodName + ": nested Criteria is not supported");
+            }
+
+            if (cond.operator() == Operator.ON || cond.operator() == Operator.USING) {
+                throw new IllegalArgumentException("Invalid condition for " + methodName + ": ON/USING conditions are not supported");
+            }
+
+            if (isClause(cond.operator())) {
+                if (cond.operator() != expectedOperator) {
+                    throw new IllegalArgumentException(
+                            "Invalid condition for " + methodName + ": expected " + expectedOperator + " or non-clause condition, but got " + cond.operator());
+                }
+
+                if (!(cond instanceof Clause)) {
+                    throw new IllegalArgumentException("Invalid condition for " + methodName + ": operator " + expectedOperator + " requires a Clause");
+                }
+            }
+        }
+
+        /**
+         *
+         * @param conditions the conditions to validate
+         */
+        private void checkConditions(final Collection<? extends Condition> conditions) {
+            N.checkArgNotNull(conditions, "conditions");
+
+            for (final Condition cond : conditions) {
+                checkCondition(cond);
+            }
+        }
+
+        /**
+         *
+         * @param conditions the conditions to validate
+         */
+        private void checkConditions(final Condition... conditions) {
+            N.checkArgNotNull(conditions, "conditions");
+
+            for (final Condition cond : conditions) {
+                checkCondition(cond);
+            }
+        }
+
+        private void checkCondition(final Condition cond) {
+            if (cond == null) {
+                throw new IllegalArgumentException("Condition cannot be null");
+            }
+
+            if (!isClause(cond.operator())) {
+                throw new IllegalArgumentException(
+                        "Invalid operator '" + cond.operator() + "' for Criteria. Expected clause operators: WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.");
+            }
+
+            if ((cond.operator() == Operator.WHERE || cond.operator() == Operator.GROUP_BY || cond.operator() == Operator.HAVING
+                    || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.LIMIT || cond.operator() == Operator.UNION
+                    || cond.operator() == Operator.UNION_ALL || cond.operator() == Operator.INTERSECT || cond.operator() == Operator.EXCEPT
+                    || cond.operator() == Operator.MINUS) && !(cond instanceof Clause)) {
+                throw new IllegalArgumentException("Condition with operator '" + cond.operator() + "' must be an instance of Clause");
+            }
+
+            if ((cond.operator() == Operator.JOIN || cond.operator() == Operator.LEFT_JOIN || cond.operator() == Operator.RIGHT_JOIN
+                    || cond.operator() == Operator.FULL_JOIN || cond.operator() == Operator.CROSS_JOIN || cond.operator() == Operator.INNER_JOIN
+                    || cond.operator() == Operator.NATURAL_JOIN) && !(cond instanceof Join)) {
+                throw new IllegalArgumentException("Condition with operator '" + cond.operator() + "' must be an instance of Join");
+            }
+        }
+
+        private void addCondition(final Condition cond) {
+            if (cond.operator() == Operator.WHERE || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.GROUP_BY
+                    || cond.operator() == Operator.HAVING || cond.operator() == Operator.LIMIT) {
+
+                final Condition clause = findConditionByOperator(this.conditionList, cond.operator());
+
+                if (clause != null) {
+                    conditionList.remove(clause); // NOSONAR
+                }
+            }
+
+            conditionList.add(cond);
+        }
+
+        private void add(final Condition... conditions) {
+            if (conditions == null || conditions.length == 0) {
+                checkConditions(conditions);
+                return;
+            }
+
+            checkConditions(conditions);
+
+            for (final Condition cond : conditions) {
+                addCondition(cond);
+            }
+        }
+
+        private void add(final Collection<? extends Condition> conditions) {
+            if (conditions == null || conditions.isEmpty()) {
+                checkConditions(conditions);
+                return;
+            }
+
+            checkConditions(conditions);
+
+            for (final Condition cond : conditions) {
+                addCondition(cond);
+            }
+        }
+
+        public Criteria build() {
+            return new Criteria(this.selectModifier, conditionList);
+        }
+
+        //    /**
+        //     * Backward-compatible alias type for {@link CriteriaBuilder}.
+        //     *
+        //     * <p>This nested type is retained for source compatibility with existing
+        //     * code that references {@code Filters.CriteriaBuilder.CB} explicitly.</p>
+        //     */
+        //    public static final class CB extends CriteriaBuilder {
+        //
+        //        private CB() {
+        //            // utility class.
+        //        }
+        //    }
     }
 }

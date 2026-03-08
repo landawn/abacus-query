@@ -177,7 +177,7 @@ public class Or extends Junction {
     @Override
     public Or or(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
-        validateLogicalOperand(cond);
+        validateLogicalOperand(cond, "or");
 
         final List<Condition> conditionList = new ArrayList<>(this.conditions.size() + 1);
 
@@ -188,13 +188,5 @@ public class Or extends Junction {
         conditionList.add(cond);
 
         return new Or(conditionList);
-    }
-
-    private static void validateLogicalOperand(final Condition cond) {
-        final Operator operator = cond.operator();
-
-        if (CriteriaUtil.isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
-            throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in logical method 'or'");
-        }
     }
 }

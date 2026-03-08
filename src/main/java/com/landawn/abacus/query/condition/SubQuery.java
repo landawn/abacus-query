@@ -23,11 +23,11 @@ import java.util.Collections;
 import java.util.List;
 
 import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -375,7 +375,7 @@ public class SubQuery extends LogicalCondition {
     }
 
     private static Condition normalizeCondition(final Condition cond) {
-        if (cond == null || cond instanceof Criteria || CriteriaUtil.isClause(cond)) {
+        if (cond == null || cond instanceof Criteria || isClause(cond)) {
             return cond;
         }
 

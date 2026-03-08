@@ -162,7 +162,7 @@ public class And extends Junction {
     @Override
     public And and(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
-        validateLogicalOperand(cond);
+        validateLogicalOperand(cond, "and");
 
         final List<Condition> conditionList = new ArrayList<>(this.conditions.size() + 1);
 
@@ -173,13 +173,5 @@ public class And extends Junction {
         conditionList.add(cond);
 
         return new And(conditionList);
-    }
-
-    private static void validateLogicalOperand(final Condition cond) {
-        final Operator operator = cond.operator();
-
-        if (CriteriaUtil.isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
-            throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in logical method 'and'");
-        }
     }
 }
