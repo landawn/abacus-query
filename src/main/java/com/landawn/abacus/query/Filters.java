@@ -1606,35 +1606,8 @@ public class Filters {
         return new Between(propName, Filters.QME, Filters.QME);
     }
 
-    /**
-     * Creates a BETWEEN condition for the specified property and range values.
-     * This is an alias for {@link #between(String, Object, Object)}.
-     *
-     * @param propName the property/column name
-     * @param minValue the minimum value (inclusive)
-     * @param maxValue the maximum value (inclusive)
-     * @return a Between condition
-     * @deprecated Use {@link #between(String, Object, Object)} instead for better code readability.
-     *             Replace {@code bt(propName, min, max)} with {@code between(propName, min, max)}.
-     */
-    @Deprecated
-    public static Between bt(final String propName, final Object minValue, final Object maxValue) {
-        return new Between(propName, minValue, maxValue);
-    }
-
-    /**
-     * Creates a parameterized BETWEEN condition for use with prepared statements.
-     * This is an alias for {@link #between(String)}.
-     *
-     * @param propName the property/column name
-     * @return a Between condition with parameter placeholders
-     * @deprecated Use {@link #between(String)} instead for better code readability.
-     *             Replace {@code bt(propName)} with {@code between(propName)}.
-     */
-    @Deprecated
-    public static Between bt(final String propName) {
-        return new Between(propName, Filters.QME, Filters.QME);
-    }
+    // Removed: bt(String, Object, Object) and bt(String) - non-standard abbreviations.
+    // Use between(String, Object, Object) or between(String) instead.
 
     /**
      * Creates a NOT BETWEEN condition for the specified property and range values.

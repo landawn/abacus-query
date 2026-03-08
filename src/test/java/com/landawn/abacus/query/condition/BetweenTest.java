@@ -231,13 +231,7 @@ public class BetweenTest extends TestBase {
         Assertions.assertTrue(result.contains("SELECT MAX(salary)"));
     }
 
-    @Test
-    public void testBtAlias() {
-        Between bt = Filters.bt("value", 1, 10);
-        Assertions.assertEquals("value", bt.getPropName());
-        Assertions.assertEquals(1, (Integer) bt.getMinValue());
-        Assertions.assertEquals(10, (Integer) bt.getMaxValue());
-    }
+    // Removed: testBtAlias() - bt() methods have been removed. Use between() instead.
 
     @Test
     public void testComplexBetweenScenarios() {

@@ -462,25 +462,8 @@ public class Expression extends LogicalCondition {
         return link(Operator.BETWEEN, literal, min, max);
     }
 
-    /**
-     * Creates a BETWEEN expression for a literal with min and max values.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String expr = Expression.bt("score", 60, 100);
-     * // Returns: "score BETWEEN 60 AND 100"
-     * }</pre>
-     *
-     * @param literal the literal to test
-     * @param min the minimum value (inclusive)
-     * @param max the maximum value (inclusive)
-     * @return a string representation of the BETWEEN expression
-     * @deprecated please use {@link #between(String, Object, Object)}
-     */
-    @Deprecated
-    public static String bt(final String literal, final Object min, final Object max) {
-        return between(literal, min, max);
-    }
+    // Removed: bt(String, Object, Object) - non-standard abbreviation.
+    // Use between(String, Object, Object) instead.
 
     /**
      * Creates a LIKE expression for pattern matching.

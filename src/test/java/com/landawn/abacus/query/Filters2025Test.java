@@ -324,11 +324,7 @@ public class Filters2025Test extends TestBase {
         assertEquals(Integer.valueOf(65), between.getMaxValue());
     }
 
-    @Test
-    public void testBt() {
-        Between bt = Filters.bt("price", 100, 1000);
-        assertNotNull(bt);
-    }
+    // Removed: testBt() - bt() methods have been removed. Use between() instead.
 
     @Test
     public void testNotBetween() {

@@ -512,18 +512,8 @@ public sealed class NamedProperty permits NP {
         return Filters.between(propName, minValue, maxValue);
     }
 
-    /**
-     * Creates a BETWEEN condition for this property.
-     *
-     * @param minValue the minimum value (inclusive)
-     * @param maxValue the maximum value (inclusive)
-     * @return a Between condition
-     * @deprecated please use {@link #between(Object, Object)}
-     */
-    @Deprecated
-    public Between bt(final Object minValue, final Object maxValue) {
-        return Filters.between(propName, minValue, maxValue);
-    }
+    // Removed: bt(Object, Object) - non-standard abbreviation.
+    // Use between(Object, Object) instead.
 
     /**
      * Creates a NOT BETWEEN condition for this property.

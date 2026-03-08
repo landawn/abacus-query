@@ -411,21 +411,7 @@ public class FiltersTest extends TestBase {
         Assertions.assertEquals(Filters.QME, bt2.getMaxValue());
     }
 
-    @Test
-    public void testBt() {
-        // With values
-        Between bt1 = Filters.bt("salary", 30000, 100000);
-        Assertions.assertNotNull(bt1);
-        Assertions.assertEquals("salary", bt1.getPropName());
-        Assertions.assertEquals(30000, (Integer) bt1.getMinValue());
-        Assertions.assertEquals(100000, (Integer) bt1.getMaxValue());
-
-        // Without values
-        Between bt2 = Filters.bt("salary");
-        Assertions.assertNotNull(bt2);
-        Assertions.assertEquals(Filters.QME, bt2.getMinValue());
-        Assertions.assertEquals(Filters.QME, bt2.getMaxValue());
-    }
+    // Removed: testBt() - bt() methods have been removed. Use between() instead.
 
     @Test
     public void testNotBetween() {

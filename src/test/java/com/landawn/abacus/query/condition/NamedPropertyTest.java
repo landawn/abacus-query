@@ -186,15 +186,7 @@ public class NamedPropertyTest extends TestBase {
         Assertions.assertEquals(65, (Integer) condition.getMaxValue());
     }
 
-    @Test
-    public void testBt() {
-        NamedProperty prop = NamedProperty.of("salary");
-        Between condition = prop.bt(30000, 80000);
-
-        Assertions.assertEquals("salary", condition.getPropName());
-        Assertions.assertEquals(30000, (Integer) condition.getMinValue());
-        Assertions.assertEquals(80000, (Integer) condition.getMaxValue());
-    }
+    // Removed: testBt() - bt() method has been removed. Use between() instead.
 
     @Test
     public void testLike() {

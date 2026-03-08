@@ -118,11 +118,7 @@ public class ExpressionTest extends TestBase {
         Assertions.assertEquals("age BETWEEN 18 AND 65", result);
     }
 
-    @Test
-    public void testBt() {
-        String result = Expression.bt("price", 10.0, 50.0);
-        Assertions.assertEquals("price BETWEEN 10.0 AND 50.0", result);
-    }
+    // Removed: testBt() - bt() method has been removed. Use between() instead.
 
     @Test
     public void testLike() {

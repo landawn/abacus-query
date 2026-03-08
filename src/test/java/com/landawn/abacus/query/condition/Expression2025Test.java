@@ -770,15 +770,7 @@ public class Expression2025Test extends TestBase {
         assertEquals("test", expr.getLiteral());
     }
 
-    @Test
-    public void testBt() {
-        String result = Expression.bt("score", 0, 100);
-
-        assertTrue(result.contains("score"));
-        assertTrue(result.contains("BETWEEN"));
-        assertTrue(result.contains("0"));
-        assertTrue(result.contains("100"));
-    }
+    // Removed: testBt() - bt() method has been removed. Use between() instead.
 
     @Test
     public void testConcatWithTwoStrings() {

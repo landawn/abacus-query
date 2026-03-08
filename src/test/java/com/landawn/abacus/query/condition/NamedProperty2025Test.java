@@ -360,16 +360,7 @@ public class NamedProperty2025Test extends TestBase {
         assertNotSame(email, age);
     }
 
-    @Test
-    public void testBtDeprecatedMethod() {
-        NamedProperty np = NamedProperty.of("score");
-
-        @SuppressWarnings("deprecation")
-        Between between = np.bt(0, 100);
-
-        assertNotNull(between);
-        assertEquals("score", between.getPropName());
-    }
+    // Removed: testBtDeprecatedMethod() - bt() method has been removed. Use between() instead.
 
     @Test
     public void testLikePatterns() {
