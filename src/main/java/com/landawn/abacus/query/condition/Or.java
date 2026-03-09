@@ -181,9 +181,7 @@ public class Or extends Junction {
 
         final List<Condition> conditionList = new ArrayList<>(this.conditions.size() + 1);
 
-        for (final Condition condition : this.conditions) {
-            conditionList.add(condition);
-        }
+        conditionList.addAll(this.conditions);
 
         conditionList.add(cond);
 

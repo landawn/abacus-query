@@ -88,7 +88,7 @@ import com.landawn.abacus.util.Strings;
  */
 public class Junction extends ComposableCondition {
 
-    List<Condition> conditions;
+    final List<Condition> conditions;
 
     /**
      * Default constructor for serialization frameworks like Kryo.

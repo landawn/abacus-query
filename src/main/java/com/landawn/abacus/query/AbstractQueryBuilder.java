@@ -5541,6 +5541,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param query the generated SQL query string
      * @param parameters the immutable list of parameter values corresponding to placeholders in the SQL
      */
-    public static final record SP(String query, ImmutableList<Object> parameters) {
+    public record SP(String query, ImmutableList<Object> parameters) {
     }
 }

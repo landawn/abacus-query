@@ -94,7 +94,7 @@ public class Criteria extends AbstractCondition {
 
     private String selectModifier = null;
 
-    private List<Condition> conditionList;
+    private final List<Condition> conditionList;
 
     /**
      * Creates a new Criteria instance with the specified select modifier and condition list.
@@ -551,7 +551,7 @@ public class Criteria extends AbstractCondition {
      *
      * @return a new Builder instance
      */
-    public static final Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
