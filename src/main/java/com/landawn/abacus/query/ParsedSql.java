@@ -198,18 +198,21 @@ public final class ParsedSql {
         ParsedSql result = null;
         PoolableAdapter<ParsedSql> w = pool.get(sql);
 
-        if ((w == null) || (w.value() == null)) {
+        if (w != null) {
+            result = w.value();
+        }
+
+        if (result == null) {
             synchronized (pool) {
                 w = pool.get(sql);
-                if ((w == null) || (w.value() == null)) {
-                    result = new ParsedSql(sql);
-                    pool.put(sql, Poolable.wrap(result, LIVE_TIME, MAX_IDLE_TIME));
-                } else {
+                if (w != null) {
                     result = w.value();
                 }
+                if (result == null) {
+                    result = new ParsedSql(sql);
+                    pool.put(sql, Poolable.wrap(result, LIVE_TIME, MAX_IDLE_TIME));
+                }
             }
-        } else {
-            result = w.value();
         }
 
         return result;

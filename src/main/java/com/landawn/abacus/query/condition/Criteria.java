@@ -500,7 +500,8 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = Strings.isEmpty(selectModifier) ? 0 : selectModifier.hashCode();
+        int h = 17;
+        h = (h * 31) + (Strings.isEmpty(selectModifier) ? 0 : selectModifier.hashCode());
         return (h * 31) + conditionList.hashCode();
     }
 
@@ -1946,11 +1947,6 @@ public class Criteria extends AbstractCondition {
         }
 
         private void add(final Condition... conditions) {
-            if (conditions == null || conditions.length == 0) {
-                checkConditions(conditions);
-                return;
-            }
-
             checkConditions(conditions);
 
             for (final Condition cond : conditions) {
@@ -1959,11 +1955,6 @@ public class Criteria extends AbstractCondition {
         }
 
         private void add(final Collection<? extends Condition> conditions) {
-            if (conditions == null || conditions.isEmpty()) {
-                checkConditions(conditions);
-                return;
-            }
-
             checkConditions(conditions);
 
             for (final Condition cond : conditions) {
@@ -1986,7 +1977,7 @@ public class Criteria extends AbstractCondition {
          * @return a new Criteria instance
          */
         public Criteria build() {
-            return new Criteria(this.selectModifier, conditionList);
+            return new Criteria(this.selectModifier, new ArrayList<>(conditionList));
         }
 
         //    /**

@@ -569,7 +569,7 @@ public abstract class AbstractCondition implements Condition {
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
         final Operator operator = cond == null ? null : cond.operator();
 
-        if (operator == null | isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
+        if (operator == null || isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
             throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in composable method '" + methodName + "'");
         }
 
