@@ -74,7 +74,8 @@ package com.landawn.abacus.query.condition;
  * @see NotIn
  * @see NotBetween
  */
-public class Not extends Cell {
+public class Not extends ComposableCell {
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Not instance and should not be used
@@ -115,6 +116,6 @@ public class Not extends Cell {
      * @throws IllegalArgumentException if cond is null
      */
     public Not(final Condition cond) {
-        super(Operator.NOT, cond);
+        super(Operator.NOT, validateComposableOperand(cond, "not"));
     }
 }

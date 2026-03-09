@@ -14,8 +14,8 @@
 
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents the SQL EXISTS operator for use with subqueries.
@@ -61,10 +61,10 @@ import com.landawn.abacus.util.NamingPolicy;
  * 
  * @see NotExists
  * @see SubQuery
- * @see Cell
+ * @see ComposableCell
  * @see In
  */
-public class Exists extends Cell {
+public class Exists extends ComposableCell {
 
     /**
      * Default constructor for serialization frameworks like Kryo.

@@ -17,11 +17,8 @@
 package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -180,7 +177,6 @@ public class Exists2025Test extends TestBase {
     public void testInheritance() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         Exists condition = new Exists(subQuery);
-        assertTrue(condition instanceof Cell);
         assertTrue(condition instanceof AbstractCondition);
         assertTrue(condition instanceof Condition);
     }

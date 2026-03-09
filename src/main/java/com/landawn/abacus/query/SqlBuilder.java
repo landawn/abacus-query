@@ -35,6 +35,7 @@ import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Clause;
+import com.landawn.abacus.query.condition.ComposableCell;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Having;
@@ -515,6 +516,14 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
             appendCondition(clause.getCondition());
         } else if (cond instanceof final Cell cell) {
+            _sb.append(_SPACE);
+            _sb.append(cell.operator().toString());
+            _sb.append(_SPACE);
+
+            _sb.append(_PARENTHESIS_L);
+            appendCondition(cell.getCondition());
+            _sb.append(_PARENTHESIS_R);
+        } else if (cond instanceof final ComposableCell cell) {
             _sb.append(_SPACE);
             _sb.append(cell.operator().toString());
             _sb.append(_SPACE);

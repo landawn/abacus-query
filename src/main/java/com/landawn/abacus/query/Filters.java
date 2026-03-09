@@ -29,7 +29,6 @@ import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Any;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
-import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.CrossJoin;
 import com.landawn.abacus.query.condition.Equal;
@@ -3446,24 +3445,32 @@ public class Filters {
         return new Minus(subQuery);
     }
 
-    /**
-     * Creates a Cell condition with a custom operator and condition.
-     * This is for advanced use cases requiring special condition handling.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Cell cell = Filters.cell(Operator.ALL, Filters.exists(subQuery));
-     * // Advanced condition wrapping for database-specific operations
-     * }</pre>
-     *
-     * @param operator the operator to apply
-     * @param cond the condition to wrap
-     * @return a Cell condition
-     */
-    @Beta
-    public static Cell cell(final Operator operator, final Condition cond) {
-        return new Cell(operator, cond);
-    }
+    //    /**
+    //     * Creates a Cell condition with a custom operator and condition.
+    //     * This is for advanced use cases requiring special condition handling.
+    //     *
+    //     * <p><b>Usage Examples:</b></p>
+    //     * <pre>{@code
+    //     * Cell cell = Filters.cell(Operator.ALL, Filters.exists(subQuery));
+    //     * // Advanced condition wrapping for database-specific operations
+    //     * }</pre>
+    //     *
+    //     * @param operator the operator to apply
+    //     * @param cond the condition to wrap
+    //     * @return a Cell condition
+    //     */
+    //    @Beta
+    //    public static Condition cell(final Operator operator, final Condition cond) {
+    //        if (operator == Operator.NOT) {
+    //            return not(cond);
+    //        } else if (operator == Operator.EXISTS) {
+    //            return exists((SubQuery) cond);
+    //        } else if (operator == Operator.NOT_EXISTS) {
+    //            return notExists((SubQuery) cond);
+    //        } else {
+    //            return new Cell(operator, cond);
+    //        }
+    //    }
 
     /**
      * Creates a SubQuery from an entity class with selected properties and condition.

@@ -14,6 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
@@ -135,6 +136,7 @@ public interface Condition {
      * }</pre>
      *
      */
+    @Beta
     void clearParameters();
 
     /**

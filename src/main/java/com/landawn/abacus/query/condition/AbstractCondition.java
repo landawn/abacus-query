@@ -69,6 +69,35 @@ import com.landawn.abacus.util.Strings;
  */
 public abstract class AbstractCondition implements Condition {
 
+    private static final ImmutableSet<Operator> clauseOperators;
+
+    static {
+        final Set<Operator> set = N.newLinkedHashSet();
+        // it has order, don't change the order.
+        set.add(Operator.JOIN);
+        set.add(Operator.LEFT_JOIN);
+        set.add(Operator.RIGHT_JOIN);
+        set.add(Operator.FULL_JOIN);
+        set.add(Operator.CROSS_JOIN);
+        set.add(Operator.INNER_JOIN);
+        set.add(Operator.NATURAL_JOIN);
+        set.add(Operator.WHERE);
+        set.add(Operator.GROUP_BY);
+        set.add(Operator.HAVING);
+        set.add(Operator.ORDER_BY);
+        set.add(Operator.LIMIT);
+        // clauseOperators.add(Operator.FOR_UPDATE);
+        // Notice: If there are several connection operators,
+        // this is their order.
+        set.add(Operator.UNION_ALL);
+        set.add(Operator.UNION);
+        set.add(Operator.INTERSECT);
+        set.add(Operator.EXCEPT);
+        set.add(Operator.MINUS);
+
+        clauseOperators = ImmutableSet.wrap(set);
+    }
+
     /**
      * The operator for this condition.
      * This field is immutable once set in the constructor and defines
@@ -106,25 +135,92 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Gets the operator for this condition.
-     * The operator defines the type of operation (e.g., EQUAL, GREATER_THAN, AND, OR).
+     * Checks if the given operator is a valid clause operator.
+     * Clause operators represent major SQL query components like WHERE, JOIN, GROUP BY, etc.
      *
-     * @return the operator for this condition
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * boolean result1 = isClause(Operator.WHERE);      // true
+     * boolean result2 = isClause(Operator.ORDER_BY);   // true
+     * boolean result3 = isClause(Operator.LEFT_JOIN);  // true
+     * boolean result4 = isClause(Operator.EQUAL);      // false
+     * boolean result5 = isClause(Operator.AND);        // false
+     * boolean result6 = isClause((Operator) null);     // false
+     * }</pre>
+     *
+     * @param operator the operator to check
+     * @return {@code true} if the operator is a clause operator, {@code false} otherwise
      */
-    @Override
-    public Operator operator() {
-        return operator;
+    protected static boolean isClause(final Operator operator) {
+        return operator != null && clauseOperators.contains(operator);
     }
 
     /**
-     * Returns a string representation of this condition using the default naming policy.
-     * This method delegates to {@link #toString(NamingPolicy)} with {@link NamingPolicy#NO_CHANGE}.
+     * Checks if the given operator string represents a valid clause operator.
+     * This method converts the string to an Operator and checks if it's a clause.
      *
-     * @return a string representation of this condition
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * boolean result1 = isClause("WHERE");      // true
+     * boolean result2 = isClause("ORDER BY");   // true
+     * boolean result3 = isClause("GROUP BY");   // true
+     * boolean result4 = isClause("=");           // false
+     * boolean result5 = isClause("AND");         // false
+     * }</pre>
+     *
+     * @param operator the operator string to check
+     * @return {@code true} if the operator string represents a clause operator, {@code false} otherwise
      */
-    @Override
-    public String toString() {
-        return toString(NamingPolicy.NO_CHANGE);
+    protected static boolean isClause(final String operator) {
+        if (Strings.isEmpty(operator)) {
+            return false;
+        }
+
+        return isClause(Operator.of(operator));
+    }
+
+    /**
+     * Checks if the given condition is a clause condition.
+     * A condition is a clause if its operator is a clause operator.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Where whereClause = new Where(Filters.equal("status", "active"));
+     * boolean result1 = isClause(whereClause);   // true
+     *
+     * OrderBy orderByClause = new OrderBy("name");
+     * boolean result2 = isClause(orderByClause);   // true
+     *
+     * Equal equalCond = Filters.equal("age", 25);
+     * boolean result3 = isClause(equalCond);   // false
+     *
+     * boolean result4 = isClause((Condition) null);   // false
+     * }</pre>
+     *
+     * @param cond the condition to check
+     * @return {@code true} if the condition has a clause operator, {@code false} if null or not a clause
+     */
+    protected static boolean isClause(final Condition cond) {
+        //        if (cond == null) {
+        //            return false;
+        //        }
+        //
+        //        if (cond instanceof Expression) {
+        //            Expression exp = (Expression) cond;
+        //
+        //            if (N.isEmpty(exp.getLiteral())) {
+        //                return false;
+        //            } else {
+        //                SqlParser sqlParser = SqlParser.valueOf(exp.getLiteral());
+        //                String word = sqlParser.nextWord();
+        //
+        //                return isClause(word) || isClause(word + D._SPACE + sqlParser.nextWord());
+        //            }
+        //        } else {
+        //            return isClause(cond.operator());
+        //        }
+
+        return cond != null && isClause(cond.operator());
     }
 
     /**
@@ -466,150 +562,36 @@ public abstract class AbstractCondition implements Condition {
         }
     }
 
-    protected static void validateComposableOperand(final Condition cond, final String methodName) {
-        final Operator operator = cond.operator();
+    protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
+        final Operator operator = cond == null ? null : cond.operator();
 
-        if (isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
+        if (operator == null | isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
             throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in composable method '" + methodName + "'");
         }
-    }
 
-    private static final ImmutableSet<Operator> clauseOperators;
-
-    static {
-        final Set<Operator> set = N.newLinkedHashSet();
-        // it has order, don't change the order.
-        set.add(Operator.JOIN);
-        set.add(Operator.LEFT_JOIN);
-        set.add(Operator.RIGHT_JOIN);
-        set.add(Operator.FULL_JOIN);
-        set.add(Operator.CROSS_JOIN);
-        set.add(Operator.INNER_JOIN);
-        set.add(Operator.NATURAL_JOIN);
-        set.add(Operator.WHERE);
-        set.add(Operator.GROUP_BY);
-        set.add(Operator.HAVING);
-        set.add(Operator.ORDER_BY);
-        set.add(Operator.LIMIT);
-        // clauseOperators.add(Operator.FOR_UPDATE);
-        // Notice: If there are several connection operators,
-        // this is their order.
-        set.add(Operator.UNION_ALL);
-        set.add(Operator.UNION);
-        set.add(Operator.INTERSECT);
-        set.add(Operator.EXCEPT);
-        set.add(Operator.MINUS);
-
-        clauseOperators = ImmutableSet.wrap(set);
+        return cond;
     }
 
     /**
-     * Gets the set of all valid clause operators.
-     * The set maintains the proper SQL clause ordering and is immutable.
+     * Gets the operator for this condition.
+     * The operator defines the type of operation (e.g., EQUAL, GREATER_THAN, AND, OR).
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Set<Operator> clauseOps = AbstractCondition.getClauseOperators();
-     * // Returns an immutable set containing: JOIN, LEFT_JOIN, RIGHT_JOIN, FULL_JOIN,
-     * // CROSS_JOIN, INNER_JOIN, NATURAL_JOIN, WHERE, GROUP_BY, HAVING, ORDER_BY,
-     * // LIMIT, UNION_ALL, UNION, INTERSECT, EXCEPT, MINUS
-     *
-     * for (Operator op : clauseOps) {
-     *     System.out.println(op.sqlToken());
-     * }
-     * }</pre>
-     *
-     * @return an immutable set of clause operators in proper SQL order 
+     * @return the operator for this condition
      */
-    protected static Set<Operator> getClauseOperators() {
-        return clauseOperators;
+    @Override
+    public Operator operator() {
+        return operator;
     }
 
     /**
-     * Checks if the given operator is a valid clause operator.
-     * Clause operators represent major SQL query components like WHERE, JOIN, GROUP BY, etc.
+     * Returns a string representation of this condition using the default naming policy.
+     * This method delegates to {@link #toString(NamingPolicy)} with {@link NamingPolicy#NO_CHANGE}.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * boolean result1 = isClause(Operator.WHERE);      // true
-     * boolean result2 = isClause(Operator.ORDER_BY);   // true
-     * boolean result3 = isClause(Operator.LEFT_JOIN);  // true
-     * boolean result4 = isClause(Operator.EQUAL);      // false
-     * boolean result5 = isClause(Operator.AND);        // false
-     * boolean result6 = isClause((Operator) null);     // false
-     * }</pre>
-     *
-     * @param operator the operator to check
-     * @return {@code true} if the operator is a clause operator, {@code false} otherwise
+     * @return a string representation of this condition
      */
-    protected static boolean isClause(final Operator operator) {
-        return operator != null && clauseOperators.contains(operator);
+    @Override
+    public String toString() {
+        return toString(NamingPolicy.NO_CHANGE);
     }
 
-    /**
-     * Checks if the given operator string represents a valid clause operator.
-     * This method converts the string to an Operator and checks if it's a clause.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * boolean result1 = isClause("WHERE");      // true
-     * boolean result2 = isClause("ORDER BY");   // true
-     * boolean result3 = isClause("GROUP BY");   // true
-     * boolean result4 = isClause("=");           // false
-     * boolean result5 = isClause("AND");         // false
-     * }</pre>
-     *
-     * @param operator the operator string to check
-     * @return {@code true} if the operator string represents a clause operator, {@code false} otherwise
-     */
-    protected static boolean isClause(final String operator) {
-        if (Strings.isEmpty(operator)) {
-            return false;
-        }
-
-        return isClause(Operator.of(operator));
-    }
-
-    /**
-     * Checks if the given condition is a clause condition.
-     * A condition is a clause if its operator is a clause operator.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Where whereClause = new Where(Filters.equal("status", "active"));
-     * boolean result1 = isClause(whereClause);   // true
-     *
-     * OrderBy orderByClause = new OrderBy("name");
-     * boolean result2 = isClause(orderByClause);   // true
-     *
-     * Equal equalCond = Filters.equal("age", 25);
-     * boolean result3 = isClause(equalCond);   // false
-     *
-     * boolean result4 = isClause((Condition) null);   // false
-     * }</pre>
-     *
-     * @param cond the condition to check
-     * @return {@code true} if the condition has a clause operator, {@code false} if null or not a clause
-     */
-    protected static boolean isClause(final Condition cond) {
-        //        if (cond == null) {
-        //            return false;
-        //        }
-        //
-        //        if (cond instanceof Expression) {
-        //            Expression exp = (Expression) cond;
-        //
-        //            if (N.isEmpty(exp.getLiteral())) {
-        //                return false;
-        //            } else {
-        //                SqlParser sqlParser = SqlParser.valueOf(exp.getLiteral());
-        //                String word = sqlParser.nextWord();
-        //
-        //                return isClause(word) || isClause(word + D._SPACE + sqlParser.nextWord());
-        //            }
-        //        } else {
-        //            return isClause(cond.operator());
-        //        }
-        return cond != null && isClause(cond.operator());
-    }
 }

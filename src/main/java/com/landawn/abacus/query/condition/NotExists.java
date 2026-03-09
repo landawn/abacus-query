@@ -14,8 +14,8 @@
 
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.SK;
 
 /**
  * Represents the SQL NOT EXISTS operator for use with subqueries.
@@ -53,9 +53,9 @@ import com.landawn.abacus.util.NamingPolicy;
  * @see Exists
  * @see SubQuery
  * @see NotIn
- * @see Cell
+ * @see ComposableCell
  */
-public class NotExists extends Cell {
+public class NotExists extends ComposableCell {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -120,4 +120,5 @@ public class NotExists extends Cell {
         final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
         return operator().toString() + SK._SPACE + SK._PARENTHESIS_L + conditionString + SK._PARENTHESIS_R;
     }
+
 }

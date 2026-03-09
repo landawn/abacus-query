@@ -15,7 +15,6 @@ import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Any;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
-import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.CrossJoin;
@@ -24,8 +23,8 @@ import com.landawn.abacus.query.condition.Except;
 import com.landawn.abacus.query.condition.Exists;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.FullJoin;
-import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GreaterThan;
+import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GroupBy;
 import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.In;
@@ -43,8 +42,8 @@ import com.landawn.abacus.query.condition.IsNull;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Junction;
 import com.landawn.abacus.query.condition.LeftJoin;
-import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.LessThan;
+import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Minus;
@@ -1057,14 +1056,14 @@ public class FiltersTest extends TestBase {
         Assertions.assertNotNull(minus);
     }
 
-    @Test
-    public void testCell() {
-        Condition condition = Filters.eq("status", "active");
-        Cell cell = Filters.cell(Operator.AND, condition);
-        Assertions.assertNotNull(cell);
-        Assertions.assertEquals(Operator.AND, cell.operator());
-        Assertions.assertEquals(condition, cell.getCondition());
-    }
+    //    @Test
+    //    public void testCell() {
+    //        Condition condition = Filters.eq("status", "active");
+    //        Cell cell = Filters.cell(Operator.AND, condition);
+    //        Assertions.assertNotNull(cell);
+    //        Assertions.assertEquals(Operator.AND, cell.operator());
+    //        Assertions.assertEquals(condition, cell.getCondition());
+    //    }
 
     @Test
     public void testSubQuery() {

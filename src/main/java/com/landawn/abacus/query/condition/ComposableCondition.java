@@ -52,6 +52,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      * @return a new Not condition wrapping this condition
      */
     public Not not() {
+        validateComposableOperand(this, "not");
         return new Not(this);
     }
 
@@ -65,6 +66,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      */
     public And and(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
+        validateComposableOperand(this, "and");
         validateComposableOperand(cond, "and");
 
         return new And(this, cond);
@@ -80,6 +82,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      */
     public Or or(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
+        validateComposableOperand(this, "or");
         validateComposableOperand(cond, "or");
 
         return new Or(this, cond);
@@ -99,6 +102,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      */
     public Or xor(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
+        validateComposableOperand(this, "xor");
         validateComposableOperand(cond, "xor");
 
         return new Or(new And(this, new Not(cond)), new And(new Not(this), cond));

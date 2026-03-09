@@ -43,7 +43,7 @@ import com.landawn.abacus.util.Strings;
  * @see Condition
  * @see Operator
  */
-public abstract class Cell extends AbstractCondition {
+public abstract class ComposableCell extends ComposableCondition {
 
     private Condition condition;
 
@@ -52,7 +52,7 @@ public abstract class Cell extends AbstractCondition {
      * This constructor creates an uninitialized Cell instance and should not be used
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
-    Cell() {
+    ComposableCell() {
     }
 
     /**
@@ -72,7 +72,7 @@ public abstract class Cell extends AbstractCondition {
      * @param operator the operator to apply to the condition
      * @param cond the condition to wrap (must not be null)
      */
-    public Cell(final Operator operator, final Condition cond) {
+    public ComposableCell(final Operator operator, final Condition cond) {
         super(operator);
         this.condition = N.checkArgNotNull(cond, "cond");
     }
@@ -166,7 +166,7 @@ public abstract class Cell extends AbstractCondition {
             return false;
         }
 
-        final Cell other = (Cell) obj;
+        final ComposableCell other = (ComposableCell) obj;
         return N.equals(operator, other.operator) && N.equals(condition, other.condition);
     }
 }

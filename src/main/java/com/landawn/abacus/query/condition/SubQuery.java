@@ -22,9 +22,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.ClassUtil;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
@@ -75,7 +75,7 @@ import com.landawn.abacus.util.Strings;
  * @see Exists
  * @see NotExists
  */
-public class SubQuery extends ComposableCondition {
+public class SubQuery extends AbstractCondition {
 
     // For Kryo
     final String entityName;

@@ -31,16 +31,17 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Condition;
+import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Expression;
-import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GreaterThan;
+import com.landawn.abacus.query.condition.GreaterThanOrEqual;
 import com.landawn.abacus.query.condition.GroupBy;
+import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.Is;
 import com.landawn.abacus.query.condition.IsInfinite;
 import com.landawn.abacus.query.condition.IsNaN;
@@ -48,11 +49,10 @@ import com.landawn.abacus.query.condition.IsNot;
 import com.landawn.abacus.query.condition.IsNotInfinite;
 import com.landawn.abacus.query.condition.IsNotNaN;
 import com.landawn.abacus.query.condition.IsNotNull;
-import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.IsNull;
 import com.landawn.abacus.query.condition.Junction;
-import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.LessThan;
+import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.NamedProperty;
 import com.landawn.abacus.query.condition.Not;
@@ -1085,12 +1085,12 @@ public class Filters2025Test extends TestBase {
         assertNotNull(minus);
     }
 
-    @Test
-    public void testCell() {
-        Condition condition = Filters.equal("status", "active");
-        com.landawn.abacus.query.condition.Cell cell = Filters.cell(Operator.WHERE, condition);
-        assertNotNull(cell);
-    }
+    //    @Test
+    //    public void testCell() {
+    //        Condition condition = Filters.equal("status", "active");
+    //        com.landawn.abacus.query.condition.Cell cell = Filters.cell(Operator.WHERE, condition);
+    //        assertNotNull(cell);
+    //    }
 
     @Test
     public void testSubQueryWithEntityClass() {
