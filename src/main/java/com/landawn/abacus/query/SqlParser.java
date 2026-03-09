@@ -36,12 +36,12 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * String sql = "SELECT * FROM users WHERE age > 25 ORDER BY name";
- * List<String> words = SQLParser.parse(sql);
+ * List<String> words = SqlParser.parse(sql);
  * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER", " ", "BY", " ", "name"]
  * }</pre>
  * 
  */
-public final class SQLParser {
+public final class SqlParser {
 
     private static final String KEEP_COMMENTS = "-- Keep comments";
 
@@ -191,7 +191,7 @@ public final class SQLParser {
         }
     }
 
-    private SQLParser() {
+    private SqlParser() {
     }
 
     /**
@@ -201,7 +201,7 @@ public final class SQLParser {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<String> words = SQLParser.parse("SELECT name, age FROM users WHERE age >= 18");
+     * List<String> words = SqlParser.parse("SELECT name, age FROM users WHERE age >= 18");
      * // Result: ["SELECT", " ", "name", ",", " ", "age", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">=", " ", "18"]
      * }</pre>
      * 
@@ -402,10 +402,10 @@ public final class SQLParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
-     * int index = SQLParser.indexOfWord(sql, "ORDER BY", 0, false);
+     * int index = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
      * // Returns: 40 (the position where "ORDER BY" starts)
      *
-     * int whereIndex = SQLParser.indexOfWord(sql, "WHERE", 0, false);
+     * int whereIndex = SqlParser.indexOfWord(sql, "WHERE", 0, false);
      * // Returns: 20 (the position where "WHERE" starts)
      * }</pre>
      * 
@@ -620,9 +620,9 @@ public final class SQLParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT   name,   age FROM users";
-     * String word1 = SQLParser.nextWord(sql, 6);    // Returns: "name" (skips spaces after SELECT)
-     * String word2 = SQLParser.nextWord(sql, 13);   // Returns: ","
-     * String word3 = SQLParser.nextWord(sql, 14);   // Returns: "age" (skips spaces after comma)
+     * String word1 = SqlParser.nextWord(sql, 6);    // Returns: "name" (skips spaces after SELECT)
+     * String word2 = SqlParser.nextWord(sql, 13);   // Returns: ","
+     * String word3 = SqlParser.nextWord(sql, 14);   // Returns: "age" (skips spaces after comma)
      * }</pre>
      * 
      * @param sql the SQL statement to extract the word from
@@ -735,8 +735,8 @@ public final class SQLParser {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLParser.registerSeparator('$');   // Register $ as a separator
-     * List<String> words = SQLParser.parse("SELECT$FROM$users");
+     * SqlParser.registerSeparator('$');   // Register $ as a separator
+     * List<String> words = SqlParser.parse("SELECT$FROM$users");
      * // Result: ["SELECT", "$", "FROM", "$", "users"]
      * }</pre>
      * 
@@ -756,8 +756,8 @@ public final class SQLParser {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLParser.registerSeparator("<=>");   // Register the NULL-safe equal operator
-     * SQLParser.registerSeparator("::");    // Register PostgreSQL cast operator
+     * SqlParser.registerSeparator("<=>");   // Register the NULL-safe equal operator
+     * SqlParser.registerSeparator("::");    // Register PostgreSQL cast operator
      * }</pre>
      *
      * @param separator the string to register as a separator (must not be null)

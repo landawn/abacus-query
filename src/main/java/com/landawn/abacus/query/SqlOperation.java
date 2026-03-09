@@ -43,9 +43,9 @@ import com.landawn.abacus.util.SK;
  * // Get operation from SQL statement
  * String sql = "SELECT * FROM users";
  * String firstWord = sql.trim().split("\\s+")[0].toUpperCase();
- * SQLOperation op = SQLOperation.of(firstWord);
+ * SqlOperation op = SqlOperation.of(firstWord);
  *
- * if (op == SQLOperation.SELECT) {
+ * if (op == SqlOperation.SELECT) {
  *     // Handle SELECT query
  * }
  * }</pre>
@@ -53,7 +53,7 @@ import com.landawn.abacus.util.SK;
  * @see Internal
  */
 @Internal
-public enum SQLOperation {
+public enum SqlOperation {
     /**
      * SELECT operation for data retrieval.
      */
@@ -141,17 +141,17 @@ public enum SQLOperation {
 
     private final String sqlToken;
 
-    SQLOperation(final String sqlToken) {
+    SqlOperation(final String sqlToken) {
         this.sqlToken = sqlToken;
     }
 
-    private static final Map<String, SQLOperation> operationMap;
+    private static final Map<String, SqlOperation> operationMap;
 
     static {
-        final SQLOperation[] values = SQLOperation.values();
-        final Map<String, SQLOperation> tempMap = new HashMap<>();
+        final SqlOperation[] values = SqlOperation.values();
+        final Map<String, SqlOperation> tempMap = new HashMap<>();
 
-        for (final SQLOperation value : values) {
+        for (final SqlOperation value : values) {
             tempMap.put(value.sqlToken, value);
             tempMap.put(value.sqlToken.toLowerCase(Locale.ROOT), value);
             tempMap.put(value.name(), value);
@@ -162,28 +162,28 @@ public enum SQLOperation {
     }
 
     /**
-     * Retrieves the SQLOperation enum value corresponding to the given operation name.
+     * Retrieves the SqlOperation enum value corresponding to the given operation name.
      * The lookup is case-insensitive and matches against both the SQL token representation
      * and the enum constant name.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLOperation selectOp = SQLOperation.of("SELECT");      // returns SELECT
-     * SQLOperation insertOp = SQLOperation.of("INSERT");      // returns INSERT
-     * SQLOperation mergeOp = SQLOperation.of("MERGE");        // returns MERGE
-     * SQLOperation unknownOp = SQLOperation.of("TRUNCATE");   // returns null (not supported)
+     * SqlOperation selectOp = SqlOperation.of("SELECT");      // returns SELECT
+     * SqlOperation insertOp = SqlOperation.of("INSERT");      // returns INSERT
+     * SqlOperation mergeOp = SqlOperation.of("MERGE");        // returns MERGE
+     * SqlOperation unknownOp = SqlOperation.of("TRUNCATE");   // returns null (not supported)
      * }</pre>
      *
      * @param name the SQL operation name to look up (case-insensitive)
-     * @return the corresponding SQLOperation enum value, or {@code null} if no matching operation is found
+     * @return the corresponding SqlOperation enum value, or {@code null} if no matching operation is found
      * @throws IllegalArgumentException if name is null
      */
-    public static SQLOperation of(final String name) {
+    public static SqlOperation of(final String name) {
         if (name == null) {
-            throw new IllegalArgumentException("SQLOperation name cannot be null");
+            throw new IllegalArgumentException("SqlOperation name cannot be null");
         }
 
-        SQLOperation value = operationMap.get(name);
+        SqlOperation value = operationMap.get(name);
 
         if (value == null) {
             return operationMap.get(name.toLowerCase(Locale.ROOT));
@@ -202,10 +202,10 @@ public enum SQLOperation {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLOperation op = SQLOperation.SELECT;
+     * SqlOperation op = SqlOperation.SELECT;
      * String sqlKeyword = op.sqlToken();   // Returns "SELECT"
      *
-     * SQLOperation txOp = SQLOperation.BEGIN_TRANSACTION;
+     * SqlOperation txOp = SqlOperation.BEGIN_TRANSACTION;
      * String txText = txOp.sqlToken();   // Returns "BEGIN TRANSACTION"
      * }</pre>
      *

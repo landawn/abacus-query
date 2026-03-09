@@ -21,8 +21,8 @@ import java.util.Set;
 import java.util.function.Function;
 
 import com.landawn.abacus.annotation.Beta;
-import com.landawn.abacus.query.SQLBuilder.NSC;
-import com.landawn.abacus.query.SQLBuilder.PSC;
+import com.landawn.abacus.query.SqlBuilder.NSC;
+import com.landawn.abacus.query.SqlBuilder.PSC;
 import com.landawn.abacus.util.N;
 
 import lombok.AllArgsConstructor;
@@ -33,7 +33,7 @@ import lombok.experimental.Accessors;
  * Represents a selection specification for SQL queries, particularly useful for complex multi-table selections.
  * This class encapsulates information about which entity fields to select, table aliases, and property filtering.
  * 
- * <p>The Selection class is designed to work with SQLBuilder to generate SELECT clauses with support for:</p>
+ * <p>The Selection class is designed to work with SqlBuilder to generate SELECT clauses with support for:</p>
  * <ul>
  *   <li>Entity class mapping</li>
  *   <li>Table aliasing</li>
@@ -97,12 +97,12 @@ public final class Selection {
     /**
      * Creates a new MultiSelectionBuilder for building complex multi-table selections.
      * This builder provides a fluent API for constructing multiple Selection objects that can be
-     * used with SQLBuilder to create complex SELECT statements involving multiple tables.
+     * used with SqlBuilder to create complex SELECT statements involving multiple tables.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Build multiple selections and apply to SQLBuilder
-     * SQLBuilder sqlBuilder = Selection.multiSelectionBuilder()
+     * // Build multiple selections and apply to SqlBuilder
+     * SqlBuilder sqlBuilder = Selection.multiSelectionBuilder()
      *     .add(User.class, "u", "user")
      *     .add(Order.class, "o", "order", Arrays.asList("id", "orderDate", "total"))
      *     .apply(PSC::selectFrom);
@@ -125,7 +125,7 @@ public final class Selection {
      * This builder is particularly useful when constructing complex queries involving multiple tables.
      * 
      * <p>The builder supports various overloaded add() methods for different selection scenarios
-     * and can be directly applied to SQLBuilder methods using the apply() method.</p>
+     * and can be directly applied to SqlBuilder methods using the apply() method.</p>
      */
     public static final class MultiSelectionBuilder {
         private final List<Selection> selections = new ArrayList<>();
@@ -278,34 +278,34 @@ public final class Selection {
         }
 
         /**
-         * Applies the built selections to the provided SQLBuilder function and returns the resulting SQLBuilder.
-         * This method provides a convenient way to integrate the selections directly with SQLBuilder methods
+         * Applies the built selections to the provided SqlBuilder function and returns the resulting SqlBuilder.
+         * This method provides a convenient way to integrate the selections directly with SqlBuilder methods
          * without needing to call build() explicitly.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * // Using with PreparedSQLBuilder (PSC)
-         * SQLBuilder query = Selection.multiSelectionBuilder()
+         * // Using with PreparedSqlBuilder (PSC)
+         * SqlBuilder query = Selection.multiSelectionBuilder()
          *     .add(User.class, "u", "user")
          *     .add(Order.class, "o", "order")
          *     .apply(PSC::selectFrom);
          *
-         * // Using with NamedSQLBuilder (NSC)
-         * SQLBuilder namedQuery = Selection.multiSelectionBuilder()
+         * // Using with NamedSqlBuilder (NSC)
+         * SqlBuilder namedQuery = Selection.multiSelectionBuilder()
          *     .add(Product.class, "p", "product")
          *     .add(Category.class, "c", "category")
          *     .apply(NSC::select);
          * }</pre>
          *
          * @param func the function to apply the selections to (e.g., PSC::select, NSC::selectFrom)
-         * @return the SQLBuilder instance returned by the function
+         * @return the SqlBuilder instance returned by the function
          * @see PSC#select(List)
          * @see PSC#selectFrom(List)
          * @see NSC#select(List)
          * @see NSC#selectFrom(List)
          */
         @Beta
-        public SQLBuilder apply(final Function<? super List<Selection>, SQLBuilder> func) {
+        public SqlBuilder apply(final Function<? super List<Selection>, SqlBuilder> func) {
             N.checkArgNotNull(func, "func");
             return func.apply(build());
         }

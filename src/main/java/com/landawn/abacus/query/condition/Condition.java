@@ -59,7 +59,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * Condition notActive = statusCondition.not();
  * 
  * // Use in queries
- * SQLBuilder builder = PSC.select("*")
+ * SqlBuilder builder = PSC.select("*")
  *     .from("users")
  *     .where(combined);
  * 

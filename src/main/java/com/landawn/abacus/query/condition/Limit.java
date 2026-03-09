@@ -39,7 +39,7 @@ import com.landawn.abacus.util.Strings;
  * <p>All APIs consistently use {@code (count, offset)} parameter order:
  * {@link com.landawn.abacus.query.AbstractQueryBuilder#limit(int, int)},
  * {@link Criteria#limit(int, int)}, and
- * {@link com.landawn.abacus.query.DynamicSQLBuilder#limit(int, int)}.</p>
+ * {@link com.landawn.abacus.query.DynamicSqlBuilder#limit(int, int)}.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code

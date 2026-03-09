@@ -21,14 +21,14 @@ import org.junit.jupiter.api.io.TempDir;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.util.ImmutableMap;
 
-public class SQLMapperTest extends TestBase {
+public class SqlMapperTest extends TestBase {
 
     @TempDir
     File tempDir;
 
     @Test
     public void testEmptyConstructor() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertNotNull(mapper);
         assertTrue(mapper.isEmpty());
         assertTrue(mapper.sqlIds().isEmpty());
@@ -48,7 +48,7 @@ public class SQLMapperTest extends TestBase {
         }
 
         // Test loading from file
-        SQLMapper mapper = SQLMapper.fromFile(xmlFile.getAbsolutePath());
+        SqlMapper mapper = SqlMapper.fromFile(xmlFile.getAbsolutePath());
         assertNotNull(mapper);
         assertFalse(mapper.isEmpty());
 
@@ -93,7 +93,7 @@ public class SQLMapperTest extends TestBase {
 
         // Test loading multiple files with comma separator
         String paths = xmlFile1.getAbsolutePath() + "," + xmlFile2.getAbsolutePath();
-        SQLMapper mapper = SQLMapper.fromFile(paths);
+        SqlMapper mapper = SqlMapper.fromFile(paths);
 
         assertEquals(2, mapper.sqlIds().size());
         assertNotNull(mapper.get("findUser"));
@@ -101,7 +101,7 @@ public class SQLMapperTest extends TestBase {
 
         // Test loading multiple files with semicolon separator
         paths = xmlFile1.getAbsolutePath() + ";" + xmlFile2.getAbsolutePath();
-        mapper = SQLMapper.fromFile(paths);
+        mapper = SqlMapper.fromFile(paths);
 
         assertEquals(2, mapper.sqlIds().size());
         assertNotNull(mapper.get("findUser"));
@@ -116,12 +116,12 @@ public class SQLMapperTest extends TestBase {
             writer.write("<root></root>\n");
         }
 
-        assertThrows(RuntimeException.class, () -> SQLMapper.fromFile(xmlFile.getAbsolutePath()));
+        assertThrows(RuntimeException.class, () -> SqlMapper.fromFile(xmlFile.getAbsolutePath()));
     }
 
     @Test
     public void testKeySet() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT * FROM table1"));
         mapper.add("query2", ParsedSql.parse("SELECT * FROM table2"));
 
@@ -133,7 +133,7 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testGet() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ParsedSql sql = ParsedSql.parse("SELECT * FROM users");
         mapper.add("findAll", sql);
 
@@ -146,7 +146,7 @@ public class SQLMapperTest extends TestBase {
         assertNull(mapper.get(null));
 
         // Test get with id too long
-        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
         assertNull(mapper.get(longId));
 
         // Test get non-existent
@@ -155,7 +155,7 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testGetAttrs() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();
         attrs.put("batchSize", "100");
         attrs.put("timeout", "30");
@@ -173,7 +173,7 @@ public class SQLMapperTest extends TestBase {
         assertNull(mapper.getAttributes(null));
 
         // Test getAttrs with id too long
-        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
         assertNull(mapper.getAttributes(longId));
 
         // Test getAttrs non-existent
@@ -182,7 +182,7 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testAddParsedSql() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
 
         // Test normal add
         ParsedSql sql1 = ParsedSql.parse("SELECT * FROM users");
@@ -204,13 +204,13 @@ public class SQLMapperTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> mapper.add("query\nnewline", sql1));
 
         // Test add with id too long
-        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
         assertThrows(IllegalArgumentException.class, () -> mapper.add(longId, sql1));
     }
 
     @Test
     public void testAddStringWithAttrs() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();
         attrs.put("batchSize", "50");
 
@@ -230,7 +230,7 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testRemove() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
         // Test valid remove
@@ -246,20 +246,20 @@ public class SQLMapperTest extends TestBase {
         mapper.remove(null);
 
         // Test remove with id too long (should not throw)
-        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
         mapper.remove(longId);
     }
 
     @Test
     public void testCopy() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();
         attrs.put("timeout", "60");
 
         mapper.add("query1", "SELECT * FROM users", attrs);
         mapper.add("query2", ParsedSql.parse("SELECT * FROM orders"));
 
-        SQLMapper copy = mapper.copy();
+        SqlMapper copy = mapper.copy();
 
         // Verify copy has same content
         assertEquals(mapper.sqlIds(), copy.sqlIds());
@@ -275,7 +275,7 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testSaveTo() throws IOException {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();
         attrs.put("batchSize", "100");
         attrs.put("fetchSize", "50");
@@ -289,7 +289,7 @@ public class SQLMapperTest extends TestBase {
         assertTrue(outputFile.exists());
 
         // Load saved file and verify
-        SQLMapper loaded = SQLMapper.fromFile(outputFile.getAbsolutePath());
+        SqlMapper loaded = SqlMapper.fromFile(outputFile.getAbsolutePath());
         assertEquals(mapper.sqlIds(), loaded.sqlIds());
         assertEquals(mapper.get("findUser").sql(), loaded.get("findUser").sql());
         assertEquals(mapper.get("updateUser").sql(), loaded.get("updateUser").sql());
@@ -301,7 +301,7 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testSaveToCreatesParentDirectories() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("findUser", "SELECT 1", new HashMap<>());
 
         File nestedDir = new File(tempDir, "nested/dir");
@@ -311,13 +311,13 @@ public class SQLMapperTest extends TestBase {
         mapper.saveTo(outputFile);
 
         assertTrue(outputFile.exists());
-        SQLMapper loaded = SQLMapper.fromFile(outputFile.getAbsolutePath());
+        SqlMapper loaded = SqlMapper.fromFile(outputFile.getAbsolutePath());
         assertNotNull(loaded.get("findUser"));
     }
 
     @Test
     public void testIsEmpty() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertTrue(mapper.isEmpty());
 
         mapper.add("query1", ParsedSql.parse("SELECT 1"));
@@ -329,8 +329,8 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        SQLMapper firstMapper = new SQLMapper();
-        SQLMapper secondMapper = new SQLMapper();
+        SqlMapper firstMapper = new SqlMapper();
+        SqlMapper secondMapper = new SqlMapper();
 
         // Empty mappers should have same hashCode
         assertEquals(firstMapper.hashCode(), secondMapper.hashCode());
@@ -344,8 +344,8 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testEquals() {
-        SQLMapper firstMapper = new SQLMapper();
-        SQLMapper secondMapper = new SQLMapper();
+        SqlMapper firstMapper = new SqlMapper();
+        SqlMapper secondMapper = new SqlMapper();
 
         // Test equals with same instance
         assertEquals(firstMapper, firstMapper);
@@ -371,7 +371,7 @@ public class SQLMapperTest extends TestBase {
 
     @Test
     public void testToString() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         String str = mapper.toString();
         assertNotNull(str);
         assertEquals("{}", str);
@@ -385,7 +385,7 @@ public class SQLMapperTest extends TestBase {
     @Test
     public void testResultSetTypeMap() {
         // Test the constant RESULT_SET_TYPE_MAP
-        ImmutableMap<String, Integer> map = SQLMapper.RESULT_SET_TYPE_MAP;
+        ImmutableMap<String, Integer> map = SqlMapper.RESULT_SET_TYPE_MAP;
 
         assertEquals(3, map.size());
         assertEquals(java.sql.ResultSet.TYPE_FORWARD_ONLY, map.get("FORWARD_ONLY").intValue());
@@ -396,13 +396,13 @@ public class SQLMapperTest extends TestBase {
     @Test
     public void testConstants() {
         // Test all public constants
-        assertEquals("sqlMapper", SQLMapper.SQL_MAPPER);
-        assertEquals("sql", SQLMapper.SQL);
-        assertEquals("id", SQLMapper.ID);
-        assertEquals("batchSize", SQLMapper.BATCH_SIZE);
-        assertEquals("fetchSize", SQLMapper.FETCH_SIZE);
-        assertEquals("resultSetType", SQLMapper.RESULT_SET_TYPE);
-        assertEquals("timeout", SQLMapper.TIMEOUT);
-        assertEquals(128, SQLMapper.MAX_ID_LENGTH);
+        assertEquals("sqlMapper", SqlMapper.SQL_MAPPER);
+        assertEquals("sql", SqlMapper.SQL);
+        assertEquals("id", SqlMapper.ID);
+        assertEquals("batchSize", SqlMapper.BATCH_SIZE);
+        assertEquals("fetchSize", SqlMapper.FETCH_SIZE);
+        assertEquals("resultSetType", SqlMapper.RESULT_SET_TYPE);
+        assertEquals("timeout", SqlMapper.TIMEOUT);
+        assertEquals(128, SqlMapper.MAX_ID_LENGTH);
     }
 }

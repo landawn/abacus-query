@@ -76,7 +76,7 @@ import com.landawn.abacus.util.Strings;
  * // Results in: age > 18 AND status = 'active'
  *
  * // Use in query building
- * SQLBuilder builder = PSC.select("*")
+ * SqlBuilder builder = PSC.select("*")
  *     .from("users")
  *     .where(age.greaterThanOrEqual(21).and(status.in("active", "pending")));
  * }</pre>

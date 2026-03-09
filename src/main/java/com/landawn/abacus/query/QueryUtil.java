@@ -54,7 +54,7 @@ import com.landawn.abacus.util.Tuple.Tuple2;
  * <p>The class maintains internal caches for performance optimization when dealing with entity-to-column mappings
  * and supports various naming policies for column name conversion.</p>
  * 
- * @see SQLBuilder
+ * @see SqlBuilder
  * @see NamingPolicy
  */
 public final class QueryUtil {
@@ -264,7 +264,7 @@ public final class QueryUtil {
             if (propInfo.columnName.isPresent()) {
                 propColumnNameMap.put(propInfo.name, propInfo.columnName.get());
             } else {
-                propColumnNameMap.put(propInfo.name, SQLBuilder.normalizeColumnName(propInfo.name, namingPolicy));
+                propColumnNameMap.put(propInfo.name, SqlBuilder.normalizeColumnName(propInfo.name, namingPolicy));
 
                 final Type<?> propType = propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type;
 
@@ -275,7 +275,7 @@ public final class QueryUtil {
                     final Map<String, String> subPropColumnNameMap = registerEntityPropColumnNameMap(propType.javaType(), namingPolicy, newRegisteringClasses);
 
                     if (N.notEmpty(subPropColumnNameMap)) {
-                        final String subTableAliasOrName = SQLBuilder.getTableAliasOrName(propType.javaType(), namingPolicy);
+                        final String subTableAliasOrName = SqlBuilder.getTableAliasOrName(propType.javaType(), namingPolicy);
 
                         for (final Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
                             propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(), subTableAliasOrName + SK.PERIOD + entry.getValue());
@@ -349,7 +349,7 @@ public final class QueryUtil {
 
         final Class<?> entityClass = entity.getClass();
 
-        final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
+        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
 
         final Collection<String> idPropNames = getIdPropNames(entityClass);
 
@@ -365,7 +365,7 @@ public final class QueryUtil {
                 final PropInfo propInfo = entityInfo.getPropInfo(idPropName);
                 if (propInfo != null) {
                     final Object propValue = propInfo.getPropValue(entity);
-                    if (!SQLBuilder.isDefaultIdPropValue(propValue)) {
+                    if (!SqlBuilder.isDefaultIdPropValue(propValue)) {
                         allDefault = false;
                         break;
                     }
@@ -415,7 +415,7 @@ public final class QueryUtil {
     public static Collection<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
-        final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
+        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
         final Collection<String> propNames = val[2];
 
         if (N.isEmpty(excludedPropNames)) {
@@ -462,7 +462,7 @@ public final class QueryUtil {
             final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
-        final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
+        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
         final Collection<String> propNames = includeSubEntityProperties ? val[0] : val[1];
 
         if (N.isEmpty(excludedPropNames)) {
@@ -505,7 +505,7 @@ public final class QueryUtil {
     public static Collection<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
-        final Collection<String>[] val = SQLBuilder.loadPropNamesByClass(entityClass);
+        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
         final Collection<String> propNames = val[4];
 
         if (N.isEmpty(excludedPropNames)) {

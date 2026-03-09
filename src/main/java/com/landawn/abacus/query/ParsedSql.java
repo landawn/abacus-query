@@ -50,8 +50,8 @@ import com.landawn.abacus.util.Strings;
  * List<String> params = parsed.namedParameters();   // ["userId", "status"]
  * }</pre>
  * 
- * @see SQLParser
- * @see SQLBuilder
+ * @see SqlParser
+ * @see SqlBuilder
  */
 public final class ParsedSql {
 
@@ -87,7 +87,7 @@ public final class ParsedSql {
     private ParsedSql(final String sql) {
         this.sql = sql.trim();
 
-        final List<String> words = SQLParser.parse(this.sql);
+        final List<String> words = SqlParser.parse(this.sql);
         final String firstOpWord = resolveFirstOpWord(words);
         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && opSqlPrefixSet.contains(firstOpWord.toUpperCase(Locale.ROOT));
 

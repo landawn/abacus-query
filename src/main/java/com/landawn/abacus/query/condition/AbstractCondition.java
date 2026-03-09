@@ -602,7 +602,7 @@ public abstract class AbstractCondition implements Condition {
         //            if (N.isEmpty(exp.getLiteral())) {
         //                return false;
         //            } else {
-        //                SQLParser sqlParser = SQLParser.valueOf(exp.getLiteral());
+        //                SqlParser sqlParser = SqlParser.valueOf(exp.getLiteral());
         //                String word = sqlParser.nextWord();
         //
         //                return isClause(word) || isClause(word + D._SPACE + sqlParser.nextWord());

@@ -31,12 +31,12 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 
 @Tag("2025")
-public class SQLParser2025Test extends TestBase {
+public class SqlParser2025Test extends TestBase {
 
     @Test
     public void testParseSimpleSelect() {
         String sql = "SELECT * FROM users";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("SELECT"));
         assertTrue(words.contains("FROM"));
@@ -46,7 +46,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseSelectWithColumns() {
         String sql = "SELECT id, name, email FROM users";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("SELECT"));
         assertTrue(words.contains("id"));
@@ -58,7 +58,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithWhere() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("WHERE"));
         assertTrue(words.contains("age"));
@@ -69,7 +69,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithJoin() {
         String sql = "SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("LEFT"));
         assertTrue(words.contains("JOIN"));
@@ -79,7 +79,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithOperators() {
         String sql = "SELECT * FROM users WHERE age >= 18 AND status = 'active'";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains(">="));
         assertTrue(words.contains("AND"));
@@ -89,7 +89,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithQuotedString() {
         String sql = "SELECT * FROM users WHERE name = 'John Doe'";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.stream().anyMatch(w -> w.contains("John Doe")));
     }
@@ -97,7 +97,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithDoubleQuotes() {
         String sql = "SELECT \"first name\" FROM users";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.stream().anyMatch(w -> w.contains("first name")));
     }
@@ -105,7 +105,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithParentheses() {
         String sql = "SELECT * FROM users WHERE (age > 18 AND status = 'active')";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("("));
         assertTrue(words.contains(")"));
@@ -114,7 +114,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithGroupBy() {
         String sql = "SELECT department, COUNT(*) FROM employees GROUP BY department";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("GROUP"));
         assertTrue(words.contains("BY"));
@@ -123,7 +123,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithOrderBy() {
         String sql = "SELECT * FROM users ORDER BY name ASC";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("ORDER"));
         assertTrue(words.contains("BY"));
@@ -132,7 +132,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithMultipleOperators() {
         String sql = "SELECT * FROM users WHERE age >= 18 AND age <= 65";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains(">="));
         assertTrue(words.contains("<="));
@@ -141,7 +141,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithInClause() {
         String sql = "SELECT * FROM users WHERE id IN (1, 2, 3)";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("IN"));
         assertTrue(words.contains("("));
@@ -151,7 +151,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testIndexWord() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SQLParser.indexOfWord(sql, "WHERE", 0, false);
+        int index = SqlParser.indexOfWord(sql, "WHERE", 0, false);
         assertTrue(index >= 0);
         assertEquals("WHERE", sql.substring(index, index + 5));
     }
@@ -159,49 +159,49 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testIndexWordCaseInsensitive() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SQLParser.indexOfWord(sql, "where", 0, false);
+        int index = SqlParser.indexOfWord(sql, "where", 0, false);
         assertTrue(index >= 0);
     }
 
     @Test
     public void testIndexWordCaseSensitive() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SQLParser.indexOfWord(sql, "where", 0, true);
+        int index = SqlParser.indexOfWord(sql, "where", 0, true);
         assertEquals(-1, index);
     }
 
     @Test
     public void testIndexWordNotFound() {
         String sql = "SELECT * FROM users";
-        int index = SQLParser.indexOfWord(sql, "WHERE", 0, false);
+        int index = SqlParser.indexOfWord(sql, "WHERE", 0, false);
         assertEquals(-1, index);
     }
 
     @Test
     public void testIndexWordComposite() {
         String sql = "SELECT * FROM users ORDER BY name";
-        int index = SQLParser.indexOfWord(sql, "ORDER BY", 0, false);
+        int index = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
         assertTrue(index >= 0);
     }
 
     @Test
     public void testIndexWordFromPosition() {
         String sql = "SELECT * FROM users WHERE age > 18 AND status = 'active'";
-        int firstAnd = SQLParser.indexOfWord(sql, "AND", 0, false);
+        int firstAnd = SqlParser.indexOfWord(sql, "AND", 0, false);
         assertTrue(firstAnd > 0);
     }
 
     @Test
     public void testIndexWordWithNegativeFromIndex() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SQLParser.indexOfWord(sql, "SELECT", -5, false);
+        int index = SqlParser.indexOfWord(sql, "SELECT", -5, false);
         assertEquals(0, index);
     }
 
     @Test
     public void testNextWord() {
         String sql = "SELECT * FROM users";
-        String word = SQLParser.nextWord(sql, 7);
+        String word = SqlParser.nextWord(sql, 7);
         assertNotNull(word);
         assertEquals("*", word);
     }
@@ -209,7 +209,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testNextWordSkipsWhitespace() {
         String sql = "SELECT    *    FROM users";
-        String word = SQLParser.nextWord(sql, 6);
+        String word = SqlParser.nextWord(sql, 6);
         assertNotNull(word);
         assertEquals("*", word);
     }
@@ -217,14 +217,14 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testNextWordEmptyString() {
         String sql = "SELECT *";
-        String word = SQLParser.nextWord(sql, sql.length());
+        String word = SqlParser.nextWord(sql, sql.length());
         assertEquals("", word);
     }
 
     @Test
     public void testNextWordWithOperator() {
         String sql = "WHERE age >= 18";
-        String word = SQLParser.nextWord(sql, 10);
+        String word = SqlParser.nextWord(sql, 10);
         assertNotNull(word);
         assertTrue(word.equals(">=") || word.equals("18"));
     }
@@ -232,73 +232,73 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testNextWordWithNegativeFromIndex() {
         String sql = "SELECT * FROM users";
-        String word = SQLParser.nextWord(sql, -3);
+        String word = SqlParser.nextWord(sql, -3);
         assertEquals("SELECT", word);
     }
 
     @Test
     public void testRegisterSeparatorChar() {
-        SQLParser.registerSeparator('$');
+        SqlParser.registerSeparator('$');
         // Test that it doesn't throw
     }
 
     @Test
     public void testRegisterSeparatorString() {
-        SQLParser.registerSeparator(":::");
+        SqlParser.registerSeparator(":::");
         // Test that it doesn't throw
     }
 
     @Test
     public void testRegisterSeparatorStringWithNewLeadingChar() {
-        SQLParser.registerSeparator("$$");
-        List<String> words = SQLParser.parse("SELECT$$FROM$$users");
+        SqlParser.registerSeparator("$$");
+        List<String> words = SqlParser.parse("SELECT$$FROM$$users");
         assertEquals(Arrays.asList("SELECT", "$$", "FROM", "$$", "users"), words);
     }
 
     @Test
     public void testParseWithDoubleHashOperator() {
-        List<String> words = SQLParser.parse("SELECT 1 ## 2");
+        List<String> words = SqlParser.parse("SELECT 1 ## 2");
         assertTrue(words.contains("##"));
     }
 
     @Test
     public void testRegisterLongSeparatorString() {
-        SQLParser.registerSeparator("~~~~");
-        List<String> words = SQLParser.parse("SELECT~~~~FROM~~~~users");
+        SqlParser.registerSeparator("~~~~");
+        List<String> words = SqlParser.parse("SELECT~~~~FROM~~~~users");
         assertEquals(Arrays.asList("SELECT", "~~~~", "FROM", "~~~~", "users"), words);
     }
 
     @Test
     public void testRegisterSeparatorNull() {
         assertThrows(IllegalArgumentException.class, () -> {
-            SQLParser.registerSeparator((String) null);
+            SqlParser.registerSeparator((String) null);
         });
     }
 
     @Test
     public void testIsSeparator() {
         String sql = "SELECT * FROM users";
-        assertTrue(SQLParser.isSeparator(sql, sql.length(), 6, ' '));
-        assertTrue(SQLParser.isSeparator(sql, sql.length(), 7, '*'));
-        assertFalse(SQLParser.isSeparator(sql, sql.length(), 0, 'S'));
+        assertTrue(SqlParser.isSeparator(sql, sql.length(), 6, ' '));
+        assertTrue(SqlParser.isSeparator(sql, sql.length(), 7, '*'));
+        assertFalse(SqlParser.isSeparator(sql, sql.length(), 0, 'S'));
     }
 
     @Test
     public void testIsSeparatorHash() {
         String sql = "SELECT * FROM users WHERE id = #{userId}";
-        assertTrue(SQLParser.isSeparator(sql, sql.length(), 35, '#'));
+        assertTrue(SqlParser.isSeparator(sql, sql.length(), 35, '#'));
     }
 
     @Test
     public void testIsSeparatorHashForTempTable() {
         String sql = "SELECT * FROM #tmp";
         int hashIndex = sql.indexOf('#');
-        assertFalse(SQLParser.isSeparator(sql, sql.length(), hashIndex, '#'));
+        assertFalse(SqlParser.isSeparator(sql, sql.length(), hashIndex, '#'));
     }
 
     @Test
     public void testIsFunctionName() {
-        List<String> words = SQLParser.parse("SELECT COUNT(*) FROM users");
+        List<String> words = SqlParser.parse("SELECT COUNT(*) FROM users");
         int countIndex = -1;
         for (int i = 0; i < words.size(); i++) {
             if ("COUNT".equals(words.get(i))) {
@@ -307,12 +307,12 @@ public class SQLParser2025Test extends TestBase {
             }
         }
         assertTrue(countIndex >= 0);
-        assertTrue(SQLParser.isFunctionName(words, words.size(), countIndex));
+        assertTrue(SqlParser.isFunctionName(words, words.size(), countIndex));
     }
 
     @Test
     public void testIsFunctionNameNotFunction() {
-        List<String> words = SQLParser.parse("SELECT name FROM users");
+        List<String> words = SqlParser.parse("SELECT name FROM users");
         int nameIndex = -1;
         for (int i = 0; i < words.size(); i++) {
             if ("name".equals(words.get(i))) {
@@ -321,13 +321,13 @@ public class SQLParser2025Test extends TestBase {
             }
         }
         assertTrue(nameIndex >= 0);
-        assertFalse(SQLParser.isFunctionName(words, words.size(), nameIndex));
+        assertFalse(SqlParser.isFunctionName(words, words.size(), nameIndex));
     }
 
     @Test
     public void testParseEmptyString() {
         String sql = "";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.isEmpty());
     }
@@ -335,7 +335,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithHaving() {
         String sql = "SELECT department, COUNT(*) FROM employees GROUP BY department HAVING COUNT(*) > 5";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("HAVING"));
     }
@@ -343,7 +343,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithSubquery() {
         String sql = "SELECT * FROM users WHERE id IN (SELECT user_id FROM orders)";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("SELECT"));
         assertTrue(words.contains("IN"));
@@ -352,7 +352,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithUnion() {
         String sql = "SELECT id FROM users UNION SELECT id FROM accounts";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("UNION"));
     }
@@ -360,7 +360,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithUnionAll() {
         String sql = "SELECT id FROM users UNION ALL SELECT id FROM accounts";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("UNION"));
         assertTrue(words.contains("ALL"));
@@ -369,7 +369,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithNotEquals() {
         String sql = "SELECT * FROM users WHERE status != 'deleted'";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("!="));
     }
@@ -377,7 +377,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithNotEqualsAlternative() {
         String sql = "SELECT * FROM users WHERE status <> 'deleted'";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("<>"));
     }
@@ -385,7 +385,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithBetween() {
         String sql = "SELECT * FROM users WHERE age BETWEEN 18 AND 65";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("BETWEEN"));
         assertTrue(words.contains("AND"));
@@ -394,7 +394,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithLike() {
         String sql = "SELECT * FROM users WHERE name LIKE 'John%'";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("LIKE"));
     }
@@ -402,7 +402,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithNotLike() {
         String sql = "SELECT * FROM users WHERE name NOT LIKE 'John%'";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("NOT"));
         assertTrue(words.contains("LIKE"));
@@ -411,7 +411,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithForUpdate() {
         String sql = "SELECT * FROM users WHERE id = 1 FOR UPDATE";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("FOR"));
         assertTrue(words.contains("UPDATE"));
@@ -422,7 +422,7 @@ public class SQLParser2025Test extends TestBase {
         String sql = "SELECT u.id, u.name, COUNT(o.id) as order_count " + "FROM users u " + "LEFT JOIN orders o ON u.id = o.user_id "
                 + "WHERE u.status = 'active' AND u.created_date > '2020-01-01' " + "GROUP BY u.id, u.name " + "HAVING COUNT(o.id) > 5 "
                 + "ORDER BY order_count DESC " + "LIMIT 10";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.size() > 10);
     }
@@ -430,8 +430,8 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testIndexWordMultipleOccurrences() {
         String sql = "SELECT name FROM users WHERE name = 'John' OR name = 'Jane'";
-        int firstIndex = SQLParser.indexOfWord(sql, "name", 0, false);
-        int secondIndex = SQLParser.indexOfWord(sql, "name", firstIndex + 1, false);
+        int firstIndex = SqlParser.indexOfWord(sql, "name", 0, false);
+        int secondIndex = SqlParser.indexOfWord(sql, "name", firstIndex + 1, false);
         assertTrue(firstIndex >= 0);
         assertTrue(secondIndex > firstIndex);
     }
@@ -439,14 +439,14 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testNextWordAtEnd() {
         String sql = "SELECT * FROM users";
-        String word = SQLParser.nextWord(sql, sql.length() - 1);
+        String word = SqlParser.nextWord(sql, sql.length() - 1);
         assertNotNull(word);
     }
 
     @Test
     public void testParseWithArithmeticOperators() {
         String sql = "SELECT price * quantity + tax - discount FROM orders";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("*"));
         assertTrue(words.contains("+"));
@@ -456,7 +456,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithModuloOperator() {
         String sql = "SELECT id % 10 FROM users";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("%"));
     }
@@ -464,7 +464,7 @@ public class SQLParser2025Test extends TestBase {
     @Test
     public void testParseWithBitwiseOperators() {
         String sql = "SELECT value & mask FROM data";
-        List<String> words = SQLParser.parse(sql);
+        List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("&"));
     }

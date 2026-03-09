@@ -399,31 +399,19 @@ public class Criteria2025Test extends TestBase {
 
     @Test
     public void testMultipleWhereConditions() {
-        Criteria criteria = Criteria.builder()
-                .where(Filters.equal("status", "active"))
-                .where(Filters.greaterThan("age", 18))
-                .build();
+        Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).where(Filters.greaterThan("age", 18)).build();
         assertNotNull(criteria.getWhere());
     }
 
     @Test
     public void testMultipleJoins() {
-        Criteria criteria = Criteria.builder()
-                .join("orders")
-                .join("products")
-                .join("categories")
-                .build();
+        Criteria criteria = Criteria.builder().join("orders").join("products").join("categories").build();
         assertEquals(3, criteria.getJoins().size());
     }
 
     @Test
     public void testGetConditionsMultipleTypes() {
-        Criteria criteria = Criteria.builder()
-                .where(Filters.equal("name", "John"))
-                .groupBy("department")
-                .having("COUNT(*) > 5")
-                .orderBy("name")
-                .build();
+        Criteria criteria = Criteria.builder().where(Filters.equal("name", "John")).groupBy("department").having("COUNT(*) > 5").orderBy("name").build();
 
         List<Condition> conditions = criteria.getConditions();
         assertNotNull(conditions);
@@ -434,10 +422,7 @@ public class Criteria2025Test extends TestBase {
 
     @Test
     public void testPreselectChaining() {
-        Criteria criteria = Criteria.builder()
-                .selectModifier("DISTINCT")
-                .where(Filters.equal("status", "active"))
-                .build();
+        Criteria criteria = Criteria.builder().selectModifier("DISTINCT").where(Filters.equal("status", "active")).build();
         assertNotNull(criteria);
         assertEquals("DISTINCT", criteria.getSelectModifier());
     }
@@ -518,11 +503,7 @@ public class Criteria2025Test extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Criteria criteria = Criteria.builder()
-                .distinct()
-                .where(Filters.equal("isActive", true))
-                .orderBy("createdDate", SortDirection.DESC)
-                .build();
+        Criteria criteria = Criteria.builder().distinct().where(Filters.equal("isActive", true)).orderBy("createdDate", SortDirection.DESC).build();
 
         String sql = criteria.toString(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
         assertNotNull(sql);
@@ -606,10 +587,7 @@ public class Criteria2025Test extends TestBase {
 
     @Test
     public void testClearParametersMultiple() {
-        Criteria criteria = Criteria.builder()
-                .where(Filters.equal("name", "John"))
-                .where(Filters.equal("age", 30))
-                .build();
+        Criteria criteria = Criteria.builder().where(Filters.equal("name", "John")).where(Filters.equal("age", 30)).build();
         criteria.clearParameters();
         // Parameters should be cleared
         List<Object> params = criteria.getParameters();
@@ -626,10 +604,7 @@ public class Criteria2025Test extends TestBase {
 
     @Test
     public void testGetParametersIncludesGroupByAndOrderByConditions() {
-        Criteria criteria = Criteria.builder()
-                .groupBy(Filters.equal("department", "Engineering"))
-                .orderBy(Filters.equal("priority", "HIGH"))
-                .build();
+        Criteria criteria = Criteria.builder().groupBy(Filters.equal("department", "Engineering")).orderBy(Filters.equal("priority", "HIGH")).build();
 
         List<Object> params = criteria.getParameters();
         assertEquals(Arrays.asList("Engineering", "HIGH"), params);
@@ -727,10 +702,7 @@ public class Criteria2025Test extends TestBase {
     @Test
     public void testGetByOperatorMultiple() {
         // The builder replaces where when called multiple times
-        Criteria criteria = Criteria.builder()
-                .where(Filters.equal("status", "active"))
-                .where(Filters.equal("type", "premium"))
-                .build();
+        Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).where(Filters.equal("type", "premium")).build();
 
         List<Condition> whereConditions = criteria.findConditions(Operator.WHERE);
         assertEquals(1, whereConditions.size());

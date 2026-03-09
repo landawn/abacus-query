@@ -62,7 +62,7 @@ package com.landawn.abacus.query.condition;
  * // SQL: HAVING COUNT(*) > 10 AND AVG(age) < 40 AND SUM(revenue) >= 50000
  *
  * // Complete query example
- * SQLBuilder builder = PSC.select("department", "COUNT(*) as emp_count", "AVG(salary) as avg_salary")
+ * SqlBuilder builder = PSC.select("department", "COUNT(*) as emp_count", "AVG(salary) as avg_salary")
  *     .from("employees")
  *     .groupBy("department")
  *     .having(new Having(Filters.and(

@@ -18,7 +18,7 @@ import java.util.Map;
 
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
-import com.landawn.abacus.query.DynamicSQLBuilder.DSB;
+import com.landawn.abacus.query.DynamicSqlBuilder.DSB;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
@@ -37,7 +37,7 @@ import com.landawn.abacus.util.Strings;
  * 
  * <h2>Example usage:</h2>
  * <pre>{@code
- * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+ * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
  * builder.select().append("id", "user_id").append("name");
  * builder.from().append("users", "u");
  * builder.where().append("u.active = ?").and("u.age > ?");
@@ -48,9 +48,9 @@ import com.landawn.abacus.util.Strings;
  * }</pre>
  */
 @SuppressWarnings("java:S1192")
-public sealed class DynamicSQLBuilder permits DSB {
+public sealed class DynamicSqlBuilder permits DSB {
 
-    static final Logger logger = LoggerFactory.getLogger(DynamicSQLBuilder.class);
+    static final Logger logger = LoggerFactory.getLogger(DynamicSqlBuilder.class);
 
     private SelectClause selectClause = new SelectClause(Objectory.createStringBuilder());
 
@@ -66,23 +66,23 @@ public sealed class DynamicSQLBuilder permits DSB {
 
     private StringBuilder moreParts = null;
 
-    private DynamicSQLBuilder() {
+    private DynamicSqlBuilder() {
 
     }
 
     /**
-     * Creates a new instance of DynamicSQLBuilder.
+     * Creates a new instance of DynamicSqlBuilder.
      * This is the entry point for building dynamic SQL queries.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * }</pre>
      *
-     * @return a new DynamicSQLBuilder instance for method chaining
+     * @return a new DynamicSqlBuilder instance for method chaining
      */
-    public static DynamicSQLBuilder create() {
-        return new DynamicSQLBuilder();
+    public static DynamicSqlBuilder create() {
+        return new DynamicSqlBuilder();
     }
 
     /**
@@ -91,7 +91,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * builder.select().append("id").append("name", "user_name");
      * // Generates: SELECT id, name AS user_name
      * }</pre>
@@ -108,7 +108,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
      * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
      * }</pre>
@@ -125,7 +125,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * builder.where().append("status = ?").and("created_date > ?");
      * // Generates: WHERE status = ? AND created_date > ?
      * }</pre>
@@ -146,7 +146,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * builder.groupBy().append("department").append("year");
      * // Generates: GROUP BY department, year
      * }</pre>
@@ -167,7 +167,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * builder.having().append("COUNT(*) > ?").and("SUM(amount) < ?");
      * // Generates: HAVING COUNT(*) > ? AND SUM(amount) < ?
      * }</pre>
@@ -188,7 +188,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * builder.orderBy().append("created_date DESC").append("name ASC");
      * // Generates: ORDER BY created_date DESC, name ASC
      * }</pre>
@@ -217,7 +217,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param limitCond the complete limit condition including the LIMIT keyword (must not be null)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder limit(final String limitCond) {
+    public DynamicSqlBuilder limit(final String limitCond) {
         N.checkArgNotNull(limitCond, "limitCond");
 
         getStringBuilderForMoreParts().append(" ").append(limitCond);
@@ -231,7 +231,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * builder.select().append("*");
      * builder.from().append("users");
      * builder.limit(10);
@@ -241,7 +241,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param count the maximum number of rows to return (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder limit(final int count) {
+    public DynamicSqlBuilder limit(final int count) {
         N.checkArgNotNegative(count, "count");
 
         getStringBuilderForMoreParts().append(" LIMIT ").append(count);
@@ -255,7 +255,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * builder.select().append("*");
      * builder.from().append("users");
      * builder.limit(10, 20);  // count=10, offset=20
@@ -269,7 +269,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @see #fetchNextRows(int)
      * @see #fetchFirstRows(int)
      */
-    public DynamicSQLBuilder limit(final int count, final int offset) {
+    public DynamicSqlBuilder limit(final int count, final int offset) {
         N.checkArgNotNegative(count, "count");
         N.checkArgNotNegative(offset, "offset");
 
@@ -291,7 +291,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param count the maximum number of rows to return (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder whereRowNumAtMost(final int count) {
+    public DynamicSqlBuilder whereRowNumAtMost(final int count) {
         N.checkArgNotNegative(count, "count");
 
         final String rowNumCondition = "ROWNUM <= " + count;
@@ -318,7 +318,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param offset the number of rows to skip (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder offsetRows(final int offset) {
+    public DynamicSqlBuilder offsetRows(final int offset) {
         N.checkArgNotNegative(offset, "offset");
 
         getStringBuilderForMoreParts().append(" OFFSET ").append(offset).append(" ROWS");
@@ -339,7 +339,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param count the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder fetchNextRows(final int count) {
+    public DynamicSqlBuilder fetchNextRows(final int count) {
         N.checkArgNotNegative(count, "count");
 
         getStringBuilderForMoreParts().append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
@@ -360,7 +360,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param count the number of rows to fetch (must not be negative)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder fetchFirstRows(final int count) {
+    public DynamicSqlBuilder fetchFirstRows(final int count) {
         N.checkArgNotNegative(count, "count");
 
         getStringBuilderForMoreParts().append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
@@ -388,7 +388,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param query the complete SQL query to union with (must not be null)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder union(final String query) {
+    public DynamicSqlBuilder union(final String query) {
         N.checkArgNotNull(query, "query");
 
         getStringBuilderForMoreParts().append(" UNION ").append(query);
@@ -408,7 +408,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param query the complete SQL query to union with (must not be null)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder unionAll(final String query) {
+    public DynamicSqlBuilder unionAll(final String query) {
         N.checkArgNotNull(query, "query");
 
         getStringBuilderForMoreParts().append(" UNION ALL ").append(query);
@@ -428,7 +428,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param query the complete SQL query to intersect with (must not be null)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder intersect(final String query) {
+    public DynamicSqlBuilder intersect(final String query) {
         N.checkArgNotNull(query, "query");
 
         getStringBuilderForMoreParts().append(" INTERSECT ").append(query);
@@ -448,7 +448,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param query the complete SQL query to exclude results from (must not be null)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder except(final String query) {
+    public DynamicSqlBuilder except(final String query) {
         N.checkArgNotNull(query, "query");
 
         getStringBuilderForMoreParts().append(" EXCEPT ").append(query);
@@ -468,7 +468,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * @param query the complete SQL query to exclude results from (must not be null)
      * @return this builder instance for method chaining
      */
-    public DynamicSQLBuilder minus(final String query) {
+    public DynamicSqlBuilder minus(final String query) {
         N.checkArgNotNull(query, "query");
 
         getStringBuilderForMoreParts().append(" MINUS ").append(query);
@@ -487,7 +487,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSQLBuilder builder = DynamicSQLBuilder.create();
+     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
      * builder.select().append("*");
      * builder.from().append("users");
      * builder.where().append("active = true");
@@ -500,7 +500,7 @@ public sealed class DynamicSQLBuilder permits DSB {
     public String build() {
         try {
             if (selectClause == null) {
-                throw new IllegalStateException("This DynamicSQLBuilder has already been closed after build() was called");
+                throw new IllegalStateException("This DynamicSqlBuilder has already been closed after build() was called");
             }
 
             if (fromClause != null && !fromClause.sb.isEmpty()) {
@@ -590,7 +590,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * Builder class for constructing the SELECT clause of a SQL query.
      * Provides methods to add columns with optional aliases and conditional inclusion.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#select()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#select()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -787,7 +787,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * Builder class for constructing the FROM clause of a SQL query.
      * Supports adding tables, aliases, and various types of joins.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#from()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#from()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1029,7 +1029,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * Builder class for constructing the WHERE clause of a SQL query.
      * Supports adding conditions with AND/OR operators and parameter placeholders.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#where()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#where()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1258,7 +1258,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * Builder class for constructing the GROUP BY clause of a SQL query.
      * Supports adding single or multiple grouping columns.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#groupBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#groupBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1403,7 +1403,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * Builder class for constructing the HAVING clause of a SQL query.
      * Used to filter grouped results based on aggregate conditions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#having()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#having()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1566,7 +1566,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * Builder class for constructing the ORDER BY clause of a SQL query.
      * Supports adding single or multiple columns with sort directions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSQLBuilder#orderBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#orderBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1708,7 +1708,7 @@ public sealed class DynamicSQLBuilder permits DSB {
     }
 
     /**
-     * A convenience subclass of DynamicSQLBuilder with a shorter name.
+     * A convenience subclass of DynamicSqlBuilder with a shorter name.
      * Functionality is identical to the parent class.
      *
      * <p>This class exists purely for brevity when the full class name would be too verbose.</p>
@@ -1721,7 +1721,7 @@ public sealed class DynamicSQLBuilder permits DSB {
      * String sql = builder.build();
      * }</pre>
      */
-    public static final class DSB extends DynamicSQLBuilder {
+    public static final class DSB extends DynamicSqlBuilder {
 
         /**
          * Instantiates a new dsb.
@@ -1731,7 +1731,7 @@ public sealed class DynamicSQLBuilder permits DSB {
 
         /**
          * Creates a new instance of DSB.
-         * This is a shorthand for DynamicSQLBuilder.create() with a shorter class name.
+         * This is a shorthand for DynamicSqlBuilder.create() with a shorter class name.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

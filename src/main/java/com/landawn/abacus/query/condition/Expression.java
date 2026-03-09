@@ -66,7 +66,7 @@ import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.util.SK;
-import com.landawn.abacus.query.SQLParser;
+import com.landawn.abacus.query.SqlParser;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
@@ -1637,7 +1637,7 @@ public class Expression extends LogicalCondition {
             return effectiveNamingPolicy.convert(literal);
         }
 
-        final List<String> words = SQLParser.parse(literal);
+        final List<String> words = SqlParser.parse(literal);
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -1645,7 +1645,7 @@ public class Expression extends LogicalCondition {
             for (int i = 0, len = words.size(); i < len; i++) {
                 word = words.get(i);
 
-                if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
+                if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, len, i)) {
                     sb.append(word);
                 } else {
                     sb.append(effectiveNamingPolicy.convert(word));

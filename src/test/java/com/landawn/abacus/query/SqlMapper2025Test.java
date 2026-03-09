@@ -34,18 +34,18 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.util.ImmutableMap;
 
 @Tag("2025")
-public class SQLMapper2025Test extends TestBase {
+public class SqlMapper2025Test extends TestBase {
 
     @Test
     public void testConstructor() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertNotNull(mapper);
         assertTrue(mapper.isEmpty());
     }
 
     @Test
     public void testAddParsedSql() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ParsedSql sql = ParsedSql.parse("SELECT * FROM users");
         mapper.add("findAll", sql);
 
@@ -56,7 +56,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testAddSqlString() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();
         attrs.put("batchSize", "100");
 
@@ -72,7 +72,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testAddEmptyId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertThrows(IllegalArgumentException.class, () -> {
             mapper.add("", ParsedSql.parse("SELECT * FROM users"));
         });
@@ -80,7 +80,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testAddNullId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertThrows(IllegalArgumentException.class, () -> {
             mapper.add(null, ParsedSql.parse("SELECT * FROM users"));
         });
@@ -88,7 +88,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testAddIdWithWhitespace() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertThrows(IllegalArgumentException.class, () -> {
             mapper.add("find all", ParsedSql.parse("SELECT * FROM users"));
         });
@@ -96,8 +96,8 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testAddTooLongId() {
-        SQLMapper mapper = new SQLMapper();
-        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        SqlMapper mapper = new SqlMapper();
+        String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
         assertThrows(IllegalArgumentException.class, () -> {
             mapper.add(longId, ParsedSql.parse("SELECT * FROM users"));
         });
@@ -105,7 +105,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testAddDuplicateId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("findAll", ParsedSql.parse("SELECT * FROM users"));
         assertThrows(IllegalArgumentException.class, () -> {
             mapper.add("findAll", ParsedSql.parse("SELECT * FROM accounts"));
@@ -114,7 +114,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testGet() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ParsedSql sql = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
         mapper.add("findById", sql);
 
@@ -125,36 +125,36 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testGetNonExistent() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ParsedSql sql = mapper.get("nonExistent");
         assertNull(sql);
     }
 
     @Test
     public void testGetEmptyId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ParsedSql sql = mapper.get("");
         assertNull(sql);
     }
 
     @Test
     public void testGetNullId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ParsedSql sql = mapper.get(null);
         assertNull(sql);
     }
 
     @Test
     public void testGetTooLongId() {
-        SQLMapper mapper = new SQLMapper();
-        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        SqlMapper mapper = new SqlMapper();
+        String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
         ParsedSql sql = mapper.get(longId);
         assertNull(sql);
     }
 
     @Test
     public void testGetAttrs() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();
         attrs.put("fetchSize", "50");
         attrs.put("timeout", "30");
@@ -169,28 +169,28 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testGetAttrsNonExistent() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ImmutableMap<String, String> attrs = mapper.getAttributes("nonExistent");
         assertNull(attrs);
     }
 
     @Test
     public void testGetAttrsEmptyId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ImmutableMap<String, String> attrs = mapper.getAttributes("");
         assertNull(attrs);
     }
 
     @Test
     public void testGetAttrsNullId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ImmutableMap<String, String> attrs = mapper.getAttributes(null);
         assertNull(attrs);
     }
 
     @Test
     public void testRemove() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("findAll", ParsedSql.parse("SELECT * FROM users"));
 
         assertNotNull(mapper.get("findAll"));
@@ -202,25 +202,25 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testRemoveNonExistent() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.remove("nonExistent"); // Should not throw
     }
 
     @Test
     public void testRemoveEmptyId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.remove(""); // Should not throw
     }
 
     @Test
     public void testRemoveNullId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.remove(null); // Should not throw
     }
 
     @Test
     public void testKeySet() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
         mapper.add("query2", ParsedSql.parse("SELECT * FROM orders"));
 
@@ -231,7 +231,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testIsEmpty() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertTrue(mapper.isEmpty());
 
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
@@ -243,14 +243,14 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testCopy() {
-        SQLMapper original = new SQLMapper();
+        SqlMapper original = new SqlMapper();
         original.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
         Map<String, String> attrs = new HashMap<>();
         attrs.put("batchSize", "100");
         original.add("query2", "INSERT INTO users VALUES (?)", attrs);
 
-        SQLMapper copy = original.copy();
+        SqlMapper copy = original.copy();
 
         assertNotNull(copy.get("query1"));
         assertNotNull(copy.get("query2"));
@@ -260,10 +260,10 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testHashCode() {
-        SQLMapper firstMapper = new SQLMapper();
+        SqlMapper firstMapper = new SqlMapper();
         firstMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
-        SQLMapper secondMapper = new SQLMapper();
+        SqlMapper secondMapper = new SqlMapper();
         secondMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
         assertEquals(firstMapper.hashCode(), secondMapper.hashCode());
@@ -271,10 +271,10 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testEquals() {
-        SQLMapper firstMapper = new SQLMapper();
+        SqlMapper firstMapper = new SqlMapper();
         firstMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
-        SQLMapper secondMapper = new SQLMapper();
+        SqlMapper secondMapper = new SqlMapper();
         secondMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
         assertEquals(firstMapper, secondMapper);
@@ -282,25 +282,25 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testEqualsSameObject() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertEquals(mapper, mapper);
     }
 
     @Test
     public void testEqualsNull() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertFalse(mapper.equals(null));
     }
 
     @Test
     public void testEqualsDifferentClass() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertFalse(mapper.equals("string"));
     }
 
     @Test
     public void testToString() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
         String str = mapper.toString();
@@ -310,46 +310,46 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testMultipleAttributes() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();
-        attrs.put(SQLMapper.BATCH_SIZE, "200");
-        attrs.put(SQLMapper.FETCH_SIZE, "100");
-        attrs.put(SQLMapper.TIMEOUT, "60");
-        attrs.put(SQLMapper.RESULT_SET_TYPE, "SCROLL_INSENSITIVE");
+        attrs.put(SqlMapper.BATCH_SIZE, "200");
+        attrs.put(SqlMapper.FETCH_SIZE, "100");
+        attrs.put(SqlMapper.TIMEOUT, "60");
+        attrs.put(SqlMapper.RESULT_SET_TYPE, "SCROLL_INSENSITIVE");
 
         mapper.add("complexQuery", "SELECT * FROM large_table", attrs);
 
         ImmutableMap<String, String> retrieved = mapper.getAttributes("complexQuery");
-        assertEquals("200", retrieved.get(SQLMapper.BATCH_SIZE));
-        assertEquals("100", retrieved.get(SQLMapper.FETCH_SIZE));
-        assertEquals("60", retrieved.get(SQLMapper.TIMEOUT));
-        assertEquals("SCROLL_INSENSITIVE", retrieved.get(SQLMapper.RESULT_SET_TYPE));
+        assertEquals("200", retrieved.get(SqlMapper.BATCH_SIZE));
+        assertEquals("100", retrieved.get(SqlMapper.FETCH_SIZE));
+        assertEquals("60", retrieved.get(SqlMapper.TIMEOUT));
+        assertEquals("SCROLL_INSENSITIVE", retrieved.get(SqlMapper.RESULT_SET_TYPE));
     }
 
     @Test
     public void testConstants() {
-        assertEquals("sqlMapper", SQLMapper.SQL_MAPPER);
-        assertEquals("sql", SQLMapper.SQL);
-        assertEquals("id", SQLMapper.ID);
-        assertEquals("batchSize", SQLMapper.BATCH_SIZE);
-        assertEquals("fetchSize", SQLMapper.FETCH_SIZE);
-        assertEquals("resultSetType", SQLMapper.RESULT_SET_TYPE);
-        assertEquals("timeout", SQLMapper.TIMEOUT);
-        assertEquals(128, SQLMapper.MAX_ID_LENGTH);
+        assertEquals("sqlMapper", SqlMapper.SQL_MAPPER);
+        assertEquals("sql", SqlMapper.SQL);
+        assertEquals("id", SqlMapper.ID);
+        assertEquals("batchSize", SqlMapper.BATCH_SIZE);
+        assertEquals("fetchSize", SqlMapper.FETCH_SIZE);
+        assertEquals("resultSetType", SqlMapper.RESULT_SET_TYPE);
+        assertEquals("timeout", SqlMapper.TIMEOUT);
+        assertEquals(128, SqlMapper.MAX_ID_LENGTH);
     }
 
     @Test
     public void testResultSetTypeMap() {
-        assertNotNull(SQLMapper.RESULT_SET_TYPE_MAP);
-        assertTrue(SQLMapper.RESULT_SET_TYPE_MAP.containsKey("FORWARD_ONLY"));
-        assertTrue(SQLMapper.RESULT_SET_TYPE_MAP.containsKey("SCROLL_INSENSITIVE"));
-        assertTrue(SQLMapper.RESULT_SET_TYPE_MAP.containsKey("SCROLL_SENSITIVE"));
+        assertNotNull(SqlMapper.RESULT_SET_TYPE_MAP);
+        assertTrue(SqlMapper.RESULT_SET_TYPE_MAP.containsKey("FORWARD_ONLY"));
+        assertTrue(SqlMapper.RESULT_SET_TYPE_MAP.containsKey("SCROLL_INSENSITIVE"));
+        assertTrue(SqlMapper.RESULT_SET_TYPE_MAP.containsKey("SCROLL_SENSITIVE"));
     }
 
     @Test
     public void testMaxIdLength() {
-        SQLMapper mapper = new SQLMapper();
-        String maxLengthId = "a".repeat(SQLMapper.MAX_ID_LENGTH);
+        SqlMapper mapper = new SqlMapper();
+        String maxLengthId = "a".repeat(SqlMapper.MAX_ID_LENGTH);
         mapper.add(maxLengthId, ParsedSql.parse("SELECT * FROM users"));
 
         assertNotNull(mapper.get(maxLengthId));
@@ -357,7 +357,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testAddEmptyAttributes() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();
 
         mapper.add("query1", "SELECT * FROM users", attrs);
@@ -369,14 +369,14 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testKeySetEmpty() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         assertNotNull(mapper.sqlIds());
         assertTrue(mapper.sqlIds().isEmpty());
     }
 
     @Test
     public void testMultipleRemove() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
         mapper.add("query2", ParsedSql.parse("SELECT * FROM orders"));
         mapper.add("query3", ParsedSql.parse("SELECT * FROM products"));
@@ -391,10 +391,10 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testCopyIsIndependent() {
-        SQLMapper original = new SQLMapper();
+        SqlMapper original = new SqlMapper();
         original.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
-        SQLMapper copy = original.copy();
+        SqlMapper copy = original.copy();
         copy.add("query2", ParsedSql.parse("SELECT * FROM orders"));
 
         assertNotNull(copy.get("query2"));
@@ -403,21 +403,21 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testGetAttrsWithNullId() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ImmutableMap<String, String> attrs = mapper.getAttributes(null);
         assertNull(attrs);
     }
 
     @Test
     public void testRemoveTooLongId() {
-        SQLMapper mapper = new SQLMapper();
-        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        SqlMapper mapper = new SqlMapper();
+        String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
         mapper.remove(longId); // Should not throw
     }
 
     @Test
     public void testAddSqlStringWithEmptyAttributes() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("query1", "SELECT * FROM users", new HashMap<>());
         ParsedSql sql = mapper.get("query1");
         assertNotNull(sql);
@@ -425,7 +425,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testKeySetOrder() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("query3", ParsedSql.parse("SELECT * FROM users"));
         mapper.add("query1", ParsedSql.parse("SELECT * FROM orders"));
         mapper.add("query2", ParsedSql.parse("SELECT * FROM products"));
@@ -436,10 +436,10 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testEqualsDifferentContent() {
-        SQLMapper firstMapper = new SQLMapper();
+        SqlMapper firstMapper = new SqlMapper();
         firstMapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
-        SQLMapper secondMapper = new SQLMapper();
+        SqlMapper secondMapper = new SqlMapper();
         secondMapper.add("query1", ParsedSql.parse("SELECT * FROM orders"));
 
         assertFalse(firstMapper.equals(secondMapper));
@@ -447,7 +447,7 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testHashCodeConsistency() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
         int hash1 = mapper.hashCode();
@@ -457,53 +457,53 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testToStringEmpty() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         String str = mapper.toString();
         assertNotNull(str);
     }
 
     @Test
     public void testConstantsValues() {
-        assertEquals("sqlMapper", SQLMapper.SQL_MAPPER);
-        assertEquals("sql", SQLMapper.SQL);
-        assertEquals("id", SQLMapper.ID);
-        assertEquals("batchSize", SQLMapper.BATCH_SIZE);
-        assertEquals("fetchSize", SQLMapper.FETCH_SIZE);
-        assertEquals("resultSetType", SQLMapper.RESULT_SET_TYPE);
-        assertEquals("timeout", SQLMapper.TIMEOUT);
-        assertEquals(128, SQLMapper.MAX_ID_LENGTH);
+        assertEquals("sqlMapper", SqlMapper.SQL_MAPPER);
+        assertEquals("sql", SqlMapper.SQL);
+        assertEquals("id", SqlMapper.ID);
+        assertEquals("batchSize", SqlMapper.BATCH_SIZE);
+        assertEquals("fetchSize", SqlMapper.FETCH_SIZE);
+        assertEquals("resultSetType", SqlMapper.RESULT_SET_TYPE);
+        assertEquals("timeout", SqlMapper.TIMEOUT);
+        assertEquals(128, SqlMapper.MAX_ID_LENGTH);
     }
 
     @Test
     public void testResultSetTypeMapValues() {
-        assertEquals(java.sql.ResultSet.TYPE_FORWARD_ONLY, SQLMapper.RESULT_SET_TYPE_MAP.get("FORWARD_ONLY").intValue());
-        assertEquals(java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE, SQLMapper.RESULT_SET_TYPE_MAP.get("SCROLL_INSENSITIVE").intValue());
-        assertEquals(java.sql.ResultSet.TYPE_SCROLL_SENSITIVE, SQLMapper.RESULT_SET_TYPE_MAP.get("SCROLL_SENSITIVE").intValue());
+        assertEquals(java.sql.ResultSet.TYPE_FORWARD_ONLY, SqlMapper.RESULT_SET_TYPE_MAP.get("FORWARD_ONLY").intValue());
+        assertEquals(java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE, SqlMapper.RESULT_SET_TYPE_MAP.get("SCROLL_INSENSITIVE").intValue());
+        assertEquals(java.sql.ResultSet.TYPE_SCROLL_SENSITIVE, SqlMapper.RESULT_SET_TYPE_MAP.get("SCROLL_SENSITIVE").intValue());
     }
 
     @Test
     public void testGetTooLongIdBoundary() {
-        SQLMapper mapper = new SQLMapper();
-        String exactMaxId = "a".repeat(SQLMapper.MAX_ID_LENGTH);
+        SqlMapper mapper = new SqlMapper();
+        String exactMaxId = "a".repeat(SqlMapper.MAX_ID_LENGTH);
         mapper.add(exactMaxId, ParsedSql.parse("SELECT * FROM users"));
 
         assertNotNull(mapper.get(exactMaxId));
 
-        String tooLongId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        String tooLongId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
         assertNull(mapper.get(tooLongId));
     }
 
     @Test
     public void testGetAttrsTooLongId() {
-        SQLMapper mapper = new SQLMapper();
-        String longId = "a".repeat(SQLMapper.MAX_ID_LENGTH + 1);
+        SqlMapper mapper = new SqlMapper();
+        String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
         ImmutableMap<String, String> attrs = mapper.getAttributes(longId);
         assertNull(attrs);
     }
 
     @Test
     public void testAddParsedSqlReturn() {
-        SQLMapper mapper = new SQLMapper();
+        SqlMapper mapper = new SqlMapper();
         ParsedSql sql1 = ParsedSql.parse("SELECT * FROM users");
         mapper.add("query1", sql1);
 
@@ -513,13 +513,13 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testCopyPreservesAttributes() {
-        SQLMapper original = new SQLMapper();
+        SqlMapper original = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();
         attrs.put("batchSize", "100");
         attrs.put("timeout", "30");
         original.add("query1", "SELECT * FROM users", attrs);
 
-        SQLMapper copy = original.copy();
+        SqlMapper copy = original.copy();
 
         ImmutableMap<String, String> copiedAttrs = copy.getAttributes("query1");
         assertNotNull(copiedAttrs);
@@ -529,10 +529,10 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testEquals_DifferentAttributesAreNotEqual() {
-        SQLMapper firstMapper = new SQLMapper();
+        SqlMapper firstMapper = new SqlMapper();
         firstMapper.add("query1", "SELECT * FROM users", Map.of("timeout", "10"));
 
-        SQLMapper secondMapper = new SQLMapper();
+        SqlMapper secondMapper = new SqlMapper();
         secondMapper.add("query1", "SELECT * FROM users", Map.of("timeout", "30"));
 
         assertNotEquals(firstMapper, secondMapper);
@@ -540,10 +540,10 @@ public class SQLMapper2025Test extends TestBase {
 
     @Test
     public void testHashCode_DifferentAttributesAreDifferent() {
-        SQLMapper firstMapper = new SQLMapper();
+        SqlMapper firstMapper = new SqlMapper();
         firstMapper.add("query1", "SELECT * FROM users", Map.of("timeout", "10"));
 
-        SQLMapper secondMapper = new SQLMapper();
+        SqlMapper secondMapper = new SqlMapper();
         secondMapper.add("query1", "SELECT * FROM users", Map.of("timeout", "30"));
 
         assertNotEquals(firstMapper.hashCode(), secondMapper.hashCode());

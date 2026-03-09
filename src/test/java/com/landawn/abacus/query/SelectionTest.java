@@ -232,15 +232,15 @@ public class SelectionTest extends TestBase {
         // Create a mock function to test apply
         List<Selection> capturedSelections = null;
 
-        SQLBuilder result = Selection.multiSelectionBuilder().add(User.class, "u", "user").add(Order.class, "o", "order").apply(selections -> {
+        SqlBuilder result = Selection.multiSelectionBuilder().add(User.class, "u", "user").add(Order.class, "o", "order").apply(selections -> {
             // Capture selections for verification
             assertNotNull(selections);
             assertEquals(2, selections.size());
-            return new SQLBuilder.PSC();
+            return new SqlBuilder.PSC();
         });
 
         assertNotNull(result);
-        assertTrue(result instanceof SQLBuilder);
+        assertTrue(result instanceof SqlBuilder);
     }
 
     @Test

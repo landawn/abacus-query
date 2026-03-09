@@ -18,16 +18,16 @@ import com.landawn.abacus.annotation.NonUpdatable;
 import com.landawn.abacus.annotation.ReadOnly;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.annotation.Transient;
-import com.landawn.abacus.query.SQLBuilder.MAC;
-import com.landawn.abacus.query.SQLBuilder.MLC;
-import com.landawn.abacus.query.SQLBuilder.MSB;
-import com.landawn.abacus.query.SQLBuilder.MSC;
+import com.landawn.abacus.query.SqlBuilder.MAC;
+import com.landawn.abacus.query.SqlBuilder.MLC;
+import com.landawn.abacus.query.SqlBuilder.MSB;
+import com.landawn.abacus.query.SqlBuilder.MSC;
 import com.landawn.abacus.util.N;
 
 /**
- * Unit tests for SQLBuilder class
+ * Unit tests for SqlBuilder class
  */
-public class SQLBuilder14Test extends TestBase {
+public class SqlBuilder14Test extends TestBase {
 
     @Nested
     public class MSBTest extends TestBase {

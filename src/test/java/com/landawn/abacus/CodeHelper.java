@@ -15,15 +15,15 @@ class CodeHelper {
 
     @Test
     public void test_addParameterCheck() throws IOException {
-        File file = new File("src/main/java/com/landawn/abacus/util/SQLBuilder.java");
+        File file = new File("src/main/java/com/landawn/abacus/util/SqlBuilder.java");
         List<String> lines = IOUtil.readAllLines(file);
 
-        Stream.of(lines).filter(line -> line.startsWith("        public static SQLBuilder")).forEach(Fn.println());
+        Stream.of(lines).filter(line -> line.startsWith("        public static SqlBuilder")).forEach(Fn.println());
 
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
 
-            if (line.startsWith("        public static SQLBuilder")) {
+            if (line.startsWith("        public static SqlBuilder")) {
                 //        if (lines.get(i + 1).contains("INSERTION_PART")) {
                 //            lines.remove(i + 1);
                 //        }

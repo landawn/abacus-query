@@ -312,12 +312,12 @@ public class Selection2025Test extends TestBase {
         // Test that apply method works with a function
         Selection.MultiSelectionBuilder builder = Selection.multiSelectionBuilder().add(String.class, "t", "alias");
 
-        // We can't test actual PSC::selectFrom without full SQLBuilder setup,
+        // We can't test actual PSC::selectFrom without full SqlBuilder setup,
         // but we can test that apply returns a result from the function
-        com.landawn.abacus.query.SQLBuilder result = builder.apply(selections -> {
+        com.landawn.abacus.query.SqlBuilder result = builder.apply(selections -> {
             assertNotNull(selections);
             assertEquals(1, selections.size());
-            return null; // Return null since we can't create actual SQLBuilder in unit test
+            return null; // Return null since we can't create actual SqlBuilder in unit test
         });
 
         assertNull(result); // Expected since our test function returns null
@@ -327,7 +327,7 @@ public class Selection2025Test extends TestBase {
     public void testMultiSelectionBuilder_ApplyExecutesFunction() {
         final boolean[] functionCalled = { false };
 
-        com.landawn.abacus.query.SQLBuilder result = Selection.multiSelectionBuilder().add(String.class).add(Integer.class).apply(selections -> {
+        com.landawn.abacus.query.SqlBuilder result = Selection.multiSelectionBuilder().add(String.class).add(Integer.class).apply(selections -> {
             functionCalled[0] = true;
             assertEquals(2, selections.size());
             return null;

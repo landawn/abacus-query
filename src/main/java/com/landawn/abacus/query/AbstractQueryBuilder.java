@@ -45,12 +45,12 @@ import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
-import com.landawn.abacus.query.SQLBuilder.NAC;
-import com.landawn.abacus.query.SQLBuilder.NLC;
-import com.landawn.abacus.query.SQLBuilder.NSC;
-import com.landawn.abacus.query.SQLBuilder.PAC;
-import com.landawn.abacus.query.SQLBuilder.PLC;
-import com.landawn.abacus.query.SQLBuilder.PSC;
+import com.landawn.abacus.query.SqlBuilder.NAC;
+import com.landawn.abacus.query.SqlBuilder.NLC;
+import com.landawn.abacus.query.SqlBuilder.NSC;
+import com.landawn.abacus.query.SqlBuilder.PAC;
+import com.landawn.abacus.query.SqlBuilder.PLC;
+import com.landawn.abacus.query.SqlBuilder.PSC;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
@@ -395,15 +395,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
 
     /**
-     * Constructs a new SQLBuilder with the specified naming policy and SQL policy.
+     * Constructs a new SqlBuilder with the specified naming policy and SQL policy.
      * 
      * @param namingPolicy the naming policy for column names, defaults to SNAKE_CASE if null
      * @param sqlPolicy the SQL generation policy, defaults to RAW_SQL if null
      */
     protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
-            logger.error("Too many(" + activeStringBuilderCounter.get() + ") StringBuilder instances are created in SQLBuilder. The method toSql()/build()"
-                    + " must be called to release resources and close SQLBuilder");
+            logger.error("Too many(" + activeStringBuilderCounter.get() + ") StringBuilder instances are created in SqlBuilder. The method toSql()/build()"
+                    + " must be called to release resources and close SqlBuilder");
         }
 
         _sb = Objectory.createStringBuilder();
@@ -817,7 +817,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Expression> params = SQLBuilder.named("firstName", "lastName");
+     * Map<String, Expression> params = SqlBuilder.named("firstName", "lastName");
      * }</pre>
      * 
      * @param propNames the property names
@@ -840,7 +840,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Expression> params = SQLBuilder.named(Arrays.asList("firstName", "lastName"));
+     * Map<String, Expression> params = SqlBuilder.named(Arrays.asList("firstName", "lastName"));
      * }</pre>
      * 
      * @param propNames the collection of property names
@@ -868,7 +868,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param tableName the name of the table to insert into
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if called on non-INSERT/SELECT operation or if columns/values not set
      */
     public This into(final String tableName) {
@@ -1016,7 +1016,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param entityClass the entity class representing the target table
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This into(final Class<?> entityClass) {
         if (_entityClass == null) {
@@ -1037,7 +1037,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param tableName the name of the table to insert into
      * @param entityClass the entity class for property mapping (can be null)
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This into(final String tableName, final Class<?> entityClass) {
         if (entityClass != null) {
@@ -1057,7 +1057,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT DISTINCT name FROM account
      * }</pre>
      * 
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This distinct() { //NOSONAR
         return selectModifier(DISTINCT);
@@ -1074,7 +1074,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param selectModifier modifiers like ALL, DISTINCT, DISTINCTROW, TOP, etc.
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if selectModifier has already been set
      */
     public This selectModifier(final String selectModifier) {
@@ -1114,7 +1114,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param tableNames the table names to use in the FROM clause
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This from(final String... tableNames) {
         N.checkArgNotEmpty(tableNames, "tableNames");
@@ -1148,7 +1148,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param tableNames the collection of table names to use in the FROM clause
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This from(final Collection<String> tableNames) {
         N.checkArgNotEmpty(tableNames, "tableNames");
@@ -1186,7 +1186,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the FROM clause expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This from(String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1225,7 +1225,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param expr the FROM clause expression
      * @param entityClass the entity class for property mapping
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This from(final String expr, final Class<?> entityClass) {
         if (entityClass != null) {
@@ -1246,7 +1246,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param entityClass the entity class representing the table
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This from(final Class<?> entityClass) {
         return from(entityClass, QueryUtil.getTableAlias(entityClass));
@@ -1263,7 +1263,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param entityClass the entity class representing the table
      * @param alias the table alias
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This from(final Class<?> entityClass, final String alias) {
         setEntityClass(entityClass);
@@ -1488,7 +1488,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the join expression (e.g., "orders o ON u.id = o.user_id")
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This join(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1513,7 +1513,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param entityClass the entity class to join
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This join(final Class<?> entityClass) {
         return join(entityClass, QueryUtil.getTableAlias(entityClass));
@@ -1533,7 +1533,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param entityClass the entity class to join
      * @param alias the table alias
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This join(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1564,7 +1564,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the join expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This innerJoin(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1586,7 +1586,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param entityClass the entity class to join
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This innerJoin(final Class<?> entityClass) {
         return innerJoin(entityClass, QueryUtil.getTableAlias(entityClass));
@@ -1603,7 +1603,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to join
      * @param alias the table alias
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This innerJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1634,7 +1634,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the join expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This leftJoin(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1656,7 +1656,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param entityClass the entity class to join
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This leftJoin(final Class<?> entityClass) {
         return leftJoin(entityClass, QueryUtil.getTableAlias(entityClass));
@@ -1673,7 +1673,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to join
      * @param alias the table alias
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This leftJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1704,7 +1704,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the join expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This rightJoin(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1726,7 +1726,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param entityClass the entity class to join
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This rightJoin(final Class<?> entityClass) {
         return rightJoin(entityClass, QueryUtil.getTableAlias(entityClass));
@@ -1743,7 +1743,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to join
      * @param alias the table alias
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This rightJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1774,7 +1774,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the join expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This fullJoin(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1796,7 +1796,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param entityClass the entity class to join
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This fullJoin(final Class<?> entityClass) {
         return fullJoin(entityClass, QueryUtil.getTableAlias(entityClass));
@@ -1813,7 +1813,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to join
      * @param alias the table alias
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This fullJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1844,7 +1844,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the join expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This crossJoin(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1866,7 +1866,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param entityClass the entity class to join
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This crossJoin(final Class<?> entityClass) {
         return crossJoin(entityClass, QueryUtil.getTableAlias(entityClass));
@@ -1883,7 +1883,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to join
      * @param alias the table alias
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This crossJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1914,7 +1914,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the join expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This naturalJoin(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1936,7 +1936,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param entityClass the entity class to join
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This naturalJoin(final Class<?> entityClass) {
         return naturalJoin(entityClass, QueryUtil.getTableAlias(entityClass));
@@ -1953,7 +1953,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to join
      * @param alias the table alias
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This naturalJoin(final Class<?> entityClass, final String alias) {
         if (Strings.isNotEmpty(alias)) {
@@ -1985,7 +1985,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the join condition expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This on(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -2010,7 +2010,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param cond the join condition
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This on(final Condition cond) {
         _sb.append(_SPACE_ON_SPACE);
@@ -2034,7 +2034,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the column name(s) for the USING clause
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This using(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -2071,7 +2071,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the WHERE condition expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This where(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -2100,7 +2100,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param cond the WHERE condition
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      * @see Filters
      */
     public This where(final Condition cond) {
@@ -2128,7 +2128,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the column to group by
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -2155,7 +2155,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param propOrColumnNames the columns to group by
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final String... propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
@@ -2189,7 +2189,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param columnName the column to group by
      * @param direction the sort direction
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final String columnName, final SortDirection direction) {
         groupBy(columnName);
@@ -2213,7 +2213,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param propOrColumnNames the collection of columns to group by
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final Collection<String> propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
@@ -2249,7 +2249,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns to group by
      * @param direction the direction appended after each column in the GROUP BY clause
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
         N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
@@ -2288,7 +2288,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param orders map of columns to their sort directions
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final Map<String, SortDirection> orders) {
         N.checkArgNotEmpty(orders, "orders");
@@ -2327,7 +2327,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the HAVING condition expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This having(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -2355,7 +2355,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param cond the HAVING condition
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      * @see Filters
      */
     public This having(final Condition cond) {
@@ -2381,7 +2381,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the column to order by
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -2408,7 +2408,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param propOrColumnNames the columns to order by
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final String... propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
@@ -2442,7 +2442,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param columnName the column to order by
      * @param direction the sort direction
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final String columnName, final SortDirection direction) {
         orderBy(columnName);
@@ -2467,7 +2467,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to order by
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final Collection<String> propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
@@ -2503,7 +2503,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns to order by
      * @param direction the direction appended after each column in the ORDER BY clause
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
         N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
@@ -2543,7 +2543,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param orders map of columns to their sort directions
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final Map<String, SortDirection> orders) {
         N.checkArgNotEmpty(orders, "orders");
@@ -2582,7 +2582,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the column to order by ascending
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This orderByAsc(final String expr) {
@@ -2603,7 +2603,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the columns to order by ascending
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This orderByAsc(final String... propOrColumnNames) {
@@ -2625,7 +2625,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to order by ascending
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This orderByAsc(final Collection<String> propOrColumnNames) {
@@ -2646,7 +2646,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the column to order by descending
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This orderByDesc(final String expr) {
@@ -2667,7 +2667,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the columns to order by descending
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This orderByDesc(final String... propOrColumnNames) {
@@ -2689,7 +2689,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to order by descending
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This orderByDesc(final Collection<String> propOrColumnNames) {
@@ -2709,7 +2709,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param count the maximum number of rows to return
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This limit(final int count) {
         checkIfAlreadyCalled(SK.LIMIT);
@@ -2735,7 +2735,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param count the maximum number of rows to return (appears as LIMIT in SQL)
      * @param offset the number of rows to skip (appears as OFFSET in SQL)
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This limit(final int count, final int offset) {
         checkIfAlreadyCalled(SK.LIMIT);
@@ -2766,7 +2766,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param offset the number of rows to skip
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This offset(final int offset) {
         checkIfAlreadyCalled(SK.OFFSET);
@@ -2791,7 +2791,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param offset the number of rows to skip
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This offsetRows(final int offset) {
         checkIfAlreadyCalled(SK.OFFSET);
@@ -2816,7 +2816,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param rowCount the number of rows to fetch
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This fetchNextRows(final int rowCount) {
         checkIfAlreadyCalled(SK.FETCH_NEXT);
@@ -2840,7 +2840,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param rowCount the number of rows to fetch
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This fetchFirstRows(final int rowCount) {
         checkIfAlreadyCalled(SK.FETCH_FIRST);
@@ -2870,7 +2870,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param cond the condition to append
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      * @see Filters
      */
     @Beta
@@ -3011,7 +3011,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the expression to append
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This append(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -3036,7 +3036,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param condition if true, the condition will be appended
      * @param cond the condition to append
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This appendIf(final boolean condition, final Condition cond) {
@@ -3064,7 +3064,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition if true, the expression will be appended
      * @param expr the expression to append
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This appendIf(final boolean condition, final String expr) {
         if (condition) {
@@ -3090,7 +3090,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param condition if true, the consumer will be executed
      * @param append the consumer function to execute
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This appendIf(final boolean condition, final java.util.function.Consumer<? super This> append) {
@@ -3119,7 +3119,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param condition if true, append condToAppendForTrue; otherwise append condToAppendForFalse
      * @param condToAppendForTrue the condition to append if condition is true
      * @param condToAppendForFalse the condition to append if condition is false
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This appendIfOrElse(final boolean condition, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
@@ -3151,7 +3151,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param condition if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
      * @param exprToAppendForTrue the expression to append if condition is true
      * @param exprToAppendForFalse the expression to append if condition is false
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     @Beta
     public This appendIfOrElse(final boolean condition, final String exprToAppendForTrue, final String exprToAppendForFalse) {
@@ -3169,18 +3169,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLBuilder query1 = PSC.select("id", "name").from("users");
-     * SQLBuilder query2 = PSC.select("id", "name").from("customers");
+     * SqlBuilder query1 = PSC.select("id", "name").from("users");
+     * SqlBuilder query2 = PSC.select("id", "name").from("customers");
      * String sql = query1.union(query2).toSql();
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      * 
      * @param sqlBuilder the SQL builder containing the query to union
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This union(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply UNION with the same SQLBuilder instance");
+        N.checkArgument(sqlBuilder != this, "Cannot apply UNION with the same SqlBuilder instance");
 
         final String sql = sqlBuilder.toSql();
 
@@ -3205,7 +3205,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param query the SQL query to union
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This union(final String query) {
         return union(N.asArray(query));
@@ -3225,7 +3225,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param propOrColumnNames the columns for the union query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This union(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3267,7 +3267,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns for the union query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This union(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3289,18 +3289,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLBuilder query1 = PSC.select("id", "name").from("users");
-     * SQLBuilder query2 = PSC.select("id", "name").from("customers");
+     * SqlBuilder query1 = PSC.select("id", "name").from("users");
+     * SqlBuilder query2 = PSC.select("id", "name").from("customers");
      * String sql = query1.unionAll(query2).toSql();
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      * 
      * @param sqlBuilder the SQL builder containing the query to union all
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This unionAll(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply UNION ALL with the same SQLBuilder instance");
+        N.checkArgument(sqlBuilder != this, "Cannot apply UNION ALL with the same SqlBuilder instance");
 
         final String sql = sqlBuilder.toSql();
 
@@ -3325,7 +3325,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param query the SQL query to union all
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This unionAll(final String query) {
         return unionAll(N.asArray(query));
@@ -3346,7 +3346,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the columns for the union all query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This unionAll(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3388,7 +3388,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns for the union all query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This unionAll(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3410,18 +3410,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLBuilder query1 = PSC.select("id", "name").from("users");
-     * SQLBuilder query2 = PSC.select("id", "name").from("customers");
+     * SqlBuilder query1 = PSC.select("id", "name").from("users");
+     * SqlBuilder query2 = PSC.select("id", "name").from("customers");
      * String sql = query1.intersect(query2).toSql();
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM customers
      * }</pre>
      * 
      * @param sqlBuilder the SQL builder containing the query to intersect
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This intersect(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply INTERSECT with the same SQLBuilder instance");
+        N.checkArgument(sqlBuilder != this, "Cannot apply INTERSECT with the same SqlBuilder instance");
 
         final String sql = sqlBuilder.toSql();
 
@@ -3446,7 +3446,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param query the SQL query to intersect
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This intersect(final String query) {
         return intersect(N.asArray(query));
@@ -3467,7 +3467,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the columns for the intersect query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This intersect(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3509,7 +3509,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns for the intersect query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This intersect(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3531,18 +3531,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLBuilder query1 = PSC.select("id", "name").from("users");
-     * SQLBuilder query2 = PSC.select("id", "name").from("customers");
+     * SqlBuilder query1 = PSC.select("id", "name").from("users");
+     * SqlBuilder query2 = PSC.select("id", "name").from("customers");
      * String sql = query1.except(query2).toSql();
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM customers
      * }</pre>
      * 
      * @param sqlBuilder the SQL builder containing the query to except
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This except(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply EXCEPT with the same SQLBuilder instance");
+        N.checkArgument(sqlBuilder != this, "Cannot apply EXCEPT with the same SqlBuilder instance");
 
         final String sql = sqlBuilder.toSql();
 
@@ -3567,7 +3567,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param query the SQL query to except
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This except(final String query) {
         return except(N.asArray(query));
@@ -3588,7 +3588,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the columns for the except query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This except(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3630,7 +3630,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns for the except query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This except(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3653,18 +3653,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLBuilder query1 = PSC.select("id", "name").from("users");
-     * SQLBuilder query2 = PSC.select("id", "name").from("inactive_users");
+     * SqlBuilder query1 = PSC.select("id", "name").from("users");
+     * SqlBuilder query2 = PSC.select("id", "name").from("inactive_users");
      * String sql = query1.minus(query2).toSql();
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
      * @param sqlBuilder the SQL builder containing the query to minus
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This minus(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply MINUS with the same SQLBuilder instance");
+        N.checkArgument(sqlBuilder != this, "Cannot apply MINUS with the same SqlBuilder instance");
 
         final String sql = sqlBuilder.toSql();
 
@@ -3689,7 +3689,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param query the SQL query to minus
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This minus(final String query) {
         return minus(N.asArray(query));
@@ -3710,7 +3710,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the columns for the minus query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This minus(final String... propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3752,7 +3752,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns for the minus query
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This minus(final Collection<String> propOrColumnNames) {
         _op = OperationType.QUERY;
@@ -3782,7 +3782,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
      * }</pre>
      * 
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This forUpdate() {
         _sb.append(_SPACE_FOR_UPDATE);
@@ -3803,7 +3803,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param expr the SET expression
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This set(final String expr) {
         return set(Array.asList(expr));
@@ -3822,7 +3822,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param propOrColumnNames the columns to update
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This set(final String... propOrColumnNames) {
         return set(Array.asList(propOrColumnNames));
@@ -3844,7 +3844,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param propOrColumnNames the collection of columns to update
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This set(final Collection<String> propOrColumnNames) {
         init(false);
@@ -3931,7 +3931,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param props map of column names to values
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This set(final Map<String, Object> props) {
         init(false);
@@ -4027,7 +4027,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @param entity the entity object containing properties to set
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This set(final Object entity) {
         return set(entity, null);
@@ -4048,7 +4048,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param entity the entity object containing properties to set
      * @param excludedPropNames properties to exclude from the update
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This set(final Object entity, final Set<String> excludedPropNames) {
         if (entity instanceof String) {
@@ -4088,7 +4088,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param entityClass the entity class to get properties from
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This set(final Class<?> entityClass) {
         setEntityClass(entityClass);
@@ -4111,7 +4111,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to get properties from
      * @param excludedPropNames additional properties to exclude from the update
-     * @return this SQLBuilder instance for method chaining
+     * @return this SqlBuilder instance for method chaining
      */
     public This set(final Class<?> entityClass, final Set<String> excludedPropNames) {
         setEntityClass(entityClass);
@@ -4136,7 +4136,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Generates the final SQL query string and releases resources.
-     * This method should be called only once. After calling this method, the SQLBuilder instance cannot be used again.
+     * This method should be called only once. After calling this method, the SqlBuilder instance cannot be used again.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4152,7 +4152,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public String toSql() {
         if (_sb == null) {
-            throw new IllegalStateException("SQLBuilder is closed and cannot be reused after toSql()/build() was called");
+            throw new IllegalStateException("SqlBuilder is closed and cannot be reused after toSql()/build() was called");
         }
 
         String sql = null;
@@ -4963,13 +4963,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
         }
 
-        final List<String> words = SQLParser.parse(expr);
+        final List<String> words = SqlParser.parse(expr);
 
         String word = null;
         for (int i = 0, len = words.size(); i < len; i++) {
             word = words.get(i);
 
-            if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SQLParser.isFunctionName(words, len, i)) {
+            if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, len, i)) {
                 _sb.append(word);
             } else {
                 _sb.append(normalizeColumnName(_propColumnNameMap, word));
@@ -5242,10 +5242,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
-            int index = SQLParser.indexOfWord(propOrColumnNames[0], SK.SELECT, 0, false);
+            int index = SqlParser.indexOfWord(propOrColumnNames[0], SK.SELECT, 0, false);
 
             if (index >= 0) {
-                index = SQLParser.indexOfWord(propOrColumnNames[0], SK.FROM, index, false);
+                index = SqlParser.indexOfWord(propOrColumnNames[0], SK.FROM, index, false);
 
                 return index >= 1;
             }
@@ -5447,7 +5447,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // After using a custom handler, reset to default
-     * SQLBuilder.resetHandlerForNamedParameter();
+     * SqlBuilder.resetHandlerForNamedParameter();
      * 
      * // Named SQL will now use :paramName format again
      * String sql = NSC.select("name").from("users").where(Filters.equal("id", 1)).toSql();

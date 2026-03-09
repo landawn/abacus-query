@@ -28,16 +28,16 @@ import com.landawn.abacus.annotation.ReadOnly;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.annotation.Transient;
 import com.landawn.abacus.query.AbstractQueryBuilder.SP;
-import com.landawn.abacus.query.SQLBuilder.PAC;
-import com.landawn.abacus.query.SQLBuilder.PLC;
-import com.landawn.abacus.query.SQLBuilder.PSB;
-import com.landawn.abacus.query.SQLBuilder.PSC;
+import com.landawn.abacus.query.SqlBuilder.PAC;
+import com.landawn.abacus.query.SqlBuilder.PLC;
+import com.landawn.abacus.query.SqlBuilder.PSB;
+import com.landawn.abacus.query.SqlBuilder.PSC;
 import com.landawn.abacus.query.condition.Condition;
 
 /**
- * Unit tests for SQLBuilder class
+ * Unit tests for SqlBuilder class
  */
-public class SQLBuilder12Test extends TestBase {
+public class SqlBuilder12Test extends TestBase {
 
     @Nested
     public class PSBTest {
@@ -125,7 +125,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_SingleColumn() {
-            SQLBuilder builder = PSB.insert("name");
+            SqlBuilder builder = PSB.insert("name");
             assertNotNull(builder);
 
             // Test with empty string - should throw exception
@@ -134,7 +134,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_MultipleColumns() {
-            SQLBuilder builder = PSB.insert("firstName", "lastName", "email");
+            SqlBuilder builder = PSB.insert("firstName", "lastName", "email");
             assertNotNull(builder);
 
             // Test with null array
@@ -147,7 +147,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testInsert_Collection() {
             List<String> columns = Arrays.asList("firstName", "lastName", "email");
-            SQLBuilder builder = PSB.insert(columns);
+            SqlBuilder builder = PSB.insert(columns);
             assertNotNull(builder);
 
             // Test with null collection
@@ -163,7 +163,7 @@ public class SQLBuilder12Test extends TestBase {
             props.put("firstName", "John");
             props.put("lastName", "Doe");
 
-            SQLBuilder builder = PSB.insert(props);
+            SqlBuilder builder = PSB.insert(props);
             assertNotNull(builder);
 
             // Test with null map
@@ -176,7 +176,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testInsert_Entity() {
             User user = new User("John", "Doe", "john@example.com");
-            SQLBuilder builder = PSB.insert(user);
+            SqlBuilder builder = PSB.insert(user);
             assertNotNull(builder);
 
             // Test with null entity
@@ -188,7 +188,7 @@ public class SQLBuilder12Test extends TestBase {
             User user = new User("John", "Doe", "john@example.com");
             Set<String> excludedProps = new HashSet<>(Arrays.asList("email"));
 
-            SQLBuilder builder = PSB.insert(user, excludedProps);
+            SqlBuilder builder = PSB.insert(user, excludedProps);
             assertNotNull(builder);
 
             // Test with null entity
@@ -197,7 +197,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_Class() {
-            SQLBuilder builder = PSB.insert(User.class);
+            SqlBuilder builder = PSB.insert(User.class);
             assertNotNull(builder);
 
             // Test with null class
@@ -207,7 +207,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testInsert_ClassWithExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("createdDate"));
-            SQLBuilder builder = PSB.insert(User.class, excludedProps);
+            SqlBuilder builder = PSB.insert(User.class, excludedProps);
             assertNotNull(builder);
 
             // Test with null class
@@ -216,7 +216,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsertInto_Class() {
-            SQLBuilder builder = PSB.insertInto(User.class);
+            SqlBuilder builder = PSB.insertInto(User.class);
             assertNotNull(builder);
 
             // Test with null class
@@ -226,7 +226,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testInsertInto_ClassWithExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("id", "createdDate"));
-            SQLBuilder builder = PSB.insertInto(User.class, excludedProps);
+            SqlBuilder builder = PSB.insertInto(User.class, excludedProps);
             assertNotNull(builder);
 
             // Test with null class
@@ -237,7 +237,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testBatchInsert() {
             List<User> users = Arrays.asList(new User("John", "Doe", "john@example.com"), new User("Jane", "Smith", "jane@example.com"));
 
-            SQLBuilder builder = PSB.batchInsert(users);
+            SqlBuilder builder = PSB.batchInsert(users);
             assertNotNull(builder);
 
             // Test with empty collection
@@ -252,13 +252,13 @@ public class SQLBuilder12Test extends TestBase {
             map1.put("firstName", "John");
             maps.add(map1);
 
-            SQLBuilder mapBuilder = PSB.batchInsert(maps);
+            SqlBuilder mapBuilder = PSB.batchInsert(maps);
             assertNotNull(mapBuilder);
         }
 
         @Test
         public void testUpdate_TableName() {
-            SQLBuilder builder = PSB.update("users");
+            SqlBuilder builder = PSB.update("users");
             assertNotNull(builder);
 
             // Test with null table name
@@ -270,7 +270,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testUpdate_TableNameWithEntityClass() {
-            SQLBuilder builder = PSB.update("users", User.class);
+            SqlBuilder builder = PSB.update("users", User.class);
             assertNotNull(builder);
 
             // Test with null parameters
@@ -280,7 +280,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testUpdate_EntityClass() {
-            SQLBuilder builder = PSB.update(User.class);
+            SqlBuilder builder = PSB.update(User.class);
             assertNotNull(builder);
 
             // Test with null class
@@ -290,7 +290,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testUpdate_EntityClassWithExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("createdDate"));
-            SQLBuilder builder = PSB.update(User.class, excludedProps);
+            SqlBuilder builder = PSB.update(User.class, excludedProps);
             assertNotNull(builder);
 
             // Test with null class
@@ -299,7 +299,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_TableName() {
-            SQLBuilder builder = PSB.deleteFrom("users");
+            SqlBuilder builder = PSB.deleteFrom("users");
             assertNotNull(builder);
 
             // Test with null table name
@@ -311,7 +311,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_TableNameWithEntityClass() {
-            SQLBuilder builder = PSB.deleteFrom("users", User.class);
+            SqlBuilder builder = PSB.deleteFrom("users", User.class);
             assertNotNull(builder);
 
             // Test with null parameters
@@ -321,7 +321,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_EntityClass() {
-            SQLBuilder builder = PSB.deleteFrom(User.class);
+            SqlBuilder builder = PSB.deleteFrom(User.class);
             assertNotNull(builder);
 
             // Test with null class
@@ -330,7 +330,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_SingleColumn() {
-            SQLBuilder builder = PSB.select("firstName");
+            SqlBuilder builder = PSB.select("firstName");
             assertNotNull(builder);
 
             // Test with null/empty
@@ -340,7 +340,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_MultipleColumns() {
-            SQLBuilder builder = PSB.select("firstName", "lastName", "email");
+            SqlBuilder builder = PSB.select("firstName", "lastName", "email");
             assertNotNull(builder);
 
             // Test with null array
@@ -353,7 +353,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testSelect_Collection() {
             List<String> columns = Arrays.asList("firstName", "lastName");
-            SQLBuilder builder = PSB.select(columns);
+            SqlBuilder builder = PSB.select(columns);
             assertNotNull(builder);
 
             // Test with null/empty collection
@@ -367,7 +367,7 @@ public class SQLBuilder12Test extends TestBase {
             aliases.put("firstName", "fname");
             aliases.put("lastName", "lname");
 
-            SQLBuilder builder = PSB.select(aliases);
+            SqlBuilder builder = PSB.select(aliases);
             assertNotNull(builder);
 
             // Test with null/empty map
@@ -377,7 +377,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_EntityClass() {
-            SQLBuilder builder = PSB.select(User.class);
+            SqlBuilder builder = PSB.select(User.class);
             assertNotNull(builder);
 
             // Test with null class
@@ -386,29 +386,29 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_EntityClassWithSubEntities() {
-            SQLBuilder builder = PSB.select(User.class, true);
+            SqlBuilder builder = PSB.select(User.class, true);
             assertNotNull(builder);
 
             // Test without sub-entities
-            SQLBuilder builder2 = PSB.select(User.class, false);
+            SqlBuilder builder2 = PSB.select(User.class, false);
             assertNotNull(builder2);
         }
 
         @Test
         public void testSelect_EntityClassWithExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("password"));
-            SQLBuilder builder = PSB.select(User.class, excludedProps);
+            SqlBuilder builder = PSB.select(User.class, excludedProps);
             assertNotNull(builder);
 
             // Test with null excluded props
-            SQLBuilder builder2 = PSB.select(User.class, null);
+            SqlBuilder builder2 = PSB.select(User.class, null);
             assertNotNull(builder2);
         }
 
         @Test
         public void testSelect_EntityClassFullOptions() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("password"));
-            SQLBuilder builder = PSB.select(User.class, true, excludedProps);
+            SqlBuilder builder = PSB.select(User.class, true, excludedProps);
             assertNotNull(builder);
 
             // Test all combinations
@@ -419,7 +419,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_EntityClass() {
-            SQLBuilder builder = PSB.selectFrom(User.class);
+            SqlBuilder builder = PSB.selectFrom(User.class);
             assertNotNull(builder);
 
             // Test with null class
@@ -428,57 +428,57 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_EntityClassWithAlias() {
-            SQLBuilder builder = PSB.selectFrom(User.class, "u");
+            SqlBuilder builder = PSB.selectFrom(User.class, "u");
             assertNotNull(builder);
 
             // Test with null alias
-            SQLBuilder builder2 = PSB.selectFrom(User.class, (String) null);
+            SqlBuilder builder2 = PSB.selectFrom(User.class, (String) null);
             assertNotNull(builder2);
         }
 
         @Test
         public void testSelectFrom_EntityClassWithSubEntities() {
-            SQLBuilder builder = PSB.selectFrom(User.class, true);
+            SqlBuilder builder = PSB.selectFrom(User.class, true);
             assertNotNull(builder);
 
-            SQLBuilder builder2 = PSB.selectFrom(User.class, false);
+            SqlBuilder builder2 = PSB.selectFrom(User.class, false);
             assertNotNull(builder2);
         }
 
         @Test
         public void testSelectFrom_EntityClassWithAliasAndSubEntities() {
-            SQLBuilder builder = PSB.selectFrom(User.class, "u", true);
+            SqlBuilder builder = PSB.selectFrom(User.class, "u", true);
             assertNotNull(builder);
 
-            SQLBuilder builder2 = PSB.selectFrom(User.class, "u", false);
+            SqlBuilder builder2 = PSB.selectFrom(User.class, "u", false);
             assertNotNull(builder2);
         }
 
         @Test
         public void testSelectFrom_EntityClassWithExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("password"));
-            SQLBuilder builder = PSB.selectFrom(User.class, excludedProps);
+            SqlBuilder builder = PSB.selectFrom(User.class, excludedProps);
             assertNotNull(builder);
         }
 
         @Test
         public void testSelectFrom_EntityClassWithAliasAndExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("password"));
-            SQLBuilder builder = PSB.selectFrom(User.class, "u", excludedProps);
+            SqlBuilder builder = PSB.selectFrom(User.class, "u", excludedProps);
             assertNotNull(builder);
         }
 
         @Test
         public void testSelectFrom_EntityClassWithSubEntitiesAndExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("password"));
-            SQLBuilder builder = PSB.selectFrom(User.class, true, excludedProps);
+            SqlBuilder builder = PSB.selectFrom(User.class, true, excludedProps);
             assertNotNull(builder);
         }
 
         @Test
         public void testSelectFrom_EntityClassFullOptions() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("password"));
-            SQLBuilder builder = PSB.selectFrom(User.class, "u", true, excludedProps);
+            SqlBuilder builder = PSB.selectFrom(User.class, "u", true, excludedProps);
             assertNotNull(builder);
 
             // Test various combinations
@@ -488,7 +488,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_TwoEntities() {
-            SQLBuilder builder = PSB.select(User.class, "u", "user", User.class, "u2", "user2");
+            SqlBuilder builder = PSB.select(User.class, "u", "user", User.class, "u2", "user2");
             assertNotNull(builder);
         }
 
@@ -497,11 +497,11 @@ public class SQLBuilder12Test extends TestBase {
             Set<String> excludedA = new HashSet<>(Arrays.asList("password"));
             Set<String> excludedB = new HashSet<>(Arrays.asList("createdDate"));
 
-            SQLBuilder builder = PSB.select(User.class, "u", "user", excludedA, User.class, "u2", "user2", excludedB);
+            SqlBuilder builder = PSB.select(User.class, "u", "user", excludedA, User.class, "u2", "user2", excludedB);
             assertNotNull(builder);
 
             // Test with null exclusions
-            SQLBuilder builder2 = PSB.select(User.class, "u", "user", null, User.class, "u2", "user2", null);
+            SqlBuilder builder2 = PSB.select(User.class, "u", "user", null, User.class, "u2", "user2", null);
             assertNotNull(builder2);
         }
 
@@ -510,7 +510,7 @@ public class SQLBuilder12Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
                     new Selection(User.class, "u2", "user2", null, false, null));
 
-            SQLBuilder builder = PSB.select(selections);
+            SqlBuilder builder = PSB.select(selections);
             assertNotNull(builder);
 
             // Test with null/empty list
@@ -520,7 +520,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_TwoEntities() {
-            SQLBuilder builder = PSB.selectFrom(User.class, "u", "user", User.class, "u2", "user2");
+            SqlBuilder builder = PSB.selectFrom(User.class, "u", "user", User.class, "u2", "user2");
             assertNotNull(builder);
         }
 
@@ -529,7 +529,7 @@ public class SQLBuilder12Test extends TestBase {
             Set<String> excludedA = new HashSet<>(Arrays.asList("password"));
             Set<String> excludedB = new HashSet<>(Arrays.asList("createdDate"));
 
-            SQLBuilder builder = PSB.selectFrom(User.class, "u", "user", excludedA, User.class, "u2", "user2", excludedB);
+            SqlBuilder builder = PSB.selectFrom(User.class, "u", "user", excludedA, User.class, "u2", "user2", excludedB);
             assertNotNull(builder);
         }
 
@@ -538,7 +538,7 @@ public class SQLBuilder12Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
                     new Selection(User.class, "u2", "user2", null, false, null));
 
-            SQLBuilder builder = PSB.selectFrom(selections);
+            SqlBuilder builder = PSB.selectFrom(selections);
             assertNotNull(builder);
 
             // Test with invalid selections
@@ -548,7 +548,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testCount_TableName() {
-            SQLBuilder builder = PSB.count("users");
+            SqlBuilder builder = PSB.count("users");
             assertNotNull(builder);
 
             // Test with null/empty table name
@@ -558,7 +558,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testCount_EntityClass() {
-            SQLBuilder builder = PSB.count(User.class);
+            SqlBuilder builder = PSB.count(User.class);
             assertNotNull(builder);
 
             // Test with null class
@@ -568,7 +568,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.eq("firstName", "John");
-            SQLBuilder builder = PSB.parse(cond, User.class);
+            SqlBuilder builder = PSB.parse(cond, User.class);
             assertNotNull(builder);
 
             // Test with null condition
@@ -576,7 +576,7 @@ public class SQLBuilder12Test extends TestBase {
 
             // Test with complex condition
             Condition complexCond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("id", 1));
-            SQLBuilder complexBuilder = PSB.parse(complexCond, User.class);
+            SqlBuilder complexBuilder = PSB.parse(complexCond, User.class);
             assertNotNull(complexBuilder);
         }
 
@@ -677,7 +677,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_SingleColumn() {
-            SQLBuilder builder = PSC.insert("firstName");
+            SqlBuilder builder = PSC.insert("firstName");
             assertNotNull(builder);
 
             // Test SQL generation
@@ -688,7 +688,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_MultipleColumns() {
-            SQLBuilder builder = PSC.insert("firstName", "lastName", "email");
+            SqlBuilder builder = PSC.insert("firstName", "lastName", "email");
             assertNotNull(builder);
 
             String sql = builder.into("account").toSql();
@@ -700,7 +700,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testInsert_Collection() {
             List<String> columns = Arrays.asList("firstName", "lastName", "email");
-            SQLBuilder builder = PSC.insert(columns);
+            SqlBuilder builder = PSC.insert(columns);
             assertNotNull(builder);
 
             String sql = builder.into("account").toSql();
@@ -715,7 +715,7 @@ public class SQLBuilder12Test extends TestBase {
             props.put("firstName", "John");
             props.put("lastName", "Doe");
 
-            SQLBuilder builder = PSC.insert(props);
+            SqlBuilder builder = PSC.insert(props);
             assertNotNull(builder);
 
             SP sp = builder.into("account").build();
@@ -729,7 +729,7 @@ public class SQLBuilder12Test extends TestBase {
             Account account = new Account("John", "Doe");
             account.setEmail("john@example.com");
 
-            SQLBuilder builder = PSC.insert(account);
+            SqlBuilder builder = PSC.insert(account);
             assertNotNull(builder);
 
             SP sp = builder.into("account").build();
@@ -745,7 +745,7 @@ public class SQLBuilder12Test extends TestBase {
             account.setEmail("john@example.com");
             Set<String> excludedProps = new HashSet<>(Arrays.asList("email"));
 
-            SQLBuilder builder = PSC.insert(account, excludedProps);
+            SqlBuilder builder = PSC.insert(account, excludedProps);
             assertNotNull(builder);
 
             SP sp = builder.into("account").build();
@@ -756,7 +756,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_Class() {
-            SQLBuilder builder = PSC.insert(Account.class);
+            SqlBuilder builder = PSC.insert(Account.class);
             assertNotNull(builder);
 
             String sql = builder.into("account").toSql();
@@ -770,7 +770,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testInsert_ClassWithExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("email", "status"));
-            SQLBuilder builder = PSC.insert(Account.class, excludedProps);
+            SqlBuilder builder = PSC.insert(Account.class, excludedProps);
             assertNotNull(builder);
 
             String sql = builder.into("account").toSql();
@@ -782,7 +782,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsertInto_Class() {
-            SQLBuilder builder = PSC.insertInto(Account.class);
+            SqlBuilder builder = PSC.insertInto(Account.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -794,7 +794,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testInsertInto_ClassWithExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("id", "createdDate"));
-            SQLBuilder builder = PSC.insertInto(Account.class, excludedProps);
+            SqlBuilder builder = PSC.insertInto(Account.class, excludedProps);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -807,7 +807,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testBatchInsert() {
             List<Account> accounts = Arrays.asList(new Account("John", "Doe"), new Account("Jane", "Smith"));
 
-            SQLBuilder builder = PSC.batchInsert(accounts);
+            SqlBuilder builder = PSC.batchInsert(accounts);
             assertNotNull(builder);
 
             SP sp = builder.into("account").build();
@@ -819,7 +819,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testUpdate_TableName() {
-            SQLBuilder builder = PSC.update("account");
+            SqlBuilder builder = PSC.update("account");
             assertNotNull(builder);
 
             String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
@@ -829,7 +829,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testUpdate_TableNameWithEntityClass() {
-            SQLBuilder builder = PSC.update("account", Account.class);
+            SqlBuilder builder = PSC.update("account", Account.class);
             assertNotNull(builder);
 
             String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
@@ -839,7 +839,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testUpdate_EntityClass() {
-            SQLBuilder builder = PSC.update(Account.class);
+            SqlBuilder builder = PSC.update(Account.class);
             assertNotNull(builder);
 
             String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
@@ -856,7 +856,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testUpdate_EntityClassWithExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("email"));
-            SQLBuilder builder = PSC.update(Account.class, excludedProps);
+            SqlBuilder builder = PSC.update(Account.class, excludedProps);
             assertNotNull(builder);
 
             // Get the generated column names
@@ -867,7 +867,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_TableName() {
-            SQLBuilder builder = PSC.deleteFrom("account");
+            SqlBuilder builder = PSC.deleteFrom("account");
             assertNotNull(builder);
 
             String sql = builder.where(Filters.eq("id", 1)).toSql();
@@ -877,7 +877,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_TableNameWithEntityClass() {
-            SQLBuilder builder = PSC.deleteFrom("account", Account.class);
+            SqlBuilder builder = PSC.deleteFrom("account", Account.class);
             assertNotNull(builder);
 
             String sql = builder.where(Filters.eq("firstName", "John")).toSql();
@@ -887,7 +887,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_EntityClass() {
-            SQLBuilder builder = PSC.deleteFrom(Account.class);
+            SqlBuilder builder = PSC.deleteFrom(Account.class);
             assertNotNull(builder);
 
             String sql = builder.where(Filters.eq("id", 1)).toSql();
@@ -896,7 +896,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_SingleColumn() {
-            SQLBuilder builder = PSC.select("COUNT(*)");
+            SqlBuilder builder = PSC.select("COUNT(*)");
             assertNotNull(builder);
 
             String sql = builder.from("account").toSql();
@@ -906,7 +906,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_MultipleColumns() {
-            SQLBuilder builder = PSC.select("id", "firstName", "lastName");
+            SqlBuilder builder = PSC.select("id", "firstName", "lastName");
             assertNotNull(builder);
 
             String sql = builder.from("account").toSql();
@@ -919,7 +919,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testSelect_Collection() {
             List<String> columns = Arrays.asList("id", "firstName", "lastName");
-            SQLBuilder builder = PSC.select(columns);
+            SqlBuilder builder = PSC.select(columns);
             assertNotNull(builder);
 
             String sql = builder.from("account").toSql();
@@ -934,7 +934,7 @@ public class SQLBuilder12Test extends TestBase {
             aliases.put("firstName", "fname");
             aliases.put("lastName", "lname");
 
-            SQLBuilder builder = PSC.select(aliases);
+            SqlBuilder builder = PSC.select(aliases);
             assertNotNull(builder);
 
             String sql = builder.from("account").toSql();
@@ -944,7 +944,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_EntityClass() {
-            SQLBuilder builder = PSC.select(Account.class);
+            SqlBuilder builder = PSC.select(Account.class);
             assertNotNull(builder);
 
             String sql = builder.from("account").toSql();
@@ -957,7 +957,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_EntityClassWithSubEntities() {
-            SQLBuilder builder = PSC.select(Account.class, true);
+            SqlBuilder builder = PSC.select(Account.class, true);
             assertNotNull(builder);
 
             String sql = builder.from("account").toSql();
@@ -967,7 +967,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testSelect_EntityClassWithExcludedProps() {
             Set<String> excludedProps = new HashSet<>(Arrays.asList("email", "status"));
-            SQLBuilder builder = PSC.select(Account.class, excludedProps);
+            SqlBuilder builder = PSC.select(Account.class, excludedProps);
             assertNotNull(builder);
 
             String sql = builder.from("account").toSql();
@@ -979,7 +979,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_EntityClass() {
-            SQLBuilder builder = PSC.selectFrom(Account.class);
+            SqlBuilder builder = PSC.selectFrom(Account.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -990,7 +990,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_EntityClassWithAlias() {
-            SQLBuilder builder = PSC.selectFrom(Account.class, "a");
+            SqlBuilder builder = PSC.selectFrom(Account.class, "a");
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1000,7 +1000,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_TwoEntities() {
-            SQLBuilder builder = PSC.selectFrom(Account.class, "a", "account", Account.class, "a2", "account2");
+            SqlBuilder builder = PSC.selectFrom(Account.class, "a", "account", Account.class, "a2", "account2");
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1013,7 +1013,7 @@ public class SQLBuilder12Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", Arrays.asList("id", "firstName"), false, null),
                     new Selection(Account.class, "a2", "account2", null, false, new HashSet<>(Arrays.asList("email"))));
 
-            SQLBuilder builder = PSC.select(selections);
+            SqlBuilder builder = PSC.select(selections);
             assertNotNull(builder);
 
             String sql = builder.from("account a, account a2").toSql();
@@ -1024,7 +1024,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testCount_TableName() {
-            SQLBuilder builder = PSC.count("account");
+            SqlBuilder builder = PSC.count("account");
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1034,7 +1034,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testCount_EntityClass() {
-            SQLBuilder builder = PSC.count(Account.class);
+            SqlBuilder builder = PSC.count(Account.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1046,7 +1046,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.like("email", "%@example.com"));
 
-            SQLBuilder builder = PSC.parse(cond, Account.class);
+            SqlBuilder builder = PSC.parse(cond, Account.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1068,7 +1068,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testNamingPolicy() {
             // Test that PSC uses snake_case naming
-            SQLBuilder builder = PSC.select("firstName", "lastName", "emailAddress");
+            SqlBuilder builder = PSC.select("firstName", "lastName", "emailAddress");
             String sql = builder.from("account").toSql();
 
             assertTrue(sql.contains("first_name AS \"firstName\""));
@@ -1162,7 +1162,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_SingleColumn() {
-            SQLBuilder builder = PAC.insert("firstName");
+            SqlBuilder builder = PAC.insert("firstName");
             assertNotNull(builder);
 
             String sql = builder.into("USER_ACCOUNT").toSql();
@@ -1172,7 +1172,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_MultipleColumns() {
-            SQLBuilder builder = PAC.insert("firstName", "lastName", "emailAddress");
+            SqlBuilder builder = PAC.insert("firstName", "lastName", "emailAddress");
             assertNotNull(builder);
 
             String sql = builder.into("USER_ACCOUNT").toSql();
@@ -1184,7 +1184,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testInsert_Collection() {
             List<String> columns = Arrays.asList("firstName", "lastName", "emailAddress");
-            SQLBuilder builder = PAC.insert(columns);
+            SqlBuilder builder = PAC.insert(columns);
             assertNotNull(builder);
 
             String sql = builder.into("USER_ACCOUNT").toSql();
@@ -1199,7 +1199,7 @@ public class SQLBuilder12Test extends TestBase {
             props.put("firstName", "John");
             props.put("lastName", "Doe");
 
-            SQLBuilder builder = PAC.insert(props);
+            SqlBuilder builder = PAC.insert(props);
             assertNotNull(builder);
 
             SP sp = builder.into("USER_ACCOUNT").build();
@@ -1213,7 +1213,7 @@ public class SQLBuilder12Test extends TestBase {
             UserAccount account = new UserAccount("John", "Doe");
             account.setEmailAddress("john@example.com");
 
-            SQLBuilder builder = PAC.insert(account);
+            SqlBuilder builder = PAC.insert(account);
             assertNotNull(builder);
 
             SP sp = builder.into("USER_ACCOUNT").build();
@@ -1229,7 +1229,7 @@ public class SQLBuilder12Test extends TestBase {
             account.setEmailAddress("john@example.com");
             Set<String> excludedProps = new HashSet<>(Arrays.asList("emailAddress"));
 
-            SQLBuilder builder = PAC.insert(account, excludedProps);
+            SqlBuilder builder = PAC.insert(account, excludedProps);
             assertNotNull(builder);
 
             SP sp = builder.into("USER_ACCOUNT").build();
@@ -1240,7 +1240,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_Class() {
-            SQLBuilder builder = PAC.insert(UserAccount.class);
+            SqlBuilder builder = PAC.insert(UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.into("USER_ACCOUNT").toSql();
@@ -1253,7 +1253,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsertInto_Class() {
-            SQLBuilder builder = PAC.insertInto(UserAccount.class);
+            SqlBuilder builder = PAC.insertInto(UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1265,7 +1265,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testBatchInsert() {
             List<UserAccount> accounts = Arrays.asList(new UserAccount("John", "Doe"), new UserAccount("Jane", "Smith"));
 
-            SQLBuilder builder = PAC.batchInsert(accounts);
+            SqlBuilder builder = PAC.batchInsert(accounts);
             assertNotNull(builder);
 
             SP sp = builder.into("USER_ACCOUNT").build();
@@ -1276,7 +1276,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testUpdate_TableName() {
-            SQLBuilder builder = PAC.update("USER_ACCOUNT");
+            SqlBuilder builder = PAC.update("USER_ACCOUNT");
             assertNotNull(builder);
 
             String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
@@ -1286,7 +1286,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testUpdate_EntityClass() {
-            SQLBuilder builder = PAC.update(UserAccount.class);
+            SqlBuilder builder = PAC.update(UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
@@ -1296,7 +1296,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_TableName() {
-            SQLBuilder builder = PAC.deleteFrom("USER_ACCOUNT");
+            SqlBuilder builder = PAC.deleteFrom("USER_ACCOUNT");
             assertNotNull(builder);
 
             String sql = builder.where(Filters.eq("id", 1)).toSql();
@@ -1305,7 +1305,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_EntityClass() {
-            SQLBuilder builder = PAC.deleteFrom(UserAccount.class);
+            SqlBuilder builder = PAC.deleteFrom(UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.where(Filters.eq("id", 1)).toSql();
@@ -1314,7 +1314,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_SingleColumn() {
-            SQLBuilder builder = PAC.select("COUNT(*)");
+            SqlBuilder builder = PAC.select("COUNT(*)");
             assertNotNull(builder);
 
             String sql = builder.from("USER_ACCOUNT").toSql();
@@ -1324,7 +1324,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_MultipleColumns() {
-            SQLBuilder builder = PAC.select("id", "firstName", "lastName");
+            SqlBuilder builder = PAC.select("id", "firstName", "lastName");
             assertNotNull(builder);
 
             String sql = builder.from("USER_ACCOUNT").toSql();
@@ -1339,7 +1339,7 @@ public class SQLBuilder12Test extends TestBase {
             aliases.put("firstName", "fname");
             aliases.put("lastName", "lname");
 
-            SQLBuilder builder = PAC.select(aliases);
+            SqlBuilder builder = PAC.select(aliases);
             assertNotNull(builder);
 
             String sql = builder.from("USER_ACCOUNT").toSql();
@@ -1349,7 +1349,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_EntityClass() {
-            SQLBuilder builder = PAC.select(UserAccount.class);
+            SqlBuilder builder = PAC.select(UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.from("USER_ACCOUNT").toSql();
@@ -1362,7 +1362,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_EntityClass() {
-            SQLBuilder builder = PAC.selectFrom(UserAccount.class);
+            SqlBuilder builder = PAC.selectFrom(UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1373,7 +1373,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_EntityClassWithAlias() {
-            SQLBuilder builder = PAC.selectFrom(UserAccount.class, "u");
+            SqlBuilder builder = PAC.selectFrom(UserAccount.class, "u");
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1383,7 +1383,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_TwoEntities() {
-            SQLBuilder builder = PAC.selectFrom(UserAccount.class, "u1", "user1", UserAccount.class, "u2", "user2");
+            SqlBuilder builder = PAC.selectFrom(UserAccount.class, "u1", "user1", UserAccount.class, "u2", "user2");
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1393,7 +1393,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testCount_TableName() {
-            SQLBuilder builder = PAC.count("USER_ACCOUNT");
+            SqlBuilder builder = PAC.count("USER_ACCOUNT");
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1403,7 +1403,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testCount_EntityClass() {
-            SQLBuilder builder = PAC.count(UserAccount.class);
+            SqlBuilder builder = PAC.count(UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1415,7 +1415,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("id", 1));
 
-            SQLBuilder builder = PAC.parse(cond, UserAccount.class);
+            SqlBuilder builder = PAC.parse(cond, UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1437,7 +1437,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testNamingPolicy() {
             // Test that PAC uses UPPER_CASE naming
-            SQLBuilder builder = PAC.select("firstName", "lastName", "emailAddress");
+            SqlBuilder builder = PAC.select("firstName", "lastName", "emailAddress");
             String sql = builder.from("USER_ACCOUNT").toSql();
 
             assertTrue(sql.contains("FIRST_NAME AS \"firstName\""));
@@ -1451,7 +1451,7 @@ public class SQLBuilder12Test extends TestBase {
             Set<String> excludeUser1 = new HashSet<>(Arrays.asList("tempData"));
             Set<String> excludeUser2 = new HashSet<>(Arrays.asList("createdDate"));
 
-            SQLBuilder builder = PAC.select(UserAccount.class, "u1", "user1", excludeUser1, UserAccount.class, "u2", "user2", excludeUser2);
+            SqlBuilder builder = PAC.select(UserAccount.class, "u1", "user1", excludeUser1, UserAccount.class, "u2", "user2", excludeUser2);
 
             String sql = builder.from("USER_ACCOUNT u1, USER_ACCOUNT u2").where(Filters.eq("u1.id", "u2.id")).toSql();
 
@@ -1584,7 +1584,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_SingleColumn() {
-            SQLBuilder builder = PLC.insert("firstName");
+            SqlBuilder builder = PLC.insert("firstName");
             assertNotNull(builder);
 
             String sql = builder.into("userProfile").toSql();
@@ -1594,7 +1594,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_MultipleColumns() {
-            SQLBuilder builder = PLC.insert("firstName", "lastName", "emailAddress");
+            SqlBuilder builder = PLC.insert("firstName", "lastName", "emailAddress");
             assertNotNull(builder);
 
             String sql = builder.into("userProfile").toSql();
@@ -1606,7 +1606,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testInsert_Collection() {
             List<String> columns = Arrays.asList("firstName", "lastName", "isActive");
-            SQLBuilder builder = PLC.insert(columns);
+            SqlBuilder builder = PLC.insert(columns);
             assertNotNull(builder);
 
             String sql = builder.into("userProfile").toSql();
@@ -1622,7 +1622,7 @@ public class SQLBuilder12Test extends TestBase {
             props.put("lastName", "Doe");
             props.put("isActive", true);
 
-            SQLBuilder builder = PLC.insert(props);
+            SqlBuilder builder = PLC.insert(props);
             assertNotNull(builder);
 
             SP sp = builder.into("userProfile").build();
@@ -1638,7 +1638,7 @@ public class SQLBuilder12Test extends TestBase {
             profile.setEmailAddress("john@example.com");
             profile.setIsActive(true);
 
-            SQLBuilder builder = PLC.insert(profile);
+            SqlBuilder builder = PLC.insert(profile);
             assertNotNull(builder);
 
             SP sp = builder.into("userProfile").build();
@@ -1655,7 +1655,7 @@ public class SQLBuilder12Test extends TestBase {
             profile.setEmailAddress("john@example.com");
             Set<String> excludedProps = new HashSet<>(Arrays.asList("emailAddress"));
 
-            SQLBuilder builder = PLC.insert(profile, excludedProps);
+            SqlBuilder builder = PLC.insert(profile, excludedProps);
             assertNotNull(builder);
 
             SP sp = builder.into("userProfile").build();
@@ -1666,7 +1666,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsert_Class() {
-            SQLBuilder builder = PLC.insert(UserProfile.class);
+            SqlBuilder builder = PLC.insert(UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.into("userProfile").toSql();
@@ -1680,7 +1680,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testInsertInto_Class() {
-            SQLBuilder builder = PLC.insertInto(UserProfile.class);
+            SqlBuilder builder = PLC.insertInto(UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1692,7 +1692,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testBatchInsert() {
             List<UserProfile> profiles = Arrays.asList(new UserProfile("John", "Doe"), new UserProfile("Jane", "Smith"));
 
-            SQLBuilder builder = PLC.batchInsert(profiles);
+            SqlBuilder builder = PLC.batchInsert(profiles);
             assertNotNull(builder);
 
             SP sp = builder.into("userProfile").build();
@@ -1703,7 +1703,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testUpdate_TableName() {
-            SQLBuilder builder = PLC.update("userProfile");
+            SqlBuilder builder = PLC.update("userProfile");
             assertNotNull(builder);
 
             String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
@@ -1713,7 +1713,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testUpdate_EntityClass() {
-            SQLBuilder builder = PLC.update(UserProfile.class);
+            SqlBuilder builder = PLC.update(UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.set("firstName", "John").where(Filters.eq("id", 1)).toSql();
@@ -1723,7 +1723,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_TableName() {
-            SQLBuilder builder = PLC.deleteFrom("userProfile");
+            SqlBuilder builder = PLC.deleteFrom("userProfile");
             assertNotNull(builder);
 
             String sql = builder.where(Filters.eq("id", 1)).toSql();
@@ -1732,7 +1732,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testDeleteFrom_EntityClass() {
-            SQLBuilder builder = PLC.deleteFrom(UserProfile.class);
+            SqlBuilder builder = PLC.deleteFrom(UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.where(Filters.eq("id", 1)).toSql();
@@ -1741,7 +1741,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_SingleColumn() {
-            SQLBuilder builder = PLC.select("COUNT(*)");
+            SqlBuilder builder = PLC.select("COUNT(*)");
             assertNotNull(builder);
 
             String sql = builder.from("userProfile").toSql();
@@ -1751,7 +1751,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_MultipleColumns() {
-            SQLBuilder builder = PLC.select("id", "firstName", "lastName");
+            SqlBuilder builder = PLC.select("id", "firstName", "lastName");
             assertNotNull(builder);
 
             String sql = builder.from("userProfile").toSql();
@@ -1766,7 +1766,7 @@ public class SQLBuilder12Test extends TestBase {
             aliases.put("firstName", "fname");
             aliases.put("lastName", "lname");
 
-            SQLBuilder builder = PLC.select(aliases);
+            SqlBuilder builder = PLC.select(aliases);
             assertNotNull(builder);
 
             String sql = builder.from("userProfile").toSql();
@@ -1776,7 +1776,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelect_EntityClass() {
-            SQLBuilder builder = PLC.select(UserProfile.class);
+            SqlBuilder builder = PLC.select(UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.from("userProfile").toSql();
@@ -1790,7 +1790,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_EntityClass() {
-            SQLBuilder builder = PLC.selectFrom(UserProfile.class);
+            SqlBuilder builder = PLC.selectFrom(UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1801,7 +1801,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_EntityClassWithAlias() {
-            SQLBuilder builder = PLC.selectFrom(UserProfile.class, "p");
+            SqlBuilder builder = PLC.selectFrom(UserProfile.class, "p");
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1811,7 +1811,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testSelectFrom_TwoEntities() {
-            SQLBuilder builder = PLC.selectFrom(UserProfile.class, "p1", "profile1", UserProfile.class, "p2", "profile2");
+            SqlBuilder builder = PLC.selectFrom(UserProfile.class, "p1", "profile1", UserProfile.class, "p2", "profile2");
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1821,7 +1821,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testCount_TableName() {
-            SQLBuilder builder = PLC.count("userProfile");
+            SqlBuilder builder = PLC.count("userProfile");
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1831,7 +1831,7 @@ public class SQLBuilder12Test extends TestBase {
 
         @Test
         public void testCount_EntityClass() {
-            SQLBuilder builder = PLC.count(UserProfile.class);
+            SqlBuilder builder = PLC.count(UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1843,7 +1843,7 @@ public class SQLBuilder12Test extends TestBase {
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.eq("isActive", true));
 
-            SQLBuilder builder = PLC.parse(cond, UserProfile.class);
+            SqlBuilder builder = PLC.parse(cond, UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.toSql();
@@ -1865,7 +1865,7 @@ public class SQLBuilder12Test extends TestBase {
         @Test
         public void testNamingPolicy() {
             // Test that PLC uses camelCase naming (no transformation)
-            SQLBuilder builder = PLC.select("firstName", "lastName", "emailAddress", "isActive");
+            SqlBuilder builder = PLC.select("firstName", "lastName", "emailAddress", "isActive");
             String sql = builder.from("userProfile").toSql();
 
             assertTrue(sql.contains("firstName"));
@@ -1888,7 +1888,7 @@ public class SQLBuilder12Test extends TestBase {
             List<Selection> selections = Arrays.asList(new Selection(UserProfile.class, "p1", "profile1", Arrays.asList("id", "firstName"), false, null),
                     new Selection(UserProfile.class, "p2", "profile2", null, false, new HashSet<>(Arrays.asList("sessionData", "lastLoginDate"))));
 
-            SQLBuilder builder = PLC.select(selections);
+            SqlBuilder builder = PLC.select(selections);
             String sql = builder.from("userProfile p1, userProfile p2").toSql();
 
             assertTrue(sql.contains("p1.id AS \"profile1.id\""));

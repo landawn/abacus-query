@@ -74,10 +74,10 @@ import com.landawn.abacus.util.XmlUtil;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Load from single file
- * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+ * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
  * 
  * // Load from multiple files
- * SQLMapper mapper = SQLMapper.fromFile("sql/users.xml,sql/orders.xml");
+ * SqlMapper mapper = SqlMapper.fromFile("sql/users.xml,sql/orders.xml");
  * 
  * // Get parsed SQL
  * ParsedSql sql = mapper.get("findAccountById");
@@ -87,7 +87,7 @@ import com.landawn.abacus.util.XmlUtil;
  * String batchSize = attrs.get("batchSize");
  * }</pre>
  */
-public final class SQLMapper {
+public final class SqlMapper {
 
     /**
      * XML element name for the root sqlMapper element.
@@ -141,34 +141,34 @@ public final class SQLMapper {
     private final Map<String, ImmutableMap<String, String>> attrsMap = new HashMap<>();
 
     /**
-     * Creates an empty SQLMapper instance.
+     * Creates an empty SqlMapper instance.
      */
-    public SQLMapper() {
+    public SqlMapper() {
         // empty constructor
     }
 
     /**
-     * Creates a SQLMapper instance by loading SQL definitions from one or more XML files.
+     * Creates a SqlMapper instance by loading SQL definitions from one or more XML files.
      * Multiple file paths can be specified separated by comma (,) or semicolon (;).
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Single file
-     * SQLMapper mapper = SQLMapper.fromFile("config/sql-mapper.xml");
+     * SqlMapper mapper = SqlMapper.fromFile("config/sql-mapper.xml");
      * 
      * // Multiple files
-     * SQLMapper mapper = SQLMapper.fromFile("sql/users.xml,sql/orders.xml,sql/products.xml");
+     * SqlMapper mapper = SqlMapper.fromFile("sql/users.xml,sql/orders.xml,sql/products.xml");
      * // or
-     * SQLMapper mapper = SQLMapper.fromFile("sql/users.xml;sql/orders.xml;sql/products.xml");
+     * SqlMapper mapper = SqlMapper.fromFile("sql/users.xml;sql/orders.xml;sql/products.xml");
      * }</pre>
      *
      * @param filePath one or more file paths separated by ',' or ';'
-     * @return a new SQLMapper instance loaded with SQL definitions from the specified files
+     * @return a new SqlMapper instance loaded with SQL definitions from the specified files
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid
      * @throws RuntimeException if no 'sqlMapper' element is found in any file
      */
-    public static SQLMapper fromFile(final String filePath) {
+    public static SqlMapper fromFile(final String filePath) {
         N.checkArgNotEmpty(filePath, "filePath");
         final String[] rawFilePaths = Splitter.with(SK.COMMA).trimResults().splitToArray(filePath.replace(SK.SEMICOLON, SK.COMMA));
         final List<String> filePaths = N.newArrayList(rawFilePaths.length);
@@ -183,7 +183,7 @@ public final class SQLMapper {
             throw new IllegalArgumentException("File path is empty after splitting: " + filePath);
         }
 
-        final SQLMapper sqlMapper = new SQLMapper();
+        final SqlMapper sqlMapper = new SqlMapper();
 
         for (final String subFilePath : filePaths) {
             final File file = PropertiesUtil.formatPath(PropertiesUtil.findFile(subFilePath));
@@ -191,7 +191,7 @@ public final class SQLMapper {
             try (InputStream is = new FileInputStream(file)) {
 
                 final Document doc = XmlUtil.createDOMParser(true, true).parse(is);
-                final NodeList sqlMapperEle = doc.getElementsByTagName(SQLMapper.SQL_MAPPER);
+                final NodeList sqlMapperEle = doc.getElementsByTagName(SqlMapper.SQL_MAPPER);
 
                 if (0 == sqlMapperEle.getLength()) {
                     throw new RuntimeException("No 'sqlMapper' element found in the configuration");
@@ -220,7 +220,7 @@ public final class SQLMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
      * Set<String> sqlIds = mapper.sqlIds();
      * sqlIds.forEach(id -> System.out.println("Available SQL: " + id));
      * }</pre>
@@ -236,7 +236,7 @@ public final class SQLMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
      *
      * ParsedSql sql = mapper.get("findAccountById");
      * if (sql != null) {
@@ -268,7 +268,7 @@ public final class SQLMapper {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql>
-     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
      *
      * ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsert");
      * if (attrs != null) {
@@ -298,7 +298,7 @@ public final class SQLMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLMapper mapper = new SQLMapper();
+     * SqlMapper mapper = new SqlMapper();
      * ParsedSql parsedSql = ParsedSql.parse("select * from users where id = ?");
      * mapper.add("findUserById", parsedSql);
      *
@@ -324,7 +324,7 @@ public final class SQLMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLMapper mapper = new SQLMapper();
+     * SqlMapper mapper = new SqlMapper();
      * Map<String, String> attrs = new HashMap<>();
      * attrs.put("batchSize", "100");
      * attrs.put("timeout", "30");
@@ -377,7 +377,7 @@ public final class SQLMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLMapper mapper = SQLMapper.fromFile("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
      * mapper.remove("deprecatedQuery");
      * // Verify removal
      * boolean removed = mapper.get("deprecatedQuery") == null;
@@ -395,14 +395,14 @@ public final class SQLMapper {
     }
 
     /**
-     * Creates a shallow copy of this SQLMapper instance.
+     * Creates a shallow copy of this SqlMapper instance.
      * The copy contains references to the same ParsedSql objects and attribute maps from the original.
      * Modifications to one mapper (adding/removing entries) will not affect the other.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLMapper original = SQLMapper.fromFile("sql/queries.xml");
-     * SQLMapper copy = original.copy();
+     * SqlMapper original = SqlMapper.fromFile("sql/queries.xml");
+     * SqlMapper copy = original.copy();
      *
      * // Modifications to the copy do not affect the original
      * copy.add("newQuery", ParsedSql.parse("SELECT 1"));
@@ -410,10 +410,10 @@ public final class SQLMapper {
      * boolean copyHasIt = copy.get("newQuery") != null;          // true
      * }</pre>
      *
-     * @return a new SQLMapper instance with the same SQL definitions and attributes
+     * @return a new SqlMapper instance with the same SQL definitions and attributes
      */
-    public SQLMapper copy() {
-        final SQLMapper copy = new SQLMapper();
+    public SqlMapper copy() {
+        final SqlMapper copy = new SqlMapper();
 
         copy.sqlMap.putAll(sqlMap);
         copy.attrsMap.putAll(attrsMap);
@@ -436,7 +436,7 @@ public final class SQLMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLMapper mapper = new SQLMapper();
+     * SqlMapper mapper = new SqlMapper();
      * mapper.add("findUser", "select * from users where id = ?", Collections.emptyMap());
      * mapper.saveTo(new File("sql/queries.xml"));
      * }</pre>
@@ -454,7 +454,7 @@ public final class SQLMapper {
 
         try (OutputStream os = new FileOutputStream(file)) {
             final Document doc = XmlUtil.createDOMParser(true, true).newDocument();
-            final Element sqlMapperNode = doc.createElement(SQLMapper.SQL_MAPPER);
+            final Element sqlMapperNode = doc.createElement(SqlMapper.SQL_MAPPER);
 
             for (final Map.Entry<String, ParsedSql> sqlEntry : sqlMap.entrySet()) {
                 final Element sqlNode = doc.createElement(SQL);
@@ -488,10 +488,10 @@ public final class SQLMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SQLMapper emptyMapper = new SQLMapper();
+     * SqlMapper emptyMapper = new SqlMapper();
      * boolean empty = emptyMapper.isEmpty();  // true
      *
-     * SQLMapper loadedMapper = SQLMapper.fromFile("sql/queries.xml");
+     * SqlMapper loadedMapper = SqlMapper.fromFile("sql/queries.xml");
      * boolean hasEntries = !loadedMapper.isEmpty();  // true (assuming file has SQL definitions)
      * }</pre>
      *
@@ -502,7 +502,7 @@ public final class SQLMapper {
     }
 
     /**
-     * Returns the hash code value for this SQLMapper.
+     * Returns the hash code value for this SqlMapper.
      * The hash code is based on the internal SQL map and the attributes map.
      *
      * @return the hash code value
@@ -513,19 +513,19 @@ public final class SQLMapper {
     }
 
     /**
-     * Compares this SQLMapper to another object for equality.
-     * Two SQLMappers are considered equal if they contain the same SQL definitions and attributes.
+     * Compares this SqlMapper to another object for equality.
+     * Two SqlMappers are considered equal if they contain the same SQL definitions and attributes.
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
      */
     @Override
     public boolean equals(final Object obj) {
-        return this == obj || (obj instanceof SQLMapper && N.equals(((SQLMapper) obj).sqlMap, sqlMap) && N.equals(((SQLMapper) obj).attrsMap, attrsMap));
+        return this == obj || (obj instanceof SqlMapper && N.equals(((SqlMapper) obj).sqlMap, sqlMap) && N.equals(((SqlMapper) obj).attrsMap, attrsMap));
     }
 
     /**
-     * Returns a string representation of this SQLMapper.
+     * Returns a string representation of this SqlMapper.
      * The string contains all SQL definitions in the mapper.
      *
      * @return a string representation of the SQL map

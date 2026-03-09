@@ -370,7 +370,7 @@ import com.landawn.abacus.util.SK;
  * @see Condition
  * @see Expression
  * @see QueryUtil
- * @see com.landawn.abacus.query.SQLBuilder
+ * @see com.landawn.abacus.query.SqlBuilder
  * @see com.landawn.abacus.annotation.Column
  * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/PreparedStatement.html">PreparedStatement</a>
  * @see <a href="https://en.wikipedia.org/wiki/SQL_injection">SQL Injection Prevention</a>
@@ -538,7 +538,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an Equal condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static Equal equal(final String propName) {//NOSONAR
         return equal(propName, QME);
@@ -574,7 +574,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an Equal condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
     public static Equal eq(final String propName) {
@@ -1242,7 +1242,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a NotEqual condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotEqual notEqual(final String propName) {
         return notEqual(propName, QME);
@@ -1278,7 +1278,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a NotEqual condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
     public static NotEqual ne(final String propName) {
@@ -1313,7 +1313,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a GreaterThan condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static GreaterThan greaterThan(final String propName) {
         return greaterThan(propName, QME);
@@ -1349,7 +1349,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a GreaterThan condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
     public static GreaterThan gt(final String propName) {
@@ -1384,7 +1384,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a GreaterThanOrEqual condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static GreaterThanOrEqual greaterThanOrEqual(final String propName) {
         return greaterThanOrEqual(propName, QME);
@@ -1420,7 +1420,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a GreaterThanOrEqual condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
     public static GreaterThanOrEqual ge(final String propName) {
@@ -1455,7 +1455,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a LessThan condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static LessThan lessThan(final String propName) {
         return lessThan(propName, QME);
@@ -1491,7 +1491,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a LessThan condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
     public static LessThan lt(final String propName) {
@@ -1526,7 +1526,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a LessThanOrEqual condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static LessThanOrEqual lessThanOrEqual(final String propName) {
         return lessThanOrEqual(propName, QME);
@@ -1562,7 +1562,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a LessThanOrEqual condition with a parameter placeholder
-     * @see com.landawn.abacus.query.SQLBuilder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
     public static LessThanOrEqual le(final String propName) {

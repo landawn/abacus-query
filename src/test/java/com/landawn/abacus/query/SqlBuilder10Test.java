@@ -28,12 +28,12 @@ import com.landawn.abacus.annotation.NonUpdatable;
 import com.landawn.abacus.annotation.ReadOnly;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.query.AbstractQueryBuilder.SP;
-import com.landawn.abacus.query.SQLBuilder.NAC;
-import com.landawn.abacus.query.SQLBuilder.NLC;
-import com.landawn.abacus.query.SQLBuilder.NSC;
-import com.landawn.abacus.query.SQLBuilder.PAC;
-import com.landawn.abacus.query.SQLBuilder.PLC;
-import com.landawn.abacus.query.SQLBuilder.PSC;
+import com.landawn.abacus.query.SqlBuilder.NAC;
+import com.landawn.abacus.query.SqlBuilder.NLC;
+import com.landawn.abacus.query.SqlBuilder.NSC;
+import com.landawn.abacus.query.SqlBuilder.PAC;
+import com.landawn.abacus.query.SqlBuilder.PLC;
+import com.landawn.abacus.query.SqlBuilder.PSC;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Having;
@@ -45,7 +45,7 @@ import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Tuple.Tuple2;
 
-public class SQLBuilder10Test extends TestBase {
+public class SqlBuilder10Test extends TestBase {
 
     // Test entity classes
     @Table(name = "test_account")
@@ -345,7 +345,7 @@ public class SQLBuilder10Test extends TestBase {
 
     //    @Test
     //    public void testIntoWithInvalidOperation() {
-    //        SQLBuilder builder = PSC.select("*").from("account");
+    //        SqlBuilder builder = PSC.select("*").from("account");
     //        assertThrows(RuntimeException.class, () -> builder.into("account"));
     //    }
 
@@ -368,7 +368,7 @@ public class SQLBuilder10Test extends TestBase {
         assertEquals("SELECT TOP 10 * FROM account", sql);
 
         // Test duplicate selectModifier
-        SQLBuilder builder = PSC.select("*").selectModifier("TOP 10");
+        SqlBuilder builder = PSC.select("*").selectModifier("TOP 10");
         assertThrows(IllegalStateException.class, () -> builder.selectModifier("DISTINCT"));
     }
 
@@ -717,8 +717,8 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testUnion() {
-        SQLBuilder query1 = PSC.select("id", "name").from("users");
-        SQLBuilder query2 = PSC.select("id", "name").from("customers");
+        SqlBuilder query1 = PSC.select("id", "name").from("users");
+        SqlBuilder query2 = PSC.select("id", "name").from("customers");
 
         String sql = query1.union(query2).toSql();
         assertEquals("SELECT id, name FROM users UNION SELECT id, name FROM customers", sql);
@@ -738,55 +738,55 @@ public class SQLBuilder10Test extends TestBase {
 
         assertEquals("SELECT id, name FROM users UNION SELECT id, name FROM customers", sql);
 
-        SQLBuilder self = PSC.select("id").from("users");
+        SqlBuilder self = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> self.union(self));
     }
 
     @Test
     public void testUnionAll() {
-        SQLBuilder query1 = PSC.select("id", "name").from("users");
-        SQLBuilder query2 = PSC.select("id", "name").from("customers");
+        SqlBuilder query1 = PSC.select("id", "name").from("users");
+        SqlBuilder query2 = PSC.select("id", "name").from("customers");
 
         String sql = query1.unionAll(query2).toSql();
         assertEquals("SELECT id, name FROM users UNION ALL SELECT id, name FROM customers", sql);
 
-        SQLBuilder self = PSC.select("id").from("users");
+        SqlBuilder self = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> self.unionAll(self));
     }
 
     @Test
     public void testIntersect() {
-        SQLBuilder query1 = PSC.select("id", "name").from("users");
-        SQLBuilder query2 = PSC.select("id", "name").from("customers");
+        SqlBuilder query1 = PSC.select("id", "name").from("users");
+        SqlBuilder query2 = PSC.select("id", "name").from("customers");
 
         String sql = query1.intersect(query2).toSql();
         assertEquals("SELECT id, name FROM users INTERSECT SELECT id, name FROM customers", sql);
 
-        SQLBuilder self = PSC.select("id").from("users");
+        SqlBuilder self = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> self.intersect(self));
     }
 
     @Test
     public void testExcept() {
-        SQLBuilder query1 = PSC.select("id", "name").from("users");
-        SQLBuilder query2 = PSC.select("id", "name").from("customers");
+        SqlBuilder query1 = PSC.select("id", "name").from("users");
+        SqlBuilder query2 = PSC.select("id", "name").from("customers");
 
         String sql = query1.except(query2).toSql();
         assertEquals("SELECT id, name FROM users EXCEPT SELECT id, name FROM customers", sql);
 
-        SQLBuilder self = PSC.select("id").from("users");
+        SqlBuilder self = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> self.except(self));
     }
 
     @Test
     public void testMinus() {
-        SQLBuilder query1 = PSC.select("id", "name").from("users");
-        SQLBuilder query2 = PSC.select("id", "name").from("customers");
+        SqlBuilder query1 = PSC.select("id", "name").from("users");
+        SqlBuilder query2 = PSC.select("id", "name").from("customers");
 
         String sql = query1.minus(query2).toSql();
         assertEquals("SELECT id, name FROM users MINUS SELECT id, name FROM customers", sql);
 
-        SQLBuilder self = PSC.select("id").from("users");
+        SqlBuilder self = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> self.minus(self));
     }
 
@@ -859,14 +859,14 @@ public class SQLBuilder10Test extends TestBase {
         assertEquals("SELECT id, name FROM account WHERE age > ?", sql);
 
         // Test double call throws exception
-        SQLBuilder builder = PSC.select("*").from("users");
+        SqlBuilder builder = PSC.select("*").from("users");
         builder.toSql();
         assertThrows(RuntimeException.class, () -> builder.toSql());
     }
 
     @Test
     public void testParameters() {
-        SQLBuilder builder = PSC.select("*").from("account").where(Filters.eq("name", "John").and(Filters.gt("age", 25)));
+        SqlBuilder builder = PSC.select("*").from("account").where(Filters.eq("name", "John").and(Filters.gt("age", 25)));
 
         SP sp = builder.build();
         List<Object> params = sp.parameters();
@@ -878,7 +878,7 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testPair() {
-        SQLBuilder.SP sp = PSC.select("*").from("account").where(Filters.eq("status", "ACTIVE")).build();
+        SqlBuilder.SP sp = PSC.select("*").from("account").where(Filters.eq("status", "ACTIVE")).build();
 
         assertEquals("SELECT * FROM account WHERE status = ?", sp.sql());
         assertEquals(1, sp.parameters().size());
@@ -1080,7 +1080,13 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testCriteriaCondition() {
-        Criteria criteria = Criteria.builder().where(Filters.gt("age", 18)).groupBy("status").having(Filters.gt("COUNT(*)", 5)).orderBy("status").limit(10).build();
+        Criteria criteria = Criteria.builder()
+                .where(Filters.gt("age", 18))
+                .groupBy("status")
+                .having(Filters.gt("COUNT(*)", 5))
+                .orderBy("status")
+                .limit(10)
+                .build();
 
         String sql = PSC.select("status", "COUNT(*)").from("users").append(criteria).toSql();
 
@@ -1514,8 +1520,8 @@ public class SQLBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testSQLBuilderWithDifferentNamingPolicies() {
-        // Test that different SQLBuilder implementations use correct naming policies
+    public void testSqlBuilderWithDifferentNamingPolicies() {
+        // Test that different SqlBuilder implementations use correct naming policies
 
         // Snake case
         assertTrue(PSC.select("firstName").from("userAccount").toSql().contains("first_name"));
@@ -1581,7 +1587,7 @@ public class SQLBuilder10Test extends TestBase {
 
         assertEquals("SELECT * FROM users WHERE deleted_by IS NULL", sql);
 
-        SQLBuilder builder = PSC.select("*").from("users").where(Filters.eq("deletedBy", null));
+        SqlBuilder builder = PSC.select("*").from("users").where(Filters.eq("deletedBy", null));
         builder.toSql();
 
         List<Object> params = builder.parameters();
@@ -1590,7 +1596,7 @@ public class SQLBuilder10Test extends TestBase {
         String sql2 = PSC.select("*").from("users").where(Filters.ne("deletedBy", null)).toSql();
         assertEquals("SELECT * FROM users WHERE deleted_by IS NOT NULL", sql2);
 
-        SQLBuilder builder2 = PSC.select("*").from("users").where(Filters.ne("deletedBy", null));
+        SqlBuilder builder2 = PSC.select("*").from("users").where(Filters.ne("deletedBy", null));
         builder2.toSql();
         assertTrue(builder2.parameters().isEmpty());
     }
@@ -1630,7 +1636,7 @@ public class SQLBuilder10Test extends TestBase {
         assertTrue(sql.contains("name = ?"));
         assertTrue(sql.contains("comment = ?"));
 
-        SQLBuilder builder = PSC.update("users").set(values).where(Filters.eq("id", 1));
+        SqlBuilder builder = PSC.update("users").set(values).where(Filters.eq("id", 1));
         builder.toSql();
 
         List<Object> params = builder.parameters();
@@ -1704,7 +1710,7 @@ public class SQLBuilder10Test extends TestBase {
     @Test
     public void testClosedBuilderException() {
         // Test that using a closed builder throws exception
-        SQLBuilder builder = PSC.select("*").from("users");
+        SqlBuilder builder = PSC.select("*").from("users");
         builder.toSql(); // This closes the builder
 
         // Any operation after sql() should throw exception
@@ -1717,7 +1723,7 @@ public class SQLBuilder10Test extends TestBase {
         // This test verifies that the active StringBuilder counter works
         // In practice, creating too many builders without calling sql() would log warnings
 
-        List<SQLBuilder> builders = new ArrayList<>();
+        List<SqlBuilder> builders = new ArrayList<>();
 
         // Create multiple builders without closing them
         for (int i = 0; i < 10; i++) {
@@ -1725,7 +1731,7 @@ public class SQLBuilder10Test extends TestBase {
         }
 
         // Clean up
-        for (SQLBuilder builder : builders) {
+        for (SqlBuilder builder : builders) {
             builder.toSql();
         }
     }
@@ -1743,13 +1749,13 @@ public class SQLBuilder10Test extends TestBase {
     }
 
     /**
-     * Regression test for ClassCastException bug in SQLBuilder.appendCondition().
+     * Regression test for ClassCastException bug in SqlBuilder.appendCondition().
      * Where and Having extend Clause (not Cell), so casting them to Cell would throw ClassCastException.
      * This test verifies that Where/Having conditions are correctly handled when nested inside a Junction.
      */
     @Test
     public void testWhereAndHavingNestedInJunction() {
-        // Where nested inside an And junction - this triggers SQLBuilder.appendCondition() with a Where instance
+        // Where nested inside an And junction - this triggers SqlBuilder.appendCondition() with a Where instance
         Where where = Filters.where("age > 18");
         Having having = Filters.having("COUNT(*) > 5");
 
