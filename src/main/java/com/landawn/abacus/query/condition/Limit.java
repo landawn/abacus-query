@@ -18,6 +18,7 @@ import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.List;
 
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -238,8 +239,8 @@ public class Limit extends Clause {
      * @return an empty immutable list as LIMIT has no parameters
      */
     @Override
-    public List<Object> getParameters() {
-        return N.emptyList();
+    public ImmutableList<Object> getParameters() {
+        return ImmutableList.empty();
     }
 
     /**

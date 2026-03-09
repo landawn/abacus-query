@@ -437,7 +437,7 @@ public class CriteriaTest extends TestBase {
         Assertions.assertTrue(result.contains("first_name = 'John'"));
         Assertions.assertTrue(result.contains("last_name"));
 
-        String sql = NSC.selectFrom(Account.class).where(Filters.eq("firstName", "John")).orderBy("lastName").toSql();
+        String sql = NSC.selectFrom(Account.class).where(Filters.eq("firstName", "John")).orderBy("lastName").build().sql();
         Assertions.assertTrue(sql.contains("first_name"));
         Assertions.assertTrue(sql.contains("last_name"));
     }

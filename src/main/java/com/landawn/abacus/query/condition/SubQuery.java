@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.N;
@@ -423,8 +424,8 @@ public class SubQuery extends LogicalCondition {
      * @return an immutable list of parameter values, or an empty immutable list if no condition or raw SQL subquery
      */
     @Override
-    public List<Object> getParameters() {
-        return condition == null ? N.emptyList() : condition.getParameters();
+    public ImmutableList<Object> getParameters() {
+        return condition == null ? ImmutableList.empty() : condition.getParameters();
     }
 
     /**

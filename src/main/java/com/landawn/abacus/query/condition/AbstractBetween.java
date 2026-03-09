@@ -109,7 +109,7 @@ public abstract class AbstractBetween extends LogicalCondition {
      * @return an immutable list containing [minValue, maxValue] or their parameters if they are Conditions
      */
     @Override
-    public List<Object> getParameters() {
+    public ImmutableList<Object> getParameters() {
         final List<Object> parameters = new ArrayList<>();
 
         if (minValue instanceof Condition) {

@@ -217,7 +217,7 @@ public class Junction extends LogicalCondition {
      * @return an immutable list containing all parameters from all conditions
      */
     @Override
-    public List<Object> getParameters() {
+    public ImmutableList<Object> getParameters() {
         final List<Object> parameters = new ArrayList<>();
 
         for (final Condition condition : conditions) {

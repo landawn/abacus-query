@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
@@ -332,8 +333,8 @@ public class Join extends AbstractCondition {
      * @return an immutable list of parameters from the condition, or an empty immutable list if no condition
      */
     @Override
-    public List<Object> getParameters() {
-        return (condition == null) ? N.emptyList() : condition.getParameters();
+    public ImmutableList<Object> getParameters() {
+        return (condition == null) ? ImmutableList.empty() : condition.getParameters();
     }
 
     /**

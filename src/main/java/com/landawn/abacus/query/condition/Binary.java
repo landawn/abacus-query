@@ -156,7 +156,7 @@ public class Binary extends LogicalCondition {
      * @return an immutable list of parameter values
      */
     @Override
-    public List<Object> getParameters() {
+    public ImmutableList<Object> getParameters() {
         if (propValue instanceof Condition) {
             return ((Condition) propValue).getParameters();
         } else {

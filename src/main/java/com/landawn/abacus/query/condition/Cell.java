@@ -16,6 +16,7 @@ package com.landawn.abacus.query.condition;
 
 import java.util.List;
 
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -109,8 +110,8 @@ public class Cell extends AbstractCondition {
      * @return an immutable list of parameters from the wrapped condition, or an empty immutable list if no condition is set
      */
     @Override
-    public List<Object> getParameters() {
-        return (condition == null) ? N.emptyList() : condition.getParameters();
+    public ImmutableList<Object> getParameters() {
+        return (condition == null) ? ImmutableList.empty() : condition.getParameters();
     }
 
     /**

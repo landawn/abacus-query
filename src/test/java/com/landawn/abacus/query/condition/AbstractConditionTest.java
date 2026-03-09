@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 
@@ -27,8 +28,8 @@ public class AbstractConditionTest extends TestBase {
         }
 
         @Override
-        public List<Object> getParameters() {
-            return value == null ? N.emptyList() : Arrays.asList(value);
+        public ImmutableList<Object> getParameters() {
+            return value == null ? ImmutableList.empty() : ImmutableList.of(value);
         }
 
         @Override
@@ -240,8 +241,8 @@ public class AbstractConditionTest extends TestBase {
         // Test condition with null operator (through default constructor)
         AbstractCondition condition = new AbstractCondition() {
             @Override
-            public List<Object> getParameters() {
-                return N.emptyList();
+            public ImmutableList<Object> getParameters() {
+                return ImmutableList.empty();
             }
 
             @Override

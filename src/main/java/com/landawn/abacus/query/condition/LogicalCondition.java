@@ -88,10 +88,13 @@ public abstract class LogicalCondition extends AbstractCondition {
     /**
      * Creates a new XOR (exclusive OR) condition combining this condition with another.
      * Exactly one of the two conditions must be true for the result to be true.
-     * Implemented as: {@code (this AND NOT other) OR (NOT this AND other)}.
+     *
+     * <p>XOR has no direct SQL equivalent, so it is expanded to its logical definition:
+     * {@code (A AND NOT B) OR (NOT A AND B)}. The return type is {@link Or} because
+     * that outer OR is the top-level operator once the expression is flattened.</p>
      *
      * @param cond the condition to XOR with this condition (must not be null)
-     * @return a new Or condition representing the exclusive-or of both conditions
+     * @return a new {@link Or} condition representing {@code (this AND NOT cond) OR (NOT this AND cond)}
      * @throws IllegalArgumentException if {@code cond} is null
      */
     public Or xor(final Condition cond) {

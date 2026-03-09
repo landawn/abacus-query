@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -136,8 +137,8 @@ public abstract class AbstractInSubQuery extends LogicalCondition {
      * @return an immutable list of parameter values from the subquery
      */
     @Override
-    public List<Object> getParameters() {
-        return subQuery == null ? N.emptyList() : subQuery.getParameters();
+    public ImmutableList<Object> getParameters() {
+        return subQuery == null ? ImmutableList.empty() : subQuery.getParameters();
     }
 
     /**

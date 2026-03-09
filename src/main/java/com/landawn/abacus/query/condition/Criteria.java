@@ -381,7 +381,7 @@ public class Criteria extends AbstractCondition {
      * @return an immutable list of all parameters from all conditions
      */
     @Override
-    public List<Object> getParameters() {
+    public ImmutableList<Object> getParameters() {
         if (conditionList.size() > 0) {
             final List<Object> parameters = new ArrayList<>();
             final Collection<Join> joins = getJoins();
@@ -424,9 +424,10 @@ public class Criteria extends AbstractCondition {
             if (limit != null) {
                 parameters.addAll(limit.getParameters());
             }
+
             return ImmutableList.wrap(parameters);
         } else {
-            return N.emptyList();
+            return ImmutableList.empty();
         }
     }
 
@@ -530,8 +531,8 @@ public class Criteria extends AbstractCondition {
 
     }
 
-    public static final CriteriaBuilder builder() {
-        return new CriteriaBuilder();
+    public static final Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -545,22 +546,22 @@ public class Criteria extends AbstractCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Instead of: Filters.criteria().where(condition)
-     * Criteria c = CriteriaBuilder.where(Filters.equal("status", "active"));
+     * Criteria c = Builder.where(Filters.equal("status", "active"));
      * 
      * // Chain multiple operations
-     * Criteria c = CriteriaBuilder.where("age > 18")
+     * Criteria c = Builder.where("age > 18")
      *     .orderBy("name")
      *     .limit(50);
      * }</pre>
      */
     @Beta
-    public static final class CriteriaBuilder {
+    public static final class Builder {
 
         private String selectModifier = null;
 
         private final List<Condition> conditionList = new ArrayList<>();
 
-        CriteriaBuilder() {
+        Builder() {
             // utility/builder class
         }
 
@@ -578,7 +579,7 @@ public class Criteria extends AbstractCondition {
          * 
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder distinct() {
+        public Builder distinct() {
             selectModifier = SK.DISTINCT;
 
             return this;
@@ -602,7 +603,7 @@ public class Criteria extends AbstractCondition {
          * @param columnNames the columns to apply DISTINCT to
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder distinctBy(final String columnNames) {
+        public Builder distinctBy(final String columnNames) {
             selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCT : SK.DISTINCT + "(" + columnNames + ")";
 
             return this;
@@ -622,7 +623,7 @@ public class Criteria extends AbstractCondition {
          * 
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder distinctRow() {
+        public Builder distinctRow() {
             selectModifier = SK.DISTINCTROW;
 
             return this;
@@ -641,7 +642,7 @@ public class Criteria extends AbstractCondition {
          * @param columnNames the columns to apply DISTINCTROW to
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder distinctRowBy(final String columnNames) {
+        public Builder distinctRowBy(final String columnNames) {
             selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
 
             return this;
@@ -665,7 +666,7 @@ public class Criteria extends AbstractCondition {
          * @param selectModifier the custom SELECT modifier
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder selectModifier(final String selectModifier) {
+        public Builder selectModifier(final String selectModifier) {
             this.selectModifier = selectModifier;
 
             return this;
@@ -687,7 +688,7 @@ public class Criteria extends AbstractCondition {
          * @param joins the JOIN clauses to add
          * @return this Criteria instance for method chaining
          */
-        public final CriteriaBuilder join(final Join... joins) {
+        public final Builder join(final Join... joins) {
             add(joins);
 
             return this;
@@ -708,7 +709,7 @@ public class Criteria extends AbstractCondition {
          * @param joins the collection of JOIN clauses to add
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder join(final Collection<Join> joins) {
+        public Builder join(final Collection<Join> joins) {
             add(joins);
 
             return this;
@@ -729,7 +730,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder join(final String joinEntity) {
+        public Builder join(final String joinEntity) {
             add(new Join(joinEntity));
 
             return this;
@@ -751,7 +752,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder join(final String joinEntity, final Condition cond) {
+        public Builder join(final String joinEntity, final Condition cond) {
             add(new Join(joinEntity, cond));
 
             return this;
@@ -771,7 +772,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder join(final Collection<String> joinEntities, final Condition cond) {
+        public Builder join(final Collection<String> joinEntities, final Condition cond) {
             add(new Join(joinEntities, cond));
 
             return this;
@@ -789,7 +790,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder innerJoin(final String joinEntity) {
+        public Builder innerJoin(final String joinEntity) {
             add(new InnerJoin(joinEntity));
 
             return this;
@@ -807,7 +808,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder innerJoin(final String joinEntity, final Condition cond) {
+        public Builder innerJoin(final String joinEntity, final Condition cond) {
             add(new InnerJoin(joinEntity, cond));
 
             return this;
@@ -825,7 +826,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder innerJoin(final Collection<String> joinEntities, final Condition cond) {
+        public Builder innerJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new InnerJoin(joinEntities, cond));
 
             return this;
@@ -842,7 +843,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder leftJoin(final String joinEntity) {
+        public Builder leftJoin(final String joinEntity) {
             add(new LeftJoin(joinEntity));
 
             return this;
@@ -860,7 +861,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder leftJoin(final String joinEntity, final Condition cond) {
+        public Builder leftJoin(final String joinEntity, final Condition cond) {
             add(new LeftJoin(joinEntity, cond));
 
             return this;
@@ -873,7 +874,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder leftJoin(final Collection<String> joinEntities, final Condition cond) {
+        public Builder leftJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new LeftJoin(joinEntities, cond));
 
             return this;
@@ -890,7 +891,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder rightJoin(final String joinEntity) {
+        public Builder rightJoin(final String joinEntity) {
             add(new RightJoin(joinEntity));
 
             return this;
@@ -908,7 +909,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder rightJoin(final String joinEntity, final Condition cond) {
+        public Builder rightJoin(final String joinEntity, final Condition cond) {
             add(new RightJoin(joinEntity, cond));
 
             return this;
@@ -921,7 +922,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder rightJoin(final Collection<String> joinEntities, final Condition cond) {
+        public Builder rightJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new RightJoin(joinEntities, cond));
 
             return this;
@@ -938,7 +939,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder fullJoin(final String joinEntity) {
+        public Builder fullJoin(final String joinEntity) {
             add(new FullJoin(joinEntity));
 
             return this;
@@ -956,7 +957,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder fullJoin(final String joinEntity, final Condition cond) {
+        public Builder fullJoin(final String joinEntity, final Condition cond) {
             add(new FullJoin(joinEntity, cond));
 
             return this;
@@ -969,7 +970,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder fullJoin(final Collection<String> joinEntities, final Condition cond) {
+        public Builder fullJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new FullJoin(joinEntities, cond));
 
             return this;
@@ -986,7 +987,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder crossJoin(final String joinEntity) {
+        public Builder crossJoin(final String joinEntity) {
             add(new CrossJoin(joinEntity));
 
             return this;
@@ -1004,7 +1005,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder crossJoin(final String joinEntity, final Condition cond) {
+        public Builder crossJoin(final String joinEntity, final Condition cond) {
             add(new CrossJoin(joinEntity, cond));
 
             return this;
@@ -1017,7 +1018,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder crossJoin(final Collection<String> joinEntities, final Condition cond) {
+        public Builder crossJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new CrossJoin(joinEntities, cond));
 
             return this;
@@ -1034,7 +1035,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder naturalJoin(final String joinEntity) {
+        public Builder naturalJoin(final String joinEntity) {
             add(new NaturalJoin(joinEntity));
 
             return this;
@@ -1052,7 +1053,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder naturalJoin(final String joinEntity, final Condition cond) {
+        public Builder naturalJoin(final String joinEntity, final Condition cond) {
             add(new NaturalJoin(joinEntity, cond));
 
             return this;
@@ -1065,7 +1066,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the join condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder naturalJoin(final Collection<String> joinEntities, final Condition cond) {
+        public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new NaturalJoin(joinEntities, cond));
 
             return this;
@@ -1088,7 +1089,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the WHERE condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder where(final Condition cond) {
+        public Builder where(final Condition cond) {
             if (cond == null) {
                 throw new IllegalArgumentException("Condition cannot be null");
             }
@@ -1121,7 +1122,7 @@ public class Criteria extends AbstractCondition {
          * @param condition the WHERE condition as a string
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder where(final String condition) {
+        public Builder where(final String condition) {
             N.checkArgNotEmpty(condition, "condition");
 
             add(new Where(Filters.expr(condition)));
@@ -1142,7 +1143,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the GROUP BY condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder groupBy(final Condition cond) {
+        public Builder groupBy(final Condition cond) {
             if (cond == null) {
                 throw new IllegalArgumentException("Condition cannot be null");
             }
@@ -1173,7 +1174,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the property names to group by
          * @return this Criteria instance for method chaining
          */
-        public final CriteriaBuilder groupBy(final String... propNames) {
+        public final Builder groupBy(final String... propNames) {
             add(new GroupBy(propNames));
 
             return this;
@@ -1194,7 +1195,7 @@ public class Criteria extends AbstractCondition {
          * @param direction the sort direction
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder groupBy(final String propName, final SortDirection direction) {
+        public Builder groupBy(final String propName, final SortDirection direction) {
             add(new GroupBy(propName, direction));
 
             return this;
@@ -1217,7 +1218,7 @@ public class Criteria extends AbstractCondition {
          * @param direction2 the sort direction for the second property
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+        public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
             groupBy(N.asMap(propName, direction, propName2, direction2));
 
             return this;
@@ -1242,7 +1243,7 @@ public class Criteria extends AbstractCondition {
          * @param direction3 the sort direction for the third property
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
+        public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
             groupBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
 
@@ -1265,7 +1266,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the collection of property names to group by
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder groupBy(final Collection<String> propNames) {
+        public Builder groupBy(final Collection<String> propNames) {
             return groupBy(propNames, SortDirection.ASC);
         }
 
@@ -1286,7 +1287,7 @@ public class Criteria extends AbstractCondition {
          * @param direction the sort direction for all properties
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder groupBy(final Collection<String> propNames, final SortDirection direction) {
+        public Builder groupBy(final Collection<String> propNames, final SortDirection direction) {
             add(new GroupBy(propNames, direction));
 
             return this;
@@ -1310,7 +1311,7 @@ public class Criteria extends AbstractCondition {
          * @param orders a map of property names to sort directions
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder groupBy(final Map<String, SortDirection> orders) {
+        public Builder groupBy(final Map<String, SortDirection> orders) {
             add(new GroupBy(orders));
 
             return this;
@@ -1334,7 +1335,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the HAVING condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder having(final Condition cond) {
+        public Builder having(final Condition cond) {
             if (cond == null) {
                 throw new IllegalArgumentException("Condition cannot be null");
             }
@@ -1365,7 +1366,7 @@ public class Criteria extends AbstractCondition {
          * @param condition the HAVING condition as a string
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder having(final String condition) {
+        public Builder having(final String condition) {
             N.checkArgNotEmpty(condition, "condition");
 
             add(new Having(Filters.expr(condition)));
@@ -1388,7 +1389,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the property names to order by ascending
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderByAsc(final String... propNames) {
+        public Builder orderByAsc(final String... propNames) {
             add(Filters.orderByAsc(propNames));
 
             return this;
@@ -1408,7 +1409,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the collection of property names to order by ascending
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderByAsc(final Collection<String> propNames) {
+        public Builder orderByAsc(final Collection<String> propNames) {
             add(Filters.orderByAsc(propNames));
 
             return this;
@@ -1429,7 +1430,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the property names to order by descending
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderByDesc(final String... propNames) {
+        public Builder orderByDesc(final String... propNames) {
             add(Filters.orderByDesc(propNames));
 
             return this;
@@ -1449,7 +1450,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the collection of property names to order by descending
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderByDesc(final Collection<String> propNames) {
+        public Builder orderByDesc(final Collection<String> propNames) {
             add(Filters.orderByDesc(propNames));
 
             return this;
@@ -1469,7 +1470,7 @@ public class Criteria extends AbstractCondition {
          * @param cond the ORDER BY condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderBy(final Condition cond) {
+        public Builder orderBy(final Condition cond) {
             if (cond == null) {
                 throw new IllegalArgumentException("Condition cannot be null");
             }
@@ -1500,7 +1501,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the property names to order by
          * @return this Criteria instance for method chaining
          */
-        public final CriteriaBuilder orderBy(final String... propNames) {
+        public final Builder orderBy(final String... propNames) {
             add(new OrderBy(propNames));
 
             return this;
@@ -1521,7 +1522,7 @@ public class Criteria extends AbstractCondition {
          * @param direction the sort direction
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderBy(final String propName, final SortDirection direction) {
+        public Builder orderBy(final String propName, final SortDirection direction) {
             add(new OrderBy(propName, direction));
 
             return this;
@@ -1544,7 +1545,7 @@ public class Criteria extends AbstractCondition {
          * @param direction2 the sort direction for the second property
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+        public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
             orderBy(N.asMap(propName, direction, propName2, direction2));
 
             return this;
@@ -1569,7 +1570,7 @@ public class Criteria extends AbstractCondition {
          * @param direction3 the sort direction for the third property
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
+        public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
             orderBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
 
@@ -1592,7 +1593,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the collection of property names to order by
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderBy(final Collection<String> propNames) {
+        public Builder orderBy(final Collection<String> propNames) {
             return orderBy(propNames, SortDirection.ASC);
         }
 
@@ -1613,7 +1614,7 @@ public class Criteria extends AbstractCondition {
          * @param direction the sort direction for all properties
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderBy(final Collection<String> propNames, final SortDirection direction) {
+        public Builder orderBy(final Collection<String> propNames, final SortDirection direction) {
             add(new OrderBy(propNames, direction));
 
             return this;
@@ -1637,7 +1638,7 @@ public class Criteria extends AbstractCondition {
          * @param orders a map of property names to sort directions
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder orderBy(final Map<String, SortDirection> orders) {
+        public Builder orderBy(final Map<String, SortDirection> orders) {
             add(new OrderBy(orders));
 
             return this;
@@ -1657,7 +1658,7 @@ public class Criteria extends AbstractCondition {
          * @param condition the LIMIT condition
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder limit(final Limit condition) {
+        public Builder limit(final Limit condition) {
             add(condition);
 
             return this;
@@ -1679,7 +1680,7 @@ public class Criteria extends AbstractCondition {
          * @param count the maximum number of results to return
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder limit(final int count) {
+        public Builder limit(final int count) {
             add(Filters.limit(count));
 
             return this;
@@ -1703,7 +1704,7 @@ public class Criteria extends AbstractCondition {
          * @param offset the number of rows to skip
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder limit(final int count, final int offset) {
+        public Builder limit(final int count, final int offset) {
             add(Filters.limit(count, offset));
 
             return this;
@@ -1726,7 +1727,7 @@ public class Criteria extends AbstractCondition {
          * @param expr the LIMIT expression as a string
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder limit(final String expr) {
+        public Builder limit(final String expr) {
             add(Filters.limit(expr));
 
             return this;
@@ -1748,7 +1749,7 @@ public class Criteria extends AbstractCondition {
          * @param subQuery the subquery to union with
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder union(final SubQuery subQuery) {
+        public Builder union(final SubQuery subQuery) {
             add(new Union(subQuery));
 
             return this;
@@ -1770,7 +1771,7 @@ public class Criteria extends AbstractCondition {
          * @param subQuery the subquery to union with
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder unionAll(final SubQuery subQuery) {
+        public Builder unionAll(final SubQuery subQuery) {
             add(new UnionAll(subQuery));
 
             return this;
@@ -1792,7 +1793,7 @@ public class Criteria extends AbstractCondition {
          * @param subQuery the subquery to intersect with
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder intersect(final SubQuery subQuery) {
+        public Builder intersect(final SubQuery subQuery) {
             add(new Intersect(subQuery));
 
             return this;
@@ -1814,7 +1815,7 @@ public class Criteria extends AbstractCondition {
          * @param subQuery the subquery to except
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder except(final SubQuery subQuery) {
+        public Builder except(final SubQuery subQuery) {
             add(new Except(subQuery));
 
             return this;
@@ -1836,7 +1837,7 @@ public class Criteria extends AbstractCondition {
          * @param subQuery the subquery to minus
          * @return this Criteria instance for method chaining
          */
-        public CriteriaBuilder minus(final SubQuery subQuery) {
+        public Builder minus(final SubQuery subQuery) {
             add(new Minus(subQuery));
 
             return this;
@@ -1956,12 +1957,12 @@ public class Criteria extends AbstractCondition {
         }
 
         //    /**
-        //     * Backward-compatible alias type for {@link CriteriaBuilder}.
+        //     * Backward-compatible alias type for {@link Builder}.
         //     *
         //     * <p>This nested type is retained for source compatibility with existing
-        //     * code that references {@code Filters.CriteriaBuilder.CB} explicitly.</p>
+        //     * code that references {@code Filters.Builder.CB} explicitly.</p>
         //     */
-        //    public static final class CB extends CriteriaBuilder {
+        //    public static final class CB extends Builder {
         //
         //        private CB() {
         //            // utility class.

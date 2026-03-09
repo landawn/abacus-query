@@ -90,7 +90,7 @@ import com.landawn.abacus.util.stream.Stream;
  *   <li>Complex joins, subqueries, and conditions</li>
  * </ul>
  * 
- * <p>The builder must be finalized by calling {@code toSql()} or {@code build()} to generate
+ * <p>The builder must be finalized by calling {@code build()} to generate
  * the SQL string and release resources.</p>
  * 
  * <p><b>Usage Examples:</b></p>
@@ -99,17 +99,17 @@ import com.landawn.abacus.util.stream.Stream;
  * String sql = PSC.select("firstName", "lastName")
  *                 .from("account")
  *                 .where(Filters.equal("id", 1))
- *                 .toSql();
+ *                 .build().sql();
  * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = ?
  * 
  * // INSERT with entity
- * String sql = PSC.insert(account).into("account").toSql();
+ * String sql = PSC.insert(account).into("account").build().sql();
  * 
  * // UPDATE with conditions
  * String sql = PSC.update("account")
  *                 .set("name", "status")
  *                 .where(Filters.equal("id", 1))
- *                 .toSql();
+ *                 .build().sql();
  * }</pre>
  * 
  * <p>The builder supports different naming policies through its subclasses:</p>
@@ -402,7 +402,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
-            logger.error("Too many(" + activeStringBuilderCounter.get() + ") StringBuilder instances are created in SqlBuilder. The method toSql()/build()"
+            logger.error("Too many(" + activeStringBuilderCounter.get() + ") StringBuilder instances are created in SqlBuilder. The method build()"
                     + " must be called to release resources and close SqlBuilder");
         }
 
@@ -863,8 +863,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String insertSql = PSC.insert("firstName", "lastName").into("account").toSql();
-     * String selectIntoSql = PSC.select("firstName").into("account_backup").from("account").toSql();
+     * String insertSql = PSC.insert("firstName", "lastName").into("account").build().sql();
+     * String selectIntoSql = PSC.select("firstName").into("account_backup").from("account").build().sql();
      * }</pre>
      *
      * @param tableName the name of the table to insert into
@@ -1011,7 +1011,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.insert(account).into(Account.class).toSql();
+     * String sql = PSC.insert(account).into(Account.class).build().sql();
      * // Table name derived from Account class based on naming policy
      * }</pre>
      * 
@@ -1031,7 +1031,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.insert(account).into("account_archive", Account.class).toSql();
+     * String sql = PSC.insert(account).into("account_archive", Account.class).build().sql();
      * // Inserts into specified table with Account class mapping
      * }</pre>
      *
@@ -1053,7 +1053,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("name").distinct().from("account").toSql();
+     * String sql = PSC.select("name").distinct().from("account").build().sql();
      * // Output: SELECT DISTINCT name FROM account
      * }</pre>
      * 
@@ -1069,7 +1069,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").selectModifier("TOP 10").from("account").toSql();
+     * String sql = PSC.select("*").selectModifier("TOP 10").from("account").build().sql();
      * // Output: SELECT TOP 10 * FROM account
      * }</pre>
      * 
@@ -1109,7 +1109,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from("users", "orders").toSql();
+     * String sql = PSC.select("*").from("users", "orders").build().sql();
      * // Output: SELECT * FROM users, orders
      * }</pre>
      * 
@@ -1143,7 +1143,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> tables = Arrays.asList("users", "orders");
-     * String sql = PSC.select("*").from(tables).toSql();
+     * String sql = PSC.select("*").from(tables).build().sql();
      * // Output: SELECT * FROM users, orders
      * }</pre>
      * 
@@ -1178,10 +1178,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from("users u").toSql();
+     * String sql = PSC.select("*").from("users u").build().sql();
      * // Output: SELECT * FROM users u
      * 
-     * String sql2 = PSC.select("*").from("(SELECT * FROM users) t").toSql();
+     * String sql2 = PSC.select("*").from("(SELECT * FROM users) t").build().sql();
      * // Output: SELECT * FROM (SELECT * FROM users) t
      * }</pre>
      * 
@@ -1219,7 +1219,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from("users u", User.class).toSql();
+     * String sql = PSC.select("*").from("users u", User.class).build().sql();
      * // Associates the User class for property mapping
      * }</pre>
      * 
@@ -1241,7 +1241,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class).toSql();
+     * String sql = PSC.select("*").from(User.class).build().sql();
      * // Table name derived from User class based on naming policy
      * }</pre>
      * 
@@ -1257,7 +1257,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class, "u").toSql();
+     * String sql = PSC.select("*").from(User.class, "u").build().sql();
      * // Output: SELECT * FROM users u (table name based on naming policy)
      * }</pre>
      * 
@@ -1483,7 +1483,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users u")
      *                 .join("orders o ON u.id = o.user_id")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
@@ -1509,7 +1509,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from(User.class)
      *                 .join(Order.class)
      *                 .on("users.id = orders.user_id")
-     *                 .toSql();
+     *                 .build().sql();
      * }</pre>
      * 
      * @param entityClass the entity class to join
@@ -1528,7 +1528,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from(User.class, "u")
      *                 .join(Order.class, "o")
      *                 .on("u.id = o.user_id")
-     *                 .toSql();
+     *                 .build().sql();
      * }</pre>
      * 
      * @param entityClass the entity class to join
@@ -1559,7 +1559,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users u")
      *                 .innerJoin("orders o ON u.id = o.user_id")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
@@ -1581,7 +1581,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class).innerJoin(Order.class).on("users.id = orders.user_id").toSql();
+     * String sql = PSC.select("*").from(User.class).innerJoin(Order.class).on("users.id = orders.user_id").build().sql();
      * // Output: SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id
      * }</pre>
      *
@@ -1597,7 +1597,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class, "u").innerJoin(Order.class, "o").on("u.id = o.user_id").toSql();
+     * String sql = PSC.select("*").from(User.class, "u").innerJoin(Order.class, "o").on("u.id = o.user_id").build().sql();
      * // Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
@@ -1629,7 +1629,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users u")
      *                 .leftJoin("orders o ON u.id = o.user_id")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
@@ -1651,7 +1651,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class).leftJoin(Order.class).on("users.id = orders.user_id").toSql();
+     * String sql = PSC.select("*").from(User.class).leftJoin(Order.class).on("users.id = orders.user_id").build().sql();
      * // Output: SELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id
      * }</pre>
      *
@@ -1667,7 +1667,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class, "u").leftJoin(Order.class, "o").on("u.id = o.user_id").toSql();
+     * String sql = PSC.select("*").from(User.class, "u").leftJoin(Order.class, "o").on("u.id = o.user_id").build().sql();
      * // Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
@@ -1699,7 +1699,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users u")
      *                 .rightJoin("orders o ON u.id = o.user_id")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
@@ -1721,7 +1721,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class).rightJoin(Order.class).on("users.id = orders.user_id").toSql();
+     * String sql = PSC.select("*").from(User.class).rightJoin(Order.class).on("users.id = orders.user_id").build().sql();
      * // Output: SELECT * FROM users RIGHT JOIN orders ON users.id = orders.user_id
      * }</pre>
      *
@@ -1737,7 +1737,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class, "u").rightJoin(Order.class, "o").on("u.id = o.user_id").toSql();
+     * String sql = PSC.select("*").from(User.class, "u").rightJoin(Order.class, "o").on("u.id = o.user_id").build().sql();
      * // Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
@@ -1769,7 +1769,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users u")
      *                 .fullJoin("orders o ON u.id = o.user_id")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
@@ -1791,7 +1791,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class).fullJoin(Order.class).on("users.id = orders.user_id").toSql();
+     * String sql = PSC.select("*").from(User.class).fullJoin(Order.class).on("users.id = orders.user_id").build().sql();
      * // Output: SELECT * FROM users FULL JOIN orders ON users.id = orders.user_id
      * }</pre>
      *
@@ -1807,7 +1807,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class, "u").fullJoin(Order.class, "o").on("u.id = o.user_id").toSql();
+     * String sql = PSC.select("*").from(User.class, "u").fullJoin(Order.class, "o").on("u.id = o.user_id").build().sql();
      * // Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
@@ -1839,7 +1839,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .crossJoin("orders")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users CROSS JOIN orders
      * }</pre>
      * 
@@ -1861,7 +1861,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class).crossJoin(Order.class).toSql();
+     * String sql = PSC.select("*").from(User.class).crossJoin(Order.class).build().sql();
      * // Output: SELECT * FROM users CROSS JOIN orders
      * }</pre>
      *
@@ -1877,7 +1877,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class, "u").crossJoin(Order.class, "o").toSql();
+     * String sql = PSC.select("*").from(User.class, "u").crossJoin(Order.class, "o").build().sql();
      * // Output: SELECT * FROM users u CROSS JOIN orders o
      * }</pre>
      *
@@ -1909,7 +1909,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .naturalJoin("orders")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users NATURAL JOIN orders
      * }</pre>
      * 
@@ -1931,7 +1931,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class).naturalJoin(Order.class).toSql();
+     * String sql = PSC.select("*").from(User.class).naturalJoin(Order.class).build().sql();
      * // Output: SELECT * FROM users NATURAL JOIN orders
      * }</pre>
      *
@@ -1947,7 +1947,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from(User.class, "u").naturalJoin(Order.class, "o").toSql();
+     * String sql = PSC.select("*").from(User.class, "u").naturalJoin(Order.class, "o").build().sql();
      * // Output: SELECT * FROM users u NATURAL JOIN orders o
      * }</pre>
      *
@@ -1980,7 +1980,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users u")
      *                 .join("orders o")
      *                 .on("u.id = o.user_id")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
@@ -2006,7 +2006,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users u")
      *                 .join("orders o")
      *                 .on(Filters.equal("u.id", "o.user_id"))
-     *                 .toSql();
+     *                 .build().sql();
      * }</pre>
      * 
      * @param cond the join condition
@@ -2029,7 +2029,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .join("orders")
      *                 .using("user_id")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users JOIN orders USING (user_id)
      * }</pre>
      * 
@@ -2066,7 +2066,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .where("age > 18")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users WHERE age > 18
      * }</pre>
      * 
@@ -2095,7 +2095,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .where(Filters.greaterThan("age", 18))
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
      * 
@@ -2123,7 +2123,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("category", "COUNT(*)")
      *                 .from("products")
      *                 .groupBy("category")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT category, COUNT(*) FROM products GROUP BY category
      * }</pre>
      * 
@@ -2150,7 +2150,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("category", "brand", "COUNT(*)")
      *                 .from("products")
      *                 .groupBy("category", "brand")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category, brand
      * }</pre>
      * 
@@ -2183,7 +2183,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("category", "COUNT(*)")
      *                 .from("products")
      *                 .groupBy("category", SortDirection.DESC)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT category, COUNT(*) FROM products GROUP BY category DESC
      * }</pre>
      * 
@@ -2209,7 +2209,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("category", "brand", "COUNT(*)")
      *                 .from("products")
      *                 .groupBy(columns)
-     *                 .toSql();
+     *                 .build().sql();
      * }</pre>
      * 
      * @param propOrColumnNames the collection of columns to group by
@@ -2243,7 +2243,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("category", "brand", "COUNT(*)")
      *                 .from("products")
      *                 .groupBy(columns, SortDirection.DESC)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category DESC, brand DESC
      * }</pre>
      *
@@ -2283,7 +2283,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("category", "brand", "COUNT(*)")
      *                 .from("products")
      *                 .groupBy(orders)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand DESC
      * }</pre>
      * 
@@ -2322,7 +2322,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("products")
      *                 .groupBy("category")
      *                 .having("COUNT(*) > 10")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT category, COUNT(*) as count FROM products GROUP BY category HAVING COUNT(*) > 10
      * }</pre>
      * 
@@ -2350,7 +2350,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("products")
      *                 .groupBy("category")
      *                 .having(Filters.greaterThan("COUNT(*)", 10))
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT category, COUNT(*) as count FROM products GROUP BY category HAVING COUNT(*) > ?
      * }</pre>
      * 
@@ -2376,7 +2376,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderBy("name")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY name
      * }</pre>
      * 
@@ -2403,7 +2403,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderBy("lastName", "firstName")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY last_name, first_name
      * }</pre>
      * 
@@ -2436,7 +2436,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderBy("name", SortDirection.DESC)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY name DESC
      * }</pre>
      * 
@@ -2462,7 +2462,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderBy(columns)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY last_name, first_name
      * }</pre>
      *
@@ -2497,7 +2497,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderBy(columns, SortDirection.DESC)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY last_name DESC, first_name DESC
      * }</pre>
      *
@@ -2538,7 +2538,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderBy(orders)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name DESC
      * }</pre>
      * 
@@ -2577,7 +2577,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderByAsc("name")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY name ASC
      * }</pre>
      * 
@@ -2598,7 +2598,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderByAsc("lastName", "firstName")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name ASC
      * }</pre>
      *
@@ -2620,7 +2620,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderByAsc(columns)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name ASC
      * }</pre>
      *
@@ -2641,7 +2641,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderByDesc("createdDate")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY created_date DESC
      * }</pre>
      * 
@@ -2662,7 +2662,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderByDesc("createdDate", "id")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY created_date DESC, id DESC
      * }</pre>
      *
@@ -2684,7 +2684,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .orderByDesc(columns)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY created_date DESC, id DESC
      * }</pre>
      *
@@ -2704,7 +2704,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .limit(10)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users LIMIT 10
      * }</pre>
      * 
@@ -2729,7 +2729,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .limit(10, 20)  // limit 10, offset 20
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
      * }</pre>
      *
@@ -2761,7 +2761,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .limit(10)
      *                 .offset(20)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
      * }</pre>
      * 
@@ -2786,7 +2786,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .orderBy("id")
      *                 .offsetRows(20)
      *                 .fetchNextRows(10)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
      * 
@@ -2811,7 +2811,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .orderBy("id")
      *                 .offsetRows(0)
      *                 .fetchNextRows(10)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
      * 
@@ -2835,7 +2835,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .orderBy("id")
      *                 .fetchFirstRows(10)
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY
      * }</pre>
      * 
@@ -2865,7 +2865,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .append(Filters.and(Filters.greaterThan("age", 18), Filters.lessThan("age", 65)))
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users WHERE ((age > ?) AND (age < ?))
      * }</pre>
      * 
@@ -3006,7 +3006,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .append(" FOR UPDATE")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users FOR UPDATE
      * }</pre>
      * 
@@ -3030,7 +3030,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .appendIf(includeAgeFilter, Filters.greaterThan("age", 18))
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
      * 
@@ -3058,7 +3058,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .where(Filters.equal("id", 1))
      *                 .appendIf(includeForUpdate, " FOR UPDATE")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
      * }</pre>
      *
@@ -3085,7 +3085,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .appendIf(complexFilter, builder -> 
      *                     builder.where(Filters.greaterThan("age", 18))
      *                            .orderBy("name"))
-     *                 .toSql();
+     *                 .build().sql();
      * }</pre>
      * 
      * @param condition if true, the consumer will be executed
@@ -3112,7 +3112,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .appendIfOrElse(isActive, 
      *                     Filters.equal("status", "active"),
      *                     Filters.equal("status", "inactive"))
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users WHERE status = ?
      * }</pre>
      * 
@@ -3144,7 +3144,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .appendIfOrElse(sortAscending,
      *                     " ORDER BY name ASC",
      *                     " ORDER BY name DESC")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users ORDER BY name ASC
      * }</pre>
      *
@@ -3171,7 +3171,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * SqlBuilder query1 = PSC.select("id", "name").from("users");
      * SqlBuilder query2 = PSC.select("id", "name").from("customers");
-     * String sql = query1.union(query2).toSql();
+     * String sql = query1.union(query2).build().sql();
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      * 
@@ -3182,11 +3182,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply UNION with the same SqlBuilder instance");
 
-        final String sql = sqlBuilder.toSql();
+        final SP sp = sqlBuilder.build();
 
-        if (N.notEmpty(sqlBuilder.parameters())) {
-            _parameters.addAll(sqlBuilder.parameters());
+        if (N.notEmpty(sp.parameters())) {
+            _parameters.addAll(sp.parameters());
         }
+
+        final String sql = sp.sql();
 
         return union(sql);
     }
@@ -3200,7 +3202,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("id", "name")
      *                 .from("users")
      *                 .union("SELECT id, name FROM customers")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      *
@@ -3220,7 +3222,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .union("id", "name")
      *                 .from("customers")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      * 
@@ -3262,7 +3264,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .union(columns)
      *                 .from("customers")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      *
@@ -3291,7 +3293,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * SqlBuilder query1 = PSC.select("id", "name").from("users");
      * SqlBuilder query2 = PSC.select("id", "name").from("customers");
-     * String sql = query1.unionAll(query2).toSql();
+     * String sql = query1.unionAll(query2).build().sql();
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      * 
@@ -3302,11 +3304,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply UNION ALL with the same SqlBuilder instance");
 
-        final String sql = sqlBuilder.toSql();
+        final SP sp = sqlBuilder.build();
 
-        if (N.notEmpty(sqlBuilder.parameters())) {
-            _parameters.addAll(sqlBuilder.parameters());
+        if (N.notEmpty(sp.parameters())) {
+            _parameters.addAll(sp.parameters());
         }
+
+        final String sql = sp.sql();
 
         return unionAll(sql);
     }
@@ -3320,7 +3324,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("id", "name")
      *                 .from("users")
      *                 .unionAll("SELECT id, name FROM customers")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
@@ -3341,7 +3345,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .unionAll("id", "name")
      *                 .from("customers")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
@@ -3383,7 +3387,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .unionAll(columns)
      *                 .from("customers")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
@@ -3412,7 +3416,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * SqlBuilder query1 = PSC.select("id", "name").from("users");
      * SqlBuilder query2 = PSC.select("id", "name").from("customers");
-     * String sql = query1.intersect(query2).toSql();
+     * String sql = query1.intersect(query2).build().sql();
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM customers
      * }</pre>
      * 
@@ -3423,11 +3427,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply INTERSECT with the same SqlBuilder instance");
 
-        final String sql = sqlBuilder.toSql();
+        final SP sp = sqlBuilder.build();
 
-        if (N.notEmpty(sqlBuilder.parameters())) {
-            _parameters.addAll(sqlBuilder.parameters());
+        if (N.notEmpty(sp.parameters())) {
+            _parameters.addAll(sp.parameters());
         }
+
+        final String sql = sp.sql();
 
         return intersect(sql);
     }
@@ -3441,7 +3447,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("id", "name")
      *                 .from("users")
      *                 .intersect("SELECT id, name FROM premium_users")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
      * }</pre>
      *
@@ -3462,7 +3468,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .intersect("id", "name")
      *                 .from("premium_users")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
      * }</pre>
      *
@@ -3504,7 +3510,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .intersect(columns)
      *                 .from("premium_users")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
      * }</pre>
      *
@@ -3533,7 +3539,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * SqlBuilder query1 = PSC.select("id", "name").from("users");
      * SqlBuilder query2 = PSC.select("id", "name").from("customers");
-     * String sql = query1.except(query2).toSql();
+     * String sql = query1.except(query2).build().sql();
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM customers
      * }</pre>
      * 
@@ -3544,11 +3550,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply EXCEPT with the same SqlBuilder instance");
 
-        final String sql = sqlBuilder.toSql();
+        final SP sp = sqlBuilder.build();
 
-        if (N.notEmpty(sqlBuilder.parameters())) {
-            _parameters.addAll(sqlBuilder.parameters());
+        if (N.notEmpty(sp.parameters())) {
+            _parameters.addAll(sp.parameters());
         }
+
+        final String sql = sp.sql();
 
         return except(sql);
     }
@@ -3562,7 +3570,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("id", "name")
      *                 .from("users")
      *                 .except("SELECT id, name FROM inactive_users")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
      * }</pre>
      *
@@ -3583,7 +3591,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .except("id", "name")
      *                 .from("inactive_users")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
      * }</pre>
      *
@@ -3625,7 +3633,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .except(columns)
      *                 .from("inactive_users")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
      * }</pre>
      *
@@ -3655,7 +3663,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * SqlBuilder query1 = PSC.select("id", "name").from("users");
      * SqlBuilder query2 = PSC.select("id", "name").from("inactive_users");
-     * String sql = query1.minus(query2).toSql();
+     * String sql = query1.minus(query2).build().sql();
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
@@ -3666,11 +3674,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply MINUS with the same SqlBuilder instance");
 
-        final String sql = sqlBuilder.toSql();
+        final SP sp = sqlBuilder.build();
 
-        if (N.notEmpty(sqlBuilder.parameters())) {
-            _parameters.addAll(sqlBuilder.parameters());
+        if (N.notEmpty(sp.parameters())) {
+            _parameters.addAll(sp.parameters());
         }
+
+        final String sql = sp.sql();
 
         return minus(sql);
     }
@@ -3684,7 +3694,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("id", "name")
      *                 .from("users")
      *                 .minus("SELECT id, name FROM inactive_users")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
@@ -3705,7 +3715,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .minus("id", "name")
      *                 .from("inactive_users")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
@@ -3747,7 +3757,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .minus(columns)
      *                 .from("inactive_users")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
@@ -3778,7 +3788,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .where(Filters.equal("id", 1))
      *                 .forUpdate()
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
      * }</pre>
      * 
@@ -3798,7 +3808,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.update("users")
      *                 .set("name = 'John'")
      *                 .where(Filters.equal("id", 1))
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: UPDATE users SET name = 'John' WHERE id = ?
      * }</pre>
      * 
@@ -3817,7 +3827,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.update("users")
      *                 .set("firstName", "lastName", "email")
      *                 .where(Filters.equal("id", 1))
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?
      * }</pre>
      * 
@@ -3839,7 +3849,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.update("users")
      *                 .set(columns)
      *                 .where("id = ?")
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?
      * }</pre>
      *
@@ -3926,7 +3936,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.update("users")
      *                 .set(values)
      *                 .where(Filters.equal("id", 1))
-     *                 .toSql();
+     *                 .build().sql();
      * // Output: UPDATE users SET first_name = ?, last_name = ? WHERE id = ?
      * }</pre>
      * 
@@ -4023,7 +4033,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.update("account")
      *                 .set(accountEntity)
      *                 .where(Filters.equal("id", 1))
-     *                 .toSql();
+     *                 .build().sql();
      * }</pre>
      * 
      * @param entity the entity object containing properties to set
@@ -4043,7 +4053,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.update("account")
      *                 .set(accountEntity, excluded)
      *                 .where(Filters.equal("id", 1))
-     *                 .toSql();
+     *                 .build().sql();
      * }</pre>
      * 
      * @param entity the entity object containing properties to set
@@ -4084,7 +4094,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.update("account")
      *                 .set(Account.class)
      *                 .where(Filters.equal("id", 1))
-     *                 .toSql();
+     *                 .build().sql();
      * }</pre>
      *
      * @param entityClass the entity class to get properties from
@@ -4106,7 +4116,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.update("account")
      *                 .set(Account.class, excluded)
      *                 .where(Filters.equal("id", 1))
-     *                 .toSql();
+     *                 .build().sql();
      * }</pre>
      *
      * @param entityClass the entity class to get properties from
@@ -4135,24 +4145,37 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Generates the final SQL query string and releases resources.
-     * This method should be called only once. After calling this method, the SqlBuilder instance cannot be used again.
+     * Generates the final SQL string and its parameters as an {@link SP} pair, then releases resources.
+     * This is the canonical method for obtaining the SQL output from a builder.
+     * The builder cannot be reused after calling this method.
+     *
+     * <p>To get just the SQL string, call {@code build().sql()}. To get the parameter values,
+     * call {@code build().parameters()}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Get SQL and parameters together
+     * SP sqlPair = PSC.select("*")
+     *                 .from("account")
+     *                 .where(Filters.equal("status", "ACTIVE"))
+     *                 .build();
+     * // sqlPair.sql() returns: "SELECT * FROM account WHERE status = ?"
+     * // sqlPair.parameters() returns: ["ACTIVE"]
+     *
+     * // Get just the SQL string
      * String sql = PSC.select("*")
      *                 .from("users")
      *                 .where(Filters.equal("status", "ACTIVE"))
-     *                 .toSql();
-     * // sql contains: "SELECT * FROM users WHERE status = ?"
+     *                 .build()
+     *                 .sql();
      * }</pre>
      *
-     * @return the generated SQL query string
-     * @throws IllegalStateException if this method is called after the builder has already been closed by a prior call to {@code toSql()} or {@code build()}
+     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
+     * @throws IllegalStateException if this method is called after the builder has already been closed by a prior call to {@code build()}
      */
-    public String toSql() {
+    public SP build() {
         if (_sb == null) {
-            throw new IllegalStateException("SqlBuilder is closed and cannot be reused after toSql()/build() was called");
+            throw new IllegalStateException("SqlBuilder is closed and cannot be reused after build() was called");
         }
 
         String sql = null;
@@ -4167,33 +4190,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             activeStringBuilderCounter.decrementAndGet();
         }
-
-        //    if (logger.isDebugEnabled()) {
-        //        logger.debug(sql);
-        //    }
-
-        return sql;
-    }
-
-    /**
-     * Generates both the SQL string and its parameters as a pair.
-     * This method finalizes the SQL builder and releases resources. The builder cannot be used after calling this method.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SP sqlPair = PSC.select("*")
-     *                 .from("account")
-     *                 .where(Filters.equal("status", "ACTIVE"))
-     *                 .build();
-     * // sqlPair.sql() returns: "SELECT * FROM account WHERE status = ?"
-     * // sqlPair.parameters() returns: ["ACTIVE"]
-     * }</pre>
-     *
-     * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
-     * @throws IllegalStateException if this method is called after the builder has already been closed by a prior call to {@code toSql()} or {@code build()}
-     */
-    public SP build() {
-        final String sql = toSql();
 
         return new SP(sql, ImmutableList.wrap(_parameters));
     }
@@ -4327,7 +4323,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      */
     public void println() {
-        N.println(toSql());
+        N.println(build().sql());
     }
 
     //    4. toString() Finalizes the Builder (Design Issue)
@@ -4336,7 +4332,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //     logic (generateSql()), making it destructive. Calling toString() for
     //    debugging can alter builder state.
     //    - Suggestion: Make toString() read-only (return a preview without
-    //    mutating state), or rename the finalizing method to build() / toSql()
+    //    mutating state), or rename the finalizing method to build()
     //    and have toString() delegate without side effects.
     //    /**
     //     * Returns the generated SQL string representation of this builder.
@@ -4346,7 +4342,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //     */
     //    @Override
     //    public String toString() {
-    //        return toSql();
+    //        return build().sql();
     //    }
 
     //    /**
@@ -5450,7 +5446,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * SqlBuilder.resetHandlerForNamedParameter();
      * 
      * // Named SQL will now use :paramName format again
-     * String sql = NSC.select("name").from("users").where(Filters.equal("id", 1)).toSql();
+     * String sql = NSC.select("name").from("users").where(Filters.equal("id", 1)).build().sql();
      * // Output: SELECT name FROM users WHERE id = :id
      * }</pre>
      */

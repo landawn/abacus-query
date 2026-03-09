@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
-import com.landawn.abacus.query.condition.Criteria.CriteriaBuilder;
+import com.landawn.abacus.query.condition.Criteria.Builder;
 
 @Tag("2025")
 public class Criteria2025Test extends TestBase {
@@ -181,13 +181,13 @@ public class Criteria2025Test extends TestBase {
 
     @Test
     public void testJoinVarargsNullArray() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.join((Join[]) null));
     }
 
     @Test
     public void testJoinCollectionNull() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.join((java.util.Collection<Join>) null));
     }
 
@@ -640,50 +640,50 @@ public class Criteria2025Test extends TestBase {
 
     @Test
     public void testWhereRejectsMismatchedClauseCondition() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.orderBy("name")));
     }
 
     @Test
     public void testWhereRejectsJoinCondition() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.where(new Join("orders", Filters.on("users.id", "orders.user_id"))));
     }
 
     @Test
     public void testWhereRejectsOnCondition() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.on("users.id", "orders.user_id")));
     }
 
     @Test
     public void testWhereRejectsNestedCriteriaCondition() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         Criteria nested = Criteria.builder().where(Filters.equal("status", "active")).build();
         assertThrows(IllegalArgumentException.class, () -> builder.where(nested));
     }
 
     @Test
     public void testGroupByRejectsMismatchedClauseCondition() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.groupBy(Filters.where(Filters.equal("status", "active"))));
     }
 
     @Test
     public void testHavingRejectsMismatchedClauseCondition() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.having(Filters.groupBy("department")));
     }
 
     @Test
     public void testOrderByRejectsMismatchedClauseCondition() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.orderBy(Filters.where(Filters.equal("status", "active"))));
     }
 
     @Test
     public void testOrderByRejectsUsingCondition() {
-        CriteriaBuilder builder = Criteria.builder();
+        Builder builder = Criteria.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.orderBy(Filters.using("id")));
     }
 

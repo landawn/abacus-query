@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.QueryUtil;
@@ -1567,8 +1568,8 @@ public class Expression extends LogicalCondition {
      * @return an empty immutable list
      */
     @Override
-    public List<Object> getParameters() {
-        return N.emptyList();
+    public ImmutableList<Object> getParameters() {
+        return ImmutableList.empty();
     }
 
     /**

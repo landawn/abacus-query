@@ -93,9 +93,9 @@ public abstract class AbstractIn extends LogicalCondition {
      * @return an immutable list of parameter values, or an empty immutable list if no values are set
      */
     @Override
-    public List<Object> getParameters() {
+    public ImmutableList<Object> getParameters() {
         if (values == null) {
-            return N.emptyList();
+            return ImmutableList.empty();
         }
 
         final List<Object> parameters = new ArrayList<>(values.size());
