@@ -31,31 +31,14 @@ import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
- * Represents a complete query criteria that can contain multiple SQL clauses.
- * This class serves as a builder and container for constructing complex SQL queries
- * by combining various clauses like WHERE, JOIN, GROUP BY, HAVING, ORDER BY, LIMIT, etc.
- * 
- * <p>Criteria provides a fluent API for building queries in a type-safe manner.
- * It maintains the proper SQL clause ordering and ensures that clauses are
- * combined correctly. Each method returns the Criteria instance for method chaining.</p>
- * 
- * <p>Supported clauses include:</p>
- * <ul>
- *   <li>{@code Join} - Various JOIN operations (INNER, LEFT, RIGHT, FULL, etc.)</li>
- *   <li>{@code Where} - Filter rows based on conditions</li>
- *   <li>{@code GroupBy} - Group rows by columns</li>
- *   <li>{@code Having} - Filter grouped results</li>
- *   <li>{@code OrderBy} - Sort results</li>
- *   <li>{@code Limit} - Limit result count</li>
- *   <li>{@code Union/UnionAll/Intersect/Except} - Set operations between queries</li>
- * </ul>
- * 
- * <p>Each clause is independent. A clause should not be included in another clause.
- * If there are multiple clauses, they should be composed in one {@code Criteria} condition.</p>
- * 
- * <p><b>Usage Examples:</b></p>
+ * An immutable container representing a complete SQL query structure composed of multiple clauses
+ * ({@link Join}, {@link Where}, {@link GroupBy}, {@link Having}, {@link OrderBy}, {@link Limit},
+ * and set operations like {@link Union}/{@link Intersect}/{@link Except}).
+ *
+ * <p>Instances are created via {@link #builder()}. Each clause is independent and should not
+ * be nested inside another clause; compose multiple clauses within a single {@code Criteria}.</p>
+ *
  * <pre>{@code
- * // Build a complex query with multiple clauses
  * Criteria criteria = Criteria.builder()
  *     .join("orders", new On("users.id", "orders.user_id"))
  *     .where(Filters.and(
@@ -67,89 +50,59 @@ import com.landawn.abacus.util.Strings;
  *     .orderBy("COUNT(*)", SortDirection.DESC)
  *     .limit(10)
  *     .build();
- *
- * // Using distinct
- * Criteria distinctUsers = Criteria.builder()
- *     .distinct()
- *     .where(Filters.equal("active", true))
- *     .orderBy("name")
- *     .build();
  * }</pre>
- * 
+ *
  * @see Condition
  * @see Filters
  * @see Clause
  */
 public class Criteria extends AbstractCondition {
 
-    private static final Set<Operator> setOperators = N.newHashSet();
+    private static final Set<Operator> SET_OPERATORS = N.newHashSet();
 
     static {
-        setOperators.add(Operator.UNION_ALL);
-        setOperators.add(Operator.UNION);
-        setOperators.add(Operator.INTERSECT);
-        setOperators.add(Operator.EXCEPT);
-        setOperators.add(Operator.MINUS);
+        SET_OPERATORS.add(Operator.UNION_ALL);
+        SET_OPERATORS.add(Operator.UNION);
+        SET_OPERATORS.add(Operator.INTERSECT);
+        SET_OPERATORS.add(Operator.EXCEPT);
+        SET_OPERATORS.add(Operator.MINUS);
     }
 
     private String selectModifier = null;
 
-    private final List<Condition> conditionList;
+    private final List<Condition> conditions;
 
     /**
      * Creates a new Criteria instance with the specified select modifier and condition list.
      *
      * @param selectModifier the SELECT modifier (e.g., DISTINCT), or {@code null} for none
-     * @param conditionList the list of conditions representing the query clauses
+     * @param conditions the list of conditions representing the query clauses
      */
-    Criteria(String selectModifier, List<Condition> conditionList) {
+    Criteria(String selectModifier, List<Condition> conditions) {
         super(Operator.EMPTY);
         this.selectModifier = selectModifier;
-        this.conditionList = conditionList;
+        this.conditions = conditions;
     }
 
     /**
-     * Gets the SELECT modifier (e.g., DISTINCT, DISTINCTROW).
-     * The modifier appears before the column list in a SELECT statement.
+     * Returns the SELECT modifier (e.g., {@code DISTINCT}, {@code DISTINCTROW}),
+     * or {@code null} if none was set.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = Criteria.builder().distinct().build();
-     * String modifier = criteria.getSelectModifier();   // Returns "DISTINCT"
-     * }</pre>
-     *
-     * @return the SELECT modifier, or null if not set
+     * @return the SELECT modifier, or {@code null} if not set
      */
     public String getSelectModifier() {
         return selectModifier;
     }
 
     /**
-     * Gets all JOIN clauses in this criteria.
-     * Returns all types of joins (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) in the order they were added.
+     * Returns all JOIN clauses (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) in the order they were added.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = Criteria.builder()
-     *     .join("orders", new On("users.id", "orders.user_id"))
-     *     .join("payments", new On("orders.id", "payments.order_id"))
-     *     .build();
-     *
-     * List<Join> joins = criteria.getJoins();
-     * // Returns a list of 2 Join conditions
-     * System.out.println(joins.size());   // 2
-     *
-     * Criteria noJoins = Criteria.builder().where(Filters.equal("status", "active")).build();
-     * List<Join> empty = noJoins.getJoins();
-     * // Returns an empty list
-     * }</pre>
-     *
-     * @return an unmodifiable list of Join conditions, empty list if none exist
+     * @return an unmodifiable list of {@link Join} conditions; empty if none exist
      */
     public List<Join> getJoins() {
         final List<Join> joins = new ArrayList<>();
 
-        for (final Condition cond : conditionList) {
+        for (final Condition cond : this.conditions) {
             if (cond instanceof Join) {
                 joins.add((Join) cond);
             }
@@ -159,104 +112,42 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Gets the WHERE clause from this criteria.
-     * Returns null if no WHERE clause has been set.
+     * Returns the WHERE clause, or {@code null} if none was set.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = Criteria.builder()
-     *     .where(Filters.equal("status", "active"))
-     *     .build();
-     *
-     * Clause whereClause = criteria.getWhere();
-     * // Returns the Where condition wrapping: status = 'active'
-     *
-     * Criteria noWhere = Criteria.builder().orderBy("name").build();
-     * Clause result = noWhere.getWhere();   // Returns null
-     * }</pre>
-     *
-     * @return the Where condition, or null if not set
+     * @return the {@link Where} clause, or {@code null}
      */
     public Clause getWhere() {
         return (Clause) find(Operator.WHERE);
     }
 
     /**
-     * Gets the GROUP BY clause from this criteria.
-     * Returns null if no GROUP BY clause has been set.
+     * Returns the GROUP BY clause, or {@code null} if none was set.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = Criteria.builder()
-     *     .groupBy("department", "location")
-     *     .build();
-     *
-     * Clause groupByClause = criteria.getGroupBy();
-     * // Returns the GroupBy condition for: department, location
-     *
-     * Criteria noGroupBy = Criteria.builder().where(Filters.equal("active", true)).build();
-     * Clause result = noGroupBy.getGroupBy();   // Returns null
-     * }</pre>
-     *
-     * @return the GroupBy condition, or null if not set
+     * @return the {@link GroupBy} clause, or {@code null}
      */
     public Clause getGroupBy() {
         return (Clause) find(Operator.GROUP_BY);
     }
 
     /**
-     * Gets the HAVING clause from this criteria.
-     * Returns null if no HAVING clause has been set.
+     * Returns the HAVING clause, or {@code null} if none was set.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = Criteria.builder()
-     *     .groupBy("department")
-     *     .having("COUNT(*) > 5")
-     *     .build();
-     *
-     * Clause havingClause = criteria.getHaving();
-     * // Returns the Having condition wrapping: COUNT(*) > 5
-     *
-     * Criteria noHaving = Criteria.builder().groupBy("category").build();
-     * Clause result = noHaving.getHaving();   // Returns null
-     * }</pre>
-     *
-     * @return the Having condition, or null if not set
+     * @return the {@link Having} clause, or {@code null}
      */
     public Clause getHaving() {
         return (Clause) find(Operator.HAVING);
     }
 
     /**
-     * Gets all set operations (UNION, UNION ALL, INTERSECT, EXCEPT, MINUS).
-     * These are set operations that combine results from multiple queries.
+     * Returns all set operations (UNION, UNION ALL, INTERSECT, EXCEPT, MINUS) in the order they were added.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users");
-     * SubQuery tempUsers = Filters.subQuery("SELECT * FROM temp_users");
-     * Criteria criteria = Criteria.builder()
-     *     .where(Filters.equal("active", true))
-     *     .union(archivedUsers)
-     *     .unionAll(tempUsers)
-     *     .build();
-     *
-     * List<Clause> setOperations = criteria.getSetOperations();
-     * // Returns an unmodifiable list of 2 set operation conditions (UNION and UNION ALL)
-     *
-     * Criteria noSetOps = Criteria.builder().where(Filters.equal("status", "active")).build();
-     * List<Clause> empty = noSetOps.getSetOperations();
-     * // Returns an empty list
-     * }</pre>
-     *
-     * @return an unmodifiable list of set operation conditions, empty if none exist
+     * @return an unmodifiable list of set operation clauses; empty if none exist
      */
     public List<Clause> getSetOperations() {
         List<Clause> result = null;
 
-        for (final Condition cond : conditionList) {
-            if (setOperators.contains(cond.operator())) {
+        for (final Condition cond : this.conditions) {
+            if (SET_OPERATORS.contains(cond.operator())) {
                 if (result == null) {
                     result = new ArrayList<>();
                 }
@@ -269,125 +160,59 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Gets the ORDER BY clause from this criteria.
-     * Returns null if no ORDER BY clause has been set.
+     * Returns the ORDER BY clause, or {@code null} if none was set.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = Criteria.builder()
-     *     .orderBy("name", SortDirection.ASC)
-     *     .build();
-     *
-     * Clause orderByClause = criteria.getOrderBy();
-     * // Returns the OrderBy condition for: name ASC
-     *
-     * Criteria noOrderBy = Criteria.builder().where(Filters.equal("active", true)).build();
-     * Clause result = noOrderBy.getOrderBy();   // Returns null
-     * }</pre>
-     *
-     * @return the OrderBy condition, or null if not set
+     * @return the {@link OrderBy} clause, or {@code null}
      */
     public Clause getOrderBy() {
         return (Clause) find(Operator.ORDER_BY);
     }
 
     /**
-     * Gets the LIMIT clause from this criteria.
-     * Returns null if no LIMIT clause has been set.
+     * Returns the LIMIT clause, or {@code null} if none was set.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = Criteria.builder()
-     *     .where(Filters.equal("active", true))
-     *     .limit(50)
-     *     .build();
-     *
-     * Limit limitClause = criteria.getLimit();
-     * // Returns the Limit condition for: LIMIT 50
-     *
-     * Criteria noLimit = Criteria.builder().where(Filters.equal("status", "active")).build();
-     * Limit result = noLimit.getLimit();   // Returns null
-     * }</pre>
-     *
-     * @return the Limit condition, or null if not set
+     * @return the {@link Limit} clause, or {@code null}
      */
     public Limit getLimit() {
         return (Limit) find(Operator.LIMIT);
     }
 
     /**
-     * Gets all conditions in this criteria.
-     * Returns all conditions in the order they were added, including all clauses.
+     * Returns all conditions (clauses) in this criteria in the order they were added.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = Criteria.builder()
-     *     .where(Filters.equal("status", "active"))
-     *     .orderBy("name")
-     *     .limit(10)
-     *     .build();
-     *
-     * List<Condition> conditions = criteria.getConditions();
-     * // Returns a list of 3 conditions: Where, OrderBy, Limit
-     * System.out.println(conditions.size());   // 3
-     *
-     * Criteria empty = Criteria.builder().build();
-     * List<Condition> none = empty.getConditions();
-     * // Returns an empty list
-     * }</pre>
-     *
-     * @return an unmodifiable view of all conditions
+     * @return an unmodifiable list of all conditions
      */
     public List<Condition> getConditions() {
-        return Collections.unmodifiableList(conditionList);
-    }
-
-    /**
-     * Finds all conditions with the specified operator.
-     * Useful for retrieving all conditions of a specific type.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = Criteria.builder()
-     *     .join("orders", new On("users.id", "orders.user_id"))
-     *     .join("payments", new On("orders.id", "payments.order_id"))
-     *     .where(Filters.equal("status", "active"))
-     *     .build();
-     *
-     * List<Condition> joins = criteria.findConditions(Operator.JOIN);
-     * // Returns a list of 2 Join conditions
-     *
-     * List<Condition> wheres = criteria.findConditions(Operator.WHERE);
-     * // Returns a list of 1 Where condition
-     *
-     * List<Condition> limits = criteria.findConditions(Operator.LIMIT);
-     * // Returns an empty list (no LIMIT clause set)
-     * }</pre>
-     *
-     * @param operator the operator to filter by (must not be null)
-     * @return an unmodifiable list of conditions with the specified operator, empty list if none found
-     */
-    public List<Condition> findConditions(final Operator operator) {
-        final List<Condition> conditions = new ArrayList<>();
-
-        for (final Condition cond : conditionList) {
-            if (cond.operator() == operator) {
-                conditions.add(cond);
-            }
-        }
-
         return Collections.unmodifiableList(conditions);
     }
 
     /**
-     * Gets all parameters from all conditions in the proper order.
-     * The order follows SQL clause precedence: JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
+     * Returns all conditions whose {@link Condition#operator()} matches the given operator.
      *
-     * @return an immutable list of all parameters from all conditions
+     * @param operator the operator to match
+     * @return an unmodifiable list of matching conditions; empty if none found
+     */
+    public List<Condition> findConditions(final Operator operator) {
+        final List<Condition> result = new ArrayList<>();
+
+        for (final Condition cond : this.conditions) {
+            if (cond.operator() == operator) {
+                result.add(cond);
+            }
+        }
+
+        return Collections.unmodifiableList(result);
+    }
+
+    /**
+     * Collects parameters from all conditions in SQL clause order:
+     * JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
+     *
+     * @return an immutable list of all parameters
      */
     @Override
     public ImmutableList<Object> getParameters() {
-        if (conditionList.size() > 0) {
+        if (this.conditions.size() > 0) {
             final List<Object> parameters = new ArrayList<>();
             final Collection<Join> joins = getJoins();
 
@@ -412,9 +237,9 @@ public class Criteria extends AbstractCondition {
                 parameters.addAll(having.getParameters());
             }
 
-            final List<Clause> condList = getSetOperations();
+            final List<Clause> setOperations = getSetOperations();
 
-            for (final Condition cond : condList) {
+            for (final Condition cond : setOperations) {
                 parameters.addAll(cond.getParameters());
             }
 
@@ -437,16 +262,11 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * This clears parameters from all conditions in this criteria.
-     *
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.</p>
-     *
+     * Clears parameter values from all conditions to release memory.
      */
     @Override
     public void clearParameters() {
-        for (final Condition condition : conditionList) {
+        for (final Condition condition : this.conditions) {
             condition.clearParameters();
         }
     }
@@ -469,9 +289,8 @@ public class Criteria extends AbstractCondition {
         String orderBy = Strings.EMPTY;
         String limit = Strings.EMPTY;
         String setOps = Strings.EMPTY;
-        final String forUpdate = Strings.EMPTY;
 
-        for (final Condition cond : conditionList) {
+        for (final Condition cond : this.conditions) {
             if (cond.operator() == Operator.WHERE) {
                 where += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
             } else if (cond.operator() == Operator.ORDER_BY) {
@@ -489,52 +308,50 @@ public class Criteria extends AbstractCondition {
             }
         }
 
-        return selectModifier + join + where + groupBy + having + setOps + orderBy + limit + forUpdate;
+        return selectModifier + join + where + groupBy + having + setOps + orderBy + limit;
     }
 
-    /**
-     * Returns the hash code of this Criteria.
-     * The hash code is based on the select modifier and all conditions.
-     * 
-     * @return the hash code value
-     */
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int h = 17;
         h = (h * 31) + (Strings.isEmpty(selectModifier) ? 0 : selectModifier.hashCode());
-        return (h * 31) + conditionList.hashCode();
+        return (h * 31) + conditions.hashCode();
     }
 
-    /**
-     * Checks if this Criteria is equal to another object.
-     * Two Criteria are equal if they have the same select modifier and conditions.
-     * 
-     * @param obj the object to compare with
-     * @return {@code true} if the objects are equal, {@code false} otherwise
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean equals(final Object obj) {
-        return this == obj || (obj instanceof Criteria && N.equals(((Criteria) obj).selectModifier, selectModifier)
-                && N.equals(((Criteria) obj).conditionList, conditionList));
+        return this == obj
+                || (obj instanceof Criteria && N.equals(((Criteria) obj).selectModifier, selectModifier) && N.equals(((Criteria) obj).conditions, conditions));
     }
 
     private Condition find(final Operator operator) {
-        return findConditionByOperator(conditionList, operator);
+        return findConditionByOperator(conditions, operator);
     }
 
-    private static Condition findConditionByOperator(final List<Condition> conditionList, final Operator operator) {
-        Condition cond = null;
-
-        for (final Condition element : conditionList) {
-            cond = element;
-
+    private static Condition findConditionByOperator(final List<Condition> conds, final Operator operator) {
+        for (final Condition cond : conds) {
             if (cond.operator() == operator) {
                 return cond;
             }
         }
 
         return null;
+    }
 
+    /**
+     * Creates a new {@link Builder} pre-populated with this criteria's select modifier and conditions.
+     *
+     * @return a new mutable Builder initialized from this criteria
+     */
+    public Builder toBuilder() {
+        final Builder builder = new Builder();
+
+        builder.selectModifier(this.selectModifier);
+        builder.add(this.conditions);
+
+        return builder;
     }
 
     /**
@@ -556,30 +373,26 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * A utility class for building Criteria objects with a fluent interface.
-     * CB (Criteria Builder) provides static methods that create and return
-     * Criteria instances with initial conditions already applied.
-     * 
-     * <p>This class is designed for convenient one-line criteria building
-     * without needing to call criteria() first.</p>
-     * 
-     * <p><b>Usage Examples:</b></p>
+     * A mutable builder for constructing {@link Criteria} instances with a fluent API.
+     *
      * <pre>{@code
-     * // Instead of: Filters.criteria().where(condition)
-     * Criteria c = Builder.where(Filters.equal("status", "active"));
-     * 
-     * // Chain multiple operations
-     * Criteria c = Builder.where("age > 18")
+     * Criteria criteria = Criteria.builder()
+     *     .where(Filters.equal("status", "active"))
      *     .orderBy("name")
-     *     .limit(50);
+     *     .limit(50)
+     *     .build();
      * }</pre>
+     *
+     * <p>For single-clause clauses (WHERE, GROUP BY, HAVING, ORDER BY, LIMIT),
+     * calling the same method again replaces the previous clause.
+     * For JOINs and set operations, multiple calls accumulate.</p>
      */
     @Beta
     public static final class Builder {
 
         private String selectModifier = null;
 
-        private final List<Condition> conditionList = new ArrayList<>();
+        private final List<Condition> conditions = new ArrayList<>();
 
         Builder() {
             // utility/builder class
@@ -1936,14 +1749,14 @@ public class Criteria extends AbstractCondition {
             if (cond.operator() == Operator.WHERE || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.GROUP_BY
                     || cond.operator() == Operator.HAVING || cond.operator() == Operator.LIMIT) {
 
-                final Condition clause = findConditionByOperator(this.conditionList, cond.operator());
+                final Condition clause = findConditionByOperator(this.conditions, cond.operator());
 
                 if (clause != null) {
-                    conditionList.remove(clause); // NOSONAR
+                    conditions.remove(clause); // NOSONAR
                 }
             }
 
-            conditionList.add(cond);
+            conditions.add(cond);
         }
 
         private void add(final Condition... conditions) {
@@ -1977,7 +1790,7 @@ public class Criteria extends AbstractCondition {
          * @return a new Criteria instance
          */
         public Criteria build() {
-            return new Criteria(this.selectModifier, new ArrayList<>(conditionList));
+            return new Criteria(this.selectModifier, new ArrayList<>(conditions));
         }
 
         //    /**

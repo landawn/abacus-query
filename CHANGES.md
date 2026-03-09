@@ -1,3 +1,7 @@
+## 4.6.5
+* Naming convention improvements
+* Improvements and bug fixes
+
 ## 4.6.4
 * Naming convention improvements
 * Improvements and bug fixes
@@ -367,7 +371,7 @@
 
 ## 1.2.23
 
-* Add  `SQLBuilder.toPreparedQuery`.
+* Add  `SqlBuilder.toPreparedQuery`.
 * Improvements
 
 
