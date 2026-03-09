@@ -966,7 +966,8 @@ public class Expression extends ComposableCondition {
         } else if (value instanceof Number || value instanceof Boolean) {
             return value.toString();
         } else if (value instanceof Expression) {
-            return ((Expression) value).getLiteral();
+            final String exprLiteral = ((Expression) value).getLiteral();
+            return exprLiteral != null ? exprLiteral : NULL_STRING;
         } else if (value instanceof Condition) {
             final String conditionStr = value.toString();
 
