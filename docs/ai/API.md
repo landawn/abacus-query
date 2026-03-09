@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.6.6)
 - Build: unknown
 - Java: 17
-- Generated: 2026-03-08
+- Generated: 2026-03-09
 
 ## Packages
 - com.landawn.abacus.query
