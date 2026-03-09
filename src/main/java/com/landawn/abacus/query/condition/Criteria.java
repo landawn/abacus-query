@@ -56,7 +56,7 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Build a complex query with multiple clauses
- * Criteria criteria = new Criteria()
+ * Criteria criteria = Criteria.builder()
  *     .join("orders", new On("users.id", "orders.user_id"))
  *     .where(Filters.and(
  *         Filters.equal("users.status", "active"),
@@ -65,13 +65,15 @@ import com.landawn.abacus.util.Strings;
  *     .groupBy("users.department")
  *     .having(Filters.greaterThan("COUNT(*)", 5))
  *     .orderBy("COUNT(*)", SortDirection.DESC)
- *     .limit(10);
- * 
+ *     .limit(10)
+ *     .build();
+ *
  * // Using distinct
- * Criteria distinctUsers = new Criteria()
+ * Criteria distinctUsers = Criteria.builder()
  *     .distinct()
  *     .where(Filters.equal("active", true))
- *     .orderBy("name");
+ *     .orderBy("name")
+ *     .build();
  * }</pre>
  * 
  * @see Condition
@@ -112,7 +114,7 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria().distinct();
+     * Criteria criteria = Criteria.builder().distinct().build();
      * String modifier = criteria.getSelectModifier();   // Returns "DISTINCT"
      * }</pre>
      *
@@ -128,15 +130,16 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria()
+     * Criteria criteria = Criteria.builder()
      *     .join("orders", new On("users.id", "orders.user_id"))
-     *     .join("payments", new On("orders.id", "payments.order_id"));
+     *     .join("payments", new On("orders.id", "payments.order_id"))
+     *     .build();
      *
      * List<Join> joins = criteria.getJoins();
      * // Returns a list of 2 Join conditions
      * System.out.println(joins.size());   // 2
      *
-     * Criteria noJoins = new Criteria().where(Filters.equal("status", "active"));
+     * Criteria noJoins = Criteria.builder().where(Filters.equal("status", "active")).build();
      * List<Join> empty = noJoins.getJoins();
      * // Returns an empty list
      * }</pre>
@@ -161,13 +164,14 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .where(Filters.equal("status", "active"));
+     * Criteria criteria = Criteria.builder()
+     *     .where(Filters.equal("status", "active"))
+     *     .build();
      *
      * Clause whereClause = criteria.getWhere();
      * // Returns the Where condition wrapping: status = 'active'
      *
-     * Criteria noWhere = new Criteria().orderBy("name");
+     * Criteria noWhere = Criteria.builder().orderBy("name").build();
      * Clause result = noWhere.getWhere();   // Returns null
      * }</pre>
      *
@@ -183,13 +187,14 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .groupBy("department", "location");
+     * Criteria criteria = Criteria.builder()
+     *     .groupBy("department", "location")
+     *     .build();
      *
      * Clause groupByClause = criteria.getGroupBy();
      * // Returns the GroupBy condition for: department, location
      *
-     * Criteria noGroupBy = new Criteria().where(Filters.equal("active", true));
+     * Criteria noGroupBy = Criteria.builder().where(Filters.equal("active", true)).build();
      * Clause result = noGroupBy.getGroupBy();   // Returns null
      * }</pre>
      *
@@ -205,14 +210,15 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria()
+     * Criteria criteria = Criteria.builder()
      *     .groupBy("department")
-     *     .having("COUNT(*) > 5");
+     *     .having("COUNT(*) > 5")
+     *     .build();
      *
      * Clause havingClause = criteria.getHaving();
      * // Returns the Having condition wrapping: COUNT(*) > 5
      *
-     * Criteria noHaving = new Criteria().groupBy("category");
+     * Criteria noHaving = Criteria.builder().groupBy("category").build();
      * Clause result = noHaving.getHaving();   // Returns null
      * }</pre>
      *
@@ -230,15 +236,16 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users");
      * SubQuery tempUsers = Filters.subQuery("SELECT * FROM temp_users");
-     * Criteria criteria = new Criteria()
+     * Criteria criteria = Criteria.builder()
      *     .where(Filters.equal("active", true))
      *     .union(archivedUsers)
-     *     .unionAll(tempUsers);
+     *     .unionAll(tempUsers)
+     *     .build();
      *
      * List<Clause> setOperations = criteria.getSetOperations();
      * // Returns an unmodifiable list of 2 set operation conditions (UNION and UNION ALL)
      *
-     * Criteria noSetOps = new Criteria().where(Filters.equal("status", "active"));
+     * Criteria noSetOps = Criteria.builder().where(Filters.equal("status", "active")).build();
      * List<Clause> empty = noSetOps.getSetOperations();
      * // Returns an empty list
      * }</pre>
@@ -267,13 +274,14 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria()
-     *     .orderBy("name", SortDirection.ASC);
+     * Criteria criteria = Criteria.builder()
+     *     .orderBy("name", SortDirection.ASC)
+     *     .build();
      *
      * Clause orderByClause = criteria.getOrderBy();
      * // Returns the OrderBy condition for: name ASC
      *
-     * Criteria noOrderBy = new Criteria().where(Filters.equal("active", true));
+     * Criteria noOrderBy = Criteria.builder().where(Filters.equal("active", true)).build();
      * Clause result = noOrderBy.getOrderBy();   // Returns null
      * }</pre>
      *
@@ -289,14 +297,15 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria()
+     * Criteria criteria = Criteria.builder()
      *     .where(Filters.equal("active", true))
-     *     .limit(50);
+     *     .limit(50)
+     *     .build();
      *
      * Limit limitClause = criteria.getLimit();
      * // Returns the Limit condition for: LIMIT 50
      *
-     * Criteria noLimit = new Criteria().where(Filters.equal("status", "active"));
+     * Criteria noLimit = Criteria.builder().where(Filters.equal("status", "active")).build();
      * Limit result = noLimit.getLimit();   // Returns null
      * }</pre>
      *
@@ -312,16 +321,17 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria()
+     * Criteria criteria = Criteria.builder()
      *     .where(Filters.equal("status", "active"))
      *     .orderBy("name")
-     *     .limit(10);
+     *     .limit(10)
+     *     .build();
      *
      * List<Condition> conditions = criteria.getConditions();
      * // Returns a list of 3 conditions: Where, OrderBy, Limit
      * System.out.println(conditions.size());   // 3
      *
-     * Criteria empty = new Criteria();
+     * Criteria empty = Criteria.builder().build();
      * List<Condition> none = empty.getConditions();
      * // Returns an empty list
      * }</pre>
@@ -338,10 +348,11 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria criteria = new Criteria()
+     * Criteria criteria = Criteria.builder()
      *     .join("orders", new On("users.id", "orders.user_id"))
      *     .join("payments", new On("orders.id", "payments.order_id"))
-     *     .where(Filters.equal("status", "active"));
+     *     .where(Filters.equal("status", "active"))
+     *     .build();
      *
      * List<Condition> joins = criteria.findConditions(Operator.JOIN);
      * // Returns a list of 2 Join conditions
@@ -527,6 +538,15 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Creates a new Criteria builder.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria criteria = Criteria.builder()
+     *     .where(Filters.equal("status", "active"))
+     *     .orderBy("name")
+     *     .limit(50)
+     *     .build();
+     * }</pre>
      *
      * @return a new Builder instance
      */
@@ -1953,6 +1973,15 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Builds and returns the Criteria instance from the configured conditions.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria criteria = Criteria.builder()
+         *     .where(Filters.equal("active", true))
+         *     .orderBy("createdDate", SortDirection.DESC)
+         *     .limit(100)
+         *     .build();
+         * }</pre>
          *
          * @return a new Criteria instance
          */

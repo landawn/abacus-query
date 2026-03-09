@@ -177,9 +177,17 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates an EQUAL condition for this property.
+     * This is a shorthand alias for {@link #equal(Object)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("status").eq("active");   // status = 'active'
+     * NamedProperty.of("count").eq(5);           // count = 5
+     * }</pre>
      *
      * @param value the value to compare against
      * @return an Equal condition for this property
+     * @see #equal(Object)
      */
     @Beta
     public Equal eq(final Object value) {
@@ -219,9 +227,18 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates an OR condition with multiple EQUAL checks for this property using primitive int values.
+     * Each value in the array is compared for equality with the property, and the results are ORed together.
      *
-     * @param values primitive int values to check
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("priority").anyEqual(new int[]{1, 2, 3});
+     * // Results in: priority = 1 OR priority = 2 OR priority = 3
+     * }</pre>
+     *
+     * @param values primitive int values to check. Must not be null or empty.
      * @return an Or condition containing multiple Equal conditions
+     * @see Or
+     * @see Equal
      */
     public Or anyEqual(final int[] values) {
         N.checkArgNotEmpty(values, "values");
@@ -237,9 +254,18 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates an OR condition with multiple EQUAL checks for this property using primitive long values.
+     * Each value in the array is compared for equality with the property, and the results are ORed together.
      *
-     * @param values primitive long values to check
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("user_id").anyEqual(new long[]{1001L, 1002L, 1003L});
+     * // Results in: user_id = 1001 OR user_id = 1002 OR user_id = 1003
+     * }</pre>
+     *
+     * @param values primitive long values to check. Must not be null or empty.
      * @return an Or condition containing multiple Equal conditions
+     * @see Or
+     * @see Equal
      */
     public Or anyEqual(final long[] values) {
         N.checkArgNotEmpty(values, "values");
@@ -255,9 +281,18 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates an OR condition with multiple EQUAL checks for this property using primitive double values.
+     * Each value in the array is compared for equality with the property, and the results are ORed together.
      *
-     * @param values primitive double values to check
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("rate").anyEqual(new double[]{1.5, 2.0, 2.5});
+     * // Results in: rate = 1.5 OR rate = 2.0 OR rate = 2.5
+     * }</pre>
+     *
+     * @param values primitive double values to check. Must not be null or empty.
      * @return an Or condition containing multiple Equal conditions
+     * @see Or
+     * @see Equal
      */
     public Or anyEqual(final double[] values) {
         N.checkArgNotEmpty(values, "values");
@@ -325,9 +360,17 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates a NOT EQUAL condition for this property.
+     * This is a shorthand alias for {@link #notEqual(Object)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("status").ne("deleted");   // status <> 'deleted'
+     * NamedProperty.of("count").ne(0);            // count <> 0
+     * }</pre>
      *
      * @param value the value to compare against
      * @return a NotEqual condition for this property
+     * @see #notEqual(Object)
      */
     @Beta
     public NotEqual ne(final Object value) {
@@ -355,9 +398,17 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates a GREATER THAN condition for this property.
+     * This is a shorthand alias for {@link #greaterThan(Object)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("age").gt(18);        // age > 18
+     * NamedProperty.of("price").gt(99.99);   // price > 99.99
+     * }</pre>
      *
      * @param value the value to compare against
      * @return a GreaterThan condition for this property
+     * @see #greaterThan(Object)
      */
     @Beta
     public GreaterThan gt(final Object value) {
@@ -385,9 +436,17 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates a GREATER THAN OR EQUAL condition for this property.
+     * This is a shorthand alias for {@link #greaterThanOrEqual(Object)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("score").ge(60);   // score >= 60
+     * NamedProperty.of("age").ge(21);     // age >= 21
+     * }</pre>
      *
      * @param value the value to compare against
      * @return a GreaterThanOrEqual condition for this property
+     * @see #greaterThanOrEqual(Object)
      */
     @Beta
     public GreaterThanOrEqual ge(final Object value) {
@@ -415,9 +474,17 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates a LESS THAN condition for this property.
+     * This is a shorthand alias for {@link #lessThan(Object)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("price").lt(100);   // price < 100
+     * NamedProperty.of("age").lt(18);      // age < 18
+     * }</pre>
      *
      * @param value the value to compare against
      * @return a LessThan condition for this property
+     * @see #lessThan(Object)
      */
     @Beta
     public LessThan lt(final Object value) {
@@ -445,9 +512,17 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates a LESS THAN OR EQUAL condition for this property.
+     * This is a shorthand alias for {@link #lessThanOrEqual(Object)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("quantity").le(10);   // quantity <= 10
+     * NamedProperty.of("age").le(65);        // age <= 65
+     * }</pre>
      *
      * @param value the value to compare against
      * @return a LessThanOrEqual condition for this property
+     * @see #lessThanOrEqual(Object)
      */
     @Beta
     public LessThanOrEqual le(final Object value) {
@@ -712,8 +787,16 @@ public sealed class NamedProperty permits NP {
     /**
      * Creates an IN condition for this property with primitive int values.
      *
-     * @param values primitive int values to check membership against
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("priority").in(new int[]{1, 2, 3});
+     * // Results in: priority IN (1, 2, 3)
+     * }</pre>
+     *
+     * @param values primitive int values to check membership against. Must not be null or empty.
      * @return an In condition for this property
+     * @see In
+     * @see Filters#in(String, int[])
      */
     public In in(final int[] values) {
         return Filters.in(propName, values);
@@ -722,8 +805,16 @@ public sealed class NamedProperty permits NP {
     /**
      * Creates an IN condition for this property with primitive long values.
      *
-     * @param values primitive long values to check membership against
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("user_id").in(new long[]{1001L, 1002L, 1003L});
+     * // Results in: user_id IN (1001, 1002, 1003)
+     * }</pre>
+     *
+     * @param values primitive long values to check membership against. Must not be null or empty.
      * @return an In condition for this property
+     * @see In
+     * @see Filters#in(String, long[])
      */
     public In in(final long[] values) {
         return Filters.in(propName, values);
@@ -732,8 +823,16 @@ public sealed class NamedProperty permits NP {
     /**
      * Creates an IN condition for this property with primitive double values.
      *
-     * @param values primitive double values to check membership against
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("rate").in(new double[]{1.5, 2.0, 2.5});
+     * // Results in: rate IN (1.5, 2.0, 2.5)
+     * }</pre>
+     *
+     * @param values primitive double values to check membership against. Must not be null or empty.
      * @return an In condition for this property
+     * @see In
+     * @see Filters#in(String, double[])
      */
     public In in(final double[] values) {
         return Filters.in(propName, values);
@@ -789,8 +888,16 @@ public sealed class NamedProperty permits NP {
     /**
      * Creates a NOT IN condition for this property with primitive int values.
      *
-     * @param values primitive int values to check non-membership against
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("priority").notIn(new int[]{4, 5});
+     * // Results in: priority NOT IN (4, 5)
+     * }</pre>
+     *
+     * @param values primitive int values to check non-membership against. Must not be null or empty.
      * @return a NotIn condition for this property
+     * @see NotIn
+     * @see Filters#notIn(String, int[])
      */
     public NotIn notIn(final int[] values) {
         return Filters.notIn(propName, values);
@@ -799,8 +906,16 @@ public sealed class NamedProperty permits NP {
     /**
      * Creates a NOT IN condition for this property with primitive long values.
      *
-     * @param values primitive long values to check non-membership against
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("user_id").notIn(new long[]{999L, 1000L});
+     * // Results in: user_id NOT IN (999, 1000)
+     * }</pre>
+     *
+     * @param values primitive long values to check non-membership against. Must not be null or empty.
      * @return a NotIn condition for this property
+     * @see NotIn
+     * @see Filters#notIn(String, long[])
      */
     public NotIn notIn(final long[] values) {
         return Filters.notIn(propName, values);
@@ -809,8 +924,16 @@ public sealed class NamedProperty permits NP {
     /**
      * Creates a NOT IN condition for this property with primitive double values.
      *
-     * @param values primitive double values to check non-membership against
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("rate").notIn(new double[]{0.0, -1.0});
+     * // Results in: rate NOT IN (0.0, -1.0)
+     * }</pre>
+     *
+     * @param values primitive double values to check non-membership against. Must not be null or empty.
      * @return a NotIn condition for this property
+     * @see NotIn
+     * @see Filters#notIn(String, double[])
      */
     public NotIn notIn(final double[] values) {
         return Filters.notIn(propName, values);

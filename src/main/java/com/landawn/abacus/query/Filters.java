@@ -173,6 +173,12 @@ public class Filters {
     /**
      * Returns a condition that always evaluates to false.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition condition = excludeAll ? Filters.alwaysFalse()
+     *                                  : Filters.equal("status", "active");
+     * }</pre>
+     *
      * @return an Expression that always evaluates to false (1 &gt; 2)
      * @deprecated is dangerous (could silently return zero rows)
      */
@@ -2393,6 +2399,12 @@ public class Filters {
      * Creates a USING clause for JOIN operations with the specified columns.
      * USING is an alternative to ON when joining tables on columns with the same name.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Using usingClause = Filters.using("user_id", "department_id");
+     * // Results in SQL like: USING (user_id, department_id)
+     * }</pre>
+     *
      * @param columnNames the column names used for joining
      * @return a Using clause
      * @deprecated It's recommended to use {@link #on(String, String)} instead of {@code Using} for better
@@ -2406,6 +2418,13 @@ public class Filters {
 
     /**
      * Creates a USING clause from a collection of column names for JOIN operations.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> cols = Arrays.asList("user_id", "department_id");
+     * Using usingClause = Filters.using(cols);
+     * // Results in SQL like: USING (user_id, department_id)
+     * }</pre>
      *
      * @param columnNames collection of column names used for joining
      * @return a Using clause

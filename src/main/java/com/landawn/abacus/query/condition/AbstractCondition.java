@@ -545,6 +545,27 @@ public abstract class AbstractCondition implements Condition {
         }
     }
 
+    /**
+     * Validates that the given condition is a valid operand for composable operations (AND, OR, NOT, XOR).
+     * Conditions with clause operators (WHERE, ORDER BY, etc.), ON, USING, or null operators cannot
+     * participate in logical composition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Valid operand - comparison condition
+     * Condition eq = Filters.equal("status", "active");
+     * validateComposableOperand(eq, "and");   // Returns eq
+     *
+     * // Invalid operand - throws IllegalArgumentException
+     * Condition where = new Where(eq);
+     * validateComposableOperand(where, "and");   // Throws IllegalArgumentException
+     * }</pre>
+     *
+     * @param cond the condition to validate
+     * @param methodName the name of the composable method being called (for error messages)
+     * @return the validated condition
+     * @throws IllegalArgumentException if the condition has a null, clause, ON, or USING operator
+     */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
         final Operator operator = cond == null ? null : cond.operator();
 

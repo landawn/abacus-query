@@ -58,6 +58,12 @@ public enum SortDirection {
     /**
      * Checks if this sort direction is ascending.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SortDirection dir = SortDirection.ASC;
+     * boolean ascending = dir.isAscending();   // true
+     * }</pre>
+     *
      * @return {@code true} if this is ASC, {@code false} if DESC
      */
     public boolean isAscending() {
@@ -66,6 +72,12 @@ public enum SortDirection {
 
     /**
      * Checks if this sort direction is descending.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SortDirection dir = SortDirection.DESC;
+     * boolean descending = dir.isDescending();   // true
+     * }</pre>
      *
      * @return {@code true} if this is DESC, {@code false} if ASC
      */

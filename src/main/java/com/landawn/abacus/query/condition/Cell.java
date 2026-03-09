@@ -52,6 +52,13 @@ public abstract class Cell extends AbstractCondition {
      * Creates a new Cell with the specified operator and condition.
      * The Cell wraps the given condition and applies the specified operator to it.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Typically used via subclass constructors:
+     * SubQuery subQuery = new SubQuery("SELECT MAX(salary) FROM employees");
+     * All allCond = new All(subQuery);   // All extends Cell
+     * }</pre>
+     *
      * @param operator the operator to apply to the condition
      * @param cond the condition to wrap (must not be null)
      */
@@ -63,6 +70,13 @@ public abstract class Cell extends AbstractCondition {
     /**
      * Gets the wrapped condition.
      * The returned condition can be cast to its specific type if needed.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT MAX(salary) FROM employees");
+     * All allCond = new All(subQuery);
+     * SubQuery inner = allCond.getCondition();   // Returns the SubQuery condition
+     * }</pre>
      *
      * @param <T> the type of condition to return
      * @return the wrapped condition, cast to the specified type

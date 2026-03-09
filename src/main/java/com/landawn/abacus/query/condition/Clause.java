@@ -44,9 +44,10 @@ package com.landawn.abacus.query.condition;
  * OrderBy orderBy = new OrderBy("created_date", SortDirection.DESC);
  *
  * // Add them to criteria
- * Criteria criteria = new Criteria()
+ * Criteria criteria = Criteria.builder()
  *     .where(Filters.equal("status", "active"))    // Correct usage
- *     .having(Filters.greaterThan("COUNT(*)", 5));
+ *     .having(Filters.greaterThan("COUNT(*)", 5))
+ *     .build();
  *
  * // Cannot combine clauses with AND/OR/NOT
  * // where.and(having);   // This will not compile -- Clause does not have and()/or() methods

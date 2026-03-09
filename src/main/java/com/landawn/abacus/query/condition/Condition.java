@@ -84,7 +84,7 @@ public interface Condition {
      * Condition between = Filters.between("age", 18, 65);
      * Operator betweenOp = between.operator();   // Operator.BETWEEN
      *
-     * Condition combined = eq.and(between);
+     * Condition combined = Filters.and(eq, between);
      * Operator andOp = combined.operator();   // Operator.AND
      * }</pre>
      *

@@ -785,13 +785,20 @@ public final class SqlParser {
      * Checks if a character at a specific position in a SQL string is a separator.
      * This method performs context-aware checking, handling special cases like
      * MyBatis/iBatis parameter markers (#{...}).
-     * 
+     *
      * <p>Special handling:</p>
      * <ul>
      *   <li># followed by { is not considered a separator (MyBatis/iBatis syntax)</li>
      *   <li>All registered separators are checked</li>
      * </ul>
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = "SELECT * FROM users";
+     * boolean isSep = SqlParser.isSeparator(sql, sql.length(), 6, '*');   // true ('*' is a separator)
+     * boolean notSep = SqlParser.isSeparator(sql, sql.length(), 7, ' ');  // true (space is a separator)
+     * }</pre>
+     *
      * @param str the SQL string being parsed
      * @param len the length of the SQL string
      * @param index the current position in the string
@@ -890,9 +897,16 @@ public final class SqlParser {
      * Determines if a word at a specific position in a parsed word list represents a function name.
      * A word is considered a function name if it is followed by an opening parenthesis,
      * either immediately or after whitespace.
-     * 
+     *
      * <p>This method is useful for identifying SQL function calls during parsing or analysis.</p>
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> words = SqlParser.parse("SELECT COUNT(*) FROM users");
+     * boolean isFunc = SqlParser.isFunctionName(words, words.size(), 2);   // true for "COUNT"
+     * boolean notFunc = SqlParser.isFunctionName(words, words.size(), 0);  // false for "SELECT"
+     * }</pre>
+     *
      * @param words the list of parsed SQL words/tokens
      * @param len the total length of the words list
      * @param index the index of the word to check

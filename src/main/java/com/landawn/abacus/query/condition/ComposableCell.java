@@ -47,6 +47,13 @@ public abstract class ComposableCell extends ComposableCondition {
     /**
      * Creates a new ComposableCell with the specified operator and condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Typically used via subclass constructors:
+     * SubQuery subQuery = new SubQuery("SELECT 1 FROM orders WHERE user_id = users.id");
+     * Exists exists = new Exists(subQuery);   // Exists extends ComposableCell
+     * }</pre>
+     *
      * @param operator the operator to apply to the condition
      * @param cond the condition to wrap (must not be null)
      */
@@ -57,6 +64,13 @@ public abstract class ComposableCell extends ComposableCondition {
 
     /**
      * Gets the wrapped condition, cast to the specified type.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition eq = Filters.equal("status", "active");
+     * Not notCond = new Not(eq);
+     * Condition inner = notCond.getCondition();   // Returns the Equal condition
+     * }</pre>
      *
      * @param <T> the type of condition to return
      * @return the wrapped condition

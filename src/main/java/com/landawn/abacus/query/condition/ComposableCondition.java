@@ -49,6 +49,13 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Creates a new NOT condition that negates this condition.
      * The result is true when this condition is false, and vice versa.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition active = Filters.equal("status", "active");
+     * Not notActive = ((ComposableCondition) active).not();
+     * // Produces: NOT (status = 'active')
+     * }</pre>
+     *
      * @return a new Not condition wrapping this condition
      */
     public Not not() {
@@ -59,6 +66,14 @@ public abstract class ComposableCondition extends AbstractCondition {
     /**
      * Creates a new AND condition combining this condition with another.
      * Both conditions must be true for the result to be true.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition age = Filters.greaterThan("age", 18);
+     * Condition status = Filters.equal("status", "active");
+     * And combined = ((ComposableCondition) age).and(status);
+     * // Produces: age > 18 AND status = 'active'
+     * }</pre>
      *
      * @param cond the condition to AND with this condition (must not be null)
      * @return a new And condition containing both conditions
@@ -75,6 +90,14 @@ public abstract class ComposableCondition extends AbstractCondition {
     /**
      * Creates a new OR condition combining this condition with another.
      * At least one condition must be true for the result to be true.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition admin = Filters.equal("role", "admin");
+     * Condition manager = Filters.equal("role", "manager");
+     * Or either = ((ComposableCondition) admin).or(manager);
+     * // Produces: role = 'admin' OR role = 'manager'
+     * }</pre>
      *
      * @param cond the condition to OR with this condition (must not be null)
      * @return a new Or condition containing both conditions
@@ -95,6 +118,14 @@ public abstract class ComposableCondition extends AbstractCondition {
      * <p>XOR has no direct SQL equivalent, so it is expanded to its composable definition:
      * {@code (A AND NOT B) OR (NOT A AND B)}. The return type is {@link Or} because
      * that outer OR is the top-level operator once the expression is flattened.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Condition a = Filters.equal("type", "A");
+     * Condition b = Filters.equal("type", "B");
+     * Or exclusive = ((ComposableCondition) a).xor(b);
+     * // Produces: (type = 'A' AND NOT type = 'B') OR (NOT type = 'A' AND type = 'B')
+     * }</pre>
      *
      * @param cond the condition to XOR with this condition (must not be null)
      * @return a new {@link Or} condition representing {@code (this AND NOT cond) OR (NOT this AND cond)}

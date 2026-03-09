@@ -92,7 +92,14 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     }
 
     /**
-     * Gets the property names for this condition.
+     * Gets the property names for this IN or NOT IN subquery condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM departments WHERE active = true");
+     * InSubQuery inSub = new InSubQuery("dept_id", subQuery);
+     * Collection<String> props = inSub.getPropNames();   // ["dept_id"]
+     * }</pre>
      *
      * @return non-null immutable collection of property names
      */
@@ -114,7 +121,14 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     }
 
     /**
-     * Gets the subquery used in this condition.
+     * Gets the subquery used in this IN or NOT IN subquery condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM departments WHERE active = true");
+     * InSubQuery inSub = new InSubQuery("dept_id", subQuery);
+     * SubQuery sq = inSub.getSubQuery();   // the subquery instance
+     * }</pre>
      *
      * @return the subquery
      */

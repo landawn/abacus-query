@@ -71,7 +71,13 @@ public abstract class AbstractBetween extends ComposableCondition {
     }
 
     /**
-     * Gets the property name being checked.
+     * Gets the property name being checked in this BETWEEN or NOT BETWEEN condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Between between = new Between("age", 18, 65);
+     * String prop = between.getPropName();   // "age"
+     * }</pre>
      *
      * @return the property name
      */
@@ -80,7 +86,13 @@ public abstract class AbstractBetween extends ComposableCondition {
     }
 
     /**
-     * Gets the minimum value of the range.
+     * Gets the minimum value of the range (inclusive lower bound).
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Between between = new Between("age", 18, 65);
+     * Integer min = between.getMinValue();   // 18
+     * }</pre>
      *
      * @param <T> the expected type of the minimum value
      * @return the minimum value (inclusive)
@@ -91,7 +103,13 @@ public abstract class AbstractBetween extends ComposableCondition {
     }
 
     /**
-     * Gets the maximum value of the range.
+     * Gets the maximum value of the range (inclusive upper bound).
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Between between = new Between("age", 18, 65);
+     * Integer max = between.getMaxValue();   // 65
+     * }</pre>
      *
      * @param <T> the expected type of the maximum value
      * @return the maximum value (inclusive)

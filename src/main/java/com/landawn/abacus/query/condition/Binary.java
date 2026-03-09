@@ -50,7 +50,7 @@ import com.landawn.abacus.util.SK;
  * Binary aboveAvg = new GreaterThan("salary", avgSalary);
  * }</pre>
  * 
- * @see AbstractCondition
+ * @see ComposableCondition
  * @see Equal
  * @see GreaterThan
  * @see LessThan

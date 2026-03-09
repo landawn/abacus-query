@@ -70,7 +70,13 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Gets the property name being checked.
+     * Gets the property name being checked in this IN or NOT IN condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In inCond = new In("status", Arrays.asList("active", "pending"));
+     * String prop = inCond.getPropName();   // "status"
+     * }</pre>
      *
      * @return the property name
      */
@@ -79,7 +85,13 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Gets the values used by this condition.
+     * Gets the values used by this IN or NOT IN condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In inCond = new In("status", Arrays.asList("active", "pending"));
+     * List<?> values = inCond.getValues();   // ["active", "pending"]
+     * }</pre>
      *
      * @return an unmodifiable view of the values list, or {@code null} for an uninitialized instance
      */
