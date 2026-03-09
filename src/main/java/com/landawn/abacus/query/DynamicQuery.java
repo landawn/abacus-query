@@ -18,7 +18,6 @@ import java.util.Map;
 
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
-import com.landawn.abacus.query.DynamicSqlBuilder.DSB;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
@@ -37,7 +36,7 @@ import com.landawn.abacus.util.Strings;
  * 
  * <h2>Example usage:</h2>
  * <pre>{@code
- * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
+ * Builder builder = DynamicQuery.builder();
  * builder.select().append("id", "user_id").append("name");
  * builder.from().append("users", "u");
  * builder.where().append("u.active = ?").and("u.age > ?");
@@ -48,549 +47,546 @@ import com.landawn.abacus.util.Strings;
  * }</pre>
  */
 @SuppressWarnings("java:S1192")
-public sealed class DynamicSqlBuilder permits DSB {
+public final class DynamicQuery {
 
-    static final Logger logger = LoggerFactory.getLogger(DynamicSqlBuilder.class);
+    static final Logger logger = LoggerFactory.getLogger(DynamicQuery.class);
 
-    private SelectClause selectClause = new SelectClause(Objectory.createStringBuilder());
-
-    private FromClause fromClause = new FromClause(Objectory.createStringBuilder());
-
-    private WhereClause whereClause;
-
-    private GroupByClause groupByClause;
-
-    private HavingClause havingClause;
-
-    private OrderByClause orderByClause;
-
-    private StringBuilder moreParts = null;
-
-    private DynamicSqlBuilder() {
-
+    private DynamicQuery() {
+        // utility/wrapper class.
     }
 
-    /**
-     * Creates a new instance of DynamicSqlBuilder.
-     * This is the entry point for building dynamic SQL queries.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * }</pre>
-     *
-     * @return a new DynamicSqlBuilder instance for method chaining
-     */
-    public static DynamicSqlBuilder create() {
-        return new DynamicSqlBuilder();
+    public static Builder builder() {
+        return new Builder();
     }
 
-    /**
-     * Returns the SELECT clause builder for defining columns to retrieve.
-     * Multiple calls to this method return the same Select instance.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * builder.select().append("id").append("name", "user_name");
-     * // Generates: SELECT id, name AS user_name
-     * }</pre>
-     *
-     * @return the {@link SelectClause} builder for method chaining
-     */
-    public SelectClause select() {
-        return selectClause;
-    }
+    public static final class Builder {
 
-    /**
-     * Returns the FROM clause builder for defining tables and joins.
-     * Multiple calls to this method return the same From instance.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
-     * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
-     * }</pre>
-     *
-     * @return the {@link FromClause} builder for method chaining
-     */
-    public FromClause from() {
-        return fromClause;
-    }
+        private SelectClause selectClause = new SelectClause(Objectory.createStringBuilder());
 
-    /**
-     * Returns the WHERE clause builder for defining query conditions.
-     * Creates a new Where instance on first call and returns the same instance on subsequent calls.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * builder.where().append("status = ?").and("created_date > ?");
-     * // Generates: WHERE status = ? AND created_date > ?
-     * }</pre>
-     *
-     * @return the {@link WhereClause} builder for method chaining
-     */
-    public WhereClause where() {
-        if (whereClause == null) {
-            whereClause = new WhereClause(Objectory.createStringBuilder());
+        private FromClause fromClause = new FromClause(Objectory.createStringBuilder());
+
+        private WhereClause whereClause;
+
+        private GroupByClause groupByClause;
+
+        private HavingClause havingClause;
+
+        private OrderByClause orderByClause;
+
+        private StringBuilder moreParts = null;
+
+        private Builder() {
+
         }
 
-        return whereClause;
-    }
-
-    /**
-     * Returns the GROUP BY clause builder for defining grouping columns.
-     * Creates a new GroupBy instance on first call and returns the same instance on subsequent calls.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * builder.groupBy().append("department").append("year");
-     * // Generates: GROUP BY department, year
-     * }</pre>
-     *
-     * @return the {@link GroupByClause} builder for method chaining
-     */
-    public GroupByClause groupBy() {
-        if (groupByClause == null) {
-            groupByClause = new GroupByClause(Objectory.createStringBuilder());
+        /**
+         * Returns the SELECT clause builder for defining columns to retrieve.
+         * Multiple calls to this method return the same Select instance.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Builder builder = DynamicQuery.builder();
+         * builder.select().append("id").append("name", "user_name");
+         * // Generates: SELECT id, name AS user_name
+         * }</pre>
+         *
+         * @return the {@link SelectClause} builder for method chaining
+         */
+        public SelectClause select() {
+            return selectClause;
         }
 
-        return groupByClause;
-    }
-
-    /**
-     * Returns the HAVING clause builder for defining conditions on grouped results.
-     * Creates a new Having instance on first call and returns the same instance on subsequent calls.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * builder.having().append("COUNT(*) > ?").and("SUM(amount) < ?");
-     * // Generates: HAVING COUNT(*) > ? AND SUM(amount) < ?
-     * }</pre>
-     *
-     * @return the {@link HavingClause} builder for method chaining
-     */
-    public HavingClause having() {
-        if (havingClause == null) {
-            havingClause = new HavingClause(Objectory.createStringBuilder());
+        /**
+         * Returns the FROM clause builder for defining tables and joins.
+         * Multiple calls to this method return the same From instance.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Builder builder = DynamicQuery.builder();
+         * builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
+         * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
+         * }</pre>
+         *
+         * @return the {@link FromClause} builder for method chaining
+         */
+        public FromClause from() {
+            return fromClause;
         }
 
-        return havingClause;
-    }
-
-    /**
-     * Returns the ORDER BY clause builder for defining result ordering.
-     * Creates a new OrderBy instance on first call and returns the same instance on subsequent calls.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * builder.orderBy().append("created_date DESC").append("name ASC");
-     * // Generates: ORDER BY created_date DESC, name ASC
-     * }</pre>
-     *
-     * @return the {@link OrderByClause} builder for method chaining
-     */
-    public OrderByClause orderBy() {
-        if (orderByClause == null) {
-            orderByClause = new OrderByClause(Objectory.createStringBuilder());
-        }
-
-        return orderByClause;
-    }
-
-    /**
-     * Appends a custom LIMIT clause to the SQL query.
-     * This method allows for database-specific limit syntax.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.limit("LIMIT 10 OFFSET 20");
-     * // Or for custom database syntax
-     * builder.limit("TOP 10");
-     * }</pre>
-     *
-     * @param limitCond the complete limit condition including the LIMIT keyword (must not be null)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder limit(final String limitCond) {
-        N.checkArgNotNull(limitCond, "limitCond");
-
-        getStringBuilderForMoreParts().append(" ").append(limitCond);
-
-        return this;
-    }
-
-    /**
-     * Adds a LIMIT clause to restrict the number of rows returned.
-     * Generates standard SQL: {@code LIMIT n}
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * builder.select().append("*");
-     * builder.from().append("users");
-     * builder.limit(10);
-     * // Generates: LIMIT 10
-     * }</pre>
-     *
-     * @param count the maximum number of rows to return (must not be negative)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder limit(final int count) {
-        N.checkArgNotNegative(count, "count");
-
-        getStringBuilderForMoreParts().append(" LIMIT ").append(count);
-
-        return this;
-    }
-
-    /**
-     * Adds a LIMIT clause with count and offset for pagination.
-     * Generates SQL standard syntax: {@code LIMIT count OFFSET offset}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * builder.select().append("*");
-     * builder.from().append("users");
-     * builder.limit(10, 20);  // count=10, offset=20
-     * // Generates: SELECT * FROM users LIMIT 10 OFFSET 20 (skip 20 rows, return next 10)
-     * }</pre>
-     *
-     * @param count the maximum number of rows to return (must not be negative)
-     * @param offset the number of rows to skip (must not be negative)
-     * @return this builder instance for method chaining
-     * @see #offsetRows(int)
-     * @see #fetchNextRows(int)
-     * @see #fetchFirstRows(int)
-     */
-    public DynamicSqlBuilder limit(final int count, final int offset) {
-        N.checkArgNotNegative(count, "count");
-        N.checkArgNotNegative(offset, "offset");
-
-        getStringBuilderForMoreParts().append(" LIMIT ").append(count).append(" OFFSET ").append(offset);
-
-        return this;
-    }
-
-    /**
-     * Adds an Oracle-style ROWNUM condition to the WHERE clause.
-     * Generates: {@code ROWNUM <= n}
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.whereRowNumAtMost(10);
-     * // Generates: ROWNUM <= 10
-     * }</pre>
-     *
-     * @param count the maximum number of rows to return (must not be negative)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder whereRowNumAtMost(final int count) {
-        N.checkArgNotNegative(count, "count");
-
-        final String rowNumCondition = "ROWNUM <= " + count;
-
-        if (whereClause == null || whereClause.sb.isEmpty()) {
-            where().append(rowNumCondition);
-        } else {
-            whereClause.and(rowNumCondition);
-        }
-
-        return this;
-    }
-
-    /**
-     * Adds an OFFSET clause for SQL:2008 standard pagination.
-     * Typically used with {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.offsetRows(20).fetchNextRows(10);
-     * // Generates: OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
-     * }</pre>
-     *
-     * @param offset the number of rows to skip (must not be negative)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder offsetRows(final int offset) {
-        N.checkArgNotNegative(offset, "offset");
-
-        getStringBuilderForMoreParts().append(" OFFSET ").append(offset).append(" ROWS");
-
-        return this;
-    }
-
-    /**
-     * Adds a FETCH NEXT clause for SQL:2008 standard result limiting.
-     * Typically used after {@link #offsetRows(int)}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.offsetRows(100).fetchNextRows(25);
-     * // Generates: OFFSET 100 ROWS FETCH NEXT 25 ROWS ONLY
-     * }</pre>
-     *
-     * @param count the number of rows to fetch (must not be negative)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder fetchNextRows(final int count) {
-        N.checkArgNotNegative(count, "count");
-
-        getStringBuilderForMoreParts().append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
-
-        return this;
-    }
-
-    /**
-     * Adds a FETCH FIRST clause for SQL:2008 standard result limiting.
-     * This is an alternative to FETCH NEXT with the same functionality.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.fetchFirstRows(10);
-     * // Generates: FETCH FIRST 10 ROWS ONLY
-     * }</pre>
-     *
-     * @param count the number of rows to fetch (must not be negative)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder fetchFirstRows(final int count) {
-        N.checkArgNotNegative(count, "count");
-
-        getStringBuilderForMoreParts().append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
-
-        return this;
-    }
-
-    private StringBuilder getStringBuilderForMoreParts() {
-        if (moreParts == null) {
-            moreParts = Objectory.createStringBuilder();
-        }
-
-        return moreParts;
-    }
-
-    /**
-     * Adds a UNION operator to combine results with another query.
-     * UNION removes duplicate rows from the combined result set.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.union("SELECT id, name FROM archived_users");
-     * }</pre>
-     *
-     * @param query the complete SQL query to union with (must not be null)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder union(final String query) {
-        N.checkArgNotNull(query, "query");
-
-        getStringBuilderForMoreParts().append(" UNION ").append(query);
-
-        return this;
-    }
-
-    /**
-     * Adds a UNION ALL operator to combine results with another query.
-     * UNION ALL keeps all rows including duplicates.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.unionAll("SELECT id, name FROM temp_users");
-     * }</pre>
-     *
-     * @param query the complete SQL query to union with (must not be null)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder unionAll(final String query) {
-        N.checkArgNotNull(query, "query");
-
-        getStringBuilderForMoreParts().append(" UNION ALL ").append(query);
-
-        return this;
-    }
-
-    /**
-     * Adds an INTERSECT operator to find common rows between queries.
-     * Returns only rows that appear in both result sets.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.intersect("SELECT user_id FROM premium_users");
-     * }</pre>
-     *
-     * @param query the complete SQL query to intersect with (must not be null)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder intersect(final String query) {
-        N.checkArgNotNull(query, "query");
-
-        getStringBuilderForMoreParts().append(" INTERSECT ").append(query);
-
-        return this;
-    }
-
-    /**
-     * Adds an EXCEPT operator to find rows in the first query but not in the second.
-     * This is the SQL standard operator (used by PostgreSQL, SQL Server).
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.except("SELECT user_id FROM blocked_users");
-     * }</pre>
-     *
-     * @param query the complete SQL query to exclude results from (must not be null)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder except(final String query) {
-        N.checkArgNotNull(query, "query");
-
-        getStringBuilderForMoreParts().append(" EXCEPT ").append(query);
-
-        return this;
-    }
-
-    /**
-     * Adds a MINUS operator to find rows in the first query but not in the second.
-     * This is Oracle's equivalent of EXCEPT.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * builder.minus("SELECT user_id FROM inactive_users");
-     * }</pre>
-     *
-     * @param query the complete SQL query to exclude results from (must not be null)
-     * @return this builder instance for method chaining
-     */
-    public DynamicSqlBuilder minus(final String query) {
-        N.checkArgNotNull(query, "query");
-
-        getStringBuilderForMoreParts().append(" MINUS ").append(query);
-
-        return this;
-    }
-
-    /**
-     * Builds the final SQL string from all the components and releases resources.
-     * This method MUST be called to get the SQL and clean up internal resources.
-     * After calling build(), this builder instance should not be reused.
-     *
-     * <p>The method combines all SQL components in the correct order and returns
-     * the complete SQL statement. Internal StringBuilder objects are recycled
-     * to the object pool for performance optimization.</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicSqlBuilder.create();
-     * builder.select().append("*");
-     * builder.from().append("users");
-     * builder.where().append("active = true");
-     * String sql = builder.build();
-     * // Returns: "SELECT * FROM users WHERE active = true"
-     * }</pre>
-     *
-     * @return the complete SQL query string
-     */
-    public String build() {
-        try {
-            if (selectClause == null) {
-                throw new IllegalStateException("This DynamicSqlBuilder has already been closed after build() was called");
+        /**
+         * Returns the WHERE clause builder for defining query conditions.
+         * Creates a new Where instance on first call and returns the same instance on subsequent calls.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Builder builder = DynamicQuery.builder();
+         * builder.where().append("status = ?").and("created_date > ?");
+         * // Generates: WHERE status = ? AND created_date > ?
+         * }</pre>
+         *
+         * @return the {@link WhereClause} builder for method chaining
+         */
+        public WhereClause where() {
+            if (whereClause == null) {
+                whereClause = new WhereClause(Objectory.createStringBuilder());
             }
 
-            if (fromClause != null && !fromClause.sb.isEmpty()) {
-                if (!selectClause.sb.isEmpty()) {
-                    selectClause.sb.append(" ");
+            return whereClause;
+        }
+
+        /**
+         * Returns the GROUP BY clause builder for defining grouping columns.
+         * Creates a new GroupBy instance on first call and returns the same instance on subsequent calls.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Builder builder = DynamicQuery.builder();
+         * builder.groupBy().append("department").append("year");
+         * // Generates: GROUP BY department, year
+         * }</pre>
+         *
+         * @return the {@link GroupByClause} builder for method chaining
+         */
+        public GroupByClause groupBy() {
+            if (groupByClause == null) {
+                groupByClause = new GroupByClause(Objectory.createStringBuilder());
+            }
+
+            return groupByClause;
+        }
+
+        /**
+         * Returns the HAVING clause builder for defining conditions on grouped results.
+         * Creates a new Having instance on first call and returns the same instance on subsequent calls.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Builder builder = DynamicQuery.builder();
+         * builder.having().append("COUNT(*) > ?").and("SUM(amount) < ?");
+         * // Generates: HAVING COUNT(*) > ? AND SUM(amount) < ?
+         * }</pre>
+         *
+         * @return the {@link HavingClause} builder for method chaining
+         */
+        public HavingClause having() {
+            if (havingClause == null) {
+                havingClause = new HavingClause(Objectory.createStringBuilder());
+            }
+
+            return havingClause;
+        }
+
+        /**
+         * Returns the ORDER BY clause builder for defining result ordering.
+         * Creates a new OrderBy instance on first call and returns the same instance on subsequent calls.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Builder builder = DynamicQuery.builder();
+         * builder.orderBy().append("created_date DESC").append("name ASC");
+         * // Generates: ORDER BY created_date DESC, name ASC
+         * }</pre>
+         *
+         * @return the {@link OrderByClause} builder for method chaining
+         */
+        public OrderByClause orderBy() {
+            if (orderByClause == null) {
+                orderByClause = new OrderByClause(Objectory.createStringBuilder());
+            }
+
+            return orderByClause;
+        }
+
+        /**
+         * Appends a custom LIMIT clause to the SQL query.
+         * This method allows for database-specific limit syntax.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.limit("LIMIT 10 OFFSET 20");
+         * // Or for custom database syntax
+         * builder.limit("TOP 10");
+         * }</pre>
+         *
+         * @param limitCond the complete limit condition including the LIMIT keyword (must not be null)
+         * @return this builder instance for method chaining
+         */
+        public Builder limit(final String limitCond) {
+            N.checkArgNotNull(limitCond, "limitCond");
+
+            getStringBuilderForMoreParts().append(" ").append(limitCond);
+
+            return this;
+        }
+
+        /**
+         * Adds a LIMIT clause to restrict the number of rows returned.
+         * Generates standard SQL: {@code LIMIT n}
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Builder builder = DynamicQuery.builder();
+         * builder.select().append("*");
+         * builder.from().append("users");
+         * builder.limit(10);
+         * // Generates: LIMIT 10
+         * }</pre>
+         *
+         * @param count the maximum number of rows to return (must not be negative)
+         * @return this builder instance for method chaining
+         */
+        public Builder limit(final int count) {
+            N.checkArgNotNegative(count, "count");
+
+            getStringBuilderForMoreParts().append(" LIMIT ").append(count);
+
+            return this;
+        }
+
+        /**
+         * Adds a LIMIT clause with count and offset for pagination.
+         * Generates SQL standard syntax: {@code LIMIT count OFFSET offset}.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Builder builder = DynamicQuery.builder();
+         * builder.select().append("*");
+         * builder.from().append("users");
+         * builder.limit(10, 20);  // count=10, offset=20
+         * // Generates: SELECT * FROM users LIMIT 10 OFFSET 20 (skip 20 rows, return next 10)
+         * }</pre>
+         *
+         * @param count the maximum number of rows to return (must not be negative)
+         * @param offset the number of rows to skip (must not be negative)
+         * @return this builder instance for method chaining
+         * @see #offsetRows(int)
+         * @see #fetchNextRows(int)
+         * @see #fetchFirstRows(int)
+         */
+        public Builder limit(final int count, final int offset) {
+            N.checkArgNotNegative(count, "count");
+            N.checkArgNotNegative(offset, "offset");
+
+            getStringBuilderForMoreParts().append(" LIMIT ").append(count).append(" OFFSET ").append(offset);
+
+            return this;
+        }
+
+        /**
+         * Adds an Oracle-style ROWNUM condition to the WHERE clause.
+         * Generates: {@code ROWNUM <= n}
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.whereRowNumAtMost(10);
+         * // Generates: ROWNUM <= 10
+         * }</pre>
+         *
+         * @param count the maximum number of rows to return (must not be negative)
+         * @return this builder instance for method chaining
+         */
+        public Builder whereRowNumAtMost(final int count) {
+            N.checkArgNotNegative(count, "count");
+
+            final String rowNumCondition = "ROWNUM <= " + count;
+
+            if (whereClause == null || whereClause.sb.isEmpty()) {
+                where().append(rowNumCondition);
+            } else {
+                whereClause.and(rowNumCondition);
+            }
+
+            return this;
+        }
+
+        /**
+         * Adds an OFFSET clause for SQL:2008 standard pagination.
+         * Typically used with {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)}.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.offsetRows(20).fetchNextRows(10);
+         * // Generates: OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
+         * }</pre>
+         *
+         * @param offset the number of rows to skip (must not be negative)
+         * @return this builder instance for method chaining
+         */
+        public Builder offsetRows(final int offset) {
+            N.checkArgNotNegative(offset, "offset");
+
+            getStringBuilderForMoreParts().append(" OFFSET ").append(offset).append(" ROWS");
+
+            return this;
+        }
+
+        /**
+         * Adds a FETCH NEXT clause for SQL:2008 standard result limiting.
+         * Typically used after {@link #offsetRows(int)}.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.offsetRows(100).fetchNextRows(25);
+         * // Generates: OFFSET 100 ROWS FETCH NEXT 25 ROWS ONLY
+         * }</pre>
+         *
+         * @param count the number of rows to fetch (must not be negative)
+         * @return this builder instance for method chaining
+         */
+        public Builder fetchNextRows(final int count) {
+            N.checkArgNotNegative(count, "count");
+
+            getStringBuilderForMoreParts().append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
+
+            return this;
+        }
+
+        /**
+         * Adds a FETCH FIRST clause for SQL:2008 standard result limiting.
+         * This is an alternative to FETCH NEXT with the same functionality.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.fetchFirstRows(10);
+         * // Generates: FETCH FIRST 10 ROWS ONLY
+         * }</pre>
+         *
+         * @param count the number of rows to fetch (must not be negative)
+         * @return this builder instance for method chaining
+         */
+        public Builder fetchFirstRows(final int count) {
+            N.checkArgNotNegative(count, "count");
+
+            getStringBuilderForMoreParts().append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
+
+            return this;
+        }
+
+        /**
+         * Adds a UNION operator to combine results with another query.
+         * UNION removes duplicate rows from the combined result set.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.union("SELECT id, name FROM archived_users");
+         * }</pre>
+         *
+         * @param query the complete SQL query to union with (must not be null)
+         * @return this builder instance for method chaining
+         */
+        public Builder union(final String query) {
+            N.checkArgNotNull(query, "query");
+
+            getStringBuilderForMoreParts().append(" UNION ").append(query);
+
+            return this;
+        }
+
+        /**
+         * Adds a UNION ALL operator to combine results with another query.
+         * UNION ALL keeps all rows including duplicates.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.unionAll("SELECT id, name FROM temp_users");
+         * }</pre>
+         *
+         * @param query the complete SQL query to union with (must not be null)
+         * @return this builder instance for method chaining
+         */
+        public Builder unionAll(final String query) {
+            N.checkArgNotNull(query, "query");
+
+            getStringBuilderForMoreParts().append(" UNION ALL ").append(query);
+
+            return this;
+        }
+
+        /**
+         * Adds an INTERSECT operator to find common rows between queries.
+         * Returns only rows that appear in both result sets.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.intersect("SELECT user_id FROM premium_users");
+         * }</pre>
+         *
+         * @param query the complete SQL query to intersect with (must not be null)
+         * @return this builder instance for method chaining
+         */
+        public Builder intersect(final String query) {
+            N.checkArgNotNull(query, "query");
+
+            getStringBuilderForMoreParts().append(" INTERSECT ").append(query);
+
+            return this;
+        }
+
+        /**
+         * Adds an EXCEPT operator to find rows in the first query but not in the second.
+         * This is the SQL standard operator (used by PostgreSQL, SQL Server).
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.except("SELECT user_id FROM blocked_users");
+         * }</pre>
+         *
+         * @param query the complete SQL query to exclude results from (must not be null)
+         * @return this builder instance for method chaining
+         */
+        public Builder except(final String query) {
+            N.checkArgNotNull(query, "query");
+
+            getStringBuilderForMoreParts().append(" EXCEPT ").append(query);
+
+            return this;
+        }
+
+        /**
+         * Adds a MINUS operator to find rows in the first query but not in the second.
+         * This is Oracle's equivalent of EXCEPT.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.minus("SELECT user_id FROM inactive_users");
+         * }</pre>
+         *
+         * @param query the complete SQL query to exclude results from (must not be null)
+         * @return this builder instance for method chaining
+         */
+        public Builder minus(final String query) {
+            N.checkArgNotNull(query, "query");
+
+            getStringBuilderForMoreParts().append(" MINUS ").append(query);
+
+            return this;
+        }
+
+        private StringBuilder getStringBuilderForMoreParts() {
+            if (moreParts == null) {
+                moreParts = Objectory.createStringBuilder();
+            }
+
+            return moreParts;
+        }
+
+        /**
+         * Builds the final SQL string from all the components and releases resources.
+         * This method MUST be called to get the SQL and clean up internal resources.
+         * After calling build(), this builder instance should not be reused.
+         *
+         * <p>The method combines all SQL components in the correct order and returns
+         * the complete SQL statement. Internal StringBuilder objects are recycled
+         * to the object pool for performance optimization.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Builder builder = DynamicQuery.builder();
+         * builder.select().append("*");
+         * builder.from().append("users");
+         * builder.where().append("active = true");
+         * String sql = builder.build();
+         * // Returns: "SELECT * FROM users WHERE active = true"
+         * }</pre>
+         *
+         * @return the complete SQL query string
+         */
+        public String build() {
+            try {
+                if (selectClause == null) {
+                    throw new IllegalStateException("This Builder has already been closed after build() was called");
                 }
 
-                selectClause.sb.append(fromClause.sb);
-            }
+                if (fromClause != null && !fromClause.sb.isEmpty()) {
+                    if (!selectClause.sb.isEmpty()) {
+                        selectClause.sb.append(" ");
+                    }
 
-            if (whereClause != null && !whereClause.sb.isEmpty()) {
-                if (!selectClause.sb.isEmpty()) {
-                    selectClause.sb.append(" ");
+                    selectClause.sb.append(fromClause.sb);
                 }
 
-                selectClause.sb.append(whereClause.sb);
-            }
+                if (whereClause != null && !whereClause.sb.isEmpty()) {
+                    if (!selectClause.sb.isEmpty()) {
+                        selectClause.sb.append(" ");
+                    }
 
-            if (groupByClause != null && !groupByClause.sb.isEmpty()) {
-                if (!selectClause.sb.isEmpty()) {
-                    selectClause.sb.append(" ");
+                    selectClause.sb.append(whereClause.sb);
                 }
 
-                selectClause.sb.append(groupByClause.sb);
-            }
+                if (groupByClause != null && !groupByClause.sb.isEmpty()) {
+                    if (!selectClause.sb.isEmpty()) {
+                        selectClause.sb.append(" ");
+                    }
 
-            if (havingClause != null && !havingClause.sb.isEmpty()) {
-                if (!selectClause.sb.isEmpty()) {
-                    selectClause.sb.append(" ");
+                    selectClause.sb.append(groupByClause.sb);
                 }
 
-                selectClause.sb.append(havingClause.sb);
-            }
+                if (havingClause != null && !havingClause.sb.isEmpty()) {
+                    if (!selectClause.sb.isEmpty()) {
+                        selectClause.sb.append(" ");
+                    }
 
-            if (orderByClause != null && !orderByClause.sb.isEmpty()) {
-                if (!selectClause.sb.isEmpty()) {
-                    selectClause.sb.append(" ");
+                    selectClause.sb.append(havingClause.sb);
                 }
 
-                selectClause.sb.append(orderByClause.sb);
-            }
+                if (orderByClause != null && !orderByClause.sb.isEmpty()) {
+                    if (!selectClause.sb.isEmpty()) {
+                        selectClause.sb.append(" ");
+                    }
 
-            if (moreParts != null) {
-                selectClause.sb.append(moreParts);
-            }
+                    selectClause.sb.append(orderByClause.sb);
+                }
 
-            return selectClause.sb.toString();
-        } finally {
-            if (fromClause != null) {
-                Objectory.recycle(fromClause.sb);
-                fromClause = null;
-            }
+                if (moreParts != null) {
+                    selectClause.sb.append(moreParts);
+                }
 
-            if (whereClause != null) {
-                Objectory.recycle(whereClause.sb);
-                whereClause = null;
-            }
+                return selectClause.sb.toString();
+            } finally {
+                if (fromClause != null) {
+                    Objectory.recycle(fromClause.sb);
+                    fromClause = null;
+                }
 
-            if (groupByClause != null) {
-                Objectory.recycle(groupByClause.sb);
-                groupByClause = null;
-            }
+                if (whereClause != null) {
+                    Objectory.recycle(whereClause.sb);
+                    whereClause = null;
+                }
 
-            if (havingClause != null) {
-                Objectory.recycle(havingClause.sb);
-                havingClause = null;
-            }
+                if (groupByClause != null) {
+                    Objectory.recycle(groupByClause.sb);
+                    groupByClause = null;
+                }
 
-            if (orderByClause != null) {
-                Objectory.recycle(orderByClause.sb);
-                orderByClause = null;
-            }
+                if (havingClause != null) {
+                    Objectory.recycle(havingClause.sb);
+                    havingClause = null;
+                }
 
-            if (moreParts != null) {
-                Objectory.recycle(moreParts);
-                moreParts = null;
-            }
+                if (orderByClause != null) {
+                    Objectory.recycle(orderByClause.sb);
+                    orderByClause = null;
+                }
 
-            if (selectClause != null) {
-                Objectory.recycle(selectClause.sb);
-                selectClause = null;
+                if (moreParts != null) {
+                    Objectory.recycle(moreParts);
+                    moreParts = null;
+                }
+
+                if (selectClause != null) {
+                    Objectory.recycle(selectClause.sb);
+                    selectClause = null;
+                }
             }
         }
+
     }
 
     /**
      * Builder class for constructing the SELECT clause of a SQL query.
      * Provides methods to add columns with optional aliases and conditional inclusion.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#select()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#select()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -787,7 +783,7 @@ public sealed class DynamicSqlBuilder permits DSB {
      * Builder class for constructing the FROM clause of a SQL query.
      * Supports adding tables, aliases, and various types of joins.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#from()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#from()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1029,7 +1025,7 @@ public sealed class DynamicSqlBuilder permits DSB {
      * Builder class for constructing the WHERE clause of a SQL query.
      * Supports adding conditions with AND/OR operators and parameter placeholders.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#where()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#where()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1258,7 +1254,7 @@ public sealed class DynamicSqlBuilder permits DSB {
      * Builder class for constructing the GROUP BY clause of a SQL query.
      * Supports adding single or multiple grouping columns.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#groupBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#groupBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1403,7 +1399,7 @@ public sealed class DynamicSqlBuilder permits DSB {
      * Builder class for constructing the HAVING clause of a SQL query.
      * Used to filter grouped results based on aggregate conditions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#having()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#having()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1566,7 +1562,7 @@ public sealed class DynamicSqlBuilder permits DSB {
      * Builder class for constructing the ORDER BY clause of a SQL query.
      * Supports adding single or multiple columns with sort directions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#orderBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#orderBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1704,47 +1700,6 @@ public sealed class DynamicSqlBuilder permits DSB {
             }
 
             return this;
-        }
-    }
-
-    /**
-     * A convenience subclass of DynamicSqlBuilder with a shorter name.
-     * Functionality is identical to the parent class.
-     *
-     * <p>This class exists purely for brevity when the full class name would be too verbose.</p>
-     *
-     * <h2>Example usage:</h2>
-     * <pre>{@code
-     * DSB builder = DSB.create();
-     * builder.select().append("*");
-     * builder.from().append("users");
-     * String sql = builder.build();
-     * }</pre>
-     */
-    public static final class DSB extends DynamicSqlBuilder {
-
-        /**
-         * Instantiates a new dsb.
-         */
-        private DSB() {
-        }
-
-        /**
-         * Creates a new instance of DSB.
-         * This is a shorthand for DynamicSqlBuilder.create() with a shorter class name.
-         *
-         * <p><b>Usage Examples:</b></p>
-         * <pre>{@code
-         * DSB builder = DSB.create();
-         * builder.select().append("*");
-         * builder.from().append("users");
-         * String sql = builder.build();
-         * }</pre>
-         *
-         * @return a new DSB instance for method chaining
-         */
-        public static DSB create() {
-            return new DSB();
         }
     }
 }

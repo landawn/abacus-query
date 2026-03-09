@@ -6,17 +6,18 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.DynamicQuery.Builder;
 
 /**
- * Simple unit tests for DynamicSqlBuilder functionality.
+ * Simple unit tests for Builder functionality.
  * Tests basic factory method and builder creation.
  */
-public class SimpleDynamicSqlBuilderTest extends TestBase {
+public class SimpleDynamicQueryBuilderTest extends TestBase {
 
     @Test
     void testCreate() {
-        DynamicSqlBuilder builder1 = DynamicSqlBuilder.create();
-        DynamicSqlBuilder builder2 = DynamicSqlBuilder.create();
+        Builder builder1 = DynamicQuery.builder();
+        Builder builder2 = DynamicQuery.builder();
 
         assertNotNull(builder1);
         assertNotNull(builder2);
@@ -25,7 +26,7 @@ public class SimpleDynamicSqlBuilderTest extends TestBase {
 
     @Test
     void testClauseBuilders() {
-        DynamicSqlBuilder builder = DynamicSqlBuilder.create();
+        Builder builder = DynamicQuery.builder();
 
         assertNotNull(builder.select());
         assertNotNull(builder.from());
@@ -37,7 +38,7 @@ public class SimpleDynamicSqlBuilderTest extends TestBase {
 
     @Test
     void testBasicBuilding() {
-        DynamicSqlBuilder builder = DynamicSqlBuilder.create();
+        Builder builder = DynamicQuery.builder();
 
         // Test basic build - should not throw exception
         String sql = builder.build();

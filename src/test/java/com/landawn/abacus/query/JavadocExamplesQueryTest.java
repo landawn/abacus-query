@@ -15,6 +15,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.query.DynamicQuery.Builder;
 import com.landawn.abacus.query.SqlBuilder.NSC;
 import com.landawn.abacus.query.SqlBuilder.PSC;
 import com.landawn.abacus.query.condition.And;
@@ -837,11 +838,11 @@ public class JavadocExamplesQueryTest {
         assertNotNull(naturalJoin);
     }
 
-    // ===================== DynamicSqlBuilder.java Examples (10+ representative) =====================
+    // ===================== Builder.java Examples (10+ representative) =====================
 
     @Test
-    public void testDynamicSqlBuilder_classLevelExample() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_classLevelExample() {
+        Builder b = DynamicQuery.builder();
         b.select().append("id", "user_id").append("name");
         b.from().append("users", "u");
         b.where().append("u.active = ?").and("u.age > ?");
@@ -852,14 +853,14 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_create() {
-        DynamicSqlBuilder builder = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_create() {
+        Builder builder = DynamicQuery.builder();
         assertNotNull(builder);
     }
 
     @Test
-    public void testDynamicSqlBuilder_selectAppend() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_selectAppend() {
+        Builder b = DynamicQuery.builder();
         b.select().append("id").append("name", "user_name");
         b.from().append("users");
         String sql = b.build();
@@ -867,8 +868,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_fromWithJoin() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_fromWithJoin() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
@@ -876,8 +877,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_where() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_where() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.where().append("status = ?").and("created_date > ?");
@@ -886,8 +887,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_groupBy() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_groupBy() {
+        Builder b = DynamicQuery.builder();
         b.select().append("department").append("COUNT(*)");
         b.from().append("employees");
         b.groupBy().append("department");
@@ -896,8 +897,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_having() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_having() {
+        Builder b = DynamicQuery.builder();
         b.select().append("department").append("COUNT(*)");
         b.from().append("employees");
         b.groupBy().append("department");
@@ -907,8 +908,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_orderBy() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_orderBy() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.orderBy().append("created_date DESC").append("name ASC");
@@ -917,8 +918,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_limitIntInt() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_limitIntInt() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.limit(10, 20);
@@ -927,8 +928,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_offsetAndFetch() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_offsetAndFetch() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.offsetRows(20).fetchNextRows(10);
@@ -937,8 +938,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_fetchFirst() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_fetchFirst() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.fetchFirstRows(10);
@@ -947,8 +948,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_union() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_union() {
+        Builder b = DynamicQuery.builder();
         b.select().append("id").append("name");
         b.from().append("active_users");
         b.union("SELECT id, name FROM archived_users");
@@ -957,8 +958,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_unionAll() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_unionAll() {
+        Builder b = DynamicQuery.builder();
         b.select().append("id").append("name");
         b.from().append("users");
         b.unionAll("SELECT id, name FROM temp_users");
@@ -967,8 +968,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_build() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_build() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.where().append("active = true");
@@ -977,8 +978,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_selectAppendCollection() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_selectAppendCollection() {
+        Builder b = DynamicQuery.builder();
         b.select().append(Arrays.asList("id", "name", "email"));
         b.from().append("users");
         String sql = b.build();
@@ -986,10 +987,10 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_selectAppendIf() {
+    public void testDynamicQueryBuilder_selectAppendIf() {
         boolean includeSalary = true;
         boolean includeBonus = false;
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+        Builder b = DynamicQuery.builder();
         b.select().append("id").appendIf(includeSalary, "salary").appendIf(includeBonus, "bonus");
         b.from().append("employees");
         String sql = b.build();
@@ -998,8 +999,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_intersect() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_intersect() {
+        Builder b = DynamicQuery.builder();
         b.select().append("user_id");
         b.from().append("all_users");
         b.intersect("SELECT user_id FROM premium_users");
@@ -1008,8 +1009,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_except() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_except() {
+        Builder b = DynamicQuery.builder();
         b.select().append("user_id");
         b.from().append("all_users");
         b.except("SELECT user_id FROM blocked_users");
@@ -1018,8 +1019,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_minus() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_minus() {
+        Builder b = DynamicQuery.builder();
         b.select().append("user_id");
         b.from().append("all_users");
         b.minus("SELECT user_id FROM inactive_users");
@@ -1028,8 +1029,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_fromAppendWithAlias() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_fromAppendWithAlias() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users", "u");
         String sql = b.build();
@@ -1037,8 +1038,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_fromInnerJoin() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_fromInnerJoin() {
+        Builder b = DynamicQuery.builder();
         b.select().append("u.id").append("p.name");
         b.from().append("users", "u").innerJoin("products p", "u.id = p.user_id");
         String sql = b.build();
@@ -1046,8 +1047,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_fromRightJoin() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_fromRightJoin() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users", "u").rightJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
@@ -1055,8 +1056,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_fromFullJoin() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_fromFullJoin() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users", "u").fullJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
@@ -1064,8 +1065,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_whereRowNumAtMost() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_whereRowNumAtMost() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.whereRowNumAtMost(10);
@@ -1074,14 +1075,14 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_selectAppendIfOrElse() {
-        DynamicSqlBuilder b1 = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_selectAppendIfOrElse() {
+        Builder b1 = DynamicQuery.builder();
         b1.select().appendIfOrElse(true, "first_name || ' ' || last_name AS full_name", "first_name");
         b1.from().append("users");
         String sql1 = b1.build();
         assertTrue(sql1.contains("first_name || ' ' || last_name AS full_name"));
 
-        DynamicSqlBuilder b2 = DynamicSqlBuilder.create();
+        Builder b2 = DynamicQuery.builder();
         b2.select().appendIfOrElse(false, "first_name || ' ' || last_name AS full_name", "first_name");
         b2.from().append("users");
         String sql2 = b2.build();
@@ -1090,8 +1091,8 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_whereOr() {
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+    public void testDynamicQueryBuilder_whereOr() {
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.where().append("status = 'active'").or("role = 'admin'");
@@ -1100,10 +1101,10 @@ public class JavadocExamplesQueryTest {
     }
 
     @Test
-    public void testDynamicSqlBuilder_whereAppendIf() {
+    public void testDynamicQueryBuilder_whereAppendIf() {
         boolean filterByStatus = true;
         boolean filterByRole = false;
-        DynamicSqlBuilder b = DynamicSqlBuilder.create();
+        Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.where().append("1 = 1").appendIf(filterByStatus, "AND status = 'active'").appendIf(filterByRole, "AND role = 'admin'");
