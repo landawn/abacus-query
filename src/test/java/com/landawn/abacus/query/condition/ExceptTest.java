@@ -134,7 +134,7 @@ public class ExceptTest extends TestBase {
         // Test EXCEPT in a complete criteria
         SubQuery excludedUsers = Filters.subQuery("SELECT user_id FROM banned_users");
 
-        Criteria criteria = Filters.criteria().where(Filters.eq("status", "active")).except(excludedUsers);
+        Criteria criteria = Criteria.builder().where(Filters.eq("status", "active")).except(excludedUsers).build();
 
         List<Clause> aggregations = criteria.getSetOperations();
         Assertions.assertEquals(1, aggregations.size());

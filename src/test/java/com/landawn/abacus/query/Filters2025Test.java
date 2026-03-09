@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
@@ -1141,43 +1142,43 @@ public class Filters2025Test extends TestBase {
 
     @Test
     public void testCriteria() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.criteria();
+        Criteria criteria = Criteria.builder().build();
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBWhere() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.where(Filters.equal("status", "active"));
+        Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).build();
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBWhereString() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.where("status = 'active'");
+        Criteria criteria = Criteria.builder().where("status = 'active'").build();
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBGroupBy() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.groupBy("department");
+        Criteria criteria = Criteria.builder().groupBy("department").build();
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBHaving() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.having(Filters.expr("COUNT(*) > 5"));
+        Criteria criteria = Criteria.builder().having(Filters.expr("COUNT(*) > 5")).build();
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBOrderBy() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.orderBy("name");
+        Criteria criteria = Criteria.builder().orderBy("name").build();
         assertNotNull(criteria);
     }
 
     @Test
     public void testCBLimit() {
-        com.landawn.abacus.query.condition.Criteria criteria = Filters.CriteriaBuilder.limit(10);
+        Criteria criteria = Criteria.builder().limit(10).build();
         assertNotNull(criteria);
     }
 }

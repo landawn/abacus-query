@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters.CriteriaBuilder;
 import com.landawn.abacus.query.condition.All;
 import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Any;
@@ -1112,7 +1111,7 @@ public class FiltersTest extends TestBase {
 
     @Test
     public void testCriteria() {
-        Criteria criteria = Filters.criteria();
+        Criteria criteria = Criteria.builder().build();
         Assertions.assertNotNull(criteria);
     }
 
@@ -1120,104 +1119,104 @@ public class FiltersTest extends TestBase {
     public void testCB() {
         // Test where with condition
         Condition condition = Filters.eq("status", "active");
-        Criteria criteria1 = CriteriaBuilder.where(condition);
+        Criteria criteria1 = Criteria.builder().where(condition).build();
         Assertions.assertNotNull(criteria1);
 
         // Test where with string
-        Criteria criteria2 = CriteriaBuilder.where("age > 18");
+        Criteria criteria2 = Criteria.builder().where("age > 18").build();
         Assertions.assertNotNull(criteria2);
 
         // Test groupBy with condition
-        Criteria criteria3 = CriteriaBuilder.groupBy(condition);
+        Criteria criteria3 = Criteria.builder().groupBy(condition).build();
         Assertions.assertNotNull(criteria3);
 
         // Test groupBy with varargs
-        Criteria criteria4 = CriteriaBuilder.groupBy("dept", "team");
+        Criteria criteria4 = Criteria.builder().groupBy("dept", "team").build();
         Assertions.assertNotNull(criteria4);
 
         // Test groupBy with property and direction
-        Criteria criteria5 = CriteriaBuilder.groupBy("salary", SortDirection.DESC);
+        Criteria criteria5 = Criteria.builder().groupBy("salary", SortDirection.DESC).build();
         Assertions.assertNotNull(criteria5);
 
         // Test groupBy with collection
         List<String> props = Arrays.asList("year", "month");
-        Criteria criteria6 = CriteriaBuilder.groupBy(props);
+        Criteria criteria6 = Criteria.builder().groupBy(props).build();
         Assertions.assertNotNull(criteria6);
 
         // Test groupBy with collection and direction
-        Criteria criteria7 = CriteriaBuilder.groupBy(props, SortDirection.DESC);
+        Criteria criteria7 = Criteria.builder().groupBy(props, SortDirection.DESC).build();
         Assertions.assertNotNull(criteria7);
 
         // Test groupBy with map
         Map<String, SortDirection> orders = new LinkedHashMap<>();
         orders.put("priority", SortDirection.DESC);
         orders.put("date", SortDirection.ASC);
-        Criteria criteria8 = CriteriaBuilder.groupBy(orders);
+        Criteria criteria8 = Criteria.builder().groupBy(orders).build();
         Assertions.assertNotNull(criteria8);
 
         // Test having with condition
-        Criteria criteria9 = CriteriaBuilder.having(condition);
+        Criteria criteria9 = Criteria.builder().having(condition).build();
         Assertions.assertNotNull(criteria9);
 
         // Test having with string
-        Criteria criteria10 = CriteriaBuilder.having("COUNT(*) > 5");
+        Criteria criteria10 = Criteria.builder().having("COUNT(*) > 5").build();
         Assertions.assertNotNull(criteria10);
 
         // Test orderByAsc with varargs
-        Criteria criteria11 = CriteriaBuilder.orderByAsc("firstName", "lastName");
+        Criteria criteria11 = Criteria.builder().orderByAsc("firstName", "lastName").build();
         Assertions.assertNotNull(criteria11);
 
         // Test orderByAsc with collection
-        Criteria criteria12 = CriteriaBuilder.orderByAsc(props);
+        Criteria criteria12 = Criteria.builder().orderByAsc(props).build();
         Assertions.assertNotNull(criteria12);
 
         // Test orderByDesc with varargs
-        Criteria criteria13 = CriteriaBuilder.orderByDesc("createdAt", "id");
+        Criteria criteria13 = Criteria.builder().orderByDesc("createdAt", "id").build();
         Assertions.assertNotNull(criteria13);
 
         // Test orderByDesc with collection
-        Criteria criteria14 = CriteriaBuilder.orderByDesc(props);
+        Criteria criteria14 = Criteria.builder().orderByDesc(props).build();
         Assertions.assertNotNull(criteria14);
 
         // Test orderBy with condition
-        Criteria criteria15 = CriteriaBuilder.orderBy(condition);
+        Criteria criteria15 = Criteria.builder().orderBy(condition).build();
         Assertions.assertNotNull(criteria15);
 
         // Test orderBy with varargs
-        Criteria criteria16 = CriteriaBuilder.orderBy("name", "age");
+        Criteria criteria16 = Criteria.builder().orderBy("name", "age").build();
         Assertions.assertNotNull(criteria16);
 
         // Test orderBy with property and direction
-        Criteria criteria17 = CriteriaBuilder.orderBy("salary", SortDirection.DESC);
+        Criteria criteria17 = Criteria.builder().orderBy("salary", SortDirection.DESC).build();
         Assertions.assertNotNull(criteria17);
 
         // Test orderBy with collection
-        Criteria criteria18 = CriteriaBuilder.orderBy(props);
+        Criteria criteria18 = Criteria.builder().orderBy(props).build();
         Assertions.assertNotNull(criteria18);
 
         // Test orderBy with collection and direction
-        Criteria criteria19 = CriteriaBuilder.orderBy(props, SortDirection.DESC);
+        Criteria criteria19 = Criteria.builder().orderBy(props, SortDirection.DESC).build();
         Assertions.assertNotNull(criteria19);
 
         // Test orderBy with map
-        Criteria criteria20 = CriteriaBuilder.orderBy(orders);
+        Criteria criteria20 = Criteria.builder().orderBy(orders).build();
         Assertions.assertNotNull(criteria20);
 
         // Test limit with Limit condition
         Limit limitCond = Filters.limit(10);
-        Criteria criteria21 = CriteriaBuilder.limit(limitCond);
+        Criteria criteria21 = Criteria.builder().limit(limitCond).build();
         Assertions.assertNotNull(criteria21);
 
         // Test limit with count
-        Criteria criteria22 = CriteriaBuilder.limit(20);
+        Criteria criteria22 = Criteria.builder().limit(20).build();
         Assertions.assertNotNull(criteria22);
 
         // Test limit with offset and count
-        Criteria criteria23 = CriteriaBuilder.limit(30, 10);
+        Criteria criteria23 = Criteria.builder().limit(30, 10).build();
         Assertions.assertNotNull(criteria23);
 
         // Test limit with expression
-        Criteria criteria24 = CriteriaBuilder.limit("50 OFFSET 100");
+        Criteria criteria24 = Criteria.builder().limit("50 OFFSET 100").build();
         Assertions.assertNotNull(criteria24);
     }
 }

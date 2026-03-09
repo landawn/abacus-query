@@ -122,7 +122,7 @@ public class SubQueryTest extends TestBase {
     @Test
     public void testCriteriaConditionNotDoubleWrappedInWhere() {
         List<String> props = Arrays.asList("id");
-        Criteria criteria = Filters.criteria().where(Filters.eq("active", true));
+        Criteria criteria = Criteria.builder().where(Filters.eq("active", true)).build();
         SubQuery subQuery = Filters.subQuery("users", props, criteria);
 
         String result = subQuery.toString();

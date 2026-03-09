@@ -558,7 +558,11 @@ public class Criteria extends AbstractCondition {
 
         private String selectModifier = null;
 
-        private List<Condition> conditionList;
+        private final List<Condition> conditionList = new ArrayList<>();
+
+        CriteriaBuilder() {
+            // utility/builder class
+        }
 
         /**
          * Sets the DISTINCT modifier for the query.

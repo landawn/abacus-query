@@ -353,7 +353,7 @@ public class AbstractQueryBuilder2025Test extends TestBase {
 
     @Test
     public void testAppendCriteriaAfterWhereThrowsWhenCriteriaHasWhere() {
-        Criteria criteria = Filters.criteria().where(Filters.eq("name", "Alice"));
+        Criteria criteria = Criteria.builder().where(Filters.eq("name", "Alice")).build();
 
         assertThrows(IllegalStateException.class, () -> SQLBuilder.PSC.select("*").from("users").where(Filters.eq("id", 1)).append(criteria).toSql());
     }

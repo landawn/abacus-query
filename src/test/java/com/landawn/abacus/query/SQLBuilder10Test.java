@@ -1080,7 +1080,7 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testCriteriaCondition() {
-        Criteria criteria = Filters.criteria().where(Filters.gt("age", 18)).groupBy("status").having(Filters.gt("COUNT(*)", 5)).orderBy("status").limit(10);
+        Criteria criteria = Criteria.builder().where(Filters.gt("age", 18)).groupBy("status").having(Filters.gt("COUNT(*)", 5)).orderBy("status").limit(10).build();
 
         String sql = PSC.select("status", "COUNT(*)").from("users").append(criteria).toSql();
 
@@ -1377,12 +1377,13 @@ public class SQLBuilder10Test extends TestBase {
 
     @Test
     public void testAppendWithCriteria() {
-        Criteria criteria = Filters.criteria()
+        Criteria criteria = Criteria.builder()
                 .where(Filters.eq("status", "ACTIVE"))
                 .groupBy("department")
                 .having(Filters.gt("COUNT(*)", 5))
                 .orderBy("department")
-                .limit(20, 10);
+                .limit(20, 10)
+                .build();
 
         String sql = PSC.select("department", "COUNT(*)").from("employees").append(criteria).toSql();
 
@@ -1761,7 +1762,7 @@ public class SQLBuilder10Test extends TestBase {
         assertTrue(sql.contains("HAVING COUNT(*) > 5"));
 
         // Where inside a Criteria (exercises AbstractQueryBuilder.append -> appendCondition path)
-        Criteria criteria = Filters.criteria().where(Filters.expr("status = 'ACTIVE'")).having(Filters.expr("COUNT(*) > 10"));
+        Criteria criteria = Criteria.builder().where(Filters.expr("status = 'ACTIVE'")).having(Filters.expr("COUNT(*) > 10")).build();
         sql = PSC.select("status", "COUNT(*)").from("users").groupBy("status").append(criteria).toSql();
         assertTrue(sql.contains("WHERE status = 'ACTIVE'"));
         assertTrue(sql.contains("HAVING COUNT(*) > 10"));
