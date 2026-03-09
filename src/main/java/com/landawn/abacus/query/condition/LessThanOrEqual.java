@@ -32,7 +32,7 @@ package com.landawn.abacus.query.condition;
  * <p>The operator works with various data types:
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
- *   <li>Dates/Times: Chronocomposable comparison</li>
+ *   <li>Dates/Times: Chronological comparison</li>
  *   <li>Strings: Lexicographical (dictionary) order</li>
  *   <li>Any Comparable type supported by the database</li>
  * </ul>
@@ -87,7 +87,7 @@ public class LessThanOrEqual extends Binary {
      *
      * // Find all orders on or before today
      * LessThanOrEqual todayOrEarlier = new LessThanOrEqual("order_date", LocalDate.now());
-     * // SQL: order_date <= '2023-10-15' (assuming today's date)
+     * // SQL: order_date <= '<today>'  (value depends on current date)
      *
      * // Set maximum allowed discount
      * LessThanOrEqual maxDiscount = new LessThanOrEqual("discount_percent", 50);

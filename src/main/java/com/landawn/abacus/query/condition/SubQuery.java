@@ -139,7 +139,7 @@ public class SubQuery extends ComposableCondition {
      * Creates a subquery with an entity name and raw SQL.
      * The entity name is for reference only when using raw SQL and doesn't affect the query.
      * 
-     * <p>This constructor allows associating a composable entity name with a raw SQL subquery,
+     * <p>This constructor allows associating a logical entity name with a raw SQL subquery,
      * which can be useful for documentation or framework integration purposes.</p>
      * 
      * <p><b>Usage Examples:</b></p>

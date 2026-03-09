@@ -73,8 +73,7 @@ import com.landawn.abacus.util.u.Optional;
  * <p><b>⚠️ IMPORTANT - Resource Management:</b>
  * All SqlBuilder instances must be properly finalized by calling {@code build()}
  * to generate the final SQL string and release internal resources. Failure to finalize
- * builder instances may result in memory leaks in long-running applications. Always use try-with-resources
- * or ensure proper cleanup in production environments.</p>
+ * builder instances may result in memory leaks in long-running applications. Always call {@code build()} to finalize the SQL construction.</p>
  *
  * <p><b>Key Features and Capabilities:</b>
  * <ul>
@@ -84,13 +83,13 @@ import com.landawn.abacus.util.u.Optional;
  *   <li><b>Entity Class Integration:</b> Seamless mapping with JPA-style annotations and reflection-based field mapping</li>
  *   <li><b>Advanced Join Operations:</b> Comprehensive support for INNER, LEFT, RIGHT, FULL OUTER, and CROSS joins</li>
  *   <li><b>Subquery Integration:</b> Nested queries, correlated subqueries, and EXISTS/NOT EXISTS operations</li>
- *   <li><b>Window Function Support:</b> ROW_NUMBER, RANK, DENSE_RANK, and aggregate window functions</li>
- *   <li><b>CTE (Common Table Expressions):</b> WITH clause support for complex recursive and non-recursive queries</li>
+ *   <li><b>Window Function Support:</b> Achievable through raw SQL expressions via {@code append()}</li>
+ *   <li><b>CTE (Common Table Expressions):</b> Achievable through raw SQL expressions via {@code append()}</li>
  * </ul>
  *
  * <p><b>Design Philosophy:</b>
  * <ul>
- *   <li><b>Type Safety First:</b> Compile-time validation and type checking for all SQL construction operations</li>
+ *   <li><b>Validation:</b> Runtime validation for SQL construction operations</li>
  *   <li><b>Security by Design:</b> All operations generate parameterized SQL preventing injection attacks</li>
  *   <li><b>Fluent Interface:</b> Method chaining enables readable, expressive query building patterns</li>
  *   <li><b>Performance Optimized:</b> Generated SQL is optimized for database execution plan efficiency</li>
@@ -159,7 +158,7 @@ import com.landawn.abacus.util.u.Optional;
  *   <li><b>Join Operations:</b> {@code join()}, {@code leftJoin()}, {@code rightJoin()}, {@code fullJoin()}, {@code crossJoin()}</li>
  *   <li><b>Aggregation:</b> {@code groupBy()}, {@code having()}, {@code distinct()}, {@code union()}, {@code unionAll()}</li>
  *   <li><b>Subqueries:</b> {@code exists()}, {@code notExists()}, {@code in()}, {@code notIn()}, {@code subQuery()}</li>
- *   <li><b>Window Functions:</b> {@code over()}, {@code partitionBy()}, {@code rowNumber()}, {@code rank()}</li>
+ *   <li><b>Window Functions:</b> Achievable through raw SQL expressions via {@code append()}</li>
  * </ul>
  *
  * <p><b>Common Usage Patterns:</b>
@@ -228,7 +227,7 @@ import com.landawn.abacus.util.u.Optional;
  *   <li><b>Parameterized Queries:</b> All values are automatically parameterized to prevent SQL injection</li>
  *   <li><b>Named Parameters:</b> Support for named parameter binding (:paramName)</li>
  *   <li><b>Collection Parameters:</b> Automatic expansion of collections for IN clauses</li>
- *   <li><b>Type Safety:</b> Compile-time type checking for parameter values</li>
+ *   <li><b>Validation:</b> Runtime validation for parameter values</li>
  *   <li><b>Null Handling:</b> Proper SQL NULL semantics for null values</li>
  * </ul>
  *
@@ -243,9 +242,9 @@ import com.landawn.abacus.util.u.Optional;
  *
  * <p><b>Advanced SQL Features:</b>
  * <ul>
- *   <li><b>Window Functions:</b> ROW_NUMBER(), RANK(), DENSE_RANK(), LAG(), LEAD()</li>
- *   <li><b>Aggregate Functions:</b> COUNT(), SUM(), AVG(), MIN(), MAX() with OVER clauses</li>
- *   <li><b>Common Table Expressions:</b> WITH clauses for recursive and non-recursive queries</li>
+ *   <li><b>Window Functions:</b> Achievable through raw SQL expressions via {@code append()}</li>
+ *   <li><b>Aggregate Functions:</b> COUNT(), SUM(), AVG(), MIN(), MAX()</li>
+ *   <li><b>Common Table Expressions:</b> Achievable through raw SQL expressions via {@code append()}</li>
  *   <li><b>Set Operations:</b> UNION, UNION ALL, INTERSECT, EXCEPT operations</li>
  *   <li><b>Conditional Logic:</b> CASE WHEN expressions and COALESCE functions</li>
  * </ul>
@@ -729,7 +728,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = SCSB.insert("firstName")
          *                  .into("account")
          *                  .build().sql();
-         * // Output: INSERT INTO account (first_name) VALUES (:first_name)
+         * // Output: INSERT INTO account (first_name) VALUES (?)
          * }</pre>
          *
          * @param expr the column name or expression
@@ -753,7 +752,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = SCSB.insert("firstName", "lastName", "email")
          *                  .into("account")
          *                  .build().sql();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (:first_name, :last_name, :email)
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the column names to insert
@@ -783,7 +782,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = SCSB.insert(columns)
          *                  .into("account")
          *                  .build().sql();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (:first_name, :last_name, :email)
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the collection of column names to insert
@@ -945,7 +944,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.insertInto(Account.class)
          *                  .build().sql();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (:first_name, :last_name, :email)
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class
@@ -967,7 +966,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Set<String> excluded = N.asSet("id");
          * String sql = SCSB.insertInto(Account.class, excluded)
          *                  .build().sql();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (:first_name, :last_name, :email)
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class
@@ -2003,7 +2002,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.insert("firstName")
          *                  .into("users")
          *                  .build().sql();
-         * // Output: INSERT INTO USERS (FIRST_NAME) VALUES (:FIRST_NAME)
+         * // Output: INSERT INTO USERS (FIRST_NAME) VALUES (?)
          * }</pre>
          *
          * @param expr the column name or expression to insert
@@ -2027,7 +2026,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.insert("firstName", "lastName", "email")
          *                  .into("users")
          *                  .build().sql();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (:FIRST_NAME, :LAST_NAME, :EMAIL)
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the property or column names to insert, in order
@@ -2057,7 +2056,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.insert(columns)
          *                  .into("users")
          *                  .build().sql();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (:FIRST_NAME, :LAST_NAME, :EMAIL)
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the collection of column names to insert
@@ -2221,7 +2220,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = ACSB.insertInto(User.class)
          *                  .build().sql();
-         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES (:FIRST_NAME, :LAST_NAME, :AGE, :EMAIL)
+         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES (?, ?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class to insert into
@@ -2243,7 +2242,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Set<String> excluded = new HashSet<>(Arrays.asList("id"));
          * String sql = ACSB.insertInto(User.class, excluded)
          *                  .build().sql();
-         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES (:FIRST_NAME, :LAST_NAME, :AGE, :EMAIL)
+         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES (?, ?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class to insert into
@@ -3275,7 +3274,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = LCSB.insert("userName")
          *                  .into("users")
          *                  .build().sql();
-         * // Output: INSERT INTO users (userName) VALUES (:userName)
+         * // Output: INSERT INTO users (userName) VALUES (?)
          * }</pre>
          * 
          * @param expr the column name or expression to insert
@@ -3302,7 +3301,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = LCSB.insert("firstName", "lastName", "email")
          *                  .into("users")
          *                  .build().sql();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (:firstName, :lastName, :email)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param propOrColumnNames the property or column names to insert
@@ -3332,7 +3331,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = LCSB.insert(columns)
          *                  .into("users")
          *                  .build().sql();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (:firstName, :lastName, :email)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param propOrColumnNames collection of property or column names to insert
@@ -3501,7 +3500,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = LCSB.insertInto(User.class)
          *                  .build().sql();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (:firstName, :lastName, :email)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param entityClass the entity class to insert into
@@ -3525,7 +3524,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Set<String> excluded = new HashSet<>(Arrays.asList("id"));
          * String sql = LCSB.insertInto(User.class, excluded)
          *                  .build().sql();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (:firstName, :lastName, :email)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param entityClass the entity class to insert into

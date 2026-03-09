@@ -124,7 +124,7 @@ public class IsNull extends Is {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
+     * @throws IllegalArgumentException if propName is null or empty (validation performed by ancestor class {@link Binary})
      */
     public IsNull(final String propName) {
         super(propName, NULL);

@@ -17,7 +17,7 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents an IS condition in SQL-like queries.
  * This class is used to create conditions that check if a property is equal to a specific value
- * using the SQL IS operator, which is primarily used for special SQL values like NULL, NaN, or INFINITE.
+ * using the SQL IS operator, which is primarily used for special SQL values like NULL, NaN, or Infinite.
  * 
  * <p>The IS operator differs from the equals (=) operator in that it can properly compare
  * special SQL values that have no direct equality semantics. The most common use case is

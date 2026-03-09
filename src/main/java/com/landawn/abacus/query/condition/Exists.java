@@ -113,7 +113,7 @@ public class Exists extends Cell {
      * }</pre>
      *
      * @param subQuery the subquery to check for existence of rows (must not be null)
-     * @throws NullPointerException if subQuery is null
+     * @throws IllegalArgumentException if subQuery is null
      */
     public Exists(final SubQuery subQuery) {
         super(Operator.EXISTS, subQuery);

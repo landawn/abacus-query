@@ -17,13 +17,13 @@ package com.landawn.abacus.query.condition;
 import com.landawn.abacus.util.N;
 
 /**
- * A {@link Condition} that supports composable composition via {@code and()}, {@code or()},
+ * A {@link Condition} that supports logical composition via {@code and()}, {@code or()},
  * {@code not()}, and {@code xor()}.
  *
- * <p>Not every {@code Condition} can be composablely combined — for example, SQL clauses
+ * <p>Not every {@code Condition} can be logically combined — for example, SQL clauses
  * ({@link Clause}: WHERE, ORDER BY, …) and {@link Join} operations are structural
- * query components that do not participate in boolean logic. This interface marks the
- * conditions that <em>do</em> support composable composition and provides working default
+ * query components that do not participate in boolean logic. This abstract class marks the
+ * conditions that <em>do</em> support logical composition and provides working default
  * implementations for the four operations.</p>
  *
  * <p>Typical implementors include comparison conditions ({@link Binary} and subclasses),

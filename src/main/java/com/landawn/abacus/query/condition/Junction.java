@@ -47,7 +47,7 @@ import com.landawn.abacus.util.Strings;
  * 
  * <p>Key features:
  * <ul>
- *   <li>Immutable after construction — conditions are set via the constructor and cannot be changed</li>
+ *   <li>Fixed after construction — no conditions can be added or removed after creation</li>
  *   <li>Deep copying support for safe condition reuse</li>
  *   <li>Automatic parentheses handling for correct precedence</li>
  *   <li>Parameter collection from all nested conditions</li>

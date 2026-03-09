@@ -523,7 +523,7 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Creates an IS EMPTY expression for the specified literal.
+     * Creates an IS NULL OR EMPTY (IS BLANK) expression for the specified literal.
      * This checks if a value is empty (blank).
      *
      * <p><b>Usage Examples:</b></p>
@@ -540,7 +540,7 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Creates an IS NOT EMPTY expression for the specified literal.
+     * Creates an IS NOT NULL AND NOT EMPTY (IS NOT BLANK) expression for the specified literal.
      * This checks if a value is not empty (not blank).
      *
      * <p><b>Usage Examples:</b></p>

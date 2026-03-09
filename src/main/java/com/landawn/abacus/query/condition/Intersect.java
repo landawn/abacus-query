@@ -146,7 +146,7 @@ public class Intersect extends Clause {
      *
      * @param subQuery the subquery to perform the INTERSECT operation with. Must not be null. The subquery should
      *                  return the same number of columns with compatible types as the main query.
-     * @throws NullPointerException if subQuery is null
+     * @throws IllegalArgumentException if subQuery is null
      * @see Union
      * @see UnionAll
      * @see Except

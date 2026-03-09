@@ -17,11 +17,11 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents a NOT BETWEEN condition in SQL queries.
  * This condition checks if a value is NOT within a specified range.
- * It's the composable opposite of the BETWEEN operator and is useful for excluding ranges of values.
+ * It's the logical opposite of the BETWEEN operator and is useful for excluding ranges of values.
  *
  * <p>The NOT BETWEEN condition is equivalent to: property &lt; minValue OR property &gt; maxValue.
- * The condition evaluates to true if the property value falls outside the specified range,
- * excluding the boundaries themselves.</p>
+ * The condition evaluates to true if the property value falls strictly outside the specified range
+ * (i.e., less than minValue or greater than maxValue).</p>
  *
  * <p>Common use cases include:
  * <ul>

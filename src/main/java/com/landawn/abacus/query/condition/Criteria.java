@@ -95,16 +95,10 @@ public class Criteria extends AbstractCondition {
     private List<Condition> conditionList;
 
     /**
-     * Creates a new empty Criteria instance.
-     * The Criteria starts with no conditions and can be built up using the fluent API.
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Criteria criteria = new Criteria();
-     * criteria.where(Filters.equal("status", "active"))
-     *         .orderBy("created_date", SortDirection.DESC)
-     *         .limit(10);
-     * }</pre>
+     * Creates a new Criteria instance with the specified select modifier and condition list.
+     *
+     * @param selectModifier the SELECT modifier (e.g., DISTINCT), or {@code null} for none
+     * @param conditionList the list of conditions representing the query clauses
      */
     Criteria(String selectModifier, List<Condition> conditionList) {
         super(Operator.EMPTY);
@@ -489,7 +483,7 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Returns the hash code of this Criteria.
-     * The hash code is based on the selectModifier modifier and all conditions.
+     * The hash code is based on the select modifier and all conditions.
      * 
      * @return the hash code value
      */
@@ -501,7 +495,7 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Checks if this Criteria is equal to another object.
-     * Two Criteria are equal if they have the same selectModifier modifier and conditions.
+     * Two Criteria are equal if they have the same select modifier and conditions.
      * 
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
@@ -571,13 +565,13 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .distinct()
          *     .where(Filters.equal("status", "active"));
          * // Results in: SELECT DISTINCT ... WHERE status = 'active'
          * }</pre>
          * 
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder distinct() {
             selectModifier = SK.DISTINCT;
@@ -591,7 +585,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .distinctBy("department, location");
          * // Results in: SELECT DISTINCT(department, location) ...
          * 
@@ -601,7 +595,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          * 
          * @param columnNames the columns to apply DISTINCT to
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder distinctBy(final String columnNames) {
             selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCT : SK.DISTINCT + "(" + columnNames + ")";
@@ -615,13 +609,13 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .distinctRow()
          *     .where(Filters.equal("active", true));
          * // Results in: SELECT DISTINCTROW ... WHERE active = true
          * }</pre>
          * 
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder distinctRow() {
             selectModifier = SK.DISTINCTROW;
@@ -634,13 +628,13 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .distinctRowBy("category, subcategory");
          * // Results in: SELECT DISTINCTROW(category, subcategory) ...
          * }</pre>
          * 
          * @param columnNames the columns to apply DISTINCTROW to
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder distinctRowBy(final String columnNames) {
             selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
@@ -654,7 +648,7 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .selectModifier("SQL_CALC_FOUND_ROWS")
          *     .where(Filters.equal("active", true));
          * // Results in: SELECT SQL_CALC_FOUND_ROWS ... WHERE active = true
@@ -664,7 +658,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param selectModifier the custom SELECT modifier
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder selectModifier(final String selectModifier) {
             this.selectModifier = selectModifier;
@@ -678,7 +672,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .join(
          *         new LeftJoin("orders", new On("users.id", "orders.user_id")),
          *         new InnerJoin("products", new On("orders.product_id", "products.id"))
@@ -686,7 +680,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          * 
          * @param joins the JOIN clauses to add
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public final Builder join(final Join... joins) {
             add(joins);
@@ -707,7 +701,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          * 
          * @param joins the collection of JOIN clauses to add
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder join(final Collection<Join> joins) {
             add(joins);
@@ -721,14 +715,14 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .join("orders")
          *     .where(Filters.equal("users.id", "orders.user_id"));
          * // Results in: JOIN orders WHERE users.id = orders.user_id
          * }</pre>
          * 
          * @param joinEntity the table or entity to join
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder join(final String joinEntity) {
             add(new Join(joinEntity));
@@ -742,7 +736,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .join("orders", new On("users.id", "orders.user_id"))
          *     .where(Filters.equal("users.status", "active"));
          * // Results in: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
@@ -750,7 +744,7 @@ public class Criteria extends AbstractCondition {
          * 
          * @param joinEntity the table or entity to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder join(final String joinEntity, final Condition cond) {
             add(new Join(joinEntity, cond));
@@ -764,13 +758,13 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Collection<String> tables = Arrays.asList("orders", "order_items");
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .join(tables, new On("id", "order_id"));
          * }</pre>
          * 
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder join(final Collection<String> joinEntities, final Condition cond) {
             add(new Join(joinEntities, cond));
@@ -788,7 +782,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder innerJoin(final String joinEntity) {
             add(new InnerJoin(joinEntity));
@@ -806,7 +800,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder innerJoin(final String joinEntity, final Condition cond) {
             add(new InnerJoin(joinEntity, cond));
@@ -824,7 +818,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder innerJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new InnerJoin(joinEntities, cond));
@@ -841,7 +835,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder leftJoin(final String joinEntity) {
             add(new LeftJoin(joinEntity));
@@ -859,7 +853,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder leftJoin(final String joinEntity, final Condition cond) {
             add(new LeftJoin(joinEntity, cond));
@@ -872,7 +866,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder leftJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new LeftJoin(joinEntities, cond));
@@ -889,7 +883,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder rightJoin(final String joinEntity) {
             add(new RightJoin(joinEntity));
@@ -907,7 +901,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder rightJoin(final String joinEntity, final Condition cond) {
             add(new RightJoin(joinEntity, cond));
@@ -920,7 +914,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder rightJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new RightJoin(joinEntities, cond));
@@ -937,7 +931,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder fullJoin(final String joinEntity) {
             add(new FullJoin(joinEntity));
@@ -955,7 +949,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder fullJoin(final String joinEntity, final Condition cond) {
             add(new FullJoin(joinEntity, cond));
@@ -968,7 +962,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder fullJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new FullJoin(joinEntities, cond));
@@ -985,7 +979,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder crossJoin(final String joinEntity) {
             add(new CrossJoin(joinEntity));
@@ -1003,7 +997,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder crossJoin(final String joinEntity, final Condition cond) {
             add(new CrossJoin(joinEntity, cond));
@@ -1016,7 +1010,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder crossJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new CrossJoin(joinEntities, cond));
@@ -1033,7 +1027,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder naturalJoin(final String joinEntity) {
             add(new NaturalJoin(joinEntity));
@@ -1051,7 +1045,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder naturalJoin(final String joinEntity, final Condition cond) {
             add(new NaturalJoin(joinEntity, cond));
@@ -1064,7 +1058,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new NaturalJoin(joinEntities, cond));
@@ -1078,7 +1072,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .where(Filters.and(
          *         Filters.equal("status", "active"),
          *         Filters.greaterThan("age", 18),
@@ -1087,7 +1081,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          * 
          * @param cond the WHERE condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder where(final Condition cond) {
             if (cond == null) {
@@ -1112,7 +1106,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .where("age > 18 AND status = 'active'");
          * 
          * // Complex expression
@@ -1120,7 +1114,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          * 
          * @param expr the WHERE condition as a string
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder where(final String expr) {
             N.checkArgNotEmpty(expr, "expr");
@@ -1136,12 +1130,12 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy(Filters.expr("YEAR(order_date), MONTH(order_date)"));
          * }</pre>
          * 
          * @param cond the GROUP BY condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder groupBy(final Condition cond) {
             if (cond == null) {
@@ -1166,13 +1160,13 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy("department", "location", "role");
          * // Results in: GROUP BY department, location, role
          * }</pre>
          * 
          * @param propNames the property names to group by
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public final Builder groupBy(final String... propNames) {
             add(new GroupBy(propNames));
@@ -1186,14 +1180,14 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy("total_sales", SortDirection.DESC);
          * // Results in: GROUP BY total_sales DESC
          * }</pre>
          * 
          * @param propName the property name to group by
          * @param direction the sort direction
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder groupBy(final String propName, final SortDirection direction) {
             add(new GroupBy(propName, direction));
@@ -1207,7 +1201,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
          * // Results in: GROUP BY year DESC, month ASC
          * }</pre>
@@ -1216,7 +1210,7 @@ public class Criteria extends AbstractCondition {
          * @param direction the sort direction for the first property
          * @param propName2 the second property name to group by
          * @param direction2 the sort direction for the second property
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
             groupBy(N.asMap(propName, direction, propName2, direction2));
@@ -1230,7 +1224,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
          * // Results in: GROUP BY country ASC, state ASC, city DESC
          * }</pre>
@@ -1241,7 +1235,7 @@ public class Criteria extends AbstractCondition {
          * @param direction2 the sort direction for the second property
          * @param propName3 the third property name to group by
          * @param direction3 the sort direction for the third property
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
@@ -1258,13 +1252,13 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> groupCols = Arrays.asList("region", "product_type");
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy(groupCols);
          * // Results in: GROUP BY region, product_type
          * }</pre>
          * 
          * @param propNames the collection of property names to group by
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder groupBy(final Collection<String> propNames) {
             return groupBy(propNames, SortDirection.ASC);
@@ -1278,14 +1272,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> groupCols = new HashSet<>(Arrays.asList("category", "brand"));
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy(groupCols, SortDirection.DESC);
          * // Results in: GROUP BY category DESC, brand DESC
          * }</pre>
          * 
          * @param propNames the collection of property names to group by
          * @param direction the sort direction for all properties
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder groupBy(final Collection<String> propNames, final SortDirection direction) {
             add(new GroupBy(propNames, direction));
@@ -1304,12 +1298,12 @@ public class Criteria extends AbstractCondition {
          * grouping.put("department", SortDirection.ASC);
          * grouping.put("salary_range", SortDirection.DESC);
          * grouping.put("years_experience", SortDirection.DESC);
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy(grouping);
          * }</pre>
          * 
          * @param orders a map of property names to sort directions
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder groupBy(final Map<String, SortDirection> orders) {
             add(new GroupBy(orders));
@@ -1324,7 +1318,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy("department")
          *     .having(Filters.and(
          *         Filters.greaterThan("COUNT(*)", 10),
@@ -1333,7 +1327,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          * 
          * @param cond the HAVING condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder having(final Condition cond) {
             if (cond == null) {
@@ -1358,13 +1352,13 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .groupBy("product_category")
          *     .having("SUM(revenue) > 10000 AND COUNT(*) > 5");
          * }</pre>
          * 
          * @param expr the HAVING condition as a string
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder having(final String expr) {
             N.checkArgNotEmpty(expr, "expr");
@@ -1381,13 +1375,13 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderByAsc("lastName", "firstName", "middleName");
          * // Results in: ORDER BY lastName ASC, firstName ASC, middleName ASC
          * }</pre>
          * 
          * @param propNames the property names to order by ascending
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderByAsc(final String... propNames) {
             add(Filters.orderByAsc(propNames));
@@ -1402,12 +1396,12 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("country", "state", "city");
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderByAsc(sortCols);
          * }</pre>
          * 
          * @param propNames the collection of property names to order by ascending
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderByAsc(final Collection<String> propNames) {
             add(Filters.orderByAsc(propNames));
@@ -1422,13 +1416,13 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderByDesc("score", "createdDate");
          * // Results in: ORDER BY score DESC, createdDate DESC
          * }</pre>
          * 
          * @param propNames the property names to order by descending
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderByDesc(final String... propNames) {
             add(Filters.orderByDesc(propNames));
@@ -1443,12 +1437,12 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> sortCols = new HashSet<>(Arrays.asList("revenue", "profit"));
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderByDesc(sortCols);
          * }</pre>
          * 
          * @param propNames the collection of property names to order by descending
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderByDesc(final Collection<String> propNames) {
             add(Filters.orderByDesc(propNames));
@@ -1463,12 +1457,12 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * // Complex ordering expression
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderBy(Filters.expr("CASE WHEN priority = 'HIGH' THEN 1 ELSE 2 END, created_date DESC"));
          * }</pre>
          * 
          * @param cond the ORDER BY condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderBy(final Condition cond) {
             if (cond == null) {
@@ -1493,13 +1487,13 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderBy("department", "lastName", "firstName");
          * // Results in: ORDER BY department, lastName, firstName
          * }</pre>
          * 
          * @param propNames the property names to order by
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public final Builder orderBy(final String... propNames) {
             add(new OrderBy(propNames));
@@ -1513,14 +1507,14 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderBy("createdDate", SortDirection.DESC);
          * // Results in: ORDER BY createdDate DESC
          * }</pre>
          * 
          * @param propName the property name to order by
          * @param direction the sort direction
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderBy(final String propName, final SortDirection direction) {
             add(new OrderBy(propName, direction));
@@ -1534,7 +1528,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderBy("priority", SortDirection.DESC, "createdDate", SortDirection.ASC);
          * // Results in: ORDER BY priority DESC, createdDate ASC
          * }</pre>
@@ -1543,7 +1537,7 @@ public class Criteria extends AbstractCondition {
          * @param direction the sort direction for the first property
          * @param propName2 the second property name to order by
          * @param direction2 the sort direction for the second property
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
             orderBy(N.asMap(propName, direction, propName2, direction2));
@@ -1557,7 +1551,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderBy("category", SortDirection.ASC, "price", SortDirection.DESC, "name", SortDirection.ASC);
          * // Results in: ORDER BY category ASC, price DESC, name ASC
          * }</pre>
@@ -1568,7 +1562,7 @@ public class Criteria extends AbstractCondition {
          * @param direction2 the sort direction for the second property
          * @param propName3 the third property name to order by
          * @param direction3 the sort direction for the third property
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
@@ -1585,13 +1579,13 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("country", "state", "city");
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderBy(sortCols);
          * // Results in: ORDER BY country, state, city
          * }</pre>
          * 
          * @param propNames the collection of property names to order by
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderBy(final Collection<String> propNames) {
             return orderBy(propNames, SortDirection.ASC);
@@ -1605,14 +1599,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> sortCols = new HashSet<>(Arrays.asList("score", "rating"));
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderBy(sortCols, SortDirection.DESC);
          * // Results in: ORDER BY score DESC, rating DESC
          * }</pre>
          * 
          * @param propNames the collection of property names to order by
          * @param direction the sort direction for all properties
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderBy(final Collection<String> propNames, final SortDirection direction) {
             add(new OrderBy(propNames, direction));
@@ -1631,12 +1625,12 @@ public class Criteria extends AbstractCondition {
          * ordering.put("priority", SortDirection.DESC);
          * ordering.put("createdDate", SortDirection.DESC);
          * ordering.put("name", SortDirection.ASC);
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderBy(ordering);
          * }</pre>
          * 
          * @param orders a map of property names to sort directions
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder orderBy(final Map<String, SortDirection> orders) {
             add(new OrderBy(orders));
@@ -1651,12 +1645,12 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Limit customLimit = Filters.limit(100);
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .limit(customLimit);
          * }</pre>
          * 
          * @param condition the LIMIT condition
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder limit(final Limit condition) {
             add(condition);
@@ -1671,14 +1665,14 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("status", "active"))
          *     .limit(10);
          * // Results in: WHERE status = 'active' LIMIT 10
          * }</pre>
          * 
          * @param count the maximum number of results to return
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder limit(final int count) {
             add(Filters.limit(count));
@@ -1694,7 +1688,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * // Page 3 with 20 items per page (take 20, skip 40)
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .orderBy("id")
          *     .limit(20, 40);
          * // Results in: ORDER BY id LIMIT 20 OFFSET 40
@@ -1702,7 +1696,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param count the maximum number of results to return
          * @param offset the number of rows to skip
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder limit(final int count, final int offset) {
             add(Filters.limit(count, offset));
@@ -1717,7 +1711,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .limit("10 OFFSET 20");
          * 
          * // Or with parameters
@@ -1725,7 +1719,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          * 
          * @param expr the LIMIT expression as a string
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder limit(final String expr) {
             add(Filters.limit(expr));
@@ -1740,14 +1734,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users WHERE active = true");
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("status", "active"))
          *     .union(archivedUsers);
          * // Returns active users from both current and archived tables
          * }</pre>
          * 
          * @param subQuery the subquery to union with
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder union(final SubQuery subQuery) {
             add(new Union(subQuery));
@@ -1762,14 +1756,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery pendingOrders = Filters.subQuery("SELECT * FROM pending_orders");
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("status", "completed"))
          *     .unionAll(pendingOrders);
          * // Returns all orders, including duplicates if any exist
          * }</pre>
          * 
          * @param subQuery the subquery to union with
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder unionAll(final SubQuery subQuery) {
             add(new UnionAll(subQuery));
@@ -1784,14 +1778,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery premiumUsers = Filters.subQuery("SELECT user_id FROM premium_members");
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("active", true))
          *     .intersect(premiumUsers);
          * // Returns only active users who are also premium members
          * }</pre>
          * 
          * @param subQuery the subquery to intersect with
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder intersect(final SubQuery subQuery) {
             add(new Intersect(subQuery));
@@ -1806,14 +1800,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery excludedUsers = Filters.subQuery("SELECT user_id FROM blacklist");
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("status", "active"))
          *     .except(excludedUsers);
          * // Returns active users who are not in the blacklist
          * }</pre>
          * 
          * @param subQuery the subquery to except
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder except(final SubQuery subQuery) {
             add(new Except(subQuery));
@@ -1828,14 +1822,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id FROM inactive_users");
-         * Criteria criteria = new Criteria()
+         * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("registered", true))
          *     .minus(inactiveUsers);
          * // Returns registered users minus inactive ones
          * }</pre>
          * 
          * @param subQuery the subquery to minus
-         * @return this Criteria instance for method chaining
+         * @return this Builder instance for method chaining
          */
         public Builder minus(final SubQuery subQuery) {
             add(new Minus(subQuery));

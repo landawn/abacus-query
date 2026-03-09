@@ -88,7 +88,7 @@ public class IsNotNaN extends IsNot {
      * calculations and analyses.
      *
      * <p>The generated SQL uses the IS NOT NAN operator because NaN has special comparison
-     * semantics where NaN != NaN evaluates to true, and normal comparison operators cannot
+     * semantics where NaN != NaN evaluates to true in Java/IEEE 754 (but to unknown in SQL), and normal comparison operators cannot
      * reliably test for the absence of NaN. IS NOT NAN is the correct way to verify a
      * value is a valid number.
      *
@@ -122,7 +122,7 @@ public class IsNotNaN extends IsNot {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
+     * @throws IllegalArgumentException if propName is null or empty (validation performed by ancestor class {@link Binary})
      */
     public IsNotNaN(final String propName) {
         super(propName, NAN);

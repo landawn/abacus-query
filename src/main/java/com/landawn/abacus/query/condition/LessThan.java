@@ -32,7 +32,7 @@ package com.landawn.abacus.query.condition;
  * <p>The operator works with various data types:
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
- *   <li>Dates/Times: Chronocomposable comparison</li>
+ *   <li>Dates/Times: Chronological comparison</li>
  *   <li>Strings: Lexicographical (dictionary) order</li>
  *   <li>Any Comparable type supported by the database</li>
  * </ul>
@@ -91,7 +91,7 @@ public class LessThan extends Binary {
      *
      * // Find items expiring before tomorrow
      * LessThan expiringItems = new LessThan("expiry_date", LocalDate.now().plusDays(1));
-     * // SQL: expiry_date < '2023-10-16' (assuming tomorrow's date)
+     * // SQL: expiry_date < '<tomorrow>'  (value depends on current date)
      *
      * // Temperature below freezing
      * LessThan freezing = new LessThan("temperature", 0);

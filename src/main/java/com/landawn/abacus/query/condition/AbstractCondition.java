@@ -509,7 +509,7 @@ public abstract class AbstractCondition implements Condition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Set<Operator> clauseOps = CriteriaUtil.getClauseOperators();
+     * Set<Operator> clauseOps = AbstractCondition.getClauseOperators();
      * // Returns an immutable set containing: JOIN, LEFT_JOIN, RIGHT_JOIN, FULL_JOIN,
      * // CROSS_JOIN, INNER_JOIN, NATURAL_JOIN, WHERE, GROUP_BY, HAVING, ORDER_BY,
      * // LIMIT, UNION_ALL, UNION, INTERSECT, EXCEPT, MINUS

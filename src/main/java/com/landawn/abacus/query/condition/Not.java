@@ -39,7 +39,7 @@ package com.landawn.abacus.query.condition;
  *   <li>NOT negates a condition (reverses its boolean value)</li>
  *   <li>AND requires all conditions to be true</li>
  *   <li>OR requires at least one condition to be true</li>
- *   <li>XOR requires exactly one of two conditions to be true</li>
+ *   <li>XOR is available via {@code ComposableCondition.xor()} method, requiring exactly one of two conditions to be true</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -112,6 +112,7 @@ public class Not extends Cell {
      * @param cond the condition to be negated. Can be any type of condition
      *                  including simple comparisons, complex composable conditions,
      *                  or subquery conditions. Must not be null.
+     * @throws IllegalArgumentException if cond is null
      */
     public Not(final Condition cond) {
         super(Operator.NOT, cond);

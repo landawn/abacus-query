@@ -108,7 +108,7 @@ public class Any extends Cell {
      * }</pre>
      *
      * @param subQuery the subquery that returns values to compare against. Must not be null.
-     * @throws NullPointerException if subQuery is null
+     * @throws IllegalArgumentException if subQuery is null
      */
     public Any(final SubQuery subQuery) {
         super(Operator.ANY, subQuery);

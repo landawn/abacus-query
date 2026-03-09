@@ -53,7 +53,7 @@ package com.landawn.abacus.query.condition;
  * <p>Database support:
  * <ul>
  *   <li>Supported by: PostgreSQL, SQL Server, SQLite, DB2</li>
- *   <li>NOT supported by MySQL or Oracle (Oracle uses MINUS instead)</li>
+ *   <li>Supported by MySQL 8.0.31+ and PostgreSQL</li>
  *   <li>Part of SQL standard but not universally implemented</li>
  *   <li>Functionally equivalent to Oracle's MINUS operator</li>
  * </ul>
@@ -153,7 +153,7 @@ public class Except extends Clause {
      *
      * @param subQuery the subquery to perform the EXCEPT operation with. Must not be null.
      *                  The subquery must have the same number of columns with compatible types as the main query.
-     * @throws NullPointerException if subQuery is null
+     * @throws IllegalArgumentException if subQuery is null
      * @see Minus
      * @see Union
      * @see UnionAll

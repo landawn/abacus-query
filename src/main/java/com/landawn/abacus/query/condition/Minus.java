@@ -162,7 +162,7 @@ public class Minus extends Clause {
      *
      * @param subQuery the subquery to perform the MINUS operation with. Must not be null.
      *                  The subquery must have the same number of columns with compatible types as the main query.
-     * @throws NullPointerException if subQuery is null
+     * @throws IllegalArgumentException if subQuery is null
      * @see Except
      * @see Union
      * @see UnionAll

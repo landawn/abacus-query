@@ -50,7 +50,7 @@ package com.landawn.abacus.query.condition;
  *     .having(Filters.greaterThan("COUNT(*)", 5));
  *
  * // Cannot combine clauses with AND/OR/NOT
- * // where.and(having);   // This will throw UnsupportedOperationException
+ * // where.and(having);   // This will not compile -- Clause does not have and()/or() methods
  *
  * // Instead, combine conditions within a clause
  * Where complexWhere = new Where(

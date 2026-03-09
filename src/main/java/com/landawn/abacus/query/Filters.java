@@ -113,7 +113,7 @@ import com.landawn.abacus.util.SK;
  *   <li><b>Complex Composable Operations:</b> Support for nested AND/OR/NOT conditions with proper precedence</li>
  *   <li><b>Advanced Join Conditions:</b> Comprehensive support for all SQL join types and complex join predicates</li>
  *   <li><b>Subquery Integration:</b> Seamless integration with EXISTS, IN, and correlated subquery patterns</li>
- *   <li><b>Pattern Matching:</b> Advanced LIKE, REGEX, and full-text search condition support</li>
+ *   <li><b>Pattern Matching:</b> LIKE/NOT LIKE operators with convenience methods for contains, startsWith, endsWith patterns</li>
  *   <li><b>Collection Operations:</b> Optimized IN/NOT IN operations for collections and arrays</li>
  * </ul>
  *
@@ -189,7 +189,7 @@ import com.landawn.abacus.util.SK;
  * <ul>
  *   <li><b>Basic Comparison:</b> {@code eq()}, {@code ne()}, {@code lt()}, {@code le()}, {@code gt()}, {@code ge()}</li>
  *   <li><b>Range and Collection:</b> {@code between()}, {@code in()}, {@code notIn()}, {@code like()}</li>
- *   <li><b>Null Operations:</b> {@code isNull()}, {@code isNotNull()}, {@code isEmpty()}, {@code isNullOrZero()}</li>
+ *   <li><b>Null Operations:</b> {@code isNull()}, {@code isNotNull()}, {@code isNullOrEmpty()}, {@code isNullOrZero()}</li>
  *   <li><b>Composable Combinators:</b> {@code and()}, {@code or()}, {@code not()}</li>
  *   <li><b>String Patterns:</b> {@code like()}, {@code notLike()}, {@code contains()}, {@code startsWith()}, {@code endsWith()}</li>
  *   <li><b>Join Conditions:</b> {@code join()}, {@code leftJoin()}, {@code rightJoin()}, {@code innerJoin()}, {@code fullJoin()}</li>
@@ -291,7 +291,7 @@ import com.landawn.abacus.util.SK;
  *
  * <p><b>Type Safety and Parameter Binding:</b>
  * <ul>
- *   <li><b>Compile-Time Validation:</b> Generic type parameters ensure type consistency between columns and values</li>
+ *   <li><b>Runtime Validation:</b> Parameter and property name validation at construction time</li>
  *   <li><b>Automatic Parameter Binding:</b> All values are automatically converted to prepared statement parameters</li>
  *   <li><b>Collection Handling:</b> Collections and arrays are properly expanded into IN clause parameters</li>
  *   <li><b>Null Safety:</b> Proper handling of null values with appropriate SQL NULL semantics</li>
@@ -310,7 +310,7 @@ import com.landawn.abacus.util.SK;
  * <p><b>Integration with Query Builders:</b>
  * <ul>
  *   <li><b>SQL Builder Integration:</b> Seamless integration with SQL query builders and ORM frameworks</li>
- *   <li><b>Criteria API Support:</b> Compatible with JPA Criteria API patterns and usage</li>
+ *   <li><b>Query Builder Pattern:</b> Similar design pattern to JPA Criteria API using abacus-specific Condition objects</li>
  *   <li><b>Dynamic Query Construction:</b> Supports runtime query building based on user input</li>
  *   <li><b>Framework Agnostic:</b> Works with any JDBC-based persistence framework</li>
  * </ul>
@@ -363,8 +363,6 @@ import com.landawn.abacus.util.SK;
  * <ul>
  *   <li><b>SQL Injection Prevention:</b> All factory methods generate parameterized SQL</li>
  *   <li><b>Input Validation:</b> Automatic validation and sanitization of condition parameters</li>
- *   <li><b>Access Control:</b> Integration points for column-level security and access control</li>
- *   <li><b>Audit Trail:</b> Support for logging and auditing of dynamic query construction</li>
  * </ul>
  *
  * @see Condition

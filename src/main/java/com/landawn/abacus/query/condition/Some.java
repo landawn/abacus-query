@@ -98,7 +98,7 @@ public class Some extends Cell {
      * }</pre>
      *
      * @param subQuery the subquery that returns values to compare against. Must not be null.
-     * @throws NullPointerException if subQuery is null
+     * @throws IllegalArgumentException if subQuery is null
      */
     public Some(final SubQuery subQuery) {
         super(Operator.SOME, subQuery);

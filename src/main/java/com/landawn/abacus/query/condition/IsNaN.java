@@ -36,7 +36,7 @@ import com.landawn.abacus.query.Filters;
  * <p>Important properties of NaN:
  * <ul>
  *   <li>NaN is not equal to anything, including itself (NaN == NaN is false)</li>
- *   <li>Any comparison with NaN returns {@code false} (except != which returns true)</li>
+ *   <li>Any comparison with NaN returns {@code false} or unknown in SQL</li>
  *   <li>NaN propagates through calculations (any operation with NaN returns NaN)</li>
  *   <li>Must use IS NAN or IS NOT NAN to check for NaN values</li>
  * </ul>
@@ -126,7 +126,7 @@ public class IsNaN extends Is {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
+     * @throws IllegalArgumentException if propName is null or empty (validation performed by ancestor class {@link Binary})
      */
     public IsNaN(final String propName) {
         super(propName, NAN);

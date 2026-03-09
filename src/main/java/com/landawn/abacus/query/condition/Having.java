@@ -137,7 +137,7 @@ public class Having extends Clause {
      * }</pre>
      *
      * @param cond the condition to apply in the HAVING clause. Must not be null.
-     * @throws NullPointerException if cond is null
+     * @throws IllegalArgumentException if cond is null
      */
     public Having(final Condition cond) {
         super(Operator.HAVING, cond);

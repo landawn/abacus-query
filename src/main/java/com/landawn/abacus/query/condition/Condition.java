@@ -29,8 +29,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * to be built from simple building blocks.</p>
  * 
  * <p>Conditions are immutable after construction. The only exception is {@code clearParameters()},
- * which may null out parameter values to release memory. This design ensures thread-safety
- * and prevents unexpected side effects when conditions are reused or shared.</p>
+ * which may null out parameter values to release memory. This design helps prevent unexpected side effects when conditions are reused or shared.</p>
  * 
  * <p>Common implementations include:</p>
  * <ul>

@@ -279,7 +279,7 @@ public class Limit extends Clause {
      * Computes the hash code for this LIMIT clause.
      * The hash code is calculated based on either the custom expression (if present)
      * or the combination of count and offset values. This ensures that Limit instances
-     * with the same composable content have the same hash code.
+     * with the same logical content have the same hash code.
      * 
      * @return the hash code based on expr if present, otherwise based on count and offset
      */

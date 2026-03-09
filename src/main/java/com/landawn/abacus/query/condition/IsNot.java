@@ -17,7 +17,7 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents an IS NOT condition in SQL-like queries.
  * This class is used to create conditions that check if a property is not equal to a specific value
- * using the SQL IS NOT operator, which is primarily used for special SQL values like NULL, NaN, or INFINITE.
+ * using the SQL IS NOT operator, which is primarily used for special SQL values like NULL, NaN, or Infinite.
  * 
  * <p>The IS NOT operator is the negation of the IS operator and is essential for:
  * <ul>

@@ -857,6 +857,53 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return m;
     }
 
+    protected static final BiConsumer<StringBuilder, String> defaultHandlerForNamedParameter = (sb, propName) -> sb.append(":").append(propName);
+    // private static final BiConsumer<StringBuilder, String> mybatisHandlerForNamedParameter = (sb, propName) -> sb.append("#{").append(propName).append("}");
+
+    protected static final ThreadLocal<BiConsumer<StringBuilder, String>> handlerForNamedParameter_TL = ThreadLocal //NOSONAR
+            .withInitial(() -> defaultHandlerForNamedParameter);
+
+    /**
+     * Sets a custom handler for formatting named parameters in SQL strings.
+     * The default handler formats parameters as {@code :paramName}.
+     * This is a thread-local setting, so each thread can have its own handler.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Use MyBatis-style named parameters: #{paramName}
+     * AbstractQueryBuilder.setHandlerForNamedParameter(
+     *     (sb, propName) -> sb.append("#{").append(propName).append("}"));
+     *
+     * // Reset to default when done
+     * AbstractQueryBuilder.resetHandlerForNamedParameter();
+     * }</pre>
+     *
+     * @param handlerForNamedParameter the handler to format named parameters; must not be null
+     * @throws IllegalArgumentException if handlerForNamedParameter is null
+     */
+    public static void setHandlerForNamedParameter(final BiConsumer<StringBuilder, String> handlerForNamedParameter) {
+        N.checkArgNotNull(handlerForNamedParameter, "handlerForNamedParameter");
+        handlerForNamedParameter_TL.set(handlerForNamedParameter);
+    }
+
+    /**
+     * Resets the named parameter handler to the default format.
+     * The default handler formats parameters as ":paramName".
+     * 
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // After using a custom handler, reset to default
+     * SqlBuilder.resetHandlerForNamedParameter();
+     * 
+     * // Named SQL will now use :paramName format again
+     * String sql = NSC.select("name").from("users").where(Filters.equal("id", 1)).build().sql();
+     * // Output: SELECT name FROM users WHERE id = :id
+     * }</pre>
+     */
+    public static void resetHandlerForNamedParameter() {
+        handlerForNamedParameter_TL.set(defaultHandlerForNamedParameter);
+    }
+
     /**
      * Specifies the target table for an INSERT or SELECT INTO operation.
      * <p>Must be called after setting the columns/values to insert or columns to select.</p>
@@ -5405,53 +5452,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         return QueryUtil.prop2ColumnNameMap(entityClass, namingPolicy);
-    }
-
-    protected static final BiConsumer<StringBuilder, String> defaultHandlerForNamedParameter = (sb, propName) -> sb.append(":").append(propName);
-    // private static final BiConsumer<StringBuilder, String> mybatisHandlerForNamedParameter = (sb, propName) -> sb.append("#{").append(propName).append("}");
-
-    protected static final ThreadLocal<BiConsumer<StringBuilder, String>> handlerForNamedParameter_TL = ThreadLocal //NOSONAR
-            .withInitial(() -> defaultHandlerForNamedParameter);
-
-    /**
-     * Sets a custom handler for formatting named parameters in SQL strings.
-     * The default handler formats parameters as {@code :paramName}.
-     * This is a thread-local setting, so each thread can have its own handler.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Use MyBatis-style named parameters: #{paramName}
-     * AbstractQueryBuilder.setHandlerForNamedParameter(
-     *     (sb, propName) -> sb.append("#{").append(propName).append("}"));
-     *
-     * // Reset to default when done
-     * AbstractQueryBuilder.resetHandlerForNamedParameter();
-     * }</pre>
-     *
-     * @param handlerForNamedParameter the handler to format named parameters; must not be null
-     * @throws IllegalArgumentException if handlerForNamedParameter is null
-     */
-    public static void setHandlerForNamedParameter(final BiConsumer<StringBuilder, String> handlerForNamedParameter) {
-        N.checkArgNotNull(handlerForNamedParameter, "handlerForNamedParameter");
-        handlerForNamedParameter_TL.set(handlerForNamedParameter);
-    }
-
-    /**
-     * Resets the named parameter handler to the default format.
-     * The default handler formats parameters as ":paramName".
-     * 
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // After using a custom handler, reset to default
-     * SqlBuilder.resetHandlerForNamedParameter();
-     * 
-     * // Named SQL will now use :paramName format again
-     * String sql = NSC.select("name").from("users").where(Filters.equal("id", 1)).build().sql();
-     * // Output: SELECT name FROM users WHERE id = :id
-     * }</pre>
-     */
-    public static void resetHandlerForNamedParameter() {
-        handlerForNamedParameter_TL.set(defaultHandlerForNamedParameter);
     }
 
     protected static String getFromClause(final List<Selection> multiSelects, final NamingPolicy namingPolicy) {
