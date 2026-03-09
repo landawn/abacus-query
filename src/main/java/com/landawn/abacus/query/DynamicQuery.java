@@ -31,7 +31,7 @@ import com.landawn.abacus.util.Strings;
  * instance, allowing method chaining. The SQL components are built in a natural order:
  * SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT/OFFSET.</p>
  * 
- * <p><b>Important:</b> Always call {@link #build()} to generate the final SQL string and 
+ * <p><b>Important:</b> Always call {@link Builder#build()} to generate the final SQL string and
  * release resources. The builder uses object pooling internally for performance optimization.</p>
  * 
  * <h2>Example usage:</h2>
@@ -55,10 +55,18 @@ public final class DynamicQuery {
         // utility/wrapper class.
     }
 
+    /**
+     * Creates a new Builder instance for constructing a dynamic SQL query.
+     *
+     * @return a new Builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Builder for constructing dynamic SQL queries clause by clause.
+     */
     public static final class Builder {
 
         private SelectClause selectClause = new SelectClause(Objectory.createStringBuilder());
@@ -586,7 +594,7 @@ public final class DynamicQuery {
      * Builder class for constructing the SELECT clause of a SQL query.
      * Provides methods to add columns with optional aliases and conditional inclusion.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#select()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#select()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -783,7 +791,7 @@ public final class DynamicQuery {
      * Builder class for constructing the FROM clause of a SQL query.
      * Supports adding tables, aliases, and various types of joins.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#from()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#from()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1025,7 +1033,7 @@ public final class DynamicQuery {
      * Builder class for constructing the WHERE clause of a SQL query.
      * Supports adding conditions with AND/OR operators and parameter placeholders.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#where()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#where()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1040,14 +1048,8 @@ public final class DynamicQuery {
      */
     public static class WhereClause {
 
-        /** The sb. */
         final StringBuilder sb;
 
-        /**
-         * Instantiates a new where.
-         *
-         * @param sb
-         */
         WhereClause(final StringBuilder sb) {
             this.sb = sb;
         }
@@ -1254,7 +1256,7 @@ public final class DynamicQuery {
      * Builder class for constructing the GROUP BY clause of a SQL query.
      * Supports adding single or multiple grouping columns.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#groupBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#groupBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1268,14 +1270,8 @@ public final class DynamicQuery {
      */
     public static class GroupByClause {
 
-        /** The sb. */
         final StringBuilder sb;
 
-        /**
-         * Instantiates a new group by.
-         *
-         * @param sb
-         */
         GroupByClause(final StringBuilder sb) {
             this.sb = sb;
         }
@@ -1399,7 +1395,7 @@ public final class DynamicQuery {
      * Builder class for constructing the HAVING clause of a SQL query.
      * Used to filter grouped results based on aggregate conditions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#having()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#having()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1412,14 +1408,8 @@ public final class DynamicQuery {
      */
     public static class HavingClause {
 
-        /** The sb. */
         final StringBuilder sb;
 
-        /**
-         * Instantiates a new having.
-         *
-         * @param sb
-         */
         HavingClause(final StringBuilder sb) {
             this.sb = sb;
         }
@@ -1562,7 +1552,7 @@ public final class DynamicQuery {
      * Builder class for constructing the ORDER BY clause of a SQL query.
      * Supports adding single or multiple columns with sort directions.
      * 
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicQuery#orderBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#orderBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1576,14 +1566,8 @@ public final class DynamicQuery {
      */
     public static class OrderByClause {
 
-        /** The sb. */
         final StringBuilder sb;
 
-        /**
-         * Instantiates a new order by.
-         *
-         * @param sb
-         */
         OrderByClause(final StringBuilder sb) {
             this.sb = sb;
         }

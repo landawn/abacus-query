@@ -395,15 +395,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
 
     /**
-     * Constructs a new SqlBuilder with the specified naming policy and SQL policy.
-     * 
+     * Constructs a new AbstractQueryBuilder with the specified naming policy and SQL policy.
+     *
      * @param namingPolicy the naming policy for column names, defaults to SNAKE_CASE if null
      * @param sqlPolicy the SQL generation policy, defaults to RAW_SQL if null
      */
     protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         if (activeStringBuilderCounter.incrementAndGet() > 1024) {
-            logger.error("Too many(" + activeStringBuilderCounter.get() + ") StringBuilder instances are created in SqlBuilder. The method build()"
-                    + " must be called to release resources and close SqlBuilder");
+            logger.error("Too many(" + activeStringBuilderCounter.get() + ") StringBuilder instances are created in AbstractQueryBuilder. The method build()"
+                    + " must be called to release resources and close the builder");
         }
 
         _sb = Objectory.createStringBuilder();

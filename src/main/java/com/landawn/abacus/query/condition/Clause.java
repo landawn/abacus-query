@@ -32,7 +32,6 @@ package com.landawn.abacus.query.condition;
  *   <li>{@link Having} - HAVING clause for filtering grouped results</li>
  *   <li>{@link GroupBy} - GROUP BY clause for grouping rows</li>
  *   <li>{@link OrderBy} - ORDER BY clause for sorting results</li>
- *   <li>{@link Join} - Various JOIN clauses (INNER, LEFT, RIGHT, FULL, etc.)</li>
  *   <li>{@link Limit} - LIMIT clause for restricting result count</li>
  *   <li>{@link Union}, {@link Intersect}, {@link Except} - Set operations</li>
  * </ul>

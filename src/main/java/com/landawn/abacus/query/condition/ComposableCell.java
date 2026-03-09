@@ -21,27 +21,17 @@ import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
- * Represents a condition cell that wraps another condition with an operator.
- * This class serves as a container for a condition paired with a specific operator,
- * typically used for unary operations or clauses that modify other conditions.
- * 
- * <p>A Cell is commonly used to wrap conditions with operators like NOT, EXISTS,
- * or to create clause conditions like WHERE, HAVING, etc. It acts as a decorator
- * that adds an operator context to an existing condition.</p>
- * 
- * <p><b>Usage Examples:</b></p>
- * <pre>{@code
- * // Create a NOT cell
- * Cell notCell = new Cell(Operator.NOT, Filters.equal("status", "active"));
- * 
- * // Create an EXISTS cell with a subquery
- * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
- * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
- * }</pre>
- * 
- * @see AbstractCondition
- * @see Condition
- * @see Operator
+ * A composable variant of {@link Cell} that supports logical composition via AND/OR/NOT operations.
+ * Like Cell, it wraps another condition with an operator, but extends {@link ComposableCondition}
+ * instead of {@link AbstractCondition}, enabling chaining with other conditions.
+ *
+ * <p>Concrete subclasses include {@link Not}, {@link Exists}, and {@link NotExists}.</p>
+ *
+ * @see Cell
+ * @see ComposableCondition
+ * @see Not
+ * @see Exists
+ * @see NotExists
  */
 public abstract class ComposableCell extends ComposableCondition {
 
@@ -49,25 +39,13 @@ public abstract class ComposableCell extends ComposableCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor creates an uninitialized Cell instance and should not be used
-     * directly in application code. It exists solely for serialization/deserialization purposes.
+     * Creates an uninitialized ComposableCell instance; not for direct application use.
      */
     ComposableCell() {
     }
 
     /**
-     * Creates a new Cell with the specified operator and condition.
-     * The Cell wraps the given condition and applies the specified operator to it.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Create a NOT cell that negates a condition
-     * Cell notCell = new Cell(Operator.NOT, Filters.isNull("email"));
-     *
-     * // Create an EXISTS cell for a subquery
-     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM products WHERE price > 100");
-     * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
-     * }</pre>
+     * Creates a new ComposableCell with the specified operator and condition.
      *
      * @param operator the operator to apply to the condition
      * @param cond the condition to wrap (must not be null)
@@ -78,23 +56,10 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Gets the wrapped condition.
-     * The returned condition can be cast to its specific type if needed.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Create a NOT cell wrapping an equality condition
-     * Cell notCell = new Cell(Operator.NOT, Filters.equal("status", "active"));
-     * Condition inner = notCell.getCondition();   // the Equal condition for status = 'active'
-     *
-     * // Create an EXISTS cell with a subquery
-     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
-     * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
-     * SubQuery sq = existsCell.getCondition();   // the SubQuery instance
-     * }</pre>
+     * Gets the wrapped condition, cast to the specified type.
      *
      * @param <T> the type of condition to return
-     * @return the wrapped condition, cast to the specified type
+     * @return the wrapped condition
      */
     @SuppressWarnings("unchecked")
     public <T extends Condition> T getCondition() {
@@ -125,11 +90,11 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Converts this Cell condition to its string representation using the specified naming policy.
+     * Converts this ComposableCell to its string representation using the specified naming policy.
      * The output format is: OPERATOR condition_string
-     * 
+     *
      * @param namingPolicy the naming policy to apply to property names
-     * @return a string representation of this Cell
+     * @return a string representation of this ComposableCell
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -137,9 +102,8 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Returns the hash code of this Cell.
-     * The hash code is computed based on the operator and wrapped condition.
-     * 
+     * Returns the hash code of this ComposableCell, based on the operator and wrapped condition.
+     *
      * @return hash code based on operator and wrapped condition
      */
     @Override
@@ -150,9 +114,9 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Checks if this Cell is equal to another object.
-     * Two Cells are equal if they have the same operator and wrapped condition.
-     * 
+     * Checks if this ComposableCell is equal to another object.
+     * Two ComposableCells are equal if they have the same operator and wrapped condition.
+     *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
      */

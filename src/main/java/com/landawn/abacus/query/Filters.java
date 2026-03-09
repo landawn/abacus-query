@@ -87,122 +87,33 @@ import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.SK;
 
 /**
- * A comprehensive, enterprise-grade factory class providing a complete suite of SQL condition builders
- * for constructing type-safe, parameterized database queries with advanced composable operations, comparison
- * operators, and complex join conditions. This class serves as the foundation for building dynamic,
- * secure SQL queries that prevent SQL injection attacks while maintaining optimal performance through
- * prepared statement usage and intelligent query optimization strategies.
+ * Factory class for creating SQL {@link Condition} objects used in query construction.
+ * Provides methods for all standard SQL comparison, logical, pattern matching, and subquery operations.
  *
- * <p>The {@code Filters} class addresses critical challenges in enterprise database programming
- * by providing a fluent, type-safe API for constructing complex SQL WHERE clauses, JOIN conditions,
- * and subquery predicates. It supports the full spectrum of SQL operators and composable constructs,
- * enabling developers to build sophisticated queries programmatically while maintaining code readability
- * and ensuring database security through parameterized query generation.</p>
+ * <p><b>Warning:</b> Value-based methods (e.g., {@code equal}, {@code in}, {@code between}) generate
+ * parameterized SQL with proper value binding. APIs that accept raw SQL fragments (e.g., {@code expr(...)})
+ * do <b>not</b> sanitize input and must not be built from untrusted data.</p>
  *
- * <p><b>⚠️ IMPORTANT - SQL Injection Prevention:</b>
- * Value-based condition methods in this factory generate parameterized SQL with proper value binding.
- * APIs that accept raw SQL fragments (for example {@code expr(...)} or string clause overloads)
- * do not sanitize SQL syntax and must not be built from untrusted input.</p>
- *
- * <p><b>Key Features and Capabilities:</b>
+ * <p><b>API Categories:</b></p>
  * <ul>
- *   <li><b>Complete SQL Operator Support:</b> All standard SQL comparison, composable, and pattern matching operators</li>
- *   <li><b>Type-Safe Query Construction:</b> Compile-time type checking for database column and value operations</li>
- *   <li><b>Parameterized Query Generation:</b> Automatic parameter binding preventing SQL injection vulnerabilities</li>
- *   <li><b>Complex Composable Operations:</b> Support for nested AND/OR/NOT conditions with proper precedence</li>
- *   <li><b>Advanced Join Conditions:</b> Comprehensive support for all SQL join types and complex join predicates</li>
- *   <li><b>Subquery Integration:</b> Seamless integration with EXISTS, IN, and correlated subquery patterns</li>
- *   <li><b>Pattern Matching:</b> LIKE/NOT LIKE operators with convenience methods for contains, startsWith, endsWith patterns</li>
- *   <li><b>Collection Operations:</b> Optimized IN/NOT IN operations for collections and arrays</li>
+ *   <li><b>Comparison:</b> {@code equal/eq}, {@code notEqual/ne}, {@code greaterThan/gt}, {@code lessThan/lt},
+ *       {@code greaterThanOrEqual/ge}, {@code lessThanOrEqual/le}</li>
+ *   <li><b>Range/Collection:</b> {@code between}, {@code notBetween}, {@code in}, {@code notIn}</li>
+ *   <li><b>Pattern Matching:</b> {@code like}, {@code notLike}, {@code contains}, {@code startsWith}, {@code endsWith}</li>
+ *   <li><b>Null Checks:</b> {@code isNull}, {@code isNotNull}</li>
+ *   <li><b>Logical:</b> {@code and}, {@code or}, {@code not}</li>
+ *   <li><b>Subquery:</b> {@code exists}, {@code notExists}, {@code inSubQuery}, {@code notInSubQuery}</li>
+ *   <li><b>Joins:</b> {@code join}, {@code leftJoin}, {@code rightJoin}, {@code innerJoin}, {@code fullJoin}</li>
  * </ul>
  *
- * <p><b>Design Philosophy:</b>
- * <ul>
- *   <li><b>Security First:</b> Value-based operations generate parameterized SQL to reduce injection risk</li>
- *   <li><b>Type Safety Priority:</b> Strong typing ensures compile-time validation of query construction</li>
- *   <li><b>Fluent Interface:</b> Method chaining enables readable, expressive query building patterns</li>
- *   <li><b>Performance Optimized:</b> Generated SQL is optimized for database execution plan efficiency</li>
- *   <li><b>Framework Agnostic:</b> Works with any JDBC-based framework or standalone applications</li>
- * </ul>
- *
- * <p><b>Condition Categories and Operators:</b>
- * <table border="1" style="border-collapse: collapse;">
- *   <caption><b>SQL Condition Types and Corresponding Factory Methods</b></caption>
- *   <tr style="background-color: #f2f2f2;">
- *     <th>Category</th>
- *     <th>SQL Operators</th>
- *     <th>Factory Methods</th>
- *     <th>Usage Examples</th>
- *   </tr>
- *   <tr>
- *     <td>Equality/Inequality</td>
- *     <td>=, !=, &lt;&gt;</td>
- *     <td>eq(), ne(), notEqual()</td>
- *     <td>eq("status", "ACTIVE")</td>
- *   </tr>
- *   <tr>
- *     <td>Comparison</td>
- *     <td>&lt;, &lt;=, &gt;, &gt;=</td>
- *     <td>lt(), le(), gt(), ge()</td>
- *     <td>gt("age", 18), le("salary", 50000)</td>
- *   </tr>
- *   <tr>
- *     <td>Range Operations</td>
- *     <td>BETWEEN, NOT BETWEEN</td>
- *     <td>between(), notBetween()</td>
- *     <td>between("price", 10, 100)</td>
- *   </tr>
- *   <tr>
- *     <td>Collection Membership</td>
- *     <td>IN, NOT IN</td>
- *     <td>in(), notIn()</td>
- *     <td>in("category", Arrays.asList("A", "B"))</td>
- *   </tr>
- *   <tr>
- *     <td>Pattern Matching</td>
- *     <td>LIKE, NOT LIKE</td>
- *     <td>like(), notLike(), contains(), startsWith(), endsWith()</td>
- *     <td>like("email", "%@company.com"), contains("name", "John")</td>
- *   </tr>
- *   <tr>
- *     <td>Null Checking</td>
- *     <td>IS NULL, IS NOT NULL</td>
- *     <td>isNull(), isNotNull()</td>
- *     <td>isNotNull("optional_field")</td>
- *   </tr>
- *   <tr>
- *     <td>Composable Operations</td>
- *     <td>AND, OR, NOT</td>
- *     <td>and(), or(), not()</td>
- *     <td>and(eq("active", true), gt("age", 21))</td>
- *   </tr>
- *   <tr>
- *     <td>Subquery Operations</td>
- *     <td>EXISTS, NOT EXISTS</td>
- *     <td>exists(), notExists()</td>
- *     <td>exists(subQuery("SELECT 1 FROM orders WHERE ..."))</td>
- *   </tr>
- * </table>
- *
- * <p><b>Core API Categories:</b>
- * <ul>
- *   <li><b>Basic Comparison:</b> {@code eq()}, {@code ne()}, {@code lt()}, {@code le()}, {@code gt()}, {@code ge()}</li>
- *   <li><b>Range and Collection:</b> {@code between()}, {@code in()}, {@code notIn()}, {@code like()}</li>
- *   <li><b>Null Operations:</b> {@code isNull()}, {@code isNotNull()}, {@code isNullOrEmpty()}, {@code isNullOrZero()}</li>
- *   <li><b>Composable Combinators:</b> {@code and()}, {@code or()}, {@code not()}</li>
- *   <li><b>String Patterns:</b> {@code like()}, {@code notLike()}, {@code contains()}, {@code startsWith()}, {@code endsWith()}</li>
- *   <li><b>Join Conditions:</b> {@code join()}, {@code leftJoin()}, {@code rightJoin()}, {@code innerJoin()}, {@code fullJoin()}</li>
- * </ul>
- *
- * <p><b>Common Usage Patterns:</b>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Basic equality and comparison conditions
- * Condition userActive = Filters.equal("status", "ACTIVE");
- * Condition adultUsers = Filters.greaterThanOrEqual("age", 18);
- * Condition recentOrders = Filters.greaterThan("order_date", lastWeek);
+ * // Basic conditions
+ * Condition active = Filters.equal("status", "ACTIVE");
+ * Condition adult = Filters.greaterThanOrEqual("age", 18);
  *
- * // Complex composable conditions with proper precedence
- * Condition complexFilter = Filters.and(
+ * // Composite conditions
+ * Condition filter = Filters.and(
  *     Filters.equal("department", "Engineering"),
  *     Filters.or(
  *         Filters.greaterThan("salary", 75000),
@@ -211,166 +122,14 @@ import com.landawn.abacus.util.SK;
  *     Filters.isNotNull("manager_id")
  * );
  *
- * // Collection-based conditions for efficient IN operations
- * List<String> validStatuses = Arrays.asList("PENDING", "APPROVED", "ACTIVE");
- * Condition statusFilter = Filters.in("status", validStatuses);
- *
- * // Pattern matching for flexible text search
- * Condition emailFilter = Filters.like("email", "%@company.com");
- * Condition companyEmail = Filters.endsWith("email", "@company.com");
- *
- * // Range conditions for efficient database queries
+ * // Collection and range
+ * Condition statusFilter = Filters.in("status", Arrays.asList("PENDING", "APPROVED"));
  * Condition priceRange = Filters.between("price", 100.0, 500.0);
- * Condition dateRange = Filters.between("created_date", startDate, endDate);
- *
- * // Subquery conditions for complex business logic
- * Condition hasOrders = Filters.exists(
- *     Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = customers.id AND status = 'COMPLETED'")
- * );
  * }</pre>
- *
- * <p><b>Advanced Query Construction Patterns:</b>
- * <pre>{@code
- * public class UserQueryBuilder {
- *
- *     // Dynamic query building based on search criteria
- *     public static Condition buildUserSearchCondition(UserSearchCriteria criteria) {
- *         List<Condition> conditions = new ArrayList<>();
- *
- *         // Add conditions based on provided criteria
- *         if (criteria.getName() != null) {
- *             conditions.add(Filters.like("name", "%" + criteria.getName() + "%"));
- *         }
- *
- *         if (criteria.getDepartment() != null) {
- *             conditions.add(Filters.equal("department", criteria.getDepartment()));
- *         }
- *
- *         if (criteria.getMinAge() != null) {
- *             conditions.add(Filters.greaterThanOrEqual("age", criteria.getMinAge()));
- *         }
- *
- *         if (criteria.getMaxAge() != null) {
- *             conditions.add(Filters.lessThanOrEqual("age", criteria.getMaxAge()));
- *         }
- *
- *         if (criteria.getSkills() != null && !criteria.getSkills().isEmpty()) {
- *             conditions.add(Filters.exists(
- *                 Filters.subQuery("SELECT 1 FROM user_skills WHERE user_id = users.id AND skill IN (" +
- *                 criteria.getSkills().stream().map(s -> "?").collect(Collectors.joining(",")) + ")")
- *             ));
- *         }
- *
- *         // Combine all conditions with AND logic
- *         return conditions.isEmpty() ? Filters.alwaysTrue() :
- *                conditions.stream().reduce(Filters::and).orElse(Filters.alwaysTrue());
- *     }
- *
- *     // Complex join condition building
- *     public static Condition buildUserOrderJoinCondition(OrderSearchCriteria orderCriteria) {
- *         Condition baseJoin = Filters.equal("users.id", "orders.customer_id");
- *
- *         List<Condition> orderConditions = new ArrayList<>();
- *         orderConditions.add(baseJoin);
- *
- *         if (orderCriteria.getMinTotal() != null) {
- *             orderConditions.add(Filters.greaterThanOrEqual("orders.total_amount", orderCriteria.getMinTotal()));
- *         }
- *
- *         if (orderCriteria.getDateRange() != null) {
- *             orderConditions.add(Filters.between("orders.order_date",
- *                 orderCriteria.getDateRange().getStart(),
- *                 orderCriteria.getDateRange().getEnd()));
- *         }
- *
- *         return orderConditions.stream().reduce(Filters::and).orElse(baseJoin);
- *     }
- * }
- * }</pre>
- *
- * <p><b>Type Safety and Parameter Binding:</b>
- * <ul>
- *   <li><b>Runtime Validation:</b> Parameter and property name validation at construction time</li>
- *   <li><b>Automatic Parameter Binding:</b> All values are automatically converted to prepared statement parameters</li>
- *   <li><b>Collection Handling:</b> Collections and arrays are properly expanded into IN clause parameters</li>
- *   <li><b>Null Safety:</b> Proper handling of null values with appropriate SQL NULL semantics</li>
- *   <li><b>Type Conversion:</b> Automatic conversion between compatible Java and SQL types</li>
- * </ul>
- *
- * <p><b>Performance Optimization Features:</b>
- * <ul>
- *   <li><b>Prepared Statement Usage:</b> All conditions generate parameterized SQL for statement caching</li>
- *   <li><b>Index-Friendly Operations:</b> Generated SQL is optimized for database index usage</li>
- *   <li><b>Efficient Collection Handling:</b> Large IN clauses are optimized for database performance</li>
- *   <li><b>Query Plan Optimization:</b> Condition ordering optimized for database execution plans</li>
- *   <li><b>Memory Efficiency:</b> Minimal object allocation during condition construction</li>
- * </ul>
- *
- * <p><b>Integration with Query Builders:</b>
- * <ul>
- *   <li><b>SQL Builder Integration:</b> Seamless integration with SQL query builders and ORM frameworks</li>
- *   <li><b>Query Builder Pattern:</b> Similar design pattern to JPA Criteria API using abacus-specific Condition objects</li>
- *   <li><b>Dynamic Query Construction:</b> Supports runtime query building based on user input</li>
- *   <li><b>Framework Agnostic:</b> Works with any JDBC-based persistence framework</li>
- * </ul>
- *
- * <p><b>Pattern Matching Support:</b>
- * <ul>
- *   <li><b>SQL LIKE Patterns:</b> Full support for SQL LIKE with % and _ wildcards via {@code like()} and {@code notLike()}</li>
- *   <li><b>String Matching:</b> Convenience methods {@code contains()}, {@code startsWith()}, {@code endsWith()}, {@code notContains()}, {@code notStartsWith()}, {@code notEndsWith()}</li>
- *   <li><b>Custom Expressions:</b> Support for database-specific patterns through {@code expr()} for regex, full-text search, and other advanced features</li>
- * </ul>
- *
- * <p><b>Composable Operation Precedence and Grouping:</b>
- * <ul>
- *   <li><b>Proper Precedence:</b> Automatic parentheses insertion for correct composable operator precedence</li>
- *   <li><b>Explicit Grouping:</b> Support for explicit condition grouping with parentheses</li>
- *   <li><b>Nested Conditions:</b> Unlimited nesting depth for complex composable expressions</li>
- *   <li><b>Short-Circuit Evaluation:</b> Optimized SQL generation for efficient condition evaluation</li>
- * </ul>
- *
- * <p><b>Error Handling and Validation:</b>
- * <ul>
- *   <li><b>Parameter Validation:</b> Comprehensive validation of condition parameters</li>
- *   <li><b>SQL Syntax Validation:</b> Early detection of potential SQL syntax issues</li>
- *   <li><b>Type Compatibility Checking:</b> Validation of type compatibility between columns and values</li>
- *   <li><b>Detailed Error Messages:</b> Clear, actionable error messages for debugging</li>
- * </ul>
- *
- * <p><b>Best Practices and Recommendations:</b>
- * <ul>
- *   <li>Always use factory methods instead of constructing Condition objects directly</li>
- *   <li>Prefer specific comparison methods (eq, gt, etc.) over generic expression building</li>
- *   <li>Use collections with IN operations instead of multiple OR conditions for better performance</li>
- *   <li>Leverage BETWEEN operations for range queries to enable index usage</li>
- *   <li>Group related conditions composablely to improve query readability and performance</li>
- *   <li>Use EXISTS instead of IN for subqueries when checking for existence</li>
- *   <li>Consider database-specific optimizations for high-performance applications</li>
- * </ul>
- *
- * <p><b>Common Anti-Patterns to Avoid:</b>
- * <ul>
- *   <li>Concatenating user input directly into SQL strings (use parameterized conditions)</li>
- *   <li>Creating overly complex nested conditions that hurt query performance</li>
- *   <li>Using LIKE conditions on unindexed columns in large tables</li>
- *   <li>Ignoring null handling in equality comparisons</li>
- *   <li>Not considering database-specific performance characteristics</li>
- *   <li>Using string concatenation for dynamic condition building</li>
- * </ul>
- *
- * <p><b>Security Considerations:</b>
- * <ul>
- *   <li><b>SQL Injection Prevention:</b> All factory methods generate parameterized SQL</li>
- *   <li><b>Input Validation:</b> Automatic validation and sanitization of condition parameters</li>
- * </ul>
  *
  * @see Condition
  * @see Expression
- * @see QueryUtil
- * @see com.landawn.abacus.query.SqlBuilder
- * @see com.landawn.abacus.annotation.Column
- * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/PreparedStatement.html">PreparedStatement</a>
- * @see <a href="https://en.wikipedia.org/wiki/SQL_injection">SQL Injection Prevention</a>
+ * @see SqlBuilder
  */
 public class Filters {
     /**

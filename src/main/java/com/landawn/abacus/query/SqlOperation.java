@@ -33,7 +33,7 @@ import com.landawn.abacus.util.SK;
  * <ul>
  *   <li>DML (Data Manipulation Language): SELECT, INSERT, UPDATE, DELETE, MERGE</li>
  *   <li>DDL (Data Definition Language): CREATE, DROP, ALTER, RENAME</li>
- *   <li>DCL (Data Control Language): USE</li>
+ *   <li>Utility: USE</li>
  *   <li>TCL (Transaction Control Language): BEGIN_TRANSACTION, COMMIT, ROLLBACK</li>
  *   <li>Other: SHOW, DESCRIBE, CALL, UNKNOWN</li>
  * </ul>
@@ -50,7 +50,7 @@ import com.landawn.abacus.util.SK;
  * }
  * }</pre>
  * 
- * @see Internal
+ * @see SqlParser
  */
 @Internal
 public enum SqlOperation {

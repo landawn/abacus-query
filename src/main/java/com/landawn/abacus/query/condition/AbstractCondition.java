@@ -32,37 +32,20 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * Abstract base class for all condition implementations.
- * This class provides common functionality for conditions including composable operations
- * (AND, OR, NOT) and utility methods for string representation.
- * 
+ * This class provides common functionality for conditions including operator storage,
+ * utility methods for string representation, and property name formatting.
+ *
  * <p>AbstractCondition serves as the foundation for the condition hierarchy, implementing
- * the {@link Condition} interface and providing default implementations for common operations.
- * All concrete condition classes should extend this class to inherit standard behavior
- * and ensure consistency across the framework.</p>
- * 
+ * the {@link Condition} interface. Composable operations (AND, OR, NOT) are provided by
+ * the {@link ComposableCondition} subclass, not by this class directly.</p>
+ *
  * <p>Key features:</p>
  * <ul>
  *   <li>Immutable operator storage</li>
- *   <li>Default implementations for composable operations (and, or, not)</li>
  *   <li>Immutable after construction</li>
  *   <li>Utility methods for parameter and property name formatting</li>
  *   <li>Standard toString() implementation</li>
  * </ul>
- * 
- * <p><b>Usage Examples:</b></p>
- * <pre>{@code
- * // Concrete implementations extend this class
- * public class Equal extends Binary {
- *     public Equal(String propName, Object propValue) {
- *         super(propName, Operator.EQUAL, propValue);
- *     }
- * }
- * 
- * // Using composable operations inherited from AbstractCondition
- * Condition c1 = new Equal("status", "active");
- * Condition c2 = new GreaterThan("age", 18);
- * Condition combined = c1.and(c2);   // Inherited method
- * }</pre>
  * 
  * @see Condition
  * @see Operator

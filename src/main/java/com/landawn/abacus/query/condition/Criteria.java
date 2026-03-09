@@ -525,6 +525,11 @@ public class Criteria extends AbstractCondition {
 
     }
 
+    /**
+     * Creates a new Criteria builder.
+     *
+     * @return a new Builder instance
+     */
     public static final Builder builder() {
         return new Builder();
     }
@@ -1946,6 +1951,11 @@ public class Criteria extends AbstractCondition {
             }
         }
 
+        /**
+         * Builds and returns the Criteria instance from the configured conditions.
+         *
+         * @return a new Criteria instance
+         */
         public Criteria build() {
             return new Criteria(this.selectModifier, conditionList);
         }

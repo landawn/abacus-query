@@ -29,18 +29,11 @@ import com.landawn.abacus.util.Strings;
  * or to create clause conditions like WHERE, HAVING, etc. It acts as a decorator
  * that adds an operator context to an existing condition.</p>
  * 
- * <p><b>Usage Examples:</b></p>
- * <pre>{@code
- * // Create a NOT cell
- * Cell notCell = new Cell(Operator.NOT, Filters.equal("status", "active"));
- * 
- * // Create an EXISTS cell with a subquery
- * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
- * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
- * }</pre>
- * 
+ * <p>Concrete subclasses include {@link Any}, {@link Some}, {@link All}, and {@link Clause}.</p>
+ *
  * @see AbstractCondition
- * @see Condition
+ * @see ComposableCell
+ * @see Clause
  * @see Operator
  */
 public abstract class Cell extends AbstractCondition {
@@ -59,16 +52,6 @@ public abstract class Cell extends AbstractCondition {
      * Creates a new Cell with the specified operator and condition.
      * The Cell wraps the given condition and applies the specified operator to it.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Create a NOT cell that negates a condition
-     * Cell notCell = new Cell(Operator.NOT, Filters.isNull("email"));
-     *
-     * // Create an EXISTS cell for a subquery
-     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM products WHERE price > 100");
-     * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
-     * }</pre>
-     *
      * @param operator the operator to apply to the condition
      * @param cond the condition to wrap (must not be null)
      */
@@ -80,18 +63,6 @@ public abstract class Cell extends AbstractCondition {
     /**
      * Gets the wrapped condition.
      * The returned condition can be cast to its specific type if needed.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Create a NOT cell wrapping an equality condition
-     * Cell notCell = new Cell(Operator.NOT, Filters.equal("status", "active"));
-     * Condition inner = notCell.getCondition();   // the Equal condition for status = 'active'
-     *
-     * // Create an EXISTS cell with a subquery
-     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
-     * Cell existsCell = new Cell(Operator.EXISTS, subQuery);
-     * SubQuery sq = existsCell.getCondition();   // the SubQuery instance
-     * }</pre>
      *
      * @param <T> the type of condition to return
      * @return the wrapped condition, cast to the specified type

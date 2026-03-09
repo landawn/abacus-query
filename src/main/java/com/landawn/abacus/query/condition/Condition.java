@@ -25,8 +25,9 @@ import com.landawn.abacus.util.NamingPolicy;
  * such as equality checks, comparisons, composable operations, and SQL clauses.
  * 
  * <p>This interface defines the contract that all conditions must follow, providing
- * methods for composable operations (AND, OR, NOT), parameter management, and string
- * representation. Conditions are designed to be composable, allowing complex queries
+ * methods for operator access, parameter management, and string representation.
+ * Composable operations (AND, OR, NOT) are available on the {@link ComposableCondition}
+ * subclass. Conditions are designed to be composable, allowing complex queries
  * to be built from simple building blocks.</p>
  * 
  * <p>Conditions are immutable after construction. The only exception is {@code clearParameters()},
@@ -47,21 +48,18 @@ import com.landawn.abacus.util.NamingPolicy;
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Create simple conditions
+ * // Create conditions via Filters factory
  * Condition ageCondition = Filters.greaterThan("age", 18);
  * Condition statusCondition = Filters.equal("status", "active");
- * 
- * // Combine conditions using composable operations
- * Condition combined = ageCondition.and(statusCondition);
- * 
- * // Negate a condition
- * Condition notActive = statusCondition.not();
- * 
+ *
+ * // Combine conditions using Filters.and() / Filters.or()
+ * Condition combined = Filters.and(ageCondition, statusCondition);
+ *
  * // Use in queries
  * SqlBuilder builder = PSC.select("*")
  *     .from("users")
  *     .where(combined);
- * 
+ *
  * // Get parameters for prepared statements
  * ImmutableList<Object> params = combined.getParameters();   // [18, "active"]
  * }</pre>

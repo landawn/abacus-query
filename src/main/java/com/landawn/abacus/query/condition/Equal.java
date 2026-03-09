@@ -47,7 +47,7 @@ package com.landawn.abacus.query.condition;
  *
  * // Null check (though IsNull is preferred for clarity)
  * Equal nullCheck = new Equal("deletedDate", null);
- * // SQL: deletedDate = NULL
+ * // SQL: deletedDate IS NULL
  *
  * // Subquery comparison
  * SubQuery maxSalary = Filters.subQuery("SELECT MAX(salary) FROM employees");
