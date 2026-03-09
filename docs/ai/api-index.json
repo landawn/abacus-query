@@ -42989,8 +42989,8 @@
           "fields": []
         },
         {
-          "fqn": "com.landawn.abacus.query.condition.LogicalCondition",
-          "name": "LogicalCondition",
+          "fqn": "com.landawn.abacus.query.condition.ComposableCondition",
+          "name": "ComposableCondition",
           "kind": "class",
           "modifiers": [
             "public",

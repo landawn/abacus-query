@@ -19,7 +19,7 @@ package com.landawn.abacus.query.condition;
  * This class is used to specify conditions that filter records in a query result.
  * 
  * <p>The WHERE clause is one of the most fundamental SQL clauses, used to extract only those
- * records that fulfill a specified condition. It supports simple comparisons, complex logical
+ * records that fulfill a specified condition. It supports simple comparisons, complex composable
  * combinations, pattern matching, null checks, and subqueries. The WHERE clause is evaluated
  * for each row before any grouping occurs.</p>
  * 
@@ -62,7 +62,7 @@ public class Where extends Clause {
     /**
      * Creates a WHERE clause with the specified condition.
      * The condition can be any valid SQL condition including simple comparisons,
-     * logical combinations (AND/OR), or complex expressions.
+     * composable combinations (AND/OR), or complex expressions.
      *
      * <p>The WHERE clause is essential for filtering query results. It's evaluated
      * row by row, and only rows where the condition evaluates to true are included

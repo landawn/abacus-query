@@ -110,7 +110,7 @@ public class OperatorTest extends TestBase {
         Assertions.assertEquals("<", Operator.LESS_THAN.sqlToken());
         Assertions.assertEquals("<=", Operator.LESS_THAN_OR_EQUAL.sqlToken());
 
-        // Logical operators
+        // Composable operators
         Assertions.assertEquals("AND", Operator.AND.sqlToken());
         Assertions.assertEquals("OR", Operator.OR.sqlToken());
         Assertions.assertEquals("NOT", Operator.NOT.sqlToken());

@@ -21,11 +21,11 @@ import java.util.List;
 import com.landawn.abacus.util.N;
 
 /**
- * Represents a logical OR condition that combines multiple conditions.
+ * Represents a composable OR condition that combines multiple conditions.
  * The OR condition evaluates to true if at least one of its child conditions evaluates to true.
  * 
  * <p>This class extends Junction and provides a fluent API for building complex OR conditions.
- * The OR operator follows standard SQL logical evaluation rules where the entire expression
+ * The OR operator follows standard SQL composable evaluation rules where the entire expression
  * is true if any single condition is true. Evaluation typically short-circuits when a true
  * condition is found.</p>
  * 
@@ -34,11 +34,11 @@ import com.landawn.abacus.util.N;
  *   <li>Returns true if ANY child condition is true</li>
  *   <li>Returns false only if ALL child conditions are false</li>
  *   <li>Supports unlimited number of child conditions</li>
- *   <li>Can be nested with other logical operators (AND, NOT)</li>
+ *   <li>Can be nested with other composable operators (AND, NOT)</li>
  *   <li>Evaluation may short-circuit for performance</li>
  * </ul>
  *
- * <p>Relationship to other logical operators:</p>
+ * <p>Relationship to other composable operators:</p>
  * <ul>
  *   <li>OR requires at least one condition to be true</li>
  *   <li>AND requires all conditions to be true</li>
@@ -177,7 +177,7 @@ public class Or extends Junction {
     @Override
     public Or or(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
-        validateLogicalOperand(cond, "or");
+        validateComposableOperand(cond, "or");
 
         final List<Condition> conditionList = new ArrayList<>(this.conditions.size() + 1);
 

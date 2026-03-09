@@ -21,10 +21,10 @@ import java.util.List;
 import com.landawn.abacus.util.N;
 
 /**
- * Represents a logical AND condition that combines multiple conditions.
+ * Represents a composable AND condition that combines multiple conditions.
  * All conditions within an AND must evaluate to true for the AND condition to be true.
  * 
- * <p>The AND condition is one of the fundamental logical operations in query building,
+ * <p>The AND condition is one of the fundamental composable operations in query building,
  * allowing you to combine multiple criteria where all must be satisfied. It follows
  * standard boolean algebra rules where the result is true only when all operands are true.</p>
  * 
@@ -36,7 +36,7 @@ import com.landawn.abacus.util.N;
  *   <li>Maintains order of conditions for predictable SQL generation</li>
  * </ul>
  *
- * <p>Relationship to other logical operators:</p>
+ * <p>Relationship to other composable operators:</p>
  * <ul>
  *   <li>AND requires all conditions to be true</li>
  *   <li>OR requires at least one condition to be true</li>
@@ -162,7 +162,7 @@ public class And extends Junction {
     @Override
     public And and(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
-        validateLogicalOperand(cond, "and");
+        validateComposableOperand(cond, "and");
 
         final List<Condition> conditionList = new ArrayList<>(this.conditions.size() + 1);
 

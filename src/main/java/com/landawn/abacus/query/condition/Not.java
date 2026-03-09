@@ -15,9 +15,9 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents a NOT logical operator in SQL conditions.
+ * Represents a NOT composable operator in SQL conditions.
  * This class negates the result of any given condition, reversing its boolean logic.
- * It's a fundamental logical operator used to invert query conditions.
+ * It's a fundamental composable operator used to invert query conditions.
  * 
  * <p>The NOT operator is particularly useful for:
  * <ul>
@@ -34,7 +34,7 @@ package com.landawn.abacus.query.condition;
  *   <li>NOT NULL = NULL (in SQL three-valued logic)</li>
  * </ul>
  *
- * <p>Relationship to other logical operators:</p>
+ * <p>Relationship to other composable operators:</p>
  * <ul>
  *   <li>NOT negates a condition (reverses its boolean value)</li>
  *   <li>AND requires all conditions to be true</li>
@@ -110,7 +110,7 @@ public class Not extends Cell {
      * }</pre>
      *
      * @param cond the condition to be negated. Can be any type of condition
-     *                  including simple comparisons, complex logical conditions,
+     *                  including simple comparisons, complex composable conditions,
      *                  or subquery conditions. Must not be null.
      */
     public Not(final Condition cond) {

@@ -89,14 +89,14 @@ import com.landawn.abacus.util.SK;
 
 /**
  * A comprehensive, enterprise-grade factory class providing a complete suite of SQL condition builders
- * for constructing type-safe, parameterized database queries with advanced logical operations, comparison
+ * for constructing type-safe, parameterized database queries with advanced composable operations, comparison
  * operators, and complex join conditions. This class serves as the foundation for building dynamic,
  * secure SQL queries that prevent SQL injection attacks while maintaining optimal performance through
  * prepared statement usage and intelligent query optimization strategies.
  *
  * <p>The {@code Filters} class addresses critical challenges in enterprise database programming
  * by providing a fluent, type-safe API for constructing complex SQL WHERE clauses, JOIN conditions,
- * and subquery predicates. It supports the full spectrum of SQL operators and logical constructs,
+ * and subquery predicates. It supports the full spectrum of SQL operators and composable constructs,
  * enabling developers to build sophisticated queries programmatically while maintaining code readability
  * and ensuring database security through parameterized query generation.</p>
  *
@@ -107,10 +107,10 @@ import com.landawn.abacus.util.SK;
  *
  * <p><b>Key Features and Capabilities:</b>
  * <ul>
- *   <li><b>Complete SQL Operator Support:</b> All standard SQL comparison, logical, and pattern matching operators</li>
+ *   <li><b>Complete SQL Operator Support:</b> All standard SQL comparison, composable, and pattern matching operators</li>
  *   <li><b>Type-Safe Query Construction:</b> Compile-time type checking for database column and value operations</li>
  *   <li><b>Parameterized Query Generation:</b> Automatic parameter binding preventing SQL injection vulnerabilities</li>
- *   <li><b>Complex Logical Operations:</b> Support for nested AND/OR/NOT conditions with proper precedence</li>
+ *   <li><b>Complex Composable Operations:</b> Support for nested AND/OR/NOT conditions with proper precedence</li>
  *   <li><b>Advanced Join Conditions:</b> Comprehensive support for all SQL join types and complex join predicates</li>
  *   <li><b>Subquery Integration:</b> Seamless integration with EXISTS, IN, and correlated subquery patterns</li>
  *   <li><b>Pattern Matching:</b> Advanced LIKE, REGEX, and full-text search condition support</li>
@@ -172,7 +172,7 @@ import com.landawn.abacus.util.SK;
  *     <td>isNotNull("optional_field")</td>
  *   </tr>
  *   <tr>
- *     <td>Logical Operations</td>
+ *     <td>Composable Operations</td>
  *     <td>AND, OR, NOT</td>
  *     <td>and(), or(), not()</td>
  *     <td>and(eq("active", true), gt("age", 21))</td>
@@ -190,7 +190,7 @@ import com.landawn.abacus.util.SK;
  *   <li><b>Basic Comparison:</b> {@code eq()}, {@code ne()}, {@code lt()}, {@code le()}, {@code gt()}, {@code ge()}</li>
  *   <li><b>Range and Collection:</b> {@code between()}, {@code in()}, {@code notIn()}, {@code like()}</li>
  *   <li><b>Null Operations:</b> {@code isNull()}, {@code isNotNull()}, {@code isEmpty()}, {@code isNullOrZero()}</li>
- *   <li><b>Logical Combinators:</b> {@code and()}, {@code or()}, {@code not()}</li>
+ *   <li><b>Composable Combinators:</b> {@code and()}, {@code or()}, {@code not()}</li>
  *   <li><b>String Patterns:</b> {@code like()}, {@code notLike()}, {@code contains()}, {@code startsWith()}, {@code endsWith()}</li>
  *   <li><b>Join Conditions:</b> {@code join()}, {@code leftJoin()}, {@code rightJoin()}, {@code innerJoin()}, {@code fullJoin()}</li>
  * </ul>
@@ -202,7 +202,7 @@ import com.landawn.abacus.util.SK;
  * Condition adultUsers = Filters.greaterThanOrEqual("age", 18);
  * Condition recentOrders = Filters.greaterThan("order_date", lastWeek);
  *
- * // Complex logical conditions with proper precedence
+ * // Complex composable conditions with proper precedence
  * Condition complexFilter = Filters.and(
  *     Filters.equal("department", "Engineering"),
  *     Filters.or(
@@ -322,11 +322,11 @@ import com.landawn.abacus.util.SK;
  *   <li><b>Custom Expressions:</b> Support for database-specific patterns through {@code expr()} for regex, full-text search, and other advanced features</li>
  * </ul>
  *
- * <p><b>Logical Operation Precedence and Grouping:</b>
+ * <p><b>Composable Operation Precedence and Grouping:</b>
  * <ul>
- *   <li><b>Proper Precedence:</b> Automatic parentheses insertion for correct logical operator precedence</li>
+ *   <li><b>Proper Precedence:</b> Automatic parentheses insertion for correct composable operator precedence</li>
  *   <li><b>Explicit Grouping:</b> Support for explicit condition grouping with parentheses</li>
- *   <li><b>Nested Conditions:</b> Unlimited nesting depth for complex logical expressions</li>
+ *   <li><b>Nested Conditions:</b> Unlimited nesting depth for complex composable expressions</li>
  *   <li><b>Short-Circuit Evaluation:</b> Optimized SQL generation for efficient condition evaluation</li>
  * </ul>
  *
@@ -344,7 +344,7 @@ import com.landawn.abacus.util.SK;
  *   <li>Prefer specific comparison methods (eq, gt, etc.) over generic expression building</li>
  *   <li>Use collections with IN operations instead of multiple OR conditions for better performance</li>
  *   <li>Leverage BETWEEN operations for range queries to enable index usage</li>
- *   <li>Group related conditions logically to improve query readability and performance</li>
+ *   <li>Group related conditions composablely to improve query readability and performance</li>
  *   <li>Use EXISTS instead of IN for subqueries when checking for existence</li>
  *   <li>Consider database-specific optimizations for high-performance applications</li>
  * </ul>
@@ -426,9 +426,9 @@ public class Filters {
     }
 
     /**
-     * Creates a negation condition that represents the logical NOT of the provided condition.
+     * Creates a negation condition that represents the composable NOT of the provided condition.
      * 
-     * <p>This method creates a Not condition that inverts the logical result of the wrapped condition.
+     * <p>This method creates a Not condition that inverts the composable result of the wrapped condition.
      * It can be used to negate any other condition type, such as Equal, Like, In, Between, etc.</p>
      * 
      * <p><b>Usage Examples:</b></p>
@@ -2170,13 +2170,13 @@ public class Filters {
      * Where where = Filters.where("YEAR(created_date) = 2023");
      * }</pre>
      *
-     * @param condition the SQL expression as a string
+     * @param expr the SQL expression as a string
      * @return a Where clause
      */
-    public static Where where(final String condition) {
-        N.checkArgNotEmpty(condition, "condition");
+    public static Where where(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
 
-        return new Where(expr(condition));
+        return new Where(expr(expr));
     }
 
     /**
@@ -2350,11 +2350,11 @@ public class Filters {
      * Having having = Filters.having("SUM(amount) > 1000");
      * }</pre>
      *
-     * @param condition the SQL expression as a string
+     * @param expr the SQL expression as a string
      * @return a Having clause
      */
-    public static Having having(final String condition) {
-        return new Having(expr(condition));
+    public static Having having(final String expr) {
+        return new Having(expr(expr));
     }
 
     /**
@@ -2590,11 +2590,11 @@ public class Filters {
      * On on = Filters.on("users.department_id = departments.id AND users.active = true");
      * }</pre>
      *
-     * @param condition the join condition as a string
+     * @param expr the join condition as a string
      * @return an On clause
      */
-    public static On on(final String condition) {
-        return new On(expr(condition));
+    public static On on(final String expr) {
+        return new On(expr(expr));
     }
 
     /**
@@ -3518,11 +3518,11 @@ public class Filters {
      *
      * @param entityName the entity/table name
      * @param propNames collection of property names to select
-     * @param condition the WHERE condition as a string
+     * @param expr the WHERE condition as a string
      * @return a SubQuery
      */
-    public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String condition) {
-        return new SubQuery(entityName, propNames, expr(condition));
+    public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr) {
+        return new SubQuery(entityName, propNames, expr(expr));
     }
 
     /**

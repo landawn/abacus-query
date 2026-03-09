@@ -155,7 +155,7 @@ public class AbstractCondition2025Test extends TestBase {
     }
 
     @Test
-    public void testMixedLogicalOperations() {
+    public void testMixedComposableOperations() {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);
 

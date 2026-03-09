@@ -32,7 +32,7 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * Abstract base class for all condition implementations.
- * This class provides common functionality for conditions including logical operations
+ * This class provides common functionality for conditions including composable operations
  * (AND, OR, NOT) and utility methods for string representation.
  * 
  * <p>AbstractCondition serves as the foundation for the condition hierarchy, implementing
@@ -43,7 +43,7 @@ import com.landawn.abacus.util.Strings;
  * <p>Key features:</p>
  * <ul>
  *   <li>Immutable operator storage</li>
- *   <li>Default implementations for logical operations (and, or, not)</li>
+ *   <li>Default implementations for composable operations (and, or, not)</li>
  *   <li>Immutable after construction</li>
  *   <li>Utility methods for parameter and property name formatting</li>
  *   <li>Standard toString() implementation</li>
@@ -58,7 +58,7 @@ import com.landawn.abacus.util.Strings;
  *     }
  * }
  * 
- * // Using logical operations inherited from AbstractCondition
+ * // Using composable operations inherited from AbstractCondition
  * Condition c1 = new Equal("status", "active");
  * Condition c2 = new GreaterThan("age", 18);
  * Condition combined = c1.and(c2);   // Inherited method
@@ -92,7 +92,7 @@ public abstract class AbstractCondition implements Condition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // In a subclass constructor
-     * abstract class CustomCondition extends LogicalCondition {
+     * abstract class CustomCondition extends ComposableCondition {
      *     CustomCondition() {
      *         super(Operator.EQUAL);   // Sets the operator
      *     }
@@ -466,11 +466,11 @@ public abstract class AbstractCondition implements Condition {
         }
     }
 
-    protected static void validateLogicalOperand(final Condition cond, final String methodName) {
+    protected static void validateComposableOperand(final Condition cond, final String methodName) {
         final Operator operator = cond.operator();
 
         if (isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
-            throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in logical method '" + methodName + "'");
+            throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in composable method '" + methodName + "'");
         }
     }
 

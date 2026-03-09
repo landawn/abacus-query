@@ -30,19 +30,19 @@ import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
 
 /**
- * Base class for logical junction conditions that combine multiple conditions.
- * This class is used to join multiple conditions using logical operators like AND or OR.
+ * Base class for composable junction conditions that combine multiple conditions.
+ * This class is used to join multiple conditions using composable operators like AND or OR.
  * It provides the foundation for creating complex query conditions by combining simpler ones.
- * Junctions can be nested to create arbitrarily complex logical expressions.
+ * Junctions can be nested to create arbitrarily complex composable expressions.
  * 
  * <p>Important: Junction must not contain clause conditions (WHERE, ORDER BY, etc.) - 
- * those are handled by {@link Criteria}. This class is specifically for logical
+ * those are handled by {@link Criteria}. This class is specifically for composable
  * combinations of conditional expressions.
  * 
  * <p>This class serves as the parent for specific junction types:
  * <ul>
- *   <li>{@link And} - combines conditions with logical AND (all must be true)</li>
- *   <li>{@link Or} - combines conditions with logical OR (at least one must be true)</li>
+ *   <li>{@link And} - combines conditions with composable AND (all must be true)</li>
+ *   <li>{@link Or} - combines conditions with composable OR (at least one must be true)</li>
  * </ul>
  * 
  * <p>Key features:
@@ -86,7 +86,7 @@ import com.landawn.abacus.util.Strings;
  * @see Criteria
  * @see AbstractCondition
  */
-public class Junction extends LogicalCondition {
+public class Junction extends ComposableCondition {
 
     List<Condition> conditions;
 
@@ -102,7 +102,7 @@ public class Junction extends LogicalCondition {
     /**
      * Creates a new Junction with the specified operator and conditions.
      * This constructor initializes the junction with a set of conditions that will
-     * be combined using the specified logical operator.
+     * be combined using the specified composable operator.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -121,7 +121,7 @@ public class Junction extends LogicalCondition {
      * );
      * }</pre>
      *
-     * @param operator the logical operator to use (AND, OR, etc.). Must not be null.
+     * @param operator the composable operator to use (AND, OR, etc.). Must not be null.
      * @param conditions the conditions to combine. Can be empty but not null.
      * @throws IllegalArgumentException if any condition in the array is null
      */
@@ -148,7 +148,7 @@ public class Junction extends LogicalCondition {
      * Junction junction = new Junction(Operator.AND, conditions);
      * }</pre>
      *
-     * @param operator the logical operator to use (AND, OR, etc.). Must not be null.
+     * @param operator the composable operator to use (AND, OR, etc.). Must not be null.
      * @param conditions the collection of conditions to combine. Can be empty but not null.
      * @throws IllegalArgumentException if any condition in the collection is null
      */
@@ -249,7 +249,7 @@ public class Junction extends LogicalCondition {
     /**
      * Converts this junction to its string representation according to the specified naming policy.
      * The output format wraps each condition in parentheses and joins them with the operator.
-     * This ensures proper precedence in complex logical expressions.
+     * This ensures proper precedence in complex composable expressions.
      * 
      * @param namingPolicy the naming policy to apply to property names
      * @return the string representation with proper parentheses and spacing

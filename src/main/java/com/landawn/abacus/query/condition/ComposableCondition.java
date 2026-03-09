@@ -17,13 +17,13 @@ package com.landawn.abacus.query.condition;
 import com.landawn.abacus.util.N;
 
 /**
- * A {@link Condition} that supports logical composition via {@code and()}, {@code or()},
+ * A {@link Condition} that supports composable composition via {@code and()}, {@code or()},
  * {@code not()}, and {@code xor()}.
  *
- * <p>Not every {@code Condition} can be logically combined — for example, SQL clauses
+ * <p>Not every {@code Condition} can be composablely combined — for example, SQL clauses
  * ({@link Clause}: WHERE, ORDER BY, …) and {@link Join} operations are structural
  * query components that do not participate in boolean logic. This interface marks the
- * conditions that <em>do</em> support logical composition and provides working default
+ * conditions that <em>do</em> support composable composition and provides working default
  * implementations for the four operations.</p>
  *
  * <p>Typical implementors include comparison conditions ({@link Binary} and subclasses),
@@ -35,13 +35,13 @@ import com.landawn.abacus.util.N;
  * @see Or
  * @see Not
  */
-public abstract class LogicalCondition extends AbstractCondition {
+public abstract class ComposableCondition extends AbstractCondition {
 
-    LogicalCondition() {
+    ComposableCondition() {
         super();
     }
 
-    protected LogicalCondition(final Operator operator) {
+    protected ComposableCondition(final Operator operator) {
         super(operator);
     }
 
@@ -65,7 +65,7 @@ public abstract class LogicalCondition extends AbstractCondition {
      */
     public And and(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
-        validateLogicalOperand(cond, "and");
+        validateComposableOperand(cond, "and");
 
         return new And(this, cond);
     }
@@ -80,7 +80,7 @@ public abstract class LogicalCondition extends AbstractCondition {
      */
     public Or or(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
-        validateLogicalOperand(cond, "or");
+        validateComposableOperand(cond, "or");
 
         return new Or(this, cond);
     }
@@ -89,7 +89,7 @@ public abstract class LogicalCondition extends AbstractCondition {
      * Creates a new XOR (exclusive OR) condition combining this condition with another.
      * Exactly one of the two conditions must be true for the result to be true.
      *
-     * <p>XOR has no direct SQL equivalent, so it is expanded to its logical definition:
+     * <p>XOR has no direct SQL equivalent, so it is expanded to its composable definition:
      * {@code (A AND NOT B) OR (NOT A AND B)}. The return type is {@link Or} because
      * that outer OR is the top-level operator once the expression is flattened.</p>
      *
@@ -99,7 +99,7 @@ public abstract class LogicalCondition extends AbstractCondition {
      */
     public Or xor(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
-        validateLogicalOperand(cond, "xor");
+        validateComposableOperand(cond, "xor");
 
         return new Or(new And(this, new Not(cond)), new And(new Not(this), cond));
     }

@@ -139,7 +139,7 @@ public class SKTest extends TestBase {
     }
 
     @Test
-    void testLogicalOperators() {
+    void testComposableOperators() {
         assertEquals("||", SK.DOUBLE_PIPE);
         assertEquals("&&", SK.AND_OP);
         assertEquals("||", SK.OR_OP);
@@ -231,10 +231,10 @@ public class SKTest extends TestBase {
         assertEquals("ROWNUM", SK.ROWNUM);
     }
 
-    // Tests for SQL Logical Operations
+    // Tests for SQL Composable Operations
 
     @Test
-    void testLogicalKeywords() {
+    void testComposableKeywords() {
         assertEquals("AND", SK.AND);
         assertEquals("OR", SK.OR);
         assertEquals("XOR", SK.XOR);
@@ -438,7 +438,7 @@ public class SKTest extends TestBase {
         assertTrue(SK.LEFT_JOIN.equals(SK.LEFT_JOIN.toUpperCase()));
         assertTrue(SK.RIGHT_JOIN.equals(SK.RIGHT_JOIN.toUpperCase()));
 
-        // Logical operators
+        // Composable operators
         assertTrue(SK.AND.equals(SK.AND.toUpperCase()));
         assertTrue(SK.OR.equals(SK.OR.toUpperCase()));
         assertTrue(SK.NOT.equals(SK.NOT.toUpperCase()));

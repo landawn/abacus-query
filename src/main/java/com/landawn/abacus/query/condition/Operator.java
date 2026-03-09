@@ -26,14 +26,14 @@ import com.landawn.abacus.util.Strings;
  * Enumeration of SQL operators supported by the condition framework.
  *
  * <p>This enum defines all the operators that can be used in SQL conditions,
- * including comparison operators, logical operators, join types, and SQL clauses.
+ * including comparison operators, composable operators, join types, and SQL clauses.
  * Each operator has a string representation that corresponds to its SQL syntax.
  * The {@link #of(String)} method provides case-insensitive lookup with caching.</p>
  *
  * <p>Categories of operators:</p>
  * <ul>
  *   <li><b>Comparison:</b> EQUAL, NOT_EQUAL, GREATER_THAN, LESS_THAN, etc.</li>
- *   <li><b>Logical:</b> AND, OR, NOT, XOR</li>
+ *   <li><b>Composable:</b> AND, OR, NOT, XOR</li>
  *   <li><b>Range/Set:</b> BETWEEN, IN, NOT_IN, LIKE</li>
  *   <li><b>Null checks:</b> IS, IS_NOT</li>
  *   <li><b>Subquery:</b> EXISTS, ANY, SOME, ALL</li>
@@ -78,7 +78,7 @@ public enum Operator {
     NOT_EQUAL_ANSI(SK.NOT_EQUAL_ANSI),
 
     /**
-     * NOT logical operator.
+     * NOT composable operator.
      * Used to negate conditions.
      */
     NOT(SK.NOT),
@@ -108,7 +108,7 @@ public enum Operator {
     NOT_LIKE(NOT + " " + SK.LIKE),
 
     /**
-     * AND logical operator.
+     * AND composable operator.
      * All conditions must be true.
      */
     AND(SK.AND),
@@ -120,7 +120,7 @@ public enum Operator {
     AND_OP(SK.AND_OP),
 
     /**
-     * OR logical operator.
+     * OR composable operator.
      * At least one condition must be true.
      */
     OR(SK.OR),

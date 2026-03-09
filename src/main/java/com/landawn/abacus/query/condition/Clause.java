@@ -20,7 +20,7 @@ package com.landawn.abacus.query.condition;
  * Unlike regular conditions, clauses typically cannot be combined using AND/OR/NOT operations.
  * 
  * <p>A Clause is a special type of {@link Cell} that represents a complete SQL clause.
- * While regular conditions can be combined with logical operators (AND, OR, NOT),
+ * While regular conditions can be combined with composable operators (AND, OR, NOT),
  * clauses are standalone components that structure the query.</p>
  * 
  * <p>This design enforces proper SQL structure - you cannot, for example, AND two

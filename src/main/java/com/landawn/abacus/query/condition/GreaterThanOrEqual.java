@@ -32,7 +32,7 @@ package com.landawn.abacus.query.condition;
  * <p>The operator works with various data types:
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
- *   <li>Dates/Times: Chronological comparison</li>
+ *   <li>Dates/Times: Chronocomposable comparison</li>
  *   <li>Strings: Lexicographical (dictionary) order</li>
  *   <li>Any Comparable type supported by the database</li>
  * </ul>

@@ -10197,7 +10197,7 @@ Represents a LIMIT clause in SQL queries to restrict the number of rows returned
   - `obj` (`Object`) — the object to compare with
 - **Returns:** {@code true} if the object is a Limit with the same expr or count/offset values
 
-### Class LogicalCondition (com.landawn.abacus.query.condition.LogicalCondition)
+### Class ComposableCondition (com.landawn.abacus.query.condition.ComposableCondition)
 A {@link Condition} that supports logical composition via {@code and()} , {@code or()} , {@code not()} , and {@code xor()} .
 
 **Thread-safety:** unspecified

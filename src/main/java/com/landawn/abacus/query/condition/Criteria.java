@@ -1119,13 +1119,13 @@ public class Criteria extends AbstractCondition {
          * criteria.where("YEAR(created_date) = 2024 OR special_flag = true");
          * }</pre>
          * 
-         * @param condition the WHERE condition as a string
+         * @param expr the WHERE condition as a string
          * @return this Criteria instance for method chaining
          */
-        public Builder where(final String condition) {
-            N.checkArgNotEmpty(condition, "condition");
+        public Builder where(final String expr) {
+            N.checkArgNotEmpty(expr, "expr");
 
-            add(new Where(Filters.expr(condition)));
+            add(new Where(Filters.expr(expr)));
 
             return this;
         }
@@ -1363,13 +1363,13 @@ public class Criteria extends AbstractCondition {
          *     .having("SUM(revenue) > 10000 AND COUNT(*) > 5");
          * }</pre>
          * 
-         * @param condition the HAVING condition as a string
+         * @param expr the HAVING condition as a string
          * @return this Criteria instance for method chaining
          */
-        public Builder having(final String condition) {
-            N.checkArgNotEmpty(condition, "condition");
+        public Builder having(final String expr) {
+            N.checkArgNotEmpty(expr, "expr");
 
-            add(new Having(Filters.expr(condition)));
+            add(new Having(Filters.expr(expr)));
 
             return this;
         }

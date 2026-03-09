@@ -40,7 +40,7 @@ public class Operator2025Test extends TestBase {
     }
 
     @Test
-    public void testGetOperator_Logical() {
+    public void testGetOperator_Composable() {
         assertEquals(Operator.AND, Operator.of("AND"));
         assertEquals(Operator.AND_OP, Operator.of("&&"));
         assertEquals(Operator.OR, Operator.of("OR"));
@@ -221,7 +221,7 @@ public class Operator2025Test extends TestBase {
         assertNotNull(Operator.LESS_THAN);
         assertNotNull(Operator.LESS_THAN_OR_EQUAL);
 
-        // Test all logical operators
+        // Test all composable operators
         assertNotNull(Operator.AND);
         assertNotNull(Operator.AND_OP);
         assertNotNull(Operator.OR);

@@ -19,7 +19,7 @@ import com.landawn.abacus.util.NamingPolicy;
 public class AbstractConditionTest extends TestBase {
 
     // Create a concrete implementation for testing
-    private static class TestCondition extends LogicalCondition {
+    private static class TestCondition extends ComposableCondition {
         private String value;
 
         public TestCondition(Operator operator, String value) {

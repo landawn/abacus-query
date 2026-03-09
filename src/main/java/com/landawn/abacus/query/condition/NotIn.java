@@ -19,7 +19,7 @@ import java.util.Collection;
 /**
  * Represents a NOT IN condition in SQL queries.
  * This condition checks if a property value is NOT contained in a specified collection of values.
- * It's the logical opposite of the IN operator and is useful for exclusion-based filtering.
+ * It's the composable opposite of the IN operator and is useful for exclusion-based filtering.
  *
  * <p>The NOT IN operator is particularly useful for:
  * <ul>

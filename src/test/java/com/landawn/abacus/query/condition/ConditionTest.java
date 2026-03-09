@@ -27,8 +27,8 @@ import com.landawn.abacus.util.NamingPolicy;
  */
 public class ConditionTest extends TestBase {
 
-    private LogicalCondition simpleCondition;
-    private LogicalCondition complexCondition;
+    private ComposableCondition simpleCondition;
+    private ComposableCondition complexCondition;
 
     @BeforeEach
     void setUp() {
@@ -100,9 +100,9 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testAndChaining() {
-        LogicalCondition condition1 = Filters.eq("field1", "value1");
-        LogicalCondition condition2 = Filters.eq("field2", "value2");
-        LogicalCondition condition3 = Filters.eq("field3", "value3");
+        ComposableCondition condition1 = Filters.eq("field1", "value1");
+        ComposableCondition condition2 = Filters.eq("field2", "value2");
+        ComposableCondition condition3 = Filters.eq("field3", "value3");
 
         Condition result = condition1.and(condition2).and(condition3);
 
@@ -142,9 +142,9 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testOrChaining() {
-        LogicalCondition condition1 = Filters.eq("status", "active");
-        LogicalCondition condition2 = Filters.eq("status", "pending");
-        LogicalCondition condition3 = Filters.eq("status", "processing");
+        ComposableCondition condition1 = Filters.eq("status", "active");
+        ComposableCondition condition2 = Filters.eq("status", "pending");
+        ComposableCondition condition3 = Filters.eq("status", "processing");
 
         Condition result = condition1.or(condition2).or(condition3);
 
@@ -186,8 +186,8 @@ public class ConditionTest extends TestBase {
     @Test
     void testXorSemantics() {
         // XOR should produce (A AND NOT B) OR (NOT A AND B)
-        LogicalCondition a = Filters.eq("x", 1);
-        LogicalCondition b = Filters.eq("y", 2);
+        ComposableCondition a = Filters.eq("x", 1);
+        ComposableCondition b = Filters.eq("y", 2);
         Or result = a.xor(b);
 
         // The result should be an Or with 2 conditions (each an And)
@@ -329,12 +329,12 @@ public class ConditionTest extends TestBase {
     // Integration Tests
 
     @Test
-    void testLogicalOperationsCombination() {
-        LogicalCondition condition1 = Filters.eq("status", "active");
-        LogicalCondition condition2 = Filters.gt("age", 18);
-        LogicalCondition condition3 = Filters.lt("age", 65);
+    void testComposableOperationsCombination() {
+        ComposableCondition condition1 = Filters.eq("status", "active");
+        ComposableCondition condition2 = Filters.gt("age", 18);
+        ComposableCondition condition3 = Filters.lt("age", 65);
 
-        // Test complex logical combination
+        // Test complex composable combination
         Condition result = condition1.and(condition2.or(condition3)).not();
 
         assertNotNull(result);
@@ -342,9 +342,9 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
-    void testParameterManagementWithLogicalOperations() {
-        LogicalCondition condition1 = Filters.eq("name", "John");
-        LogicalCondition condition2 = Filters.gt("age", 25);
+    void testParameterManagementWithComposableOperations() {
+        ComposableCondition condition1 = Filters.eq("name", "John");
+        ComposableCondition condition2 = Filters.gt("age", 25);
         Condition combined = condition1.and(condition2);
 
         List<Object> params = combined.getParameters();
@@ -394,7 +394,7 @@ public class ConditionTest extends TestBase {
     @Test
     void testConditionChainPerformance() {
         // Test performance with long condition chains
-        LogicalCondition chain = Filters.eq("field1", "value1");
+        ComposableCondition chain = Filters.eq("field1", "value1");
 
         for (int i = 2; i <= 100; i++) {
             chain = chain.and(Filters.eq("field" + i, "value" + i));
@@ -416,7 +416,7 @@ public class ConditionTest extends TestBase {
         List<Object> originalParams = simpleCondition.getParameters();
         Operator originalOperator = simpleCondition.operator();
 
-        // Logical operations should not modify original
+        // Composable operations should not modify original
         simpleCondition.and(Filters.eq("other", "value"));
         simpleCondition.or(Filters.eq("another", "value"));
         simpleCondition.not();
@@ -429,7 +429,7 @@ public class ConditionTest extends TestBase {
     @Test
     void testThreadSafetyContract() {
         // Basic thread safety test - conditions should be immutable and thread-safe
-        final LogicalCondition condition = Filters.eq("field", "value");
+        final ComposableCondition condition = Filters.eq("field", "value");
 
         Thread thread1 = new Thread(() -> {
             for (int i = 0; i < 100; i++) {

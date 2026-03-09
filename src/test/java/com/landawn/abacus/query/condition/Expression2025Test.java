@@ -232,7 +232,7 @@ public class Expression2025Test extends TestBase {
         assertTrue(result.contains("BLANK"));
     }
 
-    // Logical operators
+    // Composable operators
     @Test
     public void testAnd() {
         String result = Expression.and("active = true", "age > 18");

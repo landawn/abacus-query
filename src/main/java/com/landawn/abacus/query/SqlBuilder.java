@@ -265,7 +265,7 @@ import com.landawn.abacus.util.u.Optional;
  *   <li>Use appropriate naming convention classes (PSC, PAC, PLC, NSC, NAC, NLC) for your environment</li>
  *   <li>Leverage entity mapping annotations for maintainable database-to-object mapping</li>
  *   <li>Use parameterized queries exclusively to prevent SQL injection attacks</li>
- *   <li>Group related conditions logically to improve query readability and performance</li>
+ *   <li>Group related conditions composablely to improve query readability and performance</li>
  *   <li>Consider database-specific optimizations for high-performance applications</li>
  *   <li>Use batch operations for bulk data modifications</li>
  *   <li>Implement proper error handling and logging for production environments</li>

@@ -97,7 +97,7 @@ public class Having extends Clause {
      *
      * <p>The condition typically involves aggregate functions and comparison operators.
      * Multiple conditions can be combined using And/Or to create complex filtering logic.
-     * It can use comparison operators (gt, lt, eq, etc.) and logical operators (and, or, not)
+     * It can use comparison operators (gt, lt, eq, etc.) and composable operators (and, or, not)
      * to build complex filtering logic on grouped data.</p>
      *
      * <p><b>Usage Examples:</b></p>

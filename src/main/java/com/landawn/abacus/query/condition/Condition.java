@@ -14,19 +14,17 @@
 
 package com.landawn.abacus.query.condition;
 
-import java.util.List;
-
-import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
  * The base interface for all query conditions.
  * Conditions are immutable objects that represent various types of query criteria,
- * such as equality checks, comparisons, logical operations, and SQL clauses.
+ * such as equality checks, comparisons, composable operations, and SQL clauses.
  * 
  * <p>This interface defines the contract that all conditions must follow, providing
- * methods for logical operations (AND, OR, NOT), parameter management, and string
+ * methods for composable operations (AND, OR, NOT), parameter management, and string
  * representation. Conditions are designed to be composable, allowing complex queries
  * to be built from simple building blocks.</p>
  * 
@@ -42,7 +40,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *   <li><b>Pattern matching:</b> {@code Like}, {@code NotLike}</li>
  *   <li><b>Null checks:</b> {@code IsNull}, {@code IsNotNull}</li>
  *   <li><b>Collection operations:</b> {@code In}, {@code NotIn}</li>
- *   <li><b>Logical operations:</b> {@code And}, {@code Or}, {@code Not}</li>
+ *   <li><b>Composable operations:</b> {@code And}, {@code Or}, {@code Not}</li>
  *   <li><b>SQL clauses:</b> {@code Where}, {@code Having}, {@code GroupBy}, {@code OrderBy}, {@code Join}</li>
  *   <li><b>Subquery operations:</b> {@code Exists}, {@code NotExists}, {@code All}, {@code Any}</li>
  * </ul>
@@ -53,7 +51,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * Condition ageCondition = Filters.greaterThan("age", 18);
  * Condition statusCondition = Filters.equal("status", "active");
  * 
- * // Combine conditions using logical operations
+ * // Combine conditions using composable operations
  * Condition combined = ageCondition.and(statusCondition);
  * 
  * // Negate a condition

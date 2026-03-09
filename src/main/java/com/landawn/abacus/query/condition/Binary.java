@@ -14,12 +14,10 @@
 
 package com.landawn.abacus.query.condition;
 
-import java.util.List;
-
-import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.SK;
 
 /**
  * Abstract base class for binary conditions that compare a property with a value.
@@ -58,7 +56,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * @see LessThan
  * @see Condition
  */
-public class Binary extends LogicalCondition {
+public class Binary extends ComposableCondition {
 
     // For Kryo
     final String propName;
