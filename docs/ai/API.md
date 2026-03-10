@@ -1166,7 +1166,7 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Returns:** an Expression that always evaluates to false (1 &gt; 2)
 ##### not(...) -> Not
 - **Signature:** `public static Not not(final Condition cond)`
-- **Summary:** Creates a negation condition that represents the composable NOT of the provided condition.
+- **Summary:** Creates a negation condition that represents the logical NOT of the provided condition.
 - **Parameters:**
   - `cond` (`Condition`) — the condition to negate
 - **Returns:** a Not condition that wraps and negates the provided condition
@@ -9881,7 +9881,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 - **Signature:** `public NamedProperty(final String propName)`
 - **Summary:** Creates a NamedProperty with the specified property name.
 - **Parameters:**
-  - `propName` (`String`) — the property name. Must not be null.
+  - `propName` (`String`) — the property name. Must not be null or empty.
 ##### propName(...) -> String
 - **Signature:** `public String propName()`
 - **Summary:** Returns the property name associated with this NamedProperty.

@@ -4424,7 +4424,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a negation condition that represents the composable NOT of the provided condition.",
+              "javadoc_summary": "Creates a negation condition that represents the logical NOT of the provided condition.",
               "contract": [],
               "examples": [],
               "see_also": [
@@ -9492,7 +9492,7 @@
               "throws": [],
               "deprecated": {
                 "is_deprecated": true,
-                "message": "for internal use only",
+                "message": "for internal use only.",
                 "for_removal": false
               },
               "javadoc_summary": "Gets the property names to be used for INSERT operations on the given entity instance.",
@@ -9529,7 +9529,7 @@
               "throws": [],
               "deprecated": {
                 "is_deprecated": true,
-                "message": "for internal use only",
+                "message": "for internal use only.",
                 "for_removal": false
               },
               "javadoc_summary": "Gets the property names to be used for INSERT operations on the given entity class.",
@@ -9570,7 +9570,7 @@
               "throws": [],
               "deprecated": {
                 "is_deprecated": true,
-                "message": "for internal use only",
+                "message": "for internal use only.",
                 "for_removal": false
               },
               "javadoc_summary": "Gets the property names to be used for SELECT operations on the given entity class.",
@@ -9607,7 +9607,7 @@
               "throws": [],
               "deprecated": {
                 "is_deprecated": true,
-                "message": "for internal use only",
+                "message": "for internal use only.",
                 "for_removal": false
               },
               "javadoc_summary": "Gets the property names to be used for UPDATE operations on the given entity class.",
@@ -9638,7 +9638,7 @@
               "throws": [],
               "deprecated": {
                 "is_deprecated": true,
-                "message": "for internal only.",
+                "message": "for internal use only.",
                 "for_removal": false
               },
               "javadoc_summary": "Gets the ID field names for the specified entity class.",
@@ -39130,7 +39130,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property name. Must not be null.",
+                  "javadoc": "the property name. Must not be null or empty.",
                   "nullability": "unspecified"
                 }
               ],
