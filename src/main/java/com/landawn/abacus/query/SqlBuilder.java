@@ -737,7 +737,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = SCSB.insert("firstName")
          *                  .into("account")
          *                  .build().query();
-         * // Output: INSERT INTO account (first_name) VALUES (?)
+         * // Output: INSERT INTO account (first_name) VALUES ('John')
          * }</pre>
          *
          * @param expr the column name or expression
@@ -761,7 +761,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = SCSB.insert("firstName", "lastName", "email")
          *                  .into("account")
          *                  .build().query();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@email.com')
          * }</pre>
          *
          * @param propOrColumnNames the column names to insert
@@ -791,7 +791,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = SCSB.insert(columns)
          *                  .into("account")
          *                  .build().query();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@email.com')
          * }</pre>
          *
          * @param propOrColumnNames the collection of column names to insert
@@ -953,7 +953,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.insertInto(Account.class)
          *                  .build().query();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@email.com')
          * }</pre>
          *
          * @param entityClass the entity class
@@ -2011,7 +2011,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.insert("firstName")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME) VALUES (?)
+         * // Output: INSERT INTO USERS (FIRST_NAME) VALUES ('John')
          * }</pre>
          *
          * @param expr the column name or expression to insert
@@ -2035,7 +2035,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.insert("firstName", "lastName", "email")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES ('John', 'Doe', 'john@email.com')
          * }</pre>
          *
          * @param propOrColumnNames the property or column names to insert, in order
@@ -2065,7 +2065,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.insert(columns)
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES ('John', 'Doe', 'john@email.com')
          * }</pre>
          *
          * @param propOrColumnNames the collection of column names to insert
@@ -2229,7 +2229,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = ACSB.insertInto(User.class)
          *                  .build().query();
-         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES (?, ?, ?, ?)
+         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES ('John', 'Doe', 30, 'john@email.com')
          * }</pre>
          *
          * @param entityClass the entity class to insert into
@@ -3283,7 +3283,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = LCSB.insert("userName")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO users (userName) VALUES (?)
+         * // Output: INSERT INTO users (userName) VALUES ('John')
          * }</pre>
          * 
          * @param expr the column name or expression to insert
@@ -3310,7 +3310,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = LCSB.insert("firstName", "lastName", "email")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@email.com')
          * }</pre>
          * 
          * @param propOrColumnNames the property or column names to insert
@@ -3340,7 +3340,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = LCSB.insert(columns)
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@email.com')
          * }</pre>
          * 
          * @param propOrColumnNames collection of property or column names to insert
@@ -3509,7 +3509,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = LCSB.insertInto(User.class)
          *                  .build().query();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@email.com')
          * }</pre>
          * 
          * @param entityClass the entity class to insert into
@@ -17387,7 +17387,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: INSERT INTO ACCOUNT (FIRST_NAME, LAST_NAME) VALUES (#{firstName}, #{lastName})
      * }</pre>
      * 
-     * @deprecated Use {@link NAC} (Named SQL with All Caps) instead for better clarity
+     * @deprecated Use {@link NAC} (Named SQL with All Caps) instead for better clarity.
+     * Note: Switching from MAC to NAC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
     public static class MAC extends SqlBuilder {
@@ -18539,7 +18540,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: INSERT INTO account (firstName, lastName) VALUES (#{firstName}, #{lastName})
      * }</pre>
      * 
-     * @deprecated Use {@link NLC} (Named SQL with Lower Camel) instead for better clarity
+     * @deprecated Use {@link NLC} (Named SQL with Lower Camel) instead for better clarity.
+     * Note: Switching from MLC to NLC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
     public static class MLC extends SqlBuilder {

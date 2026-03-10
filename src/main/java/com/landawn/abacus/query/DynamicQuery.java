@@ -216,7 +216,7 @@ public final class DynamicQuery {
          * builder.limit("TOP 10");
          * }</pre>
          *
-         * @param limitCond the complete limit condition including the LIMIT keyword (must not be null)
+         * @param limitCond the complete limit/pagination expression (e.g., "LIMIT 10 OFFSET 20" or "TOP 10") (must not be null)
          * @return this builder instance for method chaining
          */
         public Builder limit(final String limitCond) {
@@ -498,6 +498,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @return the complete SQL query string
+         * @throws IllegalStateException if the builder has already been built/closed
          */
         public String build() {
             try {
@@ -873,6 +874,7 @@ public final class DynamicQuery {
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
          * @return this FromClause instance for method chaining
+         * @throws IllegalStateException if from() has not been called
          */
         public FromClause join(final String table, final String on) {
             requireFromInitialized();
@@ -894,6 +896,7 @@ public final class DynamicQuery {
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
          * @return this FromClause instance for method chaining
+         * @throws IllegalStateException if from() has not been called
          */
         public FromClause innerJoin(final String table, final String on) {
             requireFromInitialized();
@@ -915,6 +918,7 @@ public final class DynamicQuery {
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
          * @return this FromClause instance for method chaining
+         * @throws IllegalStateException if from() has not been called
          */
         public FromClause leftJoin(final String table, final String on) {
             requireFromInitialized();
@@ -936,6 +940,7 @@ public final class DynamicQuery {
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
          * @return this FromClause instance for method chaining
+         * @throws IllegalStateException if from() has not been called
          */
         public FromClause rightJoin(final String table, final String on) {
             requireFromInitialized();
@@ -957,6 +962,7 @@ public final class DynamicQuery {
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
          * @return this FromClause instance for method chaining
+         * @throws IllegalStateException if from() has not been called
          */
         public FromClause fullJoin(final String table, final String on) {
             requireFromInitialized();

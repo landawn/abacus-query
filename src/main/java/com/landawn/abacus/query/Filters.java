@@ -1943,8 +1943,8 @@ public class Filters {
 
     /**
      * Creates a GROUP BY clause with the specified property names.
-     * Groups results by the given columns in ascending order.
-     * 
+     * Groups results by the given columns. The default sort direction ASC is applied.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GroupBy groupBy = Filters.groupBy("department", "role");
@@ -1960,8 +1960,8 @@ public class Filters {
 
     /**
      * Creates a GROUP BY clause with properties from a collection.
-     * Groups results by the given columns in ascending order.
-     * 
+     * Groups results by the given columns. The default sort direction ASC is applied.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> columns = Arrays.asList("country", "city");
@@ -3372,6 +3372,7 @@ public class Filters {
      * Limit limit = Filters.limit(20, 10);
      * // Results in SQL like: LIMIT 20 OFFSET 10 (skip 10, take 20)
      * }</pre>
+     *
      * @param count the maximum number of rows to return
      * @param offset the number of rows to skip
      * @return a Limit clause

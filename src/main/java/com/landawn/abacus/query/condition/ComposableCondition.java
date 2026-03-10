@@ -41,6 +41,11 @@ public abstract class ComposableCondition extends AbstractCondition {
         super();
     }
 
+    /**
+     * Creates a new ComposableCondition with the specified operator.
+     *
+     * @param operator the logical operator for this condition
+     */
     protected ComposableCondition(final Operator operator) {
         super(operator);
     }

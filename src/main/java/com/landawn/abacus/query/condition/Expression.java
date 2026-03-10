@@ -1693,7 +1693,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression.Expr expr = new Expression.Expr("price * quantity");
+     * Expression expr = Expression.of("price * quantity");
      * }</pre>
      *
      * @see Expression
@@ -1707,7 +1707,7 @@ public class Expression extends ComposableCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Expression.Expr expr = new Expression.Expr("price * quantity");
+         * Expression expr = Expression.of("price * quantity");
          * }</pre>
          *
          * @param literal the SQL expression as a string

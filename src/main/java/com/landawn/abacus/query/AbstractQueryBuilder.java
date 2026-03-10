@@ -1322,6 +1322,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Sets the FROM clause using the specified entity class and multiple table names.
+     *
+     * @param entityClass the entity class to associate with this query
+     * @param tableNames the collection of table names for the FROM clause
+     * @return this builder instance for method chaining
+     */
     protected This from(final Class<?> entityClass, final Collection<String> tableNames) {
         setEntityClass(entityClass);
 
@@ -1438,6 +1445,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return (This) this;
     }
 
+    /**
+     * Appends the SELECT operation and modifier to the SQL string builder before the FROM clause.
+     * Parses the table name to extract table alias if present, and validates that the operation is a QUERY
+     * and that column names have been set.
+     *
+     * @param tableName the table name, optionally including an alias (e.g., "users u")
+     */
     protected void appendOperationBeforeFrom(final String tableName) {
         if (_op != OperationType.QUERY) {
             throw new IllegalStateException("Invalid operation for from(): " + _op + ". Expected QUERY");
@@ -1498,6 +1512,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Registers a property-to-column-name mapping for a table alias.
+     * This allows column names to be resolved correctly when a table alias is used in the query.
+     *
+     * @param entityClass the entity class whose property-column mapping to register
+     * @param alias the table alias to associate with the mapping
+     */
     protected void addPropColumnMapForAlias(final Class<?> entityClass, final String alias) {
         if (_aliasPropColumnNameMap == null) {
             _aliasPropColumnNameMap = new HashMap<>();
@@ -4752,6 +4773,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Sets the entity class for this query builder and initializes the associated bean info
+     * and property-to-column-name mapping if the class is a bean class.
+     *
+     * @param entityClass the entity class to set
+     */
     protected void setEntityClass(final Class<?> entityClass) {
         _entityClass = entityClass;
 
@@ -4840,6 +4867,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Generates the next unique named parameter name for the given property name.
+     * On the first occurrence, returns the property name as-is. On subsequent occurrences,
+     * appends a numeric suffix (e.g., "propName_2", "propName_3").
+     *
+     * @param propName the property name to generate a parameter name for
+     * @return the unique named parameter name
+     */
     protected String nextNamedParameterName(final String propName) {
         final int occurrence = _namedParameterNameOccurrences.compute(propName, (k, v) -> v == null ? 1 : v + 1);
         return occurrence == 1 ? propName : propName + "_" + occurrence;
@@ -4971,8 +5006,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Appends the given condition to the SQL string builder.
+     *
+     * @param cond the condition to append
+     */
     protected abstract void appendCondition(final Condition cond);
 
+    /**
+     * Appends the given condition as a parameter value expression. If the condition is a {@code SubQuery},
+     * it is wrapped in parentheses; otherwise, it is appended directly.
+     *
+     * @param cond the condition to append
+     */
     protected void appendConditionAsParameter(final Condition cond) {
         if (cond instanceof SubQuery) {
             _sb.append(SK._PARENTHESIS_L);
@@ -4983,6 +5029,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Appends a string expression to the SQL string builder, normalizing column names according to the current naming policy.
+     * Simple alphanumeric column names are normalized directly; complex expressions are parsed and each identifier is normalized individually.
+     *
+     * @param expr the string expression to append
+     * @param isFromAppendColumn {@code true} if the expression originates from an append-column call (applies stricter validation and naming policy conversion),
+     *                           {@code false} otherwise
+     */
     protected void appendStringExpr(final String expr, final boolean isFromAppendColumn) {
         N.checkArgNotEmpty(expr, "expr");
 
@@ -5020,6 +5074,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Appends a single column name to the SQL string builder, using the current entity class and table alias context.
+     *
+     * @param propName the property or column name to append
+     */
     protected void appendColumnName(final String propName) {
         N.checkArgNotEmpty(propName, "propName");
 
@@ -5085,6 +5144,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return false;
     }
 
+    /**
+     * Appends a column name to the SQL string builder with full control over aliasing, table prefix, and sub-entity expansion.
+     *
+     * @param entityClass the entity class for resolving sub-entity properties
+     * @param entityInfo the bean info for the entity class, or {@code null}
+     * @param propColumnNameMap the property-to-column-name mapping
+     * @param tableAlias the table alias to prefix the column name, or {@code null}
+     * @param propName the property or column name to append
+     * @param propAlias the column alias for the SELECT clause, or {@code null}
+     * @param withClassAlias whether to prefix the alias with the class alias
+     * @param classAlias the class alias to use when {@code withClassAlias} is {@code true}
+     * @param isForSelect whether this column is being appended in a SELECT clause (adds AS alias)
+     * @param quotePropAlias whether to quote the property alias with double quotes
+     */
     protected void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo,
             final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String tableAlias, final String propName, final String propAlias,
             final boolean withClassAlias, final String classAlias, final boolean isForSelect, boolean quotePropAlias) {
@@ -5273,6 +5346,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Checks whether the specified entity class has sub-entity properties that should be included in the query.
+     *
+     * @param entityClass the entity class to check
+     * @param includeSubEntityProperties whether sub-entity properties are requested to be included
+     * @return {@code true} if sub-entity properties should be included and the entity class has them
+     */
     protected static boolean hasSubEntityToInclude(final Class<?> entityClass, final boolean includeSubEntityProperties) {
         return includeSubEntityProperties && N.notEmpty(getSubEntityPropNames(entityClass));
     }
@@ -5297,6 +5377,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return false;
     }
 
+    /**
+     * Normalizes a column name according to the specified naming policy.
+     * SQL keywords are returned unchanged. For {@code CAMEL_CASE} policy, the name is normalized as a bean property name.
+     *
+     * @param word the column name to normalize
+     * @param namingPolicy the naming policy to apply
+     * @return the normalized column name
+     */
     protected static String normalizeColumnName(final String word, final NamingPolicy namingPolicy) {
         if (sqlKeyWords.contains(word) || namingPolicy == NamingPolicy.NO_CHANGE) {
             return word;
@@ -5307,6 +5395,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return namingPolicy.convert(word);
     }
 
+    /**
+     * Normalizes a column name using the property-to-column-name mapping, with support for table alias resolution.
+     * Falls back to the static naming policy conversion if no mapping is found.
+     *
+     * @param propColumnNameMap the property-to-column-name mapping, or {@code null}
+     * @param propName the property name to normalize
+     * @return the normalized column name, optionally prefixed with a table alias
+     */
     protected String normalizeColumnName(final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String propName) {
         Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
@@ -5343,6 +5439,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Parses an entity (String, Map, or bean) for an INSERT operation and populates the builder's
+     * property names or property-value map. Null values and zero-valued ID properties are skipped for bean entities.
+     *
+     * @param instance the query builder instance to populate
+     * @param entity the entity to parse (a column name String, a Map of properties, or a bean object)
+     * @param excludedPropNames property names to exclude from the insert, or {@code null}
+     */
     protected static void parseInsertEntity(@SuppressWarnings("rawtypes") final AbstractQueryBuilder instance, final Object entity,
             final Set<String> excludedPropNames) {
         if (entity instanceof String) {
@@ -5376,6 +5480,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Converts a collection of entities (Maps or beans) into a list of property-value maps for batch INSERT operations.
+     * Properties that are {@code null} or zero-valued IDs across all entities are removed.
+     *
+     * @param propsList the collection of entities to convert
+     * @return a list of property-value maps suitable for batch insert
+     */
     protected static List<Map<String, Object>> toInsertPropsList(final Collection<?> propsList) {
         final Optional<?> first = N.firstNonNull(propsList);
 
@@ -5442,6 +5553,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return newPropsList;
     }
 
+    /**
+     * Validates that the multi-select list is not empty and that each selection has a non-null entity class.
+     *
+     * @param multiSelects the list of selections to validate
+     */
     protected static void checkMultiSelects(final List<Selection> multiSelects) {
         N.checkArgNotEmpty(multiSelects, "multiSelects");
 
@@ -5450,10 +5566,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Returns the property-to-column-name mapping for the specified entity class and naming policy.
+     *
+     * @param entityClass the entity class
+     * @param namingPolicy the naming policy
+     * @return an immutable map from property names to column name tuples
+     */
     protected static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         return QueryUtil.prop2ColumnNameMap(entityClass, namingPolicy);
     }
 
+    /**
+     * Builds the FROM clause string for a multi-select query, including table names, aliases,
+     * and any sub-entity tables that need to be joined.
+     *
+     * @param multiSelects the list of selections defining the tables and their properties
+     * @param namingPolicy the naming policy for table name conversion
+     * @return the constructed FROM clause string
+     */
     protected static String getFromClause(final List<Selection> multiSelects, final NamingPolicy namingPolicy) {
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -5513,8 +5644,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Defines the SQL parameterization strategy used by query builders.
+     */
     protected enum SQLPolicy {
-        RAW_SQL, PARAMETERIZED_SQL, NAMED_SQL, IBATIS_SQL
+        /** Inline parameter values directly into the SQL string. */
+        RAW_SQL,
+        /** Use '?' placeholders and collect parameter values in a list. */
+        PARAMETERIZED_SQL,
+        /** Use ':paramName' named placeholders. */
+        NAMED_SQL,
+        /** Use '#{paramName}' iBATIS-style named placeholders. */
+        IBATIS_SQL
     }
 
     /**
