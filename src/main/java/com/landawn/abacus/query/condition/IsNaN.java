@@ -93,7 +93,7 @@ public class IsNaN extends Is {
      * calculation errors in floating-point operations.
      *
      * <p>The generated SQL uses the IS NAN operator because NaN has special comparison
-     * semantics where NaN != NaN evaluates to true, and NaN == NaN evaluates to false.
+     * semantics where NaN != NaN evaluates to true in Java/IEEE 754 (but to unknown in SQL), and NaN == NaN evaluates to false.
      * The IS NAN operator is the only reliable way to test for NaN values.
      *
      * <p><b>Usage Examples:</b></p>

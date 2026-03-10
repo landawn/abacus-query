@@ -52,8 +52,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Database support:
  * <ul>
- *   <li>Supported by: PostgreSQL, SQL Server, SQLite, DB2</li>
- *   <li>Supported by MySQL 8.0.31+ and PostgreSQL</li>
+ *   <li>Supported by: PostgreSQL, SQL Server, SQLite, DB2, MySQL 8.0.31+</li>
  *   <li>Part of SQL standard but not universally implemented</li>
  *   <li>Functionally equivalent to Oracle's MINUS operator</li>
  * </ul>

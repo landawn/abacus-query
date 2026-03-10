@@ -96,7 +96,7 @@ public class GroupBy extends Clause {
      * }</pre>
      *
      * @param cond the grouping condition or expression. Must not be null.
-     * @throws NullPointerException if cond is null
+     * @throws IllegalArgumentException if cond is null
      */
     public GroupBy(final Condition cond) {
         super(Operator.GROUP_BY, cond);

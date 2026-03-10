@@ -188,9 +188,9 @@ public class Filters {
     }
 
     /**
-     * Creates a negation condition that represents the composable NOT of the provided condition.
-     * 
-     * <p>This method creates a Not condition that inverts the composable result of the wrapped condition.
+     * Creates a negation condition that represents the logical NOT of the provided condition.
+     *
+     * <p>This method creates a Not condition that inverts the result of the wrapped condition.
      * It can be used to negate any other condition type, such as Equal, Like, In, Between, etc.</p>
      * 
      * <p><b>Usage Examples:</b></p>

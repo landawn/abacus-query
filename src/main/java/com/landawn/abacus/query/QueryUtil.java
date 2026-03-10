@@ -341,7 +341,7 @@ public final class QueryUtil {
      * @param entity the entity instance to analyze (must not be null)
      * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
      * @return collection of property names suitable for INSERT operations
-     * @deprecated for internal use only
+     * @deprecated for internal use only.
      */
     @Internal
     public static Collection<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames) {
@@ -409,7 +409,7 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
      * @return collection of property names suitable for INSERT operations
      * @throws IllegalArgumentException if entityClass is null
-     * @deprecated for internal use only
+     * @deprecated for internal use only.
      */
     @Internal
     public static Collection<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -455,7 +455,7 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
      * @return collection of property names suitable for SELECT operations
      * @throws IllegalArgumentException if entityClass is null
-     * @deprecated for internal use only
+     * @deprecated for internal use only.
      */
     @Internal
     public static Collection<String> getSelectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties,
@@ -499,7 +499,7 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
      * @return collection of property names suitable for UPDATE operations
      * @throws IllegalArgumentException if entityClass is null
-     * @deprecated for internal use only
+     * @deprecated for internal use only.
      */
     @Internal
     public static Collection<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -541,7 +541,7 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be null)
      * @return an immutable list of ID field names, or empty list if no ID fields are defined
      * @throws IllegalArgumentException if entityClass is null
-     * @deprecated for internal only.
+     * @deprecated for internal use only.
      */
     @Deprecated
     @Internal

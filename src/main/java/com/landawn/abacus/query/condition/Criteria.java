@@ -1698,6 +1698,7 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
+         * Validates that the given collection of conditions is not null and each condition is valid.
          *
          * @param conditions the conditions to validate
          */
@@ -1710,6 +1711,7 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
+         * Validates that the given array of conditions is not null and each condition is valid.
          *
          * @param conditions the conditions to validate
          */

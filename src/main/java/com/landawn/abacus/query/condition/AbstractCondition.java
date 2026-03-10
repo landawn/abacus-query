@@ -41,8 +41,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>Key features:</p>
  * <ul>
- *   <li>Immutable operator storage</li>
- *   <li>Immutable after construction</li>
+ *   <li>Immutable operator storage after construction</li>
  *   <li>Utility methods for parameter and property name formatting</li>
  *   <li>Standard toString() implementation</li>
  * </ul>

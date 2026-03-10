@@ -101,7 +101,8 @@ public sealed class NamedProperty permits NP {
      * // However, prefer using: NamedProperty.of("age") for caching benefits
      * }</pre>
      *
-     * @param propName the property name. Must not be null.
+     * @param propName the property name. Must not be null or empty.
+     * @throws IllegalArgumentException if propName is null or empty
      */
     public NamedProperty(final String propName) {
         this.propName = N.requireNonNull(propName, "propName");

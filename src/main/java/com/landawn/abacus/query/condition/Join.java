@@ -181,8 +181,7 @@ public class Join extends AbstractCondition {
      * This protected constructor is used by subclasses to create specific join types
      * with conditions.
      * 
-     * <p>Example usage in subclasses:
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example (subclass pattern):</b></p>
      * <pre>{@code
      * // Used internally by LeftJoin
      * class LeftJoin extends Join {
@@ -239,8 +238,7 @@ public class Join extends AbstractCondition {
      * This protected constructor provides the base implementation for all join operations,
      * allowing subclasses to specify their join type while reusing the common logic.
      * 
-     * <p>Example usage in subclasses:
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example (subclass pattern):</b></p>
      * <pre>{@code
      * // Used internally by subclasses
      * class RightJoin extends Join {
