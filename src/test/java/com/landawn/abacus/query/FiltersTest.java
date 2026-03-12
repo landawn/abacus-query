@@ -175,9 +175,30 @@ class Filters2025Test extends TestBase {
         assertNotNull(or);
     }
 
+    // Verify entity overloads honor the explicitly selected property subset.
+    @Test
+    public void testAnyEqualEntityWithSelectProps() {
+        Account account = new Account().setId(7L).setFirstName("Jane").setStatus(3);
+
+        Or or = Filters.anyEqual(account, Arrays.asList("id", "firstName"));
+
+        assertEquals(2, or.getConditions().size());
+        assertEquals("id", ((Equal) or.getConditions().get(0)).getPropName());
+        assertEquals(Long.valueOf(7L), ((Equal) or.getConditions().get(0)).getPropValue());
+        assertEquals("firstName", ((Equal) or.getConditions().get(1)).getPropName());
+        assertEquals("Jane", ((Equal) or.getConditions().get(1)).getPropValue());
+    }
+
     @Test
     public void testAnyEqualEntityWithSelectPropsRejectsNullEntity() {
         assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(null, Arrays.asList("id")));
+    }
+
+    @Test
+    public void testAnyEqualEntityWithSelectProps_EmptySelectPropNames() {
+        Account account = new Account().setId(7L);
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(account, Arrays.asList()));
     }
 
     @Test
@@ -212,9 +233,30 @@ class Filters2025Test extends TestBase {
         assertNotNull(and);
     }
 
+    // Verify entity overloads honor the explicitly selected property subset.
+    @Test
+    public void testAllEqualEntityWithSelectProps() {
+        Account account = new Account().setId(9L).setLastName("Doe").setStatus(5);
+
+        And and = Filters.allEqual(account, Arrays.asList("id", "lastName"));
+
+        assertEquals(2, and.getConditions().size());
+        assertEquals("id", ((Equal) and.getConditions().get(0)).getPropName());
+        assertEquals(Long.valueOf(9L), ((Equal) and.getConditions().get(0)).getPropValue());
+        assertEquals("lastName", ((Equal) and.getConditions().get(1)).getPropName());
+        assertEquals("Doe", ((Equal) and.getConditions().get(1)).getPropValue());
+    }
+
     @Test
     public void testAllEqualEntityWithSelectPropsRejectsNullEntity() {
         assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(null, Arrays.asList("id")));
+    }
+
+    @Test
+    public void testAllEqualEntityWithSelectProps_EmptySelectPropNames() {
+        Account account = new Account().setId(9L);
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList()));
     }
 
     @Test

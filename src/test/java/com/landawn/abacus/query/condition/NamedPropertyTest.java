@@ -69,6 +69,16 @@ class NamedProperty2025Test extends TestBase {
     }
 
     @Test
+    public void testEqual() {
+        NamedProperty np = NamedProperty.of("status");
+        Equal equal = np.equal("active");
+
+        assertNotNull(equal);
+        assertEquals("status", equal.getPropName());
+        assertEquals("active", equal.getPropValue());
+    }
+
+    @Test
     public void testEq() {
         NamedProperty np = NamedProperty.of("status");
         Equal equal = np.eq("active");
