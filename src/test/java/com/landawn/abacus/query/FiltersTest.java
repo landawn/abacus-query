@@ -74,6 +74,7 @@ import com.landawn.abacus.query.condition.UnionAll;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.EntityId;
 
 @Tag("2025")
 class Filters2025Test extends TestBase {
@@ -1175,6 +1176,73 @@ class Filters2025Test extends TestBase {
     public void testCBLimit() {
         Criteria criteria = Criteria.builder().limit(10).build();
         assertNotNull(criteria);
+    }
+}
+
+class Filters2026Test extends TestBase {
+
+    @Test
+    public void testId2Cond() {
+        final EntityId entityId = EntityId.of("userId", 1, "orderId", 100);
+
+        final And condition = Filters.id2Cond(entityId);
+
+        assertEquals(Operator.AND, condition.operator());
+        assertEquals(2, condition.getConditions().size());
+        assertEquals(2, condition.getParameters().size());
+        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 100)));
+    }
+
+    @Test
+    public void testId2Cond_SingleProperty() {
+        final EntityId entityId = EntityId.of("userId", 1);
+
+        final And condition = Filters.id2Cond(entityId);
+
+        assertEquals(1, condition.getConditions().size());
+        assertEquals(Arrays.asList(1), condition.getParameters());
+    }
+
+    @Test
+    public void testId2Cond_NullEntityId() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond((EntityId) null));
+    }
+
+    @Test
+    public void testId2Cond_Collection() {
+        final List<EntityId> entityIds = Arrays.asList(EntityId.of("userId", 1, "orderId", 100), EntityId.of("userId", 2, "orderId", 200));
+
+        final Or condition = Filters.id2Cond(entityIds);
+
+        assertEquals(Operator.OR, condition.operator());
+        assertEquals(2, condition.getConditions().size());
+        assertEquals(4, condition.getParameters().size());
+        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 100, 2, 200)));
+    }
+
+    @Test
+    public void testId2Cond_CollectionEmpty() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond(Arrays.<EntityId>asList()));
+    }
+
+    @Test
+    public void testIsNotNullAndNotEmpty() {
+        final And condition = Filters.isNotNullAndNotEmpty("email");
+
+        assertEquals(Operator.AND, condition.operator());
+        assertEquals(2, condition.getConditions().size());
+        Assertions.assertTrue(condition.toString().contains("IS NOT NULL"));
+        Assertions.assertTrue(condition.toString().contains("!= ''"));
+    }
+
+    @Test
+    public void testIsNotNullAndNotZero() {
+        final And condition = Filters.isNotNullAndNotZero("quantity");
+
+        assertEquals(Operator.AND, condition.operator());
+        assertEquals(2, condition.getConditions().size());
+        Assertions.assertTrue(condition.toString().contains("IS NOT NULL"));
+        Assertions.assertTrue(condition.toString().contains("!= 0"));
     }
 }
 

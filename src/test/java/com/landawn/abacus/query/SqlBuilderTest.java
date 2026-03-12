@@ -1846,7 +1846,6 @@ class SqlBuilder11Test extends TestBase {
         Assertions.assertDoesNotThrow(() -> AbstractQueryBuilder.resetHandlerForNamedParameter());
     }
 
-    @Nested
     public static class TestEntity {
         private Long id;
         private String firstName;
@@ -1932,7 +1931,6 @@ class SqlBuilder11Test extends TestBase {
         }
     }
 
-    @Nested
     public static class TestOrder {
         private Long orderId;
         private Long userId;

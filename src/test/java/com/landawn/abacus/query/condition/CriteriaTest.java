@@ -1433,6 +1433,30 @@ public class CriteriaTest extends TestBase {
     }
 }
 
+class Criteria2026Test extends TestBase {
+
+    @Test
+    public void testToBuilder() {
+        final Criteria original = Criteria.builder()
+                .selectModifier("DISTINCT")
+                .orderBy("name")
+                .limit(10)
+                .build();
+
+        final Criteria rebuilt = original.toBuilder()
+                .where(Filters.eq("status", "ACTIVE"))
+                .build();
+
+        assertEquals("DISTINCT", rebuilt.getSelectModifier());
+        assertEquals(0, original.getParameters().size());
+        assertEquals(1, rebuilt.getParameters().size());
+        assertTrue(original.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
+        assertFalse(original.toString(NamingPolicy.NO_CHANGE).contains("status"));
+        assertTrue(rebuilt.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
+        assertTrue(rebuilt.toString(NamingPolicy.NO_CHANGE).contains("status"));
+    }
+}
+
 class CriteriaFromFiltersTest extends TestBase {
 
     @Test

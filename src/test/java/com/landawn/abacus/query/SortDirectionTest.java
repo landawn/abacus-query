@@ -171,3 +171,16 @@ class SortDirectionJavadocExamples extends TestBase {
         assertFalse(descAscending);
     }
 }
+
+class SortDirection2026Test extends TestBase {
+
+    @Test
+    public void testIsDescending() {
+        assertTrue(SortDirection.DESC.isDescending());
+    }
+
+    @Test
+    public void testIsDescending_ASC() {
+        assertFalse(SortDirection.ASC.isDescending());
+    }
+}

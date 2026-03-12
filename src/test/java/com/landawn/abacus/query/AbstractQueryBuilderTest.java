@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -396,6 +400,365 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testWhereRejectsNullStringExpression() {
         assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").where((String) null));
+    }
+}
+
+class AbstractQueryBuilder2026Test extends TestBase {
+
+    @Test
+    public void testSetHandlerForNamedParameter() {
+        AbstractQueryBuilder.setHandlerForNamedParameter((sb, propName) -> sb.append("#{").append(propName).append("}"));
+
+        try {
+            final String sql = SqlBuilder.NSC.select("name").from("users").where(Filters.eq("id", 1)).build().query();
+
+            assertTrue(sql.contains("#{id}"));
+        } finally {
+            AbstractQueryBuilder.resetHandlerForNamedParameter();
+        }
+    }
+
+    @Test
+    public void testResetHandlerForNamedParameter() {
+        AbstractQueryBuilder.setHandlerForNamedParameter((sb, propName) -> sb.append("#{").append(propName).append("}"));
+        AbstractQueryBuilder.resetHandlerForNamedParameter();
+
+        final String sql = SqlBuilder.NSC.select("name").from("users").where(Filters.eq("id", 1)).build().query();
+
+        assertTrue(sql.contains(":id"));
+    }
+
+    @Test
+    public void testSelectModifier() {
+        final String sql = SqlBuilder.PSC.select("*").selectModifier("TOP 5").from("users").build().query();
+
+        assertTrue(sql.contains("SELECT TOP 5"));
+    }
+
+    @Test
+    public void testNaturalJoin_String() {
+        final String sql = SqlBuilder.PSC.select("*").from("users").naturalJoin("orders").build().query();
+
+        assertTrue(sql.contains("NATURAL JOIN orders"));
+    }
+
+    @Test
+    public void testNaturalJoin_EntityClass() {
+        final String sql = SqlBuilder.PSC.select("*").from(Account.class).naturalJoin(Account.class).build().query();
+
+        assertTrue(sql.contains("NATURAL JOIN"));
+        assertTrue(sql.toLowerCase().contains("account"));
+    }
+
+    @Test
+    public void testNaturalJoin_EntityClassAlias() {
+        final String sql = SqlBuilder.PSC.select("*").from(Account.class, "a").naturalJoin(Account.class, "b").build().query();
+
+        assertTrue(sql.contains("NATURAL JOIN"));
+        assertTrue(sql.contains(" b"));
+    }
+
+    @Test
+    public void testUsing() {
+        final String sql = SqlBuilder.PSC.select("*").from("users").join("orders").using("user_id").build().query();
+
+        assertTrue(sql.contains("USING (user_id)"));
+    }
+
+    @Test
+    public void testOffsetRows() {
+        final String sql = SqlBuilder.PSC.select("*").from("users").orderBy("id").offsetRows(20).build().query();
+
+        assertTrue(sql.contains("OFFSET 20 ROWS"));
+    }
+
+    @Test
+    public void testFetchNextRows() {
+        final String sql = SqlBuilder.PSC.select("*").from("users").orderBy("id").offsetRows(0).fetchNextRows(10).build().query();
+
+        assertTrue(sql.contains("FETCH NEXT 10 ROWS ONLY"));
+    }
+
+    @Test
+    public void testFetchFirstRows() {
+        final String sql = SqlBuilder.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).build().query();
+
+        assertTrue(sql.contains("FETCH FIRST 10 ROWS ONLY"));
+    }
+
+    @Test
+    public void testAppendIf_Condition() {
+        final String withCondition = SqlBuilder.PSC.select("*").from("users").appendIf(true, Filters.eq("status", "ACTIVE")).build().query();
+        final String withoutCondition = SqlBuilder.PSC.select("*").from("users").appendIf(false, Filters.eq("status", "ACTIVE")).build().query();
+
+        assertTrue(withCondition.contains("status"));
+        assertTrue(!withoutCondition.contains("status"));
+    }
+
+    @Test
+    public void testAppendIf_String() {
+        final String withExpression = SqlBuilder.PSC.select("*").from("users").where(Filters.eq("id", 1)).appendIf(true, " FOR UPDATE").build().query();
+        final String withoutExpression = SqlBuilder.PSC.select("*").from("users").where(Filters.eq("id", 1)).appendIf(false, " FOR UPDATE").build().query();
+
+        assertTrue(withExpression.contains("FOR UPDATE"));
+        assertTrue(!withoutExpression.contains("FOR UPDATE"));
+    }
+
+    @Test
+    public void testAppendIf_Consumer() {
+        final String sql = SqlBuilder.PSC.select("*")
+                .from("users")
+                .appendIf(true, builder -> builder.where(Filters.eq("status", "ACTIVE")).orderBy("name"))
+                .build()
+                .query();
+
+        assertTrue(sql.contains("WHERE"));
+        assertTrue(sql.contains("ORDER BY"));
+    }
+
+    @Test
+    public void testAppendIfOrElse_Condition() {
+        final AbstractQueryBuilder.SP trueBranch = SqlBuilder.PSC.select("*").from("users")
+                .appendIfOrElse(true, Filters.eq("status", "ACTIVE"), Filters.eq("status", "INACTIVE"))
+                .build();
+        final AbstractQueryBuilder.SP falseBranch = SqlBuilder.PSC.select("*").from("users")
+                .appendIfOrElse(false, Filters.eq("status", "ACTIVE"), Filters.eq("status", "INACTIVE"))
+                .build();
+
+        assertTrue(trueBranch.query().contains("WHERE"));
+        assertTrue(falseBranch.query().contains("WHERE"));
+        assertEquals(Arrays.asList("ACTIVE"), trueBranch.parameters());
+        assertEquals(Arrays.asList("INACTIVE"), falseBranch.parameters());
+    }
+
+    @Test
+    public void testAppendIfOrElse_String() {
+        final String asc = SqlBuilder.PSC.select("*").from("users").appendIfOrElse(true, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
+        final String desc = SqlBuilder.PSC.select("*").from("users").appendIfOrElse(false, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
+
+        assertTrue(asc.contains("ORDER BY name ASC"));
+        assertTrue(desc.contains("ORDER BY name DESC"));
+    }
+
+    @Test
+    public void testUnion_SqlBuilder() {
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+                .union(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .build();
+
+        assertTrue(sp.query().contains("UNION"));
+        assertEquals(Arrays.asList("USER", "ADMIN"), sp.parameters());
+    }
+
+    @Test
+    public void testUnion_Query() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").union("SELECT id FROM admins").build().query();
+
+        assertTrue(sql.contains("UNION SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testUnion_Columns() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").union("id").from("admins").build().query();
+
+        assertTrue(sql.contains("UNION SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testUnion_Collection() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").union(Collections.singletonList("id")).from("admins").build().query();
+
+        assertTrue(sql.contains("UNION SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testUnionAll_SqlBuilder() {
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+                .unionAll(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .build();
+
+        assertTrue(sp.query().contains("UNION ALL"));
+        assertEquals(Arrays.asList("USER", "ADMIN"), sp.parameters());
+    }
+
+    @Test
+    public void testUnionAll_Query() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").unionAll("SELECT id FROM admins").build().query();
+
+        assertTrue(sql.contains("UNION ALL SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testUnionAll_Columns() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").unionAll("id").from("admins").build().query();
+
+        assertTrue(sql.contains("UNION ALL SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testUnionAll_Collection() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").unionAll(Collections.singletonList("id")).from("admins").build().query();
+
+        assertTrue(sql.contains("UNION ALL SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testIntersect_SqlBuilder() {
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+                .intersect(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .build();
+
+        assertTrue(sp.query().contains("INTERSECT"));
+        assertEquals(Arrays.asList("USER", "ADMIN"), sp.parameters());
+    }
+
+    @Test
+    public void testIntersect_Query() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").intersect("SELECT id FROM admins").build().query();
+
+        assertTrue(sql.contains("INTERSECT SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testIntersect_Columns() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").intersect("id").from("admins").build().query();
+
+        assertTrue(sql.contains("INTERSECT SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testIntersect_Collection() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").intersect(Collections.singletonList("id")).from("admins").build().query();
+
+        assertTrue(sql.contains("INTERSECT SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testExcept_SqlBuilder() {
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+                .except(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .build();
+
+        assertTrue(sp.query().contains("EXCEPT"));
+        assertEquals(Arrays.asList("USER", "ADMIN"), sp.parameters());
+    }
+
+    @Test
+    public void testExcept_Query() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").except("SELECT id FROM admins").build().query();
+
+        assertTrue(sql.contains("EXCEPT SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testExcept_Columns() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").except("id").from("admins").build().query();
+
+        assertTrue(sql.contains("EXCEPT SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testExcept_Collection() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").except(Collections.singletonList("id")).from("admins").build().query();
+
+        assertTrue(sql.contains("EXCEPT SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testMinus_SqlBuilder() {
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+                .minus(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .build();
+
+        assertTrue(sp.query().contains("MINUS"));
+        assertEquals(Arrays.asList("USER", "ADMIN"), sp.parameters());
+    }
+
+    @Test
+    public void testMinus_Query() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").minus("SELECT id FROM admins").build().query();
+
+        assertTrue(sql.contains("MINUS SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testMinus_Columns() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").minus("id").from("admins").build().query();
+
+        assertTrue(sql.contains("MINUS SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testMinus_Collection() {
+        final String sql = SqlBuilder.PSC.select("id").from("users").minus(Collections.singletonList("id")).from("admins").build().query();
+
+        assertTrue(sql.contains("MINUS SELECT id FROM admins"));
+    }
+
+    @Test
+    public void testForUpdate() {
+        final String sql = SqlBuilder.PSC.select("*").from("users").forUpdate().build().query();
+
+        assertTrue(sql.contains("FOR UPDATE"));
+    }
+
+    @Test
+    public void testApply_SPFunction() throws Exception {
+        final List<Object> result = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("id", 1)).apply(sp -> Arrays.asList(sp.query(), sp.parameters().size()));
+
+        assertTrue(result.get(0).toString().contains("WHERE"));
+        assertEquals(1, result.get(1));
+    }
+
+    @Test
+    public void testApply_SqlAndParams() throws Exception {
+        final String result = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("id", 1)).apply((sql, params) -> sql + " / " + params.size());
+
+        assertTrue(result.contains("WHERE"));
+        assertTrue(result.endsWith("/ 1"));
+    }
+
+    @Test
+    public void testAccept_SPConsumer() throws Exception {
+        final String[] sqlHolder = new String[1];
+        final int[] paramCount = new int[1];
+
+        SqlBuilder.PSC.select("id").from("users").where(Filters.eq("id", 1)).accept(sp -> {
+            sqlHolder[0] = sp.query();
+            paramCount[0] = sp.parameters().size();
+        });
+
+        assertTrue(sqlHolder[0].contains("WHERE"));
+        assertEquals(1, paramCount[0]);
+    }
+
+    @Test
+    public void testAccept_SqlAndParams() throws Exception {
+        final String[] sqlHolder = new String[1];
+        final int[] paramCount = new int[1];
+
+        SqlBuilder.PSC.select("id").from("users").where(Filters.eq("id", 1)).accept((sql, params) -> {
+            sqlHolder[0] = sql;
+            paramCount[0] = params.size();
+        });
+
+        assertTrue(sqlHolder[0].contains("WHERE"));
+        assertEquals(1, paramCount[0]);
+    }
+
+    @Test
+    public void testPrintln() {
+        final PrintStream originalOut = System.out;
+        final ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        try {
+            System.setOut(new PrintStream(output));
+            SqlBuilder.PSC.select("id").from("users").println();
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        assertTrue(output.toString().contains("SELECT id FROM users"));
     }
 }
 

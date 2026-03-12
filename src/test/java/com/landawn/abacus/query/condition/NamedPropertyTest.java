@@ -478,6 +478,91 @@ class NamedProperty2025Test extends TestBase {
     }
 }
 
+class NamedProperty2026Test extends TestBase {
+
+    @Test
+    public void testNotEqual() {
+        final NamedProperty property = NamedProperty.of("status");
+        final NotEqual condition = property.notEqual("deleted");
+
+        assertEquals("status", condition.getPropName());
+        assertEquals("deleted", condition.getPropValue());
+    }
+
+    @Test
+    public void testGreaterThan() {
+        final NamedProperty property = NamedProperty.of("age");
+        final GreaterThan condition = property.greaterThan(18);
+
+        assertEquals("age", condition.getPropName());
+        assertEquals(Integer.valueOf(18), condition.getPropValue());
+    }
+
+    @Test
+    public void testGreaterThanOrEqual() {
+        final NamedProperty property = NamedProperty.of("score");
+        final GreaterThanOrEqual condition = property.greaterThanOrEqual(60);
+
+        assertEquals("score", condition.getPropName());
+        assertEquals(Integer.valueOf(60), condition.getPropValue());
+    }
+
+    @Test
+    public void testLessThan() {
+        final NamedProperty property = NamedProperty.of("price");
+        final LessThan condition = property.lessThan(100);
+
+        assertEquals("price", condition.getPropName());
+        assertEquals(Integer.valueOf(100), condition.getPropValue());
+    }
+
+    @Test
+    public void testLessThanOrEqual() {
+        final NamedProperty property = NamedProperty.of("quantity");
+        final LessThanOrEqual condition = property.lessThanOrEqual(10);
+
+        assertEquals("quantity", condition.getPropName());
+        assertEquals(Integer.valueOf(10), condition.getPropValue());
+    }
+
+    @Test
+    public void testNotBetween() {
+        final NamedProperty property = NamedProperty.of("age");
+        final NotBetween condition = property.notBetween(18, 65);
+
+        assertEquals("age", condition.getPropName());
+        assertEquals(Integer.valueOf(18), condition.getMinValue());
+        assertEquals(Integer.valueOf(65), condition.getMaxValue());
+    }
+
+    @Test
+    public void testNotStartsWith() {
+        final NamedProperty property = NamedProperty.of("code");
+        final NotLike condition = property.notStartsWith("TMP");
+
+        assertEquals("code", condition.getPropName());
+        assertEquals("TMP%", condition.getPropValue());
+    }
+
+    @Test
+    public void testNotEndsWith() {
+        final NamedProperty property = NamedProperty.of("email");
+        final NotLike condition = property.notEndsWith("@temp.com");
+
+        assertEquals("email", condition.getPropName());
+        assertEquals("%@temp.com", condition.getPropValue());
+    }
+
+    @Test
+    public void testNotContains() {
+        final NamedProperty property = NamedProperty.of("description");
+        final NotLike condition = property.notContains("draft");
+
+        assertEquals("description", condition.getPropName());
+        assertEquals("%draft%", condition.getPropValue());
+    }
+}
+
 public class NamedPropertyTest extends TestBase {
 
     @Test
