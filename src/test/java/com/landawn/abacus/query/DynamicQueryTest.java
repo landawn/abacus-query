@@ -1,24 +1,10 @@
-/*
- * Copyright (c) 2025, Haiyang Li.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package com.landawn.abacus.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,7 +20,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.DynamicQuery.Builder;
 
 @Tag("2025")
-public class DynamicQueryBuilder2025Test extends TestBase {
+public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testCreate() {
@@ -666,15 +652,6 @@ public class DynamicQueryBuilder2025Test extends TestBase {
     }
 
     @Test
-    public void testEmptyQuery() {
-        Builder builder = DynamicQuery.builder();
-        builder.select().append("*");
-        builder.from().append("users");
-        String sql = builder.build();
-        assertEquals("SELECT * FROM users", sql);
-    }
-
-    @Test
     public void testWhereRepeatQuestionMarkZero() {
         assertThrows(IllegalArgumentException.class, () -> {
             Builder builder = DynamicQuery.builder();
@@ -683,5 +660,316 @@ public class DynamicQueryBuilder2025Test extends TestBase {
             builder.where().append("id IN (").placeholders(-1).append(")");
             builder.build();
         });
+    }
+}
+
+/**
+ * Simple unit tests for Builder functionality.
+ * Tests basic factory method and builder creation.
+ */
+class SimpleDynamicQueryBuilderTest extends TestBase {
+
+    @Test
+    void testCreate() {
+        Builder builder1 = DynamicQuery.builder();
+        Builder builder2 = DynamicQuery.builder();
+
+        assertNotNull(builder1);
+        assertNotNull(builder2);
+        assertNotSame(builder1, builder2); // Should return different instances
+    }
+
+    @Test
+    void testClauseBuilders() {
+        Builder builder = DynamicQuery.builder();
+
+        assertNotNull(builder.select());
+        assertNotNull(builder.from());
+        assertNotNull(builder.where());
+        assertNotNull(builder.groupBy());
+        assertNotNull(builder.having());
+        assertNotNull(builder.orderBy());
+    }
+
+    @Test
+    void testBasicBuilding() {
+        Builder builder = DynamicQuery.builder();
+
+        // Test basic build - should not throw exception
+        String sql = builder.build();
+        assertNotNull(sql);
+    }
+}
+
+/**
+ * Javadoc usage examples for the DynamicQuery builder live here because DynamicQuery exposes the builder entry point.
+ */
+class DynamicQueryJavadocExamples extends TestBase {
+
+    @Test
+    public void testDynamicQueryBuilder_classLevelExample() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("id", "user_id").append("name");
+        b.from().append("users", "u");
+        b.where().append("u.active = ?").and("u.age > ?");
+        b.orderBy().append("u.name ASC");
+        b.limit(10);
+        String sql = b.build();
+        assertEquals("SELECT id AS user_id, name FROM users u WHERE u.active = ? AND u.age > ? ORDER BY u.name ASC LIMIT 10", sql);
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_selectAppend() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("id").append("name", "user_name");
+        b.from().append("users");
+        String sql = b.build();
+        assertEquals("SELECT id, name AS user_name FROM users", sql);
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_fromWithJoin() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
+        String sql = b.build();
+        assertTrue(sql.contains("LEFT JOIN orders o ON u.id = o.user_id"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_where() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users");
+        b.where().append("status = ?").and("created_date > ?");
+        String sql = b.build();
+        assertTrue(sql.contains("WHERE status = ? AND created_date > ?"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_groupBy() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("department").append("COUNT(*)");
+        b.from().append("employees");
+        b.groupBy().append("department");
+        String sql = b.build();
+        assertTrue(sql.contains("GROUP BY department"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_having() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("department").append("COUNT(*)");
+        b.from().append("employees");
+        b.groupBy().append("department");
+        b.having().append("COUNT(*) > ?");
+        String sql = b.build();
+        assertTrue(sql.contains("HAVING COUNT(*) > ?"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_orderBy() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users");
+        b.orderBy().append("created_date DESC").append("name ASC");
+        String sql = b.build();
+        assertTrue(sql.contains("ORDER BY created_date DESC, name ASC"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_limitIntInt() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users");
+        b.limit(10, 20);
+        String sql = b.build();
+        assertTrue(sql.contains("LIMIT 10 OFFSET 20"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_offsetAndFetch() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users");
+        b.offsetRows(20).fetchNextRows(10);
+        String sql = b.build();
+        assertTrue(sql.contains("OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_fetchFirst() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users");
+        b.fetchFirstRows(10);
+        String sql = b.build();
+        assertTrue(sql.contains("FETCH FIRST 10 ROWS ONLY"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_union() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("id").append("name");
+        b.from().append("active_users");
+        b.union("SELECT id, name FROM archived_users");
+        String sql = b.build();
+        assertTrue(sql.contains("UNION SELECT id, name FROM archived_users"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_unionAll() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("id").append("name");
+        b.from().append("users");
+        b.unionAll("SELECT id, name FROM temp_users");
+        String sql = b.build();
+        assertTrue(sql.contains("UNION ALL SELECT id, name FROM temp_users"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_build() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users");
+        b.where().append("active = true");
+        String sql = b.build();
+        assertEquals("SELECT * FROM users WHERE active = true", sql);
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_selectAppendCollection() {
+        Builder b = DynamicQuery.builder();
+        b.select().append(Arrays.asList("id", "name", "email"));
+        b.from().append("users");
+        String sql = b.build();
+        assertEquals("SELECT id, name, email FROM users", sql);
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_selectAppendIf() {
+        boolean includeSalary = true;
+        boolean includeBonus = false;
+        Builder b = DynamicQuery.builder();
+        b.select().append("id").appendIf(includeSalary, "salary").appendIf(includeBonus, "bonus");
+        b.from().append("employees");
+        String sql = b.build();
+        assertTrue(sql.contains("salary"));
+        assertFalse(sql.contains("bonus"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_intersect() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("user_id");
+        b.from().append("all_users");
+        b.intersect("SELECT user_id FROM premium_users");
+        String sql = b.build();
+        assertTrue(sql.contains("INTERSECT SELECT user_id FROM premium_users"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_except() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("user_id");
+        b.from().append("all_users");
+        b.except("SELECT user_id FROM blocked_users");
+        String sql = b.build();
+        assertTrue(sql.contains("EXCEPT SELECT user_id FROM blocked_users"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_minus() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("user_id");
+        b.from().append("all_users");
+        b.minus("SELECT user_id FROM inactive_users");
+        String sql = b.build();
+        assertTrue(sql.contains("MINUS SELECT user_id FROM inactive_users"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_fromAppendWithAlias() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users", "u");
+        String sql = b.build();
+        assertEquals("SELECT * FROM users u", sql);
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_fromInnerJoin() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("u.id").append("p.name");
+        b.from().append("users", "u").innerJoin("products p", "u.id = p.user_id");
+        String sql = b.build();
+        assertTrue(sql.contains("INNER JOIN products p ON u.id = p.user_id"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_fromRightJoin() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users", "u").rightJoin("orders o", "u.id = o.user_id");
+        String sql = b.build();
+        assertTrue(sql.contains("RIGHT JOIN orders o ON u.id = o.user_id"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_fromFullJoin() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users", "u").fullJoin("orders o", "u.id = o.user_id");
+        String sql = b.build();
+        assertTrue(sql.contains("FULL JOIN orders o ON u.id = o.user_id"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_whereRowNumAtMost() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users");
+        b.whereRowNumAtMost(10);
+        String sql = b.build();
+        assertTrue(sql.contains("ROWNUM <= 10"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_selectAppendIfOrElse() {
+        Builder b1 = DynamicQuery.builder();
+        b1.select().appendIfOrElse(true, "first_name || ' ' || last_name AS full_name", "first_name");
+        b1.from().append("users");
+        String sql1 = b1.build();
+        assertTrue(sql1.contains("first_name || ' ' || last_name AS full_name"));
+
+        Builder b2 = DynamicQuery.builder();
+        b2.select().appendIfOrElse(false, "first_name || ' ' || last_name AS full_name", "first_name");
+        b2.from().append("users");
+        String sql2 = b2.build();
+        assertTrue(sql2.contains("SELECT first_name FROM"));
+        assertFalse(sql2.contains("full_name"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_whereOr() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users");
+        b.where().append("status = 'active'").or("role = 'admin'");
+        String sql = b.build();
+        assertTrue(sql.contains("WHERE status = 'active' OR role = 'admin'"));
+    }
+
+    @Test
+    public void testDynamicQueryBuilder_whereAppendIf() {
+        boolean filterByStatus = true;
+        boolean filterByRole = false;
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("users");
+        b.where().append("1 = 1").appendIf(filterByStatus, "AND status = 'active'").appendIf(filterByRole, "AND role = 'admin'");
+        String sql = b.build();
+        assertTrue(sql.contains("status = 'active'"));
+        assertFalse(sql.contains("role = 'admin'"));
     }
 }

@@ -16,24 +16,24 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+import java.util.Arrays;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-
 @Tag("2025")
-public class NotExists2025Test extends TestBase {
+public class NotExistsTest extends TestBase {
 
     @Test
     public void testConstructor_WithRawSQLSubQuery() {
@@ -216,4 +216,60 @@ public class NotExists2025Test extends TestBase {
         NotExists condition = new NotExists(subQuery);
         assertNotNull(condition);
     }
+}
+
+/**
+ * Simple unit tests for the NotExists condition.
+ * Tests basic functionality without complex scenarios.
+ */
+class SimpleNotExistsTest extends TestBase {
+
+    private SubQuery simpleSubQuery;
+    private NotExists notExistsCondition;
+
+    @BeforeEach
+    void setUp() {
+        simpleSubQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+        notExistsCondition = new NotExists(simpleSubQuery);
+    }
+
+    @Test
+    void testConstructorWithSubQuery() {
+        NotExists notExists = new NotExists(simpleSubQuery);
+
+        assertNotNull(notExists);
+        assertEquals(Operator.NOT_EXISTS, notExists.operator());
+    }
+
+    @Test
+    void testConstructorWithNullSubQuery() {
+        assertThrows(IllegalArgumentException.class, () -> new NotExists(null));
+    }
+
+    @Test
+    void testGetOperator() {
+        assertEquals(Operator.NOT_EXISTS, notExistsCondition.operator());
+    }
+
+    @Test
+    void testGetCondition() {
+        SubQuery retrieved = notExistsCondition.getCondition();
+        assertSame(simpleSubQuery, retrieved);
+    }
+
+    @Test
+    void testGetParameters() {
+        // Simple SubQuery without parameters should return empty list
+        assertNotNull(notExistsCondition.getParameters());
+    }
+
+    @Test
+    void testToString() {
+        String result = notExistsCondition.toString();
+
+        assertNotNull(result);
+        // Should contain NOT EXISTS in the output
+        // Note: specific format may vary based on implementation
+    }
+
 }

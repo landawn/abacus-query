@@ -1,18 +1,3 @@
-/*
- * Copyright (c) 2025, Haiyang Li.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package com.landawn.abacus.query;
 
@@ -23,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -30,9 +16,10 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
-public class AbstractQueryBuilder2025Test extends TestBase {
+public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testConstants() {
@@ -409,5 +396,48 @@ public class AbstractQueryBuilder2025Test extends TestBase {
     @Test
     public void testWhereRejectsNullStringExpression() {
         assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").where((String) null));
+    }
+}
+
+/**
+ * Simple unit tests for AbstractQueryBuilder functionality.
+ * Tests basic constants and naming policy functionality.
+ */
+class SimpleAbstractQueryBuilderTest extends TestBase {
+
+    @BeforeEach
+    void setUp() {
+        // No setup needed for constant testing
+    }
+
+    @Test
+    void testPublicConstants() {
+        assertEquals("ALL", AbstractQueryBuilder.ALL);
+        assertEquals("TOP", AbstractQueryBuilder.TOP);
+        assertEquals("UNIQUE", AbstractQueryBuilder.UNIQUE);
+        assertEquals("DISTINCT", AbstractQueryBuilder.DISTINCT);
+        assertEquals("DISTINCTROW", AbstractQueryBuilder.DISTINCTROW);
+        assertEquals("*", AbstractQueryBuilder.ASTERISK);
+        assertEquals("count(*)", AbstractQueryBuilder.COUNT_ALL);
+    }
+
+    @Test
+    void testConstantsAreNotNull() {
+        assertNotNull(AbstractQueryBuilder.ALL);
+        assertNotNull(AbstractQueryBuilder.TOP);
+        assertNotNull(AbstractQueryBuilder.UNIQUE);
+        assertNotNull(AbstractQueryBuilder.DISTINCT);
+        assertNotNull(AbstractQueryBuilder.DISTINCTROW);
+        assertNotNull(AbstractQueryBuilder.ASTERISK);
+        assertNotNull(AbstractQueryBuilder.COUNT_ALL);
+    }
+
+    @Test
+    void testNamingPolicyEnum() {
+        // Test that NamingPolicy enum values exist and are accessible
+        assertNotNull(NamingPolicy.NO_CHANGE);
+        assertNotNull(NamingPolicy.SNAKE_CASE);
+        assertNotNull(NamingPolicy.SCREAMING_SNAKE_CASE);
+        assertNotNull(NamingPolicy.CAMEL_CASE);
     }
 }

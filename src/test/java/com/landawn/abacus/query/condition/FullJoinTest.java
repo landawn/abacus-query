@@ -1,14 +1,174 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+class FullJoin2025Test extends TestBase {
+
+    @Test
+    public void testConstructor_Simple() {
+        FullJoin join = new FullJoin("departments");
+        assertNotNull(join);
+        assertEquals(Operator.FULL_JOIN, join.operator());
+    }
+
+    @Test
+    public void testConstructor_WithCondition() {
+        FullJoin join = new FullJoin("employees", new Equal("departments.id", "employees.dept_id"));
+        assertNotNull(join);
+        assertNotNull(join.getCondition());
+        assertEquals(Operator.FULL_JOIN, join.operator());
+    }
+
+    @Test
+    public void testConstructor_MultipleEntities() {
+        List<String> entities = Arrays.asList("employees", "contractors");
+        FullJoin join = new FullJoin(entities, new Equal("departments.id", "person.dept_id"));
+        assertNotNull(join);
+        assertEquals(2, (int) join.getJoinEntities().size());
+        assertEquals(Operator.FULL_JOIN, join.operator());
+    }
+
+    @Test
+    public void testGetJoinEntities() {
+        List<String> entities = Arrays.asList("table1", "table2");
+        FullJoin join = new FullJoin(entities, null);
+        List<String> result = join.getJoinEntities();
+        assertEquals(2, (int) result.size());
+        assertTrue(result.contains("table1"));
+        assertTrue(result.contains("table2"));
+    }
+
+    @Test
+    public void testGetCondition() {
+        Equal condition = new Equal("users.id", "orders.user_id");
+        FullJoin join = new FullJoin("orders", condition);
+        Condition retrieved = join.getCondition();
+        assertEquals(condition, retrieved);
+    }
+
+    @Test
+    public void testGetCondition_Null() {
+        FullJoin join = new FullJoin("departments");
+        assertNull(join.getCondition());
+    }
+
+    @Test
+    public void testGetParameters_Empty() {
+        FullJoin join = new FullJoin("orders");
+        assertTrue(join.getParameters().isEmpty());
+    }
+
+    @Test
+    public void testGetParameters_WithCondition() {
+        FullJoin join = new FullJoin("products", new Equal("active", true));
+        List<Object> params = join.getParameters();
+        assertEquals(1, (int) params.size());
+        assertEquals(true, params.get(0));
+    }
+
+    @Test
+    public void testClearParameters() {
+        FullJoin join = new FullJoin("products", new Equal("status", "available"));
+        assertFalse(join.getParameters().isEmpty());
+        join.clearParameters();
+        List<Object> params = join.getParameters();
+        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
+    }
+
+    @Test
+    public void testToString_Simple() {
+        FullJoin join = new FullJoin("departments");
+        String result = join.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("FULL JOIN"));
+        assertTrue(result.contains("departments"));
+    }
+
+    @Test
+    public void testToString_WithCondition() {
+        FullJoin join = new FullJoin("employees", new Equal("departments.id", "employees.dept_id"));
+        String result = join.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("FULL JOIN"));
+        assertTrue(result.contains("employees"));
+    }
+
+    @Test
+    public void testHashCode() {
+        FullJoin join1 = new FullJoin("orders", new Equal("a", "b"));
+        FullJoin join2 = new FullJoin("orders", new Equal("a", "b"));
+        assertEquals(join1.hashCode(), join2.hashCode());
+    }
+
+    @Test
+    public void testEquals_SameObject() {
+        FullJoin join = new FullJoin("orders");
+        assertEquals(join, join);
+    }
+
+    @Test
+    public void testEquals_EqualObjects() {
+        FullJoin join1 = new FullJoin("orders o", new Equal("a", "b"));
+        FullJoin join2 = new FullJoin("orders o", new Equal("a", "b"));
+        assertEquals(join1, join2);
+    }
+
+    @Test
+    public void testEquals_DifferentEntities() {
+        FullJoin join1 = new FullJoin("orders");
+        FullJoin join2 = new FullJoin("products");
+        assertNotEquals(join1, join2);
+    }
+
+    @Test
+    public void testEquals_Null() {
+        FullJoin join = new FullJoin("orders");
+        assertNotEquals(null, join);
+    }
+
+    @Test
+    public void testAllRowsFromBothTables() {
+        FullJoin join = new FullJoin("orders", new Equal("users.id", "orders.user_id"));
+        assertNotNull(join);
+        assertEquals(Operator.FULL_JOIN, join.operator());
+    }
+
+    @Test
+    public void testReconcileTwoDataSources() {
+        FullJoin join = new FullJoin("external_users", new Equal("internal_users.email", "external_users.email"));
+        assertNotNull(join.getCondition());
+        assertEquals(Operator.FULL_JOIN, join.operator());
+    }
+
+    @Test
+    public void testMultiTableFullJoin() {
+        List<String> tables = Arrays.asList("system_a_data", "system_b_data");
+        FullJoin join = new FullJoin(tables, new Equal("master_data.record_id", "source.record_id"));
+        assertEquals(2, (int) join.getJoinEntities().size());
+    }
+
+    @Test
+    public void testFindDataMismatches() {
+        FullJoin join = new FullJoin("warehouse_inventory", new Equal("online_inventory.product_id", "warehouse_inventory.product_id"));
+        assertNotNull(join.getCondition());
+        assertEquals(Operator.FULL_JOIN, join.operator());
+    }
+}
 
 public class FullJoinTest extends TestBase {
 
