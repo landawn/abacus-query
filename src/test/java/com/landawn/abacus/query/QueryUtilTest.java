@@ -1,14 +1,19 @@
 package com.landawn.abacus.query;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.annotation.Column;
+import com.landawn.abacus.annotation.Id;
+import com.landawn.abacus.annotation.NonColumn;
+import com.landawn.abacus.annotation.Table;
+import com.landawn.abacus.parser.ParserUtil.BeanInfo;
+import com.landawn.abacus.parser.ParserUtil.PropInfo;
+import com.landawn.abacus.parser.ParserUtil;
+import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.ImmutableMap;
+import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Strings;
+import com.landawn.abacus.util.Tuple.Tuple2;
+import com.landawn.abacus.util.Tuple;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,24 +22,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.annotation.Column;
-import com.landawn.abacus.annotation.Id;
-import com.landawn.abacus.annotation.NonColumn;
-import com.landawn.abacus.annotation.Table;
-import com.landawn.abacus.parser.ParserUtil;
-import com.landawn.abacus.parser.ParserUtil.BeanInfo;
-import com.landawn.abacus.parser.ParserUtil.PropInfo;
-import com.landawn.abacus.query.entity.Account;
-import com.landawn.abacus.util.ImmutableMap;
-import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.Tuple;
-import com.landawn.abacus.util.Tuple.Tuple2;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("2025")
 class QueryUtil2025Test extends TestBase {

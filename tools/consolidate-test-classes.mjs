@@ -43,25 +43,10 @@ const PREFIX_TO_OWNER = new Map([
     ["SqlBuilder", "SqlBuilder"]
 ]);
 
-const EXTRACTION_RULES = [
-    {
-        type: "whole-class-method-prefix",
-        source: "src/test/java/com/landawn/abacus/query/JavadocExamplesQueryTest.java",
-        generatedSuffix: "JavadocExamples"
-    },
-    {
-        type: "named-methods",
-        source: "src/test/java/com/landawn/abacus/query/FiltersTest.java",
-        generatedSuffix: "FromFiltersTest",
-        methods: [{ name: "testCriteria", owner: "Criteria" }]
-    },
-    {
-        type: "named-methods",
-        source: "src/test/java/com/landawn/abacus/query/Filters2025Test.java",
-        generatedSuffix: "FromFilters2025Test",
-        methods: [{ name: "testPatternForAlphanumericColumnName", owner: "QueryUtil" }]
-    }
-];
+// Extraction rules for cross-class method relocation.
+// Rules are only applied when the source file and target method both exist;
+// stale entries (already-consolidated files) are silently skipped at runtime.
+const EXTRACTION_RULES = [];
 
 function toPosix(filePath) {
     return filePath.replace(/\\/g, "/");
@@ -515,7 +500,9 @@ function main() {
             for (const item of rule.methods) {
                 const method = methodMap.get(item.name);
                 if (!method) {
-                    throw new Error(`Missing method ${item.name} in ${rule.source}`);
+                    // Method was already moved in a prior run — skip silently.
+                    console.warn(`[SKIP] Method ${item.name} not found in ${rule.source} (already consolidated?)`);
+                    continue;
                 }
 
                 if (!extractedByOwner.has(item.owner)) {
