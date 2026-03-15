@@ -571,6 +571,168 @@ class NamedProperty2026Test extends TestBase {
         assertEquals("description", condition.getPropName());
         assertEquals("%draft%", condition.getPropValue());
     }
+
+    @Test
+    public void testAnyEqual_LongArray() {
+        final NamedProperty property = NamedProperty.of("user_id");
+        final Or condition = property.anyEqual(new long[] { 1001L, 1002L, 1003L });
+
+        assertNotNull(condition);
+        assertEquals(3, condition.getConditions().size());
+        assertEquals(Long.valueOf(1001L), ((Equal) condition.getConditions().get(0)).getPropValue());
+        assertEquals(Long.valueOf(1002L), ((Equal) condition.getConditions().get(1)).getPropValue());
+        assertEquals(Long.valueOf(1003L), ((Equal) condition.getConditions().get(2)).getPropValue());
+    }
+
+    @Test
+    public void testAnyEqual_LongArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("id");
+        final Or condition = property.anyEqual(new long[] { 42L });
+
+        assertEquals(1, condition.getConditions().size());
+    }
+
+    @Test
+    public void testAnyEqual_LongArray_Empty() {
+        final NamedProperty property = NamedProperty.of("id");
+
+        assertThrows(IllegalArgumentException.class, () -> property.anyEqual(new long[0]));
+    }
+
+    @Test
+    public void testAnyEqual_DoubleArray() {
+        final NamedProperty property = NamedProperty.of("rate");
+        final Or condition = property.anyEqual(new double[] { 1.5, 2.0, 2.5 });
+
+        assertNotNull(condition);
+        assertEquals(3, condition.getConditions().size());
+        assertEquals(Double.valueOf(1.5), ((Equal) condition.getConditions().get(0)).getPropValue());
+        assertEquals(Double.valueOf(2.0), ((Equal) condition.getConditions().get(1)).getPropValue());
+        assertEquals(Double.valueOf(2.5), ((Equal) condition.getConditions().get(2)).getPropValue());
+    }
+
+    @Test
+    public void testAnyEqual_DoubleArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("score");
+        final Or condition = property.anyEqual(new double[] { 99.9 });
+
+        assertEquals(1, condition.getConditions().size());
+    }
+
+    @Test
+    public void testAnyEqual_DoubleArray_Empty() {
+        final NamedProperty property = NamedProperty.of("score");
+
+        assertThrows(IllegalArgumentException.class, () -> property.anyEqual(new double[0]));
+    }
+
+    @Test
+    public void testIn_LongArray() {
+        final NamedProperty property = NamedProperty.of("user_id");
+        final In condition = property.in(new long[] { 1001L, 1002L, 1003L });
+
+        assertNotNull(condition);
+        assertEquals("user_id", condition.getPropName());
+        assertEquals(3, condition.getValues().size());
+    }
+
+    @Test
+    public void testIn_LongArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("id");
+        final In condition = property.in(new long[] { 42L });
+
+        assertEquals(1, condition.getValues().size());
+    }
+
+    @Test
+    public void testIn_DoubleArray() {
+        final NamedProperty property = NamedProperty.of("rate");
+        final In condition = property.in(new double[] { 1.5, 2.0, 2.5 });
+
+        assertNotNull(condition);
+        assertEquals("rate", condition.getPropName());
+        assertEquals(3, condition.getValues().size());
+    }
+
+    @Test
+    public void testIn_DoubleArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("score");
+        final In condition = property.in(new double[] { 99.9 });
+
+        assertEquals(1, condition.getValues().size());
+    }
+
+    @Test
+    public void testNotIn_ObjectVarargs() {
+        final NamedProperty property = NamedProperty.of("status");
+        final NotIn condition = property.notIn("deleted", "archived");
+
+        assertNotNull(condition);
+        assertEquals("status", condition.getPropName());
+        assertEquals(2, condition.getValues().size());
+    }
+
+    @Test
+    public void testNotIn_ObjectVarargs_SingleValue() {
+        final NamedProperty property = NamedProperty.of("type");
+        final NotIn condition = property.notIn("invalid");
+
+        assertEquals(1, condition.getValues().size());
+    }
+
+    @Test
+    public void testNotIn_LongArray() {
+        final NamedProperty property = NamedProperty.of("user_id");
+        final NotIn condition = property.notIn(new long[] { 999L, 1000L });
+
+        assertNotNull(condition);
+        assertEquals("user_id", condition.getPropName());
+        assertEquals(2, condition.getValues().size());
+    }
+
+    @Test
+    public void testNotIn_LongArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("id");
+        final NotIn condition = property.notIn(new long[] { 42L });
+
+        assertEquals(1, condition.getValues().size());
+    }
+
+    @Test
+    public void testNotIn_DoubleArray() {
+        final NamedProperty property = NamedProperty.of("rate");
+        final NotIn condition = property.notIn(new double[] { 0.0, -1.0 });
+
+        assertNotNull(condition);
+        assertEquals("rate", condition.getPropName());
+        assertEquals(2, condition.getValues().size());
+    }
+
+    @Test
+    public void testNotIn_DoubleArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("score");
+        final NotIn condition = property.notIn(new double[] { 0.0 });
+
+        assertEquals(1, condition.getValues().size());
+    }
+
+    @Test
+    public void testNotIn_Collection() {
+        final NamedProperty property = NamedProperty.of("department");
+        final NotIn condition = property.notIn(java.util.Arrays.asList("Temp", "Archived"));
+
+        assertNotNull(condition);
+        assertEquals("department", condition.getPropName());
+        assertEquals(2, condition.getValues().size());
+    }
+
+    @Test
+    public void testNotIn_Collection_SingleElement() {
+        final NamedProperty property = NamedProperty.of("type");
+        final NotIn condition = property.notIn(java.util.Collections.singletonList("invalid"));
+
+        assertEquals(1, condition.getValues().size());
+    }
 }
 
 public class NamedPropertyTest extends TestBase {

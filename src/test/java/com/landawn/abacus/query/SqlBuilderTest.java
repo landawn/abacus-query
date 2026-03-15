@@ -810,6 +810,197 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
+    public void testUnionAll_StringOverload() {
+        String sql = PSC.select("id", "name").from("users").unionAll("SELECT id, name FROM customers").build().query();
+        assertEquals("SELECT id, name FROM users UNION ALL SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testUnionAll_VarargsOverload() {
+        String sql = PSC.select("id", "name").from("users").unionAll("id", "name").from("customers").build().query();
+        assertEquals("SELECT id, name FROM users UNION ALL SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testUnionAll_CollectionOverload() {
+        String sql = PSC.select("id", "name").from("users").unionAll(Arrays.asList("id", "name")).from("customers").build().query();
+        assertEquals("SELECT id, name FROM users UNION ALL SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testIntersect_StringOverload() {
+        String sql = PSC.select("id", "name").from("users").intersect("SELECT id, name FROM customers").build().query();
+        assertEquals("SELECT id, name FROM users INTERSECT SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testIntersect_VarargsOverload() {
+        String sql = PSC.select("id", "name").from("users").intersect("id", "name").from("customers").build().query();
+        assertEquals("SELECT id, name FROM users INTERSECT SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testIntersect_CollectionOverload() {
+        String sql = PSC.select("id", "name").from("users").intersect(Arrays.asList("id", "name")).from("customers").build().query();
+        assertEquals("SELECT id, name FROM users INTERSECT SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testExcept_StringOverload() {
+        String sql = PSC.select("id", "name").from("users").except("SELECT id, name FROM customers").build().query();
+        assertEquals("SELECT id, name FROM users EXCEPT SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testExcept_VarargsOverload() {
+        String sql = PSC.select("id", "name").from("users").except("id", "name").from("customers").build().query();
+        assertEquals("SELECT id, name FROM users EXCEPT SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testExcept_CollectionOverload() {
+        String sql = PSC.select("id", "name").from("users").except(Arrays.asList("id", "name")).from("customers").build().query();
+        assertEquals("SELECT id, name FROM users EXCEPT SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testMinus_StringOverload() {
+        String sql = PSC.select("id", "name").from("users").minus("SELECT id, name FROM customers").build().query();
+        assertEquals("SELECT id, name FROM users MINUS SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testMinus_VarargsOverload() {
+        String sql = PSC.select("id", "name").from("users").minus("id", "name").from("customers").build().query();
+        assertEquals("SELECT id, name FROM users MINUS SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testMinus_CollectionOverload() {
+        String sql = PSC.select("id", "name").from("users").minus(Arrays.asList("id", "name")).from("customers").build().query();
+        assertEquals("SELECT id, name FROM users MINUS SELECT id, name FROM customers", sql);
+    }
+
+    @Test
+    public void testGroupBy_CollectionWithDirection() {
+        String sql = PSC.select("category", "brand", "COUNT(*)").from("products")
+                .groupBy(Arrays.asList("category", "brand"), SortDirection.DESC).build().query();
+        assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category DESC, brand DESC", sql);
+    }
+
+    @Test
+    public void testGroupBy_CollectionWithAscDirection() {
+        String sql = PSC.select("category", "brand", "COUNT(*)").from("products")
+                .groupBy(Arrays.asList("category", "brand"), SortDirection.ASC).build().query();
+        assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand ASC", sql);
+    }
+
+    @Test
+    public void testOrderBy_CollectionWithDirection() {
+        String sql = PSC.select("*").from("users")
+                .orderBy(Arrays.asList("lastName", "firstName"), SortDirection.DESC).build().query();
+        assertEquals("SELECT * FROM users ORDER BY last_name DESC, first_name DESC", sql);
+    }
+
+    @Test
+    public void testOrderBy_CollectionWithAscDirection() {
+        String sql = PSC.select("*").from("users")
+                .orderBy(Arrays.asList("lastName", "firstName"), SortDirection.ASC).build().query();
+        assertEquals("SELECT * FROM users ORDER BY last_name ASC, first_name ASC", sql);
+    }
+
+    @Test
+    public void testAppendIf_ConditionTrue() {
+        String sql = PSC.select("*").from("users").appendIf(true, Filters.gt("age", 18)).build().query();
+        assertEquals("SELECT * FROM users WHERE age > ?", sql);
+    }
+
+    @Test
+    public void testAppendIf_ConditionFalse() {
+        String sql = PSC.select("*").from("users").appendIf(false, Filters.gt("age", 18)).build().query();
+        assertEquals("SELECT * FROM users", sql);
+    }
+
+    @Test
+    public void testAppendIf_StringTrue() {
+        String sql = PSC.select("*").from("users").appendIf(true, " FOR UPDATE").build().query();
+        assertEquals("SELECT * FROM users FOR UPDATE", sql);
+    }
+
+    @Test
+    public void testAppendIf_StringFalse() {
+        String sql = PSC.select("*").from("users").appendIf(false, " FOR UPDATE").build().query();
+        assertEquals("SELECT * FROM users", sql);
+    }
+
+    @Test
+    public void testAppendIf_ConsumerTrue() {
+        String sql = PSC.select("*").from("users").appendIf(true, builder -> builder.where(Filters.gt("age", 18))).build().query();
+        assertTrue(sql.contains("WHERE age > ?"));
+    }
+
+    @Test
+    public void testAppendIf_ConsumerFalse() {
+        String sql = PSC.select("*").from("users").appendIf(false, builder -> builder.where(Filters.gt("age", 18))).build().query();
+        assertEquals("SELECT * FROM users", sql);
+    }
+
+    @Test
+    public void testAppendIfOrElse_ConditionTrue() {
+        String sql = PSC.select("*").from("users")
+                .appendIfOrElse(true, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build().query();
+        assertEquals("SELECT * FROM users WHERE status = ?", sql);
+        assertEquals("active", PSC.select("*").from("users")
+                .appendIfOrElse(true, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build().parameters().get(0));
+    }
+
+    @Test
+    public void testAppendIfOrElse_ConditionFalse() {
+        SP sp = PSC.select("*").from("users")
+                .appendIfOrElse(false, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build();
+        assertEquals("SELECT * FROM users WHERE status = ?", sp.query());
+        assertEquals("inactive", sp.parameters().get(0));
+    }
+
+    @Test
+    public void testAppendIfOrElse_StringTrue() {
+        String sql = PSC.select("*").from("users")
+                .appendIfOrElse(true, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
+        assertEquals("SELECT * FROM users ORDER BY name ASC", sql);
+    }
+
+    @Test
+    public void testAppendIfOrElse_StringFalse() {
+        String sql = PSC.select("*").from("users")
+                .appendIfOrElse(false, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
+        assertEquals("SELECT * FROM users ORDER BY name DESC", sql);
+    }
+
+    @Test
+    public void testAccept_Consumer() {
+        final List<String> captured = new ArrayList<>();
+        PSC.select("*").from("account").where(Filters.eq("status", "ACTIVE")).accept(sp -> {
+            captured.add(sp.query());
+            captured.add(sp.parameters().toString());
+        });
+        assertEquals(2, captured.size());
+        assertEquals("SELECT * FROM account WHERE status = ?", captured.get(0));
+        assertEquals("[ACTIVE]", captured.get(1));
+    }
+
+    @Test
+    public void testAccept_BiConsumer() {
+        final List<String> captured = new ArrayList<>();
+        PSC.select("*").from("account").where(Filters.eq("id", 1)).accept((sql, params) -> {
+            captured.add(sql);
+            captured.add(String.valueOf(params.size()));
+        });
+        assertEquals(2, captured.size());
+        assertEquals("SELECT * FROM account WHERE id = ?", captured.get(0));
+        assertEquals("1", captured.get(1));
+    }
+
+    @Test
     public void testForUpdate() {
         String sql = PSC.select("*").from("users").where(Filters.eq("id", 1)).forUpdate().build().query();
 
