@@ -274,15 +274,6 @@ public class ConditionTest extends TestBase {
         assertThrows(UnsupportedOperationException.class, () -> params.clear());
     }
 
-    @Test
-    void testClearParametersWithNoParameters() {
-        Condition noParamCondition = Filters.isNull("field");
-
-        // Should not throw exception even if no parameters to clear
-        noParamCondition.clearParameters();
-        assertTrue(noParamCondition.getParameters().isEmpty());
-    }
-
     // Tests for toString(NamingPolicy) method
 
     @Test
@@ -348,10 +339,6 @@ public class ConditionTest extends TestBase {
         assertEquals(2, params.size());
         assertTrue(params.contains("John"));
         assertTrue(params.contains(25));
-
-        // Clear parameters
-        combined.clearParameters();
-        assertTrue(combined.getParameters().stream().allMatch(param -> param == null));
     }
 
     // Edge Cases and Error Conditions
@@ -409,7 +396,7 @@ public class ConditionTest extends TestBase {
 
     @Test
     void testImmutabilityContract() {
-        // Test that conditions are immutable (except for clearParameters)
+        // Test that conditions are immutable
         List<Object> originalParams = simpleCondition.getParameters();
         Operator originalOperator = simpleCondition.operator();
 

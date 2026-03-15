@@ -160,14 +160,6 @@ class OrderBy2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        OrderBy orderBy = new OrderBy("name", SortDirection.ASC);
-        orderBy.clearParameters();
-
-        assertNotNull(orderBy.getParameters());
-    }
-
-    @Test
     public void testEquals() {
         OrderBy orderBy1 = new OrderBy("name");
         OrderBy orderBy2 = new OrderBy("name");

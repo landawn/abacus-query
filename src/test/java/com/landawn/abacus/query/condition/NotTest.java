@@ -78,15 +78,6 @@ class Not2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Equal innerCondition = new Equal("field", "value");
-        Not condition = new Not(innerCondition);
-
-        condition.clearParameters();
-        assertNull(innerCondition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         Equal innerCondition = new Equal("userName", "Bob");
         Not condition = new Not(innerCondition);
@@ -228,16 +219,6 @@ public class NotTest extends TestBase {
 
         Assertions.assertEquals(inCondition.getParameters(), notCondition.getParameters());
         Assertions.assertEquals(3, notCondition.getParameters().size());
-    }
-
-    @Test
-    public void testClearParameters() {
-        In inCondition = Filters.in("id", Arrays.asList(1, 2, 3));
-        Not notCondition = Filters.not(inCondition);
-
-        notCondition.clearParameters();
-        // Verify the inner condition's parameters are cleared
-        Assertions.assertTrue(inCondition.getParameters().stream().allMatch(p -> p == null));
     }
 
     @Test

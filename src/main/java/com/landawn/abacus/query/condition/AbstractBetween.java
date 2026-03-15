@@ -146,25 +146,6 @@ public abstract class AbstractBetween extends ComposableCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * If min/max values are themselves conditions (like subqueries), their parameters are cleared.
-     */
-    @Override
-    public void clearParameters() {
-        if (minValue instanceof Condition) {
-            ((Condition) minValue).clearParameters();
-        } else {
-            minValue = null;
-        }
-
-        if (maxValue instanceof Condition) {
-            ((Condition) maxValue).clearParameters();
-        } else {
-            maxValue = null;
-        }
-    }
-
-    /**
      * Converts this condition to its string representation.
      * The format is: propertyName BETWEEN/NOT BETWEEN minValue AND maxValue
      *

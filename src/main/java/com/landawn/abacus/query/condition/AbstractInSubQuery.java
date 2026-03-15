@@ -156,16 +156,6 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     }
 
     /**
-     * Clears parameters in the underlying subquery.
-     */
-    @Override
-    public void clearParameters() {
-        if (subQuery != null) {
-            subQuery.clearParameters();
-        }
-    }
-
-    /**
      * Generates the hash code for this condition.
      *
      * @return hash code based on property name(s), operator, and subquery

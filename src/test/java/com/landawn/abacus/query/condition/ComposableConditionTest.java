@@ -27,11 +27,6 @@ public class ComposableConditionTest extends TestBase {
         }
 
         @Override
-        public void clearParameters() {
-            // no-op for test helper
-        }
-
-        @Override
         public String toString(final NamingPolicy namingPolicy) {
             return (namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy).convert(propName) + " = " + value;
         }

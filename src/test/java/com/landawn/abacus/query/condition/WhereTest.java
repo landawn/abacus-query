@@ -60,16 +60,6 @@ class Where2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Equal condition = new Equal("status", "active");
-        Where where = new Where(condition);
-        assertFalse(where.getParameters().isEmpty());
-        where.clearParameters();
-        List<Object> params = where.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_Simple() {
         Equal condition = new Equal("status", "active");
         Where where = new Where(condition);

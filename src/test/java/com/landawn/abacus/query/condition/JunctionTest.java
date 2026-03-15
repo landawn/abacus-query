@@ -110,18 +110,6 @@ class Junction2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.in("type", new String[] { "A", "B", "C" }));
-
-        assertFalse(junction.getParameters().isEmpty());
-
-        junction.clearParameters();
-
-        List<Object> params = junction.getParameters();
-        assertTrue(params.size() == 4 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testCopyPreservesConditions() {
         Junction original = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
         Junction copy = new Junction(original.operator(), original.getConditions());
@@ -318,16 +306,6 @@ class Junction2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters_WithNullConditionInList() {
-        Junction junction = new Junction(Operator.AND);
-        junction.conditions.add(Filters.eq("a", 1));
-        junction.conditions.add(null);
-        junction.conditions.add(Filters.eq("b", 2));
-
-        assertDoesNotThrow(() -> junction.clearParameters());
-    }
-
-    @Test
     public void testToString_DefaultNamingPolicy() {
         Junction junction = new Junction(Operator.AND, Filters.eq("userName", "John"), Filters.gt("userAge", 18));
 
@@ -409,19 +387,6 @@ public class JunctionTest extends TestBase {
         Assertions.assertTrue(params.contains("John"));
         Assertions.assertTrue(params.contains(20));
         Assertions.assertTrue(params.contains(30));
-    }
-
-    @Test
-    public void testClearParameters() {
-        Junction junction = new Junction(Operator.OR, Filters.eq("x", 10), Filters.gt("y", 20));
-
-        junction.clearParameters();
-
-        List<Object> params = junction.getParameters();
-        // Parameters should be cleared
-        for (Object param : params) {
-            Assertions.assertNull(param);
-        }
     }
 
     @Test

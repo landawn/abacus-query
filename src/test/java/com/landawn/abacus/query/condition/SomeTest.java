@@ -69,17 +69,6 @@ class Some2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Condition whereCondition = new LessThan("priority", (Object) 5);
-        SubQuery subQuery = Filters.subQuery("tasks", Arrays.asList("estimated_hours"), whereCondition);
-        Some condition = new Some(subQuery);
-
-        condition.clearParameters();
-        List<Object> params = condition.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
         Some condition = new Some(subQuery);
@@ -279,17 +268,6 @@ public class SomeTest extends TestBase {
         Some some = Filters.some(subQuery);
 
         Assertions.assertTrue(some.getParameters().isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("scores", Arrays.asList("value"), Filters.between("date", "2023-01-01", "2023-12-31"));
-        Some some = Filters.some(subQuery);
-
-        some.clearParameters();
-
-        // Verify subquery parameters are cleared
-        Assertions.assertTrue(subQuery.getParameters().stream().allMatch(p -> p == null));
     }
 
     @Test

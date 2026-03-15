@@ -82,15 +82,6 @@ class CrossJoin2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        CrossJoin join = new CrossJoin("products", new Equal("status", "available"));
-        assertFalse(join.getParameters().isEmpty());
-        join.clearParameters();
-        List<Object> params = join.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_Simple() {
         CrossJoin join = new CrossJoin("colors");
         String result = join.toString(NamingPolicy.NO_CHANGE);
@@ -251,17 +242,6 @@ public class CrossJoinTest extends TestBase {
         List<Object> params = join.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        In in = Filters.in("category_id", Arrays.asList(1, 2, 3));
-        CrossJoin join = Filters.crossJoin("categories", in);
-
-        join.clearParameters();
-
-        List<Object> params = join.getParameters();
-        Assertions.assertTrue(params.size() == 3 || params.stream().allMatch(p -> p == null));
     }
 
     @Test

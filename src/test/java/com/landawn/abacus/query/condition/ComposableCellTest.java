@@ -33,15 +33,6 @@ public class ComposableCellTest extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
-
-        cell.clearParameters();
-
-        assertEquals(Arrays.asList((Object) null), cell.getParameters());
-    }
-
-    @Test
     public void testToString() {
         final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.eq("userName", "ACTIVE"));
 

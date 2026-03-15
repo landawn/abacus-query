@@ -86,17 +86,6 @@ class NotIn2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
-        condition.clearParameters();
-
-        List<?> values = condition.getValues();
-        assertEquals(2, values.size());
-        assertEquals(null, values.get(0));
-        assertEquals(null, values.get(1));
-    }
-
-    @Test
     public void testToString_NoChange() {
         NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -295,17 +284,6 @@ public class NotInTest extends TestBase {
 
         List<Object> params = notIn.getParameters();
         Assertions.assertEquals(values, params);
-    }
-
-    @Test
-    public void testClearParameters() {
-        List<String> values = new ArrayList<>(Arrays.asList("a", "b", "c"));
-        NotIn notIn = Filters.notIn("type", values);
-
-        notIn.clearParameters();
-
-        // Values should be filled with null
-        Assertions.assertTrue(notIn.getValues().stream().allMatch(v -> v == null));
     }
 
     @Test

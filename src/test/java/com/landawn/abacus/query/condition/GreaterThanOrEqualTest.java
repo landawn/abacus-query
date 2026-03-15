@@ -84,13 +84,6 @@ class GreaterThanOrEqual2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        GreaterThanOrEqual condition = new GreaterThanOrEqual("field", "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -275,14 +268,6 @@ public class GreaterThanOrEqualTest extends TestBase {
 
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(100.0, params.get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        GreaterThanOrEqual ge = Filters.ge("amount", 500);
-        ge.clearParameters();
-
-        Assertions.assertNull(ge.getPropValue());
     }
 
     @Test

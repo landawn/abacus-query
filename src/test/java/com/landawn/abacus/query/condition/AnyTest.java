@@ -61,17 +61,6 @@ class Any2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Condition whereCondition = new GreaterThan("rating", (Object) 3);
-        SubQuery subQuery = Filters.subQuery("reviews", Arrays.asList("score"), whereCondition);
-        Any condition = new Any(subQuery);
-
-        condition.clearParameters();
-        List<Object> params = condition.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
         Any condition = new Any(subQuery);
@@ -262,18 +251,6 @@ public class AnyTest extends TestBase {
         var params = any.getParameters();
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals("Electronics", params.get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), Filters.between("price", 100, 500));
-        Any any = Filters.any(subQuery);
-
-        Assertions.assertEquals(2, any.getParameters().size());
-
-        any.clearParameters();
-
-        Assertions.assertEquals(2, any.getParameters().size());
     }
 
     @Test

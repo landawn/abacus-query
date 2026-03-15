@@ -83,13 +83,6 @@ class Like2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Like condition = new Like("field", "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         Like condition = new Like("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -275,16 +268,6 @@ public class LikeTest extends TestBase {
         Assertions.assertNotNull(params);
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals("The%", params.get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        Like condition = new Like("filename", "%.pdf");
-        condition.clearParameters();
-
-        List<Object> params = condition.getParameters();
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertNull(params.get(0));
     }
 
     @Test

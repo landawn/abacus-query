@@ -429,21 +429,6 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Clears parameters in the underlying condition.
-     * This method delegates to the wrapped condition's clearParameters method.
-     *
-     * <p>Use this method to release large objects when the subquery is no longer needed.
-     * If this is a raw SQL subquery with no condition, this method is a no-op.</p>
-     *
-     */
-    @Override
-    public void clearParameters() {
-        if (condition != null) {
-            condition.clearParameters();
-        }
-    }
-
-    /**
      * Converts this subquery to its string representation.
      *
      * <p>For raw SQL subqueries, returns the SQL as-is.

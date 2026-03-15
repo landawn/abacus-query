@@ -44,16 +44,6 @@ class Minus2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("project_assignments", List.of("employee_id"), new Equal("active", "true"));
-        Minus minus = new Minus(subQuery);
-        assertFalse(minus.getParameters().isEmpty());
-        minus.clearParameters();
-        List<Object> params = minus.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT product_id FROM inventory");
         Minus minus = new Minus(subQuery);
@@ -202,17 +192,6 @@ public class MinusTest extends TestBase {
         Minus minus = Filters.minus(subQuery);
 
         Assertions.assertTrue(minus.getParameters().isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.in("status", Arrays.asList("deleted", "banned")));
-        Minus minus = Filters.minus(subQuery);
-
-        minus.clearParameters();
-
-        // Verify subquery parameters are cleared
-        Assertions.assertTrue(subQuery.getParameters().stream().allMatch(p -> p == null));
     }
 
     @Test

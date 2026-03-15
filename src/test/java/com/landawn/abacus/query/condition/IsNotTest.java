@@ -84,13 +84,6 @@ class IsNot2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        IsNot condition = new IsNot("field", "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         IsNot condition = new IsNot("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -217,15 +210,6 @@ public class IsNotTest extends TestBase {
         IsNot condition = new IsNot("name", null);
         List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertNull(params.get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        IsNot condition = new IsNot("name", "value");
-        condition.clearParameters();
-        List<Object> params = condition.getParameters();
         Assertions.assertEquals(1, params.size());
         Assertions.assertNull(params.get(0));
     }

@@ -227,27 +227,6 @@ class SubQuery2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParametersForRawSQL() {
-        SubQuery subQuery = Filters.subQuery("SELECT * FROM users");
-
-        // Should not throw exception
-        assertDoesNotThrow(() -> subQuery.clearParameters());
-    }
-
-    @Test
-    public void testClearParametersWithCondition() {
-        Condition condition = Filters.eq("status", "active");
-        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
-
-        assertFalse(subQuery.getParameters().isEmpty());
-
-        subQuery.clearParameters();
-
-        List<Object> params = subQuery.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToStringRawSQL() {
         String sql = "SELECT id FROM users WHERE status = 'active'";
         SubQuery subQuery = Filters.subQuery(sql);
@@ -592,27 +571,6 @@ public class SubQueryTest extends TestBase {
 
         List<Object> params = subQuery.getParameters();
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        List<String> props = Arrays.asList("id");
-        Equal condition = Filters.eq("status", "active");
-        SubQuery subQuery = Filters.subQuery("users", props, condition);
-
-        subQuery.clearParameters();
-
-        // Verify condition parameters are cleared
-        Assertions.assertTrue(condition.getParameters().isEmpty() || condition.getParameters().get(0) == null);
-    }
-
-    @Test
-    public void testClearParametersWithNoCondition() {
-        SubQuery subQuery = Filters.subQuery("SELECT * FROM users");
-
-        subQuery.clearParameters();
-        Assertions.assertNull(subQuery.getCondition());
-        Assertions.assertTrue(subQuery.getParameters().isEmpty());
     }
 
     @Test

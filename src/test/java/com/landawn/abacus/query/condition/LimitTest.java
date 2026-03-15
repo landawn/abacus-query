@@ -86,16 +86,6 @@ class Limit2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Limit limit = new Limit(15);
-        limit.clearParameters();
-
-        // Should do nothing, but not throw exception
-        assertNotNull(limit.getParameters());
-        assertTrue(limit.getParameters().isEmpty());
-    }
-
-    @Test
     public void testToStringWithCountOnly() {
         Limit limit = new Limit(10);
         String result = limit.toString(NamingPolicy.NO_CHANGE);
@@ -395,15 +385,6 @@ public class LimitTest extends TestBase {
         List<Object> params = limit.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        Limit limit = Filters.limit(10);
-        limit.clearParameters();
-        Assertions.assertEquals(10, limit.getCount());
-        Assertions.assertEquals(0, limit.getOffset());
-        Assertions.assertTrue(limit.getParameters().isEmpty());
     }
 
     @Test

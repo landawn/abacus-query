@@ -49,13 +49,6 @@ class IsNaN2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        IsNaN condition = new IsNaN("value");
-        condition.clearParameters();
-        assertTrue(condition.getParameters().isEmpty());
-    }
-
-    @Test
     public void testToString_NoChange() {
         IsNaN condition = new IsNaN("value");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -207,17 +200,6 @@ public class IsNaNTest extends TestBase {
         IsNaN condition = new IsNaN("profit_ratio");
         List<Object> params = condition.getParameters();
 
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
-    }
-
-    @Test
-    public void testClearParameters() {
-        IsNaN condition = new IsNaN("computed_value");
-        condition.clearParameters();
-
-        // The parameter should be cleared but the structure remains
-        List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertEquals(0, params.size());
     }

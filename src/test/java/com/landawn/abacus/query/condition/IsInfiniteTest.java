@@ -61,13 +61,6 @@ class IsInfinite2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        IsInfinite condition = new IsInfinite("value");
-        condition.clearParameters();
-        assertNotNull(condition);
-    }
-
-    @Test
     public void testToString_NoChange() {
         IsInfinite condition = new IsInfinite("growthRate");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -233,16 +226,6 @@ public class IsInfiniteTest extends TestBase {
         IsInfinite condition = new IsInfinite("ratio");
         List<Object> params = condition.getParameters();
 
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
-    }
-
-    @Test
-    public void testClearParameters() {
-        IsInfinite condition = new IsInfinite("value");
-        condition.clearParameters();
-
-        List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertEquals(0, params.size());
     }

@@ -84,13 +84,6 @@ class NotLike2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        NotLike condition = new NotLike("field", "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         NotLike condition = new NotLike("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -262,16 +255,6 @@ public class NotLikeTest extends TestBase {
 
         Assertions.assertEquals(1, notLike.getParameters().size());
         Assertions.assertEquals("%.tmp", notLike.getParameters().get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        NotLike notLike = Filters.notLike("name", "%test%");
-
-        notLike.clearParameters();
-
-        Assertions.assertNull(notLike.getPropValue());
-        Assertions.assertTrue(notLike.getParameters().size() == 1);
     }
 
     @Test

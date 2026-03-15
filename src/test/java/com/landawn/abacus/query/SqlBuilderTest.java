@@ -883,29 +883,33 @@ class SqlBuilder10Test extends TestBase {
 
     @Test
     public void testGroupBy_CollectionWithDirection() {
-        String sql = PSC.select("category", "brand", "COUNT(*)").from("products")
-                .groupBy(Arrays.asList("category", "brand"), SortDirection.DESC).build().query();
+        String sql = PSC.select("category", "brand", "COUNT(*)")
+                .from("products")
+                .groupBy(Arrays.asList("category", "brand"), SortDirection.DESC)
+                .build()
+                .query();
         assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category DESC, brand DESC", sql);
     }
 
     @Test
     public void testGroupBy_CollectionWithAscDirection() {
-        String sql = PSC.select("category", "brand", "COUNT(*)").from("products")
-                .groupBy(Arrays.asList("category", "brand"), SortDirection.ASC).build().query();
+        String sql = PSC.select("category", "brand", "COUNT(*)")
+                .from("products")
+                .groupBy(Arrays.asList("category", "brand"), SortDirection.ASC)
+                .build()
+                .query();
         assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand ASC", sql);
     }
 
     @Test
     public void testOrderBy_CollectionWithDirection() {
-        String sql = PSC.select("*").from("users")
-                .orderBy(Arrays.asList("lastName", "firstName"), SortDirection.DESC).build().query();
+        String sql = PSC.select("*").from("users").orderBy(Arrays.asList("lastName", "firstName"), SortDirection.DESC).build().query();
         assertEquals("SELECT * FROM users ORDER BY last_name DESC, first_name DESC", sql);
     }
 
     @Test
     public void testOrderBy_CollectionWithAscDirection() {
-        String sql = PSC.select("*").from("users")
-                .orderBy(Arrays.asList("lastName", "firstName"), SortDirection.ASC).build().query();
+        String sql = PSC.select("*").from("users").orderBy(Arrays.asList("lastName", "firstName"), SortDirection.ASC).build().query();
         assertEquals("SELECT * FROM users ORDER BY last_name ASC, first_name ASC", sql);
     }
 
@@ -947,32 +951,33 @@ class SqlBuilder10Test extends TestBase {
 
     @Test
     public void testAppendIfOrElse_ConditionTrue() {
-        String sql = PSC.select("*").from("users")
-                .appendIfOrElse(true, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build().query();
+        String sql = PSC.select("*").from("users").appendIfOrElse(true, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build().query();
         assertEquals("SELECT * FROM users WHERE status = ?", sql);
-        assertEquals("active", PSC.select("*").from("users")
-                .appendIfOrElse(true, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build().parameters().get(0));
+        assertEquals("active",
+                PSC.select("*")
+                        .from("users")
+                        .appendIfOrElse(true, Filters.eq("status", "active"), Filters.eq("status", "inactive"))
+                        .build()
+                        .parameters()
+                        .get(0));
     }
 
     @Test
     public void testAppendIfOrElse_ConditionFalse() {
-        SP sp = PSC.select("*").from("users")
-                .appendIfOrElse(false, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build();
+        SP sp = PSC.select("*").from("users").appendIfOrElse(false, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build();
         assertEquals("SELECT * FROM users WHERE status = ?", sp.query());
         assertEquals("inactive", sp.parameters().get(0));
     }
 
     @Test
     public void testAppendIfOrElse_StringTrue() {
-        String sql = PSC.select("*").from("users")
-                .appendIfOrElse(true, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
+        String sql = PSC.select("*").from("users").appendIfOrElse(true, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
         assertEquals("SELECT * FROM users ORDER BY name ASC", sql);
     }
 
     @Test
     public void testAppendIfOrElse_StringFalse() {
-        String sql = PSC.select("*").from("users")
-                .appendIfOrElse(false, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
+        String sql = PSC.select("*").from("users").appendIfOrElse(false, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
         assertEquals("SELECT * FROM users ORDER BY name DESC", sql);
     }
 

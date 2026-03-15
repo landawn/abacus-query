@@ -98,18 +98,6 @@ public abstract class Cell extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * This method delegates to the wrapped condition's clearParameters method.
-     *
-     */
-    @Override
-    public void clearParameters() {
-        if (condition != null) {
-            condition.clearParameters();
-        }
-    }
-
-    /**
      * Converts this Cell condition to its string representation using the specified naming policy.
      * The output format is: OPERATOR condition_string
      * 

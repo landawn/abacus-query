@@ -163,23 +163,6 @@ public class Binary extends ComposableCondition {
     }
 
     /**
-     * Clears the parameter value by setting it to null to free memory.
-     * If the value is a nested Condition, delegates to that condition's clearParameters() method.
-     *
-     * <p>This method sets the propValue field to null unless it's a Condition,
-     * in which case it recursively clears parameters in the nested condition.</p>
-     *
-     */
-    @Override
-    public void clearParameters() {
-        if (propValue instanceof Condition) {
-            ((Condition) propValue).clearParameters();
-        } else {
-            propValue = null;
-        }
-    }
-
-    /**
      * Converts this Binary condition to its string representation using the specified naming policy.
      * The format is: propertyName OPERATOR value
      * 

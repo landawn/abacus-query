@@ -85,13 +85,6 @@ class Using2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Using using = new Using("order_id");
-        using.clearParameters();
-        assertTrue(using.getParameters().isEmpty());
-    }
-
-    @Test
     public void testToString() {
         Using using = new Using("employee_id");
         String result = using.toString(NamingPolicy.NO_CHANGE);

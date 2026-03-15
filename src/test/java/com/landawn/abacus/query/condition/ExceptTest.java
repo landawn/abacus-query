@@ -47,16 +47,6 @@ class Except2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("employees", List.of("employee_id"), new Equal("is_manager", "true"));
-        Except except = new Except(subQuery);
-        assertFalse(except.getParameters().isEmpty());
-        except.clearParameters();
-        List<Object> params = except.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT product_id FROM sales");
         Except except = new Except(subQuery);
@@ -194,18 +184,6 @@ public class ExceptTest extends TestBase {
         Assertions.assertEquals(2, params.size());
         Assertions.assertTrue(params.contains("2023-01-01"));
         Assertions.assertTrue(params.contains("cancelled"));
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("id"), Filters.in("category", Arrays.asList("obsolete", "discontinued")));
-        Except except = Filters.except(subQuery);
-
-        Assertions.assertEquals(2, except.getParameters().size());
-
-        except.clearParameters();// filled with nulls
-
-        Assertions.assertEquals(2, except.getParameters().size());
     }
 
     @Test

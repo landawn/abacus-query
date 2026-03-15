@@ -242,19 +242,6 @@ public class Limit extends Clause {
     }
 
     /**
-     * This method does nothing for LIMIT clauses.
-     * LIMIT clauses do not have parameters that can be cleared, as the row count
-     * and offset are stored as primitive values, not as parameter placeholders.
-     *
-     * <p>This method is a no-op to satisfy the Condition interface contract.</p>
-     *
-     */
-    @Override
-    public void clearParameters() {
-        // do nothing.
-    }
-
-    /**
      * Converts this LIMIT clause to its string representation according to the specified naming policy.
      * The output format depends on how the Limit was constructed:
      * <ul>

@@ -33,15 +33,6 @@ public class CellTest extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        final TestCell cell = new TestCell(Operator.WHERE, Filters.eq("status", "ACTIVE"));
-
-        cell.clearParameters();
-
-        assertEquals(Arrays.asList((Object) null), cell.getParameters());
-    }
-
-    @Test
     public void testToString() {
         final TestCell cell = new TestCell(Operator.WHERE, Filters.eq("userName", "ACTIVE"));
 

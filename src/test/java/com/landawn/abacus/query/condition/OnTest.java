@@ -71,16 +71,6 @@ class On2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        And condition = new And(new Equal("a.id", "b.id"), new Equal("a.status", "pending"));
-        On on = new On(condition);
-        assertFalse(on.getParameters().isEmpty());
-        on.clearParameters();
-        List<Object> params = on.getParameters();
-        assertTrue(params.size() == 2 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString() {
         On on = new On("orders.customer_id", "customers.id");
         String result = on.toString(NamingPolicy.NO_CHANGE);

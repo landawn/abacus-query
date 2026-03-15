@@ -87,13 +87,6 @@ class Equal2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Equal condition = new Equal("field", "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         Equal condition = new Equal("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -316,15 +309,6 @@ public class EqualTest extends TestBase {
 
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals("test@example.com", params.get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        Equal eq = Filters.eq("id", 12345);
-        Assertions.assertEquals(12345, (Integer) eq.getPropValue());
-
-        eq.clearParameters();
-        Assertions.assertNull(eq.getPropValue());
     }
 
     @Test

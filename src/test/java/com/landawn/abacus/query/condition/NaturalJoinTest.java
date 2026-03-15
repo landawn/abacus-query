@@ -81,15 +81,6 @@ class NaturalJoin2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        NaturalJoin join = new NaturalJoin("orders", new GreaterThan("orderDate", "2024-01-01"));
-        assertFalse(join.getParameters().isEmpty());
-        join.clearParameters();
-        List<Object> params = join.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_Simple() {
         NaturalJoin join = new NaturalJoin("employees");
         String result = join.toString(NamingPolicy.NO_CHANGE);
@@ -224,26 +215,6 @@ public class NaturalJoinTest extends TestBase {
         List<Object> params = join.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        Equal condition = Filters.eq("department", "IT");
-        NaturalJoin join = Filters.naturalJoin("employees", condition);
-
-        join.clearParameters();
-
-        // Verify condition parameters are cleared
-        Assertions.assertTrue(condition.getParameters().isEmpty() || condition.getParameters().get(0) == null);
-    }
-
-    @Test
-    public void testClearParametersNoCondition() {
-        NaturalJoin join = Filters.naturalJoin("employees");
-
-        join.clearParameters();
-        Assertions.assertNull(join.getCondition());
-        Assertions.assertTrue(join.getParameters().isEmpty());
     }
 
     @Test

@@ -122,27 +122,6 @@ class NotBetween2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        NotBetween condition = new NotBetween("age", 18, 65);
-        condition.clearParameters();
-
-        assertNull(condition.getMinValue());
-        assertNull(condition.getMaxValue());
-    }
-
-    @Test
-    public void testClearParameters_WithConditionValues() {
-        Expression minExpr = new Expression("MIN(age)");
-        Expression maxExpr = new Expression("MAX(age)");
-        NotBetween condition = new NotBetween("score", minExpr, maxExpr);
-
-        condition.clearParameters();
-        // Expressions should have their parameters cleared
-        assertNotNull(condition.getMinValue());
-        assertNotNull(condition.getMaxValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         NotBetween condition = new NotBetween("age", 18, 65);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -351,29 +330,6 @@ public class NotBetweenTest extends TestBase {
 
         List<Object> params = notBetween.getParameters();
         Assertions.assertEquals(minExpr.getParameters().size() + maxExpr.getParameters().size(), params.size());
-    }
-
-    @Test
-    public void testClearParameters() {
-        NotBetween notBetween = Filters.notBetween("age", 20, 40);
-
-        notBetween.clearParameters();
-
-        Assertions.assertNull(notBetween.getMinValue());
-        Assertions.assertNull(notBetween.getMaxValue());
-    }
-
-    @Test
-    public void testClearParametersWithConditionValues() {
-        SubQuery minSubQuery = Filters.subQuery("SELECT MIN(price) FROM products");
-        SubQuery maxSubQuery = Filters.subQuery("SELECT MAX(price) FROM products");
-        NotBetween notBetween = Filters.notBetween("price", minSubQuery, maxSubQuery);
-
-        notBetween.clearParameters();
-
-        // Verify subquery parameters are cleared
-        Assertions.assertTrue(minSubQuery.getParameters().isEmpty());
-        Assertions.assertTrue(maxSubQuery.getParameters().isEmpty());
     }
 
     @Test

@@ -84,14 +84,6 @@ class Between2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Between condition = new Between("age", 18, 65);
-        condition.clearParameters();
-        assertNull(condition.getMinValue());
-        assertNull(condition.getMaxValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         Between condition = new Between("age", 18, 65);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -315,30 +307,6 @@ public class BetweenTest extends TestBase {
         List<Object> params = between.getParameters();
         // Should get parameters from both subqueries
         Assertions.assertNotNull(params);
-    }
-
-    @Test
-    public void testClearParameters() {
-        Between between = Filters.between("quantity", 10, 100);
-        Assertions.assertEquals(10, (Integer) between.getMinValue());
-        Assertions.assertEquals(100, (Integer) between.getMaxValue());
-
-        between.clearParameters();
-
-        Assertions.assertNull(between.getMinValue());
-        Assertions.assertNull(between.getMaxValue());
-    }
-
-    @Test
-    public void testClearParametersWithConditionValues() {
-        In minIn = Filters.in("id", Arrays.asList(1, 2, 3));
-        In maxIn = Filters.in("id", Arrays.asList(7, 8, 9));
-        Between between = new Between("value", minIn, maxIn);
-
-        between.clearParameters();
-
-        // The subqueries' parameters should be cleared
-        Assertions.assertTrue(between.getParameters().stream().allMatch(param -> param == null));
     }
 
     @Test

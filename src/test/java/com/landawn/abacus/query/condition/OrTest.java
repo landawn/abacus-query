@@ -80,17 +80,6 @@ class Or2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Equal cond1 = new Equal("a", 1);
-        Equal cond2 = new Equal("b", 2);
-        Or junction = new Or(cond1, cond2);
-
-        junction.clearParameters();
-        assertNull(cond1.getPropValue());
-        assertNull(cond2.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         Or junction = new Or(new Equal("a", 1), new Equal("b", 2));
         String result = junction.toString(NamingPolicy.NO_CHANGE);
@@ -315,16 +304,6 @@ public class OrTest extends TestBase {
         Assertions.assertTrue(params.contains("active"));
         Assertions.assertTrue(params.contains(18));
         Assertions.assertTrue(params.contains("%John%"));
-    }
-
-    @Test
-    public void testClearParameters() {
-        Or or = Filters.or(Filters.eq("status", "active"), Filters.in("id", Arrays.asList(1, 2, 3)));
-
-        or.clearParameters();
-
-        List<Object> params = or.getParameters();
-        Assertions.assertTrue(params.stream().allMatch(p -> p == null));
     }
 
     @Test

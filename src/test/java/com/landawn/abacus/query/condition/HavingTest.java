@@ -64,16 +64,6 @@ class Having2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Having having = new Having(Filters.gt("COUNT(*)", 10));
-        assertEquals(1, having.getParameters().size());
-
-        having.clearParameters();
-        // Parameters should still exist but values should be cleared
-        assertNotNull(having.getParameters());
-    }
-
-    @Test
     public void testEquals() {
         Having having1 = new Having(Filters.gt("COUNT(*)", 5));
         Having having2 = new Having(Filters.gt("COUNT(*)", 5));
@@ -282,18 +272,6 @@ public class HavingTest extends TestBase {
         Assertions.assertEquals(2, params.size());
         Assertions.assertEquals(100, params.get(0));
         Assertions.assertEquals(500, params.get(1));
-    }
-
-    @Test
-    public void testClearParameters() {
-        Condition innerCondition = Filters.eq("COUNT(*)", 10);
-        Having having = new Having(innerCondition);
-
-        having.clearParameters();
-        List<Object> params = having.getParameters();
-        Assertions.assertNotNull(params);
-        // Parameters should be cleared
-        Assertions.assertTrue(params.isEmpty() || params.get(0) == null);
     }
 
     @Test

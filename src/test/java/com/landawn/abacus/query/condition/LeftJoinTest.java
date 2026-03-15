@@ -81,15 +81,6 @@ class LeftJoin2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        LeftJoin join = new LeftJoin("orders o", new Equal("status", "pending"));
-        assertFalse(join.getParameters().isEmpty());
-        join.clearParameters();
-        List<Object> params = join.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_Simple() {
         LeftJoin join = new LeftJoin("orders");
         String result = join.toString(NamingPolicy.NO_CHANGE);
@@ -267,17 +258,6 @@ public class LeftJoinTest extends TestBase {
 
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        Condition condition = Filters.eq("status", "active");
-        LeftJoin join = new LeftJoin("orders", condition);
-
-        join.clearParameters();
-
-        List<Object> params = join.getParameters();
-        Assertions.assertTrue(params.isEmpty() || params.stream().allMatch(p -> p == null));
     }
 
     @Test

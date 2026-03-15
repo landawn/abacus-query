@@ -44,14 +44,6 @@ class UnionAll2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("SELECT * FROM products WHERE year = 2024");
-        UnionAll unionAll = new UnionAll(subQuery);
-        // SubQuery with raw SQL doesn't have parameters - test condition instead
-        assertTrue(unionAll.getParameters().isEmpty());
-    }
-
-    @Test
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM transactions");
         UnionAll unionAll = new UnionAll(subQuery);
@@ -193,17 +185,6 @@ public class UnionAllTest extends TestBase {
         UnionAll unionAll = Filters.unionAll(subQuery);
 
         Assertions.assertTrue(unionAll.getParameters().isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("logs", Arrays.asList("timestamp", "message"), Filters.between("timestamp", "2024-01-01", "2024-12-31"));
-        UnionAll unionAll = Filters.unionAll(subQuery);
-
-        unionAll.clearParameters();
-
-        // Verify subquery parameters are cleared
-        Assertions.assertTrue(subQuery.getParameters().stream().allMatch(p -> p == null));
     }
 
     @Test

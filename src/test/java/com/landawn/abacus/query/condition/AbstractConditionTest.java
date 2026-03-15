@@ -257,11 +257,6 @@ public class AbstractConditionTest extends TestBase {
         }
 
         @Override
-        public void clearParameters() {
-            value = null;
-        }
-
-        @Override
         public String toString(NamingPolicy namingPolicy) {
             return operator().toString() + " " + value;
         }
@@ -467,10 +462,6 @@ public class AbstractConditionTest extends TestBase {
             @Override
             public ImmutableList<Object> getParameters() {
                 return ImmutableList.empty();
-            }
-
-            @Override
-            public void clearParameters() {
             }
 
             @Override

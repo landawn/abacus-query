@@ -77,14 +77,6 @@ class Join2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Join join = new Join("orders o", new Equal("status", "pending"));
-        join.clearParameters();
-        List<Object> params = join.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_Simple() {
         Join join = new Join("orders");
         String result = join.toString(NamingPolicy.NO_CHANGE);
@@ -251,28 +243,6 @@ public class JoinTest extends TestBase {
         List<Object> params = join.getParameters();
 
         Assertions.assertNotNull(params);
-        Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        Condition condition = Filters.eq("status", "active");
-        Join join = new Join("orders", condition);
-
-        join.clearParameters();
-
-        List<Object> params = join.getParameters();
-        Assertions.assertTrue(params.isEmpty() || params.stream().allMatch(p -> p == null));
-    }
-
-    @Test
-    public void testClearParametersNoCondition() {
-        Join join = new Join("products");
-
-        // Should not throw exception
-        join.clearParameters();
-
-        List<Object> params = join.getParameters();
         Assertions.assertTrue(params.isEmpty());
     }
 

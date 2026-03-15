@@ -85,21 +85,6 @@ class Binary2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Binary condition = new Binary("field", Operator.EQUAL, "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
-    public void testClearParameters_WithCondition() {
-        Equal innerCond = new Equal("id", 100);
-        Binary condition = new Binary("userId", Operator.EQUAL, innerCond);
-        condition.clearParameters();
-        assertNull(innerCond.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         Binary condition = new Binary("userName", Operator.EQUAL, "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -316,25 +301,6 @@ public class BinaryTest extends TestBase {
 
         List<Object> params = binary.getParameters();
         Assertions.assertEquals(subQuery.getParameters(), params);
-    }
-
-    @Test
-    public void testClearParametersWithLiteralValue() {
-        Binary binary = Filters.binary("count", Operator.GREATER_THAN, 100);
-        binary.clearParameters();
-
-        Assertions.assertNull(binary.getPropValue());
-    }
-
-    @Test
-    public void testClearParametersWithConditionValue() {
-        Between between = Filters.between("value", 10, 20);
-        Binary binary = Filters.binary("range", Operator.EQUAL, between);
-
-        binary.clearParameters();
-
-        List<Object> params = binary.getParameters();
-        Assertions.assertTrue(params.size() == 2 && params.get(0) == null && params.get(1) == null);
     }
 
     @Test

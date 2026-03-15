@@ -81,15 +81,6 @@ class FullJoin2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        FullJoin join = new FullJoin("products", new Equal("status", "available"));
-        assertFalse(join.getParameters().isEmpty());
-        join.clearParameters();
-        List<Object> params = join.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_Simple() {
         FullJoin join = new FullJoin("departments");
         String result = join.toString(NamingPolicy.NO_CHANGE);
@@ -258,19 +249,6 @@ public class FullJoinTest extends TestBase {
         List<Object> params = join.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        In in = Filters.in("department_id", Arrays.asList(10, 20, 30));
-        FullJoin join = Filters.fullJoin("departments", in);
-
-        Assertions.assertEquals(3, join.getParameters().size());
-
-        join.clearParameters();
-
-        List<Object> params = join.getParameters();
-        Assertions.assertTrue(params.size() == 3 && params.stream().allMatch(param -> param == null));
     }
 
     @Test

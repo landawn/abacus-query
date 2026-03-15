@@ -69,17 +69,6 @@ class Exists2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Condition whereCondition = new Equal("status", "pending");
-        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), whereCondition);
-        Exists condition = new Exists(subQuery);
-
-        condition.clearParameters();
-        List<Object> params = condition.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE status = 'active'");
         Exists condition = new Exists(subQuery);
@@ -240,18 +229,6 @@ public class ExistsTest extends TestBase {
         Assertions.assertEquals(2, params.size());
         Assertions.assertTrue(params.contains(123));
         Assertions.assertTrue(params.contains("pending"));
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("products", Arrays.asList("id"), Filters.in("category_id", Arrays.asList(1, 2, 3)));
-        Exists exists = Filters.exists(subQuery);
-
-        Assertions.assertEquals(3, exists.getParameters().size());
-
-        exists.clearParameters();
-
-        Assertions.assertTrue(exists.getParameters().size() == 3 && exists.getParameters().stream().allMatch(param -> param == null));
     }
 
     @Test

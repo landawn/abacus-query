@@ -67,14 +67,6 @@ class IsNotNaN2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        IsNotNaN condition = new IsNotNaN("value");
-        condition.clearParameters();
-        // Should not throw exception
-        assertNotNull(condition);
-    }
-
-    @Test
     public void testToString_NoChange() {
         IsNotNaN condition = new IsNotNaN("temperature");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -228,16 +220,6 @@ public class IsNotNaNTest extends TestBase {
         IsNotNaN condition = new IsNotNaN("profit_ratio");
         List<Object> params = condition.getParameters();
 
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
-    }
-
-    @Test
-    public void testClearParameters() {
-        IsNotNaN condition = new IsNotNaN("computed_value");
-        condition.clearParameters();
-
-        List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertEquals(0, params.size());
     }

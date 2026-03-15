@@ -54,19 +54,6 @@ class Clause2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Condition condition = Filters.eq("status", "active");
-        TestClause clause = new TestClause(Operator.WHERE, condition);
-
-        assertFalse(clause.getParameters().isEmpty());
-
-        clause.clearParameters();
-
-        java.util.List<Object> params = clause.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_WithNamingPolicy() {
         Condition condition = Filters.eq("userName", "John");
         TestClause clause = new TestClause(Operator.WHERE, condition);
@@ -188,10 +175,6 @@ public class ClauseTest extends TestBase {
         var params = clause.getParameters();
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(100, params.get(0));
-
-        // Test clearParameters
-        clause.clearParameters();
-        Assertions.assertNull(clause.getCondition().getParameters().get(0));
     }
 
     @Test

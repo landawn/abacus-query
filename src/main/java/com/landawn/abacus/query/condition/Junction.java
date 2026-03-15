@@ -230,23 +230,6 @@ public class Junction extends ComposableCondition {
     }
 
     /**
-     * Clears parameters in all child conditions by recursively calling clearParameters() on each.
-     * This method delegates the clearing operation to each contained condition in the junction.
-     *
-     * <p>Use this method to release large objects held by any condition in the junction tree
-     * when the junction is no longer needed.</p>
-     *
-     */
-    @Override
-    public void clearParameters() {
-        for (final Condition condition : conditions) {
-            if (condition != null) {
-                condition.clearParameters();
-            }
-        }
-    }
-
-    /**
      * Converts this junction to its string representation according to the specified naming policy.
      * The output format wraps each condition in parentheses and joins them with the operator.
      * This ensures proper precedence in complex composable expressions.

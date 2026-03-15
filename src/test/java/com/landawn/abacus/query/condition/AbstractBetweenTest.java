@@ -60,27 +60,6 @@ public class AbstractBetweenTest extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        final TestAbstractBetween condition = new TestAbstractBetween("age", 18, 65);
-
-        condition.clearParameters();
-
-        assertNull(condition.getMinValue());
-        assertNull(condition.getMaxValue());
-    }
-
-    @Test
-    public void testClearParameters_ConditionValues() {
-        final SubQuery minValue = Filters.subQuery("scores", Arrays.asList("min_score"), Filters.eq("status", "ACTIVE"));
-        final TestAbstractBetween condition = new TestAbstractBetween("score", minValue, 99);
-
-        condition.clearParameters();
-
-        assertEquals(Arrays.asList((Object) null), minValue.getParameters());
-        assertNull(condition.getMaxValue());
-    }
-
-    @Test
     public void testToString() {
         final TestAbstractBetween condition = new TestAbstractBetween("userAge", 18, 65);
 

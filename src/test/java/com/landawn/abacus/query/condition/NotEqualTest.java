@@ -85,13 +85,6 @@ class NotEqual2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        NotEqual condition = new NotEqual("field", "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         NotEqual condition = new NotEqual("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -248,16 +241,6 @@ public class NotEqualTest extends TestBase {
     public void testGetParametersWithNull() {
         NotEqual notEqual = Filters.ne("value", null);
 
-        Assertions.assertNull(notEqual.getParameters().get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        NotEqual notEqual = Filters.ne("type", "default");
-
-        notEqual.clearParameters();
-
-        Assertions.assertNull(notEqual.getPropValue());
         Assertions.assertNull(notEqual.getParameters().get(0));
     }
 

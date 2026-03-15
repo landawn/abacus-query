@@ -514,10 +514,12 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
     @Test
     public void testAppendIfOrElse_Condition() {
-        final AbstractQueryBuilder.SP trueBranch = SqlBuilder.PSC.select("*").from("users")
+        final AbstractQueryBuilder.SP trueBranch = SqlBuilder.PSC.select("*")
+                .from("users")
                 .appendIfOrElse(true, Filters.eq("status", "ACTIVE"), Filters.eq("status", "INACTIVE"))
                 .build();
-        final AbstractQueryBuilder.SP falseBranch = SqlBuilder.PSC.select("*").from("users")
+        final AbstractQueryBuilder.SP falseBranch = SqlBuilder.PSC.select("*")
+                .from("users")
                 .appendIfOrElse(false, Filters.eq("status", "ACTIVE"), Filters.eq("status", "INACTIVE"))
                 .build();
 
@@ -538,7 +540,9 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
     @Test
     public void testUnion_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id")
+                .from("users")
+                .where(Filters.eq("type", "USER"))
                 .union(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
@@ -569,7 +573,9 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
     @Test
     public void testUnionAll_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id")
+                .from("users")
+                .where(Filters.eq("type", "USER"))
                 .unionAll(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
@@ -600,7 +606,9 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
     @Test
     public void testIntersect_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id")
+                .from("users")
+                .where(Filters.eq("type", "USER"))
                 .intersect(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
@@ -631,7 +639,9 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
     @Test
     public void testExcept_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id")
+                .from("users")
+                .where(Filters.eq("type", "USER"))
                 .except(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
@@ -662,7 +672,9 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
     @Test
     public void testMinus_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("type", "USER"))
+        final AbstractQueryBuilder.SP sp = SqlBuilder.PSC.select("id")
+                .from("users")
+                .where(Filters.eq("type", "USER"))
                 .minus(SqlBuilder.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
@@ -700,7 +712,10 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
     @Test
     public void testApply_SPFunction() throws Exception {
-        final List<Object> result = SqlBuilder.PSC.select("id").from("users").where(Filters.eq("id", 1)).apply(sp -> Arrays.asList(sp.query(), sp.parameters().size()));
+        final List<Object> result = SqlBuilder.PSC.select("id")
+                .from("users")
+                .where(Filters.eq("id", 1))
+                .apply(sp -> Arrays.asList(sp.query(), sp.parameters().size()));
 
         assertTrue(result.get(0).toString().contains("WHERE"));
         assertEquals(1, result.get(1));

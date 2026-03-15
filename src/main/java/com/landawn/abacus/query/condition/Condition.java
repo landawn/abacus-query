@@ -14,7 +14,6 @@
 
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
@@ -30,8 +29,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * subclass. Conditions are designed to be composable, allowing complex queries
  * to be built from simple building blocks.</p>
  * 
- * <p>Conditions are immutable after construction. The only exception is {@code clearParameters()},
- * which may null out parameter values to release memory. This design helps prevent unexpected side effects when conditions are reused or shared.</p>
+ * <p>Conditions are immutable after construction.</p>
  * 
  * <p>Common implementations include:</p>
  * <ul>
@@ -111,31 +109,6 @@ public interface Condition {
      * @return an immutable list of parameter values, never null
      */
     ImmutableList<Object> getParameters();
-
-    /**
-     * Clears all parameter values by setting them to null to free memory.
-     *
-     * <p>The parameter list size remains unchanged, but all elements become null.
-     * Use this method to release large objects when the condition is no longer needed.
-     * This is the only mutating operation allowed on otherwise immutable conditions.</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Condition eq = Filters.equal("name", "John");
-     * ImmutableList<Object> params = eq.getParameters();   // ["John"]
-     *
-     * // Release parameter memory when the condition is no longer needed
-     * eq.clearParameters();
-     * ImmutableList<Object> cleared = eq.getParameters();   // [null]
-     *
-     * // For compound conditions, clears parameters recursively
-     * Condition combined = Filters.and(Filters.greaterThan("age", 18), Filters.equal("status", "active"));
-     * combined.clearParameters();   // Clears parameters in both child conditions
-     * }</pre>
-     *
-     */
-    @Beta
-    void clearParameters();
 
     /**
      * Returns a string representation of this condition using the specified naming policy.

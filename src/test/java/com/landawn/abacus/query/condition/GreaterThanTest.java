@@ -85,13 +85,6 @@ class GreaterThan2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        GreaterThan condition = new GreaterThan("field", "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         GreaterThan condition = new GreaterThan("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -281,15 +274,6 @@ public class GreaterThanTest extends TestBase {
 
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(32.5, params.get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        GreaterThan gt = Filters.gt("score", 85);
-        Assertions.assertEquals(85, (Integer) gt.getPropValue());
-
-        gt.clearParameters();
-        Assertions.assertNull(gt.getPropValue());
     }
 
     @Test

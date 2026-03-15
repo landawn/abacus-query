@@ -108,13 +108,6 @@ class IsNotNull2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        IsNotNull condition = new IsNotNull("field");
-        condition.clearParameters();
-        assertNotNull(condition);
-    }
-
-    @Test
     public void testToString_NoArgs() {
         IsNotNull condition = new IsNotNull("email");
         String result = condition.toString();
@@ -209,16 +202,6 @@ public class IsNotNullTest extends TestBase {
         IsNotNull condition = new IsNotNull("status");
         List<Object> params = condition.getParameters();
 
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
-    }
-
-    @Test
-    public void testClearParameters() {
-        IsNotNull condition = new IsNotNull("field");
-        condition.clearParameters();
-
-        List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertEquals(0, params.size());
     }

@@ -81,15 +81,6 @@ class RightJoin2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        RightJoin join = new RightJoin("products", new Equal("status", "available"));
-        assertFalse(join.getParameters().isEmpty());
-        join.clearParameters();
-        List<Object> params = join.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_Simple() {
         RightJoin join = new RightJoin("departments");
         String result = join.toString(NamingPolicy.NO_CHANGE);
@@ -256,26 +247,6 @@ public class RightJoinTest extends TestBase {
         List<Object> params = join.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        Equal condition = Filters.eq("region", "WEST");
-        RightJoin join = Filters.rightJoin("stores", condition);
-
-        join.clearParameters();
-
-        // Verify condition parameters are cleared
-        Assertions.assertTrue(condition.getParameters().isEmpty() || condition.getParameters().get(0) == null);
-    }
-
-    @Test
-    public void testClearParametersNoCondition() {
-        RightJoin join = Filters.rightJoin("customers");
-
-        join.clearParameters();
-        Assertions.assertNull(join.getCondition());
-        Assertions.assertTrue(join.getParameters().isEmpty());
     }
 
     @Test

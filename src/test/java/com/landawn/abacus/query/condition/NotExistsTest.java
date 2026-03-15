@@ -88,17 +88,6 @@ public class NotExistsTest extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Condition whereCondition = new Equal("type", "temporary");
-        SubQuery subQuery = Filters.subQuery("sessions", Arrays.asList("id"), whereCondition);
-        NotExists condition = new NotExists(subQuery);
-
-        condition.clearParameters();
-        List<Object> params = condition.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE status = 'cancelled'");
         NotExists condition = new NotExists(subQuery);

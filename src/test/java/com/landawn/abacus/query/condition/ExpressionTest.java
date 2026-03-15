@@ -666,14 +666,6 @@ class Expression2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Expression expr = new Expression("CURRENT_TIMESTAMP");
-
-        // Should not throw exception
-        assertDoesNotThrow(() -> expr.clearParameters());
-    }
-
-    @Test
     public void testToStringNoChange() {
         Expression expr = new Expression("userName = 'John'");
 
@@ -1374,14 +1366,6 @@ public class ExpressionTest extends TestBase {
 
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        Expression expr = Expression.of("CURRENT_DATE");
-        expr.clearParameters(); // Should do nothing
-
-        Assertions.assertEquals("CURRENT_DATE", expr.getLiteral());
     }
 
     @Test

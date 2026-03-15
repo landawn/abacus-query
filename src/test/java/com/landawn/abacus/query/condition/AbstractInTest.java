@@ -56,25 +56,6 @@ public class AbstractInTest extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        final TestAbstractIn condition = new TestAbstractIn("status", Arrays.asList("ACTIVE", "PENDING"));
-
-        condition.clearParameters();
-
-        assertEquals(Arrays.asList(null, null), condition.getValues());
-    }
-
-    @Test
-    public void testClearParameters_ConditionValues() {
-        final TestAbstractIn condition = new TestAbstractIn("id", Arrays.asList(Filters.eq("status", "ACTIVE"), 2));
-
-        condition.clearParameters();
-
-        assertEquals(Arrays.asList(null, null), condition.getParameters());
-        assertTrue(condition.getValues().get(0) instanceof Condition);
-    }
-
-    @Test
     public void testToString() {
         final TestAbstractIn condition = new TestAbstractIn("orderStatus", Arrays.asList("ACTIVE", "PENDING"));
 

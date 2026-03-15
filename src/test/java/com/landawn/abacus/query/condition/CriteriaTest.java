@@ -117,15 +117,6 @@ class Criteria2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Criteria criteria = Criteria.builder().where(Filters.equal("age", 30)).build();
-        criteria.clearParameters();
-        List<Object> params = criteria.getParameters();
-        assertEquals(1, params.size());
-        assertTrue(params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testDistinct() {
         Criteria criteria = Criteria.builder().distinct().build();
         assertNotNull(criteria);
@@ -574,15 +565,6 @@ class Criteria2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParametersMultiple() {
-        Criteria criteria = Criteria.builder().where(Filters.equal("name", "John")).where(Filters.equal("age", 30)).build();
-        criteria.clearParameters();
-        // Parameters should be cleared
-        List<Object> params = criteria.getParameters();
-        assertNotNull(params);
-    }
-
-    @Test
     public void testGetParametersEmpty() {
         Criteria criteria = Criteria.builder().build();
         List<Object> params = criteria.getParameters();
@@ -797,16 +779,6 @@ public class CriteriaTest extends TestBase {
         Assertions.assertTrue(params.contains("active"));
         Assertions.assertTrue(params.contains(100));
         Assertions.assertTrue(params.contains(5));
-    }
-
-    @Test
-    public void testClearParameters() {
-        Criteria criteria = Criteria.builder().where(Filters.in("id", Arrays.asList(1, 2, 3))).having(Filters.between("count", 10, 100)).build();
-
-        criteria.clearParameters();
-
-        List<Object> params = criteria.getParameters();
-        Assertions.assertNull(params.get(0)); // In condition should clear parameters));
     }
 
     @Test
@@ -1434,15 +1406,9 @@ class Criteria2026Test extends TestBase {
 
     @Test
     public void testToBuilder() {
-        final Criteria original = Criteria.builder()
-                .selectModifier("DISTINCT")
-                .orderBy("name")
-                .limit(10)
-                .build();
+        final Criteria original = Criteria.builder().selectModifier("DISTINCT").orderBy("name").limit(10).build();
 
-        final Criteria rebuilt = original.toBuilder()
-                .where(Filters.eq("status", "ACTIVE"))
-                .build();
+        final Criteria rebuilt = original.toBuilder().where(Filters.eq("status", "ACTIVE")).build();
 
         assertEquals("DISTINCT", rebuilt.getSelectModifier());
         assertEquals(0, original.getParameters().size());

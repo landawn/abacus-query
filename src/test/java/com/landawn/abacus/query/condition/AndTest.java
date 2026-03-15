@@ -81,17 +81,6 @@ class And2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Equal cond1 = new Equal("a", 1);
-        Equal cond2 = new Equal("b", 2);
-        And junction = new And(cond1, cond2);
-
-        junction.clearParameters();
-        assertNull(cond1.getPropValue());
-        assertNull(cond2.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         And junction = new And(new Equal("a", 1), new Equal("b", 2));
         String result = junction.toString(NamingPolicy.NO_CHANGE);
@@ -340,16 +329,6 @@ public class AndTest extends TestBase {
         Assertions.assertTrue(params.contains(18));
         Assertions.assertTrue(params.contains(65));
         Assertions.assertTrue(params.contains("John%"));
-    }
-
-    @Test
-    public void testClearParameters() {
-        And and = Filters.and(Filters.eq("id", 100), Filters.ne("status", "deleted"));
-
-        and.clearParameters();
-
-        List<Object> params = and.getParameters();
-        Assertions.assertEquals(2, params.size());
     }
 
     @Test

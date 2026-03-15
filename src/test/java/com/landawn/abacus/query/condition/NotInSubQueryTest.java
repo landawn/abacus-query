@@ -122,16 +122,6 @@ class NotInSubQuery2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Equal statusCondition = new Equal("status", "deleted");
-        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), statusCondition);
-        NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
-
-        condition.clearParameters();
-        assertNotNull(condition.getSubQuery());
-    }
-
-    @Test
     public void testToString_SingleProperty() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
@@ -328,16 +318,6 @@ public class NotInSubQueryTest extends TestBase {
 
         List<Object> params = condition.getParameters();
         Assertions.assertEquals(subQuery.getParameters(), params);
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-        NotInSubQuery condition = Filters.notIn("userId", subQuery);
-
-        condition.clearParameters();
-        // Verify subquery parameters are cleared
-        Assertions.assertTrue(subQuery.getParameters().isEmpty() || subQuery.getParameters().stream().allMatch(p -> p == null));
     }
 
     @Test

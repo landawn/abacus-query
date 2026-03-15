@@ -116,27 +116,6 @@ class In2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        In condition = new In("status", Arrays.asList("active", "pending"));
-        condition.clearParameters();
-
-        List<?> values = condition.getValues();
-        assertEquals(2, values.size());
-        assertEquals(null, values.get(0));
-        assertEquals(null, values.get(1));
-    }
-
-    @Test
-    public void testClearParameters_WithNestedConditionValues() {
-        In condition = new In("id", Arrays.asList(Filters.equal("status", "active"), 2));
-        condition.clearParameters();
-
-        List<Object> params = condition.getParameters();
-        assertEquals(Arrays.asList(null, null), params);
-        assertTrue(condition.getValues().get(0) instanceof Condition);
-    }
-
-    @Test
     public void testToString_NoChange() {
         In condition = new In("status", Arrays.asList("active", "pending"));
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -362,19 +341,6 @@ public class InTest extends TestBase {
         Assertions.assertNotNull(params);
         Assertions.assertEquals(3, params.size());
         Assertions.assertEquals(values, params);
-    }
-
-    @Test
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public void testClearParameters() {
-        In condition = new In("id", Arrays.asList(1, 2, 3));
-        condition.clearParameters();
-
-        List values = condition.getValues();
-        Assertions.assertNotNull(values);
-        for (Object value : values) {
-            Assertions.assertNull(value);
-        }
     }
 
     @Test

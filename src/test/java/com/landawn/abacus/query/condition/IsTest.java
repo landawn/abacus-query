@@ -84,13 +84,6 @@ class Is2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Is condition = new Is("field", "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         Is condition = new Is("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -217,15 +210,6 @@ public class IsTest extends TestBase {
         Is condition = new Is("name", null);
         List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertNull(params.get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        Is condition = new Is("name", "value");
-        condition.clearParameters();
-        List<Object> params = condition.getParameters();
         Assertions.assertEquals(1, params.size());
         Assertions.assertNull(params.get(0));
     }

@@ -336,20 +336,6 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     * 
-     * <p>This method delegates to the join condition, if present. Join entities are unchanged.
-     * If this join has no condition, this method is a no-op.</p>
-     * 
-     */
-    @Override
-    public void clearParameters() {
-        if (condition != null) {
-            condition.clearParameters();
-        }
-    }
-
-    /**
      * Converts this JOIN clause to its string representation according to the specified naming policy.
      * The output format includes the join operator, tables, and optional join condition.
      * The condition's string representation depends on its type (On, Using, Expression, etc.).

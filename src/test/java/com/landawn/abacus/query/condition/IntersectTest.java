@@ -43,16 +43,6 @@ class Intersect2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("activity", List.of("user_id"), new GreaterThan("last_login", "2024-01-01"));
-        Intersect intersect = new Intersect(subQuery);
-        assertFalse(intersect.getParameters().isEmpty());
-        intersect.clearParameters();
-        List<Object> params = intersect.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT employee_id FROM assignments");
         Intersect intersect = new Intersect(subQuery);
@@ -181,18 +171,6 @@ public class IntersectTest extends TestBase {
         List<Object> params = intersect.getParameters();
 
         Assertions.assertNotNull(params);
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE status = ?", "active");
-        Intersect intersect = new Intersect(subQuery);
-
-        intersect.clearParameters();
-
-        List<Object> params = intersect.getParameters();
-        Assertions.assertNotNull(params);
-        Assertions.assertTrue(params.isEmpty() || params.stream().allMatch(p -> p == null));
     }
 
     @Test

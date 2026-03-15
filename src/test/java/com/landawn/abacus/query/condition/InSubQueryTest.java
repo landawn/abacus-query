@@ -133,17 +133,6 @@ class InSubQuery2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Equal statusCondition = new Equal("status", "active");
-        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), statusCondition);
-        InSubQuery condition = new InSubQuery("user_id", subQuery);
-
-        condition.clearParameters();
-        // SubQuery parameters should be cleared
-        assertNotNull(condition.getSubQuery());
-    }
-
-    @Test
     public void testToString_SingleProperty_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
@@ -402,17 +391,6 @@ public class InSubQueryTest extends TestBase {
         List<Object> params = condition.getParameters();
 
         Assertions.assertNotNull(params);
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE value = ?");
-        InSubQuery condition = new InSubQuery("id", subQuery);
-
-        condition.clearParameters();
-
-        List<Object> params = condition.getParameters();
-        Assertions.assertTrue(params.isEmpty() || params.stream().allMatch(p -> p == null));
     }
 
     @Test

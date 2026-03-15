@@ -1574,18 +1574,6 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * No-op method as Expression has no parameters to clear.
-     *
-     * <p>Expressions are literal SQL strings and don't have bindable parameters,
-     * so this method does nothing. It exists to satisfy the interface contract.</p>
-     *
-     */
-    @Override
-    public void clearParameters() {
-        // No parameters to clear for Expression
-    }
-
-    /**
      * Creates a function expression with the given name and arguments.
      *
      * @param functionName the name of the function

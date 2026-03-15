@@ -64,44 +64,41 @@ public class AbstractInSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE"));
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id", subQuery);
-
-        condition.clearParameters();
-
-        assertEquals(Arrays.asList((Object) null), condition.getParameters());
-    }
-
-    @Test
     public void testHashCode() {
         final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE"));
         final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id", subQuery);
-        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id", Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
 
         assertEquals(left.hashCode(), right.hashCode());
     }
 
     @Test
     public void testHashCode_DifferentSubQuery() {
-        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id", Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
-        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id", Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "INACTIVE")));
+        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "INACTIVE")));
 
         assertNotEquals(left.hashCode(), right.hashCode());
     }
 
     @Test
     public void testEquals() {
-        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id", Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
-        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id", Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
 
         assertEquals(left, right);
     }
 
     @Test
     public void testEquals_DifferentSubQuery() {
-        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id", Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
-        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id", Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "INACTIVE")));
+        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "INACTIVE")));
 
         assertNotEquals(left, right);
     }
@@ -109,7 +106,8 @@ public class AbstractInSubQueryTest extends TestBase {
     // Verifies both single-column and multi-column SQL rendering.
     @Test
     public void testToString() {
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("userId", Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("userId",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
 
         final String sql = condition.toString(NamingPolicy.SNAKE_CASE);
 

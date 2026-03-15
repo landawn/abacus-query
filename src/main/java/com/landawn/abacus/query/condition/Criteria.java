@@ -262,16 +262,6 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Clears parameter values from all conditions to release memory.
-     */
-    @Override
-    public void clearParameters() {
-        for (final Condition condition : this.conditions) {
-            condition.clearParameters();
-        }
-    }
-
-    /**
      * Returns a string representation of this Criteria using the specified naming policy.
      * The output follows SQL clause ordering conventions and includes all conditions.
      *

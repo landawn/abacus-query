@@ -100,17 +100,6 @@ class Union2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("status", "active"));
-        Union union = new Union(subQuery);
-        List<Object> params = union.getParameters();
-        assertEquals(1, (int) params.size());
-        union.clearParameters();
-        List<Object> clearedParams = union.getParameters();
-        assertTrue(clearedParams.size() == 1 && clearedParams.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
         Union union = new Union(subQuery);

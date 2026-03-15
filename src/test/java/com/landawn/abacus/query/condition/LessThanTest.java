@@ -84,13 +84,6 @@ class LessThan2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        LessThan condition = new LessThan("field", "value");
-        condition.clearParameters();
-        assertNull(condition.getPropValue());
-    }
-
-    @Test
     public void testToString_NoChange() {
         LessThan condition = new LessThan("userName", "Alice");
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -247,16 +240,6 @@ public class LessThanTest extends TestBase {
         Assertions.assertNotNull(params);
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(50000, params.get(0));
-    }
-
-    @Test
-    public void testClearParameters() {
-        LessThan condition = new LessThan("quantity", 100);
-        condition.clearParameters();
-
-        List<Object> params = condition.getParameters();
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertNull(params.get(0));
     }
 
     @Test

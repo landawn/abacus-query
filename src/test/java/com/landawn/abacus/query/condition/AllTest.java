@@ -69,17 +69,6 @@ class All2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        Condition whereCondition = new Equal("active", true);
-        SubQuery subQuery = Filters.subQuery("items", Arrays.asList("cost"), whereCondition);
-        All condition = new All(subQuery);
-
-        condition.clearParameters();
-        List<Object> params = condition.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
         All condition = new All(subQuery);
@@ -259,18 +248,6 @@ public class AllTest extends TestBase {
         Assertions.assertEquals(2, params.size());
         Assertions.assertTrue(params.contains("Premium"));
         Assertions.assertTrue(params.contains(true));
-    }
-
-    @Test
-    public void testClearParameters() {
-        SubQuery subQuery = Filters.subQuery("grades", Arrays.asList("score"), Filters.between("year", 2020, 2023));
-        All all = Filters.all(subQuery);
-
-        Assertions.assertEquals(2, all.getParameters().size());
-
-        all.clearParameters();
-
-        Assertions.assertTrue(all.getParameters().size() == 2 && all.getParameters().stream().allMatch(param -> param == null));
     }
 
     @Test

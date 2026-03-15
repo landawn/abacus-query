@@ -119,14 +119,6 @@ class GroupBy2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        GroupBy groupBy = new GroupBy("category");
-        groupBy.clearParameters();
-
-        assertNotNull(groupBy.getParameters());
-    }
-
-    @Test
     public void testEquals() {
         GroupBy groupBy1 = new GroupBy("department");
         GroupBy groupBy2 = new GroupBy("department");
@@ -361,15 +353,6 @@ public class GroupByTest extends TestBase {
         List<Object> params = groupBy.getParameters();
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        GroupBy groupBy = new GroupBy("department");
-        groupBy.clearParameters();
-        // Should not throw exception
-        List<Object> params = groupBy.getParameters();
-        Assertions.assertNotNull(params);
     }
 
     @Test

@@ -1261,7 +1261,7 @@ class Filters2026Test extends TestBase {
 
     @Test
     public void testId2Cond_CollectionEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond(Arrays.<EntityId>asList()));
+        assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond(Arrays.<EntityId> asList()));
     }
 
     @Test

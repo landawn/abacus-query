@@ -81,15 +81,6 @@ class InnerJoin2025Test extends TestBase {
     }
 
     @Test
-    public void testClearParameters() {
-        InnerJoin join = new InnerJoin("orders o", new Equal("status", "pending"));
-        assertFalse(join.getParameters().isEmpty());
-        join.clearParameters();
-        List<Object> params = join.getParameters();
-        assertTrue(params.size() == 1 && params.stream().allMatch(param -> param == null));
-    }
-
-    @Test
     public void testToString_Simple() {
         InnerJoin join = new InnerJoin("orders");
         String result = join.toString(NamingPolicy.NO_CHANGE);
@@ -262,17 +253,6 @@ public class InnerJoinTest extends TestBase {
 
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testClearParameters() {
-        Condition condition = Filters.between("price", 10, 100);
-        InnerJoin join = new InnerJoin("products", condition);
-
-        join.clearParameters();
-
-        List<Object> params = join.getParameters();
-        Assertions.assertTrue(params.isEmpty() || params.stream().allMatch(p -> p == null));
     }
 
     @Test

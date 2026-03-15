@@ -124,25 +124,6 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Clears all parameter values by setting them to null to free memory.
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public void clearParameters() {
-        if (N.notEmpty(values)) {
-            for (int i = 0, size = values.size(); i < size; i++) {
-                final Object value = values.get(i);
-
-                if (value instanceof Condition) {
-                    ((Condition) value).clearParameters();
-                } else {
-                    ((List<Object>) values).set(i, null);
-                }
-            }
-        }
-    }
-
-    /**
      * Converts this condition to its string representation.
      *
      * @param namingPolicy the naming policy to apply to the property name
