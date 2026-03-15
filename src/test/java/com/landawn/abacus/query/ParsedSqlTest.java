@@ -633,6 +633,19 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
+    public void testParameterizedSql_cacheReuse() {
+        String sql = "SELECT * FROM users WHERE id = :userId";
+        ParsedSql parsed = ParsedSql.parse(sql);
+
+        // First call should trigger parsing
+        String parameterizedSql1 = parsed.parameterizedSql();
+        // Second call should use cached result
+        String parameterizedSql2 = parsed.parameterizedSql();
+
+        Assertions.assertEquals(parameterizedSql1, parameterizedSql2);
+    }
+
+    @Test
     public void testGetNamedParameters() {
         String sql = "SELECT * FROM users WHERE age > :minAge AND age < :maxAge";
         ParsedSql parsed = ParsedSql.parse(sql);
@@ -790,19 +803,6 @@ public class ParsedSqlTest extends TestBase {
         Assertions.assertEquals("id", params.get(0));
         Assertions.assertEquals("id", params.get(1));
         Assertions.assertEquals(2, parsed.parameterCount());
-    }
-
-    @Test
-    public void testParameterizedSql_cacheReuse() {
-        String sql = "SELECT * FROM users WHERE id = :userId";
-        ParsedSql parsed = ParsedSql.parse(sql);
-
-        // First call should trigger parsing
-        String parameterizedSql1 = parsed.parameterizedSql();
-        // Second call should use cached result
-        String parameterizedSql2 = parsed.parameterizedSql();
-
-        Assertions.assertEquals(parameterizedSql1, parameterizedSql2);
     }
 
     @Test

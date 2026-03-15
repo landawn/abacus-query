@@ -388,6 +388,22 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
+    public void testHashCode() {
+        Binary binary1 = Filters.binary("status", Operator.EQUAL, "active");
+        Binary binary2 = Filters.binary("status", Operator.EQUAL, "active");
+
+        Assertions.assertEquals(binary1.hashCode(), binary2.hashCode());
+    }
+
+    @Test
+    public void testHashCodeWithNull() {
+        Binary binary1 = Filters.binary("optional", Operator.EQUAL, null);
+        Binary binary2 = Filters.binary("optional", Operator.EQUAL, null);
+
+        Assertions.assertEquals(binary1.hashCode(), binary2.hashCode());
+    }
+
+    @Test
     public void testEquals() {
         Binary binary1 = Filters.binary("age", Operator.GREATER_THAN_OR_EQUAL, 18);
         Binary binary2 = Filters.binary("age", Operator.GREATER_THAN_OR_EQUAL, 18);
@@ -402,22 +418,6 @@ public class BinaryTest extends TestBase {
         Assertions.assertNotEquals(binary1, binary5); // Different property
         Assertions.assertNotEquals(binary1, null);
         Assertions.assertNotEquals(binary1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        Binary binary1 = Filters.binary("status", Operator.EQUAL, "active");
-        Binary binary2 = Filters.binary("status", Operator.EQUAL, "active");
-
-        Assertions.assertEquals(binary1.hashCode(), binary2.hashCode());
-    }
-
-    @Test
-    public void testHashCodeWithNull() {
-        Binary binary1 = Filters.binary("optional", Operator.EQUAL, null);
-        Binary binary2 = Filters.binary("optional", Operator.EQUAL, null);
-
-        Assertions.assertEquals(binary1.hashCode(), binary2.hashCode());
     }
 
     @Test

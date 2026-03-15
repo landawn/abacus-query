@@ -218,6 +218,24 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testMultipleOrderBy() {
+        String sql = SqlBuilder.PSC.select("*").from(Account.class).orderBy("lastName", "firstName").build().query();
+        assertNotNull(sql);
+        assertTrue(sql.contains("ORDER BY"));
+    }
+
+    @Test
+    public void testOrderByRejectsCommentToken() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy("id--").build().query());
+    }
+
+    @Test
+    public void testOrderByRejectsEmptyInputs() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy().build().query());
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy(Collections.emptyList()).build().query());
+    }
+
+    @Test
     public void testOrderByAsc() {
         String sql = SqlBuilder.PSC.select("*").from(Account.class).orderBy("firstName", SortDirection.ASC).build().query();
         assertNotNull(sql);
@@ -227,13 +245,6 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testOrderByDesc() {
         String sql = SqlBuilder.PSC.select("*").from(Account.class).orderBy("createdTime", SortDirection.DESC).build().query();
-        assertNotNull(sql);
-        assertTrue(sql.contains("ORDER BY"));
-    }
-
-    @Test
-    public void testMultipleOrderBy() {
-        String sql = SqlBuilder.PSC.select("*").from(Account.class).orderBy("lastName", "firstName").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
@@ -359,11 +370,6 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
-    public void testOrderByRejectsCommentToken() {
-        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy("id--").build().query());
-    }
-
-    @Test
     public void testSelectAllowsHashJsonOperators() {
         String sql = SqlBuilder.PSC.select("payload #>> '{meta,status}'").from("docs").build().query();
         assertTrue(sql.contains("#>>"));
@@ -385,12 +391,6 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testGroupByRejectsEmptyInputs() {
         assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").groupBy().build().query());
         assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").groupBy(Collections.emptyList()).build().query());
-    }
-
-    @Test
-    public void testOrderByRejectsEmptyInputs() {
-        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy().build().query());
-        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy(Collections.emptyList()).build().query());
     }
 
     @Test

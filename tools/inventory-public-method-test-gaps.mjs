@@ -185,6 +185,7 @@ function findMatchingBrace(source, openBraceIndex) {
             depth += 1;
         } else if (ch === "}") {
             depth -= 1;
+
             if (depth === 0) {
                 return i;
             }
@@ -196,11 +197,13 @@ function findMatchingBrace(source, openBraceIndex) {
 
 function lineNumberAt(source, index) {
     let line = 1;
+
     for (let i = 0; i < index; i += 1) {
         if (source[i] === "\n") {
             line += 1;
         }
     }
+
     return line;
 }
 
@@ -219,6 +222,7 @@ function normalizeWhitespace(value) {
 
 function splitParameters(paramsText) {
     const text = paramsText.trim();
+
     if (!text) {
         return [];
     }
@@ -267,6 +271,7 @@ function normalizeParameterType(parameter) {
         .trim();
 
     const match = cleaned.match(/(.+?)\s+([A-Za-z_$][\w$]*)$/);
+
     return normalizeWhitespace(match ? match[1] : cleaned).replace(/\s*\.\.\./g, "...");
 }
 
@@ -278,7 +283,61 @@ function extractPackageName(source) {
 function extractPrimaryClassName(source, filePath) {
     const cleaned = stripComments(source);
     const match = cleaned.match(/\b(?:public\s+)?(?:abstract\s+)?(?:final\s+)?(?:class|enum|record|interface)\s+([A-Za-z_$][\w$]*)\b/);
+
     return match ? match[1] : path.basename(filePath, ".java");
+}
+
+function isSimpleGetter(methodName, parameters, returnType, body) {
+    if (parameters.length !== 0 || returnType === "void" || !/^get[A-Z]/.test(methodName)) {
+        return false;
+    }
+
+    const compactBody = body.replace(/\s+/g, " ").trim();
+    return /^return\s+(?:this\.)?[A-Za-z_$][\w$]*\s*;\s*$/.test(compactBody);
+}
+
+function isSimpleBooleanGetter(methodName, parameters, returnType, body) {
+    if (parameters.length !== 0 || !/^is[A-Z]/.test(methodName)) {
+        return false;
+    }
+
+    const compactBody = body.replace(/\s+/g, " ").trim();
+    return /^return\s+(?:this\.)?[A-Za-z_$][\w$]*\s*;\s*$/.test(compactBody) && /^(boolean|Boolean)$/.test(returnType);
+}
+
+function isSimpleSetter(methodName, parameters, returnType, body, className) {
+    if (parameters.length !== 1 || !/^set[A-Z]/.test(methodName)) {
+        return false;
+    }
+
+    const compactBody = body.replace(/\s+/g, " ").trim();
+
+    if (/^(?:this\.)?[A-Za-z_$][\w$]*\s*=\s*[A-Za-z_$][\w$]*\s*;\s*$/.test(compactBody) && returnType === "void") {
+        return true;
+    }
+
+    return (
+        /^(?:this\.)?[A-Za-z_$][\w$]*\s*=\s*[A-Za-z_$][\w$]*\s*;\s*return\s+this\s*;\s*$/.test(compactBody)
+        && returnType.endsWith(className)
+    );
+}
+
+function isSimpleObjectMethod(methodName, parameters, body) {
+    if (!["toString", "hashCode", "equals"].includes(methodName)) {
+        return false;
+    }
+
+    if (methodName === "equals" && parameters.length !== 1) {
+        return false;
+    }
+
+    const compactBody = body.replace(/\s+/g, " ").trim();
+
+    if (compactBody.includes("super.")) {
+        return true;
+    }
+
+    return compactBody.length < 80;
 }
 
 function extractPublicMethods(source, filePath) {
@@ -286,17 +345,40 @@ function extractPublicMethods(source, filePath) {
     const cleaned = stripComments(source);
     const className = extractPrimaryClassName(source, filePath);
     const methodPattern =
-        /(^|\n)\s*(?:@[\w$.]+(?:\([^)]*\))?\s*)*(public)\s+(?!class\b|interface\b|enum\b|record\b)(?:static\s+)?(?:final\s+)?(?:synchronized\s+)?(?:default\s+)?(?:<[^>{;]+>\s+)?([\w$<>\[\].?,\s]+?)\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)\s*(?:throws\s+[^{;]+)?\{/gm;
+        /(^|\n)\s*(?:@[\w$.]+(?:\([^)]*\))?\s*)*(public)\s+(?!class\b|interface\b|enum\b|record\b)(?:static\s+)?(?:final\s+)?(?:synchronized\s+)?(?:default\s+)?(?:<[^>{;]+>\s+)?([\w$<>\[\].?,\s]+?)\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)\s*(?:throws\s+[^{;]+)?([;{])/gm;
 
     let match;
+
     while ((match = methodPattern.exec(cleaned)) !== null) {
         const returnType = normalizeWhitespace(match[3]);
         const methodName = match[4];
-        const paramsText = match[5];
-        const parameters = splitParameters(paramsText).map(normalizeParameterType);
+        const parameters = splitParameters(match[5]).map(normalizeParameterType);
         const signature = `${methodName}(${parameters.join(", ")})`;
-        const openBraceIndex = cleaned.indexOf("{", match.index + match[0].length - 1);
-        const closeBraceIndex = findMatchingBrace(cleaned, openBraceIndex);
+        const terminator = match[6];
+        const line = lineNumberAt(source, match.index + match[1].length);
+        let body = "";
+
+        if (terminator === "{") {
+            const openBraceIndex = cleaned.indexOf("{", match.index + match[0].length - 1);
+            const closeBraceIndex = findMatchingBrace(cleaned, openBraceIndex);
+            body = closeBraceIndex > openBraceIndex ? source.slice(openBraceIndex + 1, closeBraceIndex) : "";
+        }
+
+        if (methodName === className) {
+            continue;
+        }
+
+        if (isSimpleGetter(methodName, parameters, returnType, body) || isSimpleBooleanGetter(methodName, parameters, returnType, body)) {
+            continue;
+        }
+
+        if (isSimpleSetter(methodName, parameters, returnType, body, className)) {
+            continue;
+        }
+
+        if (isSimpleObjectMethod(methodName, parameters, body)) {
+            continue;
+        }
 
         methods.push({
             className,
@@ -305,8 +387,8 @@ function extractPublicMethods(source, filePath) {
             parameters,
             signature,
             arity: parameters.length,
-            line: lineNumberAt(source, match.index + match[1].length),
-            body: closeBraceIndex > openBraceIndex ? source.slice(openBraceIndex + 1, closeBraceIndex) : ""
+            isAbstract: terminator === ";",
+            line
         });
     }
 
@@ -319,8 +401,8 @@ function extractTestMethods(testFilePath) {
     }
 
     const source = fs.readFileSync(testFilePath, "utf8");
-    const cleanedSource = stripComments(source);
     const methods = [];
+    const cleanedSource = stripComments(source);
     const annotationPattern = /(^|\n)\s*@Test\b/gm;
     let match;
 
@@ -329,15 +411,18 @@ function extractTestMethods(testFilePath) {
 
         while (true) {
             const nextLineBreak = source.indexOf("\n", searchIndex);
+
             if (nextLineBreak < 0) {
                 break;
             }
 
             const line = source.slice(searchIndex, nextLineBreak).trim();
+
             if (line.startsWith("@")) {
                 searchIndex = nextLineBreak + 1;
                 continue;
             }
+
             break;
         }
 
@@ -346,13 +431,21 @@ function extractTestMethods(testFilePath) {
             /\b(?:public|protected|private)?\s*(?:static\s+)?(?:final\s+)?(?:synchronized\s+)?(?:<[^>]+>\s+)?[\w$<>\[\], ?]+\s+([A-Za-z_$][\w$]*)\s*\(/m.exec(
                 sourceAfter
             );
+
         if (!headerMatch) {
             continue;
         }
 
+        const methodHeaderIndex = searchIndex + headerMatch.index;
+        const braceIndex = source.indexOf("{", methodHeaderIndex);
+        const closeBraceIndex = braceIndex >= 0 ? findMatchingBrace(source, braceIndex) : -1;
+        const body = braceIndex >= 0 && closeBraceIndex > braceIndex ? source.slice(braceIndex + 1, closeBraceIndex) : "";
+
         methods.push({
             methodName: headerMatch[1],
-            line: lineNumberAt(source, searchIndex + headerMatch.index)
+            line: lineNumberAt(source, methodHeaderIndex),
+            body,
+            cleanedBody: stripComments(body)
         });
     }
 
@@ -365,14 +458,17 @@ function extractCoverageHints(testMethods) {
     for (const testMethod of testMethods) {
         const rawName = testMethod.methodName.replace(/^test/, "");
         const primary = rawName.split("_")[0];
+
         if (!primary) {
             continue;
         }
 
         const decapitalized = primary.charAt(0).toLowerCase() + primary.slice(1);
+
         if (!coverage.has(decapitalized)) {
             coverage.set(decapitalized, []);
         }
+
         coverage.get(decapitalized).push(testMethod.methodName);
     }
 
@@ -384,35 +480,20 @@ function containsMethodInvocation(cleanedTestSource, methodName) {
     return invocationPattern.test(cleanedTestSource);
 }
 
-function isCovered(method, coverageHints, cleanedTestSource) {
+function isCovered(method, coverageHints, testMethods) {
     const direct = coverageHints.get(method.methodName) ?? [];
+
     if (direct.length > 0) {
         return true;
     }
 
-    if (containsMethodInvocation(cleanedTestSource, method.methodName)) {
-        return true;
-    }
-
-    if (method.methodName === "operator") {
-        return (coverageHints.get("getOperator") ?? []).length > 0 || (coverageHints.get("operator") ?? []).length > 0;
-    }
-
-    if (method.methodName === "toString") {
-        return (coverageHints.get("toString") ?? []).length > 0;
-    }
-
-    if (method.methodName.startsWith("get")) {
-        const shortName = method.methodName.slice(3);
-        if (shortName) {
-            return (coverageHints.get(shortName.charAt(0).toLowerCase() + shortName.slice(1)) ?? []).length > 0;
-        }
-    }
-
-    return false;
+    return testMethods.some(testMethod => containsMethodInvocation(testMethod.cleanedBody, method.methodName));
 }
 
-const sourceFiles = walk(mainRoot).filter(file => !file.endsWith("package-info.java"));
+const sourceFiles = walk(mainRoot)
+    .filter(file => !file.endsWith("package-info.java"))
+    .filter(file => relativePath(file).startsWith("src/main/java/com/landawn/abacus/"));
+
 const report = [];
 
 for (const sourceFile of sourceFiles) {
@@ -423,7 +504,11 @@ for (const sourceFile of sourceFiles) {
     const publicMethods = extractPublicMethods(source, sourceFile);
     const testInfo = extractTestMethods(testFile);
     const coverageHints = extractCoverageHints(testInfo.methods);
-    const gaps = publicMethods.filter(method => !isCovered(method, coverageHints, testInfo.cleanedSource));
+    const gaps = publicMethods.filter(method => !isCovered(method, coverageHints, testInfo.methods));
+
+    if (gaps.length === 0 && fs.existsSync(testFile)) {
+        continue;
+    }
 
     report.push({
         sourceClassName,
@@ -436,7 +521,8 @@ for (const sourceFile of sourceFiles) {
         unmatchedMethods: gaps.map(method => ({
             line: method.line,
             signature: method.signature,
-            returnType: method.returnType
+            returnType: method.returnType,
+            isAbstract: method.isAbstract
         }))
     });
 }

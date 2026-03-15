@@ -1398,6 +1398,14 @@ public class ExpressionTest extends TestBase {
     }
 
     @Test
+    public void testHashCode() {
+        Expression expr1 = new Expression("count > 0");
+        Expression expr2 = new Expression("count > 0");
+
+        Assertions.assertEquals(expr1.hashCode(), expr2.hashCode());
+    }
+
+    @Test
     public void testEquals() {
         Expression expr1 = new Expression("price > 100");
         Expression expr2 = new Expression("price > 100");
@@ -1408,14 +1416,6 @@ public class ExpressionTest extends TestBase {
         Assertions.assertNotEquals(expr1, expr3);
         Assertions.assertNotEquals(expr1, null);
         Assertions.assertNotEquals(expr1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        Expression expr1 = new Expression("count > 0");
-        Expression expr2 = new Expression("count > 0");
-
-        Assertions.assertEquals(expr1.hashCode(), expr2.hashCode());
     }
 
     @Test

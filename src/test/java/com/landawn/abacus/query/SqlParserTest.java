@@ -130,167 +130,9 @@ class SqlParser2025Test extends TestBase {
     }
 
     @Test
-    public void testIndexWord() {
-        String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SqlParser.indexOfWord(sql, "WHERE", 0, false);
-        assertTrue(index >= 0);
-        assertEquals("WHERE", sql.substring(index, index + 5));
-    }
-
-    @Test
-    public void testIndexWordCaseInsensitive() {
-        String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SqlParser.indexOfWord(sql, "where", 0, false);
-        assertTrue(index >= 0);
-    }
-
-    @Test
-    public void testIndexWordCaseSensitive() {
-        String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SqlParser.indexOfWord(sql, "where", 0, true);
-        assertEquals(-1, index);
-    }
-
-    @Test
-    public void testIndexWordNotFound() {
-        String sql = "SELECT * FROM users";
-        int index = SqlParser.indexOfWord(sql, "WHERE", 0, false);
-        assertEquals(-1, index);
-    }
-
-    @Test
-    public void testIndexWordComposite() {
-        String sql = "SELECT * FROM users ORDER BY name";
-        int index = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
-        assertTrue(index >= 0);
-    }
-
-    @Test
-    public void testIndexWordFromPosition() {
-        String sql = "SELECT * FROM users WHERE age > 18 AND status = 'active'";
-        int firstAnd = SqlParser.indexOfWord(sql, "AND", 0, false);
-        assertTrue(firstAnd > 0);
-    }
-
-    @Test
-    public void testIndexWordWithNegativeFromIndex() {
-        String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SqlParser.indexOfWord(sql, "SELECT", -5, false);
-        assertEquals(0, index);
-    }
-
-    @Test
-    public void testNextWord() {
-        String sql = "SELECT * FROM users";
-        String word = SqlParser.nextWord(sql, 7);
-        assertNotNull(word);
-        assertEquals("*", word);
-    }
-
-    @Test
-    public void testNextWordSkipsWhitespace() {
-        String sql = "SELECT    *    FROM users";
-        String word = SqlParser.nextWord(sql, 6);
-        assertNotNull(word);
-        assertEquals("*", word);
-    }
-
-    @Test
-    public void testNextWordEmptyString() {
-        String sql = "SELECT *";
-        String word = SqlParser.nextWord(sql, sql.length());
-        assertEquals("", word);
-    }
-
-    @Test
-    public void testNextWordWithOperator() {
-        String sql = "WHERE age >= 18";
-        String word = SqlParser.nextWord(sql, 10);
-        assertNotNull(word);
-        assertTrue(word.equals(">=") || word.equals("18"));
-    }
-
-    @Test
-    public void testNextWordWithNegativeFromIndex() {
-        String sql = "SELECT * FROM users";
-        String word = SqlParser.nextWord(sql, -3);
-        assertEquals("SELECT", word);
-    }
-
-    @Test
-    public void testRegisterSeparatorChar() {
-        SqlParser.registerSeparator('$');
-        List<String> words = SqlParser.parse("SELECT$FROM$users");
-        assertEquals(Arrays.asList("SELECT", "$", "FROM", "$", "users"), words);
-    }
-
-    @Test
-    public void testRegisterSeparatorString() {
-        SqlParser.registerSeparator(":::");
-        List<String> words = SqlParser.parse("SELECT:::FROM:::users");
-        assertEquals(Arrays.asList("SELECT", ":::", "FROM", ":::", "users"), words);
-    }
-
-    @Test
     public void testParseWithDoubleHashOperator() {
         List<String> words = SqlParser.parse("SELECT 1 ## 2");
         assertTrue(words.contains("##"));
-    }
-
-    @Test
-    public void testRegisterSeparatorNull() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            SqlParser.registerSeparator((String) null);
-        });
-    }
-
-    @Test
-    public void testIsSeparator() {
-        String sql = "SELECT * FROM users";
-        assertTrue(SqlParser.isSeparator(sql, sql.length(), 6, ' '));
-        assertTrue(SqlParser.isSeparator(sql, sql.length(), 7, '*'));
-        assertFalse(SqlParser.isSeparator(sql, sql.length(), 0, 'S'));
-    }
-
-    @Test
-    public void testIsSeparatorHash() {
-        String sql = "SELECT * FROM users WHERE id = #{userId}";
-        assertTrue(SqlParser.isSeparator(sql, sql.length(), 35, '#'));
-    }
-
-    @Test
-    public void testIsSeparatorHashForTempTable() {
-        String sql = "SELECT * FROM #tmp";
-        int hashIndex = sql.indexOf('#');
-        assertFalse(SqlParser.isSeparator(sql, sql.length(), hashIndex, '#'));
-    }
-
-    @Test
-    public void testIsFunctionName() {
-        List<String> words = SqlParser.parse("SELECT COUNT(*) FROM users");
-        int countIndex = -1;
-        for (int i = 0; i < words.size(); i++) {
-            if ("COUNT".equals(words.get(i))) {
-                countIndex = i;
-                break;
-            }
-        }
-        assertTrue(countIndex >= 0);
-        assertTrue(SqlParser.isFunctionName(words, words.size(), countIndex));
-    }
-
-    @Test
-    public void testIsFunctionNameNotFunction() {
-        List<String> words = SqlParser.parse("SELECT name FROM users");
-        int nameIndex = -1;
-        for (int i = 0; i < words.size(); i++) {
-            if ("name".equals(words.get(i))) {
-                nameIndex = i;
-                break;
-            }
-        }
-        assertTrue(nameIndex >= 0);
-        assertFalse(SqlParser.isFunctionName(words, words.size(), nameIndex));
     }
 
     @Test
@@ -397,22 +239,6 @@ class SqlParser2025Test extends TestBase {
     }
 
     @Test
-    public void testIndexWordMultipleOccurrences() {
-        String sql = "SELECT name FROM users WHERE name = 'John' OR name = 'Jane'";
-        int firstIndex = SqlParser.indexOfWord(sql, "name", 0, false);
-        int secondIndex = SqlParser.indexOfWord(sql, "name", firstIndex + 1, false);
-        assertTrue(firstIndex >= 0);
-        assertTrue(secondIndex > firstIndex);
-    }
-
-    @Test
-    public void testNextWordAtEnd() {
-        String sql = "SELECT * FROM users";
-        String word = SqlParser.nextWord(sql, sql.length() - 1);
-        assertNotNull(word);
-    }
-
-    @Test
     public void testParseWithArithmeticOperators() {
         String sql = "SELECT price * quantity + tax - discount FROM orders";
         List<String> words = SqlParser.parse(sql);
@@ -436,6 +262,180 @@ class SqlParser2025Test extends TestBase {
         List<String> words = SqlParser.parse(sql);
         assertNotNull(words);
         assertTrue(words.contains("&"));
+    }
+
+    @Test
+    public void testIndexWord() {
+        String sql = "SELECT * FROM users WHERE age > 18";
+        int index = SqlParser.indexOfWord(sql, "WHERE", 0, false);
+        assertTrue(index >= 0);
+        assertEquals("WHERE", sql.substring(index, index + 5));
+    }
+
+    @Test
+    public void testIndexWordCaseInsensitive() {
+        String sql = "SELECT * FROM users WHERE age > 18";
+        int index = SqlParser.indexOfWord(sql, "where", 0, false);
+        assertTrue(index >= 0);
+    }
+
+    @Test
+    public void testIndexWordCaseSensitive() {
+        String sql = "SELECT * FROM users WHERE age > 18";
+        int index = SqlParser.indexOfWord(sql, "where", 0, true);
+        assertEquals(-1, index);
+    }
+
+    @Test
+    public void testIndexWordNotFound() {
+        String sql = "SELECT * FROM users";
+        int index = SqlParser.indexOfWord(sql, "WHERE", 0, false);
+        assertEquals(-1, index);
+    }
+
+    @Test
+    public void testIndexWordComposite() {
+        String sql = "SELECT * FROM users ORDER BY name";
+        int index = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
+        assertTrue(index >= 0);
+    }
+
+    @Test
+    public void testIndexWordFromPosition() {
+        String sql = "SELECT * FROM users WHERE age > 18 AND status = 'active'";
+        int firstAnd = SqlParser.indexOfWord(sql, "AND", 0, false);
+        assertTrue(firstAnd > 0);
+    }
+
+    @Test
+    public void testIndexWordWithNegativeFromIndex() {
+        String sql = "SELECT * FROM users WHERE age > 18";
+        int index = SqlParser.indexOfWord(sql, "SELECT", -5, false);
+        assertEquals(0, index);
+    }
+
+    @Test
+    public void testNextWord() {
+        String sql = "SELECT * FROM users";
+        String word = SqlParser.nextWord(sql, 7);
+        assertNotNull(word);
+        assertEquals("*", word);
+    }
+
+    @Test
+    public void testNextWordSkipsWhitespace() {
+        String sql = "SELECT    *    FROM users";
+        String word = SqlParser.nextWord(sql, 6);
+        assertNotNull(word);
+        assertEquals("*", word);
+    }
+
+    @Test
+    public void testNextWordEmptyString() {
+        String sql = "SELECT *";
+        String word = SqlParser.nextWord(sql, sql.length());
+        assertEquals("", word);
+    }
+
+    @Test
+    public void testNextWordWithOperator() {
+        String sql = "WHERE age >= 18";
+        String word = SqlParser.nextWord(sql, 10);
+        assertNotNull(word);
+        assertTrue(word.equals(">=") || word.equals("18"));
+    }
+
+    @Test
+    public void testNextWordWithNegativeFromIndex() {
+        String sql = "SELECT * FROM users";
+        String word = SqlParser.nextWord(sql, -3);
+        assertEquals("SELECT", word);
+    }
+
+    @Test
+    public void testRegisterSeparatorChar() {
+        SqlParser.registerSeparator('$');
+        List<String> words = SqlParser.parse("SELECT$FROM$users");
+        assertEquals(Arrays.asList("SELECT", "$", "FROM", "$", "users"), words);
+    }
+
+    @Test
+    public void testRegisterSeparatorString() {
+        SqlParser.registerSeparator(":::");
+        List<String> words = SqlParser.parse("SELECT:::FROM:::users");
+        assertEquals(Arrays.asList("SELECT", ":::", "FROM", ":::", "users"), words);
+    }
+
+    @Test
+    public void testRegisterSeparatorNull() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            SqlParser.registerSeparator((String) null);
+        });
+    }
+
+    @Test
+    public void testIsSeparator() {
+        String sql = "SELECT * FROM users";
+        assertTrue(SqlParser.isSeparator(sql, sql.length(), 6, ' '));
+        assertTrue(SqlParser.isSeparator(sql, sql.length(), 7, '*'));
+        assertFalse(SqlParser.isSeparator(sql, sql.length(), 0, 'S'));
+    }
+
+    @Test
+    public void testIsSeparatorHash() {
+        String sql = "SELECT * FROM users WHERE id = #{userId}";
+        assertTrue(SqlParser.isSeparator(sql, sql.length(), 35, '#'));
+    }
+
+    @Test
+    public void testIsSeparatorHashForTempTable() {
+        String sql = "SELECT * FROM #tmp";
+        int hashIndex = sql.indexOf('#');
+        assertFalse(SqlParser.isSeparator(sql, sql.length(), hashIndex, '#'));
+    }
+
+    @Test
+    public void testIsFunctionName() {
+        List<String> words = SqlParser.parse("SELECT COUNT(*) FROM users");
+        int countIndex = -1;
+        for (int i = 0; i < words.size(); i++) {
+            if ("COUNT".equals(words.get(i))) {
+                countIndex = i;
+                break;
+            }
+        }
+        assertTrue(countIndex >= 0);
+        assertTrue(SqlParser.isFunctionName(words, words.size(), countIndex));
+    }
+
+    @Test
+    public void testIsFunctionNameNotFunction() {
+        List<String> words = SqlParser.parse("SELECT name FROM users");
+        int nameIndex = -1;
+        for (int i = 0; i < words.size(); i++) {
+            if ("name".equals(words.get(i))) {
+                nameIndex = i;
+                break;
+            }
+        }
+        assertTrue(nameIndex >= 0);
+        assertFalse(SqlParser.isFunctionName(words, words.size(), nameIndex));
+    }
+
+    @Test
+    public void testIndexWordMultipleOccurrences() {
+        String sql = "SELECT name FROM users WHERE name = 'John' OR name = 'Jane'";
+        int firstIndex = SqlParser.indexOfWord(sql, "name", 0, false);
+        int secondIndex = SqlParser.indexOfWord(sql, "name", firstIndex + 1, false);
+        assertTrue(firstIndex >= 0);
+        assertTrue(secondIndex > firstIndex);
+    }
+
+    @Test
+    public void testNextWordAtEnd() {
+        String sql = "SELECT * FROM users";
+        String word = SqlParser.nextWord(sql, sql.length() - 1);
+        assertNotNull(word);
     }
 }
 
@@ -639,6 +639,41 @@ public class SqlParserTest extends TestBase {
         assertEquals("users", words.get(6));
         assertEquals(" ", words.get(7));
         assertEquals("WHERE", words.get(8));
+    }
+
+    @Test
+    public void testParseEmptyString() {
+        List<String> words = SqlParser.parse("");
+        assertNotNull(words);
+        assertTrue(words.isEmpty());
+    }
+
+    @Test
+    public void testParseComplexSQL() {
+        String sql = "WITH RECURSIVE cte AS (" + "SELECT id, parent_id, name FROM categories WHERE parent_id IS NULL " + "UNION ALL "
+                + "SELECT c.id, c.parent_id, c.name FROM categories c " + "INNER JOIN cte ON c.parent_id = cte.id" + ") SELECT * FROM cte ORDER BY name";
+
+        List<String> words = SqlParser.parse(sql);
+
+        // Verify key SQL keywords are parsed
+        assertTrue(words.contains("WITH"));
+        assertTrue(words.contains("RECURSIVE"));
+        assertFalse(words.contains("UNION ALL"));
+        assertFalse(words.contains("INNER JOIN"));
+        assertFalse(words.contains("ORDER BY"));
+        assertFalse(words.contains("IS NULL"));
+    }
+
+    @Test
+    public void testParseSpecialOperators() {
+        // Test various special operators from the separators set
+        String sql = "SELECT * WHERE a ~= b AND c ^= d AND e :: text AND f @> g";
+        List<String> words = SqlParser.parse(sql);
+
+        assertTrue(words.contains("~="));
+        assertTrue(words.contains("^="));
+        assertTrue(words.contains("::"));
+        assertTrue(words.contains("@>"));
     }
 
     @Test
@@ -853,41 +888,6 @@ public class SqlParserTest extends TestBase {
         // SUM is still a function even with multiple spaces
         int sumIndex = words.indexOf("SUM");
         assertTrue(SqlParser.isFunctionName(words, words.size(), sumIndex));
-    }
-
-    @Test
-    public void testParseEmptyString() {
-        List<String> words = SqlParser.parse("");
-        assertNotNull(words);
-        assertTrue(words.isEmpty());
-    }
-
-    @Test
-    public void testParseComplexSQL() {
-        String sql = "WITH RECURSIVE cte AS (" + "SELECT id, parent_id, name FROM categories WHERE parent_id IS NULL " + "UNION ALL "
-                + "SELECT c.id, c.parent_id, c.name FROM categories c " + "INNER JOIN cte ON c.parent_id = cte.id" + ") SELECT * FROM cte ORDER BY name";
-
-        List<String> words = SqlParser.parse(sql);
-
-        // Verify key SQL keywords are parsed
-        assertTrue(words.contains("WITH"));
-        assertTrue(words.contains("RECURSIVE"));
-        assertFalse(words.contains("UNION ALL"));
-        assertFalse(words.contains("INNER JOIN"));
-        assertFalse(words.contains("ORDER BY"));
-        assertFalse(words.contains("IS NULL"));
-    }
-
-    @Test
-    public void testParseSpecialOperators() {
-        // Test various special operators from the separators set
-        String sql = "SELECT * WHERE a ~= b AND c ^= d AND e :: text AND f @> g";
-        List<String> words = SqlParser.parse(sql);
-
-        assertTrue(words.contains("~="));
-        assertTrue(words.contains("^="));
-        assertTrue(words.contains("::"));
-        assertTrue(words.contains("@>"));
     }
 }
 
