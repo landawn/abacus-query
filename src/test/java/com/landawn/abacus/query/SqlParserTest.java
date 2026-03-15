@@ -889,6 +889,48 @@ public class SqlParserTest extends TestBase {
         int sumIndex = words.indexOf("SUM");
         assertTrue(SqlParser.isFunctionName(words, words.size(), sumIndex));
     }
+
+    // Cover comment-retention and hash-prefixed temp table parsing branches.
+    @Test
+    public void testParse_KeepCommentsDirective() {
+        String sql = "-- Keep comments\nSELECT /* keep me */ name FROM users";
+
+        List<String> words = SqlParser.parse(sql);
+
+        assertTrue(words.contains("SELECT"));
+        assertTrue(words.contains("/* keep me */"));
+    }
+
+    @Test
+    public void testParse_HashPrefixedIdentifier() {
+        String sql = "SELECT * FROM #temp_users WHERE id = 1";
+
+        List<String> words = SqlParser.parse(sql);
+
+        assertTrue(words.contains("#temp_users"));
+        assertTrue(words.contains("WHERE"));
+    }
+
+    @Test
+    public void testIndexOfWord_HashPrefixedIdentifier() {
+        String sql = "SELECT * FROM #temp_users WHERE id = 1";
+
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", 0, false));
+    }
+
+    @Test
+    public void testNextWord_HashPrefixedIdentifier() {
+        String sql = "FROM #temp_users";
+
+        assertEquals("#temp_users", SqlParser.nextWord(sql, 4));
+    }
+
+    @Test
+    public void testNextWord_SkipsBlockComment() {
+        String sql = "SELECT /* hidden */ name FROM users";
+
+        assertEquals("name", SqlParser.nextWord(sql, 6));
+    }
 }
 
 class SqlParserJavadocExamples extends TestBase {

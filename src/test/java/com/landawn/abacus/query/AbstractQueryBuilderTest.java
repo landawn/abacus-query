@@ -757,6 +757,37 @@ class AbstractQueryBuilder2026Test extends TestBase {
         assertEquals(1, paramCount[0]);
     }
 
+    // Cover select-into and entity-class join overloads that inject aliases directly.
+    @Test
+    public void testSelectIntoFromEntityClass() {
+        final String sql = SqlBuilder.PSC.select("id", "firstName").into("account_archive").from(Account.class).build().query();
+
+        assertTrue(sql.startsWith("INSERT INTO account_archive"));
+        assertTrue(sql.contains("SELECT"));
+        assertTrue(sql.contains("FROM account acc"));
+    }
+
+    @Test
+    public void testEntityJoinOverloadsWithAlias() {
+        final String innerJoinSql = SqlBuilder.PSC.select("*").from(Account.class, "a").innerJoin(Account.class, "a2").on("a.id = a2.id").build().query();
+        final String leftJoinSql = SqlBuilder.PSC.select("*").from(Account.class, "a").leftJoin(Account.class, "a2").on("a.id = a2.id").build().query();
+        final String rightJoinSql = SqlBuilder.PSC.select("*").from(Account.class, "a").rightJoin(Account.class, "a2").on("a.id = a2.id").build().query();
+        final String fullJoinSql = SqlBuilder.PSC.select("*").from(Account.class, "a").fullJoin(Account.class, "a2").on("a.id = a2.id").build().query();
+        final String crossJoinSql = SqlBuilder.PSC.select("*").from(Account.class, "a").crossJoin(Account.class, "a2").build().query();
+
+        assertTrue(innerJoinSql.contains("INNER JOIN account a2"));
+        assertTrue(leftJoinSql.contains("LEFT JOIN account a2"));
+        assertTrue(rightJoinSql.contains("RIGHT JOIN account a2"));
+        assertTrue(fullJoinSql.contains("FULL JOIN account a2"));
+        assertTrue(crossJoinSql.contains("CROSS JOIN account a2"));
+    }
+
+    @Test
+    public void testOrderByRejectsBlockAndHashCommentTokens() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy("id/*comment*/").build().query());
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy("id#comment").build().query());
+    }
+
     @Test
     public void testPrintln() {
         final PrintStream originalOut = System.out;

@@ -1264,6 +1264,103 @@ class Filters2026Test extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond(Arrays.<EntityId> asList()));
     }
 
+    // Exercise the size-specific overload branches for map/entity conversion helpers.
+    @Test
+    public void testAnyEqualMap_SingleEntry() {
+        final Map<String, Object> props = new LinkedHashMap<>();
+        props.put("status", "ACTIVE");
+
+        final Or condition = Filters.anyEqual(props);
+
+        assertEquals(1, condition.getConditions().size());
+        assertEquals("status", ((Equal) condition.getConditions().get(0)).getPropName());
+    }
+
+    @Test
+    public void testAnyEqualMap_ThreeEntries() {
+        final Map<String, Object> props = new LinkedHashMap<>();
+        props.put("status", "ACTIVE");
+        props.put("type", "PREMIUM");
+        props.put("verified", true);
+
+        final Or condition = Filters.anyEqual(props);
+
+        assertEquals(3, condition.getConditions().size());
+        assertEquals("status", ((Equal) condition.getConditions().get(0)).getPropName());
+        assertEquals("verified", ((Equal) condition.getConditions().get(2)).getPropName());
+    }
+
+    @Test
+    public void testAllEqualMap_SingleEntry() {
+        final Map<String, Object> props = new LinkedHashMap<>();
+        props.put("status", "ACTIVE");
+
+        final And condition = Filters.allEqual(props);
+
+        assertEquals(1, condition.getConditions().size());
+        assertEquals("status", ((Equal) condition.getConditions().get(0)).getPropName());
+    }
+
+    @Test
+    public void testAllEqualMap_ThreeEntries() {
+        final Map<String, Object> props = new LinkedHashMap<>();
+        props.put("status", "ACTIVE");
+        props.put("type", "PREMIUM");
+        props.put("verified", true);
+
+        final And condition = Filters.allEqual(props);
+
+        assertEquals(3, condition.getConditions().size());
+        assertEquals("status", ((Equal) condition.getConditions().get(0)).getPropName());
+        assertEquals("verified", ((Equal) condition.getConditions().get(2)).getPropName());
+    }
+
+    @Test
+    public void testAnyEqualEntityWithSelectProps_SingleSelectProp() {
+        final Account account = new Account().setId(17L).setFirstName("Jane");
+
+        final Or condition = Filters.anyEqual(account, Arrays.asList("id"));
+
+        assertEquals(1, condition.getConditions().size());
+        assertEquals(Long.valueOf(17L), ((Equal) condition.getConditions().get(0)).getPropValue());
+    }
+
+    @Test
+    public void testAllEqualEntityWithSelectProps_ThreeSelectProps() {
+        final Account account = new Account().setId(23L).setFirstName("Jane").setLastName("Doe");
+
+        final And condition = Filters.allEqual(account, Arrays.asList("id", "firstName", "lastName"));
+
+        assertEquals(3, condition.getConditions().size());
+        assertEquals("id", ((Equal) condition.getConditions().get(0)).getPropName());
+        assertEquals("lastName", ((Equal) condition.getConditions().get(2)).getPropName());
+    }
+
+    @Test
+    public void testAnyOfAllEqual_AllNullEntities() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(null, null)));
+    }
+
+    @Test
+    public void testAnyOfAllEqualWithSelectProps_NullEntityIgnored() {
+        final Account account = new Account().setId(29L).setFirstName("Alex");
+
+        final Or condition = Filters.anyOfAllEqual(Arrays.asList(null, account, null), Arrays.asList("id", "firstName"));
+
+        assertEquals(1, condition.getConditions().size());
+        assertEquals(2, condition.getParameters().size());
+    }
+
+    @Test
+    public void testId2Cond_ThreeProperties() {
+        final EntityId entityId = EntityId.of("tenantId", 1, "userId", 2, "orderId", 3);
+
+        final And condition = Filters.id2Cond(entityId);
+
+        assertEquals(3, condition.getConditions().size());
+        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 2, 3)));
+    }
+
     @Test
     public void testIsNotNullAndNotEmpty() {
         final And condition = Filters.isNotNullAndNotEmpty("email");
