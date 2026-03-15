@@ -14,9 +14,6 @@
 
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.SK;
-
 /**
  * Represents the SQL ALL operator for use with subqueries.
  * The ALL operator returns {@code true} if the comparison is true for ALL values returned by the subquery.
@@ -69,9 +66,9 @@ import com.landawn.abacus.util.SK;
  * @see Any
  * @see Some
  * @see SubQuery
- * @see Cell
+ * @see ComposableCell
  */
-public class All extends Cell {
+public class All extends ComposableCell {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -112,19 +109,5 @@ public class All extends Cell {
      */
     public All(final SubQuery subQuery) {
         super(Operator.ALL, subQuery);
-    }
-
-    /**
-     * Returns this condition as SQL text using the specified naming policy.
-     *
-     * @param namingPolicy the naming policy for property/column names. If {@code null}, {@link NamingPolicy#NO_CHANGE} is applied
-     * @return SQL in the form {@code ALL (...)}
-     */
-    @Override
-    public String toString(final NamingPolicy namingPolicy) {
-        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        final Condition condition = getCondition();
-        final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
-        return operator().toString() + SK._SPACE + SK._PARENTHESIS_L + conditionString + SK._PARENTHESIS_R;
     }
 }

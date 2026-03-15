@@ -14,9 +14,6 @@
 
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.SK;
-
 /**
  * Represents the SQL NOT EXISTS operator for use with subqueries.
  * The NOT EXISTS operator returns {@code true} if the subquery returns no rows, {@code false} otherwise.
@@ -106,19 +103,4 @@ public class NotExists extends ComposableCell {
     public NotExists(final SubQuery subQuery) {
         super(Operator.NOT_EXISTS, subQuery);
     }
-
-    /**
-     * Returns this condition as SQL text using the specified naming policy.
-     *
-     * @param namingPolicy the naming policy for property/column names. If {@code null}, {@link NamingPolicy#NO_CHANGE} is applied
-     * @return SQL in the form {@code NOT EXISTS (...)}
-     */
-    @Override
-    public String toString(final NamingPolicy namingPolicy) {
-        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        final Condition condition = getCondition();
-        final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
-        return operator().toString() + SK._SPACE + SK._PARENTHESIS_L + conditionString + SK._PARENTHESIS_R;
-    }
-
 }

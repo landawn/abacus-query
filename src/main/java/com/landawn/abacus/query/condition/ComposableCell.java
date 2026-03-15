@@ -18,14 +18,13 @@ import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.SK;
-import com.landawn.abacus.util.Strings;
 
 /**
  * A composable variant of {@link Cell} that supports logical composition via AND/OR/NOT operations.
  * Like Cell, it wraps another condition with an operator, but extends {@link ComposableCondition}
  * instead of {@link AbstractCondition}, enabling chaining with other conditions.
  *
- * <p>Concrete subclasses include {@link Not}, {@link Exists}, and {@link NotExists}.</p>
+ * <p>Concrete subclasses include {@link Not}, {@link Exists}, {@link NotExists}, {@link All}, {@link Any}, and {@link Some}.</p>
  *
  * @see Cell
  * @see ComposableCondition
@@ -100,7 +99,10 @@ public abstract class ComposableCell extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        return operator().toString() + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(namingPolicy));
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+        final Condition condition = getCondition();
+        final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
+        return operator().toString() + SK._SPACE + SK._PARENTHESIS_L + conditionString + SK._PARENTHESIS_R;
     }
 
     /**

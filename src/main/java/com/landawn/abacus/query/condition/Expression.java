@@ -621,18 +621,30 @@ public class Expression extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.minus(Expression.of("total"), Expression.of("discount"), Expression.of("tax_credit"));
+     * String expr = Expression.subtract(Expression.of("total"), Expression.of("discount"), Expression.of("tax_credit"));
      * // Returns: "total - discount - tax_credit"
      *
-     * String expr2 = Expression.minus(Expression.of("price"), 10);
+     * String expr2 = Expression.subtract(Expression.of("price"), 10);
      * // Returns: "price - 10"
      * }</pre>
      *
      * @param objects the values to subtract
      * @return a string representation of the subtraction expression
      */
-    public static String minus(final Object... objects) {
+    public static String subtract(final Object... objects) {
         return link(MINUS, objects);
+    }
+
+    /**
+     * Creates a subtraction expression for the given objects.
+     *
+     * @param objects the values to subtract
+     * @return a string representation of the subtraction expression
+     * @deprecated Use {@link #subtract(Object...)} instead to avoid ambiguity with the SQL MINUS set operation.
+     */
+    @Deprecated
+    public static String minus(final Object... objects) {
+        return subtract(objects);
     }
 
     /**

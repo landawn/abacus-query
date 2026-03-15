@@ -149,7 +149,8 @@ class All2025Test extends TestBase {
     public void testInheritance() {
         SubQuery subQuery = Filters.subQuery("SELECT value FROM table1");
         All condition = new All(subQuery);
-        assertTrue(condition instanceof Cell);
+        assertTrue(condition instanceof ComposableCell);
+        assertTrue(condition instanceof ComposableCondition);
         assertTrue(condition instanceof AbstractCondition);
         assertTrue(condition instanceof Condition);
     }

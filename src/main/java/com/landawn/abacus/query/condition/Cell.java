@@ -29,7 +29,7 @@ import com.landawn.abacus.util.Strings;
  * or to create clause conditions like WHERE, HAVING, etc. It acts as a decorator
  * that adds an operator context to an existing condition.</p>
  * 
- * <p>Concrete subclasses include {@link Any}, {@link Some}, {@link All}, and {@link Clause}.</p>
+ * <p>Concrete subclasses include {@link On}, {@link Using}, and {@link Clause} (and its subclasses).</p>
  *
  * @see AbstractCondition
  * @see ComposableCell
@@ -56,7 +56,7 @@ public abstract class Cell extends AbstractCondition {
      * <pre>{@code
      * // Typically used via subclass constructors:
      * SubQuery subQuery = new SubQuery("SELECT MAX(salary) FROM employees");
-     * All allCond = new All(subQuery);   // All extends Cell
+     * On onCond = new On(Filters.equal("a.id", "b.id"));   // On extends Cell
      * }</pre>
      *
      * @param operator the operator to apply to the condition
@@ -73,9 +73,9 @@ public abstract class Cell extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = new SubQuery("SELECT MAX(salary) FROM employees");
-     * All allCond = new All(subQuery);
-     * SubQuery inner = allCond.getCondition();   // Returns the SubQuery condition
+     * Condition eq = Filters.equal("a.id", "b.id");
+     * On onCond = new On(eq);
+     * Condition inner = onCond.getCondition();   // Returns the Equal condition
      * }</pre>
      *
      * @param <T> the type of condition to return
