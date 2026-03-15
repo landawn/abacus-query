@@ -117,6 +117,11 @@ public final class ParsedSql {
                         final String ibatisToken = ibatisTokenBuilder.toString();
                         final int rightBracketIndex = ibatisToken.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER);
 
+                        if (rightBracketIndex < 0) {
+                            throw new IllegalArgumentException(
+                                    "Malformed iBatis/MyBatis parameter: missing closing '}' for token starting with '#{' in SQL: " + sql);
+                        }
+
                         if (rightBracketIndex > 2) {
                             final String namedParameter = extractIbatisNamedParameter(ibatisToken.substring(2, rightBracketIndex));
 

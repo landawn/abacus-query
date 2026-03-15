@@ -846,6 +846,50 @@ public class ParsedSqlTest extends TestBase {
         List<String> namedParams = parsed.namedParameters();
         Assertions.assertTrue(namedParams.isEmpty());
     }
+
+    @Test
+    public void testParse_malformedIbatisParameter_missingClosingBracket_throwsException() {
+        // Bug fix: #{param without closing } should throw, not silently corrupt SQL
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            ParsedSql.parse("INSERT INTO users (id) VALUES (#{userId)");
+        });
+    }
+
+    @Test
+    public void testParse_malformedIbatisParameter_missingClosingBracketAtEnd_throwsException() {
+        // #{param at end of SQL without closing }
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            ParsedSql.parse("SELECT * FROM users WHERE id = #{userId");
+        });
+    }
+
+    @Test
+    public void testParse_malformedIbatisParameter_withTrailingTokensConsumed_throwsException() {
+        // Bug fix: the while-loop was consuming all remaining tokens when } was missing,
+        // which silently lost subsequent parameters and corrupted SQL structure
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            ParsedSql.parse("INSERT INTO t VALUES (#{id}, #{name)");
+        });
+    }
+
+    @Test
+    public void testParse_validIbatisParameter_stillWorks() {
+        // Ensure the fix doesn't break valid iBatis parameters
+        ParsedSql parsed = ParsedSql.parse("INSERT INTO t (a, b) VALUES (#{id}, #{name})");
+        Assertions.assertEquals("INSERT INTO t (a, b) VALUES (?, ?)", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals("id", parsed.namedParameters().get(0));
+        Assertions.assertEquals("name", parsed.namedParameters().get(1));
+    }
+
+    @Test
+    public void testParse_validIbatisParameterWithOptions_stillWorks() {
+        // Ensure the fix doesn't break valid iBatis parameters with options like jdbcType
+        ParsedSql parsed = ParsedSql.parse("INSERT INTO t (a) VALUES (#{id,jdbcType=INTEGER})");
+        Assertions.assertEquals("INSERT INTO t (a) VALUES (?)", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertEquals("id", parsed.namedParameters().get(0));
+    }
 }
 
 class ParsedSqlJavadocExamples extends TestBase {
