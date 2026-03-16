@@ -1,8 +1,8 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.6.6",
-    "generated_at": "2026-03-09",
+    "version": "4.6.7",
+    "generated_at": "2026-03-15",
     "java_target": "17",
     "source": {
       "git_sha": "unknown"
@@ -2970,7 +2970,7 @@
                 {
                   "name": "limitCond",
                   "type": "String",
-                  "javadoc": "the complete limit condition including the LIMIT keyword (must not be null)",
+                  "javadoc": "the complete limit/pagination expression (e.g., \"LIMIT 10 OFFSET 20\" or \"TOP 10\") (must not be null)",
                   "nullability": "unspecified"
                 }
               ],
@@ -10218,7 +10218,7 @@
             "public",
             "abstract"
           ],
-          "javadoc_summary": "A comprehensive, enterprise-grade fluent SQL builder providing type-safe, programmatic construction of complex SQL statements with advanced features including parameterized queries, multiple naming conventions, entity mapping, and sophisticated query optimization.",
+          "javadoc_summary": "A fluent SQL builder that extends {@link AbstractQueryBuilder} with concrete SQL generation, including condition rendering, operator handling, and NULL semantics.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -27788,7 +27788,7 @@
           ],
           "deprecated": {
             "is_deprecated": true,
-            "message": "Use {@link NAC} (Named SQL with All Caps) instead for better clarity",
+            "message": "Use {@link NAC} (Named SQL with All Caps) instead for better clarity. Note: Switching from MAC to NAC changes the parameter style from iBATIS ( {@code #{param}} ) to named ( {@code :param} ).",
             "for_removal": false
           },
           "javadoc_summary": "MyBatis-style SQL builder with all capital case (upper case with underscore) field/column naming strategy.",
@@ -29126,7 +29126,7 @@
           ],
           "deprecated": {
             "is_deprecated": true,
-            "message": "Use {@link NLC} (Named SQL with Lower Camel) instead for better clarity",
+            "message": "Use {@link NLC} (Named SQL with Lower Camel) instead for better clarity. Note: Switching from MLC to NLC changes the parameter style from iBATIS ( {@code #{param}} ) to named ( {@code :param} ).",
             "for_removal": false
           },
           "javadoc_summary": "MyBatis-style SQL builder with lower camel case field/column naming strategy.",
@@ -31493,24 +31493,6 @@
               "see_also": []
             },
             {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
-              "contract": [
-                "If min/max values are themselves conditions (like subqueries), their parameters are cleared."
-              ],
-              "examples": [],
-              "see_also": []
-            },
-            {
               "name": "toString",
               "kind": "instance",
               "modifiers": [
@@ -31690,22 +31672,6 @@
               "see_also": []
             },
             {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@SuppressWarnings(\"unchecked\") @Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
               "name": "toString",
               "kind": "instance",
               "modifiers": [
@@ -31836,22 +31802,6 @@
               "see_also": []
             },
             {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears parameters in the underlying subquery.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
               "name": "hashCode",
               "kind": "instance",
               "modifiers": [
@@ -31950,29 +31900,6 @@
               ],
               "throws": [],
               "javadoc_summary": "Creates a new ALL condition with the specified subquery.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "toString",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
-              "return_type": "String",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "namingPolicy",
-                  "type": "NamingPolicy",
-                  "javadoc": "the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Returns this condition as SQL text using the specified naming policy.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -32105,29 +32032,6 @@
               "contract": [
                 "The ANY operator is used in conjunction with comparison operators to test if the comparison is true for any value returned by the subquery."
               ],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "toString",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
-              "return_type": "String",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "namingPolicy",
-                  "type": "NamingPolicy",
-                  "javadoc": "the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Returns this condition as SQL text using the specified naming policy.",
-              "contract": [],
               "examples": [],
               "see_also": []
             }
@@ -32294,24 +32198,6 @@
               "see_also": []
             },
             {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears the parameter value by setting it to null to free memory.",
-              "contract": [
-                "If the value is a nested Condition, delegates to that condition's clearParameters() method."
-              ],
-              "examples": [],
-              "see_also": []
-            },
-            {
               "name": "toString",
               "kind": "instance",
               "modifiers": [
@@ -32459,22 +32345,6 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Gets the parameters from the wrapped condition.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -32671,22 +32541,6 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Gets the parameters from the wrapped condition.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -32911,25 +32765,6 @@
               "throws": [],
               "javadoc_summary": "Gets the list of parameter values associated with this condition.",
               "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Beta void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
-              "contract": [
-                "Use this method to release large objects when the condition is no longer needed.",
-                "</p> <p> <b> Usage Examples: </b> </p> <pre> {@code Condition eq = Filters.equal(\"name\", \"John\"); ImmutableList<Object> params = eq.getParameters(); // [\"John\"] // Release parameter memory when the condition is no longer needed eq.clearParameters(); ImmutableList<Object> cleared = eq.getParameters(); // [null] // For compound conditions, clears parameters recursively Condition combined = Filters.and(Filters.greaterThan(\"age\", 18), Filters.equal(\"status\", \"active\")); combined.clearParameters(); // Clears parameters in both child conditions } </pre>"
-              ],
               "examples": [],
               "see_also": []
             },
@@ -33163,22 +32998,6 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Collects parameters from all conditions in SQL clause order: JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears parameter values from all conditions to release memory.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -35208,29 +35027,6 @@
               ],
               "examples": [],
               "see_also": []
-            },
-            {
-              "name": "toString",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
-              "return_type": "String",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "namingPolicy",
-                  "type": "NamingPolicy",
-                  "javadoc": "the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Returns this condition as SQL text using the specified naming policy.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
             }
           ],
           "fields": []
@@ -35916,13 +35712,13 @@
               "see_also": []
             },
             {
-              "name": "minus",
+              "name": "subtract",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static String minus(final Object... objects)",
+              "signature": "public static String subtract(final Object... objects)",
               "return_type": "String",
               "type_params": [],
               "params": [
@@ -35934,6 +35730,35 @@
                 }
               ],
               "throws": [],
+              "javadoc_summary": "Creates a subtraction expression for the given objects.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "minus",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "@Deprecated public static String minus(final Object... objects)",
+              "return_type": "String",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "objects",
+                  "type": "Object[]",
+                  "javadoc": "the values to subtract",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "Use {@link #subtract(Object...)} instead to avoid ambiguity with the SQL MINUS set operation.",
+                "for_removal": false
+              },
               "javadoc_summary": "Creates a subtraction expression for the given objects.",
               "contract": [],
               "examples": [],
@@ -37037,22 +36862,6 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Returns an empty list as expressions have no parameters.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "No-op method as Expression has no parameters to clear.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -38297,25 +38106,6 @@
               "see_also": []
             },
             {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears all parameter values by setting them to null to free memory.",
-              "contract": [
-                "<p> This method delegates to the join condition, if present.",
-                "If this join has no condition, this method is a no-op."
-              ],
-              "examples": [],
-              "see_also": []
-            },
-            {
               "name": "toString",
               "kind": "instance",
               "modifiers": [
@@ -38486,24 +38276,6 @@
               "throws": [],
               "javadoc_summary": "Gets all parameters from all conditions in this junction.",
               "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears parameters in all child conditions by recursively calling clearParameters() on each.",
-              "contract": [
-                "<p> Use this method to release large objects held by any condition in the junction tree when the junction is no longer needed."
-              ],
               "examples": [],
               "see_also": []
             },
@@ -38968,22 +38740,6 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Gets the parameters for this LIMIT clause.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "This method does nothing for LIMIT clauses.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -40596,29 +40352,6 @@
               ],
               "examples": [],
               "see_also": []
-            },
-            {
-              "name": "toString",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
-              "return_type": "String",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "namingPolicy",
-                  "type": "NamingPolicy",
-                  "javadoc": "the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Returns this condition as SQL text using the specified naming policy.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
             }
           ],
           "fields": []
@@ -41871,29 +41604,6 @@
               ],
               "examples": [],
               "see_also": []
-            },
-            {
-              "name": "toString",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public String toString(final NamingPolicy namingPolicy)",
-              "return_type": "String",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "namingPolicy",
-                  "type": "NamingPolicy",
-                  "javadoc": "the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Returns this condition as SQL text using the specified naming policy.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
             }
           ],
           "fields": []
@@ -42137,25 +41847,6 @@
               "javadoc_summary": "Gets the list of parameter values from the condition.",
               "contract": [
                 "These are the parameter values that will be bound to the prepared statement placeholders when the query is executed."
-              ],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "clearParameters",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Override public void clearParameters()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Clears parameters in the underlying condition.",
-              "contract": [
-                "<p> Use this method to release large objects when the subquery is no longer needed.",
-                "If this is a raw SQL subquery with no condition, this method is a no-op."
               ],
               "examples": [],
               "see_also": []

@@ -1,7 +1,7 @@
-# abacus-query API Index (v4.6.6)
+# abacus-query API Index (v4.6.7)
 - Build: unknown
 - Java: 17
-- Generated: 2026-03-09
+- Generated: 2026-03-15
 
 ## Packages
 - com.landawn.abacus.query
@@ -736,7 +736,7 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Signature:** `public Builder limit(final String limitCond)`
 - **Summary:** Appends a custom LIMIT clause to the SQL query.
 - **Parameters:**
-  - `limitCond` (`String`) — the complete limit condition including the LIMIT keyword (must not be null)
+  - `limitCond` (`String`) — the complete limit/pagination expression (e.g., "LIMIT 10 OFFSET 20" or "TOP 10") (must not be null)
 - **Returns:** this builder instance for method chaining
 - **Signature:** `public Builder limit(final int count)`
 - **Summary:** Adds a LIMIT clause to restrict the number of rows returned.
@@ -2580,7 +2580,7 @@ Enumeration representing the sort direction for database queries and collections
 - **Returns:** {@code true} if this is DESC, {@code false} if ASC
 
 ### Class SqlBuilder (com.landawn.abacus.query.SqlBuilder)
-A comprehensive, enterprise-grade fluent SQL builder providing type-safe, programmatic construction of complex SQL statements with advanced features including parameterized queries, multiple naming conventions, entity mapping, and sophisticated query optimization.
+A fluent SQL builder that extends {@link AbstractQueryBuilder} with concrete SQL generation, including condition rendering, operator handling, and NULL semantics.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -7339,13 +7339,6 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list containing \[minValue, maxValue\] or their parameters if they are Conditions
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears all parameter values by setting them to null to free memory.
-- **Contract:**
-  - If min/max values are themselves conditions (like subqueries), their parameters are cleared.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this condition to its string representation.
@@ -7425,11 +7418,6 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values, or an empty immutable list if no values are set
-##### clearParameters(...) -> void
-- **Signature:** `@SuppressWarnings("unchecked") @Override public void clearParameters()`
-- **Summary:** Clears all parameter values by setting them to null to free memory.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this condition to its string representation.
@@ -7483,11 +7471,6 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values from the subquery
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears parameters in the underlying subquery.
-- **Parameters:**
-  - (none)
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
 - **Summary:** Generates the hash code for this condition.
@@ -7527,12 +7510,6 @@ Represents the SQL ALL operator for use with subqueries.
 - **Summary:** Creates a new ALL condition with the specified subquery.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery that returns values to compare against. Must not be null.
-##### toString(...) -> String
-- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
-- **Summary:** Returns this condition as SQL text using the specified naming policy.
-- **Parameters:**
-  - `namingPolicy` (`NamingPolicy`) — the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied
-- **Returns:** SQL in the form {@code ALL (...)}
 
 ### Class And (com.landawn.abacus.query.condition.And)
 Represents a composable AND condition that combines multiple conditions.
@@ -7588,12 +7565,6 @@ Represents the SQL ANY operator for use with subqueries.
   - The ANY operator is used in conjunction with comparison operators to test if the comparison is true for any value returned by the subquery.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery that returns values to compare against. Must not be null.
-##### toString(...) -> String
-- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
-- **Summary:** Returns this condition as SQL text using the specified naming policy.
-- **Parameters:**
-  - `namingPolicy` (`NamingPolicy`) — the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied
-- **Returns:** SQL in the form {@code ANY (...)}
 
 ### Class Between (com.landawn.abacus.query.condition.Between)
 Represents a BETWEEN condition in SQL queries.
@@ -7659,13 +7630,6 @@ Abstract base class for binary conditions that compare a property with a value.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears the parameter value by setting it to null to free memory.
-- **Contract:**
-  - If the value is a nested Condition, delegates to that condition's clearParameters() method.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this Binary condition to its string representation using the specified naming policy.
@@ -7721,11 +7685,6 @@ Represents a condition cell that wraps another condition with an operator.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameters from the wrapped condition, or an empty immutable list if no condition is set
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears all parameter values by setting them to null to free memory.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this Cell condition to its string representation using the specified naming policy.
@@ -7799,11 +7758,6 @@ A composable variant of {@link Cell} that supports logical composition via AND/O
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameters from the wrapped condition, or an empty immutable list if no condition is set
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears all parameter values by setting them to null to free memory.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this ComposableCell to its string representation using the specified naming policy.
@@ -7897,14 +7851,6 @@ The base interface for all query conditions.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values, never null
-##### clearParameters(...) -> void
-- **Signature:** `@Beta void clearParameters()`
-- **Summary:** Clears all parameter values by setting them to null to free memory.
-- **Contract:**
-  - Use this method to release large objects when the condition is no longer needed.
-  - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code Condition eq = Filters.equal("name", "John"); ImmutableList<Object> params = eq.getParameters(); // \["John"\] // Release parameter memory when the condition is no longer needed eq.clearParameters(); ImmutableList<Object> cleared = eq.getParameters(); // \[null\] // For compound conditions, clears parameters recursively Condition combined = Filters.and(Filters.greaterThan("age", 18), Filters.equal("status", "active")); combined.clearParameters(); // Clears parameters in both child conditions } </pre>
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `String toString(NamingPolicy namingPolicy)`
 - **Summary:** Returns a string representation of this condition using the specified naming policy.
@@ -8008,11 +7954,6 @@ An immutable container representing a complete SQL query structure composed of m
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of all parameters
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears parameter values from all conditions to release memory.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@SuppressWarnings("StringConcatenationInLoop") @Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Returns a string representation of this Criteria using the specified naming policy.
@@ -8580,12 +8521,6 @@ Represents the SQL EXISTS operator for use with subqueries.
   - <p> <b> Usage Examples: </b> </p> <pre> {@code // Check if employee has any subordinates SubQuery subordinatesQuery = Filters.subQuery( "SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id" ); Exists hasSubordinates = new Exists(subordinatesQuery); // Generates: EXISTS (SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id) // Check if product is in any active order SubQuery activeOrderQuery = Filters.subQuery( "SELECT 1 FROM order_items oi " + "JOIN orders o ON oi.order_id = o.id " + "WHERE oi.product_id = products.id " + "AND o.status = 'active'" ); Exists inActiveOrder = new Exists(activeOrderQuery); // Generates: EXISTS (SELECT 1 FROM order_items oi JOIN orders o ...) // Find users with specific permissions SubQuery permissionQuery = Filters.subQuery( "SELECT 1 FROM user_permissions up " + "WHERE up.user_id = users.id " + "AND up.permission = 'admin'" ); Exists isAdmin = new Exists(permissionQuery); // Generates: EXISTS (SELECT 1 FROM user_permissions up WHERE ...) // Find departments with employees SubQuery hasEmployees = Filters.subQuery("SELECT 1 FROM employees WHERE dept_id = departments.id"); Exists deptHasEmployees = new Exists(hasEmployees); // Generates: EXISTS (SELECT 1 FROM employees WHERE dept_id = departments.id) } </pre>
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to check for existence of rows (must not be null)
-##### toString(...) -> String
-- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
-- **Summary:** Returns this condition as SQL text using the specified naming policy.
-- **Parameters:**
-  - `namingPolicy` (`NamingPolicy`) — the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied
-- **Returns:** SQL in the form {@code EXISTS (...)}
 
 ### Class Expression (com.landawn.abacus.query.condition.Expression)
 Represents a raw SQL expression that can be used in queries.
@@ -8752,8 +8687,14 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `objects` (`Object[]`) — the values to add
 - **Returns:** a string representation of the addition expression
+##### subtract(...) -> String
+- **Signature:** `public static String subtract(final Object... objects)`
+- **Summary:** Creates a subtraction expression for the given objects.
+- **Parameters:**
+  - `objects` (`Object[]`) — the values to subtract
+- **Returns:** a string representation of the subtraction expression
 ##### minus(...) -> String
-- **Signature:** `public static String minus(final Object... objects)`
+- **Signature:** `@Deprecated public static String minus(final Object... objects)`
 - **Summary:** Creates a subtraction expression for the given objects.
 - **Parameters:**
   - `objects` (`Object[]`) — the values to subtract
@@ -9043,11 +8984,6 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - (none)
 - **Returns:** an empty immutable list
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** No-op method as Expression has no parameters to clear.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Returns the literal string of this expression.
@@ -9557,14 +9493,6 @@ Base class for SQL JOIN operations.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameters from the condition, or an empty immutable list if no condition
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears all parameter values by setting them to null to free memory.
-- **Contract:**
-  - <p> This method delegates to the join condition, if present.
-  - If this join has no condition, this method is a no-op.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this JOIN clause to its string representation according to the specified naming policy.
@@ -9626,13 +9554,6 @@ Base class for composable junction conditions that combine multiple conditions.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list containing all parameters from all conditions
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears parameters in all child conditions by recursively calling clearParameters() on each.
-- **Contract:**
-  - <p> Use this method to release large objects held by any condition in the junction tree when the junction is no longer needed.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this junction to its string representation according to the specified naming policy.
@@ -9808,11 +9729,6 @@ Represents a LIMIT clause in SQL queries to restrict the number of rows returned
 - **Parameters:**
   - (none)
 - **Returns:** an empty immutable list as LIMIT has no parameters
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** This method does nothing for LIMIT clauses.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this LIMIT clause to its string representation according to the specified naming policy.
@@ -10340,12 +10256,6 @@ Represents the SQL NOT EXISTS operator for use with subqueries.
   - The condition evaluates to true when the subquery returns no rows.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to check for non-existence of rows (must not be null)
-##### toString(...) -> String
-- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
-- **Summary:** Returns this condition as SQL text using the specified naming policy.
-- **Parameters:**
-  - `namingPolicy` (`NamingPolicy`) — the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied
-- **Returns:** SQL in the form {@code NOT EXISTS (...)}
 
 ### Class NotIn (com.landawn.abacus.query.condition.NotIn)
 Represents a NOT IN condition in SQL queries.
@@ -10605,12 +10515,6 @@ Represents the SQL SOME operator for use with subqueries.
   - The SOME operator must be used with a comparison operator in the containing condition.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery that returns values to compare against. Must not be null.
-##### toString(...) -> String
-- **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
-- **Summary:** Returns this condition as SQL text using the specified naming policy.
-- **Parameters:**
-  - `namingPolicy` (`NamingPolicy`) — the naming policy for property/column names. If {@code null} , {@link NamingPolicy#NO_CHANGE} is applied
-- **Returns:** SQL in the form {@code SOME (...)}
 
 ### Class SubQuery (com.landawn.abacus.query.condition.SubQuery)
 Represents a subquery that can be used within SQL conditions.
@@ -10695,14 +10599,6 @@ Represents a subquery that can be used within SQL conditions.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values, or an empty immutable list if no condition or raw SQL subquery
-##### clearParameters(...) -> void
-- **Signature:** `@Override public void clearParameters()`
-- **Summary:** Clears parameters in the underlying condition.
-- **Contract:**
-  - <p> Use this method to release large objects when the subquery is no longer needed.
-  - If this is a raw SQL subquery with no condition, this method is a no-op.
-- **Parameters:**
-  - (none)
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this subquery to its string representation.
