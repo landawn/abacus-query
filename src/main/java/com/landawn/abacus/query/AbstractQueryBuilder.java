@@ -4390,6 +4390,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Prints: SELECT * FROM account WHERE age BETWEEN ? AND ?
      * }</pre>
      */
+    @Beta
     public void println() {
         N.println(build().query());
     }

@@ -545,7 +545,7 @@ public class SqlMapperTest extends TestBase {
         }
 
         // Test loading from file
-        SqlMapper mapper = SqlMapper.fromFile(xmlFile.getAbsolutePath());
+        SqlMapper mapper = SqlMapper.load(xmlFile.getAbsolutePath());
         assertNotNull(mapper);
         assertFalse(mapper.isEmpty());
 
@@ -590,7 +590,7 @@ public class SqlMapperTest extends TestBase {
 
         // Test loading multiple files with comma separator
         String paths = xmlFile1.getAbsolutePath() + "," + xmlFile2.getAbsolutePath();
-        SqlMapper mapper = SqlMapper.fromFile(paths);
+        SqlMapper mapper = SqlMapper.load(paths);
 
         assertEquals(2, mapper.sqlIds().size());
         assertNotNull(mapper.get("findUser"));
@@ -598,7 +598,7 @@ public class SqlMapperTest extends TestBase {
 
         // Test loading multiple files with semicolon separator
         paths = xmlFile1.getAbsolutePath() + ";" + xmlFile2.getAbsolutePath();
-        mapper = SqlMapper.fromFile(paths);
+        mapper = SqlMapper.load(paths);
 
         assertEquals(2, mapper.sqlIds().size());
         assertNotNull(mapper.get("findUser"));
@@ -613,7 +613,7 @@ public class SqlMapperTest extends TestBase {
             writer.write("<root></root>\n");
         }
 
-        assertThrows(RuntimeException.class, () -> SqlMapper.fromFile(xmlFile.getAbsolutePath()));
+        assertThrows(RuntimeException.class, () -> SqlMapper.load(xmlFile.getAbsolutePath()));
     }
 
     @Test
@@ -786,7 +786,7 @@ public class SqlMapperTest extends TestBase {
         assertTrue(outputFile.exists());
 
         // Load saved file and verify
-        SqlMapper loaded = SqlMapper.fromFile(outputFile.getAbsolutePath());
+        SqlMapper loaded = SqlMapper.load(outputFile.getAbsolutePath());
         assertEquals(mapper.sqlIds(), loaded.sqlIds());
         assertEquals(mapper.get("findUser").sql(), loaded.get("findUser").sql());
         assertEquals(mapper.get("updateUser").sql(), loaded.get("updateUser").sql());
@@ -808,7 +808,7 @@ public class SqlMapperTest extends TestBase {
         mapper.saveTo(outputFile);
 
         assertTrue(outputFile.exists());
-        SqlMapper loaded = SqlMapper.fromFile(outputFile.getAbsolutePath());
+        SqlMapper loaded = SqlMapper.load(outputFile.getAbsolutePath());
         assertNotNull(loaded.get("findUser"));
     }
 

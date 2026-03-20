@@ -74,10 +74,10 @@ import com.landawn.abacus.util.XmlUtil;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Load from single file
- * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
+ * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
  * 
  * // Load from multiple files
- * SqlMapper mapper = SqlMapper.fromFile("sql/users.xml,sql/orders.xml");
+ * SqlMapper mapper = SqlMapper.load("sql/users.xml,sql/orders.xml");
  * 
  * // Get parsed SQL
  * ParsedSql sql = mapper.get("findAccountById");
@@ -154,12 +154,12 @@ public final class SqlMapper {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Single file
-     * SqlMapper mapper = SqlMapper.fromFile("config/sql-mapper.xml");
+     * SqlMapper mapper = SqlMapper.load("config/sql-mapper.xml");
      * 
      * // Multiple files
-     * SqlMapper mapper = SqlMapper.fromFile("sql/users.xml,sql/orders.xml,sql/products.xml");
+     * SqlMapper mapper = SqlMapper.load("sql/users.xml,sql/orders.xml,sql/products.xml");
      * // or
-     * SqlMapper mapper = SqlMapper.fromFile("sql/users.xml;sql/orders.xml;sql/products.xml");
+     * SqlMapper mapper = SqlMapper.load("sql/users.xml;sql/orders.xml;sql/products.xml");
      * }</pre>
      *
      * @param filePath one or more file paths separated by ',' or ';'
@@ -168,7 +168,7 @@ public final class SqlMapper {
      * @throws ParsingException if the XML content is invalid
      * @throws RuntimeException if no 'sqlMapper' element is found in any file
      */
-    public static SqlMapper fromFile(final String filePath) {
+    public static SqlMapper load(final String filePath) {
         N.checkArgNotEmpty(filePath, "filePath");
         final String[] rawFilePaths = Splitter.with(SK.COMMA).trimResults().splitToArray(filePath.replace(SK.SEMICOLON, SK.COMMA));
         final List<String> filePaths = N.newArrayList(rawFilePaths.length);
@@ -220,7 +220,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
      * Set<String> sqlIds = mapper.sqlIds();
      * sqlIds.forEach(id -> System.out.println("Available SQL: " + id));
      * }</pre>
@@ -236,7 +236,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
      *
      * ParsedSql sql = mapper.get("findAccountById");
      * if (sql != null) {
@@ -268,7 +268,7 @@ public final class SqlMapper {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql>
-     * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
      *
      * ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsert");
      * if (attrs != null) {
@@ -377,7 +377,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
      * mapper.remove("deprecatedQuery");
      * // Verify removal
      * boolean removed = mapper.get("deprecatedQuery") == null;
@@ -401,7 +401,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper original = SqlMapper.fromFile("sql/queries.xml");
+     * SqlMapper original = SqlMapper.load("sql/queries.xml");
      * SqlMapper copy = original.copy();
      *
      * // Modifications to the copy do not affect the original
@@ -423,7 +423,7 @@ public final class SqlMapper {
 
     /**
      * Saves all SQL definitions in this mapper to an XML file.
-     * The output format matches the expected input format for {@link #fromFile(String)}.
+     * The output format matches the expected input format for {@link #load(String)}.
      * If the file already exists, it will be overwritten.
      *
      * <p>Example output:</p>
@@ -491,7 +491,7 @@ public final class SqlMapper {
      * SqlMapper emptyMapper = new SqlMapper();
      * boolean empty = emptyMapper.isEmpty();  // true
      *
-     * SqlMapper loadedMapper = SqlMapper.fromFile("sql/queries.xml");
+     * SqlMapper loadedMapper = SqlMapper.load("sql/queries.xml");
      * boolean hasEntries = !loadedMapper.isEmpty();  // true (assuming file has SQL definitions)
      * }</pre>
      *
