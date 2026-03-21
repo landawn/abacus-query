@@ -245,7 +245,9 @@ public final class QueryUtil {
 
         if (registeringClasses != null) {
             if (registeringClasses.contains(entityClass)) {
-                throw new IllegalStateException("Cyclic references detected among: " + registeringClasses);
+                // Stop expanding nested bean paths once a cycle is detected so
+                // self-referential entities remain queryable instead of failing fast.
+                return ImmutableMap.empty();
             }
 
             registeringClasses.add(entityClass);

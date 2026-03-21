@@ -598,6 +598,28 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
+    static class SelfReferentialEntity {
+        @Id
+        private Long id;
+        private SelfReferentialEntity parent;
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public SelfReferentialEntity getParent() {
+            return parent;
+        }
+
+        public void setParent(SelfReferentialEntity parent) {
+            this.parent = parent;
+        }
+    }
+
     @Test
     public void testProp2ColumnNameMap() {
         // Test with valid entity class
@@ -861,14 +883,29 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testRegisterEntityPropColumnNameMap() {
-        // Test with cycling references detection
+        // Direct cycle detection should stop recursive expansion instead of failing the entire lookup.
         Set<Class<?>> registeringClasses = new HashSet<>();
         registeringClasses.add(TestUser.class);
 
-        // Should throw exception when trying to register same class again
-        assertThrows(RuntimeException.class, () -> {
-            QueryUtil.registerEntityPropColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE, registeringClasses);
-        });
+        ImmutableMap<String, String> result = QueryUtil.registerEntityPropColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE, registeringClasses);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testGetProp2ColumnNameMap_WithSelfReferentialEntityDoesNotThrow() {
+        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(SelfReferentialEntity.class, NamingPolicy.SNAKE_CASE);
+
+        assertEquals("id", result.get("id"));
+        assertFalse(result.containsKey("parent.parent"));
+    }
+
+    @Test
+    public void testSqlBuilder_FromSelfReferentialEntityDoesNotFail() {
+        String sql = SqlBuilder.PSC.select("id").from(SelfReferentialEntity.class).where(Filters.eq("id", 1L)).build().query();
+
+        assertTrue(sql.contains("FROM self_referential_entity"));
+        assertTrue(sql.contains("WHERE id = ?"));
     }
 }
 

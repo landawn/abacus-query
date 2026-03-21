@@ -1,5 +1,6 @@
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
@@ -620,6 +621,17 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
+    public void testToStringForEntityClassUsesTableMetadata() {
+        SubQuery subQuery = Filters.subQuery(AuditEventEntity.class, Arrays.asList("eventId"), null);
+
+        String result = subQuery.toString(NamingPolicy.SNAKE_CASE);
+
+        Assertions.assertTrue(result.contains("SELECT event_id"));
+        Assertions.assertTrue(result.contains("FROM audit_log_entries ale"));
+        Assertions.assertFalse(result.contains("FROM audit_event_entity"));
+    }
+
+    @Test
     public void testHashCode() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM users");
@@ -675,6 +687,19 @@ public class SubQueryTest extends TestBase {
     // Test entity class for constructor test
     static class TestEntity {
         // Empty class for testing
+    }
+
+    @Table(name = "audit_log_entries", alias = "ale")
+    static class AuditEventEntity {
+        private Long eventId;
+
+        public Long getEventId() {
+            return eventId;
+        }
+
+        public void setEventId(final Long eventId) {
+            this.eventId = eventId;
+        }
     }
 }
 

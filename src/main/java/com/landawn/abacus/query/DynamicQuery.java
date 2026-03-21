@@ -649,6 +649,8 @@ public final class DynamicQuery {
          * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause append(final String column) {
+            N.checkArgNotNull(column, "column");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -675,6 +677,9 @@ public final class DynamicQuery {
          * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause append(final String column, final String alias) {
+            N.checkArgNotNull(column, "column");
+            N.checkArgNotNull(alias, "alias");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -763,6 +768,8 @@ public final class DynamicQuery {
          */
         public SelectClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
+                N.checkArgNotNull(textToAppend, "textToAppend");
+
                 if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
@@ -792,6 +799,9 @@ public final class DynamicQuery {
          * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
+            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -846,6 +856,8 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          */
         public FromClause append(final String table) {
+            N.checkArgNotNull(table, "table");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -872,6 +884,9 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          */
         public FromClause append(final String table, final String alias) {
+            N.checkArgNotNull(table, "table");
+            N.checkArgNotNull(alias, "alias");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -898,6 +913,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause join(final String table, final String on) {
+            N.checkArgNotNull(table, "table");
+            N.checkArgNotNull(on, "on");
             requireFromInitialized();
             sb.append(" JOIN ").append(table).append(" ON ").append(on);
 
@@ -920,6 +937,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause innerJoin(final String table, final String on) {
+            N.checkArgNotNull(table, "table");
+            N.checkArgNotNull(on, "on");
             requireFromInitialized();
             sb.append(" INNER JOIN ").append(table).append(" ON ").append(on);
 
@@ -942,6 +961,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause leftJoin(final String table, final String on) {
+            N.checkArgNotNull(table, "table");
+            N.checkArgNotNull(on, "on");
             requireFromInitialized();
             sb.append(" LEFT JOIN ").append(table).append(" ON ").append(on);
 
@@ -964,6 +985,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause rightJoin(final String table, final String on) {
+            N.checkArgNotNull(table, "table");
+            N.checkArgNotNull(on, "on");
             requireFromInitialized();
             sb.append(" RIGHT JOIN ").append(table).append(" ON ").append(on);
 
@@ -986,6 +1009,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause fullJoin(final String table, final String on) {
+            N.checkArgNotNull(table, "table");
+            N.checkArgNotNull(on, "on");
             requireFromInitialized();
             sb.append(" FULL JOIN ").append(table).append(" ON ").append(on);
 
@@ -1013,6 +1038,8 @@ public final class DynamicQuery {
          */
         public FromClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
+                N.checkArgNotNull(textToAppend, "textToAppend");
+
                 if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
@@ -1040,6 +1067,9 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          */
         public FromClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
+            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1096,6 +1126,8 @@ public final class DynamicQuery {
          * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause append(final String cond) {
+            N.checkArgNotNull(cond, "cond");
+
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
@@ -1153,6 +1185,8 @@ public final class DynamicQuery {
          */
         public WhereClause placeholders(final int placeholderCount, final String prefix, final String postfix) {
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
+            N.checkArgNotNull(prefix, "prefix");
+            N.checkArgNotNull(postfix, "postfix");
 
             if (placeholderCount > 0) {
                 sb.append(prefix);
@@ -1184,6 +1218,8 @@ public final class DynamicQuery {
          * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause and(final String cond) {
+            N.checkArgNotNull(cond, "cond");
+
             if (sb.isEmpty()) {
                 sb.append("WHERE ");
             } else {
@@ -1208,6 +1244,8 @@ public final class DynamicQuery {
          * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause or(final String cond) {
+            N.checkArgNotNull(cond, "cond");
+
             if (sb.isEmpty()) {
                 sb.append("WHERE ");
             } else {
@@ -1235,6 +1273,8 @@ public final class DynamicQuery {
          */
         public WhereClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
+                N.checkArgNotNull(textToAppend, "textToAppend");
+
                 if (!sb.isEmpty()) {
                     sb.append(" ");
                 } else {
@@ -1264,6 +1304,9 @@ public final class DynamicQuery {
          * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
+            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
@@ -1319,6 +1362,8 @@ public final class DynamicQuery {
          * @return this {@link GroupByClause} instance for method chaining
          */
         public GroupByClause append(final String column) {
+            N.checkArgNotNull(column, "column");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1375,6 +1420,8 @@ public final class DynamicQuery {
          */
         public GroupByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
+                N.checkArgNotNull(textToAppend, "textToAppend");
+
                 if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
@@ -1404,6 +1451,9 @@ public final class DynamicQuery {
          * @return this {@link GroupByClause} instance for method chaining
          */
         public GroupByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
+            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1458,6 +1508,8 @@ public final class DynamicQuery {
          * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause append(final String cond) {
+            N.checkArgNotNull(cond, "cond");
+
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
@@ -1482,6 +1534,8 @@ public final class DynamicQuery {
          * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause and(final String cond) {
+            N.checkArgNotNull(cond, "cond");
+
             if (sb.isEmpty()) {
                 sb.append("HAVING ");
             } else {
@@ -1506,6 +1560,8 @@ public final class DynamicQuery {
          * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause or(final String cond) {
+            N.checkArgNotNull(cond, "cond");
+
             if (sb.isEmpty()) {
                 sb.append("HAVING ");
             } else {
@@ -1533,6 +1589,8 @@ public final class DynamicQuery {
          */
         public HavingClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
+                N.checkArgNotNull(textToAppend, "textToAppend");
+
                 if (!sb.isEmpty()) {
                     sb.append(" ");
                 } else {
@@ -1562,6 +1620,9 @@ public final class DynamicQuery {
          * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
+            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+
             if (!sb.isEmpty()) {
                 sb.append(" ");
             } else {
@@ -1617,6 +1678,8 @@ public final class DynamicQuery {
          * @return this {@link OrderByClause} instance for method chaining
          */
         public OrderByClause append(final String column) {
+            N.checkArgNotNull(column, "column");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1673,6 +1736,8 @@ public final class DynamicQuery {
          */
         public OrderByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
+                N.checkArgNotNull(textToAppend, "textToAppend");
+
                 if (!sb.isEmpty()) {
                     sb.append(", ");
                 } else {
@@ -1702,6 +1767,9 @@ public final class DynamicQuery {
          * @return this {@link OrderByClause} instance for method chaining
          */
         public OrderByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
+            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {

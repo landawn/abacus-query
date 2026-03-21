@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.ImmutableList;
@@ -441,6 +442,8 @@ public class SubQuery extends AbstractCondition {
     public String toString(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+            final java.util.Map<String, String> prop2ColumnNameMap = entityClass == null ? null
+                    : QueryUtil.getProp2ColumnNameMap(entityClass, effectiveNamingPolicy);
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
@@ -455,7 +458,11 @@ public class SubQuery extends AbstractCondition {
                             sb.append(COMMA_SPACE);
                         }
 
-                        sb.append(effectiveNamingPolicy.convert(propName));
+                        if (prop2ColumnNameMap == null) {
+                            sb.append(effectiveNamingPolicy.convert(propName));
+                        } else {
+                            sb.append(prop2ColumnNameMap.getOrDefault(propName, effectiveNamingPolicy.convert(propName)));
+                        }
                     }
                 } else {
                     sb.append("*");
@@ -465,7 +472,11 @@ public class SubQuery extends AbstractCondition {
                 sb.append(SK.FROM);
 
                 sb.append(_SPACE);
-                sb.append(effectiveNamingPolicy.convert(entityName));
+                if (entityClass == null) {
+                    sb.append(effectiveNamingPolicy.convert(entityName));
+                } else {
+                    sb.append(QueryUtil.getTableNameAndAlias(entityClass, effectiveNamingPolicy));
+                }
 
                 if (condition != null) {
                     sb.append(_SPACE);

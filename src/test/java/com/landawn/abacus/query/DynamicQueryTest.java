@@ -657,6 +657,28 @@ public class DynamicQueryTest extends TestBase {
             builder.build();
         });
     }
+
+    @Test
+    public void testStringInputsRejectNullInsteadOfRenderingLiteralNull() {
+        Builder builder = DynamicQuery.builder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.select().append((String) null));
+        assertThrows(IllegalArgumentException.class, () -> builder.select().append("id", null));
+        assertThrows(IllegalArgumentException.class, () -> builder.from().append((String) null));
+        assertThrows(IllegalArgumentException.class, () -> builder.from().append("users", null));
+
+        builder.select().append("*");
+        builder.from().append("users");
+
+        assertThrows(IllegalArgumentException.class, () -> builder.from().join(null, "users.id = orders.user_id"));
+        assertThrows(IllegalArgumentException.class, () -> builder.from().join("orders", null));
+        assertThrows(IllegalArgumentException.class, () -> builder.where().append(null));
+        assertThrows(IllegalArgumentException.class, () -> builder.where().appendIf(true, null));
+        assertThrows(IllegalArgumentException.class, () -> builder.where().appendIfOrElse(true, null, "status = 'inactive'"));
+        assertThrows(IllegalArgumentException.class, () -> builder.groupBy().append((String) null));
+        assertThrows(IllegalArgumentException.class, () -> builder.having().append(null));
+        assertThrows(IllegalArgumentException.class, () -> builder.orderBy().append((String) null));
+    }
 }
 
 /**
