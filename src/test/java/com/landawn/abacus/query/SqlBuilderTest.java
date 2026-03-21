@@ -12662,3 +12662,247 @@ class SqlBuilderJavadocExamples extends TestBase {
         assertNotNull(sql);
     }
 }
+
+class SqlBuilder15Test extends TestBase {
+
+    @Test
+    public void testPAC_UpdateAndDeleteWithEntityClass() {
+        String updateSql = PAC.update("USER_ACCOUNT", Account.class).set("firstName").where(Filters.eq("id", 1)).build().query();
+        String deleteSql = PAC.deleteFrom("USER_ACCOUNT", Account.class).where(Filters.eq("id", 1)).build().query();
+
+        assertTrue(updateSql.contains("UPDATE USER_ACCOUNT"));
+        assertTrue(deleteSql.contains("DELETE FROM USER_ACCOUNT"));
+    }
+
+    @Test
+    public void testPAC_SelectOverloadsWithExcludedProperties() {
+        Set<String> excluded = Collections.singleton("lastName");
+        String selectSql = PAC.select(Account.class, excluded).from("USER_ACCOUNT").build().query();
+        String selectFromSql = PAC.selectFrom(Account.class, "ua", true, excluded).build().query();
+
+        assertTrue(selectSql.contains("SELECT"));
+        assertTrue(selectSql.contains("FROM USER_ACCOUNT"));
+        assertTrue(selectFromSql.contains("FROM"));
+        assertTrue(selectFromSql.contains("ua"));
+    }
+
+    @Test
+    public void testPLC_SelectOverloadsWithTwoEntityClasses() {
+        String sql = PLC.select(Account.class, "a1", "account1", Account.class, "a2", "account2").from("account1 a1, account2 a2").build().query();
+
+        assertTrue(sql.contains("FROM account1 a1, account2 a2"));
+    }
+
+    @Test
+    public void testLCSB_SelectFromDefaultEntityClass() {
+        String sql = LCSB.selectFrom(Account.class).build().query();
+
+        assertTrue(sql.contains("FROM"));
+    }
+
+    @Test
+    public void testMSB_SelectFromMultiSelectionAndBatchInsert() {
+        List<Selection> selections = Arrays.asList(new Selection(Account.class, "a1", "account1", null, false, null),
+                new Selection(Account.class, "a2", "account2", null, false, null));
+
+        SqlBuilder selectBuilder = MSB.selectFrom(selections);
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(new LinkedHashMap<>(Map.of("firstName", "John")));
+        rows.add(new LinkedHashMap<>(Map.of("firstName", "Jane")));
+        SP batchInsert = MSB.batchInsert(rows).into("users").build();
+
+        assertTrue(selectBuilder.build().query().contains("FROM"));
+        assertTrue(batchInsert.query().contains("INSERT INTO users"));
+    }
+
+    @Test
+    public void testMAC_SelectOverloadsWithTableAliases() {
+        Set<String> excluded = Collections.singleton("lastName");
+        String selectSql = MAC.select(Account.class, "a1", "account1", excluded, Account.class, "a2", "account2", excluded)
+                .from("ACCOUNT1 a1, ACCOUNT2 a2")
+                .build()
+                .query();
+        String selectFromSql = MAC.selectFrom(Account.class, "a1", "account1", Account.class, "a2", "account2").build().query();
+
+        assertTrue(selectSql.contains("FROM ACCOUNT1 a1, ACCOUNT2 a2"));
+        assertTrue(selectFromSql.contains("FROM"));
+    }
+}
+
+class SqlBuilder16Test extends TestBase {
+
+    private static List<Map<String, Object>> batchRows() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        row2.put("lastName", "Smith");
+
+        return Arrays.asList(row1, row2);
+    }
+
+    private static void assertInsertBuilds(SP sp) {
+        assertTrue(sp.query().contains("INSERT INTO users"));
+        assertNotNull(sp.parameters());
+    }
+
+    private static void assertUpdateBuilds(SP sp, String tableName) {
+        assertTrue(sp.query().contains("UPDATE " + tableName));
+        assertTrue(sp.query().contains("WHERE"));
+    }
+
+    private static void assertDeleteBuilds(SP sp, String tableName) {
+        assertTrue(sp.query().contains("DELETE FROM " + tableName));
+        assertTrue(sp.query().contains("WHERE"));
+    }
+
+    @Test
+    public void testBatchInsertVariants_Batch2() {
+        List<Map<String, Object>> rows = batchRows();
+
+        List<SP> results = Arrays.asList(SCSB.batchInsert(rows).into("users").build(), ACSB.batchInsert(rows).into("users").build(),
+                PSB.batchInsert(rows).into("users").build(), PSC.batchInsert(rows).into("users").build(), NSB.batchInsert(rows).into("users").build(),
+                NSC.batchInsert(rows).into("users").build(), NAC.batchInsert(rows).into("users").build(), NLC.batchInsert(rows).into("users").build(),
+                MSC.batchInsert(rows).into("users").build(), MLC.batchInsert(rows).into("users").build());
+
+        for (SP sp : results) {
+            assertInsertBuilds(sp);
+        }
+    }
+
+    @Test
+    public void testUpdateTableWithEntityVariants_Batch2() {
+        List<SP> results = Arrays.asList(SCSB.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                ACSB.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                PSB.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                PSC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                NSB.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                NSC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                NAC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                NLC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                MSC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                MLC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build());
+
+        for (SP sp : results) {
+            assertUpdateBuilds(sp, "account");
+        }
+    }
+
+    @Test
+    public void testUpdateEntityWithExcludedPropsVariants_Batch2() {
+        Set<String> excluded = Collections.singleton("lastModifiedDate");
+
+        List<SP> results = Arrays.asList(SCSB.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                ACSB.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                PSB.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                PSC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                NSB.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                NSC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                NAC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                NLC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                MSC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                MLC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build());
+
+        for (SP sp : results) {
+            assertTrue(sp.query().contains("UPDATE"));
+            assertTrue(sp.query().contains("WHERE"));
+        }
+    }
+
+    @Test
+    public void testDeleteFromTableWithEntityVariants_Batch2() {
+        List<SP> results = Arrays.asList(SCSB.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
+                ACSB.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
+                PSB.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
+                PSC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
+                NSB.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
+                NSC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
+                NAC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
+                NLC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
+                MSC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
+                MLC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build());
+
+        for (SP sp : results) {
+            assertDeleteBuilds(sp, "account");
+        }
+    }
+
+    @Test
+    public void testMultiEntitySelectVariants_Batch2() {
+        Set<String> excludedA = Collections.singleton("lastModifiedDate");
+        Set<String> excludedB = Collections.singleton("amount");
+
+        List<String> results = Arrays.asList(
+                SCSB.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query(),
+                ACSB.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query(),
+                PSB.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query(),
+                PSC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query(),
+                NSB.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query(),
+                NSC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query(),
+                NAC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query(),
+                NLC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query(),
+                MSC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query(),
+                MLC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                        .from("test_account a1, user_order o1")
+                        .build()
+                        .query());
+
+        for (String sql : results) {
+            assertTrue(sql.contains("SELECT"));
+            assertTrue(sql.contains("FROM test_account a1, user_order o1"));
+        }
+    }
+
+    @Test
+    public void testMultiEntitySelectFromVariants_Batch2() {
+        Set<String> excludedA = Collections.singleton("lastModifiedDate");
+        Set<String> excludedB = Collections.singleton("amount");
+
+        List<String> results = Arrays.asList(
+                SCSB.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                ACSB.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                PSB.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                PSC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                NSB.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                NSC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                NAC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                NLC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                MSC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                MLC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query());
+
+        for (String sql : results) {
+            assertTrue(sql.contains("FROM"));
+            assertTrue(sql.contains("a1"));
+            assertTrue(sql.contains("o1"));
+        }
+    }
+}

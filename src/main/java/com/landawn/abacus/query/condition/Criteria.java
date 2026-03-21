@@ -511,7 +511,7 @@ public class Criteria extends AbstractCondition {
          * @param joins the JOIN clauses to add
          * @return this Builder instance for method chaining
          */
-        public final Builder join(final Join... joins) {
+        public Builder join(final Join... joins) {
             add(joins);
 
             return this;
@@ -997,7 +997,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the property names to group by
          * @return this Builder instance for method chaining
          */
-        public final Builder groupBy(final String... propNames) {
+        public Builder groupBy(final String... propNames) {
             add(new GroupBy(propNames));
 
             return this;
@@ -1324,7 +1324,7 @@ public class Criteria extends AbstractCondition {
          * @param propNames the property names to order by
          * @return this Builder instance for method chaining
          */
-        public final Builder orderBy(final String... propNames) {
+        public Builder orderBy(final String... propNames) {
             add(new OrderBy(propNames));
 
             return this;

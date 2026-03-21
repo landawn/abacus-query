@@ -17,6 +17,12 @@ public class ComposableCellTest extends TestBase {
         }
     }
 
+    private static final class EmptyComposableCell extends ComposableCell {
+        EmptyComposableCell() {
+            super();
+        }
+    }
+
     @Test
     public void testGetCondition() {
         final Equal wrapped = Filters.eq("status", "ACTIVE");
@@ -72,5 +78,16 @@ public class ComposableCellTest extends TestBase {
         final TestComposableCell right = new TestComposableCell(Operator.NOT, Filters.eq("status", "INACTIVE"));
 
         assertNotEquals(left, right);
+    }
+
+    @Test
+    public void testDefaultConstructor_EmptyState_Batch2() {
+        final EmptyComposableCell left = new EmptyComposableCell();
+        final EmptyComposableCell right = new EmptyComposableCell();
+
+        assertTrue(left.getCondition() == null);
+        assertTrue(left.getParameters().isEmpty());
+        assertEquals(left, right);
+        assertEquals(left.hashCode(), right.hashCode());
     }
 }

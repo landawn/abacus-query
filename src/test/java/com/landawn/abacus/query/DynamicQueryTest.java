@@ -969,3 +969,111 @@ class DynamicQueryJavadocExamples extends TestBase {
         assertFalse(sql.contains("role = 'admin'"));
     }
 }
+
+class DynamicQuery2026BatchTest extends TestBase {
+
+    // Covers clause builders when the conditional branch is the first text appended.
+    @Test
+    public void testConditionalClauseBuilders_EmptyInitialState() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().appendIfOrElse(false, "id", "user_id");
+        builder.from().appendIfOrElse(false, "archived_users", "active_users");
+        builder.where().appendIfOrElse(false, "status = 'archived'", "status = 'active'");
+        builder.groupBy().appendIfOrElse(false, "archived_region", "active_region");
+        builder.having().appendIfOrElse(false, "COUNT(*) > 100", "COUNT(*) > 0");
+        builder.orderBy().appendIfOrElse(false, "created_at DESC", "user_id ASC");
+
+        String sql = builder.build();
+
+        assertTrue(sql.contains("SELECT user_id"));
+        assertTrue(sql.contains("FROM active_users"));
+        assertTrue(sql.contains("WHERE status = 'active'"));
+        assertTrue(sql.contains("GROUP BY active_region"));
+        assertTrue(sql.contains("HAVING COUNT(*) > 0"));
+        assertTrue(sql.contains("ORDER BY user_id ASC"));
+    }
+
+    @Test
+    public void testSelectClause_appendMapAndCollectionAfterExistingContent() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("id").append(Map.of("first_name", "firstName", "last_name", "lastName")).append(Arrays.asList("email", "status"));
+        builder.from().append("users");
+
+        String sql = builder.build();
+
+        assertTrue(sql.contains("SELECT id, "));
+        assertTrue(sql.contains("first_name AS firstName"));
+        assertTrue(sql.contains("last_name AS lastName"));
+        assertTrue(sql.contains("email, status"));
+    }
+
+    @Test
+    public void testWhereClause_andOrFromEmpty() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().and("status = 'active'").or("role = 'admin'");
+
+        String sql = builder.build();
+
+        assertEquals("SELECT * FROM users WHERE status = 'active' OR role = 'admin'", sql);
+    }
+
+    @Test
+    public void testWhereClause_appendIf_FalseOnEmpty() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.where().appendIf(false, "status = 'active'");
+
+        assertEquals("SELECT * FROM users", builder.build());
+    }
+
+    @Test
+    public void testGroupByClause_appendCollectionThenAppendIf() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().append(Arrays.asList("year", "quarter")).appendIf(true, "region");
+
+        String sql = builder.build();
+
+        assertTrue(sql.contains("GROUP BY year, quarter, region"));
+    }
+
+    @Test
+    public void testHavingClause_andOrFromEmpty() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("sales");
+        builder.groupBy().append("region");
+        builder.having().and("COUNT(*) > 1").or("SUM(amount) > 0");
+
+        String sql = builder.build();
+
+        assertTrue(sql.contains("HAVING COUNT(*) > 1 OR SUM(amount) > 0"));
+    }
+
+    @Test
+    public void testOrderByClause_appendCollectionThenAppendIf() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.orderBy().append(Arrays.asList("created_at DESC", "id ASC")).appendIf(true, "name ASC");
+
+        String sql = builder.build();
+
+        assertTrue(sql.contains("ORDER BY created_at DESC, id ASC, name ASC"));
+    }
+
+    @Test
+    public void testOrderByClause_StandaloneBuilderBranches_Batch2() {
+        StringBuilder sb = new StringBuilder();
+        DynamicQuery.OrderByClause clause = new DynamicQuery.OrderByClause(sb);
+
+        clause.append(java.util.Collections.emptyList());
+        clause.append("name ASC").appendIf(false, "ignored DESC").appendIf(true, "created_at DESC").appendIfOrElse(false, "priority DESC", "id ASC");
+
+        assertEquals("ORDER BY name ASC, created_at DESC, id ASC", sb.toString());
+    }
+}

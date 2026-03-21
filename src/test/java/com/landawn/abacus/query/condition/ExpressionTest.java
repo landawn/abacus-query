@@ -1408,4 +1408,39 @@ public class ExpressionTest extends TestBase {
         Assertions.assertEquals("test expression", expr.getLiteral());
         Assertions.assertTrue(expr instanceof Expression);
     }
+
+    @Test
+    public void testDefaultConstructor_EmptyState_Batch2() {
+        Expression expr = new Expression();
+
+        Assertions.assertNull(expr.getLiteral());
+        Assertions.assertEquals("null", expr.toString());
+        Assertions.assertEquals("null", Expression.normalize(expr));
+    }
+
+    @Test
+    public void testNormalize_ConditionWithoutSubQuery_Batch2() {
+        String normalized = Expression.normalize(Filters.eq("id", 1));
+
+        Assertions.assertEquals("id = 1", normalized);
+    }
+
+    @Test
+    public void testLink_NotEqualAnsiWithNull_Batch2() {
+        Assertions.assertEquals("deleted IS NOT NULL", Expression.link(Operator.NOT_EQUAL_ANSI, "deleted", null));
+    }
+
+    @Test
+    public void testLink_SpaceAndCommaSeparators_Batch2() {
+        Assertions.assertEquals("a b", Expression.link(" ", Expression.of("a"), Expression.of("b")));
+        Assertions.assertEquals("a, b", Expression.link(", ", Expression.of("a"), Expression.of("b")));
+    }
+
+    @Test
+    public void testToString_FunctionNameWithNamingPolicy_Batch2() {
+        Expression expr = Expression.of("SUM(totalAmount)");
+
+        Assertions.assertEquals("SUM(total_amount)", expr.toString(NamingPolicy.SNAKE_CASE));
+        Assertions.assertEquals("SUM(totalAmount)", expr.toString(null));
+    }
 }

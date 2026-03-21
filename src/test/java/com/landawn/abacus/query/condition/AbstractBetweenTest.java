@@ -19,6 +19,12 @@ public class AbstractBetweenTest extends TestBase {
         }
     }
 
+    private static final class EmptyAbstractBetween extends AbstractBetween {
+        EmptyAbstractBetween() {
+            super();
+        }
+    }
+
     @Test
     public void testGetPropName() {
         final TestAbstractBetween condition = new TestAbstractBetween("age", 18, 65);
@@ -112,5 +118,30 @@ public class AbstractBetweenTest extends TestBase {
         final TestAbstractBetween right = new TestAbstractBetween("age", 18, 70);
 
         assertNotEquals(left, right);
+    }
+
+    @Test
+    public void testDefaultConstructor_EmptyState_Batch2() {
+        final EmptyAbstractBetween left = new EmptyAbstractBetween();
+        final EmptyAbstractBetween right = new EmptyAbstractBetween();
+
+        assertNull(left.getPropName());
+        assertNull(left.getMinValue());
+        assertNull(left.getMaxValue());
+        assertEquals(Arrays.asList(null, null), left.getParameters());
+        assertEquals(left, right);
+        assertEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    public void testToString_WithSubQueryBounds_Batch2() {
+        final TestAbstractBetween condition = new TestAbstractBetween("score", Filters.subQuery("SELECT MIN(score) FROM results"),
+                Filters.subQuery("SELECT MAX(score) FROM results"));
+
+        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+
+        assertTrue(sql.contains("score BETWEEN"));
+        assertTrue(sql.contains("(SELECT MIN(score) FROM results)"));
+        assertTrue(sql.contains("(SELECT MAX(score) FROM results)"));
     }
 }

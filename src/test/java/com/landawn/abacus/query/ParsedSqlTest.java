@@ -965,3 +965,40 @@ class ParsedSqlJavadocExamples extends TestBase {
         assertEquals(0, count2);
     }
 }
+
+class ParsedSql2026BatchTest extends TestBase {
+
+    @Test
+    public void testParse_EmptyIbatisTokenRemainsLiteral() {
+        ParsedSql parsed = ParsedSql.parse("SELECT #{} FROM dual");
+
+        Assertions.assertEquals("SELECT #{} FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals(0, parsed.parameterCount());
+        Assertions.assertTrue(parsed.namedParameters().isEmpty());
+    }
+
+    @Test
+    public void testParse_BlankIbatisTokenRemainsLiteral() {
+        ParsedSql parsed = ParsedSql.parse("SELECT #{   } FROM dual");
+
+        Assertions.assertEquals("SELECT #{ } FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals(0, parsed.parameterCount());
+        Assertions.assertTrue(parsed.namedParameters().isEmpty());
+    }
+
+    @Test
+    public void testParse_CommentOnlySqlHasNoOperationPrefix() {
+        ParsedSql parsed = ParsedSql.parse("/* comment only */");
+
+        Assertions.assertEquals("/* comment only */", parsed.parameterizedSql());
+        Assertions.assertEquals(0, parsed.parameterCount());
+    }
+
+    @Test
+    public void testParse_ParenthesizedCommentOnlySqlHasNoOperationPrefix() {
+        ParsedSql parsed = ParsedSql.parse("(/* comment only */)");
+
+        Assertions.assertEquals("(/* comment only */)", parsed.parameterizedSql());
+        Assertions.assertEquals(0, parsed.parameterCount());
+    }
+}

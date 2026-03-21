@@ -33219,10 +33219,9 @@
               "name": "join",
               "kind": "instance",
               "modifiers": [
-                "public",
-                "final"
+                "public"
               ],
-              "signature": "public final Builder join(final Join... joins)",
+              "signature": "public Builder join(final Join... joins)",
               "return_type": "Builder",
               "type_params": [],
               "params": [
@@ -33908,10 +33907,9 @@
               "name": "groupBy",
               "kind": "instance",
               "modifiers": [
-                "public",
-                "final"
+                "public"
               ],
-              "signature": "public final Builder groupBy(final String... propNames)",
+              "signature": "public Builder groupBy(final String... propNames)",
               "return_type": "Builder",
               "type_params": [],
               "params": [
@@ -34321,10 +34319,9 @@
               "name": "orderBy",
               "kind": "instance",
               "modifiers": [
-                "public",
-                "final"
+                "public"
               ],
-              "signature": "public final Builder orderBy(final String... propNames)",
+              "signature": "public Builder orderBy(final String... propNames)",
               "return_type": "Builder",
               "type_params": [],
               "params": [

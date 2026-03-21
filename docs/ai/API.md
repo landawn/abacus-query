@@ -8023,7 +8023,7 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
   - `selectModifier` (`String`) — the custom SELECT modifier
 - **Returns:** this Builder instance for method chaining
 ##### join(...) -> Builder
-- **Signature:** `public final Builder join(final Join... joins)`
+- **Signature:** `public Builder join(final Join... joins)`
 - **Summary:** Adds JOIN clauses to this criteria.
 - **Parameters:**
   - `joins` (`Join[]`) — the JOIN clauses to add
@@ -8181,7 +8181,7 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Parameters:**
   - `cond` (`Condition`) — the GROUP BY condition
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public final Builder groupBy(final String... propNames)`
+- **Signature:** `public Builder groupBy(final String... propNames)`
 - **Summary:** Sets or replaces the GROUP BY clause with property names.
 - **Contract:**
   - If a GROUP BY clause already exists, it will be replaced.
@@ -8295,7 +8295,7 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Parameters:**
   - `cond` (`Condition`) — the ORDER BY condition
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public final Builder orderBy(final String... propNames)`
+- **Signature:** `public Builder orderBy(final String... propNames)`
 - **Summary:** Sets or replaces the ORDER BY clause with property names.
 - **Contract:**
   - If an ORDER BY clause already exists, it will be replaced.

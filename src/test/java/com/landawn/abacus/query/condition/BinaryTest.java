@@ -441,4 +441,22 @@ public class BinaryTest extends TestBase {
         Assertions.assertEquals("prop LIKE '%test%'", like.toString());
         Assertions.assertTrue(in.toString().contains("prop IN"));
     }
+
+    @Test
+    public void testDefaultConstructor_EmptyState_Batch2() {
+        Binary binary = new Binary();
+        Binary same = new Binary();
+
+        Assertions.assertNull(binary.getPropName());
+        Assertions.assertNull(binary.getPropValue());
+        Assertions.assertEquals(binary, same);
+        Assertions.assertEquals(binary.hashCode(), same.hashCode());
+    }
+
+    @Test
+    public void testToStringWithNullAndNotEqualAnsi_Batch2() {
+        Binary binary = new Binary("deleted", Operator.NOT_EQUAL_ANSI, null);
+
+        Assertions.assertEquals("deleted IS NOT NULL", binary.toString(null));
+    }
 }

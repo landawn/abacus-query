@@ -981,3 +981,68 @@ class SqlMapperJavadocExamples extends TestBase {
         assertEquals(2, sqlIds.size());
     }
 }
+
+class SqlMapper2026Test extends TestBase {
+
+    @TempDir
+    File tempDir;
+
+    @Test
+    public void testLoad_EmptySegmentsAfterSplit() {
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load(" , ; , "));
+    }
+
+    @Test
+    public void testLoad_MissingFileWrapsIOException() {
+        File directoryPath = tempDir;
+
+        assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> SqlMapper.load(directoryPath.getAbsolutePath()));
+    }
+
+    @Test
+    public void testLoad_MalformedXmlWrapsParsingException() throws IOException {
+        File malformed = new File(tempDir, "malformed-sql-mapper.xml");
+
+        try (FileWriter writer = new FileWriter(malformed)) {
+            writer.write("<sqlMapper><sql id=\"findUser\">SELECT 1</sqlMapper>");
+        }
+
+        assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.load(malformed.getAbsolutePath()));
+    }
+
+    @Test
+    public void testSaveTo_TargetIsDirectory() {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("query1", ParsedSql.parse("SELECT 1"));
+
+        assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> mapper.saveTo(tempDir));
+    }
+
+    @Test
+    public void testSaveTo_ParentDirectoryCreationFails() throws IOException {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("query1", ParsedSql.parse("SELECT 1"));
+
+        File blocker = new File(tempDir, "blocker");
+        assertTrue(blocker.createNewFile());
+
+        File target = new File(blocker, "nested/output.xml");
+
+        assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> mapper.saveTo(target));
+    }
+
+    @Test
+    public void testSaveTo_RelativeFileWithoutParent() {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("query1", ParsedSql.parse("SELECT 1"));
+
+        File output = new File("sql-mapper-relative-output.xml");
+
+        try {
+            mapper.saveTo(output);
+            assertTrue(output.exists());
+        } finally {
+            output.delete();
+        }
+    }
+}

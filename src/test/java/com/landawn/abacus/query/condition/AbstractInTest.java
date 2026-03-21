@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,6 +17,12 @@ public class AbstractInTest extends TestBase {
     private static final class TestAbstractIn extends AbstractIn {
         TestAbstractIn(final String propName, final List<?> values) {
             super(propName, Operator.IN, values);
+        }
+    }
+
+    private static final class EmptyAbstractIn extends AbstractIn {
+        EmptyAbstractIn() {
+            super();
         }
     }
 
@@ -107,5 +114,27 @@ public class AbstractInTest extends TestBase {
         final TestAbstractIn right = new TestAbstractIn("status", Arrays.asList("ACTIVE"));
 
         assertNotEquals(left, right);
+    }
+
+    @Test
+    public void testDefaultConstructor_EmptyState_Batch2() {
+        final EmptyAbstractIn left = new EmptyAbstractIn();
+        final EmptyAbstractIn right = new EmptyAbstractIn();
+
+        assertNull(left.getPropName());
+        assertNull(left.getValues());
+        assertTrue(left.getParameters().isEmpty());
+        assertEquals(left, right);
+        assertEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    public void testToString_WithSubQueryValue_Batch2() {
+        final TestAbstractIn condition = new TestAbstractIn("userId", Arrays.asList(Filters.subQuery("SELECT id FROM users")));
+
+        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+
+        assertTrue(sql.contains("userId IN"));
+        assertTrue(sql.contains("(SELECT id FROM users)"));
     }
 }

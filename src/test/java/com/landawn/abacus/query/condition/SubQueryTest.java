@@ -677,3 +677,17 @@ public class SubQueryTest extends TestBase {
         // Empty class for testing
     }
 }
+
+class SubQuery2026Test extends TestBase {
+
+    // The default constructor exists for serialization and should only expose empty state safely.
+    @Test
+    public void testDefaultConstructor_EmptyState() {
+        SubQuery subQuery = new SubQuery();
+
+        Assertions.assertNull(subQuery.getEntityName());
+        Assertions.assertNull(subQuery.getEntityClass());
+        Assertions.assertNull(subQuery.sql());
+        Assertions.assertTrue(subQuery.getParameters().isEmpty());
+    }
+}

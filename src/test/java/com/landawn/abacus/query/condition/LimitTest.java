@@ -466,3 +466,32 @@ public class LimitTest extends TestBase {
         Assertions.assertFalse(limit1.equals(limit4));
     }
 }
+
+class Limit2026Batch2Test extends TestBase {
+
+    @Test
+    public void testDefaultConstructor_EmptyState() {
+        Limit limit = new Limit();
+        Limit same = new Limit();
+
+        Assertions.assertNull(limit.getExpression());
+        Assertions.assertEquals(0, limit.getCount());
+        Assertions.assertEquals(0, limit.getOffset());
+        Assertions.assertTrue(limit.getParameters().isEmpty());
+        Assertions.assertEquals(limit, same);
+        Assertions.assertEquals(limit.hashCode(), same.hashCode());
+    }
+
+    @Test
+    public void testConstructorWithExpression_NullInput() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Limit((String) null));
+    }
+
+    @Test
+    public void testConstructorWithExpression_MybatisPlaceholder() {
+        Limit limit = new Limit("#{limit} OFFSET #{offset}");
+
+        Assertions.assertEquals("LIMIT #{limit} OFFSET #{offset}", limit.getExpression());
+        Assertions.assertEquals("#{limit} OFFSET #{offset}", limit.getCondition().toString());
+    }
+}

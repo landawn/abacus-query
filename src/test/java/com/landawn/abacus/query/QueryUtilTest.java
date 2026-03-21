@@ -560,6 +560,32 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
+    @Table(name = "aliasless_table")
+    static class AliaslessEntity {
+        private String simpleValue;
+
+        public String getSimpleValue() {
+            return simpleValue;
+        }
+
+        public void setSimpleValue(String simpleValue) {
+            this.simpleValue = simpleValue;
+        }
+    }
+
+    static class NonColumnOnlyEntity {
+        @NonColumn
+        private String hiddenValue;
+
+        public String getHiddenValue() {
+            return hiddenValue;
+        }
+
+        public void setHiddenValue(String hiddenValue) {
+            this.hiddenValue = hiddenValue;
+        }
+    }
+
     static class NoIdEntity {
         private String data;
 
@@ -881,5 +907,37 @@ class QueryUtilFromFilters2025Test extends TestBase {
         assertTrue(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user-name").matches());
         assertFalse(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user.name").matches());
         assertFalse(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user name").matches());
+    }
+}
+
+class QueryUtil2026Batch2Test extends TestBase {
+
+    @Test
+    public void testProp2ColumnNameMap_NullNamingPolicyUsesSnakeCase() {
+        ImmutableMap<String, Tuple2<String, Boolean>> result = QueryUtil.prop2ColumnNameMap(QueryUtilTest.AliaslessEntity.class, null);
+
+        assertEquals("simple_value", result.get("simpleValue")._1);
+        assertTrue(result.get("simpleValue")._2);
+    }
+
+    @Test
+    public void testGetProp2ColumnNameMap_NullNamingPolicyUsesSnakeCase() {
+        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(QueryUtilTest.AliaslessEntity.class, null);
+
+        assertEquals("simple_value", result.get("simpleValue"));
+    }
+
+    @Test
+    public void testGetProp2ColumnNameMap_AllNonColumnProperties() {
+        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(QueryUtilTest.NonColumnOnlyEntity.class, NamingPolicy.SNAKE_CASE);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testGetTableNameAndAlias_AliaslessAnnotation() {
+        String tableName = QueryUtil.getTableNameAndAlias(QueryUtilTest.AliaslessEntity.class, null);
+
+        assertEquals("aliasless_table", tableName);
     }
 }

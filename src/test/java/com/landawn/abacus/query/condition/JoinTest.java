@@ -343,3 +343,17 @@ public class JoinTest extends TestBase {
         }
     }
 }
+
+class Join2026Batch2Test extends TestBase {
+
+    @Test
+    public void testDefaultConstructor_EmptyState() {
+        Join join = new Join();
+        Join same = new Join();
+
+        Assertions.assertTrue(join.getJoinEntities().isEmpty());
+        Assertions.assertTrue(join.getParameters().isEmpty());
+        Assertions.assertEquals(join, same);
+        Assertions.assertEquals(join.hashCode(), same.hashCode());
+    }
+}

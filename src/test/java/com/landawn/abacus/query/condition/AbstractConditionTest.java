@@ -473,3 +473,49 @@ public class AbstractConditionTest extends TestBase {
         Assertions.assertNull(condition.operator());
     }
 }
+
+class AbstractCondition2026BatchTest extends TestBase {
+
+    @Test
+    public void testIsClause_StringEdgeCases() {
+        Assertions.assertFalse(AbstractCondition.isClause((String) null));
+        Assertions.assertTrue(AbstractCondition.isClause("WHERE"));
+    }
+
+    @Test
+    public void testCreateSortExpression_StringArrayRejectsEmptyProperty() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression("id", ""));
+    }
+
+    @Test
+    public void testCreateSortExpression_SinglePropertyRejectsNullDirection() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression("id", null));
+    }
+
+    @Test
+    public void testCreateSortExpression_CollectionRejectsNullDirection() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(Arrays.asList("id"), null));
+    }
+
+    @Test
+    public void testCreateSortExpression_CollectionRejectsEmptyProperty() {
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> AbstractCondition.createSortExpression(Arrays.asList("id", ""), com.landawn.abacus.query.SortDirection.ASC));
+    }
+
+    @Test
+    public void testCreateSortExpression_MapRejectsEmptyProperty() {
+        java.util.Map<String, com.landawn.abacus.query.SortDirection> orders = new java.util.LinkedHashMap<>();
+        orders.put("", com.landawn.abacus.query.SortDirection.ASC);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(orders));
+    }
+
+    @Test
+    public void testCreateSortExpression_MapRejectsNullDirection() {
+        java.util.Map<String, com.landawn.abacus.query.SortDirection> orders = new java.util.LinkedHashMap<>();
+        orders.put("id", null);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(orders));
+    }
+}

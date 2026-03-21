@@ -846,3 +846,40 @@ class SimpleAbstractQueryBuilderTest extends TestBase {
         assertNotNull(NamingPolicy.CAMEL_CASE);
     }
 }
+
+class AbstractQueryBuilder2026BatchTest extends TestBase {
+
+    @Test
+    public void testSet_ObjectStringDelegatesToColumnSet() {
+        String sql = SqlBuilder.PSC.update("account").set((Object) "firstName").where(Filters.eq("id", 1)).build().query();
+
+        assertTrue(sql.contains("SET"));
+        assertTrue(sql.contains("first_name = ?"));
+    }
+
+    @Test
+    public void testSet_ObjectMapHonorsExcludedProperties() {
+        java.util.Map<String, Object> props = new java.util.LinkedHashMap<>();
+        props.put("firstName", "John");
+        props.put("lastName", "Doe");
+
+        String sql = SqlBuilder.PSC.update("account").set(props, Collections.singleton("lastName")).where(Filters.eq("id", 1)).build().query();
+
+        assertTrue(sql.contains("first_name = ?"));
+        assertTrue(!sql.contains("last_name = ?"));
+    }
+
+    @Test
+    public void testInsertEntity_SkipsZeroIdAndNullProperties() {
+        Account account = new Account();
+        account.setId(0);
+        account.setFirstName("John");
+        account.setLastName(null);
+
+        String sql = SqlBuilder.PSC.insert(account).into("account").build().query();
+
+        assertTrue(sql.contains("first_name"));
+        assertTrue(!sql.contains("last_name"));
+        assertTrue(!sql.contains("id"));
+    }
+}

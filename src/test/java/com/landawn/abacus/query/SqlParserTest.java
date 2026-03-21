@@ -933,6 +933,140 @@ public class SqlParserTest extends TestBase {
     }
 }
 
+@Tag("2026")
+class SqlParser2026BatchTest extends TestBase {
+
+    // Exercise uncovered parser branches around inline comments, quoted tokens, and backtracking.
+    @Test
+    public void testParse_InlineDashCommentAfterToken() {
+        String sql = "SELECT col-- hidden\nFROM users";
+
+        List<String> words = SqlParser.parse(sql);
+
+        assertTrue(words.contains("col"));
+        assertTrue(words.contains("FROM"));
+        assertFalse(words.stream().anyMatch(e -> e.contains("hidden")));
+    }
+
+    @Test
+    public void testParse_InlineBlockCommentAfterToken() {
+        String sql = "SELECT col/* hidden */FROM users";
+
+        List<String> words = SqlParser.parse(sql);
+
+        assertTrue(words.contains("col"));
+        assertTrue(words.contains("FROM"));
+        assertFalse(words.stream().anyMatch(e -> e.contains("hidden")));
+    }
+
+    @Test
+    public void testIndexOfWord_QuotedTokenWithBackslashEscape() {
+        String sql = "SELECT 'John\\'s' FROM users";
+
+        assertEquals(sql.indexOf("'John\\'s'"), SqlParser.indexOfWord(sql, "'John\\'s'", 0, true));
+    }
+
+    @Test
+    public void testIndexOfWord_DashCommentAfterMismatchedToken() {
+        String sql = "value-- hidden\nWHERE id = 1";
+
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", 0, false));
+    }
+
+    @Test
+    public void testIndexOfWord_HashCommentAfterMismatchedToken() {
+        String sql = "value# hidden\nWHERE id = 1";
+
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", 0, false));
+    }
+
+    @Test
+    public void testIndexOfWord_BlockCommentAfterMismatchedToken() {
+        String sql = "value/* hidden */WHERE id = 1";
+
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", 0, false));
+    }
+
+    @Test
+    public void testIndexOfWord_TrailingWordAtEnd() {
+        String sql = "SELECT FROM";
+
+        assertEquals(sql.length() - "FROM".length(), SqlParser.indexOfWord(sql, "FROM", 0, false));
+    }
+
+    @Test
+    public void testIndexOfWord_CompositeWordAfterFalseStarts() {
+        String sql = "SELECT * FROM users ORDER name ORDER age";
+
+        assertEquals(-1, SqlParser.indexOfWord(sql, "ORDER BY", 0, false));
+    }
+
+    @Test
+    public void testNextWord_QuotedTokenWithBackslashEscape() {
+        String sql = "SELECT 'John\\'s' FROM users";
+
+        assertEquals("'John\\'s'", SqlParser.nextWord(sql, 6));
+    }
+
+    @Test
+    public void testNextWord_SkipsDashCommentAtStart() {
+        String sql = "-- hidden\nvalue";
+
+        assertEquals("value", SqlParser.nextWord(sql, 0));
+    }
+
+    @Test
+    public void testNextWord_DashCommentAfterToken() {
+        String sql = "value-- hidden\nother";
+
+        assertEquals("value", SqlParser.nextWord(sql, 0));
+    }
+
+    @Test
+    public void testNextWord_SkipsHashCommentAtStart() {
+        String sql = "# hidden\nvalue";
+
+        assertEquals("value", SqlParser.nextWord(sql, 0));
+    }
+
+    @Test
+    public void testNextWord_HashCommentAfterToken() {
+        String sql = "value# hidden\nother";
+
+        assertEquals("value", SqlParser.nextWord(sql, 0));
+    }
+
+    @Test
+    public void testNextWord_BlockCommentAfterToken() {
+        String sql = "value/* hidden */other";
+
+        assertEquals("value", SqlParser.nextWord(sql, 0));
+    }
+
+    @Test
+    public void testNextWord_LeadingNewlineWhitespace() {
+        String sql = " \n\tvalue";
+
+        assertEquals("value", SqlParser.nextWord(sql, 0));
+    }
+
+    @Test
+    public void testIsSeparator_HashAtEnd() {
+        String sql = "SELECT #";
+        int index = sql.length() - 1;
+
+        assertTrue(SqlParser.isSeparator(sql, sql.length(), index, '#'));
+    }
+
+    @Test
+    public void testIsSeparator_HashAfterNonIdentifierContext() {
+        String sql = "SELECT (#tmp)";
+        int index = sql.indexOf('#');
+
+        assertTrue(SqlParser.isSeparator(sql, sql.length(), index, '#'));
+    }
+}
+
 class SqlParserJavadocExamples extends TestBase {
 
     @Test

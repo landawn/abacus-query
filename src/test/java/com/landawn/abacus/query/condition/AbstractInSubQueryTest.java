@@ -14,6 +14,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AbstractInSubQueryTest extends TestBase {
 
     private static final class TestAbstractInSubQuery extends AbstractInSubQuery {
+        TestAbstractInSubQuery() {
+            super();
+        }
+
         TestAbstractInSubQuery(final String propName, final SubQuery subQuery) {
             super(propName, Operator.IN, subQuery);
         }
@@ -125,5 +129,20 @@ public class AbstractInSubQueryTest extends TestBase {
 
         assertTrue(sql.contains("(left_id, right_id)"));
         assertTrue(sql.contains("IN"));
+    }
+
+    @Test
+    public void testDefaultConstructor_EmptyState() {
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery();
+
+        assertTrue(condition.getPropNames().isEmpty());
+        assertTrue(condition.getParameters().isEmpty());
+    }
+
+    @Test
+    public void testConstructor_RejectsSubQueryArityMismatch() {
+        final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id"), Filters.eq("status", "ACTIVE"));
+
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery));
     }
 }

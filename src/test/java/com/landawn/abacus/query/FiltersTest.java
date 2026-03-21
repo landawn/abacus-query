@@ -2889,3 +2889,32 @@ class FiltersJavadocExamples extends TestBase {
         assertNotNull(naturalJoin);
     }
 }
+
+class Filters2026BatchTest extends TestBase {
+
+    @Test
+    public void testAllEqual_EntitySingleSelectedProperty() {
+        com.landawn.abacus.query.entity.Account account = new com.landawn.abacus.query.entity.Account();
+        account.setFirstName("John");
+
+        And condition = Filters.allEqual(account, Arrays.asList("firstName"));
+
+        assertEquals(1, condition.getConditions().size());
+    }
+
+    @Test
+    public void testAllEqual_EntityTwoSelectedProperties() {
+        com.landawn.abacus.query.entity.Account account = new com.landawn.abacus.query.entity.Account();
+        account.setFirstName("John");
+        account.setLastName("Doe");
+
+        And condition = Filters.allEqual(account, Arrays.asList("firstName", "lastName"));
+
+        assertEquals(2, condition.getConditions().size());
+    }
+
+    @Test
+    public void testAnyOfAllEqual_AllNullEntities() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(null, null)));
+    }
+}

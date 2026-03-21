@@ -1428,3 +1428,81 @@ class CriteriaFromFiltersTest extends TestBase {
         Assertions.assertNotNull(criteria);
     }
 }
+
+class Criteria2026BatchTest extends TestBase {
+
+    private static final class FakeClauseCondition extends AbstractCondition {
+        FakeClauseCondition(final Operator operator) {
+            super(operator);
+        }
+
+        @Override
+        public com.landawn.abacus.util.ImmutableList<Object> getParameters() {
+            return com.landawn.abacus.util.ImmutableList.empty();
+        }
+
+        @Override
+        public String toString(final NamingPolicy namingPolicy) {
+            return operator().toString();
+        }
+    }
+
+    private static void invokeCheckCondition(final Criteria.Builder builder, final Condition condition) {
+        try {
+            java.lang.reflect.Method method = Criteria.Builder.class.getDeclaredMethod("checkCondition", Condition.class);
+            method.setAccessible(true);
+            method.invoke(builder, condition);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            throw (RuntimeException) e.getCause();
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testWhere_RejectsNestedCriteria() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Criteria.builder().build()));
+    }
+
+    @Test
+    public void testCheckCondition_RejectsNonClauseOperator() {
+        IllegalArgumentException error = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> invokeCheckCondition(Criteria.builder(), Filters.eq("id", 1)));
+
+        Assertions.assertTrue(error.getMessage().contains("Invalid operator"));
+    }
+
+    @Test
+    public void testCheckCondition_RejectsClauseOperatorWithoutClauseType() {
+        IllegalArgumentException error = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> invokeCheckCondition(Criteria.builder(), new FakeClauseCondition(Operator.WHERE)));
+
+        Assertions.assertTrue(error.getMessage().contains("must be an instance of Clause"));
+    }
+
+    @Test
+    public void testCheckCondition_RejectsJoinOperatorWithoutJoinType() {
+        IllegalArgumentException error = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> invokeCheckCondition(Criteria.builder(), new FakeClauseCondition(Operator.JOIN)));
+
+        Assertions.assertTrue(error.getMessage().contains("must be an instance of Join"));
+    }
+}
+
+class Criteria2026Batch2Test extends TestBase {
+
+    @Test
+    public void testEmptyCriteria_CollectionsAndEquality() {
+        Criteria left = Criteria.builder().build();
+        Criteria right = Criteria.builder().build();
+        Criteria distinct = Criteria.builder().selectModifier("DISTINCT").build();
+
+        Assertions.assertTrue(left.getJoins().isEmpty());
+        Assertions.assertTrue(left.getSetOperations().isEmpty());
+        Assertions.assertTrue(left.findConditions(Operator.WHERE).isEmpty());
+        Assertions.assertTrue(left.getParameters().isEmpty());
+        Assertions.assertEquals(left, right);
+        Assertions.assertEquals(left.hashCode(), right.hashCode());
+        Assertions.assertNotEquals(left, distinct);
+    }
+}
