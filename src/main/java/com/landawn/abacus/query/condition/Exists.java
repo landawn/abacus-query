@@ -109,8 +109,8 @@ public class Exists extends ComposableCell {
      * // Generates: EXISTS (SELECT 1 FROM employees WHERE dept_id = departments.id)
      * }</pre>
      *
-     * @param subQuery the subquery to check for existence of rows (must not be null)
-     * @throws IllegalArgumentException if subQuery is null
+     * @param subQuery the subquery to check for existence of rows (must not be {@code null})
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public Exists(final SubQuery subQuery) {
         super(Operator.EXISTS, subQuery);

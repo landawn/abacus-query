@@ -143,9 +143,9 @@ public class Union extends Clause {
      * // When combined with current orders query, removes any duplicate order_id entries
      * }</pre>
      *
-     * @param subQuery the subquery to perform the UNION operation with. Must not be null.
-     *                  The subquery must have the same number of columns with compatible types as the main query.
-     * @throws IllegalArgumentException if subQuery is null
+     * @param subQuery the subquery to perform the UNION operation with (must not be {@code null}). The subquery must
+     *            have the same number of columns with compatible types as the main query.
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      * @see UnionAll
      * @see Intersect
      * @see Except

@@ -73,7 +73,7 @@ import com.landawn.abacus.util.Strings;
  * Join exprJoin = new Join("orders o",
  *     Filters.expr("customers.id = o.customer_id"));
  * // Generates: JOIN orders o customers.id = o.customer_id
- * // Note: Expression conditions don't add ON keyword
+ * // Plain expressions are appended verbatim after the JOIN target
  *
  * // Join multiple tables
  * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
@@ -169,7 +169,8 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
+     *            include those keywords. Any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public Join(final String joinEntity, final Condition cond) {
@@ -193,7 +194,8 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator
      * @param joinEntity the table or entity to join with
-     * @param cond the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
+     *            include those keywords. Any {@link Condition} is allowed and can be {@code null}.
      */
     protected Join(final Operator operator, final String joinEntity, final Condition cond) {
         this(operator, Collections.singletonList(joinEntity), cond);
@@ -226,7 +228,8 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with
-     * @param cond the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
+     *            include those keywords. Any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if joinEntities is null/empty or contains null/empty elements
      */
     public Join(final Collection<String> joinEntities, final Condition cond) {
@@ -250,7 +253,8 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator
      * @param joinEntities the collection of tables or entities to join with
-     * @param cond the join condition, typically an {@link On} condition for column equality; any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
+     *            include those keywords. Any {@link Condition} is allowed and can be {@code null}.
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition cond) {
         super(operator);

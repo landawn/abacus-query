@@ -85,7 +85,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>The class provides numerous static helper methods for creating common SQL expressions
  * and functions, including arithmetic operations, string functions, mathematical functions,
- * and comparison operations. These methods help build type-safe SQL expressions.</p>
+ * and comparison operations. These methods help build reusable SQL expressions.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code

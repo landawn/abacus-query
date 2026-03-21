@@ -94,8 +94,8 @@ public class Some extends ComposableCell {
      * // Returns orders matching at least one threshold value
      * }</pre>
      *
-     * @param subQuery the subquery that returns values to compare against. Must not be null.
-     * @throws IllegalArgumentException if subQuery is null
+     * @param subQuery the subquery that returns values to compare against (must not be {@code null})
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public Some(final SubQuery subQuery) {
         super(Operator.SOME, subQuery);

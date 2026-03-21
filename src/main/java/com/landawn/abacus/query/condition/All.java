@@ -104,8 +104,8 @@ public class All extends ComposableCell {
      * // Used with: WHERE price < ALL (SELECT price FROM products WHERE category = 'premium')
      * }</pre>
      *
-     * @param subQuery the subquery that returns values to compare against. Must not be null.
-     * @throws IllegalArgumentException if subQuery is null
+     * @param subQuery the subquery that returns values to compare against (must not be {@code null})
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public All(final SubQuery subQuery) {
         super(Operator.ALL, subQuery);

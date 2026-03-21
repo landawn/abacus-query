@@ -81,7 +81,7 @@ import com.landawn.abacus.util.stream.Stream;
 /**
  * A fluent SQL builder for constructing SQL statements programmatically.
  * 
- * <p>This builder provides a type-safe way to construct SQL statements with support for:</p>
+ * <p>This builder provides a fluent way to construct SQL statements with support for:</p>
  * <ul>
  *   <li>SELECT, INSERT, UPDATE, DELETE operations</li>
  *   <li>Multiple naming policies (snake_case, UPPER_CASE, camelCase)</li>

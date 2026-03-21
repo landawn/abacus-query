@@ -24,7 +24,7 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * A fluent builder for creating dynamic SQL queries programmatically.
- * This builder provides a type-safe and intuitive way to construct SQL SELECT statements
+ * This builder provides a fluent and lightweight way to construct SQL SELECT statements
  * with support for joins, conditions, grouping, ordering, and set operations.
  * 
  * <p>The builder follows a fluent interface pattern where each method returns the builder

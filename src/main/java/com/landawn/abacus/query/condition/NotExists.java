@@ -97,8 +97,8 @@ public class NotExists extends ComposableCell {
      * // Generates: NOT EXISTS (SELECT 1 FROM employees WHERE employees.dept_id = departments.id)
      * }</pre>
      *
-     * @param subQuery the subquery to check for non-existence of rows (must not be null)
-     * @throws IllegalArgumentException if subQuery is null
+     * @param subQuery the subquery to check for non-existence of rows (must not be {@code null})
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public NotExists(final SubQuery subQuery) {
         super(Operator.NOT_EXISTS, subQuery);

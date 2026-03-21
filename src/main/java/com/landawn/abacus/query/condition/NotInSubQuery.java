@@ -79,9 +79,10 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * // Generates: id NOT IN (SELECT user_id FROM dept_users WHERE dept = 'HR')
      * }</pre>
      *
-     * @param propName the property/column name. Must not be null or empty.
-     * @param subQuery the subquery that returns the values to check against. Must not be null.
-     * @throws IllegalArgumentException if propName is null or empty, or if subQuery is null
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param subQuery the subquery that returns the values to check against (must not be {@code null})
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code subQuery} is
+     *             {@code null}
      */
     public NotInSubQuery(final String propName, final SubQuery subQuery) {
         super(propName, Operator.NOT_IN, subQuery);
@@ -107,11 +108,12 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * // Generates: (firstName, lastName, email) NOT IN (SELECT fname, lname, email FROM existing_users)
      * }</pre>
      *
-     * @param propNames collection of property names to check against the subquery results.
-     *                  Must not be null or empty.
-     * @param subQuery the subquery that returns the values to check against. Must not be null.
-     *                 Must return the same number of columns as propNames.size().
-     * @throws IllegalArgumentException if propNames is null/empty, if any element is null/empty, or if subQuery is null
+     * @param propNames collection of property names to check against the subquery results (must not be {@code null}
+     *            or empty)
+     * @param subQuery the subquery that returns the values to check against (must not be {@code null}). It must return
+     *            the same number of columns as {@code propNames.size()}.
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is {@code null}/empty,
+     *             or if {@code subQuery} is {@code null}
      */
     public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(propNames, Operator.NOT_IN, subQuery);

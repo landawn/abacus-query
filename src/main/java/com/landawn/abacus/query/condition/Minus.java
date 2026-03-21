@@ -160,9 +160,9 @@ public class Minus extends Clause {
      * // SELECT skill_id FROM position_requirements WHERE position_id = 5
      * }</pre>
      *
-     * @param subQuery the subquery to perform the MINUS operation with. Must not be null.
-     *                  The subquery must have the same number of columns with compatible types as the main query.
-     * @throws IllegalArgumentException if subQuery is null
+     * @param subQuery the subquery to perform the MINUS operation with (must not be {@code null}). The subquery must
+     *            have the same number of columns with compatible types as the main query.
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      * @see Except
      * @see Union
      * @see UnionAll

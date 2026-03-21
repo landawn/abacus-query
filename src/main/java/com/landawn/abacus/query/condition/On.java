@@ -130,8 +130,9 @@ public class On extends Cell {
      * // Generates: INNER JOIN salary_grades ON (emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary)
      * }</pre>
      *
-     * @param cond the join condition, can be any type of condition including
-     *                  Expression, Equal, And, Or, Between, or more complex conditions
+     * @param cond the join condition. Any non-{@code null} condition is allowed, including
+     *            {@link Expression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public On(final Condition cond) {
         super(Operator.ON, cond);
@@ -162,6 +163,7 @@ public class On extends Cell {
      *
      * @param leftPropName the column name from the first table (can include table name/alias)
      * @param rightPropName the column name from the second table (can include table name/alias)
+     * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null} or empty
      */
     public On(final String leftPropName, final String rightPropName) {
         this(createOnCondition(leftPropName, rightPropName));
@@ -201,8 +203,9 @@ public class On extends Cell {
      * // Generates: ON t1.col1 = t2.col1 AND t1.col2 = t2.col2 AND t1.col3 = t2.col3
      * }</pre>
      *
-     * @param propNamePair map of column pairs where key is from first table,
-     *                     value is from second table. Order is preserved if LinkedHashMap is used.
+     * @param propNamePair map of column pairs where the key is from the first table and the value is from the second
+     *            table. Order is preserved if a {@code LinkedHashMap} is used.
+     * @throws IllegalArgumentException if {@code propNamePair} is {@code null}, empty, or contains invalid names
      */
     public On(final Map<String, String> propNamePair) {
         this(createOnCondition(propNamePair));
@@ -222,6 +225,7 @@ public class On extends Cell {
      * @param propName the first column name
      * @param anotherPropName the second column name
      * @return an Equal condition comparing the two columns
+     * @throws IllegalArgumentException if {@code propName} or {@code anotherPropName} is {@code null} or empty
      */
     static Condition createOnCondition(final String propName, final String anotherPropName) {
         N.checkArgNotEmpty(propName, "propName");
@@ -247,6 +251,7 @@ public class On extends Cell {
      *
      * @param propNamePair map of column name pairs
      * @return a single Equal condition or an And condition combining multiple equalities
+     * @throws IllegalArgumentException if {@code propNamePair} is {@code null}, empty, or contains invalid names
      */
     static Condition createOnCondition(final Map<String, String> propNamePair) {
         N.checkArgNotEmpty(propNamePair, "propNamePair");

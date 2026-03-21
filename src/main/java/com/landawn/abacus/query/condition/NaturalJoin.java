@@ -142,8 +142,8 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond an additional filter condition applied after the natural join;
-     *            any {@link Condition} is allowed and can be {@code null}.
+     * @param cond an additional condition appended after the natural join fragment. Any {@link Condition} is allowed
+     *            and can be {@code null}.
      * @throws IllegalArgumentException if joinEntity is null or empty
      */
     public NaturalJoin(final String joinEntity, final Condition cond) {
@@ -183,8 +183,8 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param cond an additional filter condition applied after the natural join;
-     *            any {@link Condition} is allowed and can be {@code null}.
+     * @param cond an additional condition appended after the natural join fragment. Any {@link Condition} is allowed
+     *            and can be {@code null}.
      * @throws IllegalArgumentException if joinEntities is null or empty
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition cond) {

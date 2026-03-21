@@ -90,9 +90,9 @@ import com.landawn.abacus.util.SK;
  * Factory class for creating SQL {@link Condition} objects used in query construction.
  * Provides methods for all standard SQL comparison, logical, pattern matching, and subquery operations.
  *
- * <p><b>Warning:</b> Value-based methods (e.g., {@code equal}, {@code in}, {@code between}) generate
- * parameterized SQL with proper value binding. APIs that accept raw SQL fragments (e.g., {@code expr(...)})
- * do <b>not</b> sanitize input and must not be built from untrusted data.</p>
+ * <p><b>Warning:</b> Value-based methods (e.g., {@code equal}, {@code in}, {@code between}) capture structured
+ * values that are later rendered according to the {@link SqlBuilder} policy. APIs that accept raw SQL fragments
+ * (e.g., {@code expr(...)}) append those fragments verbatim and must not be built from untrusted data.</p>
  *
  * <p><b>API Categories:</b></p>
  * <ul>
@@ -151,7 +151,7 @@ public class Filters {
     private static final Expression ALWAYS_FALSE = Expression.of("1 > 2");
 
     private Filters() {
-        // No instance;
+        // utility class
     }
 
     /**
@@ -226,7 +226,7 @@ public class Filters {
 
     /**
      * Creates a {@link NamedProperty} instance representing a property/column name.
-     * This is used to reference database columns in a type-safe manner.
+     * This is used to reference database columns through a dedicated value object.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

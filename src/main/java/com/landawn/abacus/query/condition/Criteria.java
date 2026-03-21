@@ -605,9 +605,9 @@ public class Criteria extends AbstractCondition {
          * Adds an INNER JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .innerJoin("orders")
-         *     .where(Filters.eq("users.id", "orders.user_id"));
+         *     .where(Filters.expr("users.id = orders.user_id"));
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -623,7 +623,7 @@ public class Criteria extends AbstractCondition {
          * Adds an INNER JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .innerJoin("orders", Filters.on("users.id", "orders.user_id"));
          * }</pre>
          *
@@ -641,7 +641,7 @@ public class Criteria extends AbstractCondition {
          * Adds an INNER JOIN with multiple entities and a condition.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"));
          * }</pre>
          *
@@ -659,7 +659,7 @@ public class Criteria extends AbstractCondition {
          * Adds a LEFT JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .leftJoin("orders");
          * }</pre>
          *
@@ -676,7 +676,7 @@ public class Criteria extends AbstractCondition {
          * Adds a LEFT JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .leftJoin("orders", Filters.on("users.id", "orders.user_id"));
          * }</pre>
          *
@@ -707,7 +707,7 @@ public class Criteria extends AbstractCondition {
          * Adds a RIGHT JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .rightJoin("orders");
          * }</pre>
          *
@@ -724,7 +724,7 @@ public class Criteria extends AbstractCondition {
          * Adds a RIGHT JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .rightJoin("orders", Filters.on("users.id", "orders.user_id"));
          * }</pre>
          *
@@ -755,7 +755,7 @@ public class Criteria extends AbstractCondition {
          * Adds a FULL JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .fullJoin("orders");
          * }</pre>
          *
@@ -772,7 +772,7 @@ public class Criteria extends AbstractCondition {
          * Adds a FULL JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .fullJoin("orders", Filters.on("users.id", "orders.user_id"));
          * }</pre>
          *
@@ -803,7 +803,7 @@ public class Criteria extends AbstractCondition {
          * Adds a CROSS JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .crossJoin("colors");
          * }</pre>
          *
@@ -820,7 +820,7 @@ public class Criteria extends AbstractCondition {
          * Adds a CROSS JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .crossJoin("colors", Filters.eq("active", true));
          * }</pre>
          *
@@ -851,7 +851,7 @@ public class Criteria extends AbstractCondition {
          * Adds a NATURAL JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .naturalJoin("employees");
          * }</pre>
          *
@@ -868,7 +868,7 @@ public class Criteria extends AbstractCondition {
          * Adds a NATURAL JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Filters.criteria()
+         * Criteria criteria = Criteria.builder()
          *     .naturalJoin("employees", Filters.eq("status", "active"));
          * }</pre>
          *
