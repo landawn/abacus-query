@@ -144,8 +144,10 @@ public class Filters {
      */
     public static final Expression QME = Expr.of(SK.QUESTION_MARK);
 
+    /** Expression representing "1 < 2" which always evaluates to true. */
     static final Expression ALWAYS_TRUE = Expression.of("1 < 2");
 
+    /** Expression representing "1 > 2" which always evaluates to false. */
     private static final Expression ALWAYS_FALSE = Expression.of("1 > 2");
 
     private Filters() {
@@ -162,7 +164,7 @@ public class Filters {
      *                                    : Filters.alwaysTrue();
      * }</pre>
      *
-     * @return an Expression that always evaluates to true (1 &lt; 2)
+     * @return an {@link Expression} that always evaluates to true (1 &lt; 2)
      * @deprecated is dangerous (could silently bypass all filtering, returning all rows)
      */
     @Deprecated
@@ -179,7 +181,7 @@ public class Filters {
      *                                  : Filters.equal("status", "active");
      * }</pre>
      *
-     * @return an Expression that always evaluates to false (1 &gt; 2)
+     * @return an {@link Expression} that always evaluates to false (1 &gt; 2)
      * @deprecated is dangerous (could silently return zero rows)
      */
     @Deprecated
@@ -188,10 +190,10 @@ public class Filters {
     }
 
     /**
-     * Creates a negation condition that represents the logical NOT of the provided condition.
+     * Creates a negation condition that represents the logical {@code NOT} of the provided condition.
      *
-     * <p>This method creates a Not condition that inverts the result of the wrapped condition.
-     * It can be used to negate any other condition type, such as Equal, Like, In, Between, etc.</p>
+     * <p>This method creates a {@link Not} condition that inverts the result of the wrapped condition.
+     * It can be used to negate any other condition type, such as {@link Equal}, {@link Like}, {@link In}, {@link Between}, etc.</p>
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -214,7 +216,7 @@ public class Filters {
      * }</pre>
      * 
      * @param cond the condition to negate
-     * @return a Not condition that wraps and negates the provided condition
+     * @return a {@link Not} condition that wraps and negates the provided condition
      * @see Not
      * @see Condition
      */
@@ -223,7 +225,7 @@ public class Filters {
     }
 
     /**
-     * Creates a NamedProperty instance representing a property/column name.
+     * Creates a {@link NamedProperty} instance representing a property/column name.
      * This is used to reference database columns in a type-safe manner.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -232,14 +234,14 @@ public class Filters {
      * }</pre>
      *
      * @param propName the name of the property/column
-     * @return a NamedProperty instance
+     * @return a {@link NamedProperty} instance
      */
     public static NamedProperty namedProperty(final String propName) {
         return NamedProperty.of(propName);
     }
 
     /**
-     * Creates an Expression from a string literal.
+     * Creates an {@link Expression} from a string literal.
      * This allows for custom SQL expressions to be included in queries.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -248,14 +250,14 @@ public class Filters {
      * }</pre>
      *
      * @param literal the SQL expression as a string
-     * @return an Expression instance
+     * @return an {@link Expression} instance
      */
     public static Expression expr(final String literal) {
         return Expression.of(literal);
     }
 
     /**
-     * Creates a binary condition with the specified property name, operator, and value.
+     * Creates a {@link Binary} condition with the specified property name, operator, and value.
      * This is a general method for creating conditions with any binary operator.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -266,14 +268,14 @@ public class Filters {
      * @param propName the property/column name
      * @param operator the binary operator to use
      * @param propValue the value to compare against
-     * @return a Binary condition
+     * @return a {@link Binary} condition
      */
     public static Binary binary(final String propName, final Operator operator, final Object propValue) {
         return new Binary(propName, operator, propValue);
     }
 
     /**
-     * Creates an equality condition (=) for the specified property and value.
+     * Creates an equality condition ({@code =}) for the specified property and value.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -282,7 +284,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare for equality
-     * @return an Equal condition
+     * @return an {@link Equal} condition
      */
     public static Equal equal(final String propName, final Object propValue) { //NOSONAR
         return new Equal(propName, propValue);
@@ -290,7 +292,7 @@ public class Filters {
 
     /**
      * Creates a parameterized equality condition for use with prepared statements.
-     * The value will be represented by a question mark (?) placeholder.
+     * The value will be represented by a question mark ({@code ?}) placeholder.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -299,7 +301,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an Equal condition with a parameter placeholder
+     * @return an {@link Equal} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static Equal equal(final String propName) {//NOSONAR
@@ -307,7 +309,7 @@ public class Filters {
     }
 
     /**
-     * Creates an equality condition (=) for the specified property and value.
+     * Creates an equality condition ({@code =}) for the specified property and value.
      * This is a shorthand alias for {@link #equal(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -317,7 +319,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare for equality
-     * @return an Equal condition
+     * @return an {@link Equal} condition
      */
     @Beta
     public static Equal eq(final String propName, final Object propValue) {
@@ -335,7 +337,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an Equal condition with a parameter placeholder
+     * @return an {@link Equal} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
@@ -344,7 +346,7 @@ public class Filters {
     }
 
     /**
-     * Creates an OR condition from a map where each entry represents a property-value equality check
+     * Creates an {@code OR} condition from a map where each entry represents a property-value equality check
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -357,8 +359,8 @@ public class Filters {
      * }</pre>
      *
      * @param props map of property names to values (must not be empty)
-     * @return an Or condition
-     * @throws IllegalArgumentException if props is empty
+     * @return an {@link Or} condition
+     * @throws IllegalArgumentException if {@code props} is empty
      */
     public static Or anyEqual(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
@@ -386,8 +388,8 @@ public class Filters {
     }
 
     /**
-     * Creates an OR condition from an entity object using all its properties.
-     * Each property of the entity will be included as an equality check in the OR condition
+     * Creates an {@code OR} condition from an entity object using all its properties.
+     * Each property of the entity will be included as an equality check in the {@code OR} condition
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -398,7 +400,8 @@ public class Filters {
      * }</pre>
      *
      * @param entity the entity object whose properties will be used
-     * @return an Or condition
+     * @return an {@link Or} condition
+     * @throws IllegalArgumentException if {@code entity} is null
      */
     @SuppressWarnings("deprecation")
     public static Or anyEqual(final Object entity) {
@@ -408,8 +411,8 @@ public class Filters {
     }
 
     /**
-     * Creates an OR condition from an entity object using only the specified properties.
-     * Each property forms an equality check in the OR condition
+     * Creates an {@code OR} condition from an entity object using only the specified properties.
+     * Each property forms an equality check in the {@code OR} condition
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -421,8 +424,8 @@ public class Filters {
      *
      * @param entity the entity object
      * @param selectPropNames the property names to include (must not be empty)
-     * @return an Or condition
-     * @throws IllegalArgumentException if selectPropNames is empty
+     * @return an {@link Or} condition
+     * @throws IllegalArgumentException if {@code entity} is null or {@code selectPropNames} is empty
      */
     public static Or anyEqual(final Object entity, final Collection<String> selectPropNames) {
         N.checkArgNotNull(entity, "entity");
@@ -452,7 +455,7 @@ public class Filters {
     }
 
     /**
-     * Creates an OR condition with two property-value pairs
+     * Creates an {@code OR} condition with two property-value pairs
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -465,14 +468,14 @@ public class Filters {
      * @param propValue1 first property value
      * @param propName2 second property name
      * @param propValue2 second property value
-     * @return an Or condition
+     * @return an {@link Or} condition
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).or(equal(propName2, propValue2));
     }
 
     /**
-     * Creates an OR condition with three property-value pairs
+     * Creates an {@code OR} condition with three property-value pairs
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -486,7 +489,7 @@ public class Filters {
      * @param propValue2 second property value
      * @param propName3 third property name
      * @param propValue3 third property value
-     * @return an Or condition
+     * @return an {@link Or} condition
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -494,7 +497,7 @@ public class Filters {
     }
 
     /**
-     * Creates an AND condition from a map where each entry represents a property-value equality check
+     * Creates an {@code AND} condition from a map where each entry represents a property-value equality check
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -507,8 +510,8 @@ public class Filters {
      * }</pre>
      *
      * @param props map of property names to values (must not be empty)
-     * @return an And condition
-     * @throws IllegalArgumentException if props is empty
+     * @return an {@link And} condition
+     * @throws IllegalArgumentException if {@code props} is empty
      */
     public static And allEqual(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
@@ -537,8 +540,8 @@ public class Filters {
     }
 
     /**
-     * Creates an AND condition from an entity object using all its properties.
-     * Each property of the entity will be included as an equality check in the AND condition
+     * Creates an {@code AND} condition from an entity object using all its properties.
+     * Each property of the entity will be included as an equality check in the {@code AND} condition
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -549,7 +552,8 @@ public class Filters {
      * }</pre>
      *
      * @param entity the entity object whose properties will be used
-     * @return an And condition
+     * @return an {@link And} condition
+     * @throws IllegalArgumentException if {@code entity} is null
      */
     @SuppressWarnings("deprecation")
     public static And allEqual(final Object entity) {
@@ -559,8 +563,8 @@ public class Filters {
     }
 
     /**
-     * Creates an AND condition from an entity object using only the specified properties.
-     * Each property forms an equality check in the AND condition
+     * Creates an {@code AND} condition from an entity object using only the specified properties.
+     * Each property forms an equality check in the {@code AND} condition
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -572,8 +576,8 @@ public class Filters {
      *
      * @param entity the entity object
      * @param selectPropNames the property names to include (must not be empty)
-     * @return an And condition
-     * @throws IllegalArgumentException if selectPropNames is empty
+     * @return an {@link And} condition
+     * @throws IllegalArgumentException if {@code entity} is null or {@code selectPropNames} is empty
      */
     public static And allEqual(final Object entity, final Collection<String> selectPropNames) {
         N.checkArgNotNull(entity, "entity");
@@ -603,7 +607,7 @@ public class Filters {
     }
 
     /**
-     * Creates an AND condition with two property-value pairs.
+     * Creates an {@code AND} condition with two property-value pairs.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -615,14 +619,14 @@ public class Filters {
      * @param propValue1 first property value
      * @param propName2 second property name
      * @param propValue2 second property value
-     * @return an And condition
+     * @return an {@link And} condition
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).and(equal(propName2, propValue2));
     }
 
     /**
-     * Creates an AND condition with three property-value pairs.
+     * Creates an {@code AND} condition with three property-value pairs.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -635,7 +639,7 @@ public class Filters {
      * @param propValue2 second property value
      * @param propName3 third property name
      * @param propValue3 third property value
-     * @return an And condition
+     * @return an {@link And} condition
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -643,8 +647,8 @@ public class Filters {
     }
 
     /**
-     * Creates an OR condition where each element in the list represents an AND condition of property-value pairs.
-     * This is useful for creating conditions like: (a=1 AND b=2) OR (a=3 AND b=4).
+     * Creates an {@code OR} condition where each element in the list represents an {@code AND} condition of property-value pairs.
+     * This is useful for creating conditions like: {@code (a=1 AND b=2) OR (a=3 AND b=4)}.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -656,8 +660,8 @@ public class Filters {
      * }</pre>
      *
      * @param propsList list of property maps (must not be empty)
-     * @return an Or condition
-     * @throws IllegalArgumentException if propsList is empty
+     * @return an {@link Or} condition
+     * @throws IllegalArgumentException if {@code propsList} is empty
      */
     @Beta
     public static Or anyOfAllEqual(final List<? extends Map<String, ?>> propsList) {
@@ -673,7 +677,7 @@ public class Filters {
     }
 
     /**
-     * Creates an OR condition from a collection of entities, where each entity forms an AND condition.
+     * Creates an {@code OR} condition from a collection of entities, where each entity forms an {@code AND} condition.
      * All properties of each entity will be used.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -687,8 +691,8 @@ public class Filters {
      * }</pre>
      *
      * @param entities collection of entity objects (must not be empty)
-     * @return an Or condition
-     * @throws IllegalArgumentException if entities is empty
+     * @return an {@link Or} condition
+     * @throws IllegalArgumentException if {@code entities} is empty or all elements are null
      */
     @SuppressWarnings("deprecation")
     @Beta
@@ -702,8 +706,8 @@ public class Filters {
     }
 
     /**
-     * Creates an OR condition from a collection of entities using only specified properties.
-     * Each entity forms an AND condition with the selected properties.
+     * Creates an {@code OR} condition from a collection of entities using only specified properties.
+     * Each entity forms an {@code AND} condition with the selected properties.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -714,8 +718,8 @@ public class Filters {
      *
      * @param entities collection of entity objects (must not be empty)
      * @param selectPropNames the property names to include (must not be empty)
-     * @return an Or condition
-     * @throws IllegalArgumentException if entities or selectPropNames is empty
+     * @return an {@link Or} condition
+     * @throws IllegalArgumentException if {@code entities} or {@code selectPropNames} is empty, or all entities are null
      */
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> selectPropNames) {
@@ -735,8 +739,8 @@ public class Filters {
     }
 
     /**
-     * Creates a BETWEEN-like condition using greater-than (gt) and less-than (lt) comparisons.
-     * The result is: propName &gt; minValue AND propName &lt; maxValue.
+     * Creates a {@code BETWEEN}-like condition using greater-than ({@code gt}) and less-than ({@code lt}) comparisons.
+     * The result is: {@code propName > minValue AND propName < maxValue}.
      *
      * <p>Abbreviations: {@code gt} = {@link #greaterThan(String, Object) greaterThan},
      * {@code lt} = {@link #lessThan(String, Object) lessThan}.</p>
@@ -750,15 +754,15 @@ public class Filters {
      * @param propName the property/column name
      * @param minValue the minimum value (exclusive)
      * @param maxValue the maximum value (exclusive)
-     * @return an And condition
+     * @return an {@link And} condition
      */
     public static And gtAndLt(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(lt(propName, maxValue));
     }
 
     /**
-     * Creates a parameterized BETWEEN-like condition for prepared statements.
-     * The result is: propName &gt; ? AND propName &lt; ?.
+     * Creates a parameterized {@code BETWEEN}-like condition for prepared statements.
+     * The result is: {@code propName > ? AND propName < ?}.
      *
      * <p>Abbreviations: {@code gt} = {@link #greaterThan(String) greaterThan},
      * {@code lt} = {@link #lessThan(String) lessThan}.</p>
@@ -770,15 +774,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an And condition with parameter placeholders
+     * @return an {@link And} condition with parameter placeholders
      */
     public static And gtAndLt(final String propName) {
         return gt(propName).and(lt(propName));
     }
 
     /**
-     * Creates a BETWEEN-like condition using greater-than-or-equal (ge) and less-than (lt) comparisons.
-     * The result is: propName &gt;= minValue AND propName &lt; maxValue.
+     * Creates a {@code BETWEEN}-like condition using greater-than-or-equal ({@code ge}) and less-than ({@code lt}) comparisons.
+     * The result is: {@code propName >= minValue AND propName < maxValue}.
      *
      * <p>Abbreviations: {@code ge} = {@link #greaterThanOrEqual(String, Object) greaterThanOrEqual},
      * {@code lt} = {@link #lessThan(String, Object) lessThan}.</p>
@@ -792,15 +796,15 @@ public class Filters {
      * @param propName the property/column name
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (exclusive)
-     * @return an And condition
+     * @return an {@link And} condition
      */
     public static And geAndLt(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(lt(propName, maxValue));
     }
 
     /**
-     * Creates a parameterized BETWEEN-like condition for prepared statements.
-     * The result is: propName &gt;= ? AND propName &lt; ?.
+     * Creates a parameterized {@code BETWEEN}-like condition for prepared statements.
+     * The result is: {@code propName >= ? AND propName < ?}.
      *
      * <p>Abbreviations: {@code ge} = {@link #greaterThanOrEqual(String) greaterThanOrEqual},
      * {@code lt} = {@link #lessThan(String) lessThan}.</p>
@@ -812,15 +816,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an And condition with parameter placeholders
+     * @return an {@link And} condition with parameter placeholders
      */
     public static And geAndLt(final String propName) {
         return ge(propName).and(lt(propName));
     }
 
     /**
-     * Creates a BETWEEN-like condition using greater-than-or-equal (ge) and less-than-or-equal (le) comparisons.
-     * The result is: propName &gt;= minValue AND propName &lt;= maxValue.
+     * Creates a {@code BETWEEN}-like condition using greater-than-or-equal ({@code ge}) and less-than-or-equal ({@code le}) comparisons.
+     * The result is: {@code propName >= minValue AND propName <= maxValue}.
      *
      * <p>Abbreviations: {@code ge} = {@link #greaterThanOrEqual(String, Object) greaterThanOrEqual},
      * {@code le} = {@link #lessThanOrEqual(String, Object) lessThanOrEqual}.</p>
@@ -834,15 +838,15 @@ public class Filters {
      * @param propName the property/column name
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (inclusive)
-     * @return an And condition
+     * @return an {@link And} condition
      */
     public static And geAndLe(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(le(propName, maxValue));
     }
 
     /**
-     * Creates a parameterized BETWEEN-like condition for prepared statements.
-     * The result is: propName &gt;= ? AND propName &lt;= ?.
+     * Creates a parameterized {@code BETWEEN}-like condition for prepared statements.
+     * The result is: {@code propName >= ? AND propName <= ?}.
      *
      * <p>Abbreviations: {@code ge} = {@link #greaterThanOrEqual(String) greaterThanOrEqual},
      * {@code le} = {@link #lessThanOrEqual(String) lessThanOrEqual}.</p>
@@ -854,15 +858,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an And condition with parameter placeholders
+     * @return an {@link And} condition with parameter placeholders
      */
     public static And geAndLe(final String propName) {
         return ge(propName).and(le(propName));
     }
 
     /**
-     * Creates a BETWEEN-like condition using greater-than (gt) and less-than-or-equal (le) comparisons.
-     * The result is: propName &gt; minValue AND propName &lt;= maxValue.
+     * Creates a {@code BETWEEN}-like condition using greater-than ({@code gt}) and less-than-or-equal ({@code le}) comparisons.
+     * The result is: {@code propName > minValue AND propName <= maxValue}.
      *
      * <p>Abbreviations: {@code gt} = {@link #greaterThan(String, Object) greaterThan},
      * {@code le} = {@link #lessThanOrEqual(String, Object) lessThanOrEqual}.</p>
@@ -876,15 +880,15 @@ public class Filters {
      * @param propName the property/column name
      * @param minValue the minimum value (exclusive)
      * @param maxValue the maximum value (inclusive)
-     * @return an And condition
+     * @return an {@link And} condition
      */
     public static And gtAndLe(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(le(propName, maxValue));
     }
 
     /**
-     * Creates a parameterized BETWEEN-like condition for prepared statements.
-     * The result is: propName &gt; ? AND propName &lt;= ?.
+     * Creates a parameterized {@code BETWEEN}-like condition for prepared statements.
+     * The result is: {@code propName > ? AND propName <= ?}.
      *
      * <p>Abbreviations: {@code gt} = {@link #greaterThan(String) greaterThan},
      * {@code le} = {@link #lessThanOrEqual(String) lessThanOrEqual}.</p>
@@ -896,15 +900,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an And condition with parameter placeholders
+     * @return an {@link And} condition with parameter placeholders
      */
     public static And gtAndLe(final String propName) {
         return gt(propName).and(le(propName));
     }
 
     /**
-     * Converts an EntityId to an AND condition where each key-value pair becomes an equality check.
-     * EntityId typically represents a composite primary key.
+     * Converts an {@link EntityId} to an {@link And} condition where each key-value pair becomes an equality check.
+     * {@link EntityId} typically represents a composite primary key.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -913,9 +917,9 @@ public class Filters {
      * // SQL fragment: userId = 123 AND orderId = 456
      * }</pre>
      *
-     * @param entityId the EntityId containing key-value pairs (must not be null)
-     * @return an And condition
-     * @throws IllegalArgumentException if entityId is null
+     * @param entityId the {@link EntityId} containing key-value pairs (must not be null)
+     * @return an {@link And} condition
+     * @throws IllegalArgumentException if {@code entityId} is null or contains no keys
      */
     public static And id2Cond(final EntityId entityId) {
         N.checkArgNotNull(entityId, "entityId");
@@ -945,7 +949,7 @@ public class Filters {
     }
 
     /**
-     * Converts a collection of EntityIds to an OR condition where each EntityId becomes an AND condition.
+     * Converts a collection of {@link EntityId}s to an {@link Or} condition where each {@link EntityId} becomes an {@link And} condition.
      * Useful for querying multiple entities by their composite keys.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -958,9 +962,9 @@ public class Filters {
      * // Results in: (userId=1 AND orderId=100) OR (userId=2 AND orderId=200)
      * }</pre>
      *
-     * @param entityIds collection of EntityIds (must not be empty)
-     * @return an Or condition
-     * @throws IllegalArgumentException if entityIds is empty
+     * @param entityIds collection of {@link EntityId}s (must not be empty)
+     * @return an {@link Or} condition
+     * @throws IllegalArgumentException if {@code entityIds} is empty
      */
     public static Or id2Cond(final Collection<? extends EntityId> entityIds) {
         N.checkArgNotEmpty(entityIds, "entityIds");
@@ -976,7 +980,7 @@ public class Filters {
     }
 
     /**
-     * Creates a not-equal condition (!=) for the specified property and value.
+     * Creates a not-equal condition ({@code !=}) for the specified property and value.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -986,7 +990,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare for inequality
-     * @return a NotEqual condition
+     * @return a {@link NotEqual} condition
      */
     public static NotEqual notEqual(final String propName, final Object propValue) {
         return new NotEqual(propName, propValue);
@@ -994,7 +998,7 @@ public class Filters {
 
     /**
      * Creates a parameterized not-equal condition for use with prepared statements.
-     * The value will be represented by a question mark (?) placeholder.
+     * The value will be represented by a question mark ({@code ?}) placeholder.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1003,7 +1007,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a NotEqual condition with a parameter placeholder
+     * @return a {@link NotEqual} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotEqual notEqual(final String propName) {
@@ -1011,7 +1015,7 @@ public class Filters {
     }
 
     /**
-     * Creates a not-equal condition (!=) for the specified property and value.
+     * Creates a not-equal condition ({@code !=}) for the specified property and value.
      * This is a shorthand alias for {@link #notEqual(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1021,7 +1025,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare for inequality
-     * @return a NotEqual condition
+     * @return a {@link NotEqual} condition
      */
     @Beta
     public static NotEqual ne(final String propName, final Object propValue) {
@@ -1039,7 +1043,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a NotEqual condition with a parameter placeholder
+     * @return a {@link NotEqual} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
@@ -1048,7 +1052,7 @@ public class Filters {
     }
 
     /**
-     * Creates a greater-than condition (>) for the specified property and value.
+     * Creates a greater-than condition ({@code >}) for the specified property and value.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1058,7 +1062,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a GreaterThan condition
+     * @return a {@link GreaterThan} condition
      */
     public static GreaterThan greaterThan(final String propName, final Object propValue) {
         return new GreaterThan(propName, propValue);
@@ -1074,7 +1078,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a GreaterThan condition with a parameter placeholder
+     * @return a {@link GreaterThan} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static GreaterThan greaterThan(final String propName) {
@@ -1082,7 +1086,7 @@ public class Filters {
     }
 
     /**
-     * Creates a greater-than condition (>) for the specified property and value.
+     * Creates a greater-than condition ({@code >}) for the specified property and value.
      * This is a shorthand alias for {@link #greaterThan(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1092,7 +1096,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a GreaterThan condition
+     * @return a {@link GreaterThan} condition
      */
     @Beta
     public static GreaterThan gt(final String propName, final Object propValue) {
@@ -1110,7 +1114,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a GreaterThan condition with a parameter placeholder
+     * @return a {@link GreaterThan} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
@@ -1119,7 +1123,7 @@ public class Filters {
     }
 
     /**
-     * Creates a greater-than-or-equal condition (>=) for the specified property and value.
+     * Creates a greater-than-or-equal condition ({@code >=}) for the specified property and value.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1129,7 +1133,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a GreaterThanOrEqual condition
+     * @return a {@link GreaterThanOrEqual} condition
      */
     public static GreaterThanOrEqual greaterThanOrEqual(final String propName, final Object propValue) {
         return new GreaterThanOrEqual(propName, propValue);
@@ -1145,7 +1149,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a GreaterThanOrEqual condition with a parameter placeholder
+     * @return a {@link GreaterThanOrEqual} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static GreaterThanOrEqual greaterThanOrEqual(final String propName) {
@@ -1153,7 +1157,7 @@ public class Filters {
     }
 
     /**
-     * Creates a greater-than-or-equal condition (>=) for the specified property and value.
+     * Creates a greater-than-or-equal condition ({@code >=}) for the specified property and value.
      * This is a shorthand alias for {@link #greaterThanOrEqual(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1163,7 +1167,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a GreaterThanOrEqual condition
+     * @return a {@link GreaterThanOrEqual} condition
      */
     @Beta
     public static GreaterThanOrEqual ge(final String propName, final Object propValue) {
@@ -1181,7 +1185,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a GreaterThanOrEqual condition with a parameter placeholder
+     * @return a {@link GreaterThanOrEqual} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
@@ -1190,17 +1194,17 @@ public class Filters {
     }
 
     /**
-     * Creates a less-than condition (&lt;) for the specified property and value.
+     * Creates a less-than condition ({@code <}) for the specified property and value.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lessThan("age", 65);
-     * // SQL fragment: age &lt; 65
+     * // SQL fragment: age < 65
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a LessThan condition
+     * @return a {@link LessThan} condition
      */
     public static LessThan lessThan(final String propName, final Object propValue) {
         return new LessThan(propName, propValue);
@@ -1212,11 +1216,11 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lessThan("max_price");
-     * // SQL fragment: max_price &lt; ?
+     * // SQL fragment: max_price < ?
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a LessThan condition with a parameter placeholder
+     * @return a {@link LessThan} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static LessThan lessThan(final String propName) {
@@ -1224,7 +1228,7 @@ public class Filters {
     }
 
     /**
-     * Creates a less-than condition (&lt;) for the specified property and value.
+     * Creates a less-than condition ({@code <}) for the specified property and value.
      * This is a shorthand alias for {@link #lessThan(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1234,7 +1238,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a LessThan condition
+     * @return a {@link LessThan} condition
      */
     @Beta
     public static LessThan lt(final String propName, final Object propValue) {
@@ -1252,7 +1256,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a LessThan condition with a parameter placeholder
+     * @return a {@link LessThan} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
@@ -1261,17 +1265,17 @@ public class Filters {
     }
 
     /**
-     * Creates a less-than-or-equal condition (&lt;=) for the specified property and value.
+     * Creates a less-than-or-equal condition ({@code <=}) for the specified property and value.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThanOrEqual condition = Filters.lessThanOrEqual("discount", 50);
-     * // SQL fragment: discount &lt;= 50
+     * // SQL fragment: discount <= 50
      * }</pre>
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a LessThanOrEqual condition
+     * @return a {@link LessThanOrEqual} condition
      */
     public static LessThanOrEqual lessThanOrEqual(final String propName, final Object propValue) {
         return new LessThanOrEqual(propName, propValue);
@@ -1283,11 +1287,11 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThanOrEqual condition = Filters.lessThanOrEqual("max_attempts");
-     * // SQL fragment: max_attempts &lt;= ?
+     * // SQL fragment: max_attempts <= ?
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a LessThanOrEqual condition with a parameter placeholder
+     * @return a {@link LessThanOrEqual} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static LessThanOrEqual lessThanOrEqual(final String propName) {
@@ -1295,7 +1299,7 @@ public class Filters {
     }
 
     /**
-     * Creates a less-than-or-equal condition (&lt;=) for the specified property and value.
+     * Creates a less-than-or-equal condition ({@code <=}) for the specified property and value.
      * This is a shorthand alias for {@link #lessThanOrEqual(String, Object)}.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1305,7 +1309,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare against
-     * @return a LessThanOrEqual condition
+     * @return a {@link LessThanOrEqual} condition
      */
     @Beta
     public static LessThanOrEqual le(final String propName, final Object propValue) {
@@ -1323,7 +1327,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a LessThanOrEqual condition with a parameter placeholder
+     * @return a {@link LessThanOrEqual} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
     @Beta
@@ -1332,7 +1336,7 @@ public class Filters {
     }
 
     /**
-     * Creates a BETWEEN condition for the specified property and range values.
+     * Creates a {@link Between} condition for the specified property and range values.
      * The condition is inclusive on both ends.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1344,14 +1348,14 @@ public class Filters {
      * @param propName the property/column name
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (inclusive)
-     * @return a Between condition
+     * @return a {@link Between} condition
      */
     public static Between between(final String propName, final Object minValue, final Object maxValue) {
         return new Between(propName, minValue, maxValue);
     }
 
     /**
-     * Creates a parameterized BETWEEN condition for use with prepared statements.
+     * Creates a parameterized {@link Between} condition for use with prepared statements.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1360,7 +1364,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a Between condition with parameter placeholders
+     * @return a {@link Between} condition with parameter placeholders
      */
     public static Between between(final String propName) {
         return new Between(propName, Filters.QME, Filters.QME);
@@ -1370,7 +1374,7 @@ public class Filters {
     // Use between(String, Object, Object) or between(String) instead.
 
     /**
-     * Creates a NOT BETWEEN condition for the specified property and range values.
+     * Creates a {@link NotBetween} condition for the specified property and range values.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1382,14 +1386,14 @@ public class Filters {
      * @param propName the property/column name
      * @param minValue the minimum value of the excluded range (inclusive)
      * @param maxValue the maximum value of the excluded range (inclusive)
-     * @return a NotBetween condition
+     * @return a {@link NotBetween} condition
      */
     public static NotBetween notBetween(final String propName, final Object minValue, final Object maxValue) {
         return new NotBetween(propName, minValue, maxValue);
     }
 
     /**
-     * Creates a parameterized NOT BETWEEN condition for use with prepared statements.
+     * Creates a parameterized {@link NotBetween} condition for use with prepared statements.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1398,15 +1402,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a NotBetween condition with parameter placeholders
+     * @return a {@link NotBetween} condition with parameter placeholders
      */
     public static NotBetween notBetween(final String propName) {
         return new NotBetween(propName, Filters.QME, Filters.QME);
     }
 
     /**
-     * Creates a LIKE condition for pattern matching.
-     * Use SQL wildcards (% for any characters, _ for single character) in the pattern.
+     * Creates a {@link Like} condition for pattern matching.
+     * Use SQL wildcards ({@code %} for any characters, {@code _} for single character) in the pattern.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1416,14 +1420,14 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the pattern to match (can include SQL wildcards)
-     * @return a Like condition
+     * @return a {@link Like} condition
      */
     public static Like like(final String propName, final Object propValue) {
         return new Like(propName, propValue);
     }
 
     /**
-     * Creates a parameterized LIKE condition for use with prepared statements.
+     * Creates a parameterized {@link Like} condition for use with prepared statements.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1432,15 +1436,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a Like condition with a parameter placeholder
+     * @return a {@link Like} condition with a parameter placeholder
      */
     public static Like like(final String propName) {
         return like(propName, QME);
     }
 
     /**
-     * Creates a NOT LIKE condition for pattern matching exclusion.
-     * Use SQL wildcards (% for any characters, _ for single character) in the pattern.
+     * Creates a {@link NotLike} condition for pattern matching exclusion.
+     * Use SQL wildcards ({@code %} for any characters, {@code _} for single character) in the pattern.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1450,14 +1454,14 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the pattern to exclude (can include SQL wildcards)
-     * @return a NotLike condition
+     * @return a {@link NotLike} condition
      */
     public static NotLike notLike(final String propName, final Object propValue) {
         return new NotLike(propName, propValue);
     }
 
     /**
-     * Creates a parameterized NOT LIKE condition for use with prepared statements.
+     * Creates a parameterized {@link NotLike} condition for use with prepared statements.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1466,15 +1470,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return a NotLike condition with a parameter placeholder
+     * @return a {@link NotLike} condition with a parameter placeholder
      */
     public static NotLike notLike(final String propName) {
         return new NotLike(propName, Filters.QME);
     }
 
     /**
-     * Creates a LIKE condition that checks if the property contains the specified value.
-     * Automatically wraps the value with % wildcards.
+     * Creates a {@link Like} condition that checks if the property contains the specified value.
+     * Automatically wraps the value with {@code %} wildcards.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1484,15 +1488,15 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to search for
-     * @return a Like condition
+     * @return a {@link Like} condition
      */
     public static Like contains(final String propName, final Object propValue) {
         return new Like(propName, SK._PERCENT + N.stringOf(propValue) + SK._PERCENT);
     }
 
     /**
-     * Creates a NOT LIKE condition that checks if the property does not contain the specified value.
-     * Automatically wraps the value with % wildcards.
+     * Creates a {@link NotLike} condition that checks if the property does not contain the specified value.
+     * Automatically wraps the value with {@code %} wildcards.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1502,15 +1506,15 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to exclude
-     * @return a NotLike condition
+     * @return a {@link NotLike} condition
      */
     public static NotLike notContains(final String propName, final Object propValue) {
         return new NotLike(propName, SK._PERCENT + N.stringOf(propValue) + SK._PERCENT);
     }
 
     /**
-     * Creates a LIKE condition that checks if the property starts with the specified value.
-     * Automatically appends a % wildcard.
+     * Creates a {@link Like} condition that checks if the property starts with the specified value.
+     * Automatically appends a {@code %} wildcard.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1520,15 +1524,15 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the prefix to search for
-     * @return a Like condition
+     * @return a {@link Like} condition
      */
     public static Like startsWith(final String propName, final Object propValue) {
         return new Like(propName, N.stringOf(propValue) + SK._PERCENT);
     }
 
     /**
-     * Creates a NOT LIKE condition that checks if the property does not start with the specified value.
-     * Automatically appends a % wildcard.
+     * Creates a {@link NotLike} condition that checks if the property does not start with the specified value.
+     * Automatically appends a {@code %} wildcard.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1538,15 +1542,15 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the prefix to exclude
-     * @return a NotLike condition
+     * @return a {@link NotLike} condition
      */
     public static NotLike notStartsWith(final String propName, final Object propValue) {
         return new NotLike(propName, N.stringOf(propValue) + SK._PERCENT);
     }
 
     /**
-     * Creates a LIKE condition that checks if the property ends with the specified value.
-     * Automatically prepends a % wildcard.
+     * Creates a {@link Like} condition that checks if the property ends with the specified value.
+     * Automatically prepends a {@code %} wildcard.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1556,15 +1560,15 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the suffix to search for
-     * @return a Like condition
+     * @return a {@link Like} condition
      */
     public static Like endsWith(final String propName, final Object propValue) {
         return new Like(propName, SK._PERCENT + N.stringOf(propValue));
     }
 
     /**
-     * Creates a NOT LIKE condition that checks if the property does not end with the specified value.
-     * Automatically prepends a % wildcard.
+     * Creates a {@link NotLike} condition that checks if the property does not end with the specified value.
+     * Automatically prepends a {@code %} wildcard.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1574,14 +1578,14 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the suffix to exclude
-     * @return a NotLike condition
+     * @return a {@link NotLike} condition
      */
     public static NotLike notEndsWith(final String propName, final Object propValue) {
         return new NotLike(propName, SK._PERCENT + N.stringOf(propValue));
     }
 
     /**
-     * Creates an IS NULL condition to check if a property value is null.
+     * Creates an {@link IsNull} condition to check if a property value is null.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1590,7 +1594,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an IsNull condition
+     * @return an {@link IsNull} condition
      */
     public static IsNull isNull(final String propName) {
         return new IsNull(propName);
@@ -1598,7 +1602,7 @@ public class Filters {
 
     /**
      * Creates a condition to check if a property is null or empty string.
-     * This combines IS NULL and = '' checks with OR.
+     * This combines {@code IS NULL} and {@code = ''} checks with {@code OR}.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1607,7 +1611,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an Or condition combining null and empty checks
+     * @return an {@link Or} condition combining null and empty checks
      */
     @Beta
     public static Or isNullOrEmpty(final String propName) {
@@ -1616,7 +1620,7 @@ public class Filters {
 
     /**
      * Creates a condition to check if a property is null or zero.
-     * This combines IS NULL and = 0 checks with OR.
+     * This combines {@code IS NULL} and {@code = 0} checks with {@code OR}.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1625,7 +1629,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an Or condition combining null and zero checks
+     * @return an {@link Or} condition combining null and zero checks
      */
     @Beta
     public static Or isNullOrZero(final String propName) {
@@ -1633,7 +1637,7 @@ public class Filters {
     }
 
     /**
-     * Creates an IS NOT NULL condition to check if a property value is not null.
+     * Creates an {@link IsNotNull} condition to check if a property value is not null.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1642,7 +1646,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an IsNotNull condition
+     * @return an {@link IsNotNull} condition
      */
     public static IsNotNull isNotNull(final String propName) {
         return new IsNotNull(propName);
@@ -1658,7 +1662,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an And condition combining not-null and not-empty checks
+     * @return an {@link And} condition combining not-null and not-empty checks
      */
     @Beta
     public static And isNotNullAndNotEmpty(final String propName) {
@@ -1675,7 +1679,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an And condition combining not-null and non-zero checks
+     * @return an {@link And} condition combining not-null and non-zero checks
      */
     @Beta
     public static And isNotNullAndNotZero(final String propName) {
@@ -1683,7 +1687,7 @@ public class Filters {
     }
 
     /**
-     * Creates a condition to check if a numeric property value is NaN (Not a Number).
+     * Creates a condition to check if a numeric property value is {@code NaN} (Not a Number).
      * This is specific to floating-point columns.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1693,14 +1697,14 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an IsNaN condition
+     * @return an {@link IsNaN} condition
      */
     public static IsNaN isNaN(final String propName) {
         return new IsNaN(propName);
     }
 
     /**
-     * Creates a condition to check if a numeric property value is not NaN.
+     * Creates a condition to check if a numeric property value is not {@code NaN}.
      * This is specific to floating-point columns.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1710,7 +1714,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an IsNotNaN condition
+     * @return an {@link IsNotNaN} condition
      */
     public static IsNotNaN isNotNaN(final String propName) {
         return new IsNotNaN(propName);
@@ -1727,7 +1731,7 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an IsInfinite condition
+     * @return an {@link IsInfinite} condition
      */
     public static IsInfinite isInfinite(final String propName) {
         return new IsInfinite(propName);
@@ -1744,15 +1748,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @return an IsNotInfinite condition
+     * @return an {@link IsNotInfinite} condition
      */
     public static IsNotInfinite isNotInfinite(final String propName) {
         return new IsNotInfinite(propName);
     }
 
     /**
-     * Creates an IS condition for database-specific identity comparisons.
-     * Different from equals (=), IS is used for special SQL comparisons.
+     * Creates an {@link Is} condition for database-specific identity comparisons.
+     * Different from equals ({@code =}), {@code IS} is used for special SQL comparisons.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1762,15 +1766,15 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare
-     * @return an Is condition
+     * @return an {@link Is} condition
      */
     public static Is is(final String propName, final Object propValue) {
         return new Is(propName, propValue);
     }
 
     /**
-     * Creates an IS NOT condition for database-specific identity comparisons.
-     * Different from not equals (!=), IS NOT is used for special SQL comparisons.
+     * Creates an {@link IsNot} condition for database-specific identity comparisons.
+     * Different from not equals ({@code !=}), {@code IS NOT} is used for special SQL comparisons.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1780,15 +1784,15 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param propValue the value to compare
-     * @return an IsNot condition
+     * @return an {@link IsNot} condition
      */
     public static IsNot isNot(final String propName, final Object propValue) {
         return new IsNot(propName, propValue);
     }
 
     /**
-     * Creates an OR junction combining multiple conditions.
-     * At least one condition must be true for the OR to be true.
+     * Creates an {@link Or} junction combining multiple conditions.
+     * At least one condition must be true for the {@code OR} to be true.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1800,16 +1804,16 @@ public class Filters {
      * // Results in: ((status = 'active') OR (priority > 5) OR (deleted_at IS NULL))
      * }</pre>
      *
-     * @param conditions the array of conditions to combine with OR
-     * @return an Or junction
+     * @param conditions the array of conditions to combine with {@code OR}
+     * @return an {@link Or} junction
      */
     public static Or or(final Condition... conditions) {
         return new Or(conditions);
     }
 
     /**
-     * Creates an OR junction combining multiple conditions from a collection.
-     * At least one condition must be true for the OR to be true.
+     * Creates an {@link Or} junction combining multiple conditions from a collection.
+     * At least one condition must be true for the {@code OR} to be true.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1820,16 +1824,16 @@ public class Filters {
      * Or condition = Filters.or(conditions);
      * }</pre>
      *
-     * @param conditions the collection of conditions to combine with OR
-     * @return an Or junction
+     * @param conditions the collection of conditions to combine with {@code OR}
+     * @return an {@link Or} junction
      */
     public static Or or(final Collection<? extends Condition> conditions) {
         return new Or(conditions);
     }
 
     /**
-     * Creates an AND junction combining multiple conditions.
-     * All conditions must be true for the AND to be true.
+     * Creates an {@link And} junction combining multiple conditions.
+     * All conditions must be true for the {@code AND} to be true.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1841,16 +1845,16 @@ public class Filters {
      * // Results in: ((status = 'active') AND (age >= 18) AND (email IS NOT NULL))
      * }</pre>
      *
-     * @param conditions the array of conditions to combine with AND
-     * @return an And junction
+     * @param conditions the array of conditions to combine with {@code AND}
+     * @return an {@link And} junction
      */
     public static And and(final Condition... conditions) {
         return new And(conditions);
     }
 
     /**
-     * Creates an AND junction combining multiple conditions from a collection.
-     * All conditions must be true for the AND to be true.
+     * Creates an {@link And} junction combining multiple conditions from a collection.
+     * All conditions must be true for the {@code AND} to be true.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1861,16 +1865,16 @@ public class Filters {
      * And condition = Filters.and(conditions);
      * }</pre>
      *
-     * @param conditions the collection of conditions to combine with AND
-     * @return an And junction
+     * @param conditions the collection of conditions to combine with {@code AND}
+     * @return an {@link And} junction
      */
     public static And and(final Collection<? extends Condition> conditions) {
         return new And(conditions);
     }
 
     /**
-     * Creates a junction with a custom operator combining multiple conditions.
-     * This allows for database-specific junction types beyond AND/OR.
+     * Creates a {@link Junction} with a custom operator combining multiple conditions.
+     * This allows for database-specific junction types beyond {@code AND}/{@code OR}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1882,7 +1886,7 @@ public class Filters {
      *
      * @param operator the junction operator to use
      * @param conditions the array of conditions to combine
-     * @return a Junction with the specified operator
+     * @return a {@link Junction} with the specified operator
      */
     @Beta
     public static Junction junction(final Operator operator, final Condition... conditions) {
@@ -1890,8 +1894,8 @@ public class Filters {
     }
 
     /**
-     * Creates a junction with a custom operator combining conditions from a collection.
-     * This allows for database-specific junction types beyond AND/OR.
+     * Creates a {@link Junction} with a custom operator combining conditions from a collection.
+     * This allows for database-specific junction types beyond {@code AND}/{@code OR}.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1900,7 +1904,7 @@ public class Filters {
      *
      * @param operator the junction operator to use
      * @param conditions the collection of conditions to combine
-     * @return a Junction with the specified operator
+     * @return a {@link Junction} with the specified operator
      */
     @Beta
     public static Junction junction(final Operator operator, final Collection<? extends Condition> conditions) {
@@ -1908,7 +1912,7 @@ public class Filters {
     }
 
     /**
-     * Creates a WHERE clause with the specified condition.
+     * Creates a {@link Where} clause with the specified condition.
      * This is typically the starting point for building a query.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1916,15 +1920,15 @@ public class Filters {
      * Where where = Filters.where(Filters.equal("active", true));
      * }</pre>
      *
-     * @param cond the condition for the WHERE clause
-     * @return a Where clause
+     * @param cond the condition for the {@code WHERE} clause
+     * @return a {@link Where} clause
      */
     public static Where where(final Condition cond) {
         return new Where(cond);
     }
 
     /**
-     * Creates a WHERE clause from a string expression.
+     * Creates a {@link Where} clause from a string expression.
      * Useful for custom SQL expressions.
      * 
      * <p><b>Usage Examples:</b></p>
@@ -1933,7 +1937,8 @@ public class Filters {
      * }</pre>
      *
      * @param expr the SQL expression as a string
-     * @return a Where clause
+     * @return a {@link Where} clause
+     * @throws IllegalArgumentException if {@code expr} is null or empty
      */
     public static Where where(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1942,8 +1947,8 @@ public class Filters {
     }
 
     /**
-     * Creates a GROUP BY clause with the specified property names.
-     * Groups results by the given columns. The default sort direction ASC is applied.
+     * Creates a {@link GroupBy} clause with the specified property names.
+     * Groups results by the given columns. The default sort direction {@code ASC} is applied.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1952,15 +1957,15 @@ public class Filters {
      * }</pre>
      *
      * @param propNames the property/column names to group by
-     * @return a GroupBy clause
+     * @return a {@link GroupBy} clause
      */
     public static GroupBy groupBy(final String... propNames) {
         return new GroupBy(propNames);
     }
 
     /**
-     * Creates a GROUP BY clause with properties from a collection.
-     * Groups results by the given columns. The default sort direction ASC is applied.
+     * Creates a {@link GroupBy} clause with properties from a collection.
+     * Groups results by the given columns. The default sort direction {@code ASC} is applied.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1969,14 +1974,14 @@ public class Filters {
      * }</pre>
      *
      * @param propNames collection of property/column names to group by
-     * @return a GroupBy clause
+     * @return a {@link GroupBy} clause
      */
     public static GroupBy groupBy(final Collection<String> propNames) {
         return groupBy(propNames, SortDirection.ASC);
     }
 
     /**
-     * Creates a GROUP BY clause with properties and specified sort direction.
+     * Creates a {@link GroupBy} clause with properties and specified sort direction.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1985,15 +1990,15 @@ public class Filters {
      * }</pre>
      *
      * @param propNames collection of property/column names to group by
-     * @param direction the sort direction (ASC or DESC)
-     * @return a GroupBy clause
+     * @param direction the sort direction ({@code ASC} or {@code DESC})
+     * @return a {@link GroupBy} clause
      */
     public static GroupBy groupBy(final Collection<String> propNames, final SortDirection direction) {
         return new GroupBy(propNames, direction);
     }
 
     /**
-     * Creates a GROUP BY clause with a single property and sort direction.
+     * Creates a {@link GroupBy} clause with a single property and sort direction.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

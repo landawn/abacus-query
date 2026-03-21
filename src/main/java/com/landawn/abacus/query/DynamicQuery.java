@@ -69,18 +69,25 @@ public final class DynamicQuery {
      */
     public static final class Builder {
 
+        /** The {@link SelectClause} for this builder. */
         private SelectClause selectClause = new SelectClause(Objectory.createStringBuilder());
 
+        /** The {@link FromClause} for this builder. */
         private FromClause fromClause = new FromClause(Objectory.createStringBuilder());
 
+        /** The {@link WhereClause} for this builder. */
         private WhereClause whereClause;
 
+        /** The {@link GroupByClause} for this builder. */
         private GroupByClause groupByClause;
 
+        /** The {@link HavingClause} for this builder. */
         private HavingClause havingClause;
 
+        /** The {@link OrderByClause} for this builder. */
         private OrderByClause orderByClause;
 
+        /** The {@link StringBuilder} for additional SQL parts. */
         private StringBuilder moreParts = null;
 
         private Builder() {
@@ -88,8 +95,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Returns the SELECT clause builder for defining columns to retrieve.
-         * Multiple calls to this method return the same Select instance.
+         * Returns the {@link SelectClause} builder for defining columns to retrieve.
+         * Multiple calls to this method return the same instance.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -105,8 +112,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Returns the FROM clause builder for defining tables and joins.
-         * Multiple calls to this method return the same From instance.
+         * Returns the {@link FromClause} builder for defining tables and joins.
+         * Multiple calls to this method return the same instance.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -122,8 +129,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Returns the WHERE clause builder for defining query conditions.
-         * Creates a new Where instance on first call and returns the same instance on subsequent calls.
+         * Returns the {@link WhereClause} builder for defining query conditions.
+         * Creates a new instance on the first call and returns the same instance on subsequent calls.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -143,8 +150,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Returns the GROUP BY clause builder for defining grouping columns.
-         * Creates a new GroupBy instance on first call and returns the same instance on subsequent calls.
+         * Returns the {@link GroupByClause} builder for defining grouping columns.
+         * Creates a new instance on the first call and returns the same instance on subsequent calls.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -164,8 +171,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Returns the HAVING clause builder for defining conditions on grouped results.
-         * Creates a new Having instance on first call and returns the same instance on subsequent calls.
+         * Returns the {@link HavingClause} builder for defining conditions on grouped results.
+         * Creates a new instance on the first call and returns the same instance on subsequent calls.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -185,8 +192,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Returns the ORDER BY clause builder for defining result ordering.
-         * Creates a new OrderBy instance on first call and returns the same instance on subsequent calls.
+         * Returns the {@link OrderByClause} builder for defining result ordering.
+         * Creates a new instance on the first call and returns the same instance on subsequent calls.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -206,7 +213,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a custom LIMIT clause to the SQL query.
+         * Appends a custom {@code LIMIT} clause to the SQL query.
          * This method allows for database-specific limit syntax.
          *
          * <p><b>Usage Examples:</b></p>
@@ -218,6 +225,7 @@ public final class DynamicQuery {
          *
          * @param limitCond the complete limit/pagination expression (e.g., "LIMIT 10 OFFSET 20" or "TOP 10") (must not be null)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code limitCond} is null
          */
         public Builder limit(final String limitCond) {
             N.checkArgNotNull(limitCond, "limitCond");
@@ -228,7 +236,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a LIMIT clause to restrict the number of rows returned.
+         * Adds a {@code LIMIT} clause to restrict the number of rows returned.
          * Generates standard SQL: {@code LIMIT n}
          *
          * <p><b>Usage Examples:</b></p>
@@ -242,6 +250,7 @@ public final class DynamicQuery {
          *
          * @param count the maximum number of rows to return (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code count} is negative
          */
         public Builder limit(final int count) {
             N.checkArgNotNegative(count, "count");
@@ -252,7 +261,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a LIMIT clause with count and offset for pagination.
+         * Adds a {@code LIMIT} clause with count and offset for pagination.
          * Generates SQL standard syntax: {@code LIMIT count OFFSET offset}.
          *
          * <p><b>Usage Examples:</b></p>
@@ -267,6 +276,7 @@ public final class DynamicQuery {
          * @param count the maximum number of rows to return (must not be negative)
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
          * @see #offsetRows(int)
          * @see #fetchNextRows(int)
          * @see #fetchFirstRows(int)
@@ -281,7 +291,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an Oracle-style ROWNUM condition to the WHERE clause.
+         * Adds an Oracle-style {@code ROWNUM} condition to the {@code WHERE} clause.
          * Generates: {@code ROWNUM <= n}
          *
          * <p><b>Usage Examples:</b></p>
@@ -292,6 +302,7 @@ public final class DynamicQuery {
          *
          * @param count the maximum number of rows to return (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code count} is negative
          */
         public Builder whereRowNumAtMost(final int count) {
             N.checkArgNotNegative(count, "count");
@@ -308,7 +319,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an OFFSET clause for SQL:2008 standard pagination.
+         * Adds an {@code OFFSET} clause for SQL:2008 standard pagination.
          * Typically used with {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)}.
          *
          * <p><b>Usage Examples:</b></p>
@@ -319,6 +330,7 @@ public final class DynamicQuery {
          *
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code offset} is negative
          */
         public Builder offsetRows(final int offset) {
             N.checkArgNotNegative(offset, "offset");
@@ -329,7 +341,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a FETCH NEXT clause for SQL:2008 standard result limiting.
+         * Adds a {@code FETCH NEXT} clause for SQL:2008 standard result limiting.
          * Typically used after {@link #offsetRows(int)}.
          *
          * <p><b>Usage Examples:</b></p>
@@ -340,6 +352,7 @@ public final class DynamicQuery {
          *
          * @param count the number of rows to fetch (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code count} is negative
          */
         public Builder fetchNextRows(final int count) {
             N.checkArgNotNegative(count, "count");
@@ -350,8 +363,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a FETCH FIRST clause for SQL:2008 standard result limiting.
-         * This is an alternative to FETCH NEXT with the same functionality.
+         * Adds a {@code FETCH FIRST} clause for SQL:2008 standard result limiting.
+         * This is an alternative to {@code FETCH NEXT} with the same functionality.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -361,6 +374,7 @@ public final class DynamicQuery {
          *
          * @param count the number of rows to fetch (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code count} is negative
          */
         public Builder fetchFirstRows(final int count) {
             N.checkArgNotNegative(count, "count");
@@ -371,8 +385,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a UNION operator to combine results with another query.
-         * UNION removes duplicate rows from the combined result set.
+         * Adds a {@code UNION} operator to combine results with another query.
+         * {@code UNION} removes duplicate rows from the combined result set.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -381,6 +395,7 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query to union with (must not be null)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder union(final String query) {
             N.checkArgNotNull(query, "query");
@@ -391,8 +406,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a UNION ALL operator to combine results with another query.
-         * UNION ALL keeps all rows including duplicates.
+         * Adds a {@code UNION ALL} operator to combine results with another query.
+         * {@code UNION ALL} keeps all rows including duplicates.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -401,6 +416,7 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query to union with (must not be null)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder unionAll(final String query) {
             N.checkArgNotNull(query, "query");
@@ -411,7 +427,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an INTERSECT operator to find common rows between queries.
+         * Adds an {@code INTERSECT} operator to find common rows between queries.
          * Returns only rows that appear in both result sets.
          *
          * <p><b>Usage Examples:</b></p>
@@ -421,6 +437,7 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query to intersect with (must not be null)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder intersect(final String query) {
             N.checkArgNotNull(query, "query");
@@ -431,7 +448,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an EXCEPT operator to find rows in the first query but not in the second.
+         * Adds an {@code EXCEPT} operator to find rows in the first query but not in the second.
          * This is the SQL standard operator (used by PostgreSQL, SQL Server).
          *
          * <p><b>Usage Examples:</b></p>
@@ -441,6 +458,7 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query to exclude results from (must not be null)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder except(final String query) {
             N.checkArgNotNull(query, "query");
@@ -451,8 +469,8 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a MINUS operator to find rows in the first query but not in the second.
-         * This is Oracle's equivalent of EXCEPT.
+         * Adds a {@code MINUS} operator to find rows in the first query but not in the second.
+         * This is Oracle's equivalent of {@code EXCEPT}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -461,6 +479,7 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query to exclude results from (must not be null)
          * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder minus(final String query) {
             N.checkArgNotNull(query, "query");
@@ -481,10 +500,10 @@ public final class DynamicQuery {
         /**
          * Builds the final SQL string from all the components and releases resources.
          * This method MUST be called to get the SQL and clean up internal resources.
-         * After calling build(), this builder instance should not be reused.
+         * After calling {@code build()}, this builder instance should not be reused.
          *
          * <p>The method combines all SQL components in the correct order and returns
-         * the complete SQL statement. Internal StringBuilder objects are recycled
+         * the complete SQL statement. Internal {@link StringBuilder} objects are recycled
          * to the object pool for performance optimization.</p>
          *
          * <p><b>Usage Examples:</b></p>
@@ -592,7 +611,7 @@ public final class DynamicQuery {
     }
 
     /**
-     * Builder class for constructing the SELECT clause of a SQL query.
+     * Builder class for constructing the {@code SELECT} clause of a SQL query.
      * Provides methods to add columns with optional aliases and conditional inclusion.
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link Builder#select()}
@@ -609,6 +628,7 @@ public final class DynamicQuery {
      */
     public static class SelectClause {
 
+        /** The {@link StringBuilder} for this clause. */
         final StringBuilder sb;
 
         SelectClause(final StringBuilder sb) {
@@ -616,7 +636,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a single column to the SELECT clause.
+         * Appends a single column to the {@code SELECT} clause.
          * Automatically adds "SELECT " prefix on first call and comma separators for subsequent columns.
          *
          * <p><b>Usage Examples:</b></p>
@@ -626,7 +646,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param column the column name to select (must not be null)
-         * @return this SelectClause instance for method chaining
+         * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause append(final String column) {
             if (!sb.isEmpty()) {
@@ -641,7 +661,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a column with an alias to the SELECT clause.
+         * Appends a column with an alias to the {@code SELECT} clause.
          * Generates: {@code column AS alias}
          *
          * <p><b>Usage Examples:</b></p>
@@ -652,7 +672,7 @@ public final class DynamicQuery {
          *
          * @param column the column name to select (must not be null)
          * @param alias the alias for the column (must not be null)
-         * @return this SelectClause instance for method chaining
+         * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause append(final String column, final String alias) {
             if (!sb.isEmpty()) {
@@ -667,7 +687,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends multiple columns to the SELECT clause.
+         * Appends multiple columns to the {@code SELECT} clause.
          * Columns are separated by commas.
          *
          * <p><b>Usage Examples:</b></p>
@@ -677,7 +697,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param columns collection of column names to select (must not be null)
-         * @return this SelectClause instance for method chaining
+         * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause append(final Collection<String> columns) {
             if (N.isEmpty(columns)) {
@@ -696,7 +716,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends multiple columns with their aliases to the SELECT clause.
+         * Appends multiple columns with their aliases to the {@code SELECT} clause.
          * Each entry in the map represents a column-alias pair.
          *
          * <p><b>Usage Examples:</b></p>
@@ -709,7 +729,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param columnsAndAliasMap map where keys are column names and values are aliases (must not be null)
-         * @return this SelectClause instance for method chaining
+         * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause append(final Map<String, String> columnsAndAliasMap) {
             if (N.isEmpty(columnsAndAliasMap)) {
@@ -728,7 +748,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Conditionally appends a string to the SELECT clause based on a boolean condition.
+         * Conditionally appends a string to the {@code SELECT} clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
          * <p><b>Usage Examples:</b></p>
@@ -739,7 +759,7 @@ public final class DynamicQuery {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this SelectClause instance for method chaining
+         * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -756,7 +776,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends one of two strings to the SELECT clause based on a boolean condition.
+         * Appends one of two strings to the {@code SELECT} clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
          * <p><b>Usage Examples:</b></p>
@@ -769,7 +789,7 @@ public final class DynamicQuery {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this SelectClause instance for method chaining
+         * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -789,7 +809,7 @@ public final class DynamicQuery {
     }
 
     /**
-     * Builder class for constructing the FROM clause of a SQL query.
+     * Builder class for constructing the {@code FROM} clause of a SQL query.
      * Supports adding tables, aliases, and various types of joins.
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link Builder#from()}
@@ -805,6 +825,7 @@ public final class DynamicQuery {
      */
     public static class FromClause {
 
+        /** The {@link StringBuilder} for this clause. */
         final StringBuilder sb;
 
         FromClause(final StringBuilder sb) {
@@ -812,7 +833,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a table to the FROM clause.
+         * Appends a table to the {@code FROM} clause.
          * Multiple tables are separated by commas (creating a cross join).
          *
          * <p><b>Usage Examples:</b></p>
@@ -822,7 +843,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param table the table name to add (must not be null)
-         * @return this FromClause instance for method chaining
+         * @return this {@link FromClause} instance for method chaining
          */
         public FromClause append(final String table) {
             if (!sb.isEmpty()) {
@@ -837,7 +858,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a table with an alias to the FROM clause.
+         * Appends a table with an alias to the {@code FROM} clause.
          * The alias can be used to reference the table in other clauses.
          *
          * <p><b>Usage Examples:</b></p>
@@ -848,7 +869,7 @@ public final class DynamicQuery {
          *
          * @param table the table name to add (must not be null)
          * @param alias the alias for the table (must not be null)
-         * @return this FromClause instance for method chaining
+         * @return this {@link FromClause} instance for method chaining
          */
         public FromClause append(final String table, final String alias) {
             if (!sb.isEmpty()) {
@@ -863,7 +884,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a JOIN clause (implicit INNER JOIN) with the specified table and join condition.
+         * Adds a {@code JOIN} clause (implicit {@code INNER JOIN}) with the specified table and join condition.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -873,8 +894,8 @@ public final class DynamicQuery {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this FromClause instance for method chaining
-         * @throws IllegalStateException if from() has not been called
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause join(final String table, final String on) {
             requireFromInitialized();
@@ -884,7 +905,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an INNER JOIN clause with the specified table and join condition.
+         * Adds an {@code INNER JOIN} clause with the specified table and join condition.
          * Returns only rows that have matching values in both tables.
          *
          * <p><b>Usage Examples:</b></p>
@@ -895,8 +916,8 @@ public final class DynamicQuery {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this FromClause instance for method chaining
-         * @throws IllegalStateException if from() has not been called
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause innerJoin(final String table, final String on) {
             requireFromInitialized();
@@ -906,7 +927,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a LEFT JOIN clause with the specified table and join condition.
+         * Adds a {@code LEFT JOIN} clause with the specified table and join condition.
          * Returns all rows from the left table and matched rows from the right table.
          *
          * <p><b>Usage Examples:</b></p>
@@ -917,8 +938,8 @@ public final class DynamicQuery {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this FromClause instance for method chaining
-         * @throws IllegalStateException if from() has not been called
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause leftJoin(final String table, final String on) {
             requireFromInitialized();
@@ -928,7 +949,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a RIGHT JOIN clause with the specified table and join condition.
+         * Adds a {@code RIGHT JOIN} clause with the specified table and join condition.
          * Returns all rows from the right table and matched rows from the left table.
          *
          * <p><b>Usage Examples:</b></p>
@@ -939,8 +960,8 @@ public final class DynamicQuery {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this FromClause instance for method chaining
-         * @throws IllegalStateException if from() has not been called
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause rightJoin(final String table, final String on) {
             requireFromInitialized();
@@ -950,7 +971,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a FULL JOIN clause with the specified table and join condition.
+         * Adds a {@code FULL JOIN} clause with the specified table and join condition.
          * Returns all rows when there is a match in either table.
          *
          * <p><b>Usage Examples:</b></p>
@@ -961,8 +982,8 @@ public final class DynamicQuery {
          *
          * @param table the table to join (can include alias; must not be null)
          * @param on the join condition (must not be null)
-         * @return this FromClause instance for method chaining
-         * @throws IllegalStateException if from() has not been called
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause fullJoin(final String table, final String on) {
             requireFromInitialized();
@@ -978,7 +999,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Conditionally appends a string to the FROM clause based on a boolean condition.
+         * Conditionally appends a string to the {@code FROM} clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
          * <p><b>Usage Examples:</b></p>
@@ -988,7 +1009,7 @@ public final class DynamicQuery {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this FromClause instance for method chaining
+         * @return this {@link FromClause} instance for method chaining
          */
         public FromClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1005,7 +1026,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends one of two strings to the FROM clause based on a boolean condition.
+         * Appends one of two strings to the {@code FROM} clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1016,7 +1037,7 @@ public final class DynamicQuery {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this FromClause instance for method chaining
+         * @return this {@link FromClause} instance for method chaining
          */
         public FromClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -1036,8 +1057,8 @@ public final class DynamicQuery {
     }
 
     /**
-     * Builder class for constructing the WHERE clause of a SQL query.
-     * Supports adding conditions with AND/OR operators and parameter placeholders.
+     * Builder class for constructing the {@code WHERE} clause of a SQL query.
+     * Supports adding conditions with {@code AND}/{@code OR} operators and parameter placeholders.
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link Builder#where()}
      * to get an instance.</p>
@@ -1054,6 +1075,7 @@ public final class DynamicQuery {
      */
     public static class WhereClause {
 
+        /** The {@link StringBuilder} for this clause. */
         final StringBuilder sb;
 
         WhereClause(final StringBuilder sb) {
@@ -1061,7 +1083,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a condition to the WHERE clause.
+         * Appends a condition to the {@code WHERE} clause.
          * Automatically adds "WHERE " prefix on first call.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1071,7 +1093,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param cond the condition to append (must not be null)
-         * @return this WhereClause instance for method chaining
+         * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause append(final String cond) {
             if (!sb.isEmpty()) {
@@ -1087,7 +1109,7 @@ public final class DynamicQuery {
 
         /**
          * Appends question mark placeholders for parameterized queries.
-         * Useful for IN clauses or multiple parameters.
+         * Useful for {@code IN} clauses or multiple parameters.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1096,8 +1118,8 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param placeholderCount the number of question marks to append
-         * @return this WhereClause instance for method chaining
-         * @throws IllegalArgumentException if placeholderCount is negative
+         * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code placeholderCount} is negative
          */
         public WhereClause placeholders(final int placeholderCount) {
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
@@ -1115,7 +1137,7 @@ public final class DynamicQuery {
 
         /**
          * Appends question mark placeholders surrounded by prefix and postfix.
-         * Commonly used for IN clauses with automatic parentheses.
+         * Commonly used for {@code IN} clauses with automatic parentheses.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1126,8 +1148,8 @@ public final class DynamicQuery {
          * @param placeholderCount the number of question marks to append
          * @param prefix the string to add before the question marks
          * @param postfix the string to add after the question marks
-         * @return this WhereClause instance for method chaining
-         * @throws IllegalArgumentException if placeholderCount is negative
+         * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code placeholderCount} is negative
          */
         public WhereClause placeholders(final int placeholderCount, final String prefix, final String postfix) {
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
@@ -1150,7 +1172,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an AND condition to the WHERE clause.
+         * Adds an {@code AND} condition to the {@code WHERE} clause.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1158,8 +1180,8 @@ public final class DynamicQuery {
          * // Generates: WHERE active = true AND age >= 18 AND country = ?
          * }</pre>
          *
-         * @param cond the condition to add with AND (must not be null)
-         * @return this WhereClause instance for method chaining
+         * @param cond the condition to add with {@code AND} (must not be null)
+         * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause and(final String cond) {
             if (sb.isEmpty()) {
@@ -1174,7 +1196,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an OR condition to the WHERE clause.
+         * Adds an {@code OR} condition to the {@code WHERE} clause.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1182,8 +1204,8 @@ public final class DynamicQuery {
          * // Generates: WHERE role = 'admin' OR role = 'moderator'
          * }</pre>
          *
-         * @param cond the condition to add with OR (must not be null)
-         * @return this WhereClause instance for method chaining
+         * @param cond the condition to add with {@code OR} (must not be null)
+         * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause or(final String cond) {
             if (sb.isEmpty()) {
@@ -1198,7 +1220,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Conditionally appends a string to the WHERE clause based on a boolean condition.
+         * Conditionally appends a string to the {@code WHERE} clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1209,7 +1231,7 @@ public final class DynamicQuery {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this WhereClause instance for method chaining
+         * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1226,7 +1248,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends one of two strings to the WHERE clause based on a boolean condition.
+         * Appends one of two strings to the {@code WHERE} clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1239,7 +1261,7 @@ public final class DynamicQuery {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this WhereClause instance for method chaining
+         * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -1259,7 +1281,7 @@ public final class DynamicQuery {
     }
 
     /**
-     * Builder class for constructing the GROUP BY clause of a SQL query.
+     * Builder class for constructing the {@code GROUP BY} clause of a SQL query.
      * Supports adding single or multiple grouping columns.
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link Builder#groupBy()}
@@ -1276,6 +1298,7 @@ public final class DynamicQuery {
      */
     public static class GroupByClause {
 
+        /** The {@link StringBuilder} for this clause. */
         final StringBuilder sb;
 
         GroupByClause(final StringBuilder sb) {
@@ -1283,7 +1306,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a column to the GROUP BY clause.
+         * Appends a column to the {@code GROUP BY} clause.
          * Automatically adds "GROUP BY " prefix on first call and comma separators for subsequent columns.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1293,7 +1316,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param column the column name to group by (must not be null)
-         * @return this GroupByClause instance for method chaining
+         * @return this {@link GroupByClause} instance for method chaining
          */
         public GroupByClause append(final String column) {
             if (!sb.isEmpty()) {
@@ -1308,7 +1331,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends multiple columns to the GROUP BY clause.
+         * Appends multiple columns to the {@code GROUP BY} clause.
          * Columns are separated by commas.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1318,7 +1341,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param columns collection of column names to group by (must not be null)
-         * @return this GroupByClause instance for method chaining
+         * @return this {@link GroupByClause} instance for method chaining
          */
         public GroupByClause append(final Collection<String> columns) {
             if (N.isEmpty(columns)) {
@@ -1337,7 +1360,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Conditionally appends a string to the GROUP BY clause based on a boolean condition.
+         * Conditionally appends a string to the {@code GROUP BY} clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1348,7 +1371,7 @@ public final class DynamicQuery {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this GroupByClause instance for method chaining
+         * @return this {@link GroupByClause} instance for method chaining
          */
         public GroupByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1365,7 +1388,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends one of two strings to the GROUP BY clause based on a boolean condition.
+         * Appends one of two strings to the {@code GROUP BY} clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1378,7 +1401,7 @@ public final class DynamicQuery {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this GroupByClause instance for method chaining
+         * @return this {@link GroupByClause} instance for method chaining
          */
         public GroupByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -1398,7 +1421,7 @@ public final class DynamicQuery {
     }
 
     /**
-     * Builder class for constructing the HAVING clause of a SQL query.
+     * Builder class for constructing the {@code HAVING} clause of a SQL query.
      * Used to filter grouped results based on aggregate conditions.
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link Builder#having()}
@@ -1414,6 +1437,7 @@ public final class DynamicQuery {
      */
     public static class HavingClause {
 
+        /** The {@link StringBuilder} for this clause. */
         final StringBuilder sb;
 
         HavingClause(final StringBuilder sb) {
@@ -1421,7 +1445,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a condition to the HAVING clause.
+         * Appends a condition to the {@code HAVING} clause.
          * Automatically adds "HAVING " prefix on first call.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1431,7 +1455,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param cond the condition to append (must not be null)
-         * @return this HavingClause instance for method chaining
+         * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause append(final String cond) {
             if (!sb.isEmpty()) {
@@ -1446,7 +1470,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an AND condition to the HAVING clause.
+         * Adds an {@code AND} condition to the {@code HAVING} clause.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1454,8 +1478,8 @@ public final class DynamicQuery {
          * // Generates: HAVING COUNT(*) > 5 AND MAX(price) < 1000
          * }</pre>
          *
-         * @param cond the condition to add with AND (must not be null)
-         * @return this HavingClause instance for method chaining
+         * @param cond the condition to add with {@code AND} (must not be null)
+         * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause and(final String cond) {
             if (sb.isEmpty()) {
@@ -1470,7 +1494,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an OR condition to the HAVING clause.
+         * Adds an {@code OR} condition to the {@code HAVING} clause.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1478,8 +1502,8 @@ public final class DynamicQuery {
          * // Generates: HAVING MIN(score) > 80 OR AVG(score) > 90
          * }</pre>
          *
-         * @param cond the condition to add with OR (must not be null)
-         * @return this HavingClause instance for method chaining
+         * @param cond the condition to add with {@code OR} (must not be null)
+         * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause or(final String cond) {
             if (sb.isEmpty()) {
@@ -1494,7 +1518,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Conditionally appends a string to the HAVING clause based on a boolean condition.
+         * Conditionally appends a string to the {@code HAVING} clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1505,7 +1529,7 @@ public final class DynamicQuery {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this HavingClause instance for method chaining
+         * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1522,7 +1546,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends one of two strings to the HAVING clause based on a boolean condition.
+         * Appends one of two strings to the {@code HAVING} clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1535,7 +1559,7 @@ public final class DynamicQuery {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this HavingClause instance for method chaining
+         * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {
@@ -1555,7 +1579,7 @@ public final class DynamicQuery {
     }
 
     /**
-     * Builder class for constructing the ORDER BY clause of a SQL query.
+     * Builder class for constructing the {@code ORDER BY} clause of a SQL query.
      * Supports adding single or multiple columns with sort directions.
      * 
      * <p>This class is not meant to be instantiated directly. Use {@link Builder#orderBy()}
@@ -1572,6 +1596,7 @@ public final class DynamicQuery {
      */
     public static class OrderByClause {
 
+        /** The {@link StringBuilder} for this clause. */
         final StringBuilder sb;
 
         OrderByClause(final StringBuilder sb) {
@@ -1579,7 +1604,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a column (with optional sort direction) to the ORDER BY clause.
+         * Appends a column (with optional sort direction) to the {@code ORDER BY} clause.
          * Automatically adds "ORDER BY " prefix on first call and comma separators for subsequent columns.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1589,7 +1614,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param column the column name with optional ASC/DESC (must not be null)
-         * @return this OrderByClause instance for method chaining
+         * @return this {@link OrderByClause} instance for method chaining
          */
         public OrderByClause append(final String column) {
             if (!sb.isEmpty()) {
@@ -1604,7 +1629,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends multiple columns to the ORDER BY clause.
+         * Appends multiple columns to the {@code ORDER BY} clause.
          * Columns are separated by commas. Sort direction can be included with each column.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1614,7 +1639,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param columns collection of column names with optional sort directions (must not be null)
-         * @return this OrderByClause instance for method chaining
+         * @return this {@link OrderByClause} instance for method chaining
          */
         public OrderByClause append(final Collection<String> columns) {
             if (N.isEmpty(columns)) {
@@ -1633,7 +1658,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Conditionally appends a string to the ORDER BY clause based on a boolean condition.
+         * Conditionally appends a string to the {@code ORDER BY} clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1644,7 +1669,7 @@ public final class DynamicQuery {
          *
          * @param condition the condition to check
          * @param textToAppend the string to append if condition is true
-         * @return this OrderByClause instance for method chaining
+         * @return this {@link OrderByClause} instance for method chaining
          */
         public OrderByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1661,7 +1686,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends one of two strings to the ORDER BY clause based on a boolean condition.
+         * Appends one of two strings to the {@code ORDER BY} clause based on a boolean condition.
          * Always appends something, choosing between two options based on the condition.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1674,7 +1699,7 @@ public final class DynamicQuery {
          * @param condition the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true
          * @param textToAppendWhenFalse the string to append if condition is false
-         * @return this OrderByClause instance for method chaining
+         * @return this {@link OrderByClause} instance for method chaining
          */
         public OrderByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             if (!sb.isEmpty()) {

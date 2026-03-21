@@ -33,23 +33,23 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * Represents a parsed SQL statement with support for named parameters and parameterized queries.
- * This class handles SQL parsing to extract named parameters (e.g., :userId, #{userId}) and converts
- * them to standard JDBC parameter placeholders (?).
- * 
+ * This class handles SQL parsing to extract named parameters (e.g., {@code :userId}, {@code #{userId}}) and converts
+ * them to standard JDBC parameter placeholders ({@code ?}).
+ *
  * <p>The class maintains an internal cache of parsed SQL statements for performance optimization.
  * Supported parameter formats include:</p>
  * <ul>
- *   <li>Named parameters: :paramName</li>
- *   <li>iBatis/MyBatis style: #{paramName}</li>
+ *   <li>Named parameters: {@code :paramName}</li>
+ *   <li>iBatis/MyBatis style: {@code #{paramName}}</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
  * String parameterized = parsed.parameterizedSql();   // "SELECT * FROM users WHERE id = ? AND status = ?"
  * List<String> params = parsed.namedParameters();   // ["userId", "status"]
  * }</pre>
- * 
+ *
  * @see SqlParser
  * @see SqlBuilder
  */
@@ -165,18 +165,18 @@ public final class ParsedSql {
     }
 
     /**
-     * Parses the given SQL string and returns a ParsedSql instance.
+     * Parses the given SQL string and returns a {@code ParsedSql} instance.
      * This method uses an internal cache to avoid re-parsing the same SQL statements.
      * The SQL is analyzed to extract named parameters and convert them to standard JDBC placeholders.
      *
      * <p>The parser automatically detects and converts different parameter styles:</p>
      * <ul>
-     *   <li>Named parameters starting with ':' (e.g., :userId)</li>
-     *   <li>iBatis/MyBatis style parameters enclosed in #{} (e.g., #{userName})</li>
-     *   <li>Standard JDBC placeholders (?)</li>
+     *   <li>Named parameters starting with {@code ':'} (e.g., {@code :userId})</li>
+     *   <li>iBatis/MyBatis style parameters enclosed in {@code #{}} (e.g., {@code #{userName}})</li>
+     *   <li>Standard JDBC placeholders ({@code ?})</li>
      * </ul>
      *
-     * <p>Note: Mixing different parameter styles in the same SQL statement will result in an IllegalArgumentException.</p>
+     * <p>Note: Mixing different parameter styles in the same SQL statement will result in an {@code IllegalArgumentException}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -193,9 +193,9 @@ public final class ParsedSql {
      * System.out.println(ps3.parameterCount());   // 2
      * }</pre>
      *
-     * @param sql the SQL string to parse (must not be null or empty)
-     * @return a ParsedSql instance containing the parsed information
-     * @throws IllegalArgumentException if sql is null, empty, or mixes different parameter styles
+     * @param sql the SQL string to parse (must not be {@code null} or empty)
+     * @return a {@code ParsedSql} instance containing the parsed information
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or mixes different parameter styles
      */
     public static ParsedSql parse(final String sql) {
         N.checkArgNotEmpty(sql, "sql");
@@ -243,8 +243,8 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the parameterized SQL with all named parameters replaced by JDBC placeholders (?).
-     * This SQL can be used directly with JDBC PreparedStatement.
+     * Gets the parameterized SQL with all named parameters replaced by JDBC placeholders ({@code ?}).
+     * This SQL can be used directly with JDBC {@code PreparedStatement}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -258,7 +258,7 @@ public final class ParsedSql {
      * stmt.setString(2, status);
      * }</pre>
      *
-     * @return the parameterized SQL string with ? placeholders
+     * @return the parameterized SQL string with {@code ?} placeholders
      */
     public String parameterizedSql() {
         return parameterizedSql;
@@ -288,7 +288,7 @@ public final class ParsedSql {
 
     /**
      * Gets the total number of parameters (named or positional) in the SQL.
-     * This count includes all occurrences of ?, :paramName, or #{paramName}.
+     * This count includes all occurrences of {@code ?}, {@code :paramName}, or {@code #{paramName}}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

@@ -141,22 +141,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /** Constant for selecting all columns in SQL queries. */
     public static final String ALL = SK.ALL;
 
-    /** Constant for TOP clause in SQL queries. */
+    /** Constant for the TOP clause in SQL queries. */
     public static final String TOP = SK.TOP;
 
-    /** Constant for UNIQUE clause in SQL queries. */
+    /** Constant for the UNIQUE clause in SQL queries. */
     public static final String UNIQUE = SK.UNIQUE;
 
-    /** Constant for DISTINCT clause in SQL queries. */
+    /** Constant for the DISTINCT clause in SQL queries. */
     public static final String DISTINCT = SK.DISTINCT;
 
-    /** Constant for DISTINCTROW clause in SQL queries. */
+    /** Constant for the DISTINCTROW clause in SQL queries. */
     public static final String DISTINCTROW = SK.DISTINCTROW;
 
-    /** Constant for asterisk (*) wildcard in SQL queries. */
+    /** Constant for the asterisk (*) wildcard in SQL queries. */
     public static final String ASTERISK = SK.ASTERISK;
 
-    /** Constant for COUNT(*) aggregate function. */
+    /** Constant for the COUNT(*) aggregate function. */
     public static final String COUNT_ALL = "count(*)";
 
     protected static final List<String> COUNT_ALL_LIST = ImmutableList.of(COUNT_ALL);
@@ -165,138 +165,205 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //
     //    public static final List<String> _1_list = ImmutableList.of(_1);
 
+    /** Char array for the "INSERT" keyword. */
     protected static final char[] _INSERT = SK.INSERT.toCharArray();
 
+    /** Char array for " INSERT ". */
     protected static final char[] _SPACE_INSERT_SPACE = (SK.SPACE + SK.INSERT + SK.SPACE).toCharArray();
 
+    /** Char array for the "INTO" keyword. */
     protected static final char[] _INTO = SK.INTO.toCharArray();
 
+    /** Char array for " INTO ". */
     protected static final char[] _SPACE_INTO_SPACE = (SK.SPACE + SK.INTO + SK.SPACE).toCharArray();
 
+    /** Char array for the "VALUES" keyword. */
     protected static final char[] _VALUES = SK.VALUES.toCharArray();
 
+    /** Char array for " VALUES ". */
     protected static final char[] _SPACE_VALUES_SPACE = (SK.SPACE + SK.VALUES + SK.SPACE).toCharArray();
 
+    /** Char array for the "SELECT" keyword. */
     protected static final char[] _SELECT = SK.SELECT.toCharArray();
 
+    /** Char array for " SELECT ". */
     protected static final char[] _SPACE_SELECT_SPACE = (SK.SPACE + SK.SELECT + SK.SPACE).toCharArray();
 
+    /** Char array for the "FROM" keyword. */
     protected static final char[] _FROM = SK.FROM.toCharArray();
 
+    /** Char array for " FROM ". */
     protected static final char[] _SPACE_FROM_SPACE = (SK.SPACE + SK.FROM + SK.SPACE).toCharArray();
 
+    /** Char array for the "UPDATE" keyword. */
     protected static final char[] _UPDATE = SK.UPDATE.toCharArray();
 
+    /** Char array for " UPDATE ". */
     protected static final char[] _SPACE_UPDATE_SPACE = (SK.SPACE + SK.UPDATE + SK.SPACE).toCharArray();
 
+    /** Char array for the "SET" keyword. */
     protected static final char[] _SET = SK.SET.toCharArray();
 
+    /** Char array for " SET ". */
     protected static final char[] _SPACE_SET_SPACE = (SK.SPACE + SK.SET + SK.SPACE).toCharArray();
 
+    /** Char array for the "DELETE" keyword. */
     protected static final char[] _DELETE = SK.DELETE.toCharArray();
 
+    /** Char array for " DELETE ". */
     protected static final char[] _SPACE_DELETE_SPACE = (SK.SPACE + SK.DELETE + SK.SPACE).toCharArray();
 
+    /** Char array for the "JOIN" keyword. */
     protected static final char[] _JOIN = SK.JOIN.toCharArray();
 
+    /** Char array for " JOIN ". */
     protected static final char[] _SPACE_JOIN_SPACE = (SK.SPACE + SK.JOIN + SK.SPACE).toCharArray();
 
+    /** Char array for the "LEFT JOIN" keyword. */
     protected static final char[] _LEFT_JOIN = SK.LEFT_JOIN.toCharArray();
 
+    /** Char array for " LEFT JOIN ". */
     protected static final char[] _SPACE_LEFT_JOIN_SPACE = (SK.SPACE + SK.LEFT_JOIN + SK.SPACE).toCharArray();
 
+    /** Char array for the "RIGHT JOIN" keyword. */
     protected static final char[] _RIGHT_JOIN = SK.RIGHT_JOIN.toCharArray();
 
+    /** Char array for " RIGHT JOIN ". */
     protected static final char[] _SPACE_RIGHT_JOIN_SPACE = (SK.SPACE + SK.RIGHT_JOIN + SK.SPACE).toCharArray();
 
+    /** Char array for the "FULL JOIN" keyword. */
     protected static final char[] _FULL_JOIN = SK.FULL_JOIN.toCharArray();
 
+    /** Char array for " FULL JOIN ". */
     protected static final char[] _SPACE_FULL_JOIN_SPACE = (SK.SPACE + SK.FULL_JOIN + SK.SPACE).toCharArray();
 
+    /** Char array for the "CROSS JOIN" keyword. */
     protected static final char[] _CROSS_JOIN = SK.CROSS_JOIN.toCharArray();
 
+    /** Char array for " CROSS JOIN ". */
     protected static final char[] _SPACE_CROSS_JOIN_SPACE = (SK.SPACE + SK.CROSS_JOIN + SK.SPACE).toCharArray();
 
+    /** Char array for the "INNER JOIN" keyword. */
     protected static final char[] _INNER_JOIN = SK.INNER_JOIN.toCharArray();
 
+    /** Char array for " INNER JOIN ". */
     protected static final char[] _SPACE_INNER_JOIN_SPACE = (SK.SPACE + SK.INNER_JOIN + SK.SPACE).toCharArray();
 
+    /** Char array for the "NATURAL JOIN" keyword. */
     protected static final char[] _NATURAL_JOIN = SK.NATURAL_JOIN.toCharArray();
 
+    /** Char array for " NATURAL JOIN ". */
     protected static final char[] _SPACE_NATURAL_JOIN_SPACE = (SK.SPACE + SK.NATURAL_JOIN + SK.SPACE).toCharArray();
 
+    /** Char array for the "ON" keyword. */
     protected static final char[] _ON = SK.ON.toCharArray();
 
+    /** Char array for " ON ". */
     protected static final char[] _SPACE_ON_SPACE = (SK.SPACE + SK.ON + SK.SPACE).toCharArray();
 
+    /** Char array for the "USING" keyword. */
     protected static final char[] _USING = SK.USING.toCharArray();
 
+    /** Char array for " USING ". */
     protected static final char[] _SPACE_USING_SPACE = (SK.SPACE + SK.USING + SK.SPACE).toCharArray();
 
+    /** Char array for the "WHERE" keyword. */
     protected static final char[] _WHERE = SK.WHERE.toCharArray();
 
+    /** Char array for " WHERE ". */
     protected static final char[] _SPACE_WHERE_SPACE = (SK.SPACE + SK.WHERE + SK.SPACE).toCharArray();
 
+    /** Char array for the "GROUP BY" keyword. */
     protected static final char[] _GROUP_BY = SK.GROUP_BY.toCharArray();
 
+    /** Char array for " GROUP BY ". */
     protected static final char[] _SPACE_GROUP_BY_SPACE = (SK.SPACE + SK.GROUP_BY + SK.SPACE).toCharArray();
 
+    /** Char array for the "HAVING" keyword. */
     protected static final char[] _HAVING = SK.HAVING.toCharArray();
 
+    /** Char array for " HAVING ". */
     protected static final char[] _SPACE_HAVING_SPACE = (SK.SPACE + SK.HAVING + SK.SPACE).toCharArray();
 
+    /** Char array for the "ORDER BY" keyword. */
     protected static final char[] _ORDER_BY = SK.ORDER_BY.toCharArray();
 
+    /** Char array for " ORDER BY ". */
     protected static final char[] _SPACE_ORDER_BY_SPACE = (SK.SPACE + SK.ORDER_BY + SK.SPACE).toCharArray();
 
+    /** Char array for the "LIMIT" keyword. */
     protected static final char[] _LIMIT = SK.LIMIT.toCharArray();
 
+    /** Char array for " LIMIT ". */
     protected static final char[] _SPACE_LIMIT_SPACE = (SK.SPACE + SK.LIMIT + SK.SPACE).toCharArray();
 
+    /** Char array for the "OFFSET" keyword. */
     protected static final char[] _OFFSET = SK.OFFSET.toCharArray();
 
+    /** Char array for " OFFSET ". */
     protected static final char[] _SPACE_OFFSET_SPACE = (SK.SPACE + SK.OFFSET + SK.SPACE).toCharArray();
 
+    /** Char array for " ROWS". */
     protected static final char[] _SPACE_ROWS = (SK.SPACE + SK.ROWS).toCharArray();
 
+    /** Char array for the "AND" keyword. */
     protected static final char[] _AND = SK.AND.toCharArray();
 
+    /** Char array for " AND ". */
     protected static final char[] _SPACE_AND_SPACE = (SK.SPACE + SK.AND + SK.SPACE).toCharArray();
 
+    /** Char array for the "OR" keyword. */
     protected static final char[] _OR = SK.OR.toCharArray();
 
+    /** Char array for " OR ". */
     protected static final char[] _SPACE_OR_SPACE = (SK.SPACE + SK.OR + SK.SPACE).toCharArray();
 
+    /** Char array for the "UNION" keyword. */
     protected static final char[] _UNION = SK.UNION.toCharArray();
 
+    /** Char array for " UNION ". */
     protected static final char[] _SPACE_UNION_SPACE = (SK.SPACE + SK.UNION + SK.SPACE).toCharArray();
 
+    /** Char array for the "UNION ALL" keyword. */
     protected static final char[] _UNION_ALL = SK.UNION_ALL.toCharArray();
 
+    /** Char array for " UNION ALL ". */
     protected static final char[] _SPACE_UNION_ALL_SPACE = (SK.SPACE + SK.UNION_ALL + SK.SPACE).toCharArray();
 
+    /** Char array for the "INTERSECT" keyword. */
     protected static final char[] _INTERSECT = SK.INTERSECT.toCharArray();
 
+    /** Char array for " INTERSECT ". */
     protected static final char[] _SPACE_INTERSECT_SPACE = (SK.SPACE + SK.INTERSECT + SK.SPACE).toCharArray();
 
+    /** Char array for the "EXCEPT" keyword. */
     protected static final char[] _EXCEPT = SK.EXCEPT.toCharArray();
 
+    /** Char array for " EXCEPT ". */
     protected static final char[] _SPACE_EXCEPT_SPACE = (SK.SPACE + SK.EXCEPT + SK.SPACE).toCharArray();
 
+    /** Char array for the "EXCEPT" or "MINUS" keyword. */
     protected static final char[] _EXCEPT_MINUS = SK.EXCEPT_MINUS.toCharArray();
 
+    /** Char array for " EXCEPT " or " MINUS ". */
     protected static final char[] _SPACE_EXCEPT_MINUS_SPACE = (SK.SPACE + SK.EXCEPT_MINUS + SK.SPACE).toCharArray();
 
+    /** Char array for the "AS" keyword. */
     protected static final char[] _AS = SK.AS.toCharArray();
 
+    /** Char array for " AS ". */
     protected static final char[] _SPACE_AS_SPACE = (SK.SPACE + SK.AS + SK.SPACE).toCharArray();
 
+    /** Char array for " = ". */
     protected static final char[] _SPACE_EQUAL_SPACE = (SK.SPACE + SK.EQUAL + SK.SPACE).toCharArray();
 
+    /** Char array for " FOR UPDATE". */
     protected static final char[] _SPACE_FOR_UPDATE = (SK.SPACE + SK.FOR_UPDATE).toCharArray();
 
+    /** Char array for ", ". */
     protected static final char[] _COMMA_SPACE = SK.COMMA_SPACE.toCharArray();
 
+    /** String for " AS ". */
     protected static final String SPACE_AS_SPACE = SK.SPACE + SK.AS + SK.SPACE;
 
     protected static final String SELECTION_PART_MSG = "The specified parameter is not valid for selection part. It must not be null or empty";

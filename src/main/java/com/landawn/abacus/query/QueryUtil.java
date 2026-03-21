@@ -107,9 +107,10 @@ public final class QueryUtil {
      * boolean isNestedSimple = nested._2;  // false (contains dot)
      * }</pre>
      *
-     * @param entityClass the entity class to analyze (must not be null)
-     * @param namingPolicy the naming policy to use for column name conversion
+     * @param entityClass the entity class to analyze (must not be {@code null})
+     * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return an immutable map where keys are property names and values are tuples of (column name, isSimpleProperty)
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @deprecated for internal use only.
      */
     @Deprecated
@@ -149,7 +150,7 @@ public final class QueryUtil {
     /**
      * Gets a mapping of column names to property names for the specified entity class.
      * The map includes variations of column names in lowercase and uppercase for case-insensitive lookups.
-     * Column names are derived from @Column annotations on the entity properties.
+     * Column names are derived from {@code @Column} annotations on the entity properties.
      *
      * <p>This method is useful when you need to map database result set columns back to entity properties,
      * especially when dealing with case-insensitive database systems or when column names don't match
@@ -166,9 +167,9 @@ public final class QueryUtil {
      * String propName3 = columnToProp.get("user_name");    // "userName" (lowercase variant)
      * }</pre>
      *
-     * @param entityClass the entity class to analyze (must not be null)
+     * @param entityClass the entity class to analyze (must not be {@code null})
      * @return an immutable map of column names (including case variations) to property names
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
@@ -202,7 +203,7 @@ public final class QueryUtil {
      *
      * <p>The naming policy determines how property names are converted to column names when no explicit
      * {@code @Column} annotation is present. For nested bean properties, the method recursively builds mappings
-     * with dot notation (e.g., "address.street" -> "address.street").
+     * with dot notation (e.g., {@code "address.street"} -> {@code "address.street"}).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -219,8 +220,8 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param entityClass the entity class to analyze
-     * @param namingPolicy the naming policy to use for column name conversion
-     * @return an immutable map of property names to column names, or empty map if entityClass is null or Map
+     * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
+     * @return an immutable map of property names to column names, or empty map if {@code entityClass} is {@code null} or {@code Map}
      */
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
@@ -317,7 +318,7 @@ public final class QueryUtil {
      *
      * <p>The method intelligently handles ID fields:</p>
      * <ul>
-     *   <li>If all ID fields have default values (0 for numbers, null for objects), they are excluded from the result</li>
+     *   <li>If all ID fields have default values ({@code 0} for numbers, {@code null} for objects), they are excluded from the result</li>
      *   <li>If any ID field has a non-default value, all insertable properties including IDs are returned</li>
      *   <li>This allows both auto-generated IDs and manually-assigned IDs to work correctly</li>
      * </ul>
@@ -338,9 +339,10 @@ public final class QueryUtil {
      * // Returns: ["name", ...] (excludes both "id" and "email")
      * }</pre>
      *
-     * @param entity the entity instance to analyze (must not be null)
-     * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
+     * @param entity the entity instance to analyze (must not be {@code null})
+     * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return collection of property names suitable for INSERT operations
+     * @throws IllegalArgumentException if {@code entity} is {@code null}
      * @deprecated for internal use only.
      */
     @Internal
@@ -388,7 +390,7 @@ public final class QueryUtil {
 
     /**
      * Gets the property names to be used for INSERT operations on the given entity class.
-     * This method returns all insertable properties (including ID fields) excluding those specified in excludedPropNames.
+     * This method returns all insertable properties (including ID fields) excluding those specified in {@code excludedPropNames}.
      *
      * <p>Unlike the instance-based version, this method does not check for default ID values since no
      * entity instance is provided. It returns all insertable properties including IDs.</p>
@@ -405,10 +407,10 @@ public final class QueryUtil {
      * // Returns: ["id", "name", "email", ...]
      * }</pre>
      *
-     * @param entityClass the entity class to analyze (must not be null)
-     * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
+     * @param entityClass the entity class to analyze (must not be {@code null})
+     * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return collection of property names suitable for INSERT operations
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @deprecated for internal use only.
      */
     @Internal
@@ -430,8 +432,8 @@ public final class QueryUtil {
      * Gets the property names to be used for SELECT operations on the given entity class.
      * This method can optionally include sub-entity properties for nested object retrieval.
      *
-     * <p>When includeSubEntityProperties is true, the method returns nested properties using
-     * dot notation (e.g., "address.street"). This is useful for building SELECT statements
+     * <p>When {@code includeSubEntityProperties} is {@code true}, the method returns nested properties using
+     * dot notation (e.g., {@code "address.street"}). This is useful for building SELECT statements
      * that need to retrieve data for nested entity relationships.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -450,11 +452,11 @@ public final class QueryUtil {
      * // Returns: ["id", "name", ...]
      * }</pre>
      *
-     * @param entityClass the entity class to analyze (must not be null)
+     * @param entityClass the entity class to analyze (must not be {@code null})
      * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
-     * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
+     * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return collection of property names suitable for SELECT operations
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @deprecated for internal use only.
      */
     @Internal
@@ -478,9 +480,9 @@ public final class QueryUtil {
      *
      * <p>Properties are considered non-updatable if they are:</p>
      * <ul>
-     *   <li>Annotated with @Id</li>
-     *   <li>Marked as insertable=false, updatable=false in @Column</li>
-     *   <li>Listed in the excludedPropNames parameter</li>
+     *   <li>Annotated with {@code @Id}</li>
+     *   <li>Marked as {@code insertable=false, updatable=false} in {@code @Column}</li>
+     *   <li>Listed in the {@code excludedPropNames} parameter</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>
@@ -495,10 +497,10 @@ public final class QueryUtil {
      * // Returns: ["name", "email", "status", ...] (excludes "id" and "createdDate")
      * }</pre>
      *
-     * @param entityClass the entity class to analyze (must not be null)
-     * @param excludedPropNames set of property names to exclude from the result (nullable; null or empty means no exclusions)
+     * @param entityClass the entity class to analyze (must not be {@code null})
+     * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return collection of property names suitable for UPDATE operations
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @deprecated for internal use only.
      */
     @Internal
@@ -518,9 +520,9 @@ public final class QueryUtil {
 
     /**
      * Gets the ID field names for the specified entity class.
-     * ID fields are identified by @Id annotations on the entity properties.
+     * ID fields are identified by {@code @Id} annotations on the entity properties.
      *
-     * <p>This method returns all properties annotated with @Id. For entities without
+     * <p>This method returns all properties annotated with {@code @Id}. For entities without
      * explicit ID fields, an empty list is returned.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -538,9 +540,9 @@ public final class QueryUtil {
      * // Returns: []
      * }</pre>
      *
-     * @param entityClass the entity class to analyze (must not be null)
+     * @param entityClass the entity class to analyze (must not be {@code null})
      * @return an immutable list of ID field names, or empty list if no ID fields are defined
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @deprecated for internal use only.
      */
     @Deprecated
@@ -554,7 +556,7 @@ public final class QueryUtil {
 
     /**
      * Determines whether a property should be excluded from database column mapping.
-     * A property is not a column if it's transient, annotated with @NonColumn, or excluded by @Table configuration.
+     * A property is not a column if it's {@code transient}, annotated with {@code @NonColumn}, or excluded by {@code @Table} configuration.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -573,9 +575,9 @@ public final class QueryUtil {
      * // Returns true if "tempField" is in nonColumnFields
      * }</pre>
      *
-     * @param columnFields set of field names explicitly included as columns (from @Table annotation, can be null or empty)
-     * @param nonColumnFields set of field names explicitly excluded as columns (from @Table annotation, can be null or empty)
-     * @param propInfo the property information to check (must not be null)
+     * @param columnFields set of field names explicitly included as columns (from {@code @Table} annotation, can be {@code null} or empty)
+     * @param nonColumnFields set of field names explicitly excluded as columns (from {@code @Table} annotation, can be {@code null} or empty)
+     * @param propInfo the property information to check (must not be {@code null})
      * @return {@code true} if the property should not be mapped to a database column
      */
     public static boolean isNonColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
@@ -598,7 +600,7 @@ public final class QueryUtil {
     }
 
     /**
-     * Generates a string of question marks (?) repeated n times with comma-space delimiter.
+     * Generates a string of question marks ({@code ?}) repeated {@code n} times with comma-space delimiter ({@code ", "}).
      * This is commonly used for building parameterized SQL queries with multiple placeholders.
      * Common values are pre-cached for performance optimization.
      *
@@ -613,8 +615,8 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param n the number of question marks to generate (must not be negative)
-     * @return a string containing n question marks separated by ", ", or empty string if n is 0
-     * @throws IllegalArgumentException if n is negative
+     * @return a string containing {@code n} question marks separated by {@code ", "}, or empty string if {@code n} is 0
+     * @throws IllegalArgumentException if {@code n} is negative
      */
     public static String placeholders(final int n) {
         N.checkArgNotNegative(n, "count");
@@ -629,10 +631,10 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the table alias from the @Table annotation on the entity class.
+     * Gets the table alias from the {@code @Table} annotation on the entity class.
      * The alias can be used in SQL queries to reference the table with a shorter name.
      *
-     * <p>If no @Table annotation exists, this method returns {@code null}. If @Table is present
+     * <p>If no {@code @Table} annotation exists, this method returns {@code null}. If {@code @Table} is present
      * but the alias attribute is not specified, this method returns an empty string.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -650,9 +652,9 @@ public final class QueryUtil {
      * // Returns: null
      * }</pre>
      *
-     * @param entityClass the entity class to check (must not be null)
-     * @return the table alias if defined in @Table annotation, empty string if @Table is present but alias is not set, or {@code null} if no @Table annotation exists
-     * @throws IllegalArgumentException if entityClass is null
+     * @param entityClass the entity class to check (must not be {@code null})
+     * @return the table alias if defined in {@code @Table} annotation, empty string if {@code @Table} is present but alias is not set, or {@code null} if no {@code @Table} annotation exists
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public static String getTableAlias(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
@@ -663,8 +665,8 @@ public final class QueryUtil {
 
     /**
      * Gets the table name and optional alias for the entity class using the default naming policy.
-     * If @Table annotation is present, uses its values; otherwise derives the table name from the class name
-     * using SNAKE_CASE naming policy.
+     * If {@code @Table} annotation is present, uses its values; otherwise derives the table name from the class name
+     * using {@code NamingPolicy.SNAKE_CASE}.
      *
      * <p>The returned string is formatted as "tableName" or "tableName alias" depending on whether
      * an alias is defined.</p>
@@ -684,9 +686,9 @@ public final class QueryUtil {
      * // Returns: "my_entity" (derived from class name using SNAKE_CASE)
      * }</pre>
      *
-     * @param entityClass the entity class to analyze (must not be null)
+     * @param entityClass the entity class to analyze (must not be {@code null})
      * @return the table name, optionally followed by space and alias
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public static String getTableNameAndAlias(final Class<?> entityClass) {
         return getTableNameAndAlias(entityClass, NamingPolicy.SNAKE_CASE);
@@ -694,10 +696,10 @@ public final class QueryUtil {
 
     /**
      * Gets the table name and optional alias for the entity class using the specified naming policy.
-     * If @Table annotation is present, uses its values; otherwise derives the table name from the class name
+     * If {@code @Table} annotation is present, uses its values; otherwise derives the table name from the class name
      * using the provided naming policy.
      *
-     * <p>The naming policy is only used when no @Table annotation is present. If @Table is defined,
+     * <p>The naming policy is only used when no {@code @Table} annotation is present. If {@code @Table} is defined,
      * its name and alias values are used directly without any transformation.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -714,10 +716,10 @@ public final class QueryUtil {
      * // Returns: "MY_ENTITY"
      * }</pre>
      *
-     * @param entityClass the entity class to analyze (must not be null)
-     * @param namingPolicy the naming policy to use for table name conversion when @Table is not present
+     * @param entityClass the entity class to analyze (must not be {@code null})
+     * @param namingPolicy the naming policy to use for table name conversion when {@code @Table} is not present. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return the table name, optionally followed by space and alias
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public static String getTableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
