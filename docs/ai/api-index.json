@@ -1,8 +1,8 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.6.7",
-    "generated_at": "2026-03-15",
+    "version": "4.6.8",
+    "generated_at": "2026-03-21",
     "java_target": "17",
     "source": {
       "git_sha": "unknown"
@@ -2679,7 +2679,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public void println()",
+              "signature": "@Beta public void println()",
               "return_type": "void",
               "type_params": [],
               "params": [],
@@ -9231,17 +9231,17 @@
               "see_also": []
             },
             {
-              "name": "sql",
+              "name": "originalSql",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public String sql()",
+              "signature": "public String originalSql()",
               "return_type": "String",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the SQL string (trimmed of leading and trailing whitespace).",
+              "javadoc_summary": "Returns the original SQL string (trimmed of leading and trailing whitespace), before any parameter conversion or processing.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -30487,13 +30487,13 @@
               "see_also": []
             },
             {
-              "name": "fromFile",
+              "name": "load",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static SqlMapper fromFile(final String filePath)",
+              "signature": "public static SqlMapper load(final String filePath)",
               "return_type": "SqlMapper",
               "type_params": [],
               "params": [
@@ -30546,7 +30546,7 @@
               "throws": [],
               "javadoc_summary": "Retrieves the parsed SQL associated with the specified identifier.",
               "contract": [
-                "<p> <b> Usage Examples: </b> </p> <pre> {@code SqlMapper mapper = SqlMapper.fromFile(\"sql/queries.xml\"); ParsedSql sql = mapper.get(\"findAccountById\"); if (sql != null) { String parameterizedSql = sql.parameterizedSql(); // Use with PreparedStatement PreparedStatement stmt = connection.prepareStatement(parameterizedSql); } // Returns null for unknown ids ParsedSql unknown = mapper.get(\"nonExistentId\"); // unknown is null } </pre>"
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code SqlMapper mapper = SqlMapper.load(\"sql/queries.xml\"); ParsedSql sql = mapper.get(\"findAccountById\"); if (sql != null) { String parameterizedSql = sql.parameterizedSql(); // Use with PreparedStatement PreparedStatement stmt = connection.prepareStatement(parameterizedSql); } // Returns null for unknown ids ParsedSql unknown = mapper.get(\"nonExistentId\"); // unknown is null } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -30571,7 +30571,7 @@
               "throws": [],
               "javadoc_summary": "Retrieves the attributes associated with the specified SQL identifier.",
               "contract": [
-                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id=\"batchInsert\" batchSize=\"100\" timeout=\"30\">...</sql> SqlMapper mapper = SqlMapper.fromFile(\"sql/queries.xml\"); ImmutableMap<String, String> attrs = mapper.getAttributes(\"batchInsert\"); if (attrs != null) { String batchSize = attrs.get(\"batchSize\"); // \"100\" String timeout = attrs.get(\"timeout\"); // \"30\" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttributes(\"nonExistentId\"); // unknown is null } </pre>"
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id=\"batchInsert\" batchSize=\"100\" timeout=\"30\">...</sql> SqlMapper mapper = SqlMapper.load(\"sql/queries.xml\"); ImmutableMap<String, String> attrs = mapper.getAttributes(\"batchInsert\"); if (attrs != null) { String batchSize = attrs.get(\"batchSize\"); // \"100\" String timeout = attrs.get(\"timeout\"); // \"30\" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttributes(\"nonExistentId\"); // unknown is null } </pre>"
               ],
               "examples": [],
               "see_also": []

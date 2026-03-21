@@ -224,18 +224,21 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the SQL string (trimmed of leading and trailing whitespace).
-     * This is the SQL before any parameter conversion or processing, but after trimming.
+     * Returns the original SQL string (trimmed of leading and trailing whitespace),
+     * before any parameter conversion or processing.
+     *
+     * <p>Use {@link #parameterizedSql()} to obtain the SQL with named parameters
+     * replaced by JDBC {@code ?} placeholders.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ParsedSql parsed = ParsedSql.parse("  SELECT * FROM users WHERE id = :userId  ");
-     * String sql = parsed.sql();   // Returns: "SELECT * FROM users WHERE id = :userId"
+     * String sql = parsed.originalSql();   // Returns: "SELECT * FROM users WHERE id = :userId"
      * }</pre>
      *
-     * @return the trimmed SQL string
+     * @return the trimmed original SQL string
      */
-    public String sql() {
+    public String originalSql() {
         return sql;
     }
 

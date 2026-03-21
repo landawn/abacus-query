@@ -37,7 +37,7 @@ class SqlMapper2025Test extends TestBase {
 
         ParsedSql retrieved = mapper.get("findAll");
         assertNotNull(retrieved);
-        assertEquals(sql.sql(), retrieved.sql());
+        assertEquals(sql.originalSql(), retrieved.originalSql());
     }
 
     @Test
@@ -106,7 +106,7 @@ class SqlMapper2025Test extends TestBase {
 
         ParsedSql retrieved = mapper.get("findById");
         assertNotNull(retrieved);
-        assertEquals(sql.sql(), retrieved.sql());
+        assertEquals(sql.originalSql(), retrieved.originalSql());
     }
 
     @Test
@@ -558,7 +558,7 @@ public class SqlMapperTest extends TestBase {
         // Check SQL content
         ParsedSql findById = mapper.get("findById");
         assertNotNull(findById);
-        assertEquals("SELECT * FROM users WHERE id = ?", findById.sql());
+        assertEquals("SELECT * FROM users WHERE id = ?", findById.originalSql());
 
         // Check attributes
         ImmutableMap<String, String> attrs = mapper.getAttributes("updateName");
@@ -716,7 +716,7 @@ public class SqlMapperTest extends TestBase {
 
         ParsedSql sql = mapper.get("query1");
         assertNotNull(sql);
-        assertEquals("SELECT * FROM users", sql.sql());
+        assertEquals("SELECT * FROM users", sql.originalSql());
 
         ImmutableMap<String, String> retrievedAttrs = mapper.getAttributes("query1");
         assertEquals("50", retrievedAttrs.get("batchSize"));
@@ -788,8 +788,8 @@ public class SqlMapperTest extends TestBase {
         // Load saved file and verify
         SqlMapper loaded = SqlMapper.load(outputFile.getAbsolutePath());
         assertEquals(mapper.sqlIds(), loaded.sqlIds());
-        assertEquals(mapper.get("findUser").sql(), loaded.get("findUser").sql());
-        assertEquals(mapper.get("updateUser").sql(), loaded.get("updateUser").sql());
+        assertEquals(mapper.get("findUser").originalSql(), loaded.get("findUser").originalSql());
+        assertEquals(mapper.get("updateUser").originalSql(), loaded.get("updateUser").originalSql());
 
         ImmutableMap<String, String> loadedAttrs = loaded.getAttributes("findUser");
         assertEquals("100", loadedAttrs.get("batchSize"));

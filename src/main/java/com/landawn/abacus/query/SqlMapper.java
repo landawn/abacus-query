@@ -468,7 +468,7 @@ public final class SqlMapper {
                     }
                 }
 
-                final Text sqlToken = doc.createTextNode(sqlEntry.getValue().sql());
+                final Text sqlToken = doc.createTextNode(sqlEntry.getValue().originalSql());
                 sqlNode.appendChild(sqlToken);
                 sqlMapperNode.appendChild(sqlNode);
             }

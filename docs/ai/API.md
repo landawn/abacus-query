@@ -1,7 +1,7 @@
-# abacus-query API Index (v4.6.7)
+# abacus-query API Index (v4.6.8)
 - Build: unknown
 - Java: 17
-- Generated: 2026-03-15
+- Generated: 2026-03-21
 
 ## Packages
 - com.landawn.abacus.query
@@ -639,7 +639,7 @@ A fluent SQL builder for constructing SQL statements programmatically.
 - **Throws:**
   - `E` — if the consumer throws an exception
 ##### println(...) -> void
-- **Signature:** `public void println()`
+- **Signature:** `@Beta public void println()`
 - **Summary:** Prints the generated SQL to standard output.
 - **Parameters:**
   - (none)
@@ -2282,12 +2282,12 @@ Represents a parsed SQL statement with support for named parameters and paramete
 - **Returns:** a ParsedSql instance containing the parsed information
 
 #### Public Instance Methods
-##### sql(...) -> String
-- **Signature:** `public String sql()`
-- **Summary:** Gets the SQL string (trimmed of leading and trailing whitespace).
+##### originalSql(...) -> String
+- **Signature:** `public String originalSql()`
+- **Summary:** Returns the original SQL string (trimmed of leading and trailing whitespace), before any parameter conversion or processing.
 - **Parameters:**
   - (none)
-- **Returns:** the trimmed SQL string
+- **Returns:** the trimmed original SQL string
 ##### parameterizedSql(...) -> String
 - **Signature:** `public String parameterizedSql()`
 - **Summary:** Gets the parameterized SQL with all named parameters replaced by JDBC placeholders (?).
@@ -7100,8 +7100,8 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - (none)
 
 #### Public Static Methods
-##### fromFile(...) -> SqlMapper
-- **Signature:** `public static SqlMapper fromFile(final String filePath)`
+##### load(...) -> SqlMapper
+- **Signature:** `public static SqlMapper load(final String filePath)`
 - **Summary:** Creates a SqlMapper instance by loading SQL definitions from one or more XML files.
 - **Parameters:**
   - `filePath` (`String`) — one or more file paths separated by ',' or ';'
@@ -7123,7 +7123,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Signature:** `public ParsedSql get(final String id)`
 - **Summary:** Retrieves the parsed SQL associated with the specified identifier.
 - **Contract:**
-  - <p> <b> Usage Examples: </b> </p> <pre> {@code SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml"); ParsedSql sql = mapper.get("findAccountById"); if (sql != null) { String parameterizedSql = sql.parameterizedSql(); // Use with PreparedStatement PreparedStatement stmt = connection.prepareStatement(parameterizedSql); } // Returns null for unknown ids ParsedSql unknown = mapper.get("nonExistentId"); // unknown is null } </pre>
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code SqlMapper mapper = SqlMapper.load("sql/queries.xml"); ParsedSql sql = mapper.get("findAccountById"); if (sql != null) { String parameterizedSql = sql.parameterizedSql(); // Use with PreparedStatement PreparedStatement stmt = connection.prepareStatement(parameterizedSql); } // Returns null for unknown ids ParsedSql unknown = mapper.get("nonExistentId"); // unknown is null } </pre>
 - **Parameters:**
   - `id` (`String`) — the SQL identifier to look up
 - **Returns:** the ParsedSql object, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH} , or not found
@@ -7131,7 +7131,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Signature:** `public ImmutableMap<String, String> getAttributes(final String id)`
 - **Summary:** Retrieves the attributes associated with the specified SQL identifier.
 - **Contract:**
-  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql> SqlMapper mapper = SqlMapper.fromFile("sql/queries.xml"); ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsert"); if (attrs != null) { String batchSize = attrs.get("batchSize"); // "100" String timeout = attrs.get("timeout"); // "30" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttributes("nonExistentId"); // unknown is null } </pre>
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql> SqlMapper mapper = SqlMapper.load("sql/queries.xml"); ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsert"); if (attrs != null) { String batchSize = attrs.get("batchSize"); // "100" String timeout = attrs.get("timeout"); // "30" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttributes("nonExistentId"); // unknown is null } </pre>
 - **Parameters:**
   - `id` (`String`) — the SQL identifier to look up
 - **Returns:** an immutable map of attribute names to values, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH} , or not found
