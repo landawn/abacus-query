@@ -397,6 +397,44 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testWhereRejectsNullStringExpression() {
         assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").where((String) null));
     }
+
+    @Test
+    public void testClauseBuildersRejectBlankStringFragments() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").join("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").join("orders").on("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").join("orders").using("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").where("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").groupBy("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").groupBy(Arrays.asList("id", "   ")));
+        assertThrows(IllegalArgumentException.class,
+                () -> SqlBuilder.PSC.select("*").from("users").groupBy(Collections.singletonMap("   ", SortDirection.ASC)));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").groupBy("id").having("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy(Arrays.asList("id", "   ")));
+        assertThrows(IllegalArgumentException.class,
+                () -> SqlBuilder.PSC.select("*").from("users").orderBy(Collections.singletonMap("   ", SortDirection.ASC)));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").append("   "));
+    }
+
+    @Test
+    public void testInsertAndUpdateRejectBlankTableAndSetFragments() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.insert("id").into("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.update("users").set("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.update("users").set(Arrays.asList("name", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.update("users").set(Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.update("users").set(Collections.emptyMap()));
+    }
+
+    @Test
+    public void testSetOperationsAndDirectionsRejectInvalidInputs() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("id").from("users").union("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("id").from("users").unionAll("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("id").from("users").intersect("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("id").from("users").except("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("id").from("users").minus("   "));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").groupBy("id", null));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy("id", null));
+    }
 }
 
 class AbstractQueryBuilder2026Test extends TestBase {

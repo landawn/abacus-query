@@ -64,6 +64,29 @@ public final class DynamicQuery {
         return new Builder();
     }
 
+    private static void checkSqlFragmentNotBlank(final String value, final String argName) {
+        if (Strings.isBlank(value)) {
+            throw new IllegalArgumentException(argName + " cannot be null, empty, or blank");
+        }
+    }
+
+    private static void checkSqlFragmentsNotBlank(final Collection<String> values, final String argName) {
+        N.checkArgNotNull(values, argName);
+
+        for (final String value : values) {
+            checkSqlFragmentNotBlank(value, "Element in " + argName);
+        }
+    }
+
+    private static void checkSqlFragmentMapNotBlank(final Map<String, String> values, final String argName) {
+        N.checkArgNotNull(values, argName);
+
+        for (final Map.Entry<String, String> entry : values.entrySet()) {
+            checkSqlFragmentNotBlank(entry.getKey(), "Key in " + argName);
+            checkSqlFragmentNotBlank(entry.getValue(), "Value in " + argName);
+        }
+    }
+
     /**
      * Builder for constructing dynamic SQL queries clause by clause.
      */
@@ -228,7 +251,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code limitCond} is null
          */
         public Builder limit(final String limitCond) {
-            N.checkArgNotNull(limitCond, "limitCond");
+            checkSqlFragmentNotBlank(limitCond, "limitCond");
 
             getStringBuilderForMoreParts().append(" ").append(limitCond);
 
@@ -398,7 +421,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder union(final String query) {
-            N.checkArgNotNull(query, "query");
+            checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" UNION ").append(query);
 
@@ -419,7 +442,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder unionAll(final String query) {
-            N.checkArgNotNull(query, "query");
+            checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" UNION ALL ").append(query);
 
@@ -440,7 +463,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder intersect(final String query) {
-            N.checkArgNotNull(query, "query");
+            checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" INTERSECT ").append(query);
 
@@ -461,7 +484,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder except(final String query) {
-            N.checkArgNotNull(query, "query");
+            checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" EXCEPT ").append(query);
 
@@ -482,7 +505,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is null
          */
         public Builder minus(final String query) {
-            N.checkArgNotNull(query, "query");
+            checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" MINUS ").append(query);
 
@@ -649,7 +672,7 @@ public final class DynamicQuery {
          * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause append(final String column) {
-            N.checkArgNotNull(column, "column");
+            checkSqlFragmentNotBlank(column, "column");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -677,8 +700,8 @@ public final class DynamicQuery {
          * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause append(final String column, final String alias) {
-            N.checkArgNotNull(column, "column");
-            N.checkArgNotNull(alias, "alias");
+            checkSqlFragmentNotBlank(column, "column");
+            checkSqlFragmentNotBlank(alias, "alias");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -708,6 +731,8 @@ public final class DynamicQuery {
             if (N.isEmpty(columns)) {
                 return this;
             }
+
+            checkSqlFragmentsNotBlank(columns, "columns");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -741,6 +766,8 @@ public final class DynamicQuery {
                 return this;
             }
 
+            checkSqlFragmentMapNotBlank(columnsAndAliasMap, "columnsAndAliasMap");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -768,7 +795,7 @@ public final class DynamicQuery {
          */
         public SelectClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
-                N.checkArgNotNull(textToAppend, "textToAppend");
+                checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 if (!sb.isEmpty()) {
                     sb.append(", ");
@@ -799,8 +826,8 @@ public final class DynamicQuery {
          * @return this {@link SelectClause} instance for method chaining
          */
         public SelectClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
-            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+            checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
+            checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -856,7 +883,7 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          */
         public FromClause append(final String table) {
-            N.checkArgNotNull(table, "table");
+            checkSqlFragmentNotBlank(table, "table");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -884,8 +911,8 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          */
         public FromClause append(final String table, final String alias) {
-            N.checkArgNotNull(table, "table");
-            N.checkArgNotNull(alias, "alias");
+            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(alias, "alias");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -913,8 +940,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause join(final String table, final String on) {
-            N.checkArgNotNull(table, "table");
-            N.checkArgNotNull(on, "on");
+            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
             sb.append(" JOIN ").append(table).append(" ON ").append(on);
 
@@ -937,8 +964,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause innerJoin(final String table, final String on) {
-            N.checkArgNotNull(table, "table");
-            N.checkArgNotNull(on, "on");
+            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
             sb.append(" INNER JOIN ").append(table).append(" ON ").append(on);
 
@@ -961,8 +988,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause leftJoin(final String table, final String on) {
-            N.checkArgNotNull(table, "table");
-            N.checkArgNotNull(on, "on");
+            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
             sb.append(" LEFT JOIN ").append(table).append(" ON ").append(on);
 
@@ -985,8 +1012,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause rightJoin(final String table, final String on) {
-            N.checkArgNotNull(table, "table");
-            N.checkArgNotNull(on, "on");
+            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
             sb.append(" RIGHT JOIN ").append(table).append(" ON ").append(on);
 
@@ -1009,8 +1036,8 @@ public final class DynamicQuery {
          * @throws IllegalStateException if {@code from()} has not been called
          */
         public FromClause fullJoin(final String table, final String on) {
-            N.checkArgNotNull(table, "table");
-            N.checkArgNotNull(on, "on");
+            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
             sb.append(" FULL JOIN ").append(table).append(" ON ").append(on);
 
@@ -1038,7 +1065,7 @@ public final class DynamicQuery {
          */
         public FromClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
-                N.checkArgNotNull(textToAppend, "textToAppend");
+                checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 if (!sb.isEmpty()) {
                     sb.append(", ");
@@ -1067,8 +1094,8 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          */
         public FromClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
-            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+            checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
+            checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -1126,7 +1153,7 @@ public final class DynamicQuery {
          * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause append(final String cond) {
-            N.checkArgNotNull(cond, "cond");
+            checkSqlFragmentNotBlank(cond, "cond");
 
             if (!sb.isEmpty()) {
                 sb.append(" ");
@@ -1218,7 +1245,7 @@ public final class DynamicQuery {
          * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause and(final String cond) {
-            N.checkArgNotNull(cond, "cond");
+            checkSqlFragmentNotBlank(cond, "cond");
 
             if (sb.isEmpty()) {
                 sb.append("WHERE ");
@@ -1244,7 +1271,7 @@ public final class DynamicQuery {
          * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause or(final String cond) {
-            N.checkArgNotNull(cond, "cond");
+            checkSqlFragmentNotBlank(cond, "cond");
 
             if (sb.isEmpty()) {
                 sb.append("WHERE ");
@@ -1273,7 +1300,7 @@ public final class DynamicQuery {
          */
         public WhereClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
-                N.checkArgNotNull(textToAppend, "textToAppend");
+                checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 if (!sb.isEmpty()) {
                     sb.append(" ");
@@ -1304,8 +1331,8 @@ public final class DynamicQuery {
          * @return this {@link WhereClause} instance for method chaining
          */
         public WhereClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
-            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+            checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
+            checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             if (!sb.isEmpty()) {
                 sb.append(" ");
@@ -1362,7 +1389,7 @@ public final class DynamicQuery {
          * @return this {@link GroupByClause} instance for method chaining
          */
         public GroupByClause append(final String column) {
-            N.checkArgNotNull(column, "column");
+            checkSqlFragmentNotBlank(column, "column");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -1393,6 +1420,8 @@ public final class DynamicQuery {
                 return this;
             }
 
+            checkSqlFragmentsNotBlank(columns, "columns");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1420,7 +1449,7 @@ public final class DynamicQuery {
          */
         public GroupByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
-                N.checkArgNotNull(textToAppend, "textToAppend");
+                checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 if (!sb.isEmpty()) {
                     sb.append(", ");
@@ -1451,8 +1480,8 @@ public final class DynamicQuery {
          * @return this {@link GroupByClause} instance for method chaining
          */
         public GroupByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
-            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+            checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
+            checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -1508,7 +1537,7 @@ public final class DynamicQuery {
          * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause append(final String cond) {
-            N.checkArgNotNull(cond, "cond");
+            checkSqlFragmentNotBlank(cond, "cond");
 
             if (!sb.isEmpty()) {
                 sb.append(" ");
@@ -1534,7 +1563,7 @@ public final class DynamicQuery {
          * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause and(final String cond) {
-            N.checkArgNotNull(cond, "cond");
+            checkSqlFragmentNotBlank(cond, "cond");
 
             if (sb.isEmpty()) {
                 sb.append("HAVING ");
@@ -1560,7 +1589,7 @@ public final class DynamicQuery {
          * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause or(final String cond) {
-            N.checkArgNotNull(cond, "cond");
+            checkSqlFragmentNotBlank(cond, "cond");
 
             if (sb.isEmpty()) {
                 sb.append("HAVING ");
@@ -1589,7 +1618,7 @@ public final class DynamicQuery {
          */
         public HavingClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
-                N.checkArgNotNull(textToAppend, "textToAppend");
+                checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 if (!sb.isEmpty()) {
                     sb.append(" ");
@@ -1620,8 +1649,8 @@ public final class DynamicQuery {
          * @return this {@link HavingClause} instance for method chaining
          */
         public HavingClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
-            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+            checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
+            checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             if (!sb.isEmpty()) {
                 sb.append(" ");
@@ -1678,7 +1707,7 @@ public final class DynamicQuery {
          * @return this {@link OrderByClause} instance for method chaining
          */
         public OrderByClause append(final String column) {
-            N.checkArgNotNull(column, "column");
+            checkSqlFragmentNotBlank(column, "column");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");
@@ -1709,6 +1738,8 @@ public final class DynamicQuery {
                 return this;
             }
 
+            checkSqlFragmentsNotBlank(columns, "columns");
+
             if (!sb.isEmpty()) {
                 sb.append(", ");
             } else {
@@ -1736,7 +1767,7 @@ public final class DynamicQuery {
          */
         public OrderByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
-                N.checkArgNotNull(textToAppend, "textToAppend");
+                checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 if (!sb.isEmpty()) {
                     sb.append(", ");
@@ -1767,8 +1798,8 @@ public final class DynamicQuery {
          * @return this {@link OrderByClause} instance for method chaining
          */
         public OrderByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            N.checkArgNotNull(textToAppendWhenTrue, "textToAppendWhenTrue");
-            N.checkArgNotNull(textToAppendWhenFalse, "textToAppendWhenFalse");
+            checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
+            checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             if (!sb.isEmpty()) {
                 sb.append(", ");

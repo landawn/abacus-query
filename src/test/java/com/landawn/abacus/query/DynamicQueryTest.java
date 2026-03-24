@@ -1,19 +1,23 @@
 package com.landawn.abacus.query;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.DynamicQuery.Builder;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.DynamicQuery.Builder;
 
 @Tag("2025")
 public class DynamicQueryTest extends TestBase {
@@ -1098,4 +1102,98 @@ class DynamicQuery2026BatchTest extends TestBase {
 
         assertEquals("ORDER BY name ASC, created_at DESC, id ASC", sb.toString());
     }
+
+    @Test
+    public void selectClause_rejectsEmptyAlias() {
+        final Builder builder = DynamicQuery.builder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.select().append("id", ""));
+        assertThrows(IllegalArgumentException.class, () -> builder.select().append("id", "   "));
+    }
+
+    @Test
+    public void selectClause_rejectsBlankConditionalAndCollectionFragments() {
+        final Builder builder = DynamicQuery.builder();
+        final Map<String, String> columnsAndAliasMap = new LinkedHashMap<>();
+        columnsAndAliasMap.put("id", "   ");
+
+        assertThrows(IllegalArgumentException.class, () -> builder.select().append(Arrays.asList("id", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> builder.select().append(columnsAndAliasMap));
+        assertThrows(IllegalArgumentException.class, () -> builder.select().appendIf(true, "   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.select().appendIfOrElse(true, "   ", "name"));
+        assertThrows(IllegalArgumentException.class, () -> builder.select().appendIfOrElse(false, "name", "   "));
+    }
+
+    @Test
+    public void fromClause_rejectsEmptyAliasAndBlankJoinFragments() {
+        final Builder builder = DynamicQuery.builder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.from().append("users", ""));
+        assertThrows(IllegalArgumentException.class, () -> builder.from().append("users", "   "));
+
+        builder.from().append("users");
+
+        assertThrows(IllegalArgumentException.class, () -> builder.from().join("   ", "users.id = orders.user_id"));
+        assertThrows(IllegalArgumentException.class, () -> builder.from().join("orders", "   "));
+    }
+
+    @Test
+    public void builder_rejectsBlankSetOperationAndLimitFragments() {
+        final Builder builder = DynamicQuery.builder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.limit("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.union("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.unionAll("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.intersect("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.except("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.minus("   "));
+    }
+
+    @Test
+    public void whereClause_rejectsBlankConditions() {
+        final Builder builder = DynamicQuery.builder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.where().append(""));
+        assertThrows(IllegalArgumentException.class, () -> builder.where().append("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.where().and(""));
+        assertThrows(IllegalArgumentException.class, () -> builder.where().or("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.where().appendIf(true, "   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.where().appendIfOrElse(true, "   ", "id = 1"));
+        assertThrows(IllegalArgumentException.class, () -> builder.where().appendIfOrElse(false, "id = 1", "   "));
+    }
+
+    @Test
+    public void groupByClause_rejectsBlankColumns() {
+        final Builder builder = DynamicQuery.builder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.groupBy().append("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.groupBy().append(Arrays.asList("year", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> builder.groupBy().appendIf(true, "   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.groupBy().appendIfOrElse(true, "   ", "year"));
+        assertThrows(IllegalArgumentException.class, () -> builder.groupBy().appendIfOrElse(false, "year", "   "));
+    }
+
+    @Test
+    public void havingClause_rejectsBlankConditions() {
+        final Builder builder = DynamicQuery.builder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.having().append("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.having().and("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.having().or("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.having().appendIf(true, "   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.having().appendIfOrElse(true, "   ", "COUNT(*) > 0"));
+        assertThrows(IllegalArgumentException.class, () -> builder.having().appendIfOrElse(false, "COUNT(*) > 0", "   "));
+    }
+
+    @Test
+    public void orderByClause_rejectsBlankColumns() {
+        final Builder builder = DynamicQuery.builder();
+
+        assertThrows(IllegalArgumentException.class, () -> builder.orderBy().append("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.orderBy().append(Arrays.asList("id ASC", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> builder.orderBy().appendIf(true, "   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.orderBy().appendIfOrElse(true, "   ", "id ASC"));
+        assertThrows(IllegalArgumentException.class, () -> builder.orderBy().appendIfOrElse(false, "id ASC", "   "));
+    }
+
 }

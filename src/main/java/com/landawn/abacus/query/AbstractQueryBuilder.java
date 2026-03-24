@@ -971,6 +971,38 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         handlerForNamedParameter_TL.set(defaultHandlerForNamedParameter);
     }
 
+    private static void checkSqlFragmentNotBlank(final String value, final String argName) {
+        if (Strings.isBlank(value)) {
+            throw new IllegalArgumentException(argName + " cannot be null, empty, or blank");
+        }
+    }
+
+    private static void checkSqlFragmentsNotBlank(final String[] values, final String argName) {
+        N.checkArgNotEmpty(values, argName);
+
+        for (int i = 0; i < values.length; i++) {
+            checkSqlFragmentNotBlank(values[i], argName + "[" + i + "]");
+        }
+    }
+
+    private static void checkSqlFragmentsNotBlank(final Collection<String> values, final String argName) {
+        N.checkArgNotEmpty(values, argName);
+
+        int i = 0;
+
+        for (final String value : values) {
+            checkSqlFragmentNotBlank(value, argName + "[" + i++ + "]");
+        }
+    }
+
+    private static void checkSqlFragmentKeysNotBlank(final Map<String, ?> values, final String argName) {
+        N.checkArgNotEmpty(values, argName);
+
+        for (final Map.Entry<String, ?> entry : values.entrySet()) {
+            checkSqlFragmentNotBlank(entry.getKey(), "Key in " + argName);
+        }
+    }
+
     /**
      * Specifies the target table for an INSERT or SELECT INTO operation.
      * <p>Must be called after setting the columns/values to insert or columns to select.</p>
@@ -986,7 +1018,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if called on non-INSERT/SELECT operation or if columns/values not set
      */
     public This into(final String tableName) {
-        N.checkArgNotEmpty(tableName, "tableName");
+        checkSqlFragmentNotBlank(tableName, "tableName");
+        final String normalizedTableName = tableName.trim();
 
         if (!(_op == OperationType.ADD || _op == OperationType.QUERY)) {
             throw new IllegalStateException("Invalid operation for into(): " + _op + ". Expected ADD or QUERY");
@@ -1002,12 +1035,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
         }
 
-        _tableName = tableName;
+        _tableName = normalizedTableName;
 
         _sb.append(_INSERT);
         _sb.append(_SPACE_INTO_SPACE);
 
-        _sb.append(tableName);
+        _sb.append(normalizedTableName);
 
         _sb.append(_SPACE);
         _sb.append(SK._PARENTHESIS_L);
@@ -1195,6 +1228,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (Strings.isNotEmpty(_selectModifier)) {
             throw new IllegalStateException("selectModifier has already been set and cannot be set again");
         }
+
+        if (Strings.isEmpty(selectModifier)) {
+            return (This) this;
+        }
+
+        checkSqlFragmentNotBlank(selectModifier, "selectModifier");
 
         if (Strings.isNotEmpty(selectModifier)) {
             _selectModifier = selectModifier;
@@ -1626,7 +1665,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This join(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         _sb.append(_SPACE_JOIN_SPACE);
 
@@ -1702,7 +1741,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This innerJoin(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         _sb.append(_SPACE_INNER_JOIN_SPACE);
 
@@ -1772,7 +1811,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This leftJoin(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         _sb.append(_SPACE_LEFT_JOIN_SPACE);
 
@@ -1842,7 +1881,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This rightJoin(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         _sb.append(_SPACE_RIGHT_JOIN_SPACE);
 
@@ -1912,7 +1951,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This fullJoin(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         _sb.append(_SPACE_FULL_JOIN_SPACE);
 
@@ -1982,7 +2021,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This crossJoin(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         _sb.append(_SPACE_CROSS_JOIN_SPACE);
 
@@ -2052,7 +2091,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This naturalJoin(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         _sb.append(_SPACE_NATURAL_JOIN_SPACE);
 
@@ -2123,7 +2162,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This on(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         _sb.append(_SPACE_ON_SPACE);
 
@@ -2172,7 +2211,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This using(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         if (containsSqlCommentToken(expr)) {
             throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + expr);
@@ -2186,7 +2225,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             appendStringExpr(trimmedExpr, false);
         } else {
             _sb.append(SK._PARENTHESIS_L);
-            appendColumnName(expr);
+            appendColumnName(trimmedExpr);
             _sb.append(SK._PARENTHESIS_R);
         }
 
@@ -2209,7 +2248,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This where(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         checkIfAlreadyCalled(SK.WHERE);
 
@@ -2266,7 +2305,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         checkIfAlreadyCalled(SK.GROUP_BY);
 
@@ -2293,7 +2332,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final String... propOrColumnNames) {
-        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
 
         checkIfAlreadyCalled(SK.GROUP_BY);
 
@@ -2327,6 +2366,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final String columnName, final SortDirection direction) {
+        N.checkArgNotNull(direction, "direction");
+
         groupBy(columnName);
 
         _sb.append(_SPACE);
@@ -2351,7 +2392,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final Collection<String> propOrColumnNames) {
-        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
 
         checkIfAlreadyCalled(SK.GROUP_BY);
 
@@ -2387,7 +2428,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
-        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        N.checkArgNotNull(direction, "direction");
 
         checkIfAlreadyCalled(SK.GROUP_BY);
 
@@ -2426,7 +2468,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This groupBy(final Map<String, SortDirection> orders) {
-        N.checkArgNotEmpty(orders, "orders");
+        checkSqlFragmentKeysNotBlank(orders, "orders");
+
+        for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+            N.checkArgNotNull(entry.getValue(), "Value in orders");
+        }
 
         checkIfAlreadyCalled(SK.GROUP_BY);
 
@@ -2465,7 +2511,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This having(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         checkIfAlreadyCalled(SK.HAVING);
 
@@ -2519,7 +2565,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         checkIfAlreadyCalled(SK.ORDER_BY);
 
@@ -2546,7 +2592,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final String... propOrColumnNames) {
-        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
 
         checkIfAlreadyCalled(SK.ORDER_BY);
 
@@ -2580,6 +2626,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final String columnName, final SortDirection direction) {
+        N.checkArgNotNull(direction, "direction");
+
         orderBy(columnName);
 
         _sb.append(_SPACE);
@@ -2605,7 +2653,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final Collection<String> propOrColumnNames) {
-        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
 
         checkIfAlreadyCalled(SK.ORDER_BY);
 
@@ -2641,7 +2689,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
-        N.checkArgNotEmpty(propOrColumnNames, "propOrColumnNames");
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        N.checkArgNotNull(direction, "direction");
 
         checkIfAlreadyCalled(SK.ORDER_BY);
 
@@ -2681,7 +2730,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This orderBy(final Map<String, SortDirection> orders) {
-        N.checkArgNotEmpty(orders, "orders");
+        checkSqlFragmentKeysNotBlank(orders, "orders");
+
+        for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+            N.checkArgNotNull(entry.getValue(), "Value in orders");
+        }
 
         checkIfAlreadyCalled(SK.ORDER_BY);
 
@@ -3149,7 +3202,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This append(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         _sb.append(expr);
 
@@ -3345,6 +3398,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This union(final String query) {
+        checkSqlFragmentNotBlank(query, "query");
+
         return union(N.asArray(query));
     }
 
@@ -3365,6 +3420,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This union(final String... propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = Array.asList(propOrColumnNames);
@@ -3407,6 +3464,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This union(final Collection<String> propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = propOrColumnNames;
@@ -3467,6 +3526,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This unionAll(final String query) {
+        checkSqlFragmentNotBlank(query, "query");
+
         return unionAll(N.asArray(query));
     }
 
@@ -3488,6 +3549,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This unionAll(final String... propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = Array.asList(propOrColumnNames);
@@ -3530,6 +3593,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This unionAll(final Collection<String> propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = propOrColumnNames;
@@ -3590,6 +3655,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This intersect(final String query) {
+        checkSqlFragmentNotBlank(query, "query");
+
         return intersect(N.asArray(query));
     }
 
@@ -3611,6 +3678,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This intersect(final String... propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = Array.asList(propOrColumnNames);
@@ -3653,6 +3722,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This intersect(final Collection<String> propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = propOrColumnNames;
@@ -3713,6 +3784,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This except(final String query) {
+        checkSqlFragmentNotBlank(query, "query");
+
         return except(N.asArray(query));
     }
 
@@ -3734,6 +3807,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This except(final String... propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = Array.asList(propOrColumnNames);
@@ -3776,6 +3851,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This except(final Collection<String> propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = propOrColumnNames;
@@ -3837,6 +3914,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This minus(final String query) {
+        checkSqlFragmentNotBlank(query, "query");
+
         return minus(N.asArray(query));
     }
 
@@ -3858,6 +3937,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This minus(final String... propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = Array.asList(propOrColumnNames);
@@ -3900,6 +3981,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This minus(final Collection<String> propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         _op = OperationType.QUERY;
 
         _propOrColumnNames = propOrColumnNames;
@@ -3992,6 +4075,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This set(final Collection<String> propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+
         init(false);
 
         switch (_sqlPolicy) {
@@ -4079,6 +4164,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This set(final Map<String, Object> props) {
+        checkSqlFragmentKeysNotBlank(props, "props");
+
         init(false);
 
         switch (_sqlPolicy) {
@@ -5106,7 +5193,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                           {@code false} otherwise
      */
     protected void appendStringExpr(final String expr, final boolean isFromAppendColumn) {
-        N.checkArgNotEmpty(expr, "expr");
+        checkSqlFragmentNotBlank(expr, "expr");
 
         if (isFromAppendColumn && containsSqlCommentToken(expr)) {
             throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + expr);
@@ -5148,7 +5235,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propName the property or column name to append
      */
     protected void appendColumnName(final String propName) {
-        N.checkArgNotEmpty(propName, "propName");
+        checkSqlFragmentNotBlank(propName, "propName");
 
         if (containsSqlCommentToken(propName)) {
             throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + propName);
