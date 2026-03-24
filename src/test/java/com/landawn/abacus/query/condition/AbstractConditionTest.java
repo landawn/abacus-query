@@ -95,8 +95,7 @@ class AbstractCondition2025Test extends TestBase {
     public void testParameter2String_Null() {
         Equal condition = new Equal("name", null);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
-        assertNull(params.get(0));
+        assertEquals(0, (int) params.size());
     }
 
     @Test

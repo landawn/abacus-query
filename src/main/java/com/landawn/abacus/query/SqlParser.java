@@ -764,7 +764,7 @@ public final class SqlParser {
      * @throws IllegalArgumentException if separator is null
      */
     public static void registerSeparator(final String separator) {
-        N.checkArgNotNull(separator, "separator");
+        N.checkArgNotEmpty(separator, "separator");
 
         separators.add(separator);
 

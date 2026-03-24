@@ -1,19 +1,22 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 class Binary2025Test extends TestBase {
@@ -458,5 +461,49 @@ public class BinaryTest extends TestBase {
         Binary binary = new Binary("deleted", Operator.NOT_EQUAL_ANSI, null);
 
         Assertions.assertEquals("deleted IS NOT NULL", binary.toString(null));
+    }
+
+    @Test
+    public void testEqualNullUsesIsNullWithoutParameters() {
+        Equal condition = Filters.eq("deletedAt", null);
+
+        assertEquals("deletedAt IS NULL", condition.toString());
+        assertTrue(condition.getParameters().isEmpty());
+    }
+
+    @Test
+    public void testNotEqualNullUsesIsNotNullWithoutParameters() {
+        NotEqual condition = Filters.ne("deletedAt", null);
+
+        assertEquals("deletedAt IS NOT NULL", condition.toString());
+        assertTrue(condition.getParameters().isEmpty());
+    }
+
+    @Test
+    public void testIsNullUsesKeywordFormWithoutParameters() {
+        Is condition = Filters.is("deletedAt", null);
+
+        assertEquals("deletedAt IS NULL", condition.toString());
+        assertTrue(condition.getParameters().isEmpty());
+    }
+
+    @Test
+    public void testIsNotNullUsesKeywordFormWithoutParameters() {
+        IsNot condition = Filters.isNot("deletedAt", null);
+
+        assertEquals("deletedAt IS NOT NULL", condition.toString());
+        assertTrue(condition.getParameters().isEmpty());
+    }
+
+    @Test
+    public void testCriteriaParametersSkipNullOnlyComparisons() {
+        Criteria criteria = Criteria.builder()
+                .where(Filters.and(Filters.eq("deletedAt", null), Filters.is("archivedAt", null), Filters.eq("status", "ACTIVE")))
+                .build();
+
+        List<Object> parameters = criteria.getParameters();
+
+        assertEquals(1, parameters.size());
+        assertEquals("ACTIVE", parameters.get(0));
     }
 }

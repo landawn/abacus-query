@@ -155,6 +155,11 @@ public class Binary extends ComposableCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
+        if (propValue == null && (operator() == Operator.EQUAL || operator() == Operator.NOT_EQUAL || operator() == Operator.NOT_EQUAL_ANSI
+                || operator() == Operator.IS || operator() == Operator.IS_NOT)) {
+            return ImmutableList.empty();
+        }
+
         if (propValue instanceof Condition) {
             return ((Condition) propValue).getParameters();
         } else {
@@ -173,9 +178,9 @@ public class Binary extends ComposableCondition {
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         if (propValue == null) {
-            if (operator() == Operator.EQUAL) {
+            if (operator() == Operator.EQUAL || operator() == Operator.IS) {
                 return effectiveNamingPolicy.convert(propName) + SK._SPACE + SK.IS_NULL;
-            } else if (operator() == Operator.NOT_EQUAL || operator() == Operator.NOT_EQUAL_ANSI) {
+            } else if (operator() == Operator.NOT_EQUAL || operator() == Operator.NOT_EQUAL_ANSI || operator() == Operator.IS_NOT) {
                 return effectiveNamingPolicy.convert(propName) + SK._SPACE + SK.IS_NOT_NULL;
             }
         }

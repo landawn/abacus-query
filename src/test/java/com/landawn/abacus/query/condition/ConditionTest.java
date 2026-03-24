@@ -351,8 +351,7 @@ public class ConditionTest extends TestBase {
         assertEquals(Operator.EQUAL, nullCondition.operator());
 
         List<Object> params = nullCondition.getParameters();
-        assertEquals(1, params.size());
-        assertNull(params.get(0));
+        assertEquals(0, params.size());
     }
 
     @Test

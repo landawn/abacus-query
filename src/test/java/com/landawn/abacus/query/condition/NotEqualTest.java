@@ -241,7 +241,7 @@ public class NotEqualTest extends TestBase {
     public void testGetParametersWithNull() {
         NotEqual notEqual = Filters.ne("value", null);
 
-        Assertions.assertNull(notEqual.getParameters().get(0));
+        Assertions.assertTrue(notEqual.getParameters().isEmpty());
     }
 
     @Test

@@ -5630,6 +5630,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgNotEmpty(multiSelects, "multiSelects");
 
         for (final Selection selection : multiSelects) {
+            N.checkArgNotNull(selection, "Selection can't be null in 'multiSelects'");
             N.checkArgNotNull(selection.entityClass(), "Class can't be null in 'multiSelects'");
         }
     }
@@ -5672,7 +5673,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 if (N.notEmpty(selection.selectPropNames()) || selection.includeSubEntityProperties()) {
                     final Class<?> entityClass = selection.entityClass();
-                    final Collection<String> selectPropNames = selection.selectPropNames();
+                    final Collection<String> selectPropNames = N.notEmpty(selection.selectPropNames()) ? selection.selectPropNames()
+                            : QueryUtil.getSelectPropNames(entityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
                     final Set<String> excludedPropNames = selection.excludedPropNames();
                     final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
@@ -5686,7 +5688,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     for (final String subEntityPropName : subEntityPropNames) {
                         if (N.notEmpty(selectPropNames)) {
-                            if (!selectPropNames.contains(subEntityPropName)) {
+                            if (!containsSelectedPropOrSubProp(selectPropNames, subEntityPropName)) {
                                 continue;
                             }
                         } else if (excludedPropNames != null && excludedPropNames.contains(subEntityPropName)) {
@@ -5710,6 +5712,26 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         } finally {
             Objectory.recycle(sb);
         }
+    }
+
+    private static boolean containsSelectedPropOrSubProp(final Collection<String> selectPropNames, final String propName) {
+        if (N.isEmpty(selectPropNames)) {
+            return false;
+        }
+
+        if (selectPropNames.contains(propName)) {
+            return true;
+        }
+
+        final String prefix = propName + SK.PERIOD;
+
+        for (final String selectPropName : selectPropNames) {
+            if (selectPropName != null && selectPropName.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

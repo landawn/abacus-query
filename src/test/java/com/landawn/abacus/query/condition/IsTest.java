@@ -210,25 +210,21 @@ public class IsTest extends TestBase {
         Is condition = new Is("name", null);
         List<Object> params = condition.getParameters();
         Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertNull(params.get(0));
+        Assertions.assertEquals(0, params.size());
     }
 
     @Test
     public void testToString() {
         Is condition = new Is("status", null);
         String result = condition.toString();
-        Assertions.assertTrue(result.contains("status"));
-        Assertions.assertTrue(result.contains("IS"));
-        Assertions.assertTrue(result.contains("null"));
+        Assertions.assertEquals("status IS NULL", result);
     }
 
     @Test
     public void testToStringWithNamingPolicy() {
         Is condition = new Is("firstName", null);
         String result = condition.toString(NamingPolicy.CAMEL_CASE);
-        Assertions.assertTrue(result.contains("firstName"));
-        Assertions.assertTrue(result.contains("IS"));
+        Assertions.assertEquals("firstName IS NULL", result);
     }
 
     @Test

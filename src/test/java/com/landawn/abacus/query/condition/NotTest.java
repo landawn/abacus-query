@@ -160,8 +160,7 @@ class Not2025Test extends TestBase {
         Not condition = new Not(new Equal("field", null));
         List<Object> params = condition.getParameters();
 
-        assertEquals(1, (int) params.size());
-        assertNull(params.get(0));
+        assertEquals(0, (int) params.size());
     }
 
 }
