@@ -5482,7 +5482,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * long count = PSB.count(User.class)
          *                 .where(Filters.like("email", "%@example.com"))
-         *                 .queryForSingleResult(Long.class);
+         *                 .queryForSingleValue(Long.class);
          * }</pre>
          * 
          * @param entityClass the entity class to count rows for

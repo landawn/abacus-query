@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -434,6 +435,62 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("id").from("users").minus("   "));
         assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").groupBy("id", null));
         assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").orderBy("id", null));
+    }
+
+    @Test
+    public void testFetchNextRowsAndFetchFirstRowsAreMutuallyExclusive() {
+        assertThrows(IllegalStateException.class, () ->
+            SqlBuilder.PSC.select("*").from("users").orderBy("id").fetchNextRows(10).fetchFirstRows(5).build().query());
+        assertThrows(IllegalStateException.class, () ->
+            SqlBuilder.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).fetchNextRows(5).build().query());
+    }
+
+    @Test
+    public void testChainedSetCollectionCallsIncludeComma() {
+        String sql = SqlBuilder.PSC.update("users").set("firstName").set("lastName").where(Filters.eq("id", 1)).build().query();
+        assertTrue(sql.contains("first_name = ?"), "first_name assignment missing: " + sql);
+        assertTrue(sql.contains("last_name = ?"), "last_name assignment missing: " + sql);
+        int firstIdx = sql.indexOf("first_name");
+        int commaIdx = sql.indexOf(',', firstIdx);
+        int secondIdx = sql.indexOf("last_name");
+        assertTrue(commaIdx > 0 && commaIdx < secondIdx, "Comma must separate the two SET assignments: " + sql);
+    }
+
+    @Test
+    public void testChainedSetMapCallsIncludeComma() {
+        java.util.Map<String, Object> m1 = java.util.Collections.singletonMap("firstName", "John");
+        java.util.Map<String, Object> m2 = java.util.Collections.singletonMap("lastName", "Doe");
+        String sql = SqlBuilder.PSC.update("users").set(m1).set(m2).where(Filters.eq("id", 1)).build().query();
+        int firstIdx = sql.indexOf("first_name");
+        int commaIdx = sql.indexOf(',', firstIdx);
+        int secondIdx = sql.indexOf("last_name");
+        assertTrue(commaIdx > 0 && commaIdx < secondIdx, "Comma must separate map-based SET assignments: " + sql);
+    }
+
+    @Test
+    public void testIsDefaultIdPropValueFractionalNumberNotTreatedAsZero() {
+        assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(null));
+        assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(0));
+        assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(0L));
+        assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(java.math.BigDecimal.ZERO));
+        assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(0.0));
+        assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(0.0f));
+        assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(new java.math.BigDecimal("0.9")),
+                "BigDecimal 0.9 has longValue()=0 but must not be treated as default ID");
+        assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(new java.math.BigDecimal("0.1")));
+        assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(0.5),
+                "double 0.5 must not be treated as default ID");
+        assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(0.1f),
+                "float 0.1 must not be treated as default ID");
+    }
+
+    @Test
+    public void testDoubleHashNotTreatedAsSqlCommentInExpressions() {
+        // ## is a whitelisted two-char token; the second # must not be re-examined as lone #
+        String sql = SqlBuilder.PSC.select("*").from("users")
+                .where(Filters.expr("status = '##ACTIVE##'")).build().query();
+        assertNotNull(sql);
+        assertTrue(sql.contains("##ACTIVE##"), "## inside value must not be rejected as SQL comment");
     }
 }
 

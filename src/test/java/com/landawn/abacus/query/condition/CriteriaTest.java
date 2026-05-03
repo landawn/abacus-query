@@ -1506,3 +1506,25 @@ class Criteria2026Batch2Test extends TestBase {
         Assertions.assertNotEquals(left, distinct);
     }
 }
+
+class CriteriaBugFixTest extends TestBase {
+
+    @Test
+    public void testGroupByCollectionDoesNotAppendAscDirection() {
+        List<String> cols = Arrays.asList("region", "product_type");
+        String sql = Criteria.builder().groupBy(cols).build().toString();
+        assertFalse(sql.contains("ASC"), "groupBy(Collection) must not append ASC: " + sql);
+        assertFalse(sql.contains("DESC"), "groupBy(Collection) must not append DESC: " + sql);
+        String varargsSql = Criteria.builder().groupBy("region", "product_type").build().toString();
+        assertEquals(varargsSql, sql, "groupBy(Collection) must match groupBy(String...) output");
+    }
+
+    @Test
+    public void testOrderByCollectionMatchesVarargs() {
+        List<String> cols = Arrays.asList("country", "state", "city");
+        String collectionSql = Criteria.builder().orderBy(cols).build().toString();
+        String varargsSql = Criteria.builder().orderBy("country", "state", "city").build().toString();
+        assertEquals(varargsSql, collectionSql,
+                "orderBy(Collection) and orderBy(String...) must produce identical SQL");
+    }
+}

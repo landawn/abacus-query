@@ -145,7 +145,7 @@ public class Filters {
     public static final Expression QME = Expr.of(SK.QUESTION_MARK);
 
     /** Expression representing "1 < 2" which always evaluates to true. */
-    static final Expression ALWAYS_TRUE = Expression.of("1 < 2");
+    private static final Expression ALWAYS_TRUE = Expression.of("1 < 2");
 
     /** Expression representing "1 > 2" which always evaluates to false. */
     private static final Expression ALWAYS_FALSE = Expression.of("1 > 2");

@@ -71,7 +71,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("2025")
 class Filters2025Test extends TestBase {
@@ -2916,5 +2918,18 @@ class Filters2026BatchTest extends TestBase {
     @Test
     public void testAnyOfAllEqual_AllNullEntities() {
         assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(null, null)));
+    }
+
+    @Test
+    public void testAlwaysTrueAndAlwaysFalseReturnDistinctExpressions() {
+        // Both accessors must work and return non-null, distinct objects
+        var t = Filters.alwaysTrue();
+        var f = Filters.alwaysFalse();
+        assertNotNull(t);
+        assertNotNull(f);
+        assertNotSame(t, f, "alwaysTrue and alwaysFalse must be distinct instances");
+        // Semantics: alwaysTrue uses '<', alwaysFalse uses '>'
+        assertTrue(t.toString().contains("<"), "alwaysTrue expression should contain '<'");
+        assertTrue(f.toString().contains(">"), "alwaysFalse expression should contain '>'");
     }
 }

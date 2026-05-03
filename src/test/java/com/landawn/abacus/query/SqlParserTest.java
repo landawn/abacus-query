@@ -1145,4 +1145,21 @@ class SqlParserJavadocExamples extends TestBase {
     public void testRegisterSeparatorRejectsEmptyString() {
         assertThrows(IllegalArgumentException.class, () -> SqlParser.registerSeparator(""));
     }
+
+    @Test
+    public void testIndexOfWord_compositeKeyword_isNotNullWithBlockCommentBetweenSubwords() {
+        String sql = "SELECT col FROM t WHERE col IS /* remark */ NOT /* remark2 */ NULL";
+        int idx = SqlParser.indexOfWord(sql, "IS NOT NULL", 0, false);
+        assertTrue(idx >= 0,
+                "indexOfWord should find IS NOT NULL even when block comments appear between subwords");
+        assertEquals(sql.indexOf("IS"), idx);
+    }
+
+    @Test
+    public void testIndexOfWord_compositeKeyword_orderByWithBlockComment() {
+        String sql = "SELECT * FROM t ORDER /* comment */ BY id";
+        int idx = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
+        assertTrue(idx >= 0,
+                "indexOfWord should find ORDER BY even with a block comment between the keywords");
+    }
 }

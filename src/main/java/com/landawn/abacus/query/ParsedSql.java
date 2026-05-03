@@ -110,7 +110,7 @@ public final class ParsedSql {
                     } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)) {
                         final StringBuilder ibatisTokenBuilder = new StringBuilder(word);
 
-                        while (!ibatisTokenBuilder.toString().endsWith(RIGHT_OF_IBATIS_NAMED_PARAMETER) && i < size - 1) {
+                        while (ibatisTokenBuilder.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER) < 0 && i < size - 1) {
                             ibatisTokenBuilder.append(words.get(++i));
                         }
 

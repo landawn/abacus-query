@@ -619,7 +619,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Internal
     protected static boolean isDefaultIdPropValue(final Object propValue) {
-        return (propValue == null) || (propValue instanceof Number && (((Number) propValue).longValue() == 0));
+        if (propValue == null) {
+            return true;
+        }
+        if (propValue instanceof java.math.BigDecimal bd) {
+            return bd.signum() == 0;
+        }
+        if (propValue instanceof java.math.BigInteger bi) {
+            return bi.signum() == 0;
+        }
+        if (propValue instanceof Double d) {
+            return d == 0.0;
+        }
+        if (propValue instanceof Float f) {
+            return f == 0.0f;
+        }
+        if (propValue instanceof Number n) {
+            return n.longValue() == 0;
+        }
+        return false;
     }
 
     /**
@@ -3008,6 +3026,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This fetchNextRows(final int rowCount) {
         checkIfAlreadyCalled(SK.FETCH_NEXT);
+        calledOpSet.add(SK.FETCH_FIRST);
 
         _sb.append(" FETCH NEXT ").append(rowCount).append(" ROWS ONLY");
 
@@ -3032,6 +3051,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This fetchFirstRows(final int rowCount) {
         checkIfAlreadyCalled(SK.FETCH_FIRST);
+        calledOpSet.add(SK.FETCH_NEXT);
 
         _sb.append(" FETCH FIRST ").append(rowCount).append(" ROWS ONLY");
 
@@ -4079,10 +4099,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         init(false);
 
+        // When set() is chained (called more than once), _sb already has SET content and
+        // its last char is not a space. We must prepend a comma before the next assignment list.
+        final boolean needsLeadingComma = !_sb.isEmpty() && _sb.charAt(_sb.length() - 1) != ' ';
+
         switch (_sqlPolicy) {
             case RAW_SQL:
             case PARAMETERIZED_SQL: {
-                int i = 0;
+                int i = needsLeadingComma ? 1 : 0;
                 for (final String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
@@ -4099,7 +4123,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             case NAMED_SQL: {
-                int i = 0;
+                int i = needsLeadingComma ? 1 : 0;
                 for (final String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
@@ -4118,7 +4142,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             case IBATIS_SQL: {
-                int i = 0;
+                int i = needsLeadingComma ? 1 : 0;
                 for (final String columnName : propOrColumnNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
@@ -4168,9 +4192,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         init(false);
 
+        // When set() is chained (called more than once), _sb already has SET content and
+        // its last char is not a space. We must prepend a comma before the next assignment list.
+        final boolean needsLeadingComma = !_sb.isEmpty() && _sb.charAt(_sb.length() - 1) != ' ';
+
         switch (_sqlPolicy) {
             case RAW_SQL: {
-                int i = 0;
+                int i = needsLeadingComma ? 1 : 0;
                 for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
@@ -4187,7 +4215,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             case PARAMETERIZED_SQL: {
-                int i = 0;
+                int i = needsLeadingComma ? 1 : 0;
                 for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
@@ -4204,7 +4232,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             case NAMED_SQL: {
-                int i = 0;
+                int i = needsLeadingComma ? 1 : 0;
                 for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
@@ -4221,7 +4249,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             case IBATIS_SQL: {
-                int i = 0;
+                int i = needsLeadingComma ? 1 : 0;
                 for (final Map.Entry<String, Object> entry : props.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
@@ -4615,7 +4643,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //
     //        try {
     //            if (stmtSetter != null) {
-    //                preparedQuery.configStmt(stmtSetter);
+    //                preparedQuery.configureStatement(stmtSetter);
     //            }
     //
     //            if (N.notEmpty(sp.parameters)) {
@@ -4653,7 +4681,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //
     //        try {
     //            if (stmtSetter != null) {
-    //                preparedQuery.configStmt(stmtSetter);
+    //                preparedQuery.configureStatement(stmtSetter);
     //            }
     //
     //            if (N.notEmpty(sp.parameters)) {
@@ -4803,7 +4831,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(dataSource, sp.query)
     //                : JdbcUtil.prepareQuery(dataSource, sp.query)) {
     //
-    //            preparedQuery.configStmt(stmtSetter);
+    //            preparedQuery.configureStatement(stmtSetter);
     //
     //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
@@ -4830,7 +4858,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //
     //        try (final com.landawn.abacus.jdbc.AbstractQuery preparedQuery = isNamedSql() ? JdbcUtil.prepareNamedQuery(conn, sp.query) : JdbcUtil.prepareQuery(conn, sp.query)) {
     //
-    //            preparedQuery.configStmt(stmtSetter);
+    //            preparedQuery.configureStatement(stmtSetter);
     //
     //            if (N.notEmpty(sp.parameters)) {
     //                preparedQuery.setParameters(sp.parameters);
@@ -5288,6 +5316,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     final char nextChar = expr.charAt(i + 1);
 
                     if (nextChar == '>' || nextChar == '#' || nextChar == '{') {
+                        i++; // consume both chars of the ##, #>, or #{ token as a unit
                         continue;
                     }
                 }

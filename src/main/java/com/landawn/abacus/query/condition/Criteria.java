@@ -1090,7 +1090,8 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          */
         public Builder groupBy(final Collection<String> propNames) {
-            return groupBy(propNames, SortDirection.ASC);
+            add(new GroupBy(propNames.toArray(new String[0])));
+            return this;
         }
 
         /**
@@ -1417,7 +1418,8 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          */
         public Builder orderBy(final Collection<String> propNames) {
-            return orderBy(propNames, SortDirection.ASC);
+            add(new OrderBy(propNames.toArray(new String[0])));
+            return this;
         }
 
         /**

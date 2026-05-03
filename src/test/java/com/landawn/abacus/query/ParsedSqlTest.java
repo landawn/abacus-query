@@ -1001,4 +1001,22 @@ class ParsedSql2026BatchTest extends TestBase {
         Assertions.assertEquals("(/* comment only */)", parsed.parameterizedSql());
         Assertions.assertEquals(0, parsed.parameterCount());
     }
+
+    @Test
+    public void testParse_IbatisParameterTokenAssemblyStopsAtFirstClosingBrace() {
+        // Verifies the loop stops at the FIRST '}', not the last character being '}'
+        ParsedSql parsed = ParsedSql.parse("INSERT INTO t VALUES (#{a},#{b})");
+        Assertions.assertEquals(2, parsed.parameterCount(),
+                "Two iBatis parameters should be detected");
+        Assertions.assertEquals("a", parsed.namedParameters().get(0));
+        Assertions.assertEquals("b", parsed.namedParameters().get(1));
+    }
+
+    @Test
+    public void testParse_SimpleIbatisInsertProducesPlaceholders() {
+        ParsedSql parsed = ParsedSql.parse("INSERT INTO t (id) VALUES (#{id})");
+        Assertions.assertEquals("INSERT INTO t (id) VALUES (?)", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertEquals("id", parsed.namedParameters().get(0));
+    }
 }

@@ -579,12 +579,15 @@ public final class SqlParser {
                     final String nextWord = nextWord(sql, tmpIndex);
 
                     if (Strings.isNotEmpty(nextWord) && (nextWord.equals(subWords[i]) || (!caseSensitive && nextWord.equalsIgnoreCase(subWords[i])))) {
-                        // Skip whitespace to find where the matched word starts, then advance past it
-                        while (tmpIndex < sql.length() && Character.isWhitespace(sql.charAt(tmpIndex))) {
-                            tmpIndex++;
+                        // Use indexOfWord to skip whitespace AND block/line comments between subwords
+                        final int subWordPos = indexOfWord(sql, subWords[i], tmpIndex, caseSensitive);
+
+                        if (subWordPos < 0) {
+                            matched = false;
+                            break;
                         }
 
-                        tmpIndex += subWords[i].length();
+                        tmpIndex = subWordPos + subWords[i].length();
                     } else {
                         matched = false;
 
