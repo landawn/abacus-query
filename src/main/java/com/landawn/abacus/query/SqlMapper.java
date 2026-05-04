@@ -502,7 +502,7 @@ public final class SqlMapper {
     }
 
     /**
-     * Returns the hash code value for this SqlMapper.
+     * Returns the hash code value for this {@code SqlMapper}.
      * The hash code is based on the internal SQL map and the attributes map.
      *
      * @return the hash code value
@@ -513,8 +513,8 @@ public final class SqlMapper {
     }
 
     /**
-     * Compares this SqlMapper to another object for equality.
-     * Two SqlMappers are considered equal if they contain the same SQL definitions and attributes.
+     * Compares this {@code SqlMapper} to another object for equality.
+     * Two {@code SqlMapper} instances are considered equal if they contain the same SQL definitions and attributes.
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
@@ -525,10 +525,10 @@ public final class SqlMapper {
     }
 
     /**
-     * Returns a string representation of this SqlMapper.
+     * Returns a string representation of this {@code SqlMapper}.
      * The string contains all SQL definitions in the mapper.
      *
-     * @return a string representation of the SQL map
+     * @return a string representation of this SQL mapper
      */
     @Override
     public String toString() {

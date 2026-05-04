@@ -190,7 +190,11 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     /**
      * Converts this condition to its string representation.
      *
-     * @param namingPolicy the naming policy to apply to property names
+     * <p>For a single property: {@code propName IN (subQuery)}</p>
+     * <p>For multiple properties: {@code (prop1, prop2, ...) IN (subQuery)}</p>
+     *
+     * @param namingPolicy the naming policy to apply to property names;
+     *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return the string representation of the condition
      */
     @Override

@@ -75,7 +75,7 @@ public abstract class Clause extends Cell {
     }
 
     /**
-     * Creates a new Clause with the specified operator and condition.
+     * Creates a new {@code Clause} with the specified operator and condition.
      * The Clause wraps the given condition and applies the specified operator to it.
      *
      * <p><b>Usage Examples:</b></p>
@@ -88,7 +88,8 @@ public abstract class Clause extends Cell {
      * }</pre>
      *
      * @param operator the operator to apply to the condition
-     * @param cond the condition to wrap (must not be null)
+     * @param cond the condition to wrap (must not be {@code null})
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public Clause(final Operator operator, final Condition cond) {
         super(operator, cond);

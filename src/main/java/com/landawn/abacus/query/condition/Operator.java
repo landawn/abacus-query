@@ -314,7 +314,9 @@ public enum Operator {
     /**
      * FOR UPDATE clause operator.
      * Locks selected rows for update.
-     * @deprecated
+     *
+     * @deprecated This operator is no longer actively supported.
+     *             Apply row-level locking through native query mechanisms instead.
      */
     FOR_UPDATE(SK.FOR_UPDATE),
 

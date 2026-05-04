@@ -75,9 +75,10 @@ public class IsNotNull extends IsNot {
      * is not NULL, effectively filtering for records that have values in the specified field.
      * This is essential for data validation and ensuring required fields are populated.
      *
-     * <p>The generated SQL uses the IS NOT NULL operator (not != NULL) because NULL comparisons
-     * have special semantics in SQL where NULL != NULL evaluates to UNKNOWN (which behaves as false
-     * in WHERE clauses), but NULL IS NOT NULL evaluates to false (correctly indicating that NULL is not a non-NULL value).
+     * <p>The generated SQL uses the {@code IS NOT NULL} operator (not {@code != NULL}) because
+     * {@code NULL} comparisons have special semantics in SQL: {@code NULL != NULL} evaluates to
+     * UNKNOWN (which behaves as {@code false} in WHERE clauses), whereas {@code NULL IS NOT NULL}
+     * correctly evaluates to {@code false}, unambiguously indicating that the value is absent.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -105,7 +106,7 @@ public class IsNotNull extends IsNot {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null or empty (validation performed by ancestor class {@link Binary})
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNotNull(final String propName) {
         super(propName, NULL);

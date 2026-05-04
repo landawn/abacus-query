@@ -246,9 +246,9 @@ public final class DynamicQuery {
          * builder.limit("TOP 10");
          * }</pre>
          *
-         * @param limitCond the complete limit/pagination expression (e.g., "LIMIT 10 OFFSET 20" or "TOP 10") (must not be null)
+         * @param limitCond the complete limit/pagination expression (e.g., {@code "LIMIT 10 OFFSET 20"} or {@code "TOP 10"}) (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code limitCond} is null
+         * @throws IllegalArgumentException if {@code limitCond} is {@code null}, empty, or blank
          */
         public Builder limit(final String limitCond) {
             checkSqlFragmentNotBlank(limitCond, "limitCond");
@@ -416,9 +416,9 @@ public final class DynamicQuery {
          * builder.union("SELECT id, name FROM archived_users");
          * }</pre>
          *
-         * @param query the complete SQL query to union with (must not be null)
+         * @param query the complete SQL query to union with (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is null
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder union(final String query) {
             checkSqlFragmentNotBlank(query, "query");
@@ -437,9 +437,9 @@ public final class DynamicQuery {
          * builder.unionAll("SELECT id, name FROM temp_users");
          * }</pre>
          *
-         * @param query the complete SQL query to union with (must not be null)
+         * @param query the complete SQL query to union with (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is null
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder unionAll(final String query) {
             checkSqlFragmentNotBlank(query, "query");
@@ -458,9 +458,9 @@ public final class DynamicQuery {
          * builder.intersect("SELECT user_id FROM premium_users");
          * }</pre>
          *
-         * @param query the complete SQL query to intersect with (must not be null)
+         * @param query the complete SQL query to intersect with (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is null
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder intersect(final String query) {
             checkSqlFragmentNotBlank(query, "query");
@@ -479,9 +479,9 @@ public final class DynamicQuery {
          * builder.except("SELECT user_id FROM blocked_users");
          * }</pre>
          *
-         * @param query the complete SQL query to exclude results from (must not be null)
+         * @param query the complete SQL query to exclude results from (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is null
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder except(final String query) {
             checkSqlFragmentNotBlank(query, "query");
@@ -500,9 +500,9 @@ public final class DynamicQuery {
          * builder.minus("SELECT user_id FROM inactive_users");
          * }</pre>
          *
-         * @param query the complete SQL query to exclude results from (must not be null)
+         * @param query the complete SQL query to exclude results from (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is null
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder minus(final String query) {
             checkSqlFragmentNotBlank(query, "query");
@@ -668,8 +668,9 @@ public final class DynamicQuery {
          * // Generates: SELECT user_id, username
          * }</pre>
          *
-         * @param column the column name to select (must not be null)
+         * @param column the column name to select (must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
         public SelectClause append(final String column) {
             checkSqlFragmentNotBlank(column, "column");
@@ -695,9 +696,10 @@ public final class DynamicQuery {
          * // Generates: SELECT first_name AS fname, last_name AS lname
          * }</pre>
          *
-         * @param column the column name to select (must not be null)
-         * @param alias the alias for the column (must not be null)
+         * @param column the column name to select (must not be {@code null}, empty, or blank)
+         * @param alias the alias for the column (must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code column} or {@code alias} is {@code null}, empty, or blank
          */
         public SelectClause append(final String column, final String alias) {
             checkSqlFragmentNotBlank(column, "column");
@@ -716,7 +718,7 @@ public final class DynamicQuery {
 
         /**
          * Appends multiple columns to the {@code SELECT} clause.
-         * Columns are separated by commas.
+         * Columns are separated by commas. If the collection is empty, this method does nothing.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -724,8 +726,9 @@ public final class DynamicQuery {
          * // Generates: SELECT id, name, email
          * }</pre>
          *
-         * @param columns collection of column names to select (must not be null)
+         * @param columns collection of column names to select (must not be {@code null}; individual elements must not be blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
          */
         public SelectClause append(final Collection<String> columns) {
             if (N.isEmpty(columns)) {
@@ -747,7 +750,7 @@ public final class DynamicQuery {
 
         /**
          * Appends multiple columns with their aliases to the {@code SELECT} clause.
-         * Each entry in the map represents a column-alias pair.
+         * Each entry in the map represents a column-alias pair. If the map is empty, this method does nothing.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -758,8 +761,10 @@ public final class DynamicQuery {
          * // Generates: SELECT first_name AS fname, last_name AS lname
          * }</pre>
          *
-         * @param columnsAndAliasMap map where keys are column names and values are aliases (must not be null)
+         * @param columnsAndAliasMap map where keys are column names and values are aliases (must not be {@code null};
+         *        individual keys and values must not be blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalArgumentException if any key or value in the map is {@code null}, empty, or blank
          */
         public SelectClause append(final Map<String, String> columnsAndAliasMap) {
             if (N.isEmpty(columnsAndAliasMap)) {
@@ -879,8 +884,9 @@ public final class DynamicQuery {
          * // Generates: FROM users, departments
          * }</pre>
          *
-         * @param table the table name to add (must not be null)
+         * @param table the table name to add (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code table} is {@code null}, empty, or blank
          */
         public FromClause append(final String table) {
             checkSqlFragmentNotBlank(table, "table");
@@ -906,9 +912,10 @@ public final class DynamicQuery {
          * // Generates: FROM users u, orders o
          * }</pre>
          *
-         * @param table the table name to add (must not be null)
-         * @param alias the alias for the table (must not be null)
+         * @param table the table name to add (must not be {@code null}, empty, or blank)
+         * @param alias the alias for the table (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code table} or {@code alias} is {@code null}, empty, or blank
          */
         public FromClause append(final String table, final String alias) {
             checkSqlFragmentNotBlank(table, "table");
@@ -934,10 +941,11 @@ public final class DynamicQuery {
          * // Generates: FROM users u JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be null)
-         * @param on the join condition (must not be null)
+         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalStateException if {@code from()} has not been called
+         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
          */
         public FromClause join(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -958,10 +966,11 @@ public final class DynamicQuery {
          * // Generates: FROM users u INNER JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be null)
-         * @param on the join condition (must not be null)
+         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalStateException if {@code from()} has not been called
+         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
          */
         public FromClause innerJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -982,10 +991,11 @@ public final class DynamicQuery {
          * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be null)
-         * @param on the join condition (must not be null)
+         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalStateException if {@code from()} has not been called
+         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
          */
         public FromClause leftJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -1006,10 +1016,11 @@ public final class DynamicQuery {
          * // Generates: FROM orders o RIGHT JOIN users u ON o.user_id = u.id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be null)
-         * @param on the join condition (must not be null)
+         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalStateException if {@code from()} has not been called
+         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
          */
         public FromClause rightJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -1030,10 +1041,11 @@ public final class DynamicQuery {
          * // Generates: FROM employees e FULL JOIN departments d ON e.dept_id = d.id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be null)
-         * @param on the join condition (must not be null)
+         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalStateException if {@code from()} has not been called
+         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
          */
         public FromClause fullJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -1149,8 +1161,9 @@ public final class DynamicQuery {
          * // Generates: WHERE active = true AND deleted = false
          * }</pre>
          *
-         * @param cond the condition to append (must not be null)
+         * @param cond the condition to append (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
         public WhereClause append(final String cond) {
             checkSqlFragmentNotBlank(cond, "cond");
@@ -1241,8 +1254,9 @@ public final class DynamicQuery {
          * // Generates: WHERE active = true AND age >= 18 AND country = ?
          * }</pre>
          *
-         * @param cond the condition to add with {@code AND} (must not be null)
+         * @param cond the condition to add with {@code AND} (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
         public WhereClause and(final String cond) {
             checkSqlFragmentNotBlank(cond, "cond");
@@ -1267,8 +1281,9 @@ public final class DynamicQuery {
          * // Generates: WHERE role = 'admin' OR role = 'moderator'
          * }</pre>
          *
-         * @param cond the condition to add with {@code OR} (must not be null)
+         * @param cond the condition to add with {@code OR} (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
         public WhereClause or(final String cond) {
             checkSqlFragmentNotBlank(cond, "cond");
@@ -1385,8 +1400,9 @@ public final class DynamicQuery {
          * // Generates: GROUP BY category, subcategory
          * }</pre>
          *
-         * @param column the column name to group by (must not be null)
+         * @param column the column name to group by (must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
         public GroupByClause append(final String column) {
             checkSqlFragmentNotBlank(column, "column");
@@ -1404,7 +1420,7 @@ public final class DynamicQuery {
 
         /**
          * Appends multiple columns to the {@code GROUP BY} clause.
-         * Columns are separated by commas.
+         * Columns are separated by commas. If the collection is empty, this method does nothing.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1412,8 +1428,9 @@ public final class DynamicQuery {
          * // Generates: GROUP BY year, quarter, region
          * }</pre>
          *
-         * @param columns collection of column names to group by (must not be null)
+         * @param columns collection of column names to group by (must not be {@code null}; individual elements must not be blank)
          * @return this {@link GroupByClause} instance for method chaining
+         * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
          */
         public GroupByClause append(final Collection<String> columns) {
             if (N.isEmpty(columns)) {
@@ -1533,8 +1550,9 @@ public final class DynamicQuery {
          * // Generates: HAVING SUM(amount) > 1000
          * }</pre>
          *
-         * @param cond the condition to append (must not be null)
+         * @param cond the condition to append (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
         public HavingClause append(final String cond) {
             checkSqlFragmentNotBlank(cond, "cond");
@@ -1559,8 +1577,9 @@ public final class DynamicQuery {
          * // Generates: HAVING COUNT(*) > 5 AND MAX(price) < 1000
          * }</pre>
          *
-         * @param cond the condition to add with {@code AND} (must not be null)
+         * @param cond the condition to add with {@code AND} (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
         public HavingClause and(final String cond) {
             checkSqlFragmentNotBlank(cond, "cond");
@@ -1585,8 +1604,9 @@ public final class DynamicQuery {
          * // Generates: HAVING MIN(score) > 80 OR AVG(score) > 90
          * }</pre>
          *
-         * @param cond the condition to add with {@code OR} (must not be null)
+         * @param cond the condition to add with {@code OR} (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
         public HavingClause or(final String cond) {
             checkSqlFragmentNotBlank(cond, "cond");
@@ -1703,8 +1723,9 @@ public final class DynamicQuery {
          * // Generates: ORDER BY created_date DESC, name ASC
          * }</pre>
          *
-         * @param column the column name with optional ASC/DESC (must not be null)
+         * @param column the column name with optional {@code ASC}/{@code DESC} (must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
         public OrderByClause append(final String column) {
             checkSqlFragmentNotBlank(column, "column");
@@ -1723,6 +1744,7 @@ public final class DynamicQuery {
         /**
          * Appends multiple columns to the {@code ORDER BY} clause.
          * Columns are separated by commas. Sort direction can be included with each column.
+         * If the collection is empty, this method does nothing.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1730,8 +1752,9 @@ public final class DynamicQuery {
          * // Generates: ORDER BY year DESC, month DESC, day DESC
          * }</pre>
          *
-         * @param columns collection of column names with optional sort directions (must not be null)
+         * @param columns collection of column names with optional sort directions (must not be {@code null}; individual elements must not be blank)
          * @return this {@link OrderByClause} instance for method chaining
+         * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
          */
         public OrderByClause append(final Collection<String> columns) {
             if (N.isEmpty(columns)) {

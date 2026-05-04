@@ -122,7 +122,7 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     public Join(final String joinEntity) {
         this(Operator.JOIN, joinEntity);
@@ -171,7 +171,7 @@ public class Join extends AbstractCondition {
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
      *            include those keywords. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     public Join(final String joinEntity, final Condition cond) {
         this(Operator.JOIN, joinEntity, cond);
@@ -230,7 +230,7 @@ public class Join extends AbstractCondition {
      * @param joinEntities the collection of tables or entities to join with
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
      *            include those keywords. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if joinEntities is null/empty or contains null/empty elements
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
      */
     public Join(final Collection<String> joinEntities, final Condition cond) {
         this(Operator.JOIN, joinEntities, cond);

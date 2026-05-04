@@ -144,10 +144,10 @@ public class Filters {
      */
     public static final Expression QME = Expr.of(SK.QUESTION_MARK);
 
-    /** Expression representing "1 < 2" which always evaluates to true. */
+    /** Expression representing {@code "1 < 2"} which always evaluates to {@code true}. */
     private static final Expression ALWAYS_TRUE = Expression.of("1 < 2");
 
-    /** Expression representing "1 > 2" which always evaluates to false. */
+    /** Expression representing {@code "1 > 2"} which always evaluates to {@code false}. */
     private static final Expression ALWAYS_FALSE = Expression.of("1 > 2");
 
     private Filters() {
@@ -403,7 +403,6 @@ public class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entity} is null
      */
-    @SuppressWarnings("deprecation")
     public static Or anyEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
 
@@ -555,7 +554,6 @@ public class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code entity} is null
      */
-    @SuppressWarnings("deprecation")
     public static And allEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
 
@@ -694,7 +692,6 @@ public class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entities} is empty or all elements are null
      */
-    @SuppressWarnings("deprecation")
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entities) {
         N.checkArgNotEmpty(entities, "entities");
@@ -1913,8 +1910,7 @@ public class Filters {
 
     /**
      * Creates a {@link Where} clause with the specified condition.
-     * This is typically the starting point for building a query.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Where where = Filters.where(Filters.equal("active", true));
@@ -1928,17 +1924,17 @@ public class Filters {
     }
 
     /**
-     * Creates a {@link Where} clause from a string expression.
+     * Creates a {@link Where} clause from a raw SQL expression string.
      * Useful for custom SQL expressions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Where where = Filters.where("YEAR(created_date) = 2023");
      * }</pre>
      *
-     * @param expr the SQL expression as a string
+     * @param expr the SQL expression as a string (must not be {@code null} or empty)
      * @return a {@link Where} clause
-     * @throws IllegalArgumentException if {@code expr} is null or empty
+     * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
      */
     public static Where where(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1965,7 +1961,7 @@ public class Filters {
 
     /**
      * Creates a {@link GroupBy} clause with properties from a collection.
-     * Groups results by the given columns. The default sort direction {@code ASC} is applied.
+     * Groups results by the given columns in ascending order.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2007,15 +2003,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name to group by
-     * @param direction the sort direction (ASC or DESC)
-     * @return a GroupBy clause
+     * @param direction the sort direction ({@code ASC} or {@code DESC})
+     * @return a {@link GroupBy} clause
      */
     public static GroupBy groupBy(final String propName, final SortDirection direction) {
         return new GroupBy(propName, direction);
     }
 
     /**
-     * Creates a GROUP BY clause with two properties and their respective sort directions.
+     * Creates a {@link GroupBy} clause with two properties and their respective sort directions.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2027,14 +2023,14 @@ public class Filters {
      * @param direction1 first property sort direction
      * @param propName2 second property name
      * @param direction2 second property sort direction
-     * @return a GroupBy clause
+     * @return a {@link GroupBy} clause
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
         return groupBy(N.asMap(propName1, direction1, propName2, direction2));
     }
 
     /**
-     * Creates a GROUP BY clause with three properties and their respective sort directions.
+     * Creates a {@link GroupBy} clause with three properties and their respective sort directions.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2047,7 +2043,7 @@ public class Filters {
      * @param direction2 second property sort direction
      * @param propName3 third property name
      * @param direction3 third property sort direction
-     * @return a GroupBy clause
+     * @return a {@link GroupBy} clause
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
@@ -2055,8 +2051,8 @@ public class Filters {
     }
 
     /**
-     * Creates a GROUP BY clause from a map of property names to sort directions.
-     * The map should be a LinkedHashMap to preserve order.
+     * Creates a {@link GroupBy} clause from a map of property names to sort directions.
+     * The map should be a {@link java.util.LinkedHashMap} to preserve insertion order.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2066,17 +2062,17 @@ public class Filters {
      * GroupBy groupBy = Filters.groupBy(orders);
      * }</pre>
      *
-     * @param orders map of property names to sort directions (should be LinkedHashMap)
-     * @return a GroupBy clause
+     * @param orders map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
+     * @return a {@link GroupBy} clause
      */
     public static GroupBy groupBy(final Map<String, SortDirection> orders) {
         return new GroupBy(orders);
     }
 
     /**
-     * Creates a GROUP BY clause with a custom condition.
-     * Allows for complex GROUP BY expressions.
-     * 
+     * Creates a {@link GroupBy} clause with a custom condition.
+     * Allows for complex {@code GROUP BY} expressions.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GroupBy groupBy = Filters.groupBy(
@@ -2085,49 +2081,49 @@ public class Filters {
      * }</pre>
      *
      * @param cond the grouping condition
-     * @return a GroupBy clause
+     * @return a {@link GroupBy} clause
      */
     public static GroupBy groupBy(final Condition cond) {
         return new GroupBy(cond);
     }
 
     /**
-     * Creates a HAVING clause with the specified condition.
-     * HAVING is used to filter grouped results.
-     * 
+     * Creates a {@link Having} clause with the specified condition.
+     * {@code HAVING} is used to filter grouped results.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Having having = Filters.having(Filters.greaterThan("COUNT(*)", 5));
      * // Results in SQL like: HAVING COUNT(*) > 5
      * }</pre>
      *
-     * @param cond the condition for the HAVING clause
-     * @return a Having clause
+     * @param cond the condition for the {@code HAVING} clause
+     * @return a {@link Having} clause
      */
     public static Having having(final Condition cond) {
         return new Having(cond);
     }
 
     /**
-     * Creates a HAVING clause from a string expression.
+     * Creates a {@link Having} clause from a raw SQL expression string.
      * Useful for aggregate function conditions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Having having = Filters.having("SUM(amount) > 1000");
      * }</pre>
      *
      * @param expr the SQL expression as a string
-     * @return a Having clause
+     * @return a {@link Having} clause
      */
     public static Having having(final String expr) {
         return new Having(expr(expr));
     }
 
     /**
-     * Creates an ORDER BY clause with the specified property names.
-     * Orders results by the given columns in ascending order by default.
-     * 
+     * Creates an {@link OrderBy} clause with the specified property names.
+     * Orders results by the given columns in the database default order.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * OrderBy orderBy = Filters.orderBy("last_name", "first_name");
@@ -2135,15 +2131,15 @@ public class Filters {
      * }</pre>
      *
      * @param propNames the property/column names to order by
-     * @return an OrderBy clause
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderBy(final String... propNames) {
         return new OrderBy(propNames);
     }
 
     /**
-     * Creates an ORDER BY clause with ascending order for the specified properties.
-     * 
+     * Creates an {@link OrderBy} clause with ascending order for the specified properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * OrderBy orderBy = Filters.orderByAsc("created_date", "id");
@@ -2151,15 +2147,15 @@ public class Filters {
      * }</pre>
      *
      * @param propNames the property/column names to order by ascending
-     * @return an OrderBy clause
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderByAsc(final String... propNames) {
         return new OrderBy(Array.asList(propNames), SortDirection.ASC);
     }
 
     /**
-     * Creates an ORDER BY clause with ascending order for properties from a collection.
-     * 
+     * Creates an {@link OrderBy} clause with ascending order for properties from a collection.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> columns = Arrays.asList("priority", "created_date");
@@ -2167,15 +2163,15 @@ public class Filters {
      * }</pre>
      *
      * @param propNames collection of property/column names to order by ascending
-     * @return an OrderBy clause
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderByAsc(final Collection<String> propNames) {
         return new OrderBy(propNames, SortDirection.ASC);
     }
 
     /**
-     * Creates an ORDER BY clause with descending order for the specified properties.
-     * 
+     * Creates an {@link OrderBy} clause with descending order for the specified properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * OrderBy orderBy = Filters.orderByDesc("score", "timestamp");
@@ -2183,15 +2179,15 @@ public class Filters {
      * }</pre>
      *
      * @param propNames the property/column names to order by descending
-     * @return an OrderBy clause
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderByDesc(final String... propNames) {
         return new OrderBy(Array.asList(propNames), SortDirection.DESC);
     }
 
     /**
-     * Creates an ORDER BY clause with descending order for properties from a collection.
-     * 
+     * Creates an {@link OrderBy} clause with descending order for properties from a collection.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> columns = Arrays.asList("amount", "date");
@@ -2199,15 +2195,15 @@ public class Filters {
      * }</pre>
      *
      * @param propNames collection of property/column names to order by descending
-     * @return an OrderBy clause
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderByDesc(final Collection<String> propNames) {
         return new OrderBy(propNames, SortDirection.DESC);
     }
 
     /**
-     * Creates an ORDER BY clause with properties from a collection in ascending order.
-     * 
+     * Creates an {@link OrderBy} clause with properties from a collection in ascending order.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> columns = new HashSet<>(Arrays.asList("name", "age"));
@@ -2215,14 +2211,14 @@ public class Filters {
      * }</pre>
      *
      * @param propNames collection of property/column names to order by
-     * @return an OrderBy clause
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderBy(final Collection<String> propNames) {
         return orderBy(propNames, SortDirection.ASC);
     }
 
     /**
-     * Creates an ORDER BY clause with properties and specified sort direction.
+     * Creates an {@link OrderBy} clause with properties and specified sort direction.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2231,15 +2227,15 @@ public class Filters {
      * }</pre>
      *
      * @param propNames collection of property/column names to order by
-     * @param direction the sort direction (ASC or DESC)
-     * @return an OrderBy clause
+     * @param direction the sort direction ({@code ASC} or {@code DESC})
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderBy(final Collection<String> propNames, final SortDirection direction) {
         return new OrderBy(propNames, direction);
     }
 
     /**
-     * Creates an ORDER BY clause with a single property and sort direction.
+     * Creates an {@link OrderBy} clause with a single property and sort direction.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2248,15 +2244,15 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name to order by
-     * @param direction the sort direction (ASC or DESC)
-     * @return an OrderBy clause
+     * @param direction the sort direction ({@code ASC} or {@code DESC})
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderBy(final String propName, final SortDirection direction) {
         return new OrderBy(propName, direction);
     }
 
     /**
-     * Creates an ORDER BY clause with two properties and their respective sort directions.
+     * Creates an {@link OrderBy} clause with two properties and their respective sort directions.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2268,14 +2264,14 @@ public class Filters {
      * @param direction1 first property sort direction
      * @param propName2 second property name
      * @param direction2 second property sort direction
-     * @return an OrderBy clause
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
         return orderBy(N.asMap(propName1, direction1, propName2, direction2));
     }
 
     /**
-     * Creates an ORDER BY clause with three properties and their respective sort directions.
+     * Creates an {@link OrderBy} clause with three properties and their respective sort directions.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2288,7 +2284,7 @@ public class Filters {
      * @param direction2 second property sort direction
      * @param propName3 third property name
      * @param direction3 third property sort direction
-     * @return an OrderBy clause
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
@@ -2296,8 +2292,8 @@ public class Filters {
     }
 
     /**
-     * Creates an ORDER BY clause from a map of property names to sort directions.
-     * The map should be a LinkedHashMap to preserve order.
+     * Creates an {@link OrderBy} clause from a map of property names to sort directions.
+     * The map should be a {@link java.util.LinkedHashMap} to preserve insertion order.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2308,17 +2304,17 @@ public class Filters {
      * OrderBy orderBy = Filters.orderBy(orders);
      * }</pre>
      *
-     * @param orders map of property names to sort directions (should be LinkedHashMap)
-     * @return an OrderBy clause
+     * @param orders map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderBy(final Map<String, SortDirection> orders) {
         return new OrderBy(orders);
     }
 
     /**
-     * Creates an ORDER BY clause with a custom condition.
-     * Allows for complex ORDER BY expressions.
-     * 
+     * Creates an {@link OrderBy} clause with a custom condition.
+     * Allows for complex {@code ORDER BY} expressions.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * OrderBy orderBy = Filters.orderBy(
@@ -2327,15 +2323,15 @@ public class Filters {
      * }</pre>
      *
      * @param cond the ordering condition
-     * @return an OrderBy clause
+     * @return an {@link OrderBy} clause
      */
     public static OrderBy orderBy(final Condition cond) {
         return new OrderBy(cond);
     }
 
     /**
-     * Creates an ON clause for JOIN operations with the specified condition.
-     * 
+     * Creates an {@link On} clause for JOIN operations with the specified condition.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * On on = Filters.on(Filters.equal("users.id", "orders.user_id"));
@@ -2343,30 +2339,30 @@ public class Filters {
      * }</pre>
      *
      * @param cond the join condition
-     * @return an On clause
+     * @return an {@link On} clause
      */
     public static On on(final Condition cond) {
         return new On(cond);
     }
 
     /**
-     * Creates an ON clause from a string expression for JOIN operations.
-     * 
+     * Creates an {@link On} clause from a raw SQL expression string for JOIN operations.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * On on = Filters.on("users.department_id = departments.id AND users.active = true");
      * }</pre>
      *
      * @param expr the join condition as a string
-     * @return an On clause
+     * @return an {@link On} clause
      */
     public static On on(final String expr) {
         return new On(expr(expr));
     }
 
     /**
-     * Creates an ON clause for simple equality join between two columns.
-     * 
+     * Creates an {@link On} clause for simple equality join between two columns.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * On on = Filters.on("user_id", "id");
@@ -2375,16 +2371,16 @@ public class Filters {
      *
      * @param propName the first column name
      * @param anotherPropName the second column name to join with
-     * @return an On clause
+     * @return an {@link On} clause
      */
     public static On on(final String propName, final String anotherPropName) {
         return new On(propName, anotherPropName);
     }
 
     /**
-     * Creates an ON clause from a map of column pairs for JOIN operations.
-     * Each entry represents a join condition between two columns.
-     * 
+     * Creates an {@link On} clause from a map of column pairs for JOIN operations.
+     * Each entry represents an equality join condition between two columns.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, String> joinPairs = new HashMap<>();
@@ -2394,7 +2390,7 @@ public class Filters {
      * }</pre>
      *
      * @param propNamePair map of column name pairs for joining
-     * @return an On clause
+     * @return an {@link On} clause
      */
     public static On on(final Map<String, String> propNamePair) {
         return new On(propNamePair);
@@ -2443,9 +2439,9 @@ public class Filters {
     }
 
     /**
-     * Creates a JOIN clause for the specified entity/table.
-     * This creates an inner join by default.
-     * 
+     * Creates a {@link Join} clause for the specified entity/table.
+     * This creates an implicit inner join.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Join join = Filters.join("orders");
@@ -2453,33 +2449,33 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to join
-     * @return a Join clause
+     * @return a {@link Join} clause
      */
     public static Join join(final String joinEntity) {
         return new Join(joinEntity);
     }
 
     /**
-     * Creates a JOIN clause with the specified entity and join condition.
-     * 
+     * Creates a {@link Join} clause with the specified entity and join condition.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Join join = Filters.join("orders", 
+     * Join join = Filters.join("orders",
      *     Filters.on("users.id", "orders.user_id"));
      * // Results in SQL like: JOIN orders ON users.id = orders.user_id
      * }</pre>
      *
      * @param joinEntity the entity/table name to join
      * @param cond the join condition
-     * @return a Join clause
+     * @return a {@link Join} clause
      */
     public static Join join(final String joinEntity, final Condition cond) {
         return new Join(joinEntity, cond);
     }
 
     /**
-     * Creates a JOIN clause with multiple entities and a join condition.
-     * 
+     * Creates a {@link Join} clause with multiple entities and a join condition.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Join join = Filters.join(Arrays.asList("orders", "products"),
@@ -2488,7 +2484,7 @@ public class Filters {
      *
      * @param joinEntities collection of entity/table names to join
      * @param cond the join condition
-     * @return a Join clause
+     * @return a {@link Join} clause
      */
     public static Join join(final Collection<String> joinEntities, final Condition cond) {
         return new Join(joinEntities, cond);
@@ -3353,8 +3349,8 @@ public class Filters {
     }
 
     /**
-     * Creates a LIMIT clause to restrict the number of rows returned.
-     * 
+     * Creates a {@link Limit} clause to restrict the number of rows returned.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit = Filters.limit(10);
@@ -3362,14 +3358,14 @@ public class Filters {
      * }</pre>
      *
      * @param count the maximum number of rows to return
-     * @return a Limit clause
+     * @return a {@link Limit} clause
      */
     public static Limit limit(final int count) {
         return new Limit(count);
     }
 
     /**
-     * Creates a LIMIT clause with a count and offset.
+     * Creates a {@link Limit} clause with a count and offset.
      * Used for pagination of results.
      *
      * <p><b>Usage Examples:</b></p>
@@ -3380,7 +3376,7 @@ public class Filters {
      *
      * @param count the maximum number of rows to return
      * @param offset the number of rows to skip
-     * @return a Limit clause
+     * @return a {@link Limit} clause
      */
     public static Limit limit(final int count, final int offset) {
         return new Limit(count, offset);

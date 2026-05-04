@@ -162,7 +162,7 @@ public enum SqlOperation {
     }
 
     /**
-     * Retrieves the SqlOperation enum value corresponding to the given operation name.
+     * Retrieves the {@code SqlOperation} enum value corresponding to the given operation name.
      * The lookup is case-insensitive and matches against both the SQL token representation
      * and the enum constant name.
      *
@@ -175,8 +175,8 @@ public enum SqlOperation {
      * }</pre>
      *
      * @param name the SQL operation name to look up (case-insensitive)
-     * @return the corresponding SqlOperation enum value, or {@code null} if no matching operation is found
-     * @throws IllegalArgumentException if name is null
+     * @return the corresponding {@code SqlOperation} enum value, or {@code null} if no matching operation is found
+     * @throws IllegalArgumentException if {@code name} is {@code null}
      */
     public static SqlOperation of(final String name) {
         if (name == null) {
@@ -219,7 +219,7 @@ public enum SqlOperation {
      * Returns the string representation of this SQL operation.
      * This method returns the same value as {@link #sqlToken()}.
      *
-     * @return the operation name as a string
+     * @return the SQL keyword string representation of this operation
      */
     @Override
     public String toString() {

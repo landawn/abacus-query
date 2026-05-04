@@ -94,9 +94,10 @@ public class GreaterThan extends Binary {
      * GreaterThan aboveAverage = new GreaterThan("price", avgPrice);
      * }</pre>
      * 
-     * @param propName the property/column name (must not be null or empty)
-     * @param propValue the value to compare against (can be null, literal value, or subquery)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propValue the value to compare against (a literal value or a {@link SubQuery}; using
+     *                  {@code null} produces undefined behaviour for the {@code >} operator)
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public GreaterThan(final String propName, final Object propValue) {
         super(propName, Operator.GREATER_THAN, propValue);

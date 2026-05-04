@@ -102,7 +102,7 @@ public sealed class NamedProperty permits NP {
      * }</pre>
      *
      * @param propName the property name. Must not be null or empty.
-     * @throws IllegalArgumentException if propName is null or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public NamedProperty(final String propName) {
         this.propName = N.requireNonNull(propName, "propName");
@@ -131,7 +131,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param propName the property name. Must not be null or empty.
      * @return a cached or new NamedProperty instance
-     * @throws IllegalArgumentException if propName is null or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static NamedProperty of(final String propName) {
         if (Strings.isEmpty(propName)) {

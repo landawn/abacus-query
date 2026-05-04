@@ -86,10 +86,12 @@ public class Binary extends ComposableCondition {
      * Binary minPrice = new Binary("price", Operator.GREATER_THAN_OR_EQUAL, subQuery);
      * }</pre>
      * 
-     * @param propName the property name to compare (must not be null or empty)
+     * @param propName the property name to compare (must not be {@code null} or empty)
      * @param operator the comparison operator
-     * @param propValue the value to compare against (can be a literal or Condition)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @param propValue the value to compare against; may be a literal value, {@code null}
+     *                  (for equality operators, renders as {@code IS NULL} / {@code IS NOT NULL}),
+     *                  or a {@link Condition} such as a {@link SubQuery}
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {
         super(operator);
@@ -148,10 +150,16 @@ public class Binary extends ComposableCondition {
 
     /**
      * Gets the parameters for this condition.
-     * If the value is a Condition (subquery), returns its parameters.
-     * Otherwise, returns a list containing the single value.
      *
-     * @return an immutable list of parameter values
+     * <ul>
+     *   <li>If the value is {@code null} and the operator is {@code =}, {@code !=}, {@code IS}, or {@code IS NOT},
+     *       an empty list is returned because the SQL is rendered as {@code IS NULL} / {@code IS NOT NULL}
+     *       with no bind parameter.</li>
+     *   <li>If the value is a {@link Condition} (e.g., a subquery), the subquery's own parameters are returned.</li>
+     *   <li>Otherwise, a single-element list containing the value is returned.</li>
+     * </ul>
+     *
+     * @return an immutable list of parameter values; never {@code null}
      */
     @Override
     public ImmutableList<Object> getParameters() {
@@ -169,9 +177,14 @@ public class Binary extends ComposableCondition {
 
     /**
      * Converts this Binary condition to its string representation using the specified naming policy.
-     * The format is: propertyName OPERATOR value
-     * 
-     * @param namingPolicy the naming policy to apply to the property name
+     *
+     * <p>Normally the format is: {@code propertyName OPERATOR value}.
+     * When the value is {@code null} and the operator is {@code =} or {@code IS}, the output is
+     * {@code propertyName IS NULL}; when the operator is {@code !=}, {@code <>}, or {@code IS NOT},
+     * the output is {@code propertyName IS NOT NULL}.</p>
+     *
+     * @param namingPolicy the naming policy to apply to the property name;
+     *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a string representation of this condition
      */
     @Override

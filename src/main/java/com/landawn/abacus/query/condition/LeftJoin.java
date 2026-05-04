@@ -110,7 +110,7 @@ public class LeftJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     public LeftJoin(final String joinEntity) {
         super(Operator.LEFT_JOIN, joinEntity);
@@ -153,7 +153,7 @@ public class LeftJoin extends Join {
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     public LeftJoin(final String joinEntity, final Condition cond) {
         super(Operator.LEFT_JOIN, joinEntity, cond);
@@ -184,7 +184,7 @@ public class LeftJoin extends Join {
      * @param joinEntities the collection of tables or entities to join with.
      * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if joinEntities is null or empty
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.LEFT_JOIN, joinEntities, cond);

@@ -90,7 +90,7 @@ public class NotIn extends AbstractIn {
      * @param propName the property/column name. Must not be null or empty.
      * @param values the collection of values that the property should NOT match.
      *               The collection is copied internally to ensure immutability.
-     * @throws IllegalArgumentException if propName is null or values is null/empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, or if {@code values} is {@code null}/empty
      */
     public NotIn(final String propName, final Collection<?> values) {
         super(propName, Operator.NOT_IN, values);

@@ -611,11 +611,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Checks if the given property value is a default ID property value.
-     * A value is considered default if it's null or a number equal to 0.
+     * Checks if the given property value is a default (unset) ID property value.
+     * A value is considered default if it is {@code null}, or if it is a numeric type
+     * whose mathematical value equals zero (including {@link java.math.BigDecimal},
+     * {@link java.math.BigInteger}, {@link Double}, {@link Float}, and all integral types
+     * via {@link Number#longValue()}).
      *
      * @param propValue the property value to check
-     * @return {@code true} if the value is null or a number equal to 0, {@code false} otherwise
+     * @return {@code true} if the value is {@code null} or numerically zero, {@code false} otherwise
      */
     @Internal
     protected static boolean isDefaultIdPropValue(final Object propValue) {
@@ -4496,7 +4499,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * int count = PSC.update("account")
-     *     .set("status", "INACTIVE")
+     *     .set("status", "lastLogin")
      *     .where(Filters.lessThan("lastLogin", oneYearAgo))
      *     .apply((sql, params) -> jdbcTemplate.update(sql, params.toArray()));
      * }</pre>

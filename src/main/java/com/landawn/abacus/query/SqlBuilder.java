@@ -90,7 +90,7 @@ import com.landawn.abacus.util.u.Optional;
  *
  * // UPDATE
  * String sql = PSC.update("users")
- *     .set("status", "active")
+ *     .set("status", "lastModified")
  *     .where(Filters.equal("id", userId))
  *     .build().query();
  *
@@ -105,7 +105,6 @@ import com.landawn.abacus.util.u.Optional;
  * @see Filters
  * @see Condition
  */
-@SuppressWarnings("deprecation")
 public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
 
     // TODO performance goal: 80% cases (or maybe SQL.length < 1024?) can be composed in 0.1 millisecond. 0.01 millisecond will be fantastic if possible.
@@ -748,15 +747,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT INTO SQL builder for an entity class.
-         * 
+         *
          * <p>This convenience method combines insert() and into() operations. The table name
-         * is derived from the entity class using the naming policy.</p>
-         * 
+         * is derived from the entity class using the naming policy. When called with an entity
+         * class (rather than an entity instance), the VALUES clause will contain {@code ?}
+         * placeholders for each insertable column, regardless of the SQL policy.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.insertInto(Account.class)
          *                  .build().query();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@email.com')
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class
@@ -769,10 +770,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT INTO SQL builder for an entity class, excluding specified properties.
-         * 
+         *
          * <p>This convenience method combines insert() and into() operations with property exclusion.
-         * The table name is derived from the entity class.</p>
-         * 
+         * The table name is derived from the entity class. When called with an entity class (rather
+         * than an entity instance), the VALUES clause will contain {@code ?} placeholders for each
+         * included insertable column.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excluded = N.asSet("id");
@@ -830,16 +833,27 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for a table.
-         * 
+         *
          * <p>This method starts building an UPDATE statement for the specified table.
-         * The SET clause should be added using the set() method.</p>
-         * 
+         * The SET clause should be added using the {@code set()} method.
+         * For raw SQL, pass column names — each gets a {@code ?} placeholder — or pass a complete
+         * assignment expression such as {@code "status = 'ACTIVE'"} using the single-argument
+         * {@code set(String)} overload.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
+         * // Using column names (generates ? placeholders):
          * String sql = SCSB.update("account")
-         *                  .set("status", "'ACTIVE'")
+         *                  .set("status", "lastModified")
          *                  .where(Filters.equal("id", 1))
          *                  .build().query();
+         * // Output: UPDATE account SET status = ?, last_modified = ? WHERE id = 1
+         *
+         * // Using a raw expression (single-argument set):
+         * String sql2 = SCSB.update("account")
+         *                   .set("status = 'ACTIVE'")
+         *                   .where(Filters.equal("id", 1))
+         *                   .build().query();
          * // Output: UPDATE account SET status = 'ACTIVE' WHERE id = 1
          * }</pre>
          *
@@ -860,21 +874,22 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for a table with entity class context.
-         * 
+         *
          * <p>This method provides entity class information for property-to-column name mapping
-         * when building the UPDATE statement.</p>
-         * 
+         * when building the UPDATE statement. Property names of the entity class are translated
+         * to their corresponding snake_case column names.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.update("account", Account.class)
-         *                  .set("firstName", "'Jane'")
+         *                  .set("firstName", "lastName")
          *                  .where(Filters.equal("id", 1))
          *                  .build().query();
-         * // Output: UPDATE account SET first_name = 'Jane' WHERE id = 1
+         * // Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = 1
          * }</pre>
          *
          * @param tableName the table name to update
-         * @param entityClass the entity class for property mapping
+         * @param entityClass the entity class for property-to-column name mapping
          * @return a new SqlBuilder instance for UPDATE operation
          * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
@@ -893,17 +908,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class.
-         * 
-         * <p>This method derives the table name from the entity class and includes all
-         * updatable properties. Properties marked with @NonUpdatable or @ReadOnly are excluded.</p>
-         * 
+         *
+         * <p>This method derives the table name from the entity class and pre-populates the SET clause
+         * with all updatable properties. Properties marked with {@code @NonUpdatable} or {@code @ReadOnly}
+         * are excluded. A WHERE clause should be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.update(Account.class)
-         *                  .set("status", "'INACTIVE'")
          *                  .where(Filters.lessThan("lastLogin", "2023-01-01"))
          *                  .build().query();
-         * // Output: UPDATE account SET status = 'INACTIVE' WHERE last_login < '2023-01-01'
+         * // Output: UPDATE account SET first_name = ?, last_name = ?, ... WHERE last_login < '2023-01-01'
          * }</pre>
          *
          * @param entityClass the entity class
@@ -916,18 +931,18 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class, excluding specified properties.
-         * 
-         * <p>This method allows additional property exclusions beyond those marked with
-         * annotations. Useful for partial updates or when certain fields should not be modified.</p>
-         * 
+         *
+         * <p>This method derives the table name from the entity class and pre-populates the SET clause
+         * with updatable properties, additionally excluding the specified ones. A WHERE clause should
+         * be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excluded = N.asSet("email", "createdDate");
          * String sql = SCSB.update(Account.class, excluded)
-         *                  .set("status", "'ACTIVE'")
          *                  .where(Filters.equal("id", 1))
          *                  .build().query();
-         * // Output: UPDATE account SET status = 'ACTIVE' WHERE id = 1
+         * // Output: UPDATE account SET status = ?, ... WHERE id = 1
          * }</pre>
          *
          * @param entityClass the entity class
@@ -2024,15 +2039,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT INTO SQL builder for an entity class.
-         * 
+         *
          * <p>This is a convenience method that combines insert() and into() operations.
-         * The table name is derived from the entity class name and converted to uppercase.</p>
-         * 
+         * The table name is derived from the entity class name and converted to uppercase.
+         * When called with an entity class (rather than an entity instance), the VALUES
+         * clause will contain {@code ?} placeholders for each insertable column.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.insertInto(User.class)
          *                  .build().query();
-         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES ('John', 'Doe', 30, 'john@email.com')
+         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES (?, ?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class to insert into
@@ -2045,10 +2062,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT INTO SQL builder for an entity class, excluding specified properties.
-         * 
+         *
          * <p>This convenience method combines insert() and into() operations with property exclusion.
-         * The table name is derived from the entity class and converted to uppercase.</p>
-         * 
+         * The table name is derived from the entity class and converted to uppercase. When called
+         * with an entity class (rather than an entity instance), the VALUES clause will contain
+         * {@code ?} placeholders for each included insertable column.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("id"));
@@ -2108,17 +2127,25 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table.
-         * 
-         * <p>This method initializes a new SqlBuilder for UPDATE operations on the
-         * specified table. The columns to update should be specified using the
-         * set() method.</p>
-         * 
+         *
+         * <p>This method initializes a new SqlBuilder for UPDATE operations on the specified table.
+         * Pass column names to {@code set(String...)} — each column gets a {@code ?} placeholder — or
+         * pass a complete assignment expression (containing {@code =}) to embed a raw SQL expression.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = ACSB.update("users")
-         *                  .set("LAST_NAME", "'Smith'")
+         * // Using column names (generates ? placeholders):
+         * String sql = ACSB.update("USERS")
+         *                  .set("LAST_NAME", "STATUS")
          *                  .where(Filters.equal("ID", 123))
          *                  .build().query();
+         * // Output: UPDATE USERS SET LAST_NAME = ?, STATUS = ? WHERE ID = 123
+         *
+         * // Using a raw assignment expression:
+         * String sql2 = ACSB.update("USERS")
+         *                   .set("LAST_NAME = 'Smith'")
+         *                   .where(Filters.equal("ID", 123))
+         *                   .build().query();
          * // Output: UPDATE USERS SET LAST_NAME = 'Smith' WHERE ID = 123
          * }</pre>
          *
@@ -2139,17 +2166,19 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for a table with entity class context.
-         * 
+         *
          * <p>This method provides entity class information for property-to-column name mapping
-         * when building the UPDATE statement. Property names will be converted to uppercase.</p>
-         * 
+         * when building the UPDATE statement. Property names will be converted to uppercase.
+         * Use {@code set(String...)} to specify column names (each gets a {@code ?} placeholder),
+         * or {@code set(Map)} to supply column names together with their values.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.update("users", User.class)
-         *                  .set("age", 31)  // "age" is mapped to "AGE" column
+         *                  .set("age")
          *                  .where(Filters.equal("firstName", "'John'"))
          *                  .build().query();
-         * // Output: UPDATE USERS SET AGE = 31 WHERE FIRST_NAME = 'John'
+         * // Output: UPDATE USERS SET AGE = ? WHERE FIRST_NAME = 'John'
          * }</pre>
          *
          * @param tableName the name of the table to update
@@ -2172,17 +2201,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class.
-         * 
-         * <p>This method derives the table name from the entity class and includes all
-         * updatable properties. Properties marked with @NonUpdatable or @ReadOnly are excluded.</p>
-         * 
+         *
+         * <p>This method derives the table name from the entity class and pre-populates the SET clause
+         * with all updatable properties. Properties marked with {@code @NonUpdatable} or {@code @ReadOnly}
+         * are excluded. A WHERE clause should be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.update(User.class)
-         *                  .set("age", 31)
          *                  .where(Filters.equal("firstName", "'John'"))
          *                  .build().query();
-         * // Output: UPDATE USER SET AGE = 31 WHERE FIRST_NAME = 'John'
+         * // Output: UPDATE USER SET LAST_NAME = ?, AGE = ?, EMAIL = ? WHERE FIRST_NAME = 'John'
          * }</pre>
          *
          * @param entityClass the entity class to update
@@ -2195,18 +2224,18 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class, excluding specified properties.
-         * 
-         * <p>This method allows additional property exclusions beyond those marked with
-         * annotations. Useful for partial updates or when certain fields should not be modified.</p>
-         * 
+         *
+         * <p>This method derives the table name from the entity class and pre-populates the SET clause
+         * with updatable properties, additionally excluding the specified ones. A WHERE clause should
+         * be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
+         * Set<String> excluded = new HashSet<>(Arrays.asList("createdDate"));
          * String sql = ACSB.update(User.class, excluded)
-         *                  .set("age", 31)
          *                  .where(Filters.equal("id", 1))
          *                  .build().query();
-         * // Output: UPDATE USER SET AGE = 31 WHERE ID = 1
+         * // Output: UPDATE USER SET LAST_NAME = ?, AGE = ?, EMAIL = ? WHERE ID = 1
          * }</pre>
          *
          * @param entityClass the entity class to update
@@ -3076,23 +3105,24 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         }
 
         /**
-         * Creates an INSERT SQL builder for a single column expression.
-         * 
-         * <p>This method is a convenience wrapper that delegates to {@link #insert(String...)} 
-         * with a single element array. Column names remain in camelCase format.</p>
-         * 
+         * Creates an INSERT SQL builder for a single column name.
+         *
+         * <p>This method is a convenience wrapper that delegates to {@link #insert(String...)}
+         * with a single element. The column name remains in camelCase format without conversion.
+         * A {@code ?} placeholder is generated for the value when {@link #into(String)} is called.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.insert("userName")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO users (userName) VALUES ('John')
+         * // Output: INSERT INTO users (userName) VALUES (?)
          * }</pre>
-         * 
-         * @param expr the column name or expression to insert
+         *
+         * @param expr the column name to insert
          * @return a new SqlBuilder instance configured for INSERT operation
          * @throws IllegalArgumentException if expr is null or empty
-         * 
+         *
          * @see #insert(String...)
          */
         public static SqlBuilder insert(final String expr) {
@@ -3103,19 +3133,19 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for the specified columns.
-         * 
+         *
          * <p>This method initializes a new SqlBuilder for INSERT operations with the specified
-         * column names. The actual values should be provided later using the VALUES clause.
-         * Column names remain in camelCase format without conversion.</p>
-         * 
+         * column names. A {@code ?} placeholder is generated for each column when {@link #into(String)}
+         * is called. Column names remain in camelCase format without conversion.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.insert("firstName", "lastName", "email")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@email.com')
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
-         * 
+         *
          * @param propOrColumnNames the property or column names to insert
          * @return a new SqlBuilder instance configured for INSERT operation
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
@@ -3133,19 +3163,21 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for the specified columns collection.
-         * 
-         * <p>This method is similar to {@link #insert(String...)} but accepts a Collection
-         * of column names instead of varargs. Useful when column names are dynamically determined.</p>
-         * 
+         *
+         * <p>This method is similar to {@link #insert(String...)} but accepts a {@link Collection}
+         * of column names instead of varargs. A {@code ?} placeholder is generated for each column
+         * when {@link #into(String)} is called. Useful when column names are determined dynamically
+         * at runtime.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = LCSB.insert(columns)
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@email.com')
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
-         * 
+         *
          * @param propOrColumnNames collection of property or column names to insert
          * @return a new SqlBuilder instance configured for INSERT operation
          * @throws IllegalArgumentException if propOrColumnNames is null or empty
@@ -3249,21 +3281,22 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for an entity class.
-         * 
+         *
          * <p>This method generates an INSERT template for the specified entity class,
-         * including all insertable properties. Properties marked with @ReadOnly, @ReadOnlyId,
-         * or @Transient are automatically excluded.</p>
-         * 
+         * including all insertable properties. Properties marked with {@code @ReadOnly},
+         * {@code @ReadOnlyId}, or {@code @Transient} are automatically excluded.
+         * A {@code ?} placeholder is generated for each column when {@link #into(String)} is called.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.insert(User.class).into("users").build().query();
-         * // Output: INSERT INTO users (firstName, lastName, email)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to create INSERT for
          * @return a new SqlBuilder instance configured for INSERT operation
          * @throws IllegalArgumentException if entityClass is null
-         * 
+         *
          * @see #insert(Class, Set)
          */
         public static SqlBuilder insert(final Class<?> entityClass) {
@@ -3304,21 +3337,22 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT INTO SQL builder for an entity class.
-         * 
+         *
          * <p>This is a convenience method that combines {@link #insert(Class)} and
-         * {@link #into(Class)} operations. The table name is derived from the entity class.</p>
-         * 
+         * {@link #into(Class)} operations. The table name is derived from the entity class.
+         * A {@code ?} placeholder is generated for each column.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.insertInto(User.class)
          *                  .build().query();
-         * // Output: INSERT INTO users (firstName, lastName, email) VALUES ('John', 'Doe', 'john@email.com')
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to insert into
          * @return a new SqlBuilder instance configured for INSERT INTO operation
          * @throws IllegalArgumentException if entityClass is null
-         * 
+         *
          * @see #insertInto(Class, Set)
          */
         public static SqlBuilder insertInto(final Class<?> entityClass) {
@@ -3389,20 +3423,29 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table.
-         * 
+         *
          * <p>This method initializes a new SqlBuilder for UPDATE operations on the
-         * specified table. The columns to update should be specified using the
-         * {@code set()} method.</p>
-         * 
+         * specified table. The columns to update should be specified using the {@code set()} method.
+         * Pass column names to generate {@code ?} placeholders, or pass a complete assignment
+         * expression (containing {@code =}) to embed a raw SQL expression.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
+         * // Using column names (generates ? placeholders):
          * String sql = LCSB.update("users")
-         *                  .set("lastName", "'Smith'")
+         *                  .set("lastName", "email")
          *                  .where(Filters.equal("id", 123))
          *                  .build().query();
+         * // Output: UPDATE users SET lastName = ?, email = ? WHERE id = 123
+         *
+         * // Using a raw assignment expression:
+         * String sql2 = LCSB.update("users")
+         *                   .set("lastName = 'Smith'")
+         *                   .where(Filters.equal("id", 123))
+         *                   .build().query();
          * // Output: UPDATE users SET lastName = 'Smith' WHERE id = 123
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if tableName is null or empty
@@ -3420,21 +3463,22 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table with entity class context.
-         * 
+         *
          * <p>This method is similar to {@link #update(String)} but also provides entity
-         * class information for better type safety and property name mapping.</p>
-         * 
+         * class information for property-name-to-column-name mapping in the SET and WHERE clauses.
+         * Column names remain in camelCase format.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.update("users", User.class)
-         *                  .set("age", 31)
+         *                  .set("age", "lastName")
          *                  .where(Filters.equal("firstName", "'John'"))
          *                  .build().query();
-         * // Output: UPDATE users SET age = 31 WHERE firstName = 'John'
+         * // Output: UPDATE users SET age = ?, lastName = ? WHERE firstName = 'John'
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
-         * @param entityClass the entity class corresponding to the table
+         * @param entityClass the entity class for property-to-column name mapping
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
@@ -3453,24 +3497,23 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class.
-         * 
-         * <p>This method derives the table name from the entity class and includes
-         * all updatable properties. Properties marked with {@link NonUpdatable} or
-         * {@link ReadOnly} are automatically excluded.</p>
-         * 
+         *
+         * <p>This method derives the table name from the entity class and pre-populates the SET clause
+         * with all updatable properties. Properties marked with {@link NonUpdatable} or {@link ReadOnly}
+         * are automatically excluded. A WHERE clause should be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.update(User.class)
-         *                  .set("age", 31)
          *                  .where(Filters.equal("firstName", "'John'"))
          *                  .build().query();
-         * // Output: UPDATE users SET age = 31 WHERE firstName = 'John'
+         * // Output: UPDATE users SET lastName = ?, email = ?, ... WHERE firstName = 'John'
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
-         * 
+         *
          * @see #update(Class, Set)
          */
         public static SqlBuilder update(final Class<?> entityClass) {
@@ -3479,24 +3522,24 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class, excluding specified properties.
-         * 
-         * <p>This method generates an UPDATE template for the specified entity class,
-         * excluding the specified properties. Properties marked with {@link ReadOnly},
-         * {@link NonUpdatable}, or {@link com.landawn.abacus.annotation.Transient} 
-         * annotations are automatically excluded.</p>
-         * 
+         *
+         * <p>This method derives the table name from the entity class and pre-populates the SET clause
+         * with all updatable properties, additionally excluding those in {@code excludedPropNames}.
+         * Properties marked with {@link ReadOnly}, {@link NonUpdatable}, or
+         * {@link com.landawn.abacus.annotation.Transient} annotations are always excluded.
+         * A WHERE clause should be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
+         * Set<String> excluded = new HashSet<>(Arrays.asList("email", "createdDate"));
          * String sql = LCSB.update(User.class, excluded)
-         *                  .set("firstName", "'John'")
          *                  .where(Filters.equal("id", 123))
          *                  .build().query();
-         * // Output: UPDATE users SET firstName = 'John' WHERE id = 123
+         * // Output: UPDATE users SET firstName = ?, lastName = ?, ... WHERE id = 123
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
-         * @param excludedPropNames set of property names to exclude from the update
+         * @param excludedPropNames additional property names to exclude from the SET clause
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -5561,10 +5604,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * String sql = PSC.insert(account).into("account").build().query();
      * // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
      * 
-     * // UPDATE with specific fields
+     * // UPDATE with specific column names (each gets a ? placeholder)
      * String sql = PSC.update("account")
-     *                 .set("firstName", "John")
-     *                 .set("lastName", "Smith")
+     *                 .set("firstName", "lastName")
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = ?
@@ -5939,20 +5981,20 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         /**
          * Creates an UPDATE statement for a table.
          *
-         * <p>This method starts building an UPDATE statement. Use the {@code set()} method to specify
-         * which columns to update and their values. Property names in subsequent operations will be
+         * <p>This method starts building an UPDATE statement. Use the {@code set(String...)} method
+         * to specify which columns to update (each column gets a {@code ?} placeholder), or use
+         * {@code set(Map)} to specify column names together with their values. Property names are
          * converted to snake_case format.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.update("account")
-         *                 .set("firstName", "John")
-         *                 .set("lastName", "Smith")
+         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
          * // Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = ?
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
          * @return a new SqlBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty
@@ -5970,21 +6012,22 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE statement for a table with entity class mapping.
-         * 
+         *
          * <p>This method creates an UPDATE statement where the entity class provides property-to-column
          * name mapping information. This ensures proper snake_case conversion for all property names
-         * used in the update operation.</p>
-         * 
+         * used in the update operation. Use {@code set(String...)} to specify the column names to
+         * update (each gets a {@code ?} placeholder), or {@code set(Map)} to supply names and values
+         * together.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.update("account", Account.class)
-         *                 .set("firstName", "John")
-         *                 .set("lastModified", new Date())
+         *                 .set("firstName", "lastModified")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
          * // Output: UPDATE account SET first_name = ?, last_modified = ? WHERE id = ?
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance for method chaining
@@ -6006,19 +6049,19 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         /**
          * Creates an UPDATE statement for an entity class.
          *
-         * <p>This method creates an UPDATE statement where the table name is derived from the entity
-         * class name or {@code @Table} annotation. All updatable properties (excluding those marked with
-         * {@code @ReadOnly} or {@code @NonUpdatable}) are included by default.
+         * <p>This method derives the table name from the entity class name or {@code @Table} annotation
+         * and pre-populates the SET clause with all updatable properties (those not marked
+         * {@code @ReadOnly} or {@code @NonUpdatable}). A WHERE clause should be added before
+         * calling {@code build()}.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PSC.update(Account.class)
-         *                 .set("status", "active")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE account SET status = ? WHERE id = ?
+         * // Output: UPDATE account SET first_name = ?, last_name = ?, email = ?, ... WHERE id = ?
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
          * @return a new SqlBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
@@ -7300,19 +7343,20 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE statement for an entity class with automatic table name.
-         * 
-         * <p>The table name is determined from the @Table annotation or class name. 
-         * All updatable properties (excluding @ReadOnly, @NonUpdatable) are included.</p>
-         * 
+         *
+         * <p>The table name is determined from the {@code @Table} annotation or class name.
+         * The SET clause is pre-populated with all updatable properties (those not marked
+         * {@code @ReadOnly} or {@code @NonUpdatable}). A WHERE clause should be added before
+         * calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.update(User.class)
-         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
+         * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ?, EMAIL = ?, ... WHERE ID = ?
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
@@ -7323,22 +7367,24 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE statement for an entity class with excluded properties.
-         * 
-         * <p>This method generates an UPDATE statement excluding specified properties 
-         * in addition to those marked with @ReadOnly or @NonUpdatable annotations.</p>
-         * 
+         *
+         * <p>The table name is determined from the {@code @Table} annotation or class name.
+         * The SET clause is pre-populated with all updatable properties, additionally excluding
+         * those in {@code excludedPropNames} and those marked with {@code @ReadOnly} or
+         * {@code @NonUpdatable} annotations. A WHERE clause should be added before calling
+         * {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("version", "modifiedDate"));
          * String sql = PAC.update(User.class, exclude)
-         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
+         * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ?, EMAIL = ?, ... WHERE ID = ?
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
-         * @param excludedPropNames set of property names to exclude from updates
+         * @param excludedPropNames additional property names to exclude from the SET clause
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -8141,18 +8187,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: SELECT firstName, lastName FROM account WHERE id = ?
-     * 
+     *
      * // INSERT with entity
      * Account account = new Account();
      * account.setFirstName("John");
      * account.setLastName("Doe");
      * String sql = PLC.insert(account).into("account").build().query();
      * // Output: INSERT INTO account (firstName, lastName) VALUES (?, ?)
-     * 
-     * // UPDATE with specific fields
+     *
+     * // UPDATE with specific column names (each column gets a ? placeholder)
      * String sql = PLC.update("account")
-     *                 .set("firstName", "John")
-     *                 .set("lastName", "Smith")
+     *                 .set("firstName", "lastName")
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: UPDATE account SET firstName = ?, lastName = ? WHERE id = ?
@@ -8584,25 +8629,27 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates an UPDATE statement for a table.
          *
          * <p>This method starts building an UPDATE statement. Column names maintain camelCase format.
-         * The actual columns to update are specified using the set() method.</p>
-         * 
+         * Pass column names to {@code set(String...)} — each column gets a {@code ?} placeholder.
+         * Use {@code set(Map)} to supply column names together with their values.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
+         * // Using column names (each gets a ? placeholder)
          * String sql = PLC.update("account")
-         *                 .set("firstName", "John")
-         *                 .set("lastName", "Smith")
+         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
          * // Output: UPDATE account SET firstName = ?, lastName = ? WHERE id = ?
-         * 
-         * // Update with expression
-         * String sql2 = PLC.update("account")
-         *                  .set("loginCount", "loginCount + 1")
-         *                  .set("lastLoginDate", new Date())
-         *                  .where(Filters.equal("id", 1))
-         *                  .build().query();
+         *
+         * // Using a map to supply column names and values together
+         * SP sqlPair = PLC.update("account")
+         *                 .set(N.asMap("firstName", "John", "lastName", "Smith"))
+         *                 .where(Filters.equal("id", 1))
+         *                 .build();
+         * // sqlPair.query(): UPDATE account SET firstName = ?, lastName = ? WHERE id = ?
+         * // sqlPair.parameters(): ["John", "Smith"]
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
          * @return a new SqlBuilder instance for method chaining
          * @throws IllegalArgumentException if tableName is null or empty
@@ -8658,29 +8705,21 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE statement for an entity class.
-         * 
-         * <p>The table name is derived from the entity class name or @Table annotation.
-         * All updatable properties are included by default when using set() with an entity object.</p>
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties (those not marked
+         * {@code @ReadOnly} or {@code @NonUpdatable}). A WHERE clause should be added before
+         * calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * // Simple update
+         * // Update using pre-populated SET clause
          * String sql = PLC.update(Account.class)
-         *                 .set("status", "active")
-         *                 .set("activatedDate", new Date())
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE account SET status = ?, activatedDate = ? WHERE id = ?
-         * 
-         * // Update with entity
-         * Account account = getAccount();
-         * account.setStatus("inactive");
-         * SP sqlPair = PLC.update(Account.class)
-         *                 .set(account)
-         *                 .where(Filters.equal("id", account.getId()))
-         *                 .build();
+         * // Output: UPDATE account SET firstName = ?, lastName = ?, email = ?, ... WHERE id = ?
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
          * @return a new SqlBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
@@ -8691,36 +8730,24 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE statement for an entity class with excluded properties.
-         * 
-         * <p>Properties marked with @NonUpdatable or @ReadOnly are automatically excluded.
-         * Additional properties can be excluded through the excludedPropNames parameter.</p>
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties, additionally excluding those
+         * in {@code excludedPropNames} and those marked with {@code @NonUpdatable} or {@code @ReadOnly}.
+         * A WHERE clause should be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * // Exclude audit fields from update
          * Set<String> excluded = N.asSet("createdDate", "createdBy");
-         * 
-         * Account account = getAccount();
-         * account.setFirstName("John");
-         * account.setLastName("Doe");
-         * account.setCreatedDate(new Date());   // This will be ignored
-         * 
-         * SP sqlPair = PLC.update(Account.class, excluded)
-         *                 .set(account)
-         *                 .where(Filters.equal("id", account.getId()))
-         *                 .build();
-         * // createdDate excluded even though set in entity
-         * 
-         * // Exclude version control fields
-         * Set<String> versionExcluded = N.asSet("version", "previousVersion");
-         * String sql = PLC.update(Document.class, versionExcluded)
-         *                 .set("content", newContent)
-         *                 .where(Filters.equal("id", docId))
+         * String sql = PLC.update(Account.class, excluded)
+         *                 .where(Filters.equal("id", 1))
          *                 .build().query();
+         * // Output: UPDATE account SET firstName = ?, lastName = ?, email = ?, ... WHERE id = ?
+         * // (createdDate and createdBy are excluded from the SET clause)
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
-         * @param excludedPropNames set of property names to exclude from the update
+         * @param excludedPropNames additional property names to exclude from the SET clause
          * @return a new SqlBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -10125,10 +10152,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSB.update("user_accounts", User.class)
-         *                 .set("lastLogin", "active")
+         *                 .set("lastLogin", "isActive")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // UPDATE user_accounts SET last_login = :lastLogin, active = :active WHERE id = :id
+         * // UPDATE user_accounts SET lastLogin = :lastLogin, isActive = :isActive WHERE id = :id
          * }</pre>
          *
          * @param tableName the name of the table to update
@@ -10151,17 +10178,18 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class with automatic table name detection.
-         * 
-         * <p>The table name is derived from the entity class, and all updatable properties
-         * (excluding those marked with {@code @NonUpdatable}, {@code @ReadOnly}, etc.) are included.</p>
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties (those not marked
+         * {@code @NonUpdatable} or {@code @ReadOnly}), each mapped to a named parameter.
+         * A WHERE clause should be added before calling {@code build()}.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSB.update(User.class)
-         *                 .set("name", "email")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // UPDATE users SET name = :name, email = :email WHERE id = :id
+         * // UPDATE users SET name = :name, email = :email, ... WHERE id = :id
          * }</pre>
          *
          * @param entityClass the entity class to update
@@ -10174,22 +10202,25 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class with excluded properties.
-         * 
-         * <p>This method automatically determines updatable properties from the entity class
-         * while allowing additional properties to be excluded from the UPDATE.</p>
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties, additionally excluding those
+         * in {@code excludedPropNames} and those marked with {@code @NonUpdatable} or {@code @ReadOnly}.
+         * Each column is mapped to a named parameter. A WHERE clause should be added before calling
+         * {@code build()}.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> exclude = N.asSet("password", "createdDate");
          * String sql = NSB.update(User.class, exclude)
-         *                 .set("name", "email")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // UPDATE users SET name = :name, email = :email WHERE id = :id
+         * // UPDATE users SET name = :name, email = :email, ... WHERE id = :id
+         * // (password and createdDate are excluded from the SET clause)
          * }</pre>
          *
          * @param entityClass the entity class to update
-         * @param excludedPropNames set of property names to exclude from the UPDATE
+         * @param excludedPropNames additional property names to exclude from the SET clause
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -11348,16 +11379,19 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for a table with named parameters.
-         * 
+         *
+         * <p>Pass column names to {@code set(String...)} — each column gets a named parameter placeholder.
+         * Use {@code set(Map)} to supply column names together with their values.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSC.update("users")
-         *                 .set("firstName", "John")
+         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE users SET first_name = :firstName WHERE id = :id
+         * // Output: UPDATE users SET first_name = :firstName, last_name = :lastName WHERE id = :id
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
          * @return a new SqlBuilder instance configured for UPDATE operation with named parameters
          * @throws IllegalArgumentException if tableName is null or empty
@@ -11375,18 +11409,22 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for a table with entity class context and named parameters.
-         * 
+         *
+         * <p>The entity class provides property-to-column name mapping. Pass column names to
+         * {@code set(String...)} — each column gets a named parameter placeholder based on the
+         * property name.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSC.update("users", User.class)
-         *                 .set("firstName", "John")
+         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE users SET first_name = :firstName WHERE id = :id
+         * // Output: UPDATE users SET first_name = :firstName, last_name = :lastName WHERE id = :id
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
-         * @param entityClass the entity class for property mapping
+         * @param entityClass the entity class for property-to-column name mapping
          * @return a new SqlBuilder instance configured for UPDATE operation with named parameters
          * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
@@ -11405,17 +11443,20 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class with named parameters.
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties (those not marked
+         * {@code @ReadOnly} or {@code @NonUpdatable}), each mapped to a named parameter.
+         * A WHERE clause should be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSC.update(User.class)
-         *                 .set("firstName", "John")
-         *                 .set("lastName", "Doe")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE users SET first_name = :firstName, last_name = :lastName WHERE id = :id
+         * // Output: UPDATE users SET first_name = :firstName, last_name = :lastName, ... WHERE id = :id
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
          * @return a new SqlBuilder instance configured for UPDATE operation with named parameters
          * @throws IllegalArgumentException if entityClass is null
@@ -11426,19 +11467,25 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for an entity class with excluded properties and named parameters.
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties, additionally excluding those
+         * in {@code excludedPropNames} and those marked with {@code @ReadOnly} or {@code @NonUpdatable}.
+         * Each column is mapped to a named parameter. A WHERE clause should be added before calling
+         * {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excluded = Set.of("createdDate", "createdBy");
          * String sql = NSC.update(User.class, excluded)
-         *                 .set("firstName", "John")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE users SET first_name = :firstName WHERE id = :id
+         * // Output: UPDATE users SET first_name = :firstName, last_name = :lastName, ... WHERE id = :id
+         * // (createdDate and createdBy are excluded from the SET clause)
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
-         * @param excludedPropNames the set of property names to exclude from the UPDATE
+         * @param excludedPropNames additional property names to exclude from the SET clause
          * @return a new SqlBuilder instance configured for UPDATE operation with named parameters
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -12494,16 +12541,19 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table.
-         * 
+         *
+         * <p>Pass column names to {@code set(String...)} — each column gets a named parameter
+         * placeholder. Use {@code set(Map)} to supply column names together with their values.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.update("ACCOUNT")
-         *                 .set("STATUS", "ACTIVE")
+         *                 .set("STATUS", "LAST_MODIFIED")
          *                 .where(Filters.equal("ID", 1))
          *                 .build().query();
-         * // Output: UPDATE ACCOUNT SET STATUS = :STATUS WHERE ID = :id
+         * // Output: UPDATE ACCOUNT SET STATUS = :STATUS, LAST_MODIFIED = :LAST_MODIFIED WHERE ID = :id
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
          * @return an SqlBuilder configured for UPDATE operation
          * @throws IllegalArgumentException if tableName is null or empty
@@ -12552,18 +12602,20 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified entity class.
-         * The table name will be derived from the entity class name or @Table annotation.
-         * All updatable properties will be included.
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties (those not marked
+         * {@code @ReadOnly} or {@code @NonUpdatable}), each mapped to a named parameter.
+         * A WHERE clause should be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.update(Account.class)
-         *                 .set("status", "lastModified")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE ACCOUNT SET STATUS = :status, LAST_MODIFIED = :lastModified WHERE ID = :id
+         * // Output: UPDATE ACCOUNT SET STATUS = :status, LAST_MODIFIED = :lastModified, ... WHERE ID = :id
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class
          * @return an SqlBuilder configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
@@ -12574,20 +12626,24 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified entity class with excluded properties.
-         * The table name will be derived from the entity class name or @Table annotation.
-         * Properties marked with @NonUpdatable or in the excluded set will be omitted.
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties, additionally excluding those
+         * in {@code excludedPropNames} and those marked with {@code @NonUpdatable} or {@code @ReadOnly}.
+         * Each column is mapped to a named parameter. A WHERE clause should be added before calling
+         * {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.update(Account.class, Set.of("createdTime"))
-         *                 .set("status", "lastModified")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE ACCOUNT SET STATUS = :status, LAST_MODIFIED = :lastModified WHERE ID = :id
+         * // Output: UPDATE ACCOUNT SET STATUS = :status, LAST_MODIFIED = :lastModified, ... WHERE ID = :id
+         * // (createdTime is excluded from the SET clause)
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class
-         * @param excludedPropNames the set of property names to exclude from the UPDATE
+         * @param excludedPropNames additional property names to exclude from the SET clause
          * @return an SqlBuilder configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -13711,17 +13767,19 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table.
-         * This method starts building an UPDATE statement for the given table name.
-         * 
+         *
+         * <p>Pass column names to {@code set(String...)} — each column gets a named parameter
+         * placeholder. Use {@code set(Map)} to supply column names together with their values.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.update("account")
-         *                 .set("status", "active")
+         *                 .set("status", "lastModified")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE account SET status = :status WHERE id = :id
+         * // Output: UPDATE account SET status = :status, lastModified = :lastModified WHERE id = :id
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
          * @return an SqlBuilder configured for UPDATE operation
          * @throws IllegalArgumentException if tableName is null or empty
@@ -13739,21 +13797,21 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table with entity class mapping.
-         * The entity class provides property-to-column mapping information for the UPDATE statement.
-         * This is useful when you want to update a table using entity property names.
-         * 
+         *
+         * <p>The entity class provides property-to-column name mapping for the SET and WHERE clauses.
+         * Pass column names to {@code set(String...)} — each gets a named parameter placeholder.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.update("account", Account.class)
-         *                 .set("firstName", "John")
-         *                 .set("lastName", "Doe")
+         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
          * // Output: UPDATE account SET firstName = :firstName, lastName = :lastName WHERE id = :id
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
-         * @param entityClass the entity class for property mapping
+         * @param entityClass the entity class for property-to-column name mapping
          * @return an SqlBuilder configured for UPDATE operation
          * @throws IllegalArgumentException if tableName is null/empty or entityClass is null
          */
@@ -13772,19 +13830,20 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified entity class.
-         * The table name will be derived from the entity class name or @Table annotation.
-         * All updatable properties (not marked with @NonUpdatable) will be available for updating.
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties (those not marked
+         * {@code @ReadOnly} or {@code @NonUpdatable}), each mapped to a named parameter.
+         * A WHERE clause should be added before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.update(Account.class)
-         *                 .set("status", "active")
-         *                 .set("lastLoginTime", new Date())
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE account SET status = :status, lastLoginTime = :lastLoginTime WHERE id = :id
+         * // Output: UPDATE account SET status = :status, lastLoginTime = :lastLoginTime, ... WHERE id = :id
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class
          * @return an SqlBuilder configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
@@ -13795,21 +13854,24 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified entity class with excluded properties.
-         * The table name will be derived from the entity class name or @Table annotation.
-         * Properties marked with @NonUpdatable or in the excluded set will be omitted from updates.
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties, additionally excluding those
+         * in {@code excludedPropNames} and those marked with {@code @NonUpdatable} or {@code @ReadOnly}.
+         * Each column is mapped to a named parameter. A WHERE clause should be added before calling
+         * {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.update(Account.class, Set.of("createdTime", "createdBy"))
-         *                 .set("status", "active")
-         *                 .set("modifiedTime", new Date())
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE account SET status = :status, modifiedTime = :modifiedTime WHERE id = :id
+         * // Output: UPDATE account SET status = :status, modifiedTime = :modifiedTime, ... WHERE id = :id
+         * // (createdTime and createdBy are excluded from the SET clause)
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class
-         * @param excludedPropNames the set of property names to exclude from the UPDATE
+         * @param excludedPropNames additional property names to exclude from the SET clause
          * @return an SqlBuilder configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -16283,18 +16345,18 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE statement for the specified table.
-         * 
-         * <p>Use {@code set()} to specify columns to update. Column names in conditions
-         * will be converted from camelCase to snake_case.</p>
+         *
+         * <p>Use {@code set(String...)} to specify column names — each column gets a {@code #{propName}}
+         * placeholder. Property/column names are converted from camelCase to snake_case.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
+         * // Pass column names to set(); each gets a #{propName} placeholder:
          * String sql = MSC.update("users")
-         *                 .set("firstName", "John")
-         *                 .set("lastName", "Doe")
+         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("userId", 123))
          *                 .build().query();
-         * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName} 
+         * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName}
          * //         WHERE user_id = #{userId}
          * }</pre>
          *
@@ -16315,14 +16377,14 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE statement for a table with entity class context.
-         * 
-         * <p>Property names will be automatically converted to snake_case column names.</p>
+         *
+         * <p>Property names will be automatically converted to snake_case column names.
+         * Use {@code set(String...)} to specify column names — each gets a {@code #{propName}} placeholder.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.update("users", User.class)
-         *                 .set("firstName", "John")
-         *                 .set("lastName", "Doe")
+         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
          * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName} WHERE id = #{id}
@@ -16348,20 +16410,20 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE statement for an entity class.
-         * 
-         * <p>All updatable properties will be included in the SET clause,
-         * with automatic conversion to snake_case column names.</p>
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * All updatable properties (excluding those annotated {@code @ReadOnly}, {@code @ReadOnlyId},
+         * or {@code @NonUpdatable}) are pre-populated into the SET clause with snake_case column names
+         * and {@code #{propName}} placeholders. Add a WHERE clause before calling {@code build()}.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.update(User.class)
-         *                 .set("firstName", "John")
-         *                 .set("lastName", "Doe")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName} WHERE id = #{id}
+         * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName}, ... WHERE id = #{id}
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
          * @return a new SqlBuilder instance for method chaining
          */
@@ -16371,22 +16433,23 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE statement for an entity class, excluding specified properties.
-         * 
-         * <p>Provides control over which properties to update, with automatic
-         * snake_case conversion for column names.</p>
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * All updatable properties not in {@code excludedPropNames} are pre-populated into the SET
+         * clause with snake_case column names and {@code #{propName}} placeholders.
+         * Add a WHERE clause before calling {@code build()}.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Set<String> exclude = Set.of("id", "createdDate");
+         * Set<String> exclude = new HashSet<>(Arrays.asList("id", "createdDate"));
          * String sql = MSC.update(User.class, exclude)
-         *                 .set("firstName", "John")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName} WHERE id = #{id}
+         * // Output: UPDATE users SET first_name = #{firstName}, last_name = #{lastName}, ... WHERE id = #{id}
          * }</pre>
          *
          * @param entityClass the entity class to update
-         * @param excludedPropNames set of property names to exclude from the update
+         * @param excludedPropNames set of property names to exclude from the SET clause
          * @return a new SqlBuilder instance for method chaining
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -17492,13 +17555,15 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table.
-         * 
+         *
+         * <p>Use {@code set(String...)} to specify column names — each column gets a {@code #{propName}}
+         * placeholder. Property/column names are converted from camelCase to SCREAMING_SNAKE_CASE.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
+         * // Pass column names to set(); each gets a #{propName} placeholder:
          * String sql = MAC.update("ACCOUNT")
-         *                 .set("firstName", "John")
-         *                 .set("lastName", "Doe")
-         *                 .set("modifiedDate", new Date())
+         *                 .set("firstName", "lastName", "modifiedDate")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
          * // Output: UPDATE ACCOUNT SET FIRST_NAME = #{firstName}, LAST_NAME = #{lastName}, MODIFIED_DATE = #{modifiedDate} WHERE ID = #{id}
@@ -17521,13 +17586,15 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table with entity class mapping.
-         * The entity class is used for property name validation and type checking.
+         *
+         * <p>The entity class is used for property name validation and metadata.
+         * Use {@code set(String...)} to specify column names — each gets a {@code #{propName}}
+         * placeholder. Property/column names are converted from camelCase to SCREAMING_SNAKE_CASE.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MAC.update("ACCOUNT", Account.class)
-         *                 .set("isActive", false)
-         *                 .set("deactivatedDate", new Date())
+         *                 .set("isActive", "deactivatedDate")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
          * // Output: UPDATE ACCOUNT SET IS_ACTIVE = #{isActive}, DEACTIVATED_DATE = #{deactivatedDate} WHERE ID = #{id}
@@ -17553,16 +17620,19 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified entity class.
-         * The table name is derived from the entity class name or @Table annotation.
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * All updatable properties (excluding those annotated {@code @ReadOnly}, {@code @ReadOnlyId},
+         * or {@code @NonUpdatable}) are pre-populated into the SET clause with SCREAMING_SNAKE_CASE
+         * column names and {@code #{propName}} placeholders. Add a WHERE clause before calling
+         * {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MAC.update(Account.class)
-         *                 .set("status", "ACTIVE")
-         *                 .set("lastLoginDate", new Date())
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE ACCOUNT SET STATUS = #{status}, LAST_LOGIN_DATE = #{lastLoginDate} WHERE ID = #{id}
+         * // Output: UPDATE ACCOUNT SET STATUS = #{status}, LAST_LOGIN_DATE = #{lastLoginDate}, ... WHERE ID = #{id}
          * }</pre>
          *
          * @param entityClass the entity class to update
@@ -17574,21 +17644,24 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified entity class, excluding specified properties.
-         * Properties marked with @NonUpdatable or in the excluded set will not be updated.
-         * 
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * All updatable properties not in {@code excludedPropNames} (and not annotated
+         * {@code @NonUpdatable}) are pre-populated into the SET clause with SCREAMING_SNAKE_CASE
+         * column names and {@code #{propName}} placeholders. Add a WHERE clause before calling
+         * {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("id", "createdDate", "createdBy"));
          * String sql = MAC.update(Account.class, excludes)
-         *                 .set("firstName", "John")
-         *                 .set("modifiedDate", new Date())
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE ACCOUNT SET FIRST_NAME = #{firstName}, MODIFIED_DATE = #{modifiedDate} WHERE ID = #{id}
+         * // Output: UPDATE ACCOUNT SET FIRST_NAME = #{firstName}, MODIFIED_DATE = #{modifiedDate}, ... WHERE ID = #{id}
          * }</pre>
          *
          * @param entityClass the entity class to update
-         * @param excludedPropNames set of property names to exclude from the UPDATE
+         * @param excludedPropNames set of property names to exclude from the SET clause
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -18650,13 +18723,15 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table.
-         * Use the {@code set()} method to specify which columns to update.
-         * 
+         *
+         * <p>Use {@code set(String...)} to specify column names — each column gets a {@code #{propName}}
+         * placeholder. Column names are used as-is (camelCase, no conversion).</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
+         * // Pass column names to set(); each gets a #{propName} placeholder:
          * String sql = MLC.update("account")
-         *                 .set("firstName", "updatedName")
-         *                 .set("modifiedDate", new Date())
+         *                 .set("firstName", "modifiedDate")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
          * // Output: UPDATE account SET firstName = #{firstName}, modifiedDate = #{modifiedDate} WHERE id = #{id}
@@ -18679,13 +18754,14 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified table with entity class context.
-         * The entity class provides metadata for property-to-column mapping.
-         * 
+         *
+         * <p>The entity class provides metadata for property-to-column mapping.
+         * Use {@code set(String...)} to specify column names — each gets a {@code #{propName}} placeholder.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.update("account", Account.class)
-         *                 .set("firstName", "John")
-         *                 .set("lastName", "Doe")
+         *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
          * // Output: UPDATE account SET firstName = #{firstName}, lastName = #{lastName} WHERE id = #{id}
@@ -18711,16 +18787,18 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified entity class.
-         * The table name is automatically derived from the entity class name or @Table annotation.
-         * All updatable properties (excluding @ReadOnly, @NonUpdatable) are included.
-         * 
+         *
+         * <p>The table name is automatically derived from the entity class name or {@code @Table} annotation.
+         * All updatable properties (excluding those annotated {@code @ReadOnly}, {@code @ReadOnlyId},
+         * or {@code @NonUpdatable}) are pre-populated into the SET clause with camelCase column names
+         * and {@code #{propName}} placeholders. Add a WHERE clause before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.update(Account.class)
-         *                 .set("firstName", "John")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE account SET firstName = #{firstName} WHERE id = #{id}
+         * // Output: UPDATE account SET firstName = #{firstName}, lastName = #{lastName}, ... WHERE id = #{id}
          * }</pre>
          *
          * @param entityClass the entity class to generate UPDATE for
@@ -18733,21 +18811,23 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an UPDATE SQL builder for the specified entity class, excluding specified properties.
-         * The table name is automatically derived from the entity class name or @Table annotation.
-         * Properties in the exclude set or annotated as non-updatable are not included.
-         * 
+         *
+         * <p>The table name is automatically derived from the entity class name or {@code @Table} annotation.
+         * All updatable properties not in {@code excludedPropNames} (and not annotated as non-updatable)
+         * are pre-populated into the SET clause with camelCase column names and {@code #{propName}}
+         * placeholders. Add a WHERE clause before calling {@code build()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("createdDate", "createdBy"));
          * String sql = MLC.update(Account.class, excludes)
-         *                 .set("firstName", "John")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE account SET firstName = #{firstName} WHERE id = #{id}
+         * // Output: UPDATE account SET firstName = #{firstName}, lastName = #{lastName}, ... WHERE id = #{id}
          * }</pre>
          *
          * @param entityClass the entity class to generate UPDATE for
-         * @param excludedPropNames set of property names to exclude from the UPDATE
+         * @param excludedPropNames set of property names to exclude from the SET clause
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
          */

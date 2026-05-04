@@ -136,8 +136,8 @@ public class Having extends Clause {
      * //      AND AVG(rating) BETWEEN 3.0 AND 5.0
      * }</pre>
      *
-     * @param cond the condition to apply in the HAVING clause. Must not be null.
-     * @throws IllegalArgumentException if cond is null
+     * @param cond the condition to apply in the HAVING clause. Must not be {@code null}.
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public Having(final Condition cond) {
         super(Operator.HAVING, cond);

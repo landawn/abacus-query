@@ -763,8 +763,8 @@ public final class SqlParser {
      * SqlParser.registerSeparator("::");    // Register PostgreSQL cast operator
      * }</pre>
      *
-     * @param separator the string to register as a separator (must not be null)
-     * @throws IllegalArgumentException if separator is null
+     * @param separator the string to register as a separator (must not be {@code null} or empty)
+     * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
      */
     public static void registerSeparator(final String separator) {
         N.checkArgNotEmpty(separator, "separator");
@@ -798,8 +798,8 @@ public final class SqlParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT * FROM users";
-     * boolean isSep = SqlParser.isSeparator(sql, sql.length(), 6, '*');   // true ('*' is a separator)
-     * boolean notSep = SqlParser.isSeparator(sql, sql.length(), 7, ' ');  // true (space is a separator)
+     * boolean isSep = SqlParser.isSeparator(sql, sql.length(), 7, '*');   // true ('*' is a separator)
+     * boolean notSep = SqlParser.isSeparator(sql, sql.length(), 6, ' ');  // true (space is a separator)
      * }</pre>
      *
      * @param str the SQL string being parsed

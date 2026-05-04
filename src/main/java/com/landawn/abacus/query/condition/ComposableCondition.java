@@ -80,9 +80,9 @@ public abstract class ComposableCondition extends AbstractCondition {
      * // Produces: age > 18 AND status = 'active'
      * }</pre>
      *
-     * @param cond the condition to AND with this condition (must not be null)
-     * @return a new And condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is null
+     * @param cond the condition to AND with this condition (must not be {@code null})
+     * @return a new {@link And} condition containing both conditions
+     * @throws IllegalArgumentException if {@code cond} is {@code null} or has a non-composable operator
      */
     public And and(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
@@ -104,9 +104,9 @@ public abstract class ComposableCondition extends AbstractCondition {
      * // Produces: role = 'admin' OR role = 'manager'
      * }</pre>
      *
-     * @param cond the condition to OR with this condition (must not be null)
-     * @return a new Or condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is null
+     * @param cond the condition to OR with this condition (must not be {@code null})
+     * @return a new {@link Or} condition containing both conditions
+     * @throws IllegalArgumentException if {@code cond} is {@code null} or has a non-composable operator
      */
     public Or or(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
@@ -132,9 +132,9 @@ public abstract class ComposableCondition extends AbstractCondition {
      * // Produces: (type = 'A' AND NOT type = 'B') OR (NOT type = 'A' AND type = 'B')
      * }</pre>
      *
-     * @param cond the condition to XOR with this condition (must not be null)
+     * @param cond the condition to XOR with this condition (must not be {@code null})
      * @return a new {@link Or} condition representing {@code (this AND NOT cond) OR (NOT this AND cond)}
-     * @throws IllegalArgumentException if {@code cond} is null
+     * @throws IllegalArgumentException if {@code cond} is {@code null} or has a non-composable operator
      */
     public Or xor(final Condition cond) {
         N.checkArgNotNull(cond, "cond");

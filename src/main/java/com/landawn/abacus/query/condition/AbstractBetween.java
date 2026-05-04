@@ -54,11 +54,11 @@ public abstract class AbstractBetween extends ComposableCondition {
     /**
      * Creates a new BETWEEN or NOT BETWEEN condition.
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name (must not be {@code null} or empty)
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
-     * @param minValue the minimum value (inclusive) (can be null, literal value, or subquery)
-     * @param maxValue the maximum value (inclusive) (can be null, literal value, or subquery)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @param minValue the minimum value (inclusive); may be a literal value or a {@link SubQuery}
+     * @param maxValue the maximum value (inclusive); may be a literal value or a {@link SubQuery}
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
         super(operator);
@@ -147,10 +147,12 @@ public abstract class AbstractBetween extends ComposableCondition {
 
     /**
      * Converts this condition to its string representation.
-     * The format is: propertyName BETWEEN/NOT BETWEEN minValue AND maxValue
+     * The format is: {@code propertyName BETWEEN minValue AND maxValue}
+     * (or {@code NOT BETWEEN} for {@link NotBetween}).
      *
-     * @param namingPolicy the naming policy to apply to the property name
-     * @return a string representation
+     * @param namingPolicy the naming policy to apply to the property name;
+     *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
+     * @return a string representation of this condition
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {

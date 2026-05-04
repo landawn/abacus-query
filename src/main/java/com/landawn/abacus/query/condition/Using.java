@@ -115,7 +115,7 @@ public class Using extends Cell {
      *
      * @param columnNames variable number of column names to join on.
      *                    All columns must exist in both tables with identical names. Must not be null or empty.
-     * @throws IllegalArgumentException if columnNames is null or empty
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null} or empty
      */
     public Using(final String... columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
@@ -151,7 +151,7 @@ public class Using extends Cell {
      *
      * @param columnNames collection of column names to join on. Must not be null or empty.
      *                    Order matters for some databases. Use LinkedHashSet or List to preserve order.
-     * @throws IllegalArgumentException if columnNames is null or empty
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null} or empty
      */
     public Using(final Collection<String> columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
@@ -175,7 +175,7 @@ public class Using extends Cell {
      *
      * @param columnNames array of column names. Must not be null or empty.
      * @return a condition representing the USING clause
-     * @throws IllegalArgumentException if columnNames is null or empty
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null} or empty
      */
     static Condition createUsingCondition(final String... columnNames) {
         N.checkArgNotEmpty(columnNames, "columnNames");
@@ -207,7 +207,7 @@ public class Using extends Cell {
      *
      * @param columnNames collection of column names. Must not be null or empty.
      * @return a condition representing the USING clause
-     * @throws IllegalArgumentException if columnNames is null or empty
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null} or empty
      */
     static Condition createUsingCondition(final Collection<String> columnNames) {
         N.checkArgNotEmpty(columnNames, "columnNames");

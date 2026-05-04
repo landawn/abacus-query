@@ -116,7 +116,8 @@ public class Or extends Junction {
      * This constructor is useful when conditions are built dynamically.
      *
      * <p>All conditions in the collection will be combined using the OR operator.
-     * The collection is copied internally to ensure immutability of the condition.</p>
+     * The collection is copied internally so that subsequent changes to the original
+     * collection do not affect this condition.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -170,9 +171,11 @@ public class Or extends Junction {
      * // Results vary based on flags
      * }</pre>
      *
-     * @param cond the condition to add to this OR. Must not be null.
+     * @param cond the condition to add to this OR. Must not be {@code null} and must not
+     *             be a clause or join condition (ON/USING).
      * @return a new Or condition containing all existing conditions plus the new one
-     * @throws IllegalArgumentException if cond is null
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond}
+     *             is a clause or join condition (ON/USING) that cannot be composed
      */
     @Override
     public Or or(final Condition cond) {

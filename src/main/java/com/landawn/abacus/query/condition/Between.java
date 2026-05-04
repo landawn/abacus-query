@@ -89,10 +89,10 @@ public class Between extends AbstractBetween {
      * Between nearAverage = new Between("score", avgMinus10, avgPlus10);
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
-     * @param minValue the minimum value (inclusive) (can be null, literal value, or subquery)
-     * @param maxValue the maximum value (inclusive) (can be null, literal value, or subquery)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param minValue the minimum value (inclusive); may be a literal value or a {@link SubQuery}
+     * @param maxValue the maximum value (inclusive); may be a literal value or a {@link SubQuery}
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public Between(final String propName, final Object minValue, final Object maxValue) {
         super(propName, Operator.BETWEEN, minValue, maxValue);

@@ -44,17 +44,14 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Creates a new ComposableCell with the specified operator and condition.
+     * Creates a new {@code ComposableCell} with the specified operator and condition.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Typically used via subclass constructors:
-     * SubQuery subQuery = new SubQuery("SELECT 1 FROM orders WHERE user_id = users.id");
-     * Exists exists = new Exists(subQuery);   // Exists extends ComposableCell
-     * }</pre>
+     * <p>This constructor is typically invoked by subclass constructors such as
+     * {@link Not}, {@link Exists}, {@link NotExists}, {@link All}, {@link Any}, and {@link Some}.</p>
      *
      * @param operator the operator to apply to the condition
-     * @param cond the condition to wrap (must not be null)
+     * @param cond the condition to wrap (must not be {@code null})
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public ComposableCell(final Operator operator, final Condition cond) {
         super(operator);
@@ -91,10 +88,12 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Converts this ComposableCell to its string representation using the specified naming policy.
-     * The output format is: OPERATOR condition_string
+     * Converts this {@code ComposableCell} to its string representation using the specified naming policy.
+     * The output format is: {@code OPERATOR (condition_string)}
+     * (the inner condition is always enclosed in parentheses).
      *
-     * @param namingPolicy the naming policy to apply to property names
+     * @param namingPolicy the naming policy to apply to property names within the wrapped condition;
+     *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a string representation of this ComposableCell
      */
     @Override

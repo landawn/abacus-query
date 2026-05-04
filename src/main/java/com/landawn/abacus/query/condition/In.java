@@ -93,7 +93,7 @@ public class In extends AbstractIn {
      * @param propName the property/column name. Must not be null or empty.
      * @param values the collection of values to check against. Must not be null or empty.
      *               The collection is copied internally to prevent external modifications.
-     * @throws IllegalArgumentException if propName is null or values is null/empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, or if {@code values} is {@code null}/empty
      */
     public In(final String propName, final Collection<?> values) {
         super(propName, Operator.IN, values);

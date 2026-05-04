@@ -82,7 +82,7 @@ public class Where extends Clause {
      *     Filters.equal("vip", true)
      * );
      * Where complexWhere = new Where(complexCondition);
-     * // SQL: WHERE ((status = 'active') AND (balance > 1000)) OR (vip = true)
+     * // SQL: WHERE (((status = 'active') AND (balance > 1000)) OR (vip = true))
      *
      * // WHERE with subquery
      * SubQuery activeUsers = Filters.subQuery("SELECT id FROM users WHERE active = true");
@@ -90,8 +90,8 @@ public class Where extends Clause {
      * // SQL: WHERE user_id IN (SELECT id FROM users WHERE active = true)
      * }</pre>
      *
-     * @param cond the condition to apply in the WHERE clause. Must not be null.
-     * @throws IllegalArgumentException if cond is null
+     * @param cond the condition to apply in the WHERE clause. Must not be {@code null}.
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public Where(final Condition cond) {
         super(Operator.WHERE, cond);

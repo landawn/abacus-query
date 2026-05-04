@@ -92,9 +92,10 @@ public class IsNaN extends Is {
      * result. This is crucial for data validation, quality checks, and identifying
      * calculation errors in floating-point operations.
      *
-     * <p>The generated SQL uses the IS NAN operator because NaN has special comparison
-     * semantics where NaN != NaN evaluates to true in Java/IEEE 754 (but to unknown in SQL), and NaN == NaN evaluates to false.
-     * The IS NAN operator is the only reliable way to test for NaN values.
+     * <p>The generated SQL uses the {@code IS NAN} operator because NaN has special comparison
+     * semantics: in Java/IEEE 754, {@code NaN != NaN} evaluates to {@code true} and
+     * {@code NaN == NaN} evaluates to {@code false}, while in SQL any comparison with NaN
+     * evaluates to UNKNOWN. {@code IS NAN} is the only reliable way to test for NaN values.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -126,7 +127,7 @@ public class IsNaN extends Is {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null or empty (validation performed by ancestor class {@link Binary})
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNaN(final String propName) {
         super(propName, NAN);

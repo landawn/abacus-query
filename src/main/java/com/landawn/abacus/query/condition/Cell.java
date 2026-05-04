@@ -49,18 +49,15 @@ public abstract class Cell extends AbstractCondition {
     }
 
     /**
-     * Creates a new Cell with the specified operator and condition.
+     * Creates a new {@code Cell} with the specified operator and condition.
      * The Cell wraps the given condition and applies the specified operator to it.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Typically used via subclass constructors:
-     * SubQuery subQuery = new SubQuery("SELECT MAX(salary) FROM employees");
-     * On onCond = new On(Filters.equal("a.id", "b.id"));   // On extends Cell
-     * }</pre>
+     * <p>This constructor is typically invoked by subclass constructors such as
+     * {@link Clause} subclasses and {@link On}.</p>
      *
      * @param operator the operator to apply to the condition
-     * @param cond the condition to wrap (must not be null)
+     * @param cond the condition to wrap (must not be {@code null})
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public Cell(final Operator operator, final Condition cond) {
         super(operator);
@@ -98,10 +95,10 @@ public abstract class Cell extends AbstractCondition {
     }
 
     /**
-     * Converts this Cell condition to its string representation using the specified naming policy.
-     * The output format is: OPERATOR condition_string
-     * 
-     * @param namingPolicy the naming policy to apply to property names
+     * Converts this {@code Cell} condition to its string representation using the specified naming policy.
+     * The output format is: {@code OPERATOR condition_string}
+     *
+     * @param namingPolicy the naming policy to apply to property names within the wrapped condition
      * @return a string representation of this Cell
      */
     @Override

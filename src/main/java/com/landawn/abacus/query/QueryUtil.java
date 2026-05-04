@@ -345,7 +345,6 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return collection of property names suitable for INSERT operations
      * @throws IllegalArgumentException if {@code entity} is {@code null}
-     * @deprecated for internal use only.
      */
     @Internal
     public static Collection<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames) {
@@ -413,7 +412,6 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return collection of property names suitable for INSERT operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @deprecated for internal use only.
      */
     @Internal
     public static Collection<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -459,7 +457,6 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return collection of property names suitable for SELECT operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @deprecated for internal use only.
      */
     @Internal
     public static Collection<String> getSelectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties,
@@ -503,7 +500,6 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return collection of property names suitable for UPDATE operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @deprecated for internal use only.
      */
     @Internal
     public static Collection<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {

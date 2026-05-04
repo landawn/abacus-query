@@ -90,9 +90,10 @@ public class IsNull extends Is {
      * which represents the absence of a value in the database. NULL is distinctly different
      * from empty strings, zero values, or false boolean values.
      *
-     * <p>The generated SQL uses the IS NULL operator (not = NULL) because NULL comparisons
-     * have special semantics in SQL where NULL = NULL evaluates to UNKNOWN (which behaves as false
-     * in WHERE clauses), but NULL IS NULL evaluates to true.
+     * <p>The generated SQL uses the {@code IS NULL} operator (not {@code = NULL}) because
+     * {@code NULL} comparisons have special semantics in SQL: {@code NULL = NULL} evaluates to
+     * UNKNOWN (which behaves as {@code false} in WHERE clauses), whereas {@code NULL IS NULL}
+     * correctly evaluates to {@code true}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -124,7 +125,7 @@ public class IsNull extends Is {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null or empty (validation performed by ancestor class {@link Binary})
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNull(final String propName) {
         super(propName, NULL);

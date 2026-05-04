@@ -387,7 +387,7 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns the hash code value for this ParsedSql.
+     * Returns the hash code value for this {@code ParsedSql}.
      * The hash code is based on the original SQL string.
      *
      * @return the hash code value
@@ -399,10 +399,10 @@ public final class ParsedSql {
 
     /**
      * Indicates whether some other object is "equal to" this one.
-     * Two ParsedSql objects are equal if they have the same original SQL string.
+     * Two {@code ParsedSql} objects are equal if they have the same original SQL string.
      *
      * @param obj the reference object with which to compare
-     * @return {@code true} if this object equals the obj argument; false otherwise
+     * @return {@code true} if this object equals the obj argument; {@code false} otherwise
      */
     @Override
     public boolean equals(final Object obj) {
@@ -418,10 +418,10 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns a string representation of this ParsedSql.
+     * Returns a string representation of this {@code ParsedSql}.
      * The string contains both the original SQL and the parameterized SQL.
      *
-     * @return a string representation of the object
+     * @return a string representation of this object
      */
     @Override
     public String toString() {

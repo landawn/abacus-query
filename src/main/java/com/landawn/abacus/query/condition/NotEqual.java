@@ -91,7 +91,7 @@ public class NotEqual extends Binary {
      *
      * @param propName the property/column name (must not be null or empty)
      * @param propValue the value to compare against (can be null, literal value, or subquery)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public NotEqual(final String propName, final Object propValue) {
         super(propName, Operator.NOT_EQUAL, propValue);

@@ -144,12 +144,13 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Constructs a new Expression with the specified SQL literal.
+     * Constructs a new {@code Expression} with the specified SQL literal.
      * The literal can contain any valid SQL expression, including functions, operators,
-     * column references, and complex expressions.
+     * column references, and complex expressions. A {@code null} literal is permitted and
+     * will render as the string {@code "null"}.
      *
-     * <p>Note: For frequently used expressions, consider using {@link #of(String)} instead,
-     * which provides caching for better performance and memory efficiency.</p>
+     * <p>Note: For frequently used expressions, prefer {@link #of(String)} instead,
+     * which provides instance caching for better performance and memory efficiency.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -159,7 +160,7 @@ public class Expression extends ComposableCondition {
      * Expression expr4 = new Expression("COALESCE(middle_name, '')");
      * }</pre>
      *
-     * @param literal the SQL expression as a string. Can contain any valid SQL.
+     * @param literal the SQL expression as a string; may be {@code null}
      */
     public Expression(final String literal) {
         super(Operator.EMPTY);
@@ -523,8 +524,10 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Creates an IS NULL OR EMPTY (IS BLANK) expression for the specified literal.
-     * This checks if a value is empty (blank).
+     * Creates a framework-specific {@code IS BLANK} expression for the specified literal,
+     * which the query engine interprets as a combined null-or-empty check.
+     * This is not standard SQL; the generated string uses the token {@code "BLANK"}
+     * as a special sentinel understood by this framework's SQL parser.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -532,16 +535,18 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.isNullOrEmpty("address");      // Returns: "address IS BLANK"
      * }</pre>
      *
-     * @param literal the literal to check for emptiness
-     * @return a string representation of the IS EMPTY expression
+     * @param literal the column reference or expression to check
+     * @return a framework-specific {@code IS BLANK} expression string
      */
     public static String isNullOrEmpty(final String literal) {
         return link2(Operator.IS, literal, EMPTY);
     }
 
     /**
-     * Creates an IS NOT NULL AND NOT EMPTY (IS NOT BLANK) expression for the specified literal.
-     * This checks if a value is not empty (not blank).
+     * Creates a framework-specific {@code IS NOT BLANK} expression for the specified literal,
+     * which the query engine interprets as a combined not-null-and-not-empty check.
+     * This is not standard SQL; the generated string uses the token {@code "BLANK"}
+     * as a special sentinel understood by this framework's SQL parser.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -549,8 +554,8 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.isNotNullAndNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
      * }</pre>
      *
-     * @param literal the literal to check for non-emptiness
-     * @return a string representation of the IS NOT EMPTY expression
+     * @param literal the column reference or expression to check
+     * @return a framework-specific {@code IS NOT BLANK} expression string
      */
     public static String isNotNullAndNotEmpty(final String literal) {
         return link2(Operator.IS_NOT, literal, EMPTY);
@@ -640,7 +645,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values to subtract
      * @return a string representation of the subtraction expression
-     * @deprecated Use {@link #subtract(Object...)} instead to avoid ambiguity with the SQL MINUS set operation.
+     * @deprecated Use {@link #subtract(Object...)} instead to avoid confusion with the SQL {@code MINUS} set operation.
      */
     @Deprecated
     public static String minus(final Object... objects) {
@@ -1618,12 +1623,13 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Returns the literal string of this expression.
-     * The naming policy may be applied to property names within the expression
-     * if they can be identified as simple column names.
+     * Returns the string form of this expression, with the naming policy applied to any
+     * identifiers (column or property names) that can be detected within the literal.
+     * Pure SQL tokens, function names, quoted strings, and numeric literals are left unchanged.
      *
-     * @param namingPolicy the naming policy to apply
-     * @return the literal string of this expression with applied naming policy
+     * @param namingPolicy the naming policy to apply to detected identifiers;
+     *                     if {@code null}, {@link NamingPolicy#NO_CHANGE} is used
+     * @return the expression string with identifiers converted according to the naming policy
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -1682,33 +1688,23 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * A simplified alias class for {@link Expression}.
+     * A concise alias for {@link Expression}.
      *
-     * <p>This class provides the same functionality as the parent {@code Expression} class
-     * but with a more concise class name. It can be used interchangeably with {@code Expression}
-     * in contexts where a shorter name is preferred for readability or brevity.
+     * <p>This class provides the same functionality as the parent {@link Expression} class
+     * but with a shorter class name. It can be used interchangeably with {@code Expression}
+     * in contexts where a shorter name is preferred for readability.
+     * Instances are created internally by the framework (e.g., by {@link Filters#expr(String)})
+     * and should not be constructed directly by application code.</p>
      *
-     * <p>Since this class inherits all methods and behavior from {@code Expression}, it can be
-     * used in all the same contexts with identical functionality.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Expression expr = Expression.of("price * quantity");
-     * }</pre>
+     * <p>Since this class inherits all methods and behavior from {@link Expression}, it can be
+     * used in all the same contexts with identical functionality.</p>
      *
      * @see Expression
      */
     public static class Expr extends Expression {
         /**
-         * Constructs a new Expr (Expression alias) with the specified SQL literal.
-         *
-         * <p>This constructor creates a new Expression instance using the shortened Expr alias.
-         * It passes the provided literal directly to the parent Expression constructor.
-         *
-         * <p><b>Usage Examples:</b></p>
-         * <pre>{@code
-         * Expression expr = Expression.of("price * quantity");
-         * }</pre>
+         * Constructs a new {@code Expr} with the specified SQL literal.
+         * Passes the provided literal directly to the {@link Expression#Expression(String)} constructor.
          *
          * @param literal the SQL expression as a string
          * @see Expression#Expression(String)

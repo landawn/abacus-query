@@ -188,9 +188,11 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityName the entity/table name
      * @param propNames collection of property names to select
-     * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE)
-     * @throws IllegalArgumentException if entityName is null or empty, if propNames is null,
-     *             or if propNames contains null/empty names
+     * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
+     *             May be {@code null} to select without a WHERE clause.
+     * @throws IllegalArgumentException if entityName is null or empty, if propNames is null or empty,
+     *             if propNames contains null/empty names, or if cond uses an
+     *             {@link Operator#ON ON}/{@link Operator#USING USING} operator (which is not valid here)
      */
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
         super(Operator.EMPTY);
@@ -235,9 +237,11 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityClass the entity class
      * @param propNames collection of property names to select
-     * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE)
-     * @throws IllegalArgumentException if entityClass is null, if propNames is null,
-     *             or if propNames contains null/empty names
+     * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
+     *             May be {@code null} to select without a WHERE clause.
+     * @throws IllegalArgumentException if entityClass is null, if propNames is null or empty,
+     *             if propNames contains null/empty names, or if cond uses an
+     *             {@link Operator#ON ON}/{@link Operator#USING USING} operator (which is not valid here)
      */
     public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {
         super(Operator.EMPTY);

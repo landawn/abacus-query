@@ -93,7 +93,7 @@ public class NotBetween extends AbstractBetween {
      * @param propName the property/column name (must not be null or empty)
      * @param minValue the minimum value of the range to exclude (can be null, literal value, or subquery)
      * @param maxValue the maximum value of the range to exclude (can be null, literal value, or subquery)
-     * @throws IllegalArgumentException if propName is null or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {
         super(propName, Operator.NOT_BETWEEN, minValue, maxValue);

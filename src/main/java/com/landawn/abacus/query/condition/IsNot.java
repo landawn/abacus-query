@@ -81,7 +81,7 @@ public class IsNot extends Binary {
      *
      * @param propName the name of the property/column to check (must not be null or empty)
      * @param propValue the value to compare against (can be null, literal value, or subquery)
-     * @throws IllegalArgumentException if propName is null or empty (validation performed by superclass {@link Binary})
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);

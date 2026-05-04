@@ -54,10 +54,10 @@ public abstract class AbstractIn extends ComposableCondition {
     /**
      * Creates a new IN or NOT IN condition.
      *
-     * @param propName the property/column name (must not be null or empty)
+     * @param propName the property/column name (must not be {@code null} or empty)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
-     * @param values the collection of values to check against (must not be null or empty)
-     * @throws IllegalArgumentException if propName is null/empty or values is null/empty
+     * @param values the collection of values to check membership against (must not be {@code null} or empty)
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty or {@code values} is {@code null}/empty
      */
     protected AbstractIn(final String propName, final Operator operator, final Collection<?> values) {
         super(operator);
@@ -125,9 +125,12 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Converts this condition to its string representation.
+     * The format is: {@code propName IN (value1, value2, ...)}
+     * (or {@code NOT IN} for {@link NotIn}).
      *
-     * @param namingPolicy the naming policy to apply to the property name
-     * @return the string representation, e.g., "status IN ('active', 'pending')"
+     * @param namingPolicy the naming policy to apply to the property name;
+     *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
+     * @return the string representation, e.g., {@code "status IN ('active', 'pending')"}
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {

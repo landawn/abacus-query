@@ -263,9 +263,10 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Returns a string representation of this Criteria using the specified naming policy.
-     * The output follows SQL clause ordering conventions and includes all conditions.
+     * Clauses are emitted in SQL order: select modifier, JOINs, WHERE, GROUP BY, HAVING,
+     * set operations (UNION/INTERSECT/EXCEPT), ORDER BY, LIMIT.
      *
-     * @param namingPolicy the naming policy to apply to property names
+     * @param namingPolicy the naming policy to apply to property names within each clause
      * @return a string representation of this Criteria
      */
     @SuppressWarnings("StringConcatenationInLoop")
@@ -301,7 +302,11 @@ public class Criteria extends AbstractCondition {
         return selectModifier + join + where + groupBy + having + setOps + orderBy + limit;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Returns the hash code of this Criteria, based on its select modifier and conditions list.
+     *
+     * @return hash code based on the select modifier and the ordered conditions list
+     */
     @Override
     public int hashCode() {
         int h = 17;
@@ -309,7 +314,14 @@ public class Criteria extends AbstractCondition {
         return (h * 31) + conditions.hashCode();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Checks whether this Criteria is equal to another object.
+     * Two {@code Criteria} instances are equal if they have the same select modifier
+     * and the same ordered list of conditions.
+     *
+     * @param obj the object to compare with
+     * @return {@code true} if the objects are equal, {@code false} otherwise
+     */
     @Override
     public boolean equals(final Object obj) {
         return this == obj
@@ -1690,9 +1702,11 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Validates that the given collection of conditions is not null and each condition is valid.
+         * Validates that the given collection of conditions is not {@code null} and that each element
+         * is a valid clause-level condition (has a clause operator and the correct implementation type).
          *
-         * @param conditions the conditions to validate
+         * @param conditions the conditions to validate; must not be {@code null}
+         * @throws IllegalArgumentException if {@code conditions} is {@code null} or contains an invalid condition
          */
         private void checkConditions(final Collection<? extends Condition> conditions) {
             N.checkArgNotNull(conditions, "conditions");
@@ -1703,9 +1717,11 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Validates that the given array of conditions is not null and each condition is valid.
+         * Validates that the given array of conditions is not {@code null} and that each element
+         * is a valid clause-level condition (has a clause operator and the correct implementation type).
          *
-         * @param conditions the conditions to validate
+         * @param conditions the conditions to validate; must not be {@code null}
+         * @throws IllegalArgumentException if {@code conditions} is {@code null} or contains an invalid condition
          */
         private void checkConditions(final Condition... conditions) {
             N.checkArgNotNull(conditions, "conditions");

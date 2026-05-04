@@ -29,9 +29,9 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>Truth table:
  * <ul>
- *   <li>NOT TRUE = FALSE</li>
- *   <li>NOT FALSE = TRUE</li>
- *   <li>NOT NULL = NULL (in SQL three-valued logic)</li>
+ *   <li>{@code NOT TRUE = FALSE}</li>
+ *   <li>{@code NOT FALSE = TRUE}</li>
+ *   <li>{@code NOT NULL = NULL} (in SQL three-valued logic)</li>
  * </ul>
  *
  * <p>Relationship to other composable operators:</p>
@@ -110,10 +110,12 @@ public class Not extends ComposableCell {
      * // Results in: NOT ((status = 'PENDING') OR (status = 'PROCESSING'))
      * }</pre>
      *
-     * @param cond the condition to be negated. Can be any type of condition
-     *                  including simple comparisons, complex composable conditions,
-     *                  or subquery conditions. Must not be null.
-     * @throws IllegalArgumentException if cond is null
+     * @param cond the condition to be negated. May be any composable condition,
+     *             including simple comparisons, logical junctions ({@link And}, {@link Or}),
+     *             or subquery conditions. Must not be {@code null} and must not be a
+     *             clause condition (such as {@link Where} or {@link Having}).
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond}
+     *             is a clause or join condition (ON/USING) that cannot be composed
      */
     public Not(final Condition cond) {
         super(Operator.NOT, validateComposableOperand(cond, "not"));

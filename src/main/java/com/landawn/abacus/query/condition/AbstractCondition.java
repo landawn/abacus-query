@@ -97,20 +97,11 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Creates a new AbstractCondition with the specified operator.
-     * The operator is immutable once set and defines the behavior of this condition.
+     * Creates a new {@code AbstractCondition} with the specified operator.
+     * The operator is immutable once set and defines the behaviour of this condition.
+     * Subclass constructors must supply a non-{@code null} operator.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // In a subclass constructor
-     * abstract class CustomCondition extends ComposableCondition {
-     *     CustomCondition() {
-     *         super(Operator.EQUAL);   // Sets the operator
-     *     }
-     * }
-     * }</pre>
-     *
-     * @param operator the operator for this condition (must not be null)
+     * @param operator the operator for this condition (must not be {@code null})
      */
     protected AbstractCondition(final Operator operator) {
         this.operator = N.requireNonNull(operator, "operator");
@@ -226,13 +217,13 @@ public abstract class AbstractCondition implements Condition {
      * <pre>{@code
      * formatParameter("John", NamingPolicy.NO_CHANGE);         // Returns: 'John'
      * formatParameter(123, NamingPolicy.NO_CHANGE);            // Returns: 123
-     * formatParameter(null, NamingPolicy.NO_CHANGE);           // Returns: null
+     * formatParameter(null, NamingPolicy.NO_CHANGE);           // Returns: null (Java null)
      * formatParameter(subCondition, NamingPolicy.NO_CHANGE);   // Returns: subCondition.toString(policy)
      * }</pre>
      *
-     * @param parameter the parameter value to convert
-     * @param namingPolicy the naming policy to apply to property names within conditions
-     * @return the string representation of the parameter, or null if parameter is null
+     * @param parameter the parameter value to convert; may be {@code null}
+     * @param namingPolicy the naming policy to apply to property names within nested {@link Condition}s
+     * @return the string representation of the parameter, or {@code null} if {@code parameter} is {@code null}
      */
     protected static String formatParameter(final Object parameter, final NamingPolicy namingPolicy) {
         if (parameter == null) {
@@ -398,15 +389,15 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Creates a comma-separated string of property names for ordering.
-     * This is an internal helper method used by OrderBy and GroupBy constructors.
+     * Creates a comma-separated string of property names for use in ORDER BY or GROUP BY clauses.
+     * This is an internal helper method used by {@link OrderBy} and {@link GroupBy} constructors.
      *
-     * <p>This method is package-private and not intended for direct use by application code.
-     * Use the public OrderBy constructors instead.</p>
+     * <p>This method is protected and not intended for direct use by application code.
+     * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propNames array of property names. Must not be null or empty.
-     * @return formatted string for ORDER BY clause
-     * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
+     * @param propNames array of property names. Must not be {@code null} or empty.
+     * @return a comma-separated string of property names suitable for use in a sort/grouping clause
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}/empty elements
      */
     protected static String createSortExpression(final String... propNames) {
         N.checkArgNotEmpty(propNames, "propNames");
@@ -434,16 +425,17 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Creates an ordering condition for a single property with direction.
-     * This is an internal helper method used by OrderBy and GroupBy constructors.
+     * Creates a sort expression for a single property with the given direction,
+     * for use in ORDER BY or GROUP BY clauses.
+     * This is an internal helper method used by {@link OrderBy} and {@link GroupBy} constructors.
      *
-     * <p>This method is package-private and not intended for direct use by application code.
-     * Use the public OrderBy constructors instead.</p>
+     * <p>This method is protected and not intended for direct use by application code.
+     * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propName the property name
-     * @param direction the sort direction
-     * @return formatted string for ORDER BY clause
-     * @throws IllegalArgumentException if propName is null/empty or direction is null
+     * @param propName the property name (must not be {@code null} or empty)
+     * @param direction the sort direction (must not be {@code null})
+     * @return a string of the form {@code "propName direction"} suitable for a sort/grouping clause
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty or {@code direction} is {@code null}
      */
     protected static String createSortExpression(final String propName, final SortDirection direction) {
         if (Strings.isEmpty(propName)) {
@@ -456,16 +448,18 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Creates an ordering condition for multiple properties with the same direction.
-     * This is an internal helper method used by OrderBy and GroupBy constructors.
+     * Creates a sort expression for multiple properties, all using the same direction,
+     * for use in ORDER BY or GROUP BY clauses.
+     * This is an internal helper method used by {@link OrderBy} and {@link GroupBy} constructors.
      *
-     * <p>This method is package-private and not intended for direct use by application code.
-     * Use the public OrderBy constructors instead.</p>
+     * <p>This method is protected and not intended for direct use by application code.
+     * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propNames collection of property names
-     * @param direction the sort direction
-     * @return formatted string for ORDER BY clause
-     * @throws IllegalArgumentException if propNames is null/empty, direction is null, or propNames contains null/empty elements
+     * @param propNames collection of property names (must not be {@code null} or empty)
+     * @param direction the sort direction to apply to all properties (must not be {@code null})
+     * @return a comma-separated string of {@code "propName direction"} entries
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, {@code direction} is {@code null},
+     *                                  or {@code propNames} contains {@code null}/empty elements
      */
     protected static String createSortExpression(final Collection<String> propNames, final SortDirection direction) {
         N.checkArgNotEmpty(propNames, "propNames");
@@ -499,15 +493,18 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Creates an ordering condition from a map of properties and their directions.
-     * This is an internal helper method used by OrderBy and GroupBy constructors.
+     * Creates a sort expression from a map of property names to their individual sort directions,
+     * for use in ORDER BY or GROUP BY clauses.
+     * This is an internal helper method used by {@link OrderBy} and {@link GroupBy} constructors.
      *
-     * <p>This method is package-private and not intended for direct use by application code.
-     * Use the public OrderBy constructors instead.</p>
+     * <p>This method is protected and not intended for direct use by application code.
+     * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.
+     * Use a {@link java.util.LinkedHashMap} to preserve the desired column order.</p>
      *
-     * @param orders map of property names to sort directions
-     * @return formatted string for ORDER BY clause
-     * @throws IllegalArgumentException if orders is null/empty, or contains null/empty keys or null values
+     * @param orders map of property names to their sort directions (must not be {@code null} or empty)
+     * @return a comma-separated string of {@code "propName direction"} entries in map iteration order
+     * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, or contains {@code null}/empty keys
+     *                                  or {@code null} values
      */
     protected static String createSortExpression(final Map<String, SortDirection> orders) {
         if (orders == null || orders.isEmpty()) {

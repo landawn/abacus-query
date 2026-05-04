@@ -41,15 +41,14 @@ import com.landawn.abacus.util.Strings;
  * 
  * <p>This class serves as the parent for specific junction types:
  * <ul>
- *   <li>{@link And} - combines conditions with composable AND (all must be true)</li>
- *   <li>{@link Or} - combines conditions with composable OR (at least one must be true)</li>
+ *   <li>{@link And} - combines conditions with logical AND (all must be true)</li>
+ *   <li>{@link Or} - combines conditions with logical OR (at least one must be true)</li>
  * </ul>
  * 
  * <p>Key features:
  * <ul>
  *   <li>Fixed after construction — no conditions can be added or removed after creation</li>
- *   <li>Deep copying support for safe condition reuse</li>
- *   <li>Automatic parentheses handling for correct precedence</li>
+ *   <li>Automatic parentheses handling for correct precedence in generated SQL</li>
  *   <li>Parameter collection from all nested conditions</li>
  * </ul>
  * 
@@ -122,8 +121,8 @@ public class Junction extends ComposableCondition {
      * }</pre>
      *
      * @param operator the composable operator to use (AND, OR, etc.). Must not be null.
-     * @param conditions the conditions to combine. Can be empty but not null.
-     * @throws IllegalArgumentException if any condition in the array is null
+     * @param conditions the conditions to combine. Can be empty but not {@code null}.
+     * @throws IllegalArgumentException if any condition in the array is {@code null}
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
@@ -149,8 +148,8 @@ public class Junction extends ComposableCondition {
      * }</pre>
      *
      * @param operator the composable operator to use (AND, OR, etc.). Must not be null.
-     * @param conditions the collection of conditions to combine. Can be empty but not null.
-     * @throws IllegalArgumentException if any condition in the collection is null
+     * @param conditions the collection of conditions to combine. Can be empty but not {@code null}.
+     * @throws IllegalArgumentException if any condition in the collection is {@code null}
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
