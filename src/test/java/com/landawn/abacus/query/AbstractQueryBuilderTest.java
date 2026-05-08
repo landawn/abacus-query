@@ -977,4 +977,60 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
         assertTrue(!sql.contains("last_name"));
         assertTrue(!sql.contains("id"));
     }
+
+    @com.landawn.abacus.annotation.Table(name = "frac_tbl")
+    public static class FractionalIdEntity {
+        @com.landawn.abacus.annotation.Id
+        private java.math.BigDecimal myKey;
+        private String myName;
+
+        public java.math.BigDecimal getMyKey() {
+            return myKey;
+        }
+
+        public FractionalIdEntity setMyKey(java.math.BigDecimal myKey) {
+            this.myKey = myKey;
+            return this;
+        }
+
+        public String getMyName() {
+            return myName;
+        }
+
+        public FractionalIdEntity setMyName(String myName) {
+            this.myName = myName;
+            return this;
+        }
+    }
+
+    @Test
+    public void testFix_insertEntity_doesNotSkipFractionalBigDecimalIdAsZero() {
+        // BigDecimal("0.5").longValue() == 0 (truncation), so the buggy check would
+        // wrongly treat 0.5 as a default/unset ID and omit it from the INSERT.
+        FractionalIdEntity entity = new FractionalIdEntity();
+        entity.setMyKey(new java.math.BigDecimal("0.5"));
+        entity.setMyName("Alice");
+
+        String sql = SqlBuilder.PSC.insert(entity).into("frac_tbl").build().query();
+
+        assertTrue(sql.contains("my_name"), "my_name should be included: " + sql);
+        assertTrue(sql.contains("my_key"), "Fractional BigDecimal id 0.5 must not be skipped as default: " + sql);
+    }
+
+    @Test
+    public void testFix_batchInsertEntities_doesNotSkipFractionalBigDecimalIdAsZero() {
+        // Same defect as above, but for the batch-insert code path that builds props from a collection.
+        FractionalIdEntity e1 = new FractionalIdEntity();
+        e1.setMyKey(new java.math.BigDecimal("0.5"));
+        e1.setMyName("Alice");
+
+        FractionalIdEntity e2 = new FractionalIdEntity();
+        e2.setMyKey(new java.math.BigDecimal("0.7"));
+        e2.setMyName("Bob");
+
+        String sql = SqlBuilder.PSC.batchInsert(java.util.Arrays.asList(e1, e2)).into("frac_tbl").build().query();
+
+        assertTrue(sql.contains("my_name"), "my_name should be included: " + sql);
+        assertTrue(sql.contains("my_key"), "Fractional BigDecimal ids must not be removed as all-zero: " + sql);
+    }
 }

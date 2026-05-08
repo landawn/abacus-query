@@ -5655,8 +5655,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             for (final String propName : propNames) {
                 propValue = beanInfo.getPropValue(entity, propName);
 
-                if (propValue == null || (!idPropNameList.isEmpty() && idPropNameList.contains(propName) && propValue instanceof Number
-                        && ((Number) propValue).longValue() == 0)) {
+                if (propValue == null || (!idPropNameList.isEmpty() && idPropNameList.contains(propName) && isDefaultIdPropValue(propValue))) {
                     continue; // skip null or zero id values
                 }
 
@@ -5727,8 +5726,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final List<String> nullPropToRemove = Stream.of(propNames).filter(propName -> Stream.of(newPropsList).allMatch(map -> {
             Object propValue = map.get(propName);
 
-            return propValue == null
-                    || (!idPropNameList.isEmpty() && idPropNameList.contains(propName) && propValue instanceof Number && ((Number) propValue).longValue() == 0);
+            return propValue == null || (!idPropNameList.isEmpty() && idPropNameList.contains(propName) && isDefaultIdPropValue(propValue));
         })).toList();
 
         if (N.notEmpty(nullPropToRemove)) {
