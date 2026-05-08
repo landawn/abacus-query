@@ -111,7 +111,7 @@ public final class QueryUtil {
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return an immutable map where keys are property names and values are tuples of (column name, isSimpleProperty)
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @deprecated for internal use only.
+     * @deprecated for internal use only. No public replacement is provided.
      */
     @Deprecated
     @Beta
@@ -219,9 +219,9 @@ public final class QueryUtil {
      * String upperColumn = propToColumnUpper.get("firstName");   // "FIRST_NAME"
      * }</pre>
      *
-     * @param entityClass the entity class to analyze
+     * @param entityClass the entity class to analyze (may be {@code null})
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
-     * @return an immutable map of property names to column names, or empty map if {@code entityClass} is {@code null} or {@code Map}
+     * @return an immutable map of property names to column names, or an empty map if {@code entityClass} is {@code null} or assignable to {@link Map}
      */
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
@@ -541,7 +541,7 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @return an immutable list of ID field names, or empty list if no ID fields are defined
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @deprecated for internal use only.
+     * @deprecated for internal use only. No public replacement is provided.
      */
     @Deprecated
     @Internal

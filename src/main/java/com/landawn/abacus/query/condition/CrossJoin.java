@@ -53,7 +53,7 @@ import java.util.Collection;
  * // CROSS JOIN with condition (unusual but supported)
  * CrossJoin filtered = new CrossJoin("categories",
  *     Filters.equal("active", true));
- * // Generates: CROSS JOIN categories (active = true)
+ * // Generates: CROSS JOIN categories active = true
  * // Note: Functionally equivalent to INNER JOIN with the condition
  *
  * // CROSS JOIN with Expression
@@ -100,7 +100,7 @@ public class CrossJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     public CrossJoin(final String joinEntity) {
         super(Operator.CROSS_JOIN, joinEntity);
@@ -131,13 +131,13 @@ public class CrossJoin extends Join {
      *         new On("i.warehouse_id", "w.id"),
      *         Filters.equal("i.active", true)
      *     ));
-     * // Generates: CROSS JOIN inventory i (ON i.warehouse_id = w.id) AND (i.active = true)
+     * // Generates: CROSS JOIN inventory i ((ON i.warehouse_id = w.id) AND (i.active = true))
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     public CrossJoin(final String joinEntity, final Condition cond) {
         super(Operator.CROSS_JOIN, joinEntity, cond);
@@ -153,7 +153,7 @@ public class CrossJoin extends Join {
      * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
      * CrossJoin join = new CrossJoin(tables,
      *     Filters.equal("active", true));
-     * // Generates: CROSS JOIN (sizes s, colors c, styles st) (active = true)
+     * // Generates: CROSS JOIN (sizes s, colors c, styles st) active = true
      *
      * // Using ON conditions (makes it similar to INNER JOIN)
      * List<String> relatedTables = Arrays.asList("table1 t1", "table2 t2");
@@ -171,7 +171,7 @@ public class CrossJoin extends Join {
      * @param joinEntities the collection of tables or entities to join with.
      * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if joinEntities is null or empty
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
      */
     public CrossJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.CROSS_JOIN, joinEntities, cond);

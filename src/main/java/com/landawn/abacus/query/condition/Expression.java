@@ -219,18 +219,22 @@ public class Expression extends ComposableCondition {
     /**
      * Creates an equality expression between a literal and a value.
      * This is useful for building dynamic SQL conditions programmatically.
+     * If {@code value} is {@code null}, the result is rendered as {@code "literal IS NULL"} instead of {@code "literal = null"}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String expr = Expression.equal("age", 25);
      * // Returns: "age = 25"
-     * 
+     *
      * String expr2 = Expression.equal("status", "active");
      * // Returns: "status = 'active'"
+     *
+     * String expr3 = Expression.equal("middle_name", null);
+     * // Returns: "middle_name IS NULL"
      * }</pre>
      *
      * @param literal the left-hand side of the equality
-     * @param value the right-hand side value
+     * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
      * @return a string representation of the equality expression
      */
     public static String equal(final String literal, final Object value) { //NOSONAR
@@ -258,18 +262,22 @@ public class Expression extends ComposableCondition {
 
     /**
      * Creates a not-equal expression between a literal and a value.
+     * If {@code value} is {@code null}, the result is rendered as {@code "literal IS NOT NULL"} instead of {@code "literal != null"}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String expr = Expression.notEqual("status", "INACTIVE");
      * // Returns: "status != 'INACTIVE'"
-     * 
+     *
      * String expr2 = Expression.notEqual("count", 0);
      * // Returns: "count != 0"
+     *
+     * String expr3 = Expression.notEqual("email", null);
+     * // Returns: "email IS NOT NULL"
      * }</pre>
      *
      * @param literal the left-hand side of the inequality
-     * @param value the right-hand side value
+     * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
      * @return a string representation of the not-equal expression
      */
     public static String notEqual(final String literal, final Object value) {

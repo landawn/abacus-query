@@ -101,8 +101,9 @@ public sealed class NamedProperty permits NP {
      * // However, prefer using: NamedProperty.of("age") for caching benefits
      * }</pre>
      *
-     * @param propName the property name. Must not be null or empty.
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @param propName the property name; must not be {@code null} or empty
+     * @throws NullPointerException if {@code propName} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is empty
      */
     public NamedProperty(final String propName) {
         this.propName = N.requireNonNull(propName, "propName");
@@ -346,8 +347,8 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("status").notEqual("deleted");   // status <> 'deleted'
-     * NamedProperty.of("count").notEqual(0);            // count <> 0
+     * NamedProperty.of("status").notEqual("deleted");   // status != 'deleted'
+     * NamedProperty.of("count").notEqual(0);            // count != 0
      * }</pre>
      *
      * @param value the value to compare against. Can be of any type compatible with the property.
@@ -365,8 +366,8 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("status").ne("deleted");   // status <> 'deleted'
-     * NamedProperty.of("count").ne(0);            // count <> 0
+     * NamedProperty.of("status").ne("deleted");   // status != 'deleted'
+     * NamedProperty.of("count").ne(0);            // count != 0
      * }</pre>
      *
      * @param value the value to compare against

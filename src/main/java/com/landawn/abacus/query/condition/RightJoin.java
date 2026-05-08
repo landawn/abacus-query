@@ -58,7 +58,7 @@ import java.util.Collection;
  *         new On("order_items.product_id", "p.id"),
  *         Filters.equal("p.active", true)
  *     ));
- * // Generates: RIGHT JOIN products p (ON order_items.product_id = p.id) AND (p.active = true)
+ * // Generates: RIGHT JOIN products p ((ON order_items.product_id = p.id) AND (p.active = true))
  *
  * // Using Expression for custom join logic
  * RightJoin exprJoin = new RightJoin("departments",
@@ -135,7 +135,7 @@ public class RightJoin extends Join {
      *         Filters.equal("c.active", true),
      *         Filters.greaterThan("c.created_date", "2023-01-01")
      *     ));
-     * // Generates: RIGHT JOIN categories c (ON products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01')
+     * // Generates: RIGHT JOIN categories c ((ON products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * RightJoin exprJoin = new RightJoin("products p",
@@ -166,7 +166,7 @@ public class RightJoin extends Join {
      *         new On("p.category_id", "c.id"),
      *         new On("p.subcategory_id", "sc.id")
      *     ));
-     * // Generates: RIGHT JOIN (categories c, subcategories sc) (ON p.category_id = c.id) AND (ON p.subcategory_id = sc.id)
+     * // Generates: RIGHT JOIN (categories c, subcategories sc) ((ON p.category_id = c.id) AND (ON p.subcategory_id = sc.id))
      *
      * // Using Expression for multiple tables
      * RightJoin exprJoin = new RightJoin(tables,

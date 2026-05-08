@@ -95,8 +95,8 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END
      * }</pre>
      *
-     * @param cond the grouping condition or expression. Must not be null.
-     * @throws IllegalArgumentException if cond is null
+     * @param cond the grouping condition or expression. Must not be {@code null}.
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public GroupBy(final Condition cond) {
         super(Operator.GROUP_BY, cond);
@@ -122,8 +122,8 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY region, product_category, year
      * }</pre>
      *
-     * @param propNames the property names to group by, in order. Must not be null or empty.
-     * @throws IllegalArgumentException if propNames is null, empty, or contains null/empty elements
+     * @param propNames the property names to group by, in order. Must not be {@code null} or empty.
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
      */
     public GroupBy(final String... propNames) {
         this(Filters.expr(AbstractCondition.createSortExpression(propNames)));
@@ -144,9 +144,9 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY order_date ASC
      * }</pre>
      *
-     * @param propName the property name to group by. Must not be null or empty.
-     * @param direction the sort direction (ASC or DESC). Must not be null.
-     * @throws IllegalArgumentException if propName is null/empty or direction is null
+     * @param propName the property name to group by. Must not be {@code null} or empty.
+     * @param direction the sort direction (ASC or DESC). Must not be {@code null}.
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code direction} is {@code null}
      */
     public GroupBy(final String propName, final SortDirection direction) {
         this(Filters.expr(AbstractCondition.createSortExpression(propName, direction)));
@@ -170,9 +170,10 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY type ASC, subtype ASC (order preserved)
      * }</pre>
      *
-     * @param propNames the collection of property names to group by. Must not be null or empty.
-     * @param direction the sort direction to apply to all properties. Must not be null.
-     * @throws IllegalArgumentException if propNames is null/empty, direction is null, or propNames contains null/empty elements
+     * @param propNames the collection of property names to group by. Must not be {@code null} or empty.
+     * @param direction the sort direction to apply to all properties. Must not be {@code null}.
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements,
+     *                                  or if {@code direction} is {@code null}
      */
     public GroupBy(final Collection<String> propNames, final SortDirection direction) {
         this(Filters.expr(AbstractCondition.createSortExpression(propNames, direction)));
@@ -203,9 +204,10 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY region ASC, total_sales DESC
      * }</pre>
      *
-     * @param orders a map of property names to their sort directions. Should be a LinkedHashMap
-     *               to maintain order. Must not be null or empty.
-     * @throws IllegalArgumentException if orders is null/empty, or contains null/empty keys or null values
+     * @param orders a map of property names to their sort directions. Should be a {@code LinkedHashMap}
+     *               to maintain order. Must not be {@code null} or empty.
+     * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null} or empty keys
+     *                                  or {@code null} values
      */
     public GroupBy(final Map<String, SortDirection> orders) {
         this(Filters.expr(AbstractCondition.createSortExpression(orders)));

@@ -27,15 +27,15 @@ import com.landawn.abacus.util.Strings;
  * This class supports both simple LIMIT (count only) and LIMIT with OFFSET for pagination.
  * The LIMIT clause is essential for controlling result set size and implementing efficient
  * data retrieval strategies, especially for large datasets.
- * 
+ *
  * <p>This class provides three ways to create LIMIT clauses:
  * <ul>
- *   <li>Simple limit with count only</li>
- *   <li>Limit with count and offset for pagination</li>
- *   <li>Custom expression for database-specific syntax</li>
+ *   <li>Simple limit with count only — produces {@code LIMIT n}</li>
+ *   <li>Limit with count and offset for pagination — produces {@code LIMIT n OFFSET m}</li>
+ *   <li>Custom expression for database-specific syntax (e.g., MySQL's {@code LIMIT m, n}) via {@link #Limit(String)}</li>
  * </ul>
  *
- * <p>All APIs consistently use {@code (count, offset)} parameter order:
+ * <p>All numeric APIs consistently use {@code (count, offset)} parameter order:
  * {@link com.landawn.abacus.query.AbstractQueryBuilder#limit(int, int)},
  * {@link Criteria.Builder#limit(int, int)}, and
  * {@link com.landawn.abacus.query.DynamicQuery.Builder#limit(int, int)}.</p>
@@ -52,8 +52,9 @@ import com.landawn.abacus.util.Strings;
  *
  * // Custom expression for specific databases
  * Limit limit3 = new Limit("10 OFFSET 20");
+ * // SQL: LIMIT 10 OFFSET 20
  * }</pre>
- * 
+ *
  * @see Clause
  * @see AbstractCondition
  */
@@ -98,17 +99,23 @@ public class Limit extends Clause {
 
     /**
      * Creates a LIMIT clause with both count and offset.
+     * When {@code offset} is {@code 0}, the rendered SQL omits the {@code OFFSET} clause and produces
+     * {@code LIMIT count} only.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Page 3: Results 21-30 (count=10, offset=20)
      * Limit page3 = new Limit(10, 20);
      * // SQL: LIMIT 10 OFFSET 20
+     *
+     * // offset == 0 omits the OFFSET clause
+     * Limit firstPage = new Limit(10, 0);
+     * // SQL: LIMIT 10
      * }</pre>
      *
      * @param count the maximum number of rows to return. Must be non-negative.
      * @param offset the number of rows to skip before returning results. Must be non-negative.
-     * @throws IllegalArgumentException if offset or count is negative
+     * @throws IllegalArgumentException if {@code offset} or {@code count} is negative
      */
     public Limit(final int count, final int offset) {
         super(Operator.LIMIT, Expression.of(offset == 0 ? String.valueOf(N.checkArgNotNegative(count, "count"))
@@ -123,20 +130,31 @@ public class Limit extends Clause {
      * This constructor allows for custom LIMIT expressions to accommodate database-specific
      * syntax or complex limit scenarios that can't be expressed with simple count/offset.
      *
+     * <p>If the expression starts with a digit, {@code '?'}, {@code ':'}, or <code>"#{"</code>, the literal
+     * {@code "LIMIT "} prefix is added automatically; otherwise the expression is used as-is.
+     * After this normalization, {@link #getExpression()} returns the prefixed form and
+     * {@link #toString(NamingPolicy)} renders it directly without inserting an additional {@code LIMIT}.</p>
+     *
+     * <p>Note: {@link #getCount()} returns {@link Integer#MAX_VALUE} and {@link #getOffset()} returns
+     * {@code 0} when the instance is constructed via this constructor, regardless of the expression contents.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Standard LIMIT with OFFSET
+     * // Standard LIMIT with OFFSET (numeric prefix triggers automatic "LIMIT " prepend)
      * Limit standard = new Limit("10 OFFSET 20");
+     * // toString() -> "LIMIT 10 OFFSET 20"
      *
      * // MySQL-style limit (offset, count)
      * Limit mysql = new Limit("20, 10");
+     * // toString() -> "LIMIT 20, 10"
      *
-     * // Database-specific syntax (e.g., Firebird)
+     * // Database-specific syntax (e.g., Firebird) - non-numeric prefix kept as-is
      * Limit custom = new Limit("FIRST 10 SKIP 20");
+     * // toString() -> "FIRST 10 SKIP 20"
      * }</pre>
      *
-     * @param expr the custom LIMIT expression as a string. Must not be null or empty.
-     * @throws IllegalArgumentException if expr is null or empty
+     * @param expr the custom LIMIT expression as a string. Must not be {@code null}, empty, or blank.
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public Limit(final String expr) {
         super(Operator.LIMIT, Expression.of(normalizeConditionExpr(expr)));
@@ -284,12 +302,14 @@ public class Limit extends Clause {
 
     /**
      * Checks if this LIMIT clause is equal to another object.
-     * Two Limit instances are considered equal if:
-     * - Both have the same custom expression, or
-     * - Both have the same count and offset values
-     * 
+     * Two Limit instances are considered equal if either:
+     * <ul>
+     *   <li>both have a non-empty custom expression and the expressions are equal, or</li>
+     *   <li>neither has a custom expression and both have the same count and offset values.</li>
+     * </ul>
+     *
      * @param obj the object to compare with
-     * @return {@code true} if the object is a Limit with the same expr or count/offset values
+     * @return {@code true} if the object is a Limit with the same {@code expr} or matching count/offset values
      */
     @Override
     public boolean equals(final Object obj) {

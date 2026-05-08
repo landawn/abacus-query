@@ -33,7 +33,8 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Important notes:</p>
  * <ul>
- *   <li>The range is inclusive in BETWEEN, so NOT BETWEEN excludes both boundaries</li>
+ *   <li>BETWEEN is inclusive on both sides, so NOT BETWEEN excludes rows whose value equals
+ *       either {@code minValue} or {@code maxValue}</li>
  *   <li>Works with numbers, strings, dates, and other comparable types</li>
  *   <li>Can use expressions or subqueries as range boundaries</li>
  *   <li>NULL values: if the column value or either boundary is NULL, the result is NULL (not true)</li>
@@ -74,8 +75,10 @@ public class NotBetween extends AbstractBetween {
 
     /**
      * Creates a NOT BETWEEN condition for the specified property and range.
-     * The condition will match values that are less than minValue OR greater than maxValue.
-     * Both boundaries are excluded from the match (opposite of BETWEEN's inclusive behavior).
+     * The condition matches rows where the property value is less than {@code minValue}
+     * OR greater than {@code maxValue} — i.e., outside the inclusive {@code [minValue, maxValue]}
+     * range. Values exactly equal to either boundary do not match (because they are inside the
+     * inclusive BETWEEN range, and NOT BETWEEN is its negation).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -90,9 +93,9 @@ public class NotBetween extends AbstractBetween {
      * // Matches: Sunday (1) and Saturday (7)
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
-     * @param minValue the minimum value of the range to exclude (can be null, literal value, or subquery)
-     * @param maxValue the maximum value of the range to exclude (can be null, literal value, or subquery)
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param minValue the lower bound of the range to exclude; may be a literal value or a {@link SubQuery}
+     * @param maxValue the upper bound of the range to exclude; may be a literal value or a {@link SubQuery}
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {

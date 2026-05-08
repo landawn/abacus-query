@@ -79,20 +79,22 @@ import com.landawn.abacus.util.u.Optional;
 import com.landawn.abacus.util.stream.Stream;
 
 /**
- * A fluent SQL builder for constructing SQL statements programmatically.
- * 
- * <p>This builder provides a fluent way to construct SQL statements with support for:</p>
+ * Base class for fluent SQL builders. Provides clause-by-clause construction of SQL statements
+ * (SELECT, INSERT, UPDATE, DELETE) with support for:
  * <ul>
- *   <li>SELECT, INSERT, UPDATE, DELETE operations</li>
  *   <li>Multiple naming policies (snake_case, UPPER_CASE, camelCase)</li>
- *   <li>Parameterized and named SQL generation</li>
- *   <li>Entity class mapping with annotations</li>
- *   <li>Complex joins, subqueries, and conditions</li>
+ *   <li>Parameterized ({@code ?}) and named ({@code :name}, {@code #{name}}) parameter styles</li>
+ *   <li>Entity class mapping driven by annotations</li>
+ *   <li>Joins, subqueries, set operations ({@code UNION}, {@code INTERSECT}, etc.) and arbitrary conditions</li>
  * </ul>
- * 
- * <p>The builder must be finalized by calling {@code build()} to generate
- * the SQL string and release resources.</p>
- * 
+ *
+ * <p>Concrete subclasses live in {@link com.landawn.abacus.query.SqlBuilder}. Pick a subclass
+ * by parameter style and naming policy (see {@link com.landawn.abacus.query.SqlBuilder} for the full table).</p>
+ *
+ * <p>Instances are <b>not thread-safe</b>; build one per thread or per query and always call
+ * {@link #build()} to obtain the {@link SP} pair and release pooled resources. After {@code build()}
+ * the builder is closed and any further use throws {@link IllegalStateException}.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple SELECT
@@ -101,17 +103,17 @@ import com.landawn.abacus.util.stream.Stream;
  *                 .where(Filters.equal("id", 1))
  *                 .build().query();
  * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = ?
- * 
+ *
  * // INSERT with entity
- * String sql = PSC.insert(account).into("account").build().query();
- * 
+ * String sql2 = PSC.insert(account).into("account").build().query();
+ *
  * // UPDATE with conditions
- * String sql = PSC.update("account")
- *                 .set("name", "status")
- *                 .where(Filters.equal("id", 1))
- *                 .build().query();
+ * String sql3 = PSC.update("account")
+ *                  .set("name", "status")
+ *                  .where(Filters.equal("id", 1))
+ *                  .build().query();
  * }</pre>
- * 
+ *
  * <p>The builder supports different naming policies through its subclasses:</p>
  * <ul>
  *   <li>{@link PSC} - Parameterized SQL with snake_case naming</li>
@@ -121,15 +123,16 @@ import com.landawn.abacus.util.stream.Stream;
  *   <li>{@link NAC} - Named SQL with UPPER_CASE naming</li>
  *   <li>{@link NLC} - Named SQL with camelCase naming</li>
  * </ul>
- * 
+ *
+ * @param <This> the concrete subclass type, used as the return type for chained calls (CRTP/self-type)
+ *
+ * @see com.landawn.abacus.query.SqlBuilder
  * @see com.landawn.abacus.annotation.ReadOnly
  * @see com.landawn.abacus.annotation.ReadOnlyId
  * @see com.landawn.abacus.annotation.NonUpdatable
  * @see com.landawn.abacus.annotation.Transient
  * @see com.landawn.abacus.annotation.Table
  * @see com.landawn.abacus.annotation.Column
- * 
- * @param <This> the concrete implementation type that extends this builder for method chaining
  */
 @SuppressWarnings("deprecation")
 public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<This>> { // NOSONAR
@@ -138,7 +141,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractQueryBuilder.class);
 
-    /** Constant for selecting all columns in SQL queries. */
+    /** Constant for the {@code ALL} select modifier (the SQL default; opposite of {@code DISTINCT}). */
     public static final String ALL = SK.ALL;
 
     /** Constant for the TOP clause in SQL queries. */
@@ -4042,19 +4045,32 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets columns for UPDATE operation with a single expression.
-     * 
+     * Sets a single column or raw assignment expression for an UPDATE operation.
+     *
+     * <p>If {@code expr} contains an {@code =} sign, it is appended verbatim as a raw assignment.
+     * Otherwise, it is treated as a column name and a parameter placeholder
+     * ({@code = ?}, {@code = :name}, or {@code = #{name}}) is appended based on the SQL policy.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * // Raw assignment expression (already contains '='):
      * String sql = PSC.update("users")
      *                 .set("name = 'John'")
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: UPDATE users SET name = 'John' WHERE id = ?
+     *
+     * // Column name (placeholder is generated):
+     * String sql2 = PSC.update("users")
+     *                  .set("status")
+     *                  .where(Filters.equal("id", 1))
+     *                  .build().query();
+     * // Output: UPDATE users SET status = ? WHERE id = ?
      * }</pre>
-     * 
-     * @param expr the SET expression
+     *
+     * @param expr a column name (placeholder will be appended) or a complete {@code col = value} assignment
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This set(final String expr) {
         return set(Array.asList(expr));
@@ -4563,9 +4579,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Prints the generated SQL to standard output.
-     * This is useful for debugging and development.
-     * 
+     * Builds the SQL and prints the resulting query string to standard output.
+     * This finalizes the builder (it cannot be reused after this call) and is intended for
+     * debugging and development.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * PSC.select("*")
@@ -4574,6 +4591,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *    .println();
      * // Prints: SELECT * FROM account WHERE age BETWEEN ? AND ?
      * }</pre>
+     *
+     * @throws IllegalStateException if the builder has already been closed by a prior call to {@code build()}
      */
     @Beta
     public void println() {

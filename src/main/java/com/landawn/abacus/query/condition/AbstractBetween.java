@@ -33,7 +33,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *
  * @see Between
  * @see NotBetween
- * @see AbstractCondition
+ * @see ComposableCondition
  */
 public abstract class AbstractBetween extends ComposableCondition {
 
@@ -56,8 +56,10 @@ public abstract class AbstractBetween extends ComposableCondition {
      *
      * @param propName the property/column name (must not be {@code null} or empty)
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
-     * @param minValue the minimum value (inclusive); may be a literal value or a {@link SubQuery}
-     * @param maxValue the maximum value (inclusive); may be a literal value or a {@link SubQuery}
+     * @param minValue the lower bound of the range (inclusive for {@code BETWEEN}); may be a
+     *                 literal value or a {@link SubQuery}
+     * @param maxValue the upper bound of the range (inclusive for {@code BETWEEN}); may be a
+     *                 literal value or a {@link SubQuery}
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
@@ -86,7 +88,8 @@ public abstract class AbstractBetween extends ComposableCondition {
     }
 
     /**
-     * Gets the minimum value of the range (inclusive lower bound).
+     * Gets the lower bound of the range. For {@link Between} this is the inclusive lower bound;
+     * for {@link NotBetween} this is the lower bound of the excluded range.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -95,7 +98,7 @@ public abstract class AbstractBetween extends ComposableCondition {
      * }</pre>
      *
      * @param <T> the expected type of the minimum value
-     * @return the minimum value (inclusive)
+     * @return the configured minimum value (literal or {@link SubQuery})
      */
     @SuppressWarnings("unchecked")
     public <T> T getMinValue() {
@@ -103,7 +106,8 @@ public abstract class AbstractBetween extends ComposableCondition {
     }
 
     /**
-     * Gets the maximum value of the range (inclusive upper bound).
+     * Gets the upper bound of the range. For {@link Between} this is the inclusive upper bound;
+     * for {@link NotBetween} this is the upper bound of the excluded range.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -112,7 +116,7 @@ public abstract class AbstractBetween extends ComposableCondition {
      * }</pre>
      *
      * @param <T> the expected type of the maximum value
-     * @return the maximum value (inclusive)
+     * @return the configured maximum value (literal or {@link SubQuery})
      */
     @SuppressWarnings("unchecked")
     public <T> T getMaxValue() {

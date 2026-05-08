@@ -120,9 +120,10 @@ public class Junction extends ComposableCondition {
      * );
      * }</pre>
      *
-     * @param operator the composable operator to use (AND, OR, etc.). Must not be null.
-     * @param conditions the conditions to combine. Can be empty but not {@code null}.
-     * @throws IllegalArgumentException if any condition in the array is {@code null}
+     * @param operator the composable operator to use (AND, OR, etc.). Must not be {@code null}.
+     * @param conditions the conditions to combine; may be {@code null} or empty (treated as no conditions)
+     * @throws NullPointerException if {@code operator} is {@code null}
+     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
@@ -147,9 +148,10 @@ public class Junction extends ComposableCondition {
      * Junction junction = new Junction(Operator.AND, conditions);
      * }</pre>
      *
-     * @param operator the composable operator to use (AND, OR, etc.). Must not be null.
-     * @param conditions the collection of conditions to combine. Can be empty but not {@code null}.
-     * @throws IllegalArgumentException if any condition in the collection is {@code null}
+     * @param operator the composable operator to use (AND, OR, etc.). Must not be {@code null}.
+     * @param conditions the collection of conditions to combine; may be {@code null} or empty (treated as no conditions)
+     * @throws NullPointerException if {@code operator} is {@code null}
+     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
@@ -230,11 +232,13 @@ public class Junction extends ComposableCondition {
 
     /**
      * Converts this junction to its string representation according to the specified naming policy.
-     * The output format wraps each condition in parentheses and joins them with the operator.
-     * This ensures proper precedence in complex composable expressions.
-     * 
-     * @param namingPolicy the naming policy to apply to property names
-     * @return the string representation with proper parentheses and spacing
+     * Each contained condition is wrapped in parentheses, joined by the junction operator, and the
+     * entire result is itself wrapped in an outer pair of parentheses (e.g.
+     * {@code "((cond1) AND (cond2) AND (cond3))"}). This ensures proper precedence in nested
+     * composable expressions. Returns an empty string if the junction has no conditions.
+     *
+     * @param namingPolicy the naming policy to apply to property names within each condition
+     * @return the string representation with proper parentheses and spacing, or empty string if no conditions
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {

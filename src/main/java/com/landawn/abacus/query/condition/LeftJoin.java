@@ -64,7 +64,7 @@ import java.util.Collection;
  *         Filters.equal("oi.status", "active"),
  *         Filters.greaterThan("oi.quantity", 0)
  *     ));
- * // Generates: LEFT JOIN order_items oi (ON o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0)
+ * // Generates: LEFT JOIN order_items oi ((ON o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0))
  *
  * // Using Expression for custom join logic
  * LeftJoin exprJoin = new LeftJoin("orders o",
@@ -141,7 +141,7 @@ public class LeftJoin extends Join {
      *         Filters.equal("oi.status", "active"),
      *         Filters.greaterThan("oi.created_date", "2023-01-01")
      *     ));
-     * // Generates: LEFT JOIN order_items oi (ON orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01')
+     * // Generates: LEFT JOIN order_items oi ((ON orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * LeftJoin exprJoin = new LeftJoin("orders o",
@@ -172,7 +172,7 @@ public class LeftJoin extends Join {
      *         new On("c.id", "o.customer_id"),
      *         new On("o.id", "oi.order_id")
      *     ));
-     * // Generates: LEFT JOIN (orders o, order_items oi) (ON c.id = o.customer_id) AND (ON o.id = oi.order_id)
+     * // Generates: LEFT JOIN (orders o, order_items oi) ((ON c.id = o.customer_id) AND (ON o.id = oi.order_id))
      *
      * // Using Expression for multiple tables
      * LeftJoin exprJoin = new LeftJoin(tables,

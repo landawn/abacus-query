@@ -59,7 +59,7 @@ package com.landawn.abacus.query.condition;
  * @see NotExists
  * @see SubQuery
  * @see ComposableCell
- * @see In
+ * @see InSubQuery
  */
 public class Exists extends ComposableCell {
 

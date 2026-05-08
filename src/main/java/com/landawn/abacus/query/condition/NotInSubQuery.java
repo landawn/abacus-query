@@ -80,9 +80,10 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)
-     * @param subQuery the subquery that returns the values to check against (must not be {@code null})
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code subQuery} is
-     *             {@code null}
+     * @param subQuery the subquery that returns the values to check against (must not be {@code null});
+     *            if it is a structured subquery, it must select exactly one column
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, if {@code subQuery} is
+     *             {@code null}, or if the subquery is structured and selects a number of columns other than 1
      */
     public NotInSubQuery(final String propName, final SubQuery subQuery) {
         super(propName, Operator.NOT_IN, subQuery);
@@ -109,11 +110,12 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * }</pre>
      *
      * @param propNames collection of property names to check against the subquery results (must not be {@code null}
-     *            or empty)
-     * @param subQuery the subquery that returns the values to check against (must not be {@code null}). It must return
-     *            the same number of columns as {@code propNames.size()}.
+     *            or empty). Their order must match the column order in the subquery.
+     * @param subQuery the subquery that returns the values to check against (must not be {@code null}).
+     *            If it is a structured subquery, it must select exactly {@code propNames.size()} columns.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is {@code null}/empty,
-     *             or if {@code subQuery} is {@code null}
+     *             if {@code subQuery} is {@code null}, or if the subquery is structured and its number of selected
+     *             columns does not match {@code propNames.size()}
      */
     public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(propNames, Operator.NOT_IN, subQuery);

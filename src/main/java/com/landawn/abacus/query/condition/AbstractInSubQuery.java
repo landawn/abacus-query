@@ -57,10 +57,15 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     /**
      * Creates a condition for a single property.
      *
-     * @param propName the property/column name (must not be null or empty)
+     * <p>If the subquery is a structured subquery (i.e. it exposes selected property names via
+     * {@link SubQuery#getSelectPropNames()}), it must select exactly one column. Raw SQL subqueries
+     * are not validated for column arity.</p>
+     *
+     * @param propName the property/column name (must not be {@code null} or empty)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
-     * @param subQuery the subquery (must not be null)
-     * @throws IllegalArgumentException if propName is null/empty or subQuery is null
+     * @param subQuery the subquery (must not be {@code null})
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, if {@code subQuery} is
+     *             {@code null}, or if the subquery is structured and selects a number of columns other than 1
      */
     protected AbstractInSubQuery(final String propName, final Operator operator, final SubQuery subQuery) {
         super(operator);
@@ -76,10 +81,16 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     /**
      * Creates a condition for multiple properties.
      *
-     * @param propNames the property/column names (must not be null or empty)
+     * <p>If the subquery is a structured subquery (i.e. it exposes selected property names via
+     * {@link SubQuery#getSelectPropNames()}), the number of selected columns must match
+     * {@code propNames.size()}. Raw SQL subqueries are not validated for column arity.</p>
+     *
+     * @param propNames the property/column names (must not be {@code null} or empty)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
-     * @param subQuery the subquery (must not be null)
-     * @throws IllegalArgumentException if propNames is null/empty, any element is null/empty, or subQuery is null
+     * @param subQuery the subquery (must not be {@code null})
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is
+     *             {@code null}/empty, if {@code subQuery} is {@code null}, or if the subquery is structured and
+     *             its number of selected columns does not match {@code propNames.size()}
      */
     protected AbstractInSubQuery(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
         super(operator);

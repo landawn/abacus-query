@@ -530,16 +530,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for a single column.
-         * 
+         *
          * <p>This method initializes an INSERT statement for one column. The column name will be
-         * converted according to the snake_case naming policy.</p>
-         * 
+         * converted according to the snake_case naming policy. A {@code ?} placeholder is generated
+         * for the value when {@link #into(String)} is called.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.insert("firstName")
          *                  .into("account")
          *                  .build().query();
-         * // Output: INSERT INTO account (first_name) VALUES ('John')
+         * // Output: INSERT INTO account (first_name) VALUES (?)
          * }</pre>
          *
          * @param expr the column name or expression
@@ -554,16 +555,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for multiple columns.
-         * 
+         *
          * <p>This method initializes an INSERT statement for multiple columns. All column names
-         * will be converted according to the snake_case naming policy.</p>
-         * 
+         * will be converted according to the snake_case naming policy. A {@code ?} placeholder is
+         * generated for each column when {@link #into(String)} is called.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.insert("firstName", "lastName", "email")
          *                  .into("account")
          *                  .build().query();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@email.com')
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the column names to insert
@@ -583,17 +585,18 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for a collection of columns.
-         * 
+         *
          * <p>This method is useful when column names are determined dynamically. The collection
-         * can contain property names that will be converted to column names.</p>
-         * 
+         * can contain property names that will be converted to column names. A {@code ?} placeholder
+         * is generated for each column when {@link #into(String)} is called.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = SCSB.insert(columns)
          *                  .into("account")
          *                  .build().query();
-         * // Output: INSERT INTO account (first_name, last_name, email) VALUES ('John', 'Doe', 'john@email.com')
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the collection of column names to insert
@@ -1736,26 +1739,25 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         }
 
         /**
-         * Parses a condition into SQL with entity class context.
-         * 
-         * <p>This method is used to generate SQL fragments for conditions only, without
-         * building a complete SQL statement. It's useful for debugging conditions or
-         * building dynamic query parts that will be combined later.</p>
-         * 
+         * Renders a condition as a standalone SQL fragment, using the given entity class for column-name mapping.
+         *
+         * <p>This method does not produce a complete SQL statement; it is intended for rendering condition
+         * fragments that will be embedded into a larger query, or for debugging condition output.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Condition cond = Filters.and(
-         *     Filters.equal("status", "'ACTIVE'"),
+         *     Filters.equal("status", "ACTIVE"),
          *     Filters.greaterThan("balance", 1000)
          * );
          * String sql = SCSB.parse(cond, Account.class).build().query();
-         * // Output: status = 'ACTIVE' AND balance > 1000
+         * // Output: ((status = 'ACTIVE') AND (balance > 1000))
          * }</pre>
          *
-         * @param cond the condition to parse
-         * @param entityClass the entity class for property mapping (can be null)
-         * @return a new SqlBuilder instance containing the condition SQL
-         * @throws IllegalArgumentException if cond is null
+         * @param cond the condition to render (must not be {@code null})
+         * @param entityClass the entity class for property-to-column name mapping (may be {@code null})
+         * @return a new SqlBuilder instance containing the rendered condition SQL
+         * @throws IllegalArgumentException if {@code cond} is {@code null}
          */
         public static SqlBuilder parse(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
@@ -1820,16 +1822,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for a single column.
-         * 
+         *
          * <p>This method initializes an INSERT statement for one column. The column name will be
-         * converted to SCREAMING_SNAKE_CASE according to the naming policy.</p>
-         * 
+         * converted to SCREAMING_SNAKE_CASE according to the naming policy. A {@code ?} placeholder
+         * is generated for the value when {@link #into(String)} is called.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.insert("firstName")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME) VALUES ('John')
+         * // Output: INSERT INTO USERS (FIRST_NAME) VALUES (?)
          * }</pre>
          *
          * @param expr the column name or expression to insert
@@ -1844,16 +1847,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for multiple columns.
-         * 
+         *
          * <p>This method initializes an INSERT statement for multiple columns. All column names
-         * will be converted to SCREAMING_SNAKE_CASE according to the naming policy.</p>
-         * 
+         * will be converted to SCREAMING_SNAKE_CASE according to the naming policy. A {@code ?}
+         * placeholder is generated for each column when {@link #into(String)} is called.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.insert("firstName", "lastName", "email")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES ('John', 'Doe', 'john@email.com')
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the property or column names to insert, in order
@@ -1873,17 +1877,18 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for a collection of columns.
-         * 
+         *
          * <p>This method is useful when column names are dynamically determined. The collection
-         * can contain property names that will be converted to uppercase column names.</p>
-         * 
+         * can contain property names that will be converted to uppercase column names. A {@code ?}
+         * placeholder is generated for each column when {@link #into(String)} is called.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = ACSB.insert(columns)
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES ('John', 'Doe', 'john@email.com')
+         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the collection of column names to insert

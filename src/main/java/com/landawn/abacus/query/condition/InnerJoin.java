@@ -58,7 +58,7 @@ import java.util.Collection;
  *         new On("c.id", "o.customer_id"),
  *         Filters.equal("o.status", "completed")
  *     ));
- * // Generates: INNER JOIN orders o (ON c.id = o.customer_id) AND (o.status = 'completed')
+ * // Generates: INNER JOIN orders o ((ON c.id = o.customer_id) AND (o.status = 'completed'))
  *
  * // Complex multi-condition join
  * InnerJoin complexJoin = new InnerJoin("inventory i",
@@ -67,7 +67,7 @@ import java.util.Collection;
  *         new On("p.warehouse_id", "i.warehouse_id"),
  *         Filters.greaterThan("i.quantity", 0)
  *     ));
- * // Generates: INNER JOIN inventory i (ON p.product_id = i.product_id) AND (ON p.warehouse_id = i.warehouse_id) AND (i.quantity > 0)
+ * // Generates: INNER JOIN inventory i ((ON p.product_id = i.product_id) AND (ON p.warehouse_id = i.warehouse_id) AND (i.quantity > 0))
  *
  * // Using Expression for custom join logic
  * InnerJoin exprJoin = new InnerJoin("customers c",
@@ -138,7 +138,7 @@ public class InnerJoin extends Join {
      *         new On("orders.id", "oi.order_id"),
      *         new On("orders.version", "oi.order_version")
      *     ));
-     * // Generates: INNER JOIN order_items oi (ON orders.id = oi.order_id) AND (ON orders.version = oi.order_version)
+     * // Generates: INNER JOIN order_items oi ((ON orders.id = oi.order_id) AND (ON orders.version = oi.order_version))
      *
      * // Join with ON condition and additional filter conditions
      * InnerJoin filteredJoin = new InnerJoin("products p",
@@ -147,7 +147,7 @@ public class InnerJoin extends Join {
      *         Filters.equal("p.active", true),
      *         Filters.greaterThan("p.stock", 0)
      *     ));
-     * // Generates: INNER JOIN products p (ON order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0)
+     * // Generates: INNER JOIN products p ((ON order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0))
      *
      * // Using Expression for custom join logic
      * InnerJoin exprJoin = new InnerJoin("customers c",
@@ -185,7 +185,7 @@ public class InnerJoin extends Join {
      *         new On("p.category_id", "cat.id"),
      *         new On("p.supplier_id", "s.id")
      *     ));
-     * // Generates: INNER JOIN (products p, categories cat, suppliers s) (ON p.category_id = cat.id) AND (ON p.supplier_id = s.id)
+     * // Generates: INNER JOIN (products p, categories cat, suppliers s) ((ON p.category_id = cat.id) AND (ON p.supplier_id = s.id))
      *
      * // Using Expression for multiple tables
      * InnerJoin exprMulti = new InnerJoin(tables,

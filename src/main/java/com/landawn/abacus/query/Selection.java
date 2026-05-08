@@ -297,8 +297,9 @@ public final class Selection {
          *     .apply(NSC::select);
          * }</pre>
          *
-         * @param func the function to apply the selections to (e.g., PSC::select, NSC::selectFrom)
+         * @param func the function to apply the built selections to (e.g., {@code PSC::select}, {@code NSC::selectFrom}); must not be {@code null}
          * @return the SqlBuilder instance returned by the function
+         * @throws IllegalArgumentException if {@code func} is {@code null}
          * @see PSC#select(List)
          * @see PSC#selectFrom(List)
          * @see NSC#select(List)

@@ -127,9 +127,10 @@ public class Like extends Binary {
      * // Check your database documentation for escape syntax
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
-     * @param propValue the pattern to match, including wildcards (can be null, literal value, or subquery).
-     *                  Use % for any characters, _ for single character.
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propValue the pattern to match (typically a {@link String} containing {@code %} and/or
+     *                  {@code _} wildcards; may also be a {@link SubQuery}). Use {@code %} to match
+     *                  any sequence of characters and {@code _} to match a single character.
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public Like(final String propName, final Object propValue) {

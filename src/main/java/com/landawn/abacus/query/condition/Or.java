@@ -104,8 +104,8 @@ public class Or extends Junction {
      * // Results in: ((email LIKE '%@gmail.com') OR (email LIKE '%@yahoo.com') OR (email IS NULL))
      * }</pre>
      *
-     * @param conditions the conditions to combine with OR logic
-     * @throws IllegalArgumentException if conditions array contains null elements
+     * @param conditions the conditions to combine with OR logic; may be {@code null} or empty
+     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
      */
     public Or(final Condition... conditions) {
         super(Operator.OR, conditions);
@@ -137,8 +137,8 @@ public class Or extends Junction {
      * // Results in: ((status = 'active') OR (status = 'pending'))
      * }</pre>
      *
-     * @param conditions the collection of conditions to combine with OR logic
-     * @throws IllegalArgumentException if conditions contains null elements
+     * @param conditions the collection of conditions to combine with OR logic; may be {@code null} or empty
+     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
      */
     public Or(final Collection<? extends Condition> conditions) {
         super(Operator.OR, conditions);

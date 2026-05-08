@@ -15,35 +15,40 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents an IS NOT condition in SQL-like queries.
- * This class is used to create conditions that check if a property is not equal to a specific value
- * using the SQL IS NOT operator, which is primarily used for special SQL values like NULL, NaN, or Infinite.
- * 
- * <p>The IS NOT operator is the negation of the IS operator and is essential for:
+ * Represents an SQL {@code IS NOT} predicate (e.g. {@code IS NOT NULL}).
+ * This class creates conditions that test a property using the SQL {@code IS NOT} operator,
+ * which is the negation of the {@code IS} operator and is primarily used for special SQL values
+ * like {@code NULL}, {@code NaN}, or {@code INFINITE}.
+ *
+ * <p>The {@code IS NOT} operator is essential for:</p>
  * <ul>
  *   <li>Checking if a value is not NULL (most common use case)</li>
  *   <li>Checking if a numeric value is not NaN</li>
  *   <li>Checking if a numeric value is not INFINITE</li>
- *   <li>Comparing against other special SQL values</li>
+ *   <li>Negating comparisons against other special SQL values</li>
  * </ul>
- * 
- * <p>This class serves as the base for more specific IS NOT conditions like IsNotNull,
- * IsNotNaN, and IsNotInfinite, but can also be used directly for custom IS NOT expressions.
+ *
+ * <p>This class serves as the base for more specific {@code IS NOT} conditions like {@link IsNotNull},
+ * {@link IsNotNaN}, and {@link IsNotInfinite}. Prefer those subclasses for the well-known values;
+ * use {@code IsNot} directly only when supplying a custom right-hand expression.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check if a property is not null (prefer IsNotNull class)
  * IsNot notNull = new IsNot("email", null);
  * // Generates: email IS NOT NULL
- * 
+ *
  * // Check if not a specific expression value
  * Expression unknownExpr = Filters.expr("UNKNOWN");
  * IsNot notUnknown = new IsNot("status", unknownExpr);
  * // Generates: status IS NOT UNKNOWN
  * }</pre>
- * 
+ *
  * @see Binary
  * @see Is
+ * @see IsNotNull
+ * @see IsNotNaN
+ * @see IsNotInfinite
  * @see Condition
  */
 public class IsNot extends Binary {
@@ -57,30 +62,34 @@ public class IsNot extends Binary {
     }
 
     /**
-     * Creates a new IS NOT condition with the specified property name and value.
-     * This condition checks if the property is not equal to the specified value using
-     * the SQL IS NOT operator. This operator is essential for negating comparisons
-     * with special SQL values that have no direct inequality semantics.
+     * Creates a new {@code IS NOT} condition with the specified property name and right-hand value.
+     * The generated SQL takes the form {@code propName IS NOT propValue}, where {@code propValue}
+     * is typically an {@link Expression} representing a special SQL keyword such as {@code NULL},
+     * {@code NAN}, {@code INFINITE}, or {@code UNKNOWN}.
+     *
+     * <p>If {@code propValue} is the Java {@code null} reference, the generated SQL collapses to
+     * {@code propName IS NOT NULL}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check for NOT NULL (though IsNotNull is preferred)
      * IsNot notNull = new IsNot("phone_number", null);
      * // Generates: phone_number IS NOT NULL
-     * 
+     *
      * // Check if not NaN
      * Expression nanExpr = Filters.expr("NAN");
      * IsNot notNaN = new IsNot("temperature", nanExpr);
      * // Generates: temperature IS NOT NAN
-     * 
+     *
      * // Check if not a custom value
      * Expression pendingExpr = Filters.expr("PENDING");
      * IsNot notPending = new IsNot("order_status", pendingExpr);
      * // Generates: order_status IS NOT PENDING
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be null or empty)
-     * @param propValue the value to compare against (can be null, literal value, or subquery)
+     * @param propName the name of the property/column to check (must not be {@code null} or empty)
+     * @param propValue the right-hand value of the IS NOT predicate; may be {@code null} (renders as
+     *            {@code IS NOT NULL}) or an {@link Expression} for a SQL keyword
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNot(final String propName, final Object propValue) {

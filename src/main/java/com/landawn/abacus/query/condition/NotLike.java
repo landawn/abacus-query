@@ -96,9 +96,11 @@ public class NotLike extends Binary {
      * // SQL: code NOT LIKE 'TEST%'
      * }</pre>
      *
-     * @param propName the property/column name (must not be null or empty)
-     * @param propValue the pattern to match against (can be null, literal value, or subquery).
-     *                  Can include % and _ wildcards.
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propValue the pattern to match against (typically a {@link String} containing
+     *                  {@code %} and/or {@code _} wildcards; may also be a {@link SubQuery}).
+     *                  Use {@code %} to match any sequence of characters and {@code _} to match
+     *                  a single character.
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public NotLike(final String propName, final Object propValue) {

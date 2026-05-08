@@ -49,8 +49,9 @@ public abstract class ComposableCell extends ComposableCondition {
      * <p>This constructor is typically invoked by subclass constructors such as
      * {@link Not}, {@link Exists}, {@link NotExists}, {@link All}, {@link Any}, and {@link Some}.</p>
      *
-     * @param operator the operator to apply to the condition
+     * @param operator the operator to apply to the condition (must not be {@code null})
      * @param cond the condition to wrap (must not be {@code null})
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public ComposableCell(final Operator operator, final Condition cond) {
@@ -59,17 +60,19 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Gets the wrapped condition, cast to the specified type.
+     * Gets the wrapped condition, cast to the requested type.
+     * Type-checking of {@code <T>} is the caller's responsibility; an incorrect type parameter will
+     * cause a {@link ClassCastException} at the call site when the returned value is used.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition eq = Filters.equal("status", "active");
      * Not notCond = new Not(eq);
-     * Condition inner = notCond.getCondition();   // Returns the Equal condition
+     * Equal inner = notCond.getCondition();   // Returns the Equal condition
      * }</pre>
      *
      * @param <T> the type of condition to return
-     * @return the wrapped condition
+     * @return the wrapped condition, cast to the specified type
      */
     @SuppressWarnings("unchecked")
     public <T extends Condition> T getCondition() {

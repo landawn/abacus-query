@@ -59,7 +59,7 @@ package com.landawn.abacus.query.condition;
  *         Filters.greaterThanOrEqual("SUM(revenue)", 50000)
  *     )
  * );
- * // SQL: HAVING COUNT(*) > 10 AND AVG(age) < 40 AND SUM(revenue) >= 50000
+ * // SQL: HAVING ((COUNT(*) > 10) AND (AVG(age) < 40) AND (SUM(revenue) >= 50000))
  *
  * // Complete query example
  * SqlBuilder builder = PSC.select("department", "COUNT(*) as emp_count", "AVG(salary) as avg_salary")
@@ -72,7 +72,7 @@ package com.landawn.abacus.query.condition;
  * // SQL: SELECT department, COUNT(*) as emp_count, AVG(salary) as avg_salary
  * //      FROM employees
  * //      GROUP BY department
- * //      HAVING COUNT(*) > 5 AND AVG(salary) > 50000
+ * //      HAVING ((COUNT(*) > 5) AND (AVG(salary) > 50000))
  * }</pre>
  *
  * @see Clause
@@ -117,7 +117,7 @@ public class Having extends Clause {
      *         Filters.lessThanOrEqual("AVG(score)", 90)
      *     )
      * );
-     * // SQL: HAVING AVG(score) >= 60 AND AVG(score) <= 90
+     * // SQL: HAVING ((AVG(score) >= 60) AND (AVG(score) <= 90))
      *
      * // Filter groups with maximum value check
      * Having maxCheck = new Having(Filters.lessThan("MAX(temperature)", 100));
@@ -131,9 +131,9 @@ public class Having extends Clause {
      *         Filters.between("AVG(rating)", 3.0, 5.0)
      *     )
      * );
-     * // SQL: HAVING COUNT(DISTINCT customer_id) > 10
-     * //      AND SUM(amount) >= 5000
-     * //      AND AVG(rating) BETWEEN 3.0 AND 5.0
+     * // SQL: HAVING ((COUNT(DISTINCT customer_id) > 10)
+     * //          AND (SUM(amount) >= 5000)
+     * //          AND (AVG(rating) BETWEEN 3.0 AND 5.0))
      * }</pre>
      *
      * @param cond the condition to apply in the HAVING clause. Must not be {@code null}.

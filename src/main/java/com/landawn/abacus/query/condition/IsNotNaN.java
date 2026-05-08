@@ -20,10 +20,12 @@ package com.landawn.abacus.query.condition;
  * floating-point values are valid numbers (not NaN). This is essential for ensuring
  * data quality and preventing NaN values from propagating through calculations.
  * 
- * <p>NaN (Not a Number) values can severely impact data analysis and calculations because:
+ * <p>NaN (Not a Number) values can severely impact data analysis and calculations because:</p>
  * <ul>
- *   <li>NaN propagates through calculations (any operation with NaN returns NaN)</li>
- *   <li>NaN comparisons always return false (except != which returns true)</li>
+ *   <li>NaN propagates through calculations (any arithmetic operation with NaN returns NaN)</li>
+ *   <li>Standard SQL comparisons against NaN evaluate to UNKNOWN (and behave as {@code false} in
+ *       WHERE clauses); under IEEE 754, only {@code !=} returns {@code true} — making
+ *       {@code IS NOT NAN} the only reliable way to filter for valid numbers</li>
  *   <li>Aggregate functions may produce unexpected results with NaN values</li>
  *   <li>Statistical analyses require valid numeric data</li>
  * </ul>

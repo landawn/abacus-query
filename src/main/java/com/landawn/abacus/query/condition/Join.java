@@ -36,7 +36,7 @@ import com.landawn.abacus.util.Strings;
  * <p>A JOIN clause combines rows from two or more tables based on a related column between them.
  * This class supports:
  * <ul>
- *   <li>Simple joins without conditions (natural joins or cross joins)</li>
+ *   <li>Simple joins without an explicit condition (e.g., for {@link CrossJoin} or {@link NaturalJoin})</li>
  *   <li>Joins with ON conditions specifying how tables relate</li>
  *   <li>Joins with multiple tables in a single operation</li>
  *   <li>Complex join conditions using AND/OR logic</li>
@@ -107,8 +107,9 @@ public class Join extends AbstractCondition {
 
     /**
      * Creates a simple JOIN clause for the specified table or entity.
-     * Uses the default JOIN operator without any ON condition. This form is rarely used
-     * in practice as it relies on implicit join conditions or results in a cross join.
+     * Uses the default {@link Operator#JOIN} operator without any join condition. This form is rarely used
+     * directly; most databases treat a {@code JOIN} without {@code ON} as either a cross join or
+     * an inner join requiring an implicit condition.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -215,7 +216,7 @@ public class Join extends AbstractCondition {
      *         new On("o.customer_id", "c.id"),
      *         new On("c.address_id", "a.id")
      *     ));
-     * // Generates: JOIN (orders o, customers c) (ON o.customer_id = c.id) AND (ON c.address_id = a.id)
+     * // Generates: JOIN (orders o, customers c) ((ON o.customer_id = c.id) AND (ON c.address_id = a.id))
      *
      * // Join multiple tables with Expression
      * Join exprMultiJoin = new Join(tables,
@@ -223,7 +224,7 @@ public class Join extends AbstractCondition {
      *         Filters.expr("o.customer_id = c.id"),
      *         Filters.expr("o.status = 'active'")
      *     ));
-     * // Generates: JOIN (orders o, customers c) (o.customer_id = c.id) AND (o.status = 'active')
+     * // Generates: JOIN (orders o, customers c) ((o.customer_id = c.id) AND (o.status = 'active'))
      * // Note: Expression conditions don't add ON keyword
      * }</pre>
      *
@@ -301,17 +302,19 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Gets the join condition.
-     * Returns the condition that specifies how the tables are related.
-     * May return null if no condition was specified (natural join or cross join).
+     * Gets the join condition, cast to the requested type.
+     * Returns the condition that specifies how the tables are related, or {@code null} if no
+     * condition was supplied at construction time. Type-checking of {@code <T>} is the caller's
+     * responsibility; an incorrect type parameter will cause a {@link ClassCastException} at the
+     * call site when the returned value is used.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join with ON condition
      * On onCondition = new On("customers.id", "o.customer_id");
      * Join join = new Join("orders o", onCondition);
-     * Condition condition = join.getCondition();
-     * // Returns the On condition: ON customers.id = o.customer_id
+     * On condition = join.getCondition();
+     * // Returns the same On instance
      *
      * // Join without condition
      * Join simpleJoin = new Join("products");
@@ -319,8 +322,8 @@ public class Join extends AbstractCondition {
      * // Returns: null
      * }</pre>
      *
-     * @param <T> the type of the condition
-     * @return the join condition, or null if no condition is specified
+     * @param <T> the expected type of the wrapped condition
+     * @return the join condition, or {@code null} if no condition was specified
      */
     @SuppressWarnings("unchecked")
     public <T extends Condition> T getCondition() {

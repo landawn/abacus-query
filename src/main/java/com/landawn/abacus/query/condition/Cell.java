@@ -55,8 +55,9 @@ public abstract class Cell extends AbstractCondition {
      * <p>This constructor is typically invoked by subclass constructors such as
      * {@link Clause} subclasses and {@link On}.</p>
      *
-     * @param operator the operator to apply to the condition
+     * @param operator the operator to apply to the condition (must not be {@code null})
      * @param cond the condition to wrap (must not be {@code null})
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public Cell(final Operator operator, final Condition cond) {
@@ -65,14 +66,15 @@ public abstract class Cell extends AbstractCondition {
     }
 
     /**
-     * Gets the wrapped condition.
-     * The returned condition can be cast to its specific type if needed.
+     * Gets the wrapped condition, cast to the requested type.
+     * Type-checking of {@code <T>} is the caller's responsibility; an incorrect type parameter will
+     * cause a {@link ClassCastException} at the call site when the returned value is used.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition eq = Filters.equal("a.id", "b.id");
      * On onCond = new On(eq);
-     * Condition inner = onCond.getCondition();   // Returns the Equal condition
+     * Equal inner = onCond.getCondition();   // Returns the Equal condition
      * }</pre>
      *
      * @param <T> the type of condition to return
@@ -96,7 +98,9 @@ public abstract class Cell extends AbstractCondition {
 
     /**
      * Converts this {@code Cell} condition to its string representation using the specified naming policy.
-     * The output format is: {@code OPERATOR condition_string}
+     * The output format is {@code OPERATOR condition_string} (separated by a single space), or just
+     * {@code OPERATOR} if the wrapped condition is {@code null}. Unlike {@link ComposableCell#toString(NamingPolicy)},
+     * the inner condition is <em>not</em> enclosed in parentheses.
      *
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition
      * @return a string representation of this Cell

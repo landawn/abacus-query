@@ -102,6 +102,7 @@ public abstract class AbstractCondition implements Condition {
      * Subclass constructors must supply a non-{@code null} operator.
      *
      * @param operator the operator for this condition (must not be {@code null})
+     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractCondition(final Operator operator) {
         this.operator = N.requireNonNull(operator, "operator");
@@ -543,8 +544,8 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Validates that the given condition is a valid operand for composable operations (AND, OR, NOT, XOR).
-     * Conditions with clause operators (WHERE, ORDER BY, etc.), ON, USING, or null operators cannot
-     * participate in logical composition.
+     * Conditions with clause operators (WHERE, ORDER BY, etc.), ON, USING, or {@code null} operators
+     * (including a {@code null} {@code cond}) cannot participate in logical composition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -557,10 +558,11 @@ public abstract class AbstractCondition implements Condition {
      * validateComposableOperand(where, "and");   // Throws IllegalArgumentException
      * }</pre>
      *
-     * @param cond the condition to validate
+     * @param cond the condition to validate; may be {@code null} (will trigger the exception)
      * @param methodName the name of the composable method being called (for error messages)
      * @return the validated condition
-     * @throws IllegalArgumentException if the condition has a null, clause, ON, or USING operator
+     * @throws IllegalArgumentException if {@code cond} is {@code null} or has a {@code null}, clause,
+     *                                  {@code ON}, or {@code USING} operator
      */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
         final Operator operator = cond == null ? null : cond.operator();

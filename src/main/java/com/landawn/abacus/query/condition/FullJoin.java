@@ -54,7 +54,7 @@ import java.util.Collection;
  *         new On("internal_data.id", "e.id"),
  *         Filters.greaterThan("e.updated_date", "2024-01-01")
  *     ));
- * // Generates: FULL JOIN external_data e (ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01')
+ * // Generates: FULL JOIN external_data e ((ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01'))
  * }</pre>
  * 
  * @see Join
@@ -94,7 +94,7 @@ public class FullJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     public FullJoin(final String joinEntity) {
         super(Operator.FULL_JOIN, joinEntity);
@@ -125,7 +125,7 @@ public class FullJoin extends Join {
      *         Filters.equal("ei.active", true),
      *         Filters.greaterThan("ei.updated_date", "2023-01-01")
      *     ));
-     * // Generates: FULL JOIN external_inventory ei (ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01')
+     * // Generates: FULL JOIN external_inventory ei ((ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * FullJoin exprJoin = new FullJoin("departments d",
@@ -137,7 +137,7 @@ public class FullJoin extends Join {
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if joinEntity is null or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     public FullJoin(final String joinEntity, final Condition cond) {
         super(Operator.FULL_JOIN, joinEntity, cond);
@@ -156,7 +156,7 @@ public class FullJoin extends Join {
      *         new On("d.id", "e.dept_id"),
      *         new On("d.id", "c.dept_id")
      *     ));
-     * // Generates: FULL JOIN (employees e, contractors c) (ON d.id = e.dept_id) AND (ON d.id = c.dept_id)
+     * // Generates: FULL JOIN (employees e, contractors c) ((ON d.id = e.dept_id) AND (ON d.id = c.dept_id))
      *
      * // Using Expression for multiple tables
      * FullJoin exprJoin = new FullJoin(tables,
@@ -168,7 +168,7 @@ public class FullJoin extends Join {
      * @param joinEntities the collection of tables or entities to join with.
      * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if joinEntities is null or empty
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
      */
     public FullJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.FULL_JOIN, joinEntities, cond);

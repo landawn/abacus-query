@@ -82,7 +82,7 @@ public class Where extends Clause {
      *     Filters.equal("vip", true)
      * );
      * Where complexWhere = new Where(complexCondition);
-     * // SQL: WHERE (((status = 'active') AND (balance > 1000)) OR (vip = true))
+     * // SQL: WHERE ((((status = 'active') AND (balance > 1000))) OR (vip = true))
      *
      * // WHERE with subquery
      * SubQuery activeUsers = Filters.subQuery("SELECT id FROM users WHERE active = true");

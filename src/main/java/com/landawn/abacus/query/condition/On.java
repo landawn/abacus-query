@@ -59,7 +59,7 @@ import com.landawn.abacus.util.N;
  *     Filters.expr("o.order_date > c.registration_date")
  * );
  * LeftJoin leftJoin = new LeftJoin("customers c", complexJoin);
- * // Generates: LEFT JOIN customers c (ON o.customer_id = c.id) AND (o.order_date > c.registration_date)
+ * // Generates: LEFT JOIN customers c ((ON o.customer_id = c.id) AND (o.order_date > c.registration_date))
  *
  * // Multiple join conditions using Map (composite key)
  * Map<String, String> joinMap = new LinkedHashMap<>();
@@ -74,7 +74,7 @@ import com.landawn.abacus.util.N;
  *     Filters.equal("categories.active", true)
  * );
  * RightJoin rightJoin = new RightJoin("categories", filteredJoin);
- * // Generates: RIGHT JOIN categories (ON products.category_id = categories.id) AND (categories.active = true)
+ * // Generates: RIGHT JOIN categories ((ON products.category_id = categories.id) AND (categories.active = true))
  * }</pre>
  * 
  * @see Using
@@ -118,7 +118,7 @@ public class On extends Cell {
      * );
      * On on2 = new On(complexCondition);
      * LeftJoin join2 = new LeftJoin("customers", on2);
-     * // Generates: LEFT JOIN customers ON ((orders.customer_id = customers.id) AND (orders.order_date BETWEEN '2024-01-01' AND '2024-12-31') AND (customers.status <> 'DELETED'))
+     * // Generates: LEFT JOIN customers ON ((orders.customer_id = customers.id) AND ... AND (customers.status != 'DELETED'))
      *
      * // Range join for salary bands
      * Condition rangeJoin = Filters.and(
@@ -162,7 +162,8 @@ public class On extends Cell {
      * }</pre>
      *
      * @param leftPropName the column name from the first table (can include table name/alias)
-     * @param rightPropName the column name from the second table (can include table name/alias)
+     * @param rightPropName the column name from the second table (can include table name/alias). Treated as a
+     *            column expression rather than a string literal.
      * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null} or empty
      */
     public On(final String leftPropName, final String rightPropName) {
@@ -222,9 +223,10 @@ public class On extends Cell {
      * // Creates: Equal("users.id", Expression("posts.user_id"))
      * }</pre>
      *
-     * @param propName the first column name
-     * @param anotherPropName the second column name
-     * @return an Equal condition comparing the two columns
+     * @param propName the first column name (used as the property side of the Equal)
+     * @param anotherPropName the second column name (wrapped as an {@link Expression}, so it is rendered as a
+     *            column reference rather than a quoted literal)
+     * @return an {@link Equal} condition comparing the two columns
      * @throws IllegalArgumentException if {@code propName} or {@code anotherPropName} is {@code null} or empty
      */
     static Condition createOnCondition(final String propName, final String anotherPropName) {

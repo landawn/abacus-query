@@ -58,10 +58,12 @@ public abstract class ComposableCondition extends AbstractCondition {
      * <pre>{@code
      * Condition active = Filters.equal("status", "active");
      * Not notActive = ((ComposableCondition) active).not();
-     * // Produces: NOT (status = 'active')
+     * // Renders as: NOT (status = 'active')
      * }</pre>
      *
-     * @return a new Not condition wrapping this condition
+     * @return a new {@link Not} condition wrapping this condition
+     * @throws IllegalArgumentException if this condition has a non-composable operator
+     *                                  (e.g., a clause, {@code ON}, or {@code USING} operator)
      */
     public Not not() {
         validateComposableOperand(this, "not");
@@ -77,12 +79,14 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Condition age = Filters.greaterThan("age", 18);
      * Condition status = Filters.equal("status", "active");
      * And combined = ((ComposableCondition) age).and(status);
-     * // Produces: age > 18 AND status = 'active'
+     * // Renders as: ((age > 18) AND (status = 'active'))
      * }</pre>
      *
      * @param cond the condition to AND with this condition (must not be {@code null})
      * @return a new {@link And} condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is {@code null} or has a non-composable operator
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or
+     *                                  {@code cond} has a non-composable operator (e.g., a clause,
+     *                                  {@code ON}, or {@code USING} operator)
      */
     public And and(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
@@ -101,12 +105,14 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Condition admin = Filters.equal("role", "admin");
      * Condition manager = Filters.equal("role", "manager");
      * Or either = ((ComposableCondition) admin).or(manager);
-     * // Produces: role = 'admin' OR role = 'manager'
+     * // Renders as: ((role = 'admin') OR (role = 'manager'))
      * }</pre>
      *
      * @param cond the condition to OR with this condition (must not be {@code null})
      * @return a new {@link Or} condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is {@code null} or has a non-composable operator
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or
+     *                                  {@code cond} has a non-composable operator (e.g., a clause,
+     *                                  {@code ON}, or {@code USING} operator)
      */
     public Or or(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
@@ -129,12 +135,15 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Condition a = Filters.equal("type", "A");
      * Condition b = Filters.equal("type", "B");
      * Or exclusive = ((ComposableCondition) a).xor(b);
-     * // Produces: (type = 'A' AND NOT type = 'B') OR (NOT type = 'A' AND type = 'B')
+     * // Logically: (a AND NOT b) OR (NOT a AND b)
+     * // Renders as: (((type = 'A') AND (NOT (type = 'B'))) OR ((NOT (type = 'A')) AND (type = 'B')))
      * }</pre>
      *
      * @param cond the condition to XOR with this condition (must not be {@code null})
      * @return a new {@link Or} condition representing {@code (this AND NOT cond) OR (NOT this AND cond)}
-     * @throws IllegalArgumentException if {@code cond} is {@code null} or has a non-composable operator
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or
+     *                                  {@code cond} has a non-composable operator (e.g., a clause,
+     *                                  {@code ON}, or {@code USING} operator)
      */
     public Or xor(final Condition cond) {
         N.checkArgNotNull(cond, "cond");

@@ -44,13 +44,11 @@ import com.landawn.abacus.util.Strings;
  * 
  * <p>Subqueries can be used in various contexts:</p>
  * <ul>
- *   <li>IN/NOT IN conditions for set membership tests</li>
- *   <li>EXISTS/NOT EXISTS for existence checks</li>
- *   <li>Scalar subqueries in comparisons (=, &gt;, &lt;, etc.)</li>
- *   <li>ANY/ALL/SOME for multi-row comparisons</li>
- *   <li>FROM clause for derived tables</li>
+ *   <li>IN/NOT IN conditions for set membership tests (see {@link InSubQuery}, {@link NotInSubQuery})</li>
+ *   <li>EXISTS/NOT EXISTS for existence checks (see {@link Exists}, {@link NotExists})</li>
+ *   <li>ANY/ALL/SOME for quantified comparisons (see {@link Any}, {@link All}, {@link Some})</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Raw SQL subquery
@@ -70,11 +68,14 @@ import com.landawn.abacus.util.Strings;
  * Condition inCondition = Filters.in("userId", subQuery1);
  * // Results in: userId IN (SELECT id FROM users WHERE status = 'active')
  * }</pre>
- * 
- * @see In
- * @see NotIn
+ *
+ * @see InSubQuery
+ * @see NotInSubQuery
  * @see Exists
  * @see NotExists
+ * @see Any
+ * @see All
+ * @see Some
  */
 public class SubQuery extends AbstractCondition {
 
@@ -89,7 +90,8 @@ public class SubQuery extends AbstractCondition {
     // For Kryo
     final String sql;
 
-    /** The WHERE condition for structured subqueries, or {@code null} for raw SQL subqueries. */
+    /** The WHERE condition for structured subqueries; {@code null} for raw SQL subqueries or for
+     *  structured subqueries created without a condition. */
     private Condition condition;
 
     /**
@@ -436,10 +438,13 @@ public class SubQuery extends AbstractCondition {
     /**
      * Converts this subquery to its string representation.
      *
-     * <p>For raw SQL subqueries, returns the SQL as-is.
-     * For structured subqueries, generates the SELECT statement with proper formatting.</p>
+     * <p>For raw SQL subqueries, returns the SQL as-is (the {@code namingPolicy} is ignored).
+     * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition]}
+     * statement, applying the naming policy to property names, the entity/table name, and to
+     * the inner WHERE condition.</p>
      *
-     * @param namingPolicy the naming policy to apply to column and table names. Can be null.
+     * @param namingPolicy the naming policy to apply; if {@code null},
+     *            {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return string representation of the subquery
      */
     @Override

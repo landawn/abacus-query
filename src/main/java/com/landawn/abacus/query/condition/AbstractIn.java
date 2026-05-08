@@ -35,7 +35,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *
  * @see In
  * @see NotIn
- * @see AbstractCondition
+ * @see ComposableCondition
  */
 public abstract class AbstractIn extends ComposableCondition {
 

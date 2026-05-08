@@ -33,12 +33,12 @@ import com.landawn.abacus.query.Filters;
  *   <li>Any operation involving an existing NaN value</li>
  * </ul>
  * 
- * <p>Important properties of NaN:
+ * <p>Important properties of NaN:</p>
  * <ul>
- *   <li>NaN is not equal to anything, including itself (NaN == NaN is false)</li>
- *   <li>Any comparison with NaN returns {@code false} or unknown in SQL</li>
- *   <li>NaN propagates through calculations (any operation with NaN returns NaN)</li>
- *   <li>Must use IS NAN or IS NOT NAN to check for NaN values</li>
+ *   <li>NaN is not equal to anything, including itself (under IEEE 754 {@code NaN == NaN} is {@code false})</li>
+ *   <li>Standard SQL comparisons against NaN evaluate to UNKNOWN (and behave as {@code false} in WHERE clauses)</li>
+ *   <li>NaN propagates through calculations (any arithmetic operation with NaN returns NaN)</li>
+ *   <li>Must use {@code IS NAN} or {@code IS NOT NAN} to reliably test for NaN values</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>

@@ -798,14 +798,14 @@ public final class SqlParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT * FROM users";
-     * boolean isSep = SqlParser.isSeparator(sql, sql.length(), 7, '*');   // true ('*' is a separator)
-     * boolean notSep = SqlParser.isSeparator(sql, sql.length(), 6, ' ');  // true (space is a separator)
+     * boolean isStar  = SqlParser.isSeparator(sql, sql.length(), 7, '*');   // true ('*' is a separator)
+     * boolean isSpace = SqlParser.isSeparator(sql, sql.length(), 6, ' ');   // true (space is a separator)
      * }</pre>
      *
      * @param str the SQL string being parsed
      * @param len the length of the SQL string
      * @param index the current position in the string
-     * @param ch the character to check
+     * @param ch the character to check (the character at {@code str.charAt(index)})
      * @return {@code true} if the character is a separator in this context, {@code false} otherwise
      */
     public static boolean isSeparator(final String str, final int len, final int index, final char ch) {

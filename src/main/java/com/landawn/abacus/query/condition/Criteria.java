@@ -921,8 +921,12 @@ public class Criteria extends AbstractCondition {
          *     ));
          * }</pre>
          * 
-         * @param cond the WHERE condition
+         * @param cond the WHERE condition (must not be {@code null}); if its operator is already
+         *             {@link Operator#WHERE} it is added directly, otherwise it is wrapped in a {@link Where}
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
+         *                                  uses {@code ON}/{@code USING}, or is a clause condition
+         *                                  with an operator other than {@code WHERE}
          */
         public Builder where(final Condition cond) {
             if (cond == null) {
@@ -954,8 +958,9 @@ public class Criteria extends AbstractCondition {
          * criteria.where("YEAR(created_date) = 2024 OR special_flag = true");
          * }</pre>
          * 
-         * @param expr the WHERE condition as a string
+         * @param expr the WHERE condition as a string (must not be {@code null} or empty)
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
          */
         public Builder where(final String expr) {
             N.checkArgNotEmpty(expr, "expr");
@@ -975,8 +980,12 @@ public class Criteria extends AbstractCondition {
          *     .groupBy(Filters.expr("YEAR(order_date), MONTH(order_date)"));
          * }</pre>
          * 
-         * @param cond the GROUP BY condition
+         * @param cond the GROUP BY condition (must not be {@code null}); if its operator is already
+         *             {@link Operator#GROUP_BY} it is added directly, otherwise it is wrapped in a {@link GroupBy}
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
+         *                                  uses {@code ON}/{@code USING}, or is a clause condition
+         *                                  with an operator other than {@code GROUP_BY}
          */
         public Builder groupBy(final Condition cond) {
             if (cond == null) {
@@ -1168,8 +1177,12 @@ public class Criteria extends AbstractCondition {
          *     ));
          * }</pre>
          * 
-         * @param cond the HAVING condition
+         * @param cond the HAVING condition (must not be {@code null}); if its operator is already
+         *             {@link Operator#HAVING} it is added directly, otherwise it is wrapped in a {@link Having}
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
+         *                                  uses {@code ON}/{@code USING}, or is a clause condition
+         *                                  with an operator other than {@code HAVING}
          */
         public Builder having(final Condition cond) {
             if (cond == null) {
@@ -1199,8 +1212,9 @@ public class Criteria extends AbstractCondition {
          *     .having("SUM(revenue) > 10000 AND COUNT(*) > 5");
          * }</pre>
          * 
-         * @param expr the HAVING condition as a string
+         * @param expr the HAVING condition as a string (must not be {@code null} or empty)
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
          */
         public Builder having(final String expr) {
             N.checkArgNotEmpty(expr, "expr");
@@ -1303,8 +1317,12 @@ public class Criteria extends AbstractCondition {
          *     .orderBy(Filters.expr("CASE WHEN priority = 'HIGH' THEN 1 ELSE 2 END, created_date DESC"));
          * }</pre>
          * 
-         * @param cond the ORDER BY condition
+         * @param cond the ORDER BY condition (must not be {@code null}); if its operator is already
+         *             {@link Operator#ORDER_BY} it is added directly, otherwise it is wrapped in an {@link OrderBy}
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
+         *                                  uses {@code ON}/{@code USING}, or is a clause condition
+         *                                  with an operator other than {@code ORDER_BY}
          */
         public Builder orderBy(final Condition cond) {
             if (cond == null) {
