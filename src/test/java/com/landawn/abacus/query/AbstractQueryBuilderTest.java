@@ -890,7 +890,7 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
         try {
             System.setOut(new PrintStream(output));
-            SqlBuilder.PSC.select("id").from("users").println();
+            SqlBuilder.PSC.select("id").from("users").debugPrint();
         } finally {
             System.setOut(originalOut);
         }

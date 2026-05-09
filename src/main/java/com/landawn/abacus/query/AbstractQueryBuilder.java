@@ -4588,14 +4588,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * PSC.select("*")
      *    .from("account")
      *    .where(Filters.between("age", 18, 65))
-     *    .println();
+     *    .debugPrint();
      * // Prints: SELECT * FROM account WHERE age BETWEEN ? AND ?
      * }</pre>
      *
      * @throws IllegalStateException if the builder has already been closed by a prior call to {@code build()}
      */
     @Beta
-    public void println() {
+    public void debugPrint() {
         N.println(build().query());
     }
 

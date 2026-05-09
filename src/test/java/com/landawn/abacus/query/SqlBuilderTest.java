@@ -1120,9 +1120,9 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testPrintln() {
+    public void testDebugPrint() {
         SqlBuilder builder = PSC.select("*").from("account").where(Filters.between("age", 18, 65));
-        builder.println();
+        builder.debugPrint();
         assertThrows(RuntimeException.class, () -> builder.where(Filters.eq("id", 1)));
     }
 
