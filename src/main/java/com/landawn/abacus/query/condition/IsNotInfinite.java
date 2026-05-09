@@ -91,32 +91,13 @@ public class IsNotInfinite extends IsNot {
      * infinity because infinity has special arithmetic properties. IS NOT INFINITE is
      * the correct way to filter for finite numeric values.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
-     * // Ensure calculated values are finite
      * IsNotInfinite calcCheck = new IsNotInfinite("calculation_result");
      * // Generates SQL: calculation_result IS NOT INFINITE
-     *
-     * // Filter for records with finite growth rates
-     * IsNotInfinite growthCheck = new IsNotInfinite("year_over_year_growth");
-     * // Generates SQL: year_over_year_growth IS NOT INFINITE
-     *
-     * // Validate division results
-     * IsNotInfinite divisionCheck = new IsNotInfinite("average_score");
-     * // Generates SQL: average_score IS NOT INFINITE
-     *
-     * // Check scientific calculations
-     * IsNotInfinite scientificCheck = new IsNotInfinite("exponential_result");
-     * // Generates SQL: exponential_result IS NOT INFINITE
-     *
-     * // Use in query builders to filter finite values
-     * List<Metric> finiteMetrics = queryExecutor
-     *     .prepareQuery(Metric.class)
-     *     .where(new IsNotInfinite("metric_value"))
-     *     .list();
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be null or empty)
+     * @param propName the name of the property/column to check (must not be {@code null} or empty)
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNotInfinite(final String propName) {

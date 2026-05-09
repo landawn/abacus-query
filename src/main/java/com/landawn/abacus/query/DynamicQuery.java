@@ -1155,13 +1155,18 @@ public final class DynamicQuery {
          * Appends question mark placeholders for parameterized queries.
          * Useful for {@code IN} clauses or multiple parameters.
          *
+         * <p>Note: this method writes only the {@code ?} characters separated by {@code ", "} into the
+         * underlying buffer; it does not insert any surrounding whitespace or parentheses. Use the
+         * {@link #placeholders(int, String, String)} overload when you also need a prefix/postfix
+         * (e.g. parentheses for an {@code IN} list).</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * where.append("id IN (").placeholders(3).append(")");
-         * // Generates: id IN (?, ?, ?)
+         * where.append("id IN (").placeholders(3); // continues at the open parenthesis - no separator added
+         * // sb contents so far: "WHERE id IN (?, ?, ?"
          * }</pre>
          *
-         * @param placeholderCount the number of question marks to append
+         * @param placeholderCount the number of question marks to append (must not be negative)
          * @return this {@link WhereClause} instance for method chaining
          * @throws IllegalArgumentException if {@code placeholderCount} is negative
          */
@@ -1189,11 +1194,13 @@ public final class DynamicQuery {
          * // Generates: status IN (?, ?, ?)
          * }</pre>
          *
-         * @param placeholderCount the number of question marks to append
-         * @param prefix the string to add before the question marks
-         * @param postfix the string to add after the question marks
+         * <p>If {@code placeholderCount} is {@code 0}, neither {@code prefix} nor {@code postfix} is appended.</p>
+         *
+         * @param placeholderCount the number of question marks to append (must not be negative)
+         * @param prefix the string to add before the question marks (must not be {@code null})
+         * @param postfix the string to add after the question marks (must not be {@code null})
          * @return this {@link WhereClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code placeholderCount} is negative
+         * @throws IllegalArgumentException if {@code placeholderCount} is negative, or if {@code prefix} or {@code postfix} is {@code null}
          */
         public WhereClause placeholders(final int placeholderCount, final String prefix, final String postfix) {
             N.checkArgNotNegative(placeholderCount, "placeholderCount");

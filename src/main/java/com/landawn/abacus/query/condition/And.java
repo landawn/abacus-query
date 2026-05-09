@@ -30,10 +30,10 @@ import com.landawn.abacus.util.N;
  * 
  * <p>Key characteristics:</p>
  * <ul>
- *   <li>Short-circuit evaluation in most databases</li>
- *   <li>Can combine any types of conditions</li>
- *   <li>Supports chaining for readability</li>
+ *   <li>Can combine any types of composable conditions</li>
+ *   <li>Supports chaining for readability via {@link #and(Condition)}</li>
  *   <li>Maintains order of conditions for predictable SQL generation</li>
+ *   <li>Whether the database short-circuits evaluation is engine-dependent</li>
  * </ul>
  *
  * <p>Relationship to other composable operators:</p>

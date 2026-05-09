@@ -71,8 +71,7 @@ public abstract class Cell extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition eq = Filters.equal("a.id", "b.id");
-     * On onCond = new On(eq);
+     * On onCond = new On("a.id", "b.id");
      * Equal inner = (Equal) onCond.getCondition();
      * }</pre>
      *

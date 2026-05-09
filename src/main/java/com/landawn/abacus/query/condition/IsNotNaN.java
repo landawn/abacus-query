@@ -95,36 +95,13 @@ public class IsNotNaN extends IsNot {
      * evaluates to UNKNOWN. Normal comparison operators therefore cannot reliably test for the
      * absence of NaN; {@code IS NOT NAN} is the correct way to verify that a value is a valid number.</p>
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
-     * // Ensure temperature readings are valid numbers
      * IsNotNaN tempCheck = new IsNotNaN("temperature");
      * // Generates SQL: temperature IS NOT NAN
-     *
-     * // Find all records with valid calculations
-     * IsNotNaN calcCheck = new IsNotNaN("computed_value");
-     * // Generates SQL: computed_value IS NOT NAN
-     *
-     * // Validate statistical measures
-     * IsNotNaN statsCheck = new IsNotNaN("standard_deviation");
-     * // Generates SQL: standard_deviation IS NOT NAN
-     *
-     * // Filter for valid financial metrics
-     * IsNotNaN financeCheck = new IsNotNaN("return_on_investment");
-     * // Generates SQL: return_on_investment IS NOT NAN
-     *
-     * // Ensure scientific measurements are valid
-     * IsNotNaN measurementCheck = new IsNotNaN("ph_level");
-     * // Generates SQL: ph_level IS NOT NAN
-     *
-     * // Use in query builders to filter valid data
-     * List<Calculation> validCalculations = queryExecutor
-     *     .prepareQuery(Calculation.class)
-     *     .where(new IsNotNaN("result_value"))
-     *     .list();
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be null or empty)
+     * @param propName the name of the property/column to check (must not be {@code null} or empty)
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNotNaN(final String propName) {

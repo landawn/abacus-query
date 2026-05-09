@@ -51,11 +51,6 @@ package com.landawn.abacus.query.condition;
  * // SQL: name LIKE 'John%'
  * // Matches: "John", "Johnson", "Johnny", etc.
  *
- * // Find all emails ending with "@example.com"
- * Like exampleEmails = new Like("email", "%@example.com");
- * // SQL: email LIKE '%@example.com'
- * // Matches: "user@example.com", "admin@example.com", etc.
- *
  * // Find all products containing "phone" anywhere in the name
  * Like phoneProducts = new Like("product_name", "%phone%");
  * // SQL: product_name LIKE '%phone%'
@@ -65,11 +60,6 @@ package com.landawn.abacus.query.condition;
  * Like pattern = new Like("word", "A___E");
  * // SQL: word LIKE 'A___E'
  * // Matches: "APPLE", "ANKLE", "ANGLE", etc.
- *
- * // Complex pattern matching
- * Like complexPattern = new Like("code", "PRD-20__-___");
- * // SQL: code LIKE 'PRD-20__-___'
- * // Matches: "PRD-2023-001", "PRD-2024-ABC", etc.
  * }</pre>
  * 
  * @see Binary
@@ -94,34 +84,18 @@ public class Like extends Binary {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Starts with pattern - uses index efficiently
+     * // Starts with pattern - can use indexes efficiently
      * Like startsWith = new Like("title", "The%");
      * // Matches: "The Great Gatsby", "The Lord of the Rings", "The", etc.
-     * 
-     * // Ends with pattern - may require full table scan
-     * Like endsWith = new Like("filename", "%.pdf");
-     * // Matches: "report.pdf", "invoice_2023.pdf", ".pdf", etc.
-     * 
+     *
      * // Contains pattern - requires full table scan
      * Like contains = new Like("description", "%important%");
-     * // Matches: "This is important", "unimportant details", "important", etc.
-     * 
+     * // Matches: "This is important", "unimportant details", etc.
+     *
      * // Specific character positions using underscore
      * Like pattern = new Like("code", "A_B_C");
      * // Matches: "A1B2C", "AXBYC", "A-B-C", etc.
-     * 
-     * // Mixed wildcards for complex patterns
-     * Like mixed = new Like("serial", "SN-%_____");
-     * // Matches: "SN-12345", "SN-ABCDE", etc.
-     * 
-     * // Email domain pattern
-     * Like emailDomain = new Like("email", "%@%.com");
-     * // Matches any .com email address
-     * 
-     * // Phone number pattern (specific format)
-     * Like phonePattern = new Like("phone", "(___) ___-____");
-     * // Matches: "(555) 123-4567" format
-     * 
+     *
      * // Escape special characters if needed (syntax varies by database)
      * Like escaped = new Like("path", "%\\_%");   // To match literal underscore
      * // Check your database documentation for escape syntax

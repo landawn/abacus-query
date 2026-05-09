@@ -81,27 +81,14 @@ public class Any extends ComposableCell {
      * The ANY operator is used in conjunction with comparison operators to test
      * if the comparison is true for any value returned by the subquery.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
-     * // Create a subquery for department budgets
      * SubQuery budgetQuery = Filters.subQuery(
      *     "SELECT budget FROM departments WHERE region = 'West'"
      * );
      * Any anyBudget = new Any(budgetQuery);
      * // Used with: WHERE expense > ANY (SELECT budget FROM departments WHERE region = 'West')
-     * // This finds expenses greater than at least one department budget in West region
-     *
-     * // Find students with score higher than any passing score
-     * SubQuery passingScores = Filters.subQuery(
-     *     "SELECT passing_score FROM exams WHERE subject = 'Math'"
-     * );
-     * Any anyPassingScore = new Any(passingScores);
-     * // Used with: WHERE student_score > ANY (SELECT passing_score FROM exams WHERE subject = 'Math')
-     *
-     * // Find products with price equal to any competitor price
-     * SubQuery competitorPrices = Filters.subQuery("SELECT price FROM competitor_products");
-     * Any anyPrice = new Any(competitorPrices);
-     * // Used with: WHERE price = ANY (SELECT price FROM competitor_products)
+     * // Matches expenses greater than at least one department budget in the West region.
      * }</pre>
      *
      * @param subQuery the subquery that returns values to compare against (must not be {@code null})

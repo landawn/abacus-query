@@ -32,7 +32,7 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>Simple limit with count only — produces {@code LIMIT n}</li>
  *   <li>Limit with count and offset for pagination — produces {@code LIMIT n OFFSET m}</li>
- *   <li>Custom expression for database-specific syntax (e.g., MySQL's {@code LIMIT m, n}) via {@link #Limit(String)}</li>
+ *   <li>Custom expression for database-specific syntax (e.g., MySQL's {@code LIMIT offset, count}) via {@link #Limit(String)}</li>
  * </ul>
  *
  * <p>All numeric APIs consistently use {@code (count, offset)} parameter order:
@@ -46,7 +46,7 @@ import com.landawn.abacus.util.Strings;
  * Limit limit1 = new Limit(10);
  * // SQL: LIMIT 10
  *
- * // Pagination: return next 20, skip 50 rows (count=20, offset=50)
+ * // Pagination: skip 50 rows then return up to 20 (count=20, offset=50)
  * Limit limit2 = new Limit(20, 50);
  * // SQL: LIMIT 20 OFFSET 50
  *
@@ -148,9 +148,9 @@ public class Limit extends Clause {
      * Limit mysql = new Limit("20, 10");
      * // toString() -> "LIMIT 20, 10"
      *
-     * // Database-specific syntax (e.g., Firebird) - non-numeric prefix kept as-is
-     * Limit custom = new Limit("FIRST 10 SKIP 20");
-     * // toString() -> "FIRST 10 SKIP 20"
+     * // Non-numeric prefix is kept verbatim (no automatic "LIMIT " prepend)
+     * Limit custom = new Limit("FETCH FIRST 10 ROWS ONLY");
+     * // toString() -> "FETCH FIRST 10 ROWS ONLY"
      * }</pre>
      *
      * @param expr the custom LIMIT expression as a string. Must not be {@code null}, empty, or blank.

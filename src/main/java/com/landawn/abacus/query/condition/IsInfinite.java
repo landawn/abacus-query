@@ -95,32 +95,13 @@ public class IsInfinite extends Is {
      * reliably test for infinity because infinity has special arithmetic properties
      * (e.g., infinity == infinity is true, but infinity - infinity is NaN).
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
-     * // Check for infinite values in calculations
      * IsInfinite rateCheck = new IsInfinite("interest_rate");
      * // Generates SQL: interest_rate IS INFINITE
-     *
-     * // Find records with overflow in computations
-     * IsInfinite overflowCheck = new IsInfinite("computed_value");
-     * // Generates SQL: computed_value IS INFINITE
-     *
-     * // Identify division by zero results (non-zero / 0 = infinity)
-     * IsInfinite divByZero = new IsInfinite("average_per_unit");
-     * // Generates SQL: average_per_unit IS INFINITE
-     *
-     * // Check exponential calculation results
-     * IsInfinite expCheck = new IsInfinite("exponential_growth");
-     * // Generates SQL: exponential_growth IS INFINITE
-     *
-     * // Use in query builders to identify problematic calculations
-     * List<Calculation> infiniteResults = queryExecutor
-     *     .prepareQuery(Calculation.class)
-     *     .where(new IsInfinite("result_value"))
-     *     .list();
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be null or empty)
+     * @param propName the name of the property/column to check (must not be {@code null} or empty)
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsInfinite(final String propName) {

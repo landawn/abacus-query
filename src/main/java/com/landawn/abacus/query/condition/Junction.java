@@ -83,7 +83,7 @@ import com.landawn.abacus.util.Strings;
  * @see And
  * @see Or
  * @see Criteria
- * @see AbstractCondition
+ * @see ComposableCondition
  */
 public class Junction extends ComposableCondition {
 

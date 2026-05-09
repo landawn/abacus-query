@@ -152,11 +152,10 @@ public class NaturalJoin extends Join {
 
     /**
      * Creates a NATURAL JOIN clause with multiple tables/entities and a condition.
-     * This allows joining multiple tables in a single natural join operation.
-     *
-     * <p>When joining multiple tables, the natural join is performed sequentially.
-     * Each table is joined based on columns with matching names. Care must be taken
-     * to ensure the intended columns are matched, especially with multiple tables.
+     * The rendered SQL is {@code NATURAL JOIN (t1, t2, ...)} followed by the optional condition;
+     * because most databases do not accept a comma-separated list after {@code NATURAL JOIN}, this
+     * form is rarely directly executable and is provided mainly for symmetry with the other join
+     * subclasses. Prefer chaining individual {@link NaturalJoin} clauses for portable SQL.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -185,7 +184,7 @@ public class NaturalJoin extends Join {
      * @param joinEntities the collection of tables or entities to join with.
      * @param cond an additional condition appended after the natural join fragment. Any {@link Condition} is allowed
      *            and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntities, cond);

@@ -909,7 +909,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Expression> params = SqlBuilder.named("firstName", "lastName");
+     * Map<String, Expression> params = AbstractQueryBuilder.named("firstName", "lastName");
      * }</pre>
      *
      * @param propNames the property names
@@ -933,7 +933,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Expression> params = SqlBuilder.named(Arrays.asList("firstName", "lastName"));
+     * Map<String, Expression> params = AbstractQueryBuilder.named(Arrays.asList("firstName", "lastName"));
      * }</pre>
      *
      * @param propNames the collection of property names
@@ -986,8 +986,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // After using a custom handler, reset to default
-     * SqlBuilder.resetHandlerForNamedParameter();
-     * 
+     * AbstractQueryBuilder.resetHandlerForNamedParameter();
+     *
      * // Named SQL will now use :paramName format again
      * String sql = NSC.select("name").from("users").where(Filters.equal("id", 1)).build().query();
      * // Output: SELECT name FROM users WHERE id = :id
@@ -1030,18 +1030,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Specifies the target table for an INSERT or SELECT INTO operation.
-     * <p>Must be called after setting the columns/values to insert or columns to select.</p>
+     * Specifies the target table for an {@code INSERT} or {@code INSERT ... SELECT} operation.
+     * <p>Must be called after setting the columns/values via {@code insert(...)} or the columns to copy via {@code select(...)}.
+     * When chained after {@code select(...)}, the eventual {@code from(...)} call appends the source query, producing
+     * {@code INSERT INTO target (cols) SELECT cols FROM source}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String insertSql = PSC.insert("firstName", "lastName").into("account").build().query();
-     * String selectIntoSql = PSC.select("firstName").into("account_backup").from("account").build().query();
+     * // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
+     *
+     * String insertSelectSql = PSC.select("firstName").into("account_backup").from("account").build().query();
+     * // Output: INSERT INTO account_backup (first_name) SELECT first_name AS "firstName" FROM account
      * }</pre>
      *
-     * @param tableName the name of the table to insert into
+     * @param tableName the name of the target table
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if called on non-INSERT/SELECT operation or if columns/values not set
+     * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, or if columns/values have not been set
      */
     public This into(final String tableName) {
         checkSqlFragmentNotBlank(tableName, "tableName");
@@ -1179,7 +1184,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Specifies the target table for an INSERT or SELECT INTO operation using an entity class.
+     * Specifies the target table for an {@code INSERT} or {@code INSERT ... SELECT} operation using an entity class.
      * <p>The table name will be derived from the entity class based on the naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -1200,7 +1205,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Specifies the target table for an INSERT or SELECT INTO operation with explicit table name and entity class.
+     * Specifies the target table for an {@code INSERT} or {@code INSERT ... SELECT} operation with an explicit table name and entity class.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1208,8 +1213,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Inserts into specified table with Account class mapping
      * }</pre>
      *
-     * @param tableName the name of the table to insert into
-     * @param entityClass the entity class for property mapping (can be null)
+     * @param tableName the name of the target table
+     * @param entityClass the entity class for property mapping (may be {@code null})
      * @return this SqlBuilder instance for method chaining
      */
     public This into(final String tableName, final Class<?> entityClass) {
@@ -3083,7 +3088,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("users")
      *                 .append(Filters.and(Filters.greaterThan("age", 18), Filters.lessThan("age", 65)))
      *                 .build().query();
-     * // Output: SELECT * FROM users WHERE ((age > ?) AND (age < ?))
+     * // Output: SELECT * FROM users WHERE (age > ?) AND (age < ?)
      * }</pre>
      * 
      * @param cond the condition to append
@@ -4302,9 +4307,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets properties to update from an entity object.
-     * Only the dirty properties will be set into the result SQL if the specified entity is a dirty marker entity.
-     * 
+     * Sets properties to update from an entity object, a {@code Map}, or a single column-name {@code String}.
+     * For bean entities, properties annotated as {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId},
+     * or {@code @Transient} are automatically excluded.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.update("account")
@@ -4312,8 +4318,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * }</pre>
-     * 
-     * @param entity the entity object containing properties to set
+     *
+     * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @return this SqlBuilder instance for method chaining
      */
     public This set(final Object entity) {
@@ -4321,9 +4327,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets properties to update from an entity object, excluding specified properties.
-     * Only the dirty properties will be set into the result SQL if the specified entity is a dirty marker entity.
-     * 
+     * Sets properties to update from an entity object, a {@code Map}, or a single column-name {@code String},
+     * excluding the specified properties. For bean entities, properties annotated as {@code @NonUpdatable},
+     * {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @Transient} are also excluded.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> excluded = N.asSet("createdDate", "version");
@@ -4332,9 +4339,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * }</pre>
-     * 
-     * @param entity the entity object containing properties to set
-     * @param excludedPropNames properties to exclude from the update
+     *
+     * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
+     * @param excludedPropNames property names to exclude from the update (may be {@code null})
      * @return this SqlBuilder instance for method chaining
      */
     public This set(final Object entity, final Set<String> excludedPropNames) {

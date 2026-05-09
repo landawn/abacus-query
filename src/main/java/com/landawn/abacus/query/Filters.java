@@ -1877,11 +1877,12 @@ public class Filters {
 
     /**
      * Creates a {@link Junction} with a custom operator combining multiple conditions.
-     * This allows for database-specific junction types beyond {@code AND}/{@code OR}.
+     * This allows for junction types beyond the convenience {@link #and(Condition...)} / {@link #or(Condition...)} factories
+     * (e.g., {@link Operator#XOR}).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Junction condition = Filters.junction(CustomOperator.NAND,
+     * Junction condition = Filters.junction(Operator.XOR,
      *     Filters.equal("flag1", true),
      *     Filters.equal("flag2", true)
      * );
@@ -1898,11 +1899,12 @@ public class Filters {
 
     /**
      * Creates a {@link Junction} with a custom operator combining conditions from a collection.
-     * This allows for database-specific junction types beyond {@code AND}/{@code OR}.
-     * 
+     * This allows for junction types beyond the convenience {@link #and(Collection)} / {@link #or(Collection)} factories
+     * (e.g., {@link Operator#XOR}).
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Junction condition = Filters.junction(CustomOperator.NOR, conditionsList);
+     * Junction condition = Filters.junction(Operator.XOR, conditionsList);
      * }</pre>
      *
      * @param operator the junction operator to use
@@ -2416,7 +2418,7 @@ public class Filters {
      * }</pre>
      *
      * @param columnNames the column names used for joining
-     * @return a Using clause
+     * @return a {@link Using} clause
      * @deprecated It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses instead of
      *             {@code Using} for better portability and clarity. Replace {@code using("col1", "col2")} with explicit
      *             {@code on(N.asMap("table1.col1", "table2.col1", "table1.col2", "table2.col2"))}.
@@ -2437,7 +2439,7 @@ public class Filters {
      * }</pre>
      *
      * @param columnNames collection of column names used for joining
-     * @return a Using clause
+     * @return a {@link Using} clause
      * @deprecated It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses
      *             instead of {@code Using} for better portability and clarity. Replace {@code using(columnList)}
      *             with explicit {@code on()} conditions that specify the full column names with table prefixes.

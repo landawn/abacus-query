@@ -82,26 +82,13 @@ public class All extends ComposableCell {
      * Creates a new ALL condition with the specified subquery.
      * The ALL operator ensures that a comparison is true for every value returned by the subquery.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
-     * // Create a subquery for competitor prices
      * SubQuery competitorPrices = Filters.subQuery(
      *     "SELECT price FROM competitor_products WHERE product_type = 'Premium'"
      * );
      * All allCompetitors = new All(competitorPrices);
      * // Used with: WHERE our_price > ALL (SELECT price FROM competitor_products WHERE product_type = 'Premium')
-     *
-     * // Find students who scored higher than all class averages
-     * SubQuery classAverages = Filters.subQuery(
-     *     "SELECT avg_score FROM class_statistics WHERE year = 2024"
-     * );
-     * All allAverages = new All(classAverages);
-     * // Used with: WHERE student_score > ALL (SELECT avg_score FROM class_statistics WHERE year = 2024)
-     *
-     * // Find products cheaper than all premium items
-     * SubQuery premiumPrices = Filters.subQuery("SELECT price FROM products WHERE category = 'premium'");
-     * All allPremium = new All(premiumPrices);
-     * // Used with: WHERE price < ALL (SELECT price FROM products WHERE category = 'premium')
      * }</pre>
      *
      * @param subQuery the subquery that returns values to compare against (must not be {@code null})

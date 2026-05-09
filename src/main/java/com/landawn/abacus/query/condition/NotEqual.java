@@ -40,13 +40,9 @@ package com.landawn.abacus.query.condition;
  * NotEqual condition2 = new NotEqual("quantity", 0);
  * // SQL: quantity != 0
  *
- * // With null values (note: use IsNotNull for null checks)
- * NotEqual condition3 = new NotEqual("assignee", "admin");
- * // SQL: assignee != 'admin'
- *
- * // Date comparison
- * NotEqual condition4 = new NotEqual("created", "2024-01-01");
- * // SQL: created != '2024-01-01'
+ * // Null argument is rewritten to IS NOT NULL (prefer IsNotNull for clarity)
+ * NotEqual condition3 = new NotEqual("deletedDate", null);
+ * // SQL: deletedDate IS NOT NULL
  * }</pre>
  * 
  * @see Binary

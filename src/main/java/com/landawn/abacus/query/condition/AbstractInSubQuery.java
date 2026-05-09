@@ -38,7 +38,7 @@ import com.landawn.abacus.util.Strings;
  * @see InSubQuery
  * @see NotInSubQuery
  * @see SubQuery
- * @see AbstractCondition
+ * @see ComposableCondition
  */
 public abstract class AbstractInSubQuery extends ComposableCondition {
 

@@ -185,7 +185,7 @@ public class SubQuery extends AbstractCondition {
      *     Filters.greaterThan("created", "2024-01-01")
      * );
      * SubQuery subQuery = Filters.subQuery("users", props, condition);
-     * // Generates: SELECT id, email FROM users WHERE active = true AND created > '2024-01-01'
+     * // Generates: SELECT id, email FROM users WHERE ((active = true) AND (created > '2024-01-01'))
      * }</pre>
      *
      * @param entityName the entity/table name

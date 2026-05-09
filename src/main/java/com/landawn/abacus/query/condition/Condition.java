@@ -25,9 +25,9 @@ import com.landawn.abacus.util.NamingPolicy;
  * 
  * <p>This interface defines the contract that all conditions must follow, providing
  * methods for operator access, parameter management, and string representation.
- * Composable operations (AND, OR, NOT) are available on the {@link ComposableCondition}
- * subclass. Conditions are designed to be composable, allowing complex queries
- * to be built from simple building blocks.</p>
+ * Composable operations (AND, OR, NOT) are available on the abstract subclass
+ * {@link ComposableCondition}. Conditions are designed to be composable, allowing
+ * complex queries to be built from simple building blocks.</p>
  * 
  * <p>Conditions are immutable after construction.</p>
  * 

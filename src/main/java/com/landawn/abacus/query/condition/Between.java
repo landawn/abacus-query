@@ -70,20 +70,12 @@ public class Between extends AbstractBetween {
      * Creates a new BETWEEN condition.
      * The condition checks if the property value falls within the specified range, inclusive.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * // Check if age is between 18 and 65 (inclusive)
      * Between ageRange = new Between("age", 18, 65);
      *
-     * // Check if salary is within a range
-     * Between salaryRange = new Between("salary", 50000, 100000);
-     *
-     * // Check if date is in current year
-     * Between currentYear = new Between("createdDate",
-     *     LocalDate.of(2024, 1, 1),
-     *     LocalDate.of(2024, 12, 31));
-     *
-     * // Use with subqueries for dynamic ranges
+     * // Use with subqueries for a dynamic range
      * SubQuery avgMinus10 = Filters.subQuery("SELECT AVG(score) - 10 FROM scores");
      * SubQuery avgPlus10 = Filters.subQuery("SELECT AVG(score) + 10 FROM scores");
      * Between nearAverage = new Between("score", avgMinus10, avgPlus10);

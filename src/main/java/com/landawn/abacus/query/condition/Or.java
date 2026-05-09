@@ -24,10 +24,9 @@ import com.landawn.abacus.util.N;
  * Represents a composable OR condition that combines multiple conditions.
  * The OR condition evaluates to true if at least one of its child conditions evaluates to true.
  * 
- * <p>This class extends Junction and provides a fluent API for building complex OR conditions.
- * The OR operator follows standard SQL composable evaluation rules where the entire expression
- * is true if any single condition is true. Evaluation typically short-circuits when a true
- * condition is found.</p>
+ * <p>This class extends {@link Junction} and provides a fluent API for building complex OR conditions.
+ * The OR operator follows standard SQL evaluation rules where the entire expression is true if
+ * any single condition is true.</p>
  * 
  * <p>Key characteristics:</p>
  * <ul>
@@ -35,7 +34,7 @@ import com.landawn.abacus.util.N;
  *   <li>Returns false only if ALL child conditions are false</li>
  *   <li>Supports unlimited number of child conditions</li>
  *   <li>Can be nested with other composable operators (AND, NOT)</li>
- *   <li>Evaluation may short-circuit for performance</li>
+ *   <li>Whether the database short-circuits evaluation is engine-dependent</li>
  * </ul>
  *
  * <p>Relationship to other composable operators:</p>
@@ -81,9 +80,9 @@ public class Or extends Junction {
      * Creates a new OR condition with the specified conditions.
      * All provided conditions will be combined using the OR operator.
      *
-     * <p>The conditions are evaluated left to right, and the first true condition
-     * will make the entire OR expression true. This constructor accepts a variable
-     * number of conditions for convenience.</p>
+     * <p>The OR expression is true if any single child condition is true. Evaluation
+     * order at the database level depends on the SQL engine. This constructor accepts
+     * a variable number of conditions for convenience.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

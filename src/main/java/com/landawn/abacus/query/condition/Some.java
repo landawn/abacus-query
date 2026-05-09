@@ -73,25 +73,12 @@ public class Some extends ComposableCell {
      * particularly useful for finding records that exceed minimum thresholds or fall
      * below maximum limits from a dynamic set of values.</p>
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
-     * // Subquery to get department budgets
      * SubQuery deptBudgets = Filters.subQuery("SELECT budget FROM departments");
      * Some someCondition = new Some(deptBudgets);
      * // Used with: WHERE project_cost < SOME (SELECT budget FROM departments)
-     * // Returns projects that cost less than at least one department's budget
-     *
-     * // Find employees earning more than some manager salaries
-     * SubQuery managerSalaries = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
-     * Some someManagerSalary = new Some(managerSalaries);
-     * // Used with: WHERE salary > SOME (SELECT salary FROM employees WHERE is_manager = true)
-     * // Returns employees earning more than at least one manager
-     *
-     * // Find orders with amount equal to some threshold
-     * SubQuery thresholds = Filters.subQuery("SELECT threshold FROM order_levels");
-     * Some someThreshold = new Some(thresholds);
-     * // Used with: WHERE order_amount = SOME (SELECT threshold FROM order_levels)
-     * // Returns orders matching at least one threshold value
+     * // Matches projects that cost less than at least one department's budget.
      * }</pre>
      *
      * @param subQuery the subquery that returns values to compare against (must not be {@code null})

@@ -165,8 +165,8 @@ public class Join extends AbstractCondition {
      *         new On("categories.id", "p.category_id"),
      *         Filters.equal("p.active", true)
      *     ));
-     * // Generates: JOIN products p (ON categories.id = p.category_id) AND (p.active = true)
-     * // Note: And wraps each condition in parentheses
+     * // Generates: JOIN products p ((ON categories.id = p.category_id) AND (p.active = true))
+     * // Note: And wraps each child in parentheses and the whole junction in outer parentheses
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.

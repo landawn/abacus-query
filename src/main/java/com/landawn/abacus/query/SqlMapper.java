@@ -167,7 +167,7 @@ public final class SqlMapper {
      * @throws IllegalArgumentException if {@code filePath} is {@code null}, empty, or resolves to no non-empty paths after splitting
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid
-     * @throws RuntimeException if no 'sqlMapper' element is found in any file
+     * @throws RuntimeException if any of the loaded files does not contain a {@code <sqlMapper>} element
      */
     public static SqlMapper load(final String filePath) {
         N.checkArgNotEmpty(filePath, "filePath");

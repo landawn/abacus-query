@@ -80,32 +80,13 @@ public class IsNotNull extends IsNot {
      * UNKNOWN (which behaves as {@code false} in WHERE clauses), whereas {@code NULL IS NOT NULL}
      * correctly evaluates to {@code false}, unambiguously indicating that the value is absent.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
-     * // Ensure user has an email address
      * IsNotNull emailCheck = new IsNotNull("email");
      * // Generates SQL: email IS NOT NULL
-     *
-     * // Filter for customers with phone numbers
-     * IsNotNull phoneCheck = new IsNotNull("phone_number");
-     * // Generates SQL: phone_number IS NOT NULL
-     *
-     * // Find all orders with shipping addresses
-     * IsNotNull addressCheck = new IsNotNull("shipping_address");
-     * // Generates SQL: shipping_address IS NOT NULL
-     *
-     * // Validate that a date field is populated
-     * IsNotNull dateCheck = new IsNotNull("registration_date");
-     * // Generates SQL: registration_date IS NOT NULL
-     *
-     * // Use in query builders
-     * List<User> usersWithEmail = queryExecutor
-     *     .prepareQuery(User.class)
-     *     .where(new IsNotNull("email"))
-     *     .list();
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be null or empty)
+     * @param propName the name of the property/column to check (must not be {@code null} or empty)
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNotNull(final String propName) {

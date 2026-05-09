@@ -97,36 +97,13 @@ public class IsNaN extends Is {
      * {@code NaN == NaN} evaluates to {@code false}, while in SQL any comparison with NaN
      * evaluates to UNKNOWN. {@code IS NAN} is the only reliable way to test for NaN values.</p>
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
-     * // Check if temperature reading is NaN
      * IsNaN tempCheck = new IsNaN("temperature");
      * // Generates SQL: temperature IS NAN
-     *
-     * // Find all records with invalid calculations
-     * IsNaN calcError = new IsNaN("computed_value");
-     * // Generates SQL: computed_value IS NAN
-     *
-     * // Identify division by zero errors (0/0 results in NaN)
-     * IsNaN divError = new IsNaN("average_score");
-     * // Generates SQL: average_score IS NAN
-     *
-     * // Check statistical calculations
-     * IsNaN statsCheck = new IsNaN("standard_deviation");
-     * // Generates SQL: standard_deviation IS NAN
-     *
-     * // Validate sensor readings
-     * IsNaN sensorError = new IsNaN("pressure_reading");
-     * // Generates SQL: pressure_reading IS NAN
-     *
-     * // Use in query builders to find problematic data
-     * List<Measurement> invalidMeasurements = queryExecutor
-     *     .prepareQuery(Measurement.class)
-     *     .where(new IsNaN("sensor_value"))
-     *     .list();
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be null or empty)
+     * @param propName the name of the property/column to check (must not be {@code null} or empty)
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNaN(final String propName) {

@@ -37,7 +37,7 @@ import java.util.Collection;
  *   <li>Returns ALL rows from the left table</li>
  *   <li>Returns matching rows from the right table</li>
  *   <li>Returns NULL for right table columns when no match exists</li>
- *   <li>Result set size is at least the size of the left table</li>
+ *   <li>Result set size is at least the size of the left table (more if a left-table row matches multiple right-table rows)</li>
  *   <li>Order matters: LEFT JOIN is not commutative</li>
  * </ul>
  * 
@@ -184,7 +184,7 @@ public class LeftJoin extends Join {
      * @param joinEntities the collection of tables or entities to join with.
      * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.LEFT_JOIN, joinEntities, cond);

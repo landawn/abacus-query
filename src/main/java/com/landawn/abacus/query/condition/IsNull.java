@@ -95,36 +95,13 @@ public class IsNull extends Is {
      * UNKNOWN (which behaves as {@code false} in WHERE clauses), whereas {@code NULL IS NULL}
      * correctly evaluates to {@code true}.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
-     * // Find records with missing data
      * IsNull birthdateCheck = new IsNull("birth_date");
      * // Generates SQL: birth_date IS NULL
-     *
-     * // Find unprocessed records
-     * IsNull processedCheck = new IsNull("processed_date");
-     * // Generates SQL: processed_date IS NULL
-     *
-     * // Find products without descriptions
-     * IsNull descCheck = new IsNull("description");
-     * // Generates SQL: description IS NULL
-     *
-     * // Find employees without managers (top-level employees)
-     * IsNull managerCheck = new IsNull("manager_id");
-     * // Generates SQL: manager_id IS NULL
-     *
-     * // Check for missing optional fields
-     * IsNull middleNameCheck = new IsNull("middle_name");
-     * // Generates SQL: middle_name IS NULL
-     *
-     * // Use in query builders
-     * List<User> usersWithoutEmail = queryExecutor
-     *     .prepareQuery(User.class)
-     *     .where(new IsNull("email"))
-     *     .list();
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be null or empty)
+     * @param propName the name of the property/column to check (must not be {@code null} or empty)
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public IsNull(final String propName) {

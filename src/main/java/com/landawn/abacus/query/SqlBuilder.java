@@ -6770,11 +6770,11 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = PSC.selectFrom(Account.class, "a", "account",
          *                            Order.class, "o", "order")
-         *                 .innerJoin("o").on("a.id = o.account_id")
+         *                 .where(Filters.expr("a.id = o.account_id"))
          *                 .build().query();
          * // Automatically generates appropriate FROM clause
          * }</pre>
-         * 
+         *
          * @param entityClassA first entity class
          * @param tableAliasA table alias for first entity
          * @param classAliasA property prefix for first entity
@@ -6791,16 +6791,16 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement for multiple entity classes with exclusions.
-         * 
+         *
          * <p>Extended version allowing property exclusions for each entity in the query.
          * The FROM clause is automatically generated.</p>
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> userExclude = N.asSet("password");
          * String sql = PSC.selectFrom(Account.class, "a", "account", userExclude,
          *                            Order.class, "o", "order", null)
-         *                 .innerJoin("o").on("a.id = o.account_id")
+         *                 .where(Filters.expr("a.id = o.account_id"))
          *                 .build().query();
          * }</pre>
          * 
@@ -8011,12 +8011,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * String sql = PAC.selectFrom(User.class, "u", "user", 
+         * String sql = PAC.selectFrom(User.class, "u", "user",
          *                            Order.class, "o", "order")
-         *                 .innerJoin("o").on("u.id = o.user_id")
+         *                 .where(Filters.expr("u.id = o.user_id"))
          *                 .build().query();
          * }</pre>
-         * 
+         *
          * @param entityClassA first entity class
          * @param tableAliasA table alias for first entity
          * @param classAliasA property prefix for first entity
@@ -8032,15 +8032,15 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates a SELECT FROM statement for two entities with exclusions.
-         * 
+         *
          * <p>Extended version allowing property exclusions for each entity in the query.</p>
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> userExclude = new HashSet<>(Arrays.asList("password"));
          * String sql = PAC.selectFrom(User.class, "u", "user", userExclude,
          *                            Order.class, "o", "order", null)
-         *                 .innerJoin("o").on("u.id = o.user_id")
+         *                 .where(Filters.expr("u.id = o.user_id"))
          *                 .build().query();
          * }</pre>
          * 
@@ -8078,7 +8078,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     new Selection(Order.class, "o", "order", null, false, null)
          * );
          * String sql = PAC.selectFrom(selections)
-         *                 .innerJoin("o").on("u.id = o.user_id")
+         *                 .where(Filters.expr("u.id = o.user_id"))
          *                 .build().query();
          * }</pre>
          * 
@@ -12173,7 +12173,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                     Filters.greaterThan("age", 18)
          *                 ))
          *                 .build().query();
-         * // Output: SELECT count(*) FROM users WHERE first_name = :firstName AND age = :age
+         * // Output: SELECT count(*) FROM users WHERE first_name = :firstName AND age > :age
          * }</pre>
          * 
          * @param entityClass the entity class to count rows from
@@ -12199,7 +12199,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.like("email", "%@example.com")
          * );
          * String sql = NSC.render(cond, User.class).build().query();
-         * // Output: first_name = :firstName AND age = :age AND email LIKE :email
+         * // Output: first_name = :firstName AND age > :age AND email LIKE :email
          * }</pre>
          * 
          * @param cond the condition to parse into SQL
@@ -19433,8 +19433,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MLC.selectFrom(Account.class, "a", "account", Order.class, "o", "order")
-         *                 .innerJoin("a.id = o.accountId")
-         *                 .where(Filters.greaterThan("o.createdDate", someDate))
+         *                 .where(Filters.expr("a.id = o.accountId"))
          *                 .build().query();
          * // Output: SELECT with automatic FROM clause generation
          * }</pre>
@@ -19456,13 +19455,13 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         /**
          * Creates a complete SELECT...FROM SQL builder for multiple entity classes with property exclusion.
          * Automatically generates the FROM clause and excludes specified properties.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Set<String> accountExcludes = new HashSet<>(Arrays.asList("sensitiveData"));
          * String sql = MLC.selectFrom(Account.class, "a", "account", accountExcludes,
          *                            Order.class, "o", "order", null)
-         *                 .innerJoin("a.id = o.accountId")
+         *                 .where(Filters.expr("a.id = o.accountId"))
          *                 .build().query();
          * // Output: SELECT with automatic FROM clause and excluded columns
          * }</pre>

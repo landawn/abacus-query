@@ -475,12 +475,14 @@ public final class QueryUtil {
 
     /**
      * Gets the property names to be used for UPDATE operations on the given entity class.
-     * This method automatically excludes ID fields and properties marked as non-updatable.
+     * This method excludes properties marked as non-updatable, which typically includes ID fields.
      *
      * <p>Properties are considered non-updatable if they are:</p>
      * <ul>
-     *   <li>Annotated with {@code @Id}</li>
-     *   <li>Marked as {@code insertable=false, updatable=false} in {@code @Column}</li>
+     *   <li>Annotated with {@code @ReadOnly}, {@code @ReadOnlyId}, or otherwise marked as a read-only id property</li>
+     *   <li>Annotated with {@code @NonUpdatable}</li>
+     *   <li>Excluded from column mapping (e.g. {@code transient}, annotated with {@code @NonColumn},
+     *       or filtered out by the {@code @Table} {@code columnFields}/{@code nonColumnFields} configuration)</li>
      *   <li>Listed in the {@code excludedPropNames} parameter</li>
      * </ul>
      *

@@ -18,8 +18,10 @@ import java.util.Collection;
 
 /**
  * Represents a FULL OUTER JOIN operation in SQL queries.
- * A FULL JOIN returns all rows when there is a match in either table.
- * It combines the results of both LEFT JOIN and RIGHT JOIN.
+ * A FULL JOIN returns all rows from both tables: matched rows are combined,
+ * and unmatched rows from either side are returned with NULLs filled in for
+ * the columns of the other table. It is equivalent to the union of the
+ * results of a LEFT JOIN and a RIGHT JOIN on the same condition.
  * 
  * <p>FULL JOIN is useful when you need to see all records from both tables,
  * regardless of whether they have matching values. It's particularly valuable

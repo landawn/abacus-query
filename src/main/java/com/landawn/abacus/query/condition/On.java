@@ -66,7 +66,8 @@ import com.landawn.abacus.util.N;
  * joinMap.put("emp.department_id", "dept.id");
  * joinMap.put("emp.location_id", "dept.location_id");
  * On on3 = new On(joinMap);
- * // Generates: ON ((emp.department_id = dept.id) AND (emp.location_id = dept.location_id))
+ * // The wrapped condition is an And of two Equals, which renders as:
+ * // ON ((emp.department_id = dept.id) AND (emp.location_id = dept.location_id))
  *
  * // Join with ON condition and additional filter
  * Condition filteredJoin = Filters.and(
@@ -183,8 +184,8 @@ public class On extends Cell {
      * compositeKey.put("order_items.customer_id", "orders.customer_id");
      * On on1 = new On(compositeKey);
      * InnerJoin join1 = new InnerJoin("orders", on1);
-     * // Generates: INNER JOIN orders ON order_items.order_id = orders.id
-     * //                             AND order_items.customer_id = orders.customer_id
+     * // Generates: INNER JOIN orders ON ((order_items.order_id = orders.id)
+     * //                             AND (order_items.customer_id = orders.customer_id))
      *
      * // Multi-column natural key join
      * Map<String, String> naturalKey = new LinkedHashMap<>();
@@ -192,8 +193,8 @@ public class On extends Cell {
      * naturalKey.put("addresses.region_code", "countries.region_code");
      * On on2 = new On(naturalKey);
      * LeftJoin join2 = new LeftJoin("countries", on2);
-     * // Generates: LEFT JOIN countries ON addresses.country_code = countries.code
-     * //                                AND addresses.region_code = countries.region_code
+     * // Generates: LEFT JOIN countries ON ((addresses.country_code = countries.code)
+     * //                                AND (addresses.region_code = countries.region_code))
      *
      * // Three-column composite join
      * Map<String, String> tripleKey = new LinkedHashMap<>();
@@ -201,7 +202,7 @@ public class On extends Cell {
      * tripleKey.put("t1.col2", "t2.col2");
      * tripleKey.put("t1.col3", "t2.col3");
      * On on3 = new On(tripleKey);
-     * // Generates: ON t1.col1 = t2.col1 AND t1.col2 = t2.col2 AND t1.col3 = t2.col3
+     * // Generates: ON ((t1.col1 = t2.col1) AND (t1.col2 = t2.col2) AND (t1.col3 = t2.col3))
      * }</pre>
      *
      * @param propNamePair map of column pairs where the key is from the first table and the value is from the second
