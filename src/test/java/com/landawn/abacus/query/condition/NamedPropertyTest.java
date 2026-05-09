@@ -100,7 +100,7 @@ class NamedProperty2025Test extends TestBase {
     @Test
     public void testAnyEqualWithVarargs() {
         NamedProperty np = NamedProperty.of("color");
-        Or or = np.anyEqual("red", "green", "blue");
+        Or or = np.equalsAny("red", "green", "blue");
 
         assertNotNull(or);
         assertEquals(3, or.getConditions().size());
@@ -111,7 +111,7 @@ class NamedProperty2025Test extends TestBase {
         NamedProperty np = NamedProperty.of("city");
         List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
 
-        Or or = np.anyEqual(cities);
+        Or or = np.equalsAny(cities);
 
         assertNotNull(or);
         assertEquals(3, or.getConditions().size());
@@ -349,7 +349,7 @@ class NamedProperty2025Test extends TestBase {
     public void testComplexUsageWithOr() {
         NamedProperty priority = NamedProperty.of("priority");
 
-        Or or = priority.anyEqual(1, 2, 3, 4, 5);
+        Or or = priority.equalsAny(1, 2, 3, 4, 5);
 
         assertEquals(5, or.getConditions().size());
     }
@@ -419,7 +419,7 @@ class NamedProperty2025Test extends TestBase {
     public void testComplexAnyEqualWithMixedTypes() {
         NamedProperty type = NamedProperty.of("type");
 
-        Or or = type.anyEqual("A", "B", "C", "D");
+        Or or = type.equalsAny("A", "B", "C", "D");
 
         assertEquals(4, or.getConditions().size());
     }
@@ -428,7 +428,7 @@ class NamedProperty2025Test extends TestBase {
     public void testAnyEqualWithSingleValue() {
         NamedProperty status = NamedProperty.of("status");
 
-        Or or = status.anyEqual("active");
+        Or or = status.equalsAny("active");
 
         assertNotNull(or);
         assertEquals(1, or.getConditions().size());
@@ -439,7 +439,7 @@ class NamedProperty2025Test extends TestBase {
         NamedProperty status = NamedProperty.of("status");
 
         assertThrows(IllegalArgumentException.class, () -> {
-            status.anyEqual(Arrays.asList());
+            status.equalsAny(Arrays.asList());
         });
     }
 
@@ -575,7 +575,7 @@ class NamedProperty2026Test extends TestBase {
     @Test
     public void testAnyEqual_LongArray() {
         final NamedProperty property = NamedProperty.of("user_id");
-        final Or condition = property.anyEqual(new long[] { 1001L, 1002L, 1003L });
+        final Or condition = property.equalsAny(new long[] { 1001L, 1002L, 1003L });
 
         assertNotNull(condition);
         assertEquals(3, condition.getConditions().size());
@@ -587,7 +587,7 @@ class NamedProperty2026Test extends TestBase {
     @Test
     public void testAnyEqual_LongArray_SingleElement() {
         final NamedProperty property = NamedProperty.of("id");
-        final Or condition = property.anyEqual(new long[] { 42L });
+        final Or condition = property.equalsAny(new long[] { 42L });
 
         assertEquals(1, condition.getConditions().size());
     }
@@ -596,13 +596,13 @@ class NamedProperty2026Test extends TestBase {
     public void testAnyEqual_LongArray_Empty() {
         final NamedProperty property = NamedProperty.of("id");
 
-        assertThrows(IllegalArgumentException.class, () -> property.anyEqual(new long[0]));
+        assertThrows(IllegalArgumentException.class, () -> property.equalsAny(new long[0]));
     }
 
     @Test
     public void testAnyEqual_DoubleArray() {
         final NamedProperty property = NamedProperty.of("rate");
-        final Or condition = property.anyEqual(new double[] { 1.5, 2.0, 2.5 });
+        final Or condition = property.equalsAny(new double[] { 1.5, 2.0, 2.5 });
 
         assertNotNull(condition);
         assertEquals(3, condition.getConditions().size());
@@ -614,7 +614,7 @@ class NamedProperty2026Test extends TestBase {
     @Test
     public void testAnyEqual_DoubleArray_SingleElement() {
         final NamedProperty property = NamedProperty.of("score");
-        final Or condition = property.anyEqual(new double[] { 99.9 });
+        final Or condition = property.equalsAny(new double[] { 99.9 });
 
         assertEquals(1, condition.getConditions().size());
     }
@@ -623,7 +623,7 @@ class NamedProperty2026Test extends TestBase {
     public void testAnyEqual_DoubleArray_Empty() {
         final NamedProperty property = NamedProperty.of("score");
 
-        assertThrows(IllegalArgumentException.class, () -> property.anyEqual(new double[0]));
+        assertThrows(IllegalArgumentException.class, () -> property.equalsAny(new double[0]));
     }
 
     @Test
@@ -799,7 +799,7 @@ public class NamedPropertyTest extends TestBase {
     @Test
     public void testAnyEqualWithArray() {
         NamedProperty prop = NamedProperty.of("color");
-        Or condition = prop.anyEqual("red", "green", "blue");
+        Or condition = prop.equalsAny("red", "green", "blue");
 
         Assertions.assertEquals(3, condition.getConditions().size());
     }
@@ -808,7 +808,7 @@ public class NamedPropertyTest extends TestBase {
     public void testAnyEqualWithCollection() {
         NamedProperty prop = NamedProperty.of("city");
         List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
-        Or condition = prop.anyEqual(cities);
+        Or condition = prop.equalsAny(cities);
 
         Assertions.assertEquals(3, condition.getConditions().size());
     }
@@ -816,7 +816,7 @@ public class NamedPropertyTest extends TestBase {
     @Test
     public void testAnyEqualWithPrimitiveArray() {
         NamedProperty prop = NamedProperty.of("priority");
-        Or condition = prop.anyEqual(new int[] { 1, 2, 3 });
+        Or condition = prop.equalsAny(new int[] { 1, 2, 3 });
 
         Assertions.assertEquals(3, condition.getConditions().size());
         Assertions.assertEquals(Integer.valueOf(1), ((Equal) condition.getConditions().get(0)).getPropValue());
@@ -827,7 +827,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop = NamedProperty.of("city");
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            prop.anyEqual();
+            prop.equalsAny();
         });
     }
 
@@ -836,7 +836,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop = NamedProperty.of("city");
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            prop.anyEqual(Arrays.asList());
+            prop.equalsAny(Arrays.asList());
         });
     }
 
@@ -1030,7 +1030,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty status = NamedProperty.of("status");
 
         // Create complex conditions using named properties
-        Or complexCondition = age.anyEqual(25, 30, 35);
+        Or complexCondition = age.equalsAny(25, 30, 35);
         In statusCondition = status.in(Arrays.asList("active", "pending"));
 
         Assertions.assertEquals(3, complexCondition.getConditions().size());

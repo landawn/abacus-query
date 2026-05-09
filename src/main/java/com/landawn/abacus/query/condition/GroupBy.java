@@ -189,11 +189,11 @@ public class GroupBy extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Complex grouping with mixed sort directions
-     * Map<String, SortDirection> orders = new LinkedHashMap<>();
-     * orders.put("department", SortDirection.ASC);
-     * orders.put("salary_range", SortDirection.DESC);
-     * orders.put("hire_year", SortDirection.ASC);
-     * GroupBy complex = new GroupBy(orders);
+     * Map<String, SortDirection> groupings = new LinkedHashMap<>();
+     * groupings.put("department", SortDirection.ASC);
+     * groupings.put("salary_range", SortDirection.DESC);
+     * groupings.put("hire_year", SortDirection.ASC);
+     * GroupBy complex = new GroupBy(groupings);
      * // SQL: GROUP BY department ASC, salary_range DESC, hire_year ASC
      *
      * // Grouping for sales analysis
@@ -204,12 +204,12 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY region ASC, total_sales DESC
      * }</pre>
      *
-     * @param orders a map of property names to their sort directions. Should be a {@code LinkedHashMap}
-     *               to maintain order. Must not be {@code null} or empty.
-     * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null} or empty keys
+     * @param groupings a map of property names to their sort directions. Should be a {@code LinkedHashMap}
+     *                  to maintain order. Must not be {@code null} or empty.
+     * @throws IllegalArgumentException if {@code groupings} is {@code null}, empty, or contains {@code null} or empty keys
      *                                  or {@code null} values
      */
-    public GroupBy(final Map<String, SortDirection> orders) {
-        this(Filters.expr(AbstractCondition.createSortExpression(orders)));
+    public GroupBy(final Map<String, SortDirection> groupings) {
+        this(Filters.expr(AbstractCondition.createSortExpression(groupings)));
     }
 }

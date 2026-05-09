@@ -44,7 +44,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Support for pattern matching (like, notLike, startsWith, endsWith, contains)</li>
  *   <li>Support for null checks (isNull, isNotNull)</li>
  *   <li>Support for range and set operations (between, in)</li>
- *   <li>Convenience methods for OR combinations (anyEqual)</li>
+ *   <li>Convenience methods for OR combinations (equalsAny)</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -69,7 +69,7 @@ import com.landawn.abacus.util.Strings;
  * Condition c8 = status.isNotNull();   // status IS NOT NULL
  *
  * // Chain conditions with OR
- * Or orCondition = age.anyEqual(25, 30, 35);   // age = 25 OR age = 30 OR age = 35
+ * Or orCondition = age.equalsAny(25, 30, 35);   // age = 25 OR age = 30 OR age = 35
  *
  * // Combine with AND/OR for complex queries
  * Condition complex = age.greaterThan(18).and(status.equal("active"));
@@ -203,10 +203,10 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("color").anyEqual("red", "green", "blue");
+     * NamedProperty.of("color").equalsAny("red", "green", "blue");
      * // Results in: color = 'red' OR color = 'green' OR color = 'blue'
      *
-     * NamedProperty.of("priority").anyEqual(1, 2, 3);
+     * NamedProperty.of("priority").equalsAny(1, 2, 3);
      * // Results in: priority = 1 OR priority = 2 OR priority = 3
      * }</pre>
      *
@@ -215,7 +215,7 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
-    public Or anyEqual(final Object... values) {
+    public Or equalsAny(final Object... values) {
         N.checkArgNotEmpty(values, "values");
 
         final List<Condition> conditions = new ArrayList<>(values.length);
@@ -233,7 +233,7 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("priority").anyEqual(new int[]{1, 2, 3});
+     * NamedProperty.of("priority").equalsAny(new int[]{1, 2, 3});
      * // Results in: priority = 1 OR priority = 2 OR priority = 3
      * }</pre>
      *
@@ -242,7 +242,7 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
-    public Or anyEqual(final int[] values) {
+    public Or equalsAny(final int[] values) {
         N.checkArgNotEmpty(values, "values");
 
         final List<Condition> conditions = new ArrayList<>(values.length);
@@ -260,7 +260,7 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("user_id").anyEqual(new long[]{1001L, 1002L, 1003L});
+     * NamedProperty.of("user_id").equalsAny(new long[]{1001L, 1002L, 1003L});
      * // Results in: user_id = 1001 OR user_id = 1002 OR user_id = 1003
      * }</pre>
      *
@@ -269,7 +269,7 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
-    public Or anyEqual(final long[] values) {
+    public Or equalsAny(final long[] values) {
         N.checkArgNotEmpty(values, "values");
 
         final List<Condition> conditions = new ArrayList<>(values.length);
@@ -287,7 +287,7 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NamedProperty.of("rate").anyEqual(new double[]{1.5, 2.0, 2.5});
+     * NamedProperty.of("rate").equalsAny(new double[]{1.5, 2.0, 2.5});
      * // Results in: rate = 1.5 OR rate = 2.0 OR rate = 2.5
      * }</pre>
      *
@@ -296,7 +296,7 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
-    public Or anyEqual(final double[] values) {
+    public Or equalsAny(final double[] values) {
         N.checkArgNotEmpty(values, "values");
 
         final List<Condition> conditions = new ArrayList<>(values.length);
@@ -310,17 +310,17 @@ public sealed class NamedProperty permits NP {
 
     /**
      * Creates an OR condition with multiple EQUAL checks for this property using a collection.
-     * This is similar to {@link #anyEqual(Object...)} but accepts a collection instead of varargs.
+     * This is similar to {@link #equalsAny(Object...)} but accepts a collection instead of varargs.
      * Useful when the values are already in a collection or list.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
-     * NamedProperty.of("city").anyEqual(cities);
+     * NamedProperty.of("city").equalsAny(cities);
      * // Results in: city = 'New York' OR city = 'Los Angeles' OR city = 'Chicago'
      *
      * Set<Integer> validIds = Set.of(10, 20, 30);
-     * NamedProperty.of("department_id").anyEqual(validIds);
+     * NamedProperty.of("department_id").equalsAny(validIds);
      * // Results in: department_id = 10 OR department_id = 20 OR department_id = 30
      * }</pre>
      *
@@ -329,7 +329,7 @@ public sealed class NamedProperty permits NP {
      * @see Or
      * @see Equal
      */
-    public Or anyEqual(final Collection<?> values) {
+    public Or equalsAny(final Collection<?> values) {
         N.checkArgNotEmpty(values, "values");
 
         final List<Condition> conditions = new ArrayList<>(values.size());
@@ -625,9 +625,9 @@ public sealed class NamedProperty permits NP {
      * @param value the pattern to match (can include % for any characters and _ for single character)
      * @return a Like condition for this property
      * @see Like
-     * @see Filters#like(String, Object)
+     * @see Filters#like(String, String)
      */
-    public Like like(final Object value) {
+    public Like like(final String value) {
         return Filters.like(propName, value);
     }
 
@@ -644,9 +644,9 @@ public sealed class NamedProperty permits NP {
      * @param value the pattern to exclude (can include % for any characters and _ for single character)
      * @return a NotLike condition for this property
      * @see NotLike
-     * @see Filters#notLike(String, Object)
+     * @see Filters#notLike(String, String)
      */
-    public NotLike notLike(final Object value) {
+    public NotLike notLike(final String value) {
         return Filters.notLike(propName, value);
     }
 
@@ -663,9 +663,9 @@ public sealed class NamedProperty permits NP {
      * @param value the prefix to match. The % wildcard will be automatically appended.
      * @return a Like condition with % appended to the value
      * @see Like
-     * @see Filters#startsWith(String, Object)
+     * @see Filters#startsWith(String, String)
      */
-    public Like startsWith(final Object value) {
+    public Like startsWith(final String value) {
         return Filters.startsWith(propName, value);
     }
 
@@ -682,9 +682,9 @@ public sealed class NamedProperty permits NP {
      * @param value the prefix to exclude. The % wildcard will be automatically appended.
      * @return a NotLike condition with % appended to the value
      * @see NotLike
-     * @see Filters#notStartsWith(String, Object)
+     * @see Filters#notStartsWith(String, String)
      */
-    public NotLike notStartsWith(final Object value) {
+    public NotLike notStartsWith(final String value) {
         return Filters.notStartsWith(propName, value);
     }
 
@@ -701,9 +701,9 @@ public sealed class NamedProperty permits NP {
      * @param value the suffix to match. The % wildcard will be automatically prepended.
      * @return a Like condition with % prepended to the value
      * @see Like
-     * @see Filters#endsWith(String, Object)
+     * @see Filters#endsWith(String, String)
      */
-    public Like endsWith(final Object value) {
+    public Like endsWith(final String value) {
         return Filters.endsWith(propName, value);
     }
 
@@ -720,9 +720,9 @@ public sealed class NamedProperty permits NP {
      * @param value the suffix to exclude. The % wildcard will be automatically prepended.
      * @return a NotLike condition with % prepended to the value
      * @see NotLike
-     * @see Filters#notEndsWith(String, Object)
+     * @see Filters#notEndsWith(String, String)
      */
-    public NotLike notEndsWith(final Object value) {
+    public NotLike notEndsWith(final String value) {
         return Filters.notEndsWith(propName, value);
     }
 
@@ -739,9 +739,9 @@ public sealed class NamedProperty permits NP {
      * @param value the substring to match. The % wildcard will be automatically added to both sides.
      * @return a Like condition with % on both sides of the value
      * @see Like
-     * @see Filters#contains(String, Object)
+     * @see Filters#contains(String, String)
      */
-    public Like contains(final Object value) {
+    public Like contains(final String value) {
         return Filters.contains(propName, value);
     }
 
@@ -758,9 +758,9 @@ public sealed class NamedProperty permits NP {
      * @param value the substring to exclude. The % wildcard will be automatically added to both sides.
      * @return a NotLike condition with % on both sides of the value
      * @see NotLike
-     * @see Filters#notContains(String, Object)
+     * @see Filters#notContains(String, String)
      */
-    public NotLike notContains(final Object value) {
+    public NotLike notContains(final String value) {
         return Filters.notContains(propName, value);
     }
 

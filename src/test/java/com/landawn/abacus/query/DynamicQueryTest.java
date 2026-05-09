@@ -492,27 +492,6 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
-    public void testLimitByRowNum() {
-        Builder builder = DynamicQuery.builder();
-        builder.select().append("*");
-        builder.from().append("users");
-        builder.whereRowNumAtMost(100);
-        String sql = builder.build();
-        assertEquals("SELECT * FROM users WHERE ROWNUM <= 100", sql);
-    }
-
-    @Test
-    public void testLimitByRowNumWithWhere() {
-        Builder builder = DynamicQuery.builder();
-        builder.select().append("*");
-        builder.from().append("users");
-        builder.where().append("active = 1");
-        builder.whereRowNumAtMost(100);
-        String sql = builder.build();
-        assertEquals("SELECT * FROM users WHERE active = 1 AND ROWNUM <= 100", sql);
-    }
-
-    @Test
     public void testOffsetRows() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("*");
@@ -944,16 +923,6 @@ class DynamicQueryJavadocExamples extends TestBase {
         b.from().append("users", "u").fullJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
         assertTrue(sql.contains("FULL JOIN orders o ON u.id = o.user_id"));
-    }
-
-    @Test
-    public void testDynamicQueryBuilder_whereRowNumAtMost() {
-        Builder b = DynamicQuery.builder();
-        b.select().append("*");
-        b.from().append("users");
-        b.whereRowNumAtMost(10);
-        String sql = b.build();
-        assertTrue(sql.contains("ROWNUM <= 10"));
     }
 
     @Test

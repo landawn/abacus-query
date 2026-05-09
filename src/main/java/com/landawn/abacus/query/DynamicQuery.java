@@ -314,34 +314,6 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an Oracle-style {@code ROWNUM} condition to the {@code WHERE} clause.
-         * Generates: {@code ROWNUM <= n}
-         *
-         * <p><b>Usage Examples:</b></p>
-         * <pre>{@code
-         * builder.whereRowNumAtMost(10);
-         * // Generates: ROWNUM <= 10
-         * }</pre>
-         *
-         * @param count the maximum number of rows to return (must not be negative)
-         * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code count} is negative
-         */
-        public Builder whereRowNumAtMost(final int count) {
-            N.checkArgNotNegative(count, "count");
-
-            final String rowNumCondition = "ROWNUM <= " + count;
-
-            if (whereClause == null || whereClause.sb.isEmpty()) {
-                where().append(rowNumCondition);
-            } else {
-                whereClause.and(rowNumCondition);
-            }
-
-            return this;
-        }
-
-        /**
          * Adds an {@code OFFSET} clause for SQL:2008 standard pagination.
          * Typically used with {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)}.
          *

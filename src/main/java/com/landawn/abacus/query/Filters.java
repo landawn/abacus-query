@@ -1419,7 +1419,7 @@ public class Filters {
      * @param propValue the pattern to match (can include SQL wildcards)
      * @return a {@link Like} condition
      */
-    public static Like like(final String propName, final Object propValue) {
+    public static Like like(final String propName, final String propValue) {
         return new Like(propName, propValue);
     }
 
@@ -1436,7 +1436,7 @@ public class Filters {
      * @return a {@link Like} condition with a parameter placeholder
      */
     public static Like like(final String propName) {
-        return like(propName, QME);
+        return new Like(propName, QME);
     }
 
     /**
@@ -1453,7 +1453,7 @@ public class Filters {
      * @param propValue the pattern to exclude (can include SQL wildcards)
      * @return a {@link NotLike} condition
      */
-    public static NotLike notLike(final String propName, final Object propValue) {
+    public static NotLike notLike(final String propName, final String propValue) {
         return new NotLike(propName, propValue);
     }
 
@@ -1487,7 +1487,7 @@ public class Filters {
      * @param propValue the value to search for
      * @return a {@link Like} condition
      */
-    public static Like contains(final String propName, final Object propValue) {
+    public static Like contains(final String propName, final String propValue) {
         return new Like(propName, SK._PERCENT + N.stringOf(propValue) + SK._PERCENT);
     }
 
@@ -1505,7 +1505,7 @@ public class Filters {
      * @param propValue the value to exclude
      * @return a {@link NotLike} condition
      */
-    public static NotLike notContains(final String propName, final Object propValue) {
+    public static NotLike notContains(final String propName, final String propValue) {
         return new NotLike(propName, SK._PERCENT + N.stringOf(propValue) + SK._PERCENT);
     }
 
@@ -1523,7 +1523,7 @@ public class Filters {
      * @param propValue the prefix to search for
      * @return a {@link Like} condition
      */
-    public static Like startsWith(final String propName, final Object propValue) {
+    public static Like startsWith(final String propName, final String propValue) {
         return new Like(propName, N.stringOf(propValue) + SK._PERCENT);
     }
 
@@ -1541,7 +1541,7 @@ public class Filters {
      * @param propValue the prefix to exclude
      * @return a {@link NotLike} condition
      */
-    public static NotLike notStartsWith(final String propName, final Object propValue) {
+    public static NotLike notStartsWith(final String propName, final String propValue) {
         return new NotLike(propName, N.stringOf(propValue) + SK._PERCENT);
     }
 
@@ -1559,7 +1559,7 @@ public class Filters {
      * @param propValue the suffix to search for
      * @return a {@link Like} condition
      */
-    public static Like endsWith(final String propName, final Object propValue) {
+    public static Like endsWith(final String propName, final String propValue) {
         return new Like(propName, SK._PERCENT + N.stringOf(propValue));
     }
 
@@ -1577,7 +1577,7 @@ public class Filters {
      * @param propValue the suffix to exclude
      * @return a {@link NotLike} condition
      */
-    public static NotLike notEndsWith(final String propName, final Object propValue) {
+    public static NotLike notEndsWith(final String propName, final String propValue) {
         return new NotLike(propName, SK._PERCENT + N.stringOf(propValue));
     }
 

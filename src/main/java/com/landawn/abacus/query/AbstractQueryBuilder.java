@@ -1365,16 +1365,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the FROM clause expression
      * @return this SqlBuilder instance for method chaining
      */
-    public This from(String expr) {
+    public This from(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
-        expr = expr.trim();
-        N.checkArgNotEmpty(expr, "expr");
+        final String trimmedExpr = expr.trim();
+        N.checkArgNotEmpty(trimmedExpr, "expr");
 
         int depth = 0;
         int commaIdx = -1;
 
-        for (int i = 0; i < expr.length(); i++) {
-            final char c = expr.charAt(i);
+        for (int i = 0; i < trimmedExpr.length(); i++) {
+            final char c = trimmedExpr.charAt(i);
 
             if (c == '(') {
                 depth++;
@@ -1386,9 +1386,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
         }
 
-        final String localTableName = commaIdx > 0 ? expr.substring(0, commaIdx) : expr;
+        final String localTableName = commaIdx > 0 ? trimmedExpr.substring(0, commaIdx) : trimmedExpr;
 
-        return from(localTableName.trim(), expr);
+        return from(localTableName.trim(), trimmedExpr);
     }
 
     /**
