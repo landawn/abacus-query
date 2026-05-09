@@ -2932,4 +2932,66 @@ class Filters2026BatchTest extends TestBase {
         assertTrue(t.toString().contains("<"), "alwaysTrue expression should contain '<'");
         assertTrue(f.toString().contains(">"), "alwaysFalse expression should contain '>'");
     }
+
+    // --- Bug fixes: wildcard methods must reject null propValue (previously silently produced "%null%") ---
+
+    @Test
+    public void testContains_NullPropValue_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.contains("name", null));
+    }
+
+    @Test
+    public void testNotContains_NullPropValue_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.notContains("name", null));
+    }
+
+    @Test
+    public void testStartsWith_NullPropValue_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.startsWith("name", null));
+    }
+
+    @Test
+    public void testNotStartsWith_NullPropValue_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.notStartsWith("name", null));
+    }
+
+    @Test
+    public void testEndsWith_NullPropValue_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.endsWith("name", null));
+    }
+
+    @Test
+    public void testNotEndsWith_NullPropValue_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.notEndsWith("name", null));
+    }
+
+    @Test
+    public void testWildcardMethods_NonNullValues_StillWork() {
+        // Regression guard: ensure happy paths still produce the expected wildcard patterns.
+        assertEquals("%java%", Filters.contains("col", "java").getPropValue());
+        assertEquals("%java%", Filters.notContains("col", "java").getPropValue());
+        assertEquals("Jo%", Filters.startsWith("col", "Jo").getPropValue());
+        assertEquals("TEST%", Filters.notStartsWith("col", "TEST").getPropValue());
+        assertEquals("%.com", Filters.endsWith("col", ".com").getPropValue());
+        assertEquals("%.tmp", Filters.notEndsWith("col", ".tmp").getPropValue());
+    }
+
+    // --- Bug fix: having(String) must reject null/empty (matching where(String) contract) ---
+
+    @Test
+    public void testHavingString_NullExpr_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.having((String) null));
+    }
+
+    @Test
+    public void testHavingString_EmptyExpr_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.having(""));
+    }
+
+    @Test
+    public void testHavingString_NonEmptyExpr_StillWorks() {
+        Having h = Filters.having("SUM(amount) > 1000");
+        assertNotNull(h);
+        assertTrue(h.toString().contains("SUM(amount) > 1000"));
+    }
 }

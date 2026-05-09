@@ -1488,6 +1488,7 @@ public class Filters {
      * @return a {@link Like} condition
      */
     public static Like contains(final String propName, final String propValue) {
+        N.checkArgNotNull(propValue, "propValue");
         return new Like(propName, SK._PERCENT + propValue + SK._PERCENT);
     }
 
@@ -1506,6 +1507,7 @@ public class Filters {
      * @return a {@link NotLike} condition
      */
     public static NotLike notContains(final String propName, final String propValue) {
+        N.checkArgNotNull(propValue, "propValue");
         return new NotLike(propName, SK._PERCENT + propValue + SK._PERCENT);
     }
 
@@ -1524,6 +1526,7 @@ public class Filters {
      * @return a {@link Like} condition
      */
     public static Like startsWith(final String propName, final String propValue) {
+        N.checkArgNotNull(propValue, "propValue");
         return new Like(propName, propValue + SK._PERCENT);
     }
 
@@ -1542,6 +1545,7 @@ public class Filters {
      * @return a {@link NotLike} condition
      */
     public static NotLike notStartsWith(final String propName, final String propValue) {
+        N.checkArgNotNull(propValue, "propValue");
         return new NotLike(propName, propValue + SK._PERCENT);
     }
 
@@ -1560,6 +1564,7 @@ public class Filters {
      * @return a {@link Like} condition
      */
     public static Like endsWith(final String propName, final String propValue) {
+        N.checkArgNotNull(propValue, "propValue");
         return new Like(propName, SK._PERCENT + propValue);
     }
 
@@ -1578,6 +1583,7 @@ public class Filters {
      * @return a {@link NotLike} condition
      */
     public static NotLike notEndsWith(final String propName, final String propValue) {
+        N.checkArgNotNull(propValue, "propValue");
         return new NotLike(propName, SK._PERCENT + propValue);
     }
 
@@ -2113,10 +2119,13 @@ public class Filters {
      * Having having = Filters.having("SUM(amount) > 1000");
      * }</pre>
      *
-     * @param expr the SQL expression as a string
+     * @param expr the SQL expression as a string (must not be {@code null} or empty)
      * @return a {@link Having} clause
+     * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
      */
     public static Having having(final String expr) {
+        N.checkArgNotEmpty(expr, "expr");
+
         return new Having(expr(expr));
     }
 

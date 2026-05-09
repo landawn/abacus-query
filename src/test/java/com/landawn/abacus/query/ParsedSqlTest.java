@@ -1019,4 +1019,37 @@ class ParsedSql2026BatchTest extends TestBase {
         Assertions.assertEquals(1, parsed.parameterCount());
         Assertions.assertEquals("id", parsed.namedParameters().get(0));
     }
+
+    // --- Bug fix: trailing-semicolon strip must also remove residual whitespace before the ';' ---
+
+    @Test
+    public void testParse_TrailingSemicolon_WithWhitespaceBefore_StripsBoth() {
+        // The body had whitespace before the trailing ';' — that whitespace must NOT leak
+        // into the parameterized SQL after the ';' is removed.
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users   ;");
+        Assertions.assertEquals("SELECT * FROM users", parsed.parameterizedSql());
+        Assertions.assertFalse(parsed.parameterizedSql().endsWith(" "),
+                "parameterizedSql must not end with whitespace after ';' removal");
+    }
+
+    @Test
+    public void testParse_TrailingSemicolonAndWhitespace_NamedParam() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId   ;");
+        Assertions.assertEquals("SELECT * FROM users WHERE id = ?", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+    }
+
+    // --- Bug fix: parameterCount must be safely published via the static cache (now final field) ---
+
+    @Test
+    public void testParse_CachedInstance_ReturnsCorrectParameterCount() {
+        // First parse populates the cache; second parse hits the unsynchronized fast path.
+        // Both observations of parameterCount must agree (regression guard for unsafe publication).
+        String sql = "SELECT * FROM users WHERE a = :a AND b = :b AND c = :c";
+        ParsedSql first = ParsedSql.parse(sql);
+        ParsedSql second = ParsedSql.parse(sql);
+        Assertions.assertSame(first, second, "ParsedSql.parse should return the cached instance");
+        Assertions.assertEquals(3, first.parameterCount());
+        Assertions.assertEquals(3, second.parameterCount());
+    }
 }

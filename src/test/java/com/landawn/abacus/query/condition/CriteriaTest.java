@@ -1527,4 +1527,26 @@ class CriteriaBugFixTest extends TestBase {
         assertEquals(varargsSql, collectionSql,
                 "orderBy(Collection) and orderBy(String...) must produce identical SQL");
     }
+
+    // --- Bug fixes: Builder.groupBy/orderBy(Collection) must reject null with IAE (previously NPE'd) ---
+
+    @Test
+    public void testBuilderGroupByCollection_Null_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy((List<String>) null));
+    }
+
+    @Test
+    public void testBuilderGroupByCollection_Empty_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy(java.util.Collections.<String>emptyList()));
+    }
+
+    @Test
+    public void testBuilderOrderByCollection_Null_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy((List<String>) null));
+    }
+
+    @Test
+    public void testBuilderOrderByCollection_Empty_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(java.util.Collections.<String>emptyList()));
+    }
 }

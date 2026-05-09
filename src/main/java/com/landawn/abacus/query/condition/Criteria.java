@@ -1111,6 +1111,8 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          */
         public Builder groupBy(final Collection<String> propNames) {
+            N.checkArgNotEmpty(propNames, "propNames");
+
             add(new GroupBy(propNames.toArray(new String[0])));
             return this;
         }
@@ -1452,6 +1454,8 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          */
         public Builder orderBy(final Collection<String> propNames) {
+            N.checkArgNotEmpty(propNames, "propNames");
+
             add(new OrderBy(propNames.toArray(new String[0])));
             return this;
         }

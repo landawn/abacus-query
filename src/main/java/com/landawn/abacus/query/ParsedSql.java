@@ -82,7 +82,7 @@ public final class ParsedSql {
 
     private final ImmutableList<String> namedParameters;
 
-    private int parameterCount;
+    private final int parameterCount;
 
     private ParsedSql(final String sql) {
         this.sql = sql.trim();
@@ -92,6 +92,7 @@ public final class ParsedSql {
         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && opSqlPrefixSet.contains(firstOpWord.toUpperCase(Locale.ROOT));
 
         final List<String> namedParameterList = new ArrayList<>();
+        int paramCount = 0;
         int type = 0; // Use bit flags: 1=question mark, 2=named parameter, 4=iBatis parameter
         final int QUESTION_MARK_TYPE = 1;
         final int NAMED_PARAMETER_TYPE = 2;
@@ -105,7 +106,7 @@ public final class ParsedSql {
 
                 if (isOpSqlPrefix) {
                     if (word.equals(SK.QUESTION_MARK)) {
-                        parameterCount++;
+                        paramCount++;
                         type |= QUESTION_MARK_TYPE;
                     } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)) {
                         final StringBuilder ibatisTokenBuilder = new StringBuilder(word);
@@ -131,7 +132,7 @@ public final class ParsedSql {
                                         : Strings.EMPTY;
 
                                 word = SK.QUESTION_MARK + suffix;
-                                parameterCount++;
+                                paramCount++;
                                 type |= IBATIS_PARAMETER_TYPE;
                             } else {
                                 word = ibatisToken;
@@ -144,7 +145,7 @@ public final class ParsedSql {
                         namedParameterList.add(word.substring(1, parameterEndIndex));
 
                         word = SK.QUESTION_MARK + word.substring(parameterEndIndex);
-                        parameterCount++;
+                        paramCount++;
                         type |= NAMED_PARAMETER_TYPE;
                     }
 
@@ -157,7 +158,9 @@ public final class ParsedSql {
             }
 
             final String tmpSql = Strings.stripToEmpty(isOpSqlPrefix ? sb.toString() : this.sql);
-            parameterizedSql = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
+            final String withoutTrailingSemicolon = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
+            parameterizedSql = withoutTrailingSemicolon.stripTrailing();
+            parameterCount = paramCount;
             namedParameters = isOpSqlPrefix ? ImmutableList.wrap(namedParameterList) : ImmutableList.empty();
         } finally {
             Objectory.recycle(sb);
