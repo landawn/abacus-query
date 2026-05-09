@@ -59,7 +59,7 @@ import lombok.experimental.Accessors;
  *     .excludedPropNames(Set.of("internalNotes"));
  * 
  * // Multi-table selection using builder
- * List<Selection> selections = Selection.multiSelectionBuilder()
+ * List<Selection> selections = Selection.builder()
  *     .add(User.class, "u", "user", Arrays.asList("id", "name"))
  *     .add(Order.class, "o", "order")
  *     .add(Product.class, "p", "product", true, Set.of("cost"))
@@ -102,13 +102,13 @@ public final class Selection {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Build multiple selections and apply to SqlBuilder
-     * SqlBuilder sqlBuilder = Selection.multiSelectionBuilder()
+     * SqlBuilder sqlBuilder = Selection.builder()
      *     .add(User.class, "u", "user")
      *     .add(Order.class, "o", "order", Arrays.asList("id", "orderDate", "total"))
      *     .apply(PSC::selectFrom);
      *
      * // Or build and use separately
-     * List<Selection> selections = Selection.multiSelectionBuilder()
+     * List<Selection> selections = Selection.builder()
      *     .add(User.class, "u", "user")
      *     .add(Address.class, "a", "address")
      *     .build();
@@ -116,7 +116,7 @@ public final class Selection {
      *
      * @return a new MultiSelectionBuilder instance for constructing multi-table selections
      */
-    public static MultiSelectionBuilder multiSelectionBuilder() {
+    public static MultiSelectionBuilder builder() {
         return new MultiSelectionBuilder();
     }
 
@@ -140,7 +140,7 @@ public final class Selection {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * List<Selection> selections = Selection.multiSelectionBuilder()
+         * List<Selection> selections = Selection.builder()
          *     .add(User.class)
          *     .build();
          * }</pre>
@@ -157,7 +157,7 @@ public final class Selection {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * List<Selection> selections = Selection.multiSelectionBuilder()
+         * List<Selection> selections = Selection.builder()
          *     .add(User.class, Arrays.asList("id", "name", "email"))
          *     .build();
          * }</pre>
@@ -176,7 +176,7 @@ public final class Selection {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * List<Selection> selections = Selection.multiSelectionBuilder()
+         * List<Selection> selections = Selection.builder()
          *     .add(User.class, "u", "user")
          *     .add(Order.class, "o", "order")
          *     .build();
@@ -196,7 +196,7 @@ public final class Selection {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * List<Selection> selections = Selection.multiSelectionBuilder()
+         * List<Selection> selections = Selection.builder()
          *     .add(User.class, "u", "user", Arrays.asList("id", "name"))
          *     .add(Order.class, "o", "order", Arrays.asList("orderId", "orderDate", "total"))
          *     .build();
@@ -220,7 +220,7 @@ public final class Selection {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * List<Selection> selections = Selection.multiSelectionBuilder()
+         * List<Selection> selections = Selection.builder()
          *     .add(User.class, true, Set.of("password", "internalNotes"))
          *     .build();
          * }</pre>
@@ -239,7 +239,7 @@ public final class Selection {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * List<Selection> selections = Selection.multiSelectionBuilder()
+         * List<Selection> selections = Selection.builder()
          *     .add(User.class, "u", "user", true, Set.of("password"))
          *     .add(Order.class, "o", "order", false, Set.of("internalNotes", "costPrice"))
          *     .build();
@@ -265,7 +265,7 @@ public final class Selection {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * List<Selection> selections = Selection.multiSelectionBuilder()
+         * List<Selection> selections = Selection.builder()
          *     .add(User.class, "u", "user")
          *     .add(Order.class, "o", "order")
          *     .build();
@@ -285,13 +285,13 @@ public final class Selection {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * // Using with PreparedSqlBuilder (PSC)
-         * SqlBuilder query = Selection.multiSelectionBuilder()
+         * SqlBuilder query = Selection.builder()
          *     .add(User.class, "u", "user")
          *     .add(Order.class, "o", "order")
          *     .apply(PSC::selectFrom);
          *
          * // Using with NamedSqlBuilder (NSC)
-         * SqlBuilder namedQuery = Selection.multiSelectionBuilder()
+         * SqlBuilder namedQuery = Selection.builder()
          *     .add(Product.class, "p", "product")
          *     .add(Category.class, "c", "category")
          *     .apply(NSC::select);
