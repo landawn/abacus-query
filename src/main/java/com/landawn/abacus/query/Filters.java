@@ -1488,7 +1488,7 @@ public class Filters {
      * @return a {@link Like} condition
      */
     public static Like contains(final String propName, final String propValue) {
-        return new Like(propName, SK._PERCENT + N.stringOf(propValue) + SK._PERCENT);
+        return new Like(propName, SK._PERCENT + propValue + SK._PERCENT);
     }
 
     /**
@@ -1506,7 +1506,7 @@ public class Filters {
      * @return a {@link NotLike} condition
      */
     public static NotLike notContains(final String propName, final String propValue) {
-        return new NotLike(propName, SK._PERCENT + N.stringOf(propValue) + SK._PERCENT);
+        return new NotLike(propName, SK._PERCENT + propValue + SK._PERCENT);
     }
 
     /**
@@ -1524,7 +1524,7 @@ public class Filters {
      * @return a {@link Like} condition
      */
     public static Like startsWith(final String propName, final String propValue) {
-        return new Like(propName, N.stringOf(propValue) + SK._PERCENT);
+        return new Like(propName, propValue + SK._PERCENT);
     }
 
     /**
@@ -1542,7 +1542,7 @@ public class Filters {
      * @return a {@link NotLike} condition
      */
     public static NotLike notStartsWith(final String propName, final String propValue) {
-        return new NotLike(propName, N.stringOf(propValue) + SK._PERCENT);
+        return new NotLike(propName, propValue + SK._PERCENT);
     }
 
     /**
@@ -1560,7 +1560,7 @@ public class Filters {
      * @return a {@link Like} condition
      */
     public static Like endsWith(final String propName, final String propValue) {
-        return new Like(propName, SK._PERCENT + N.stringOf(propValue));
+        return new Like(propName, SK._PERCENT + propValue);
     }
 
     /**
@@ -1578,7 +1578,7 @@ public class Filters {
      * @return a {@link NotLike} condition
      */
     public static NotLike notEndsWith(final String propName, final String propValue) {
-        return new NotLike(propName, SK._PERCENT + N.stringOf(propValue));
+        return new NotLike(propName, SK._PERCENT + propValue);
     }
 
     /**
