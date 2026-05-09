@@ -161,10 +161,10 @@ public final class QueryUtil {
      * // Given an entity class with @Column annotations
      * ImmutableMap<String, String> columnToProp = QueryUtil.getColumn2PropNameMap(User.class);
      *
-     * // If User has @Column("user_name") on property "userName":
-     * String propName = columnToProp.get("user_name");     // "userName"
-     * String propName2 = columnToProp.get("USER_NAME");    // "userName" (uppercase variant)
-     * String propName3 = columnToProp.get("user_name");    // "userName" (lowercase variant)
+     * // If User has @Column("User_Name") on property "userName":
+     * String propName  = columnToProp.get("User_Name");   // "userName" (original column name)
+     * String propName2 = columnToProp.get("USER_NAME");   // "userName" (uppercase variant)
+     * String propName3 = columnToProp.get("user_name");   // "userName" (lowercase variant)
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})

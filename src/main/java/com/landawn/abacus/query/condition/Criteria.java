@@ -553,15 +553,15 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a simple INNER JOIN to this criteria.
          * This creates a join without an explicit condition.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
          *     .join("orders")
-         *     .where(Filters.equal("users.id", "orders.user_id"));
+         *     .where(Filters.expr("users.id = orders.user_id"));
          * // Results in: JOIN orders WHERE users.id = orders.user_id
          * }</pre>
-         * 
+         *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
          */
@@ -1122,13 +1122,15 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Set<String> groupCols = new HashSet<>(Arrays.asList("category", "brand"));
+         * List<String> groupCols = Arrays.asList("category", "brand");
          * Criteria criteria = Criteria.builder()
          *     .groupBy(groupCols, SortDirection.DESC);
          * // Results in: GROUP BY category DESC, brand DESC
          * }</pre>
-         * 
+         *
          * @param propNames the collection of property names to group by
+         *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
+         *                  to preserve the column order)
          * @param direction the sort direction for all properties
          * @return this Builder instance for method chaining
          */
@@ -1292,12 +1294,14 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Set<String> sortCols = new HashSet<>(Arrays.asList("revenue", "profit"));
+         * List<String> sortCols = Arrays.asList("revenue", "profit");
          * Criteria criteria = Criteria.builder()
          *     .orderByDesc(sortCols);
          * }</pre>
-         * 
+         *
          * @param propNames the collection of property names to order by descending
+         *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
+         *                  to preserve the column order)
          * @return this Builder instance for method chaining
          */
         public Builder orderByDesc(final Collection<String> propNames) {
@@ -1459,13 +1463,15 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Set<String> sortCols = new HashSet<>(Arrays.asList("score", "rating"));
+         * List<String> sortCols = Arrays.asList("score", "rating");
          * Criteria criteria = Criteria.builder()
          *     .orderBy(sortCols, SortDirection.DESC);
          * // Results in: ORDER BY score DESC, rating DESC
          * }</pre>
-         * 
+         *
          * @param propNames the collection of property names to order by
+         *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
+         *                  to preserve the column order)
          * @param direction the sort direction for all properties
          * @return this Builder instance for method chaining
          */

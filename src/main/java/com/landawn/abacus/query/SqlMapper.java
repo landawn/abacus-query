@@ -162,8 +162,9 @@ public final class SqlMapper {
      * SqlMapper mapper = SqlMapper.load("sql/users.xml;sql/orders.xml;sql/products.xml");
      * }</pre>
      *
-     * @param filePath one or more file paths separated by ',' or ';'
+     * @param filePath one or more file paths separated by ',' or ';' (must not be {@code null} or empty)
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
+     * @throws IllegalArgumentException if {@code filePath} is {@code null}, empty, or resolves to no non-empty paths after splitting
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid
      * @throws RuntimeException if no 'sqlMapper' element is found in any file
@@ -307,8 +308,8 @@ public final class SqlMapper {
      * }</pre>
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
-     * @param sql the parsed SQL to associate with the identifier
-     * @throws IllegalArgumentException if the id is empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
+     * @param sql the parsed SQL to associate with the identifier (must not be {@code null})
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
      */
     public void add(final String id, final ParsedSql sql) {
         N.checkArgNotNull(sql, "sql");
@@ -332,9 +333,9 @@ public final class SqlMapper {
      * }</pre>
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
-     * @param sql the SQL string to parse and store
+     * @param sql the SQL string to parse and store (must not be {@code null})
      * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty
-     * @throws IllegalArgumentException if the id is empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
      */
     public void add(final String id, final String sql, final Map<String, String> attrs) {
         N.checkArgNotNull(sql, "sql");

@@ -87,10 +87,9 @@ public abstract class Clause extends Cell {
      * Having having = new Having(Filters.greaterThan("COUNT(*)", 5));
      * }</pre>
      *
-     * @param operator the operator to apply to the condition (must not be {@code null});
+     * @param operator the operator to apply to the condition;
      *                 typically a clause operator such as {@code WHERE}, {@code GROUP_BY}, etc.
      * @param cond the condition to wrap (must not be {@code null})
-     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public Clause(final Operator operator, final Condition cond) {

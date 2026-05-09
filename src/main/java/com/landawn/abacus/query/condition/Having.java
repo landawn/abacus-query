@@ -65,10 +65,10 @@ package com.landawn.abacus.query.condition;
  * SqlBuilder builder = PSC.select("department", "COUNT(*) as emp_count", "AVG(salary) as avg_salary")
  *     .from("employees")
  *     .groupBy("department")
- *     .having(new Having(Filters.and(
+ *     .having(Filters.and(
  *         Filters.greaterThan("COUNT(*)", 5),
  *         Filters.greaterThan("AVG(salary)", 50000)
- *     )));
+ *     ));
  * // SQL: SELECT department, COUNT(*) as emp_count, AVG(salary) as avg_salary
  * //      FROM employees
  * //      GROUP BY department

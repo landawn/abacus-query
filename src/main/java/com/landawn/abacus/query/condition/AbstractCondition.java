@@ -207,11 +207,12 @@ public abstract class AbstractCondition implements Condition {
      *
      * <p>Formatting rules:</p>
      * <ul>
-     *   <li>Strings are wrapped in single quotes: 'value'</li>
-     *   <li>Numbers are returned as-is: 123</li>
-     *   <li>null returns null</li>
-     *   <li>Conditions use recursive toString with naming policy</li>
-     *   <li>Other objects use their toString() method</li>
+     *   <li>{@code null} returns {@code null}</li>
+     *   <li>Strings are wrapped in single quotes with embedded quotes escaped (e.g., {@code "John" -> 'John'})</li>
+     *   <li>{@link Condition} values use the recursive {@code toString(namingPolicy)}; a {@link SubQuery} is additionally
+     *       wrapped in parentheses, and the {@link IsNull#NULL}, {@link IsNaN#NAN}, and {@link IsInfinite#INFINITE}
+     *       sentinels use their plain {@code toString()}</li>
+     *   <li>Any other object (numbers, booleans, dates, etc.) uses its {@code toString()} representation</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>

@@ -165,7 +165,7 @@ public class Filters {
      * }</pre>
      *
      * @return an {@link Expression} that always evaluates to true (1 &lt; 2)
-     * @deprecated is dangerous (could silently bypass all filtering, returning all rows)
+     * @deprecated dangerous; could silently bypass all filtering, returning all rows.
      */
     @Deprecated
     public static Expression alwaysTrue() {
@@ -182,7 +182,7 @@ public class Filters {
      * }</pre>
      *
      * @return an {@link Expression} that always evaluates to false (1 &gt; 2)
-     * @deprecated is dangerous (could silently return zero rows)
+     * @deprecated dangerous; could silently return zero rows.
      */
     @Deprecated
     public static Expression alwaysFalse() {
@@ -2408,9 +2408,9 @@ public class Filters {
      *
      * @param columnNames the column names used for joining
      * @return a Using clause
-     * @deprecated It's recommended to use {@link #on(String, String)} instead of {@code Using} for better
-     *             portability and clarity. Replace {@code using("col1", "col2")} with explicit
-     *             {@code on("table1.col1", "table2.col1").and(eq("table1.col2", "table2.col2"))}.
+     * @deprecated It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses instead of
+     *             {@code Using} for better portability and clarity. Replace {@code using("col1", "col2")} with explicit
+     *             {@code on(N.asMap("table1.col1", "table2.col1", "table1.col2", "table2.col2"))}.
      */
     @Deprecated
     public static Using using(final String... columnNames) {
@@ -2429,9 +2429,9 @@ public class Filters {
      *
      * @param columnNames collection of column names used for joining
      * @return a Using clause
-     * @deprecated It's recommended to use {@link #on(String, String)} instead of {@code Using} for better
-     *             portability and clarity. Replace {@code using(columnList)} with explicit
-     *             {@code on()} conditions that specify the full column names with table prefixes.
+     * @deprecated It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses
+     *             instead of {@code Using} for better portability and clarity. Replace {@code using(columnList)}
+     *             with explicit {@code on()} conditions that specify the full column names with table prefixes.
      */
     @Deprecated
     public static Using using(final Collection<String> columnNames) {

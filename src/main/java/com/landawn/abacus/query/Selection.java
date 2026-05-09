@@ -284,13 +284,13 @@ public final class Selection {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * // Using with PreparedSqlBuilder (PSC)
+         * // Using with parameterized snake_case builder (PSC)
          * SqlBuilder query = Selection.builder()
          *     .add(User.class, "u", "user")
          *     .add(Order.class, "o", "order")
          *     .apply(PSC::selectFrom);
          *
-         * // Using with NamedSqlBuilder (NSC)
+         * // Using with named-parameter snake_case builder (NSC)
          * SqlBuilder namedQuery = Selection.builder()
          *     .add(Product.class, "p", "product")
          *     .add(Category.class, "c", "category")

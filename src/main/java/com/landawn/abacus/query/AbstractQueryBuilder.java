@@ -903,16 +903,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    }
 
     /**
-     * Creates a map with property names as keys and {@code Filters.QME} (question mark expression) as values.
-     * <p>This is useful for creating parameterized queries with named parameters.</p>
-     * 
+     * Creates a map with property names as keys and {@link Filters#QME} (question-mark expression) as values.
+     * <p>This is useful for building INSERT/UPDATE column-to-placeholder maps that the builder will
+     * later render as {@code ?} (or as {@code :name} / {@code #{name}} when named/iBATIS SQL is used).</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, Expression> params = SqlBuilder.named("firstName", "lastName");
      * }</pre>
-     * 
+     *
      * @param propNames the property names
-     * @return a map with property names mapped to question mark expressions
+     * @return a map with property names mapped to {@code Filters.QME}
      */
     @Beta
     protected static Map<String, Expression> named(final String... propNames) {
@@ -926,16 +927,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Creates a map with property names as keys and {@code Filters.QME} (question mark expression) as values.
-     * <p>This is useful for creating parameterized queries with named parameters.</p>
-     * 
+     * Creates a map with property names as keys and {@link Filters#QME} (question-mark expression) as values.
+     * <p>This is useful for building INSERT/UPDATE column-to-placeholder maps that the builder will
+     * later render as {@code ?} (or as {@code :name} / {@code #{name}} when named/iBATIS SQL is used).</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, Expression> params = SqlBuilder.named(Arrays.asList("firstName", "lastName"));
      * }</pre>
-     * 
+     *
      * @param propNames the collection of property names
-     * @return a map with property names mapped to question mark expressions
+     * @return a map with property names mapped to {@code Filters.QME}
      */
     @Beta
     protected static Map<String, Expression> named(final Collection<String> propNames) {
@@ -1177,15 +1179,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Specifies the target table for an INSERT operation using an entity class.
+     * Specifies the target table for an INSERT or SELECT INTO operation using an entity class.
      * <p>The table name will be derived from the entity class based on the naming policy.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.insert(account).into(Account.class).build().query();
      * // Table name derived from Account class based on naming policy
      * }</pre>
-     * 
+     *
      * @param entityClass the entity class representing the target table
      * @return this SqlBuilder instance for method chaining
      */
@@ -1198,7 +1200,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Specifies the target table for an INSERT operation with explicit table name and entity class.
+     * Specifies the target table for an INSERT or SELECT INTO operation with explicit table name and entity class.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1466,12 +1468,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets the FROM clause with a custom table expression or clause.
-     * 
-     * <p>This method allows specifying additional FROM clause expressions beyond just a table name.</p>
+     * Sets the FROM clause using a separate primary table name and a complete FROM-body expression.
+     * <p>{@code tableName} is parsed to extract the optional alias and used to set the builder's
+     * {@code _tableName}/{@code _tableAlias} state, while {@code fromClause} is appended verbatim
+     * after the {@code FROM} keyword (it may include commas, joins, subqueries, etc.).</p>
      *
-     * @param tableName the name of the table to select from
-     * @param fromClause additional FROM clause expression or conditions
+     * @param tableName the primary table name (with optional alias) used for column resolution
+     * @param fromClause the full text emitted after {@code FROM} (e.g. {@code "users u, orders o"})
      * @return this builder instance for method chaining
      */
     protected This from(final String tableName, final String fromClause) {
@@ -3380,7 +3383,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a UNION clause with another SQL query.
-     * 
+     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlBuilder query1 = PSC.select("id", "name").from("users");
@@ -3388,7 +3392,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = query1.union(query2).build().query();
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
-     * 
+     *
      * @param sqlBuilder the SQL builder containing the query to union
      * @return this SqlBuilder instance for method chaining
      */
@@ -3508,7 +3512,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a UNION ALL clause with another SQL query.
-     * 
+     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlBuilder query1 = PSC.select("id", "name").from("users");
@@ -3516,7 +3521,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = query1.unionAll(query2).build().query();
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
-     * 
+     *
      * @param sqlBuilder the SQL builder containing the query to union all
      * @return this SqlBuilder instance for method chaining
      */
@@ -3637,7 +3642,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an INTERSECT clause with another SQL query.
-     * 
+     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlBuilder query1 = PSC.select("id", "name").from("users");
@@ -3645,7 +3651,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = query1.intersect(query2).build().query();
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM customers
      * }</pre>
-     * 
+     *
      * @param sqlBuilder the SQL builder containing the query to intersect
      * @return this SqlBuilder instance for method chaining
      */
@@ -3766,7 +3772,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an EXCEPT clause with another SQL query.
-     * 
+     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlBuilder query1 = PSC.select("id", "name").from("users");
@@ -3774,7 +3781,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = query1.except(query2).build().query();
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM customers
      * }</pre>
-     * 
+     *
      * @param sqlBuilder the SQL builder containing the query to except
      * @return this SqlBuilder instance for method chaining
      */
@@ -3896,6 +3903,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a MINUS clause with another SQL query (Oracle syntax).
      * MINUS is Oracle's equivalent to EXCEPT - returns rows from the first query that don't appear in the second.
+     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4399,13 +4407,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Returns the list of parameter values for the generated SQL.
-     * For parameterized SQL (using ?), this list contains the actual values in order.
+     * Returns the list of parameter values accumulated so far for the generated SQL.
+     * For parameterized SQL (using {@code ?}), this list contains the actual values in order.
      * For named SQL, this list contains the values corresponding to named parameters.
      *
-     * <p>This method is used internally by set operations such as {@code union()}, {@code unionAll()},
-     * {@code intersect()}, and {@code except()} to merge parameters from sub-queries. To retrieve
-     * the SQL and parameters together, use the {@link #build()} method which returns an {@link SP} record.</p>
+     * <p>This is a snapshot of the builder's internal parameter buffer; to retrieve the finished
+     * SQL and parameters together (after which the builder is closed), use {@link #build()}.</p>
      *
      * @return an unmodifiable view of the parameter values
      */
@@ -4941,12 +4948,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    }
 
     /**
-     * Initializes the query builder with the appropriate SQL operation type and parameters.
-     * 
-     * <p>This method sets up the builder's internal state based on the operation type and whether
-     * this is an update operation that affects row data.</p>
+     * Lazily emits the leading SQL keyword for the current operation (UPDATE/DELETE) into the buffer
+     * the first time it is required, and validates that {@code from()} has been called for QUERY operations.
+     * Returns immediately if the buffer is already non-empty.
      *
-     * @param setForUpdate whether this operation will update data (affects entity field filtering)
+     * @param setForUpdate when {@code true} and the current operation is UPDATE, the staged
+     *                     {@code _propOrColumnNames} are emitted as a {@code SET col = ?} list.
+     *                     When {@code false}, the SET list is left to the caller (typically
+     *                     {@link #set(Collection)}). Has no effect for non-UPDATE operations.
      */
     protected void init(final boolean setForUpdate) {
         // Note: any change, please take a look at: parse(final Class<?> entityClass, final Condition cond) first.
@@ -5564,10 +5573,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Checks if the provided property or column names represent a subquery.
+     * Checks whether the array represents a single inline subquery rather than a list of column names.
+     * Returns {@code true} only when the array has exactly one element and that element contains
+     * both a {@code SELECT} and a {@code FROM} keyword (in that order).
      *
      * @param propOrColumnNames array of property or column names to check
-     * @return {@code true} if any of the names represents a subquery, {@code false} otherwise
+     * @return {@code true} if the array contains a single SELECT ... FROM subquery, {@code false} otherwise
      */
     protected static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {

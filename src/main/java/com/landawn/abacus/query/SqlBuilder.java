@@ -94,11 +94,12 @@ import com.landawn.abacus.util.u.Optional;
  *     .where(Filters.equal("id", userId))
  *     .build().query();
  *
- * // Named parameters
+ * // Named parameters (NSC generates :name placeholders)
  * String sql = NSC.select("*")
  *     .from("orders")
- *     .where(Filters.between("order_date", ":startDate", ":endDate"))
+ *     .where(Filters.between("orderDate", startDate, endDate))
  *     .build().query();
+ * // Output: SELECT * FROM orders WHERE order_date BETWEEN :minOrderDate AND :maxOrderDate
  * }</pre>
  *
  * @see AbstractQueryBuilder
@@ -975,7 +976,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.deleteFrom("account")
-         *                  .where(Filters.equal("status", "'DELETED'"))
+         *                  .where(Filters.equal("status", "DELETED"))
          *                  .build().query();
          * // Output: DELETE FROM account WHERE status = 'DELETED'
          * }</pre>
@@ -1004,7 +1005,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.deleteFrom("account", Account.class)
-         *                  .where(Filters.equal("status", "'INACTIVE'"))
+         *                  .where(Filters.equal("status", "INACTIVE"))
          *                  .build().query();
          * // Output: DELETE FROM account WHERE status = 'INACTIVE'
          * }</pre>
@@ -1037,7 +1038,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.deleteFrom(Account.class)
          *                  .where(Filters.and(
-         *                      Filters.equal("status", "'INACTIVE'"),
+         *                      Filters.equal("status", "INACTIVE"),
          *                      Filters.lessThan("lastLogin", "2022-01-01")
          *                  ))
          *                  .build().query();
@@ -1099,7 +1100,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.select("firstName", "lastName", "email")
          *                  .from("account")
-         *                  .where(Filters.equal("status", "'ACTIVE'"))
+         *                  .where(Filters.equal("status", "ACTIVE"))
          *                  .build().query();
          * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
          * }</pre>
@@ -1130,7 +1131,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = SCSB.select(columns)
          *                  .from("account")
-         *                  .where(Filters.equal("status", "'ACTIVE'"))
+         *                  .where(Filters.equal("status", "ACTIVE"))
          *                  .build().query();
          * // Output: SELECT first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
          * }</pre>
@@ -1292,7 +1293,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.selectFrom(Account.class)
-         *                  .where(Filters.equal("status", "'ACTIVE'"))
+         *                  .where(Filters.equal("status", "ACTIVE"))
          *                  .build().query();
          * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = 'ACTIVE'
          * }</pre>
@@ -1314,7 +1315,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.selectFrom(Account.class, "a")
-         *                  .innerJoin("orders", "o").on("a.id = o.account_id")
+         *                  .innerJoin("orders o").on("a.id = o.account_id")
          *                  .build().query();
          * // Output: SELECT a.id, a.first_name AS "firstName" ... FROM account a INNER JOIN orders o ON a.id = o.account_id
          * }</pre>
@@ -1360,7 +1361,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.selectFrom(Order.class, "o", true)
-         *                  .where(Filters.equal("o.status", "'COMPLETED'"))
+         *                  .where(Filters.equal("o.status", "COMPLETED"))
          *                  .build().query();
          * // Output includes aliased columns and joins for sub-entities
          * }</pre>
@@ -1409,7 +1410,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("internalCode");
          * String sql = SCSB.selectFrom(Account.class, "a", excluded)
-         *                  .innerJoin("orders", "o").on("a.id = o.account_id")
+         *                  .innerJoin("orders o").on("a.id = o.account_id")
          *                  .build().query();
          * // Output uses alias "a" and excludes internalCode property
          * }</pre>
@@ -1601,7 +1602,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = SCSB.selectFrom(Account.class, "a", "account",
          *                             Order.class, "o", "order")
-         *                  .where(Filters.equal("a.status", "'ACTIVE'"))
+         *                  .where(Filters.equal("a.status", "ACTIVE"))
          *                  .build().query();
          * // Output: SELECT ... FROM account a, orders o WHERE a.status = 'ACTIVE'
          * }</pre>
@@ -1632,7 +1633,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Set<String> orderExcluded = N.asSet("debugData");
          * String sql = SCSB.selectFrom(Account.class, "a", "account", accountExcluded,
          *                             Order.class, "o", "order", orderExcluded)
-         *                  .where(Filters.equal("o.status", "'COMPLETED'"))
+         *                  .where(Filters.equal("o.status", "COMPLETED"))
          *                  .build().query();
          * }</pre>
          *
@@ -1699,7 +1700,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.count("account")
-         *                  .where(Filters.equal("status", "'ACTIVE'"))
+         *                  .where(Filters.equal("status", "ACTIVE"))
          *                  .build().query();
          * // Output: SELECT count(*) FROM account WHERE status = 'ACTIVE'
          * }</pre>
@@ -2181,7 +2182,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = ACSB.update("users", User.class)
          *                  .set("age")
-         *                  .where(Filters.equal("firstName", "'John'"))
+         *                  .where(Filters.equal("firstName", "John"))
          *                  .build().query();
          * // Output: UPDATE USERS SET AGE = ? WHERE FIRST_NAME = 'John'
          * }</pre>
@@ -2214,7 +2215,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.update(User.class)
-         *                  .where(Filters.equal("firstName", "'John'"))
+         *                  .where(Filters.equal("firstName", "John"))
          *                  .build().query();
          * // Output: UPDATE USER SET LAST_NAME = ?, AGE = ?, EMAIL = ? WHERE FIRST_NAME = 'John'
          * }</pre>
@@ -2629,7 +2630,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.selectFrom(Order.class, true)
-         *                  .where(Filters.equal("STATUS", "'ACTIVE'"))
+         *                  .where(Filters.equal("STATUS", "ACTIVE"))
          *                  .build().query();
          * // Output includes JOINs for sub-entities like Customer
          * }</pre>
@@ -2652,7 +2653,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.selectFrom(Order.class, "o", true)
-         *                  .where(Filters.equal("o.STATUS", "'ACTIVE'"))
+         *                  .where(Filters.equal("o.STATUS", "ACTIVE"))
          *                  .build().query();
          * // Output includes aliased columns and JOINs for sub-entities
          * }</pre>
@@ -2702,7 +2703,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("internalCode"));
          * String sql = ACSB.selectFrom(User.class, "u", excluded)
-         *                  .innerJoin("ORDERS", "o").on("u.ID = o.USER_ID")
+         *                  .innerJoin("ORDERS o").on("u.ID = o.USER_ID")
          *                  .build().query();
          * // Output uses alias "u" and excludes internalCode property
          * }</pre>
@@ -2727,7 +2728,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("deletedFlag"));
          * String sql = ACSB.selectFrom(Order.class, true, excluded)
-         *                  .where(Filters.greaterThan("CREATED_DATE", "'2023-01-01'"))
+         *                  .where(Filters.greaterThan("CREATED_DATE", "2023-01-01"))
          *                  .build().query();
          * // Output includes Order with Customer sub-entity, excluding deletedFlag
          * }</pre>
@@ -2787,8 +2788,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.select(User.class, "u", "user", Order.class, "o", "order")
-         *                  .from("USERS", "u")
-         *                  .innerJoin("ORDERS", "o").on("u.ID = o.USER_ID")
+         *                  .from("USERS u")
+         *                  .innerJoin("ORDERS o").on("u.ID = o.USER_ID")
          *                  .build().query();
          * // Output: SELECT with columns from both entities properly aliased
          * }</pre>
@@ -2819,8 +2820,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Set<String> orderExclusions = new HashSet<>(Arrays.asList("internalNotes"));
          * String sql = ACSB.select(User.class, "u", "user", userExclusions,
          *                         Order.class, "o", "order", orderExclusions)
-         *                  .from("USERS", "u")
-         *                  .innerJoin("ORDERS", "o").on("u.ID = o.USER_ID")
+         *                  .from("USERS u")
+         *                  .innerJoin("ORDERS o").on("u.ID = o.USER_ID")
          *                  .build().query();
          * // Output: SELECT with filtered columns from both entities
          * }</pre>
@@ -2860,9 +2861,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     new Selection(Product.class, "p", "product", null, false, null)
          * );
          * String sql = ACSB.select(selections)
-         *                  .from("USERS", "u")
-         *                  .innerJoin("ORDERS", "o").on("u.ID = o.USER_ID")
-         *                  .innerJoin("PRODUCTS", "p").on("o.PRODUCT_ID = p.ID")
+         *                  .from("USERS u")
+         *                  .innerJoin("ORDERS o").on("u.ID = o.USER_ID")
+         *                  .innerJoin("PRODUCTS p").on("o.PRODUCT_ID = p.ID")
          *                  .build().query();
          * // Output: Complex SELECT with columns from all three entities
          * }</pre>
@@ -2923,7 +2924,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Set<String> orderExcl = new HashSet<>(Arrays.asList("debugData"));
          * String sql = ACSB.selectFrom(User.class, "u", "user", userExcl,
          *                             Order.class, "o", "order", orderExcl)
-         *                  .where(Filters.equal("o.STATUS", "'COMPLETED'"))
+         *                  .where(Filters.equal("o.STATUS", "COMPLETED"))
          *                  .build().query();
          * // Output: SELECT ... FROM USER u, ORDER o WHERE o.STATUS = 'COMPLETED'
          * }</pre>
@@ -3037,7 +3038,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Condition cond = Filters.and(Filters.equal("firstName", "'John'"), Filters.greaterThan("age", 18));
+         * Condition cond = Filters.and(Filters.equal("firstName", "John"), Filters.greaterThan("age", 18));
          * String sql = ACSB.render(cond, User.class).build().query();
          * // Output: FIRST_NAME = 'John' AND AGE > 18
          * }</pre>
@@ -3477,7 +3478,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * String sql = LCSB.update("users", User.class)
          *                  .set("age", "lastName")
-         *                  .where(Filters.equal("firstName", "'John'"))
+         *                  .where(Filters.equal("firstName", "John"))
          *                  .build().query();
          * // Output: UPDATE users SET age = ?, lastName = ? WHERE firstName = 'John'
          * }</pre>
@@ -3510,7 +3511,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.update(User.class)
-         *                  .where(Filters.equal("firstName", "'John'"))
+         *                  .where(Filters.equal("firstName", "John"))
          *                  .build().query();
          * // Output: UPDATE users SET lastName = ?, email = ?, ... WHERE firstName = 'John'
          * }</pre>
@@ -3570,7 +3571,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.deleteFrom("users")
-         *                  .where(Filters.equal("status", "'inactive'"))
+         *                  .where(Filters.equal("status", "inactive"))
          *                  .build().query();
          * // Output: DELETE FROM users WHERE status = 'inactive'
          * }</pre>
@@ -3954,7 +3955,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = LCSB.selectFrom(Order.class, "o", true)
-         *                  .where(Filters.equal("o.status", "'ACTIVE'"))
+         *                  .where(Filters.equal("o.status", "ACTIVE"))
          *                  .build().query();
          * // Output includes aliased columns and JOINs for sub-entities
          * }</pre>
@@ -4002,7 +4003,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("internalCode"));
          * String sql = LCSB.selectFrom(User.class, "u", excluded)
-         *                  .innerJoin("orders", "o").on("u.id = o.userId")
+         *                  .innerJoin("orders o").on("u.id = o.userId")
          *                  .build().query();
          * // Output uses alias "u" and excludes internalCode property
          * }</pre>
@@ -4027,7 +4028,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("deletedFlag"));
          * String sql = LCSB.selectFrom(Order.class, true, excluded)
-         *                  .where(Filters.greaterThan("createdDate", "'2023-01-01'"))
+         *                  .where(Filters.greaterThan("createdDate", "2023-01-01"))
          *                  .build().query();
          * // Output includes Order with Customer sub-entity, excluding deletedFlag
          * }</pre>
@@ -4232,7 +4233,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * String sql = LCSB.selectFrom(User.class, "u", "user", userExcl,
          *                             Order.class, "o", "order", orderExcl)
-         *                  .where(Filters.equal("o.status", "'COMPLETED'"))
+         *                  .where(Filters.equal("o.status", "COMPLETED"))
          *                  .build().query();
          * }</pre>
          * 
@@ -5528,11 +5529,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * long count = PSB.count(User.class)
+         * String sql = PSB.count(User.class)
          *                 .where(Filters.like("email", "%@example.com"))
-         *                 .queryForSingleValue(Long.class);
+         *                 .build().query();
+         * // Output: SELECT count(*) FROM User WHERE email LIKE ?
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to count rows for
          * @return a new SqlBuilder instance configured for COUNT query
          * @throws IllegalArgumentException if entityClass is null
@@ -7873,7 +7875,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("password"));
          * String sql = PAC.selectFrom(User.class, "u", true, exclude)
-         *                 .innerJoin("addresses", "a").on("u.id = a.user_id")
+         *                 .innerJoin("addresses a").on("u.id = a.user_id")
          *                 .build().query();
          * // Complex query with full control
          * }</pre>
@@ -7908,8 +7910,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.select(User.class, "u", "user", Order.class, "o", "order")
-         *                 .from("users", "u")
-         *                 .innerJoin("orders", "o").on("u.id = o.user_id")
+         *                 .from("users u")
+         *                 .innerJoin("orders o").on("u.id = o.user_id")
          *                 .build().query();
          * // Output: SELECT u.ID AS "user.id", ..., o.ID AS "order.id", ... 
          * }</pre>
@@ -7939,8 +7941,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Set<String> orderExclude = new HashSet<>(Arrays.asList("internalNotes"));
          * String sql = PAC.select(User.class, "u", "user", userExclude,
          *                        Order.class, "o", "order", orderExclude)
-         *                 .from("users", "u")
-         *                 .innerJoin("orders", "o").on("u.id = o.user_id")
+         *                 .from("users u")
+         *                 .innerJoin("orders o").on("u.id = o.user_id")
          *                 .build().query();
          * }</pre>
          * 
@@ -7979,9 +7981,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     new Selection(Product.class, "p", "product", null, false, null)
          * );
          * String sql = PAC.select(selections)
-         *                 .from("users", "u")
-         *                 .innerJoin("orders", "o").on("u.id = o.user_id")
-         *                 .innerJoin("products", "p").on("o.product_id = p.id")
+         *                 .from("users u")
+         *                 .innerJoin("orders o").on("u.id = o.user_id")
+         *                 .innerJoin("products p").on("o.product_id = p.id")
          *                 .build().query();
          * }</pre>
          * 
@@ -15595,7 +15597,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.selectFrom(Order.class, "ord", true)
-         *                 .where(Filters.equal("ord.status", "'PENDING'"))
+         *                 .where(Filters.equal("ord.status", "PENDING"))
          *                 .build().query();
          * // Output: SELECT ord.id, ord.totalAmount, c.name ... FROM orders ord LEFT JOIN customers c ON ... WHERE ord.status = #{status}
          * }</pre>
@@ -15620,7 +15622,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("password", "internalNotes");
          * String sql = MSB.selectFrom(Account.class, excluded)
-         *                 .where(Filters.equal("status", "'ACTIVE'"))
+         *                 .where(Filters.equal("status", "ACTIVE"))
          *                 .build().query();
          * // Output: SELECT id, firstName, email FROM account WHERE status = #{status}
          * }</pre>
@@ -15643,7 +15645,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("largeBlob");
          * String sql = MSB.selectFrom(Document.class, "doc", excluded)
-         *                 .where(Filters.like("doc.title", "'%report%'"))
+         *                 .where(Filters.like("doc.title", "%report%"))
          *                 .build().query();
          * // Output: SELECT doc.id, doc.title, doc.author FROM documents doc WHERE doc.title LIKE #{title}
          * }</pre>
@@ -15728,8 +15730,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.select(User.class, "u", "user", Order.class, "o", "order")
-         *                 .from("users", "u")
-         *                 .join("orders", "o").on("u.id = o.user_id")
+         *                 .from("users u")
+         *                 .join("orders o").on("u.id = o.user_id")
          *                 .build().query();
          * // Output: SELECT u.id AS "user.id", u.name AS "user.name", 
          * //                o.id AS "order.id", o.total AS "order.total"
@@ -18022,7 +18024,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MAC.selectFrom(Product.class, "p", true)
-         *                 .innerJoin("category", "c").on("p.categoryId = c.id")
+         *                 .innerJoin("category c").on("p.categoryId = c.id")
          *                 .where(Filters.equal("c.isActive", true))
          *                 .build().query();
          * }</pre>
@@ -18062,7 +18064,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("encryptedData"));
          * String sql = MAC.selectFrom(User.class, "u", excludes)
-         *                 .leftJoin("user_roles", "ur").on("u.id = ur.userId")
+         *                 .leftJoin("user_roles ur").on("u.id = ur.userId")
          *                 .build().query();
          * }</pre>
          *
@@ -18103,7 +18105,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excludes = new HashSet<>(Arrays.asList("tempData"));
          * String sql = MAC.selectFrom(Transaction.class, "t", true, excludes)
-         *                 .innerJoin("account", "a").on("t.accountId = a.id")
+         *                 .innerJoin("account a").on("t.accountId = a.id")
          *                 .where(Filters.and(
          *                     Filters.equal("a.isActive", true),
          *                     Filters.greaterThan("t.amount", 1000)
@@ -18262,7 +18264,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Set<String> productExcludes = new HashSet<>(Arrays.asList("warehouseNotes"));
          * String sql = MAC.selectFrom(Order.class, "o", "order", orderExcludes,
          *                            Product.class, "p", "product", productExcludes)
-         *                 .innerJoin("order_items", "oi").on("o.id = oi.orderId")
+         *                 .innerJoin("order_items oi").on("o.id = oi.orderId")
          *                 .on("oi.productId = p.id")
          *                 .build().query();
          * }</pre>
@@ -18302,7 +18304,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * );
          * String sql = MAC.selectFrom(selections)
          *                 .on("d.id = e.departmentId")
-         *                 .leftJoin("employee_projects", "ep").on("e.id = ep.employeeId")
+         *                 .leftJoin("employee_projects ep").on("e.id = ep.employeeId")
          *                 .on("ep.projectId = p.id")
          *                 .build().query();
          * }</pre>

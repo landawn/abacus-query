@@ -66,7 +66,7 @@ import com.landawn.abacus.util.N;
  * joinMap.put("emp.department_id", "dept.id");
  * joinMap.put("emp.location_id", "dept.location_id");
  * On on3 = new On(joinMap);
- * // Generates: ON emp.department_id = dept.id AND emp.location_id = dept.location_id
+ * // Generates: ON ((emp.department_id = dept.id) AND (emp.location_id = dept.location_id))
  *
  * // Join with ON condition and additional filter
  * Condition filteredJoin = Filters.and(
@@ -127,7 +127,7 @@ public class On extends Cell {
      * );
      * On on3 = new On(rangeJoin);
      * InnerJoin join3 = new InnerJoin("salary_grades", on3);
-     * // Generates: INNER JOIN salary_grades ON (emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary)
+     * // Generates: INNER JOIN salary_grades ON ((emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary))
      * }</pre>
      *
      * @param cond the join condition. Any non-{@code null} condition is allowed, including

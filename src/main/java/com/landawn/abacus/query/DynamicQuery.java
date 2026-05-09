@@ -917,7 +917,7 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
          */
         public FromClause join(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -942,7 +942,7 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
          */
         public FromClause innerJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -967,7 +967,7 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
          */
         public FromClause leftJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -992,7 +992,7 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
          */
         public FromClause rightJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -1017,7 +1017,7 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@link #append(String)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
          */
         public FromClause fullJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");

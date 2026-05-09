@@ -958,11 +958,12 @@ public class Expression extends ComposableCondition {
      * Converts a value to its SQL representation.
      * This method performs SQL escaping and formatting:
      * <ul>
+     *   <li>{@code null} values become the string {@code "null"}</li>
      *   <li>Strings are quoted with single quotes and special characters are escaped</li>
-     *   <li>null values become the string "null"</li>
      *   <li>Numbers and booleans are converted to their string representation</li>
-     *   <li>Expression objects return their literal SQL text</li>
-     *   <li>Other objects are converted to strings, quoted, and escaped</li>
+     *   <li>{@link Expression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
+     *   <li>{@link SubQuery} instances are wrapped in parentheses; other {@link Condition}s use their {@code toString()}</li>
+     *   <li>Other objects are converted via {@link N#stringOf(Object)}, then quoted and escaped</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>
@@ -1696,16 +1697,13 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * A concise alias for {@link Expression}.
+     * A concise alias for {@link Expression}, useful as a shorter qualifier when invoking
+     * the inherited static factory and helper methods (e.g., {@code Expr.of("...")}).
      *
-     * <p>This class provides the same functionality as the parent {@link Expression} class
-     * but with a shorter class name. It can be used interchangeably with {@code Expression}
-     * in contexts where a shorter name is preferred for readability.
-     * Instances are created internally by the framework (e.g., by {@link Filters#expr(String)})
-     * and should not be constructed directly by application code.</p>
-     *
-     * <p>Since this class inherits all methods and behavior from {@link Expression}, it can be
-     * used in all the same contexts with identical functionality.</p>
+     * <p>The package-private constructor exists only to allow this subclass to be loaded;
+     * application code should obtain instances through {@link Expression#of(String)}
+     * (or {@code Expr.of(String)}, which inherits the same factory) rather than constructing
+     * {@code Expr} directly.</p>
      *
      * @see Expression
      */
