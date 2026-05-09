@@ -35,7 +35,7 @@ class Any2025Test extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
         Any condition = new Any(subQuery);
-        SubQuery retrieved = condition.getCondition();
+        SubQuery retrieved = (SubQuery) condition.getCondition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -220,7 +220,7 @@ public class AnyTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
         Any any = Filters.any(subQuery);
 
-        SubQuery retrieved = any.getCondition();
+        SubQuery retrieved = (SubQuery) any.getCondition();
         Assertions.assertEquals(subQuery, retrieved);
     }
 

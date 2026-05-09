@@ -43,7 +43,7 @@ class All2025Test extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE in_stock = true");
         All condition = new All(subQuery);
-        SubQuery retrieved = condition.getCondition();
+        SubQuery retrieved = (SubQuery) condition.getCondition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -218,7 +218,7 @@ public class AllTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
         All all = Filters.all(subQuery);
 
-        SubQuery retrieved = all.getCondition();
+        SubQuery retrieved = (SubQuery) all.getCondition();
         Assertions.assertEquals(subQuery, retrieved);
     }
 

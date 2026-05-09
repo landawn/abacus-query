@@ -189,7 +189,7 @@ class Or2025Test extends TestBase {
 
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
-        Or innerCondition = result.getCondition();
+        Or innerCondition = (Or) result.getCondition();
         assertEquals(2, (int) innerCondition.getConditions().size());
     }
 

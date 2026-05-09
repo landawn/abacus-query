@@ -302,18 +302,17 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Gets the join condition, cast to the requested type.
+     * Gets the join condition.
      * Returns the condition that specifies how the tables are related, or {@code null} if no
-     * condition was supplied at construction time. Type-checking of {@code <T>} is the caller's
-     * responsibility; an incorrect type parameter will cause a {@link ClassCastException} at the
-     * call site when the returned value is used.
+     * condition was supplied at construction time. Callers that need a more specific subtype
+     * must cast explicitly.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Join with ON condition
      * On onCondition = new On("customers.id", "o.customer_id");
      * Join join = new Join("orders o", onCondition);
-     * On condition = join.getCondition();
+     * On condition = (On) join.getCondition();
      * // Returns the same On instance
      *
      * // Join without condition
@@ -322,12 +321,10 @@ public class Join extends AbstractCondition {
      * // Returns: null
      * }</pre>
      *
-     * @param <T> the expected type of the wrapped condition
      * @return the join condition, or {@code null} if no condition was specified
      */
-    @SuppressWarnings("unchecked")
-    public <T extends Condition> T getCondition() {
-        return (T) condition;
+    public Condition getCondition() {
+        return condition;
     }
 
     /**

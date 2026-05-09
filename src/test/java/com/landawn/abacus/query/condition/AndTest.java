@@ -190,7 +190,7 @@ class And2025Test extends TestBase {
 
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
-        And innerCondition = result.getCondition();
+        And innerCondition = (And) result.getCondition();
         assertEquals(2, (int) innerCondition.getConditions().size());
     }
 

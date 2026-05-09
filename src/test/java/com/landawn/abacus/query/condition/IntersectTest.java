@@ -28,7 +28,7 @@ class Intersect2025Test extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM orders");
         Intersect intersect = new Intersect(subQuery);
-        SubQuery retrieved = intersect.getCondition();
+        SubQuery retrieved = (SubQuery) intersect.getCondition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -233,7 +233,7 @@ public class IntersectTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         Intersect intersect = new Intersect(subQuery);
 
-        SubQuery retrieved = intersect.getCondition();
+        SubQuery retrieved = (SubQuery) intersect.getCondition();
 
         Assertions.assertNotNull(retrieved);
         Assertions.assertEquals(subQuery, retrieved);

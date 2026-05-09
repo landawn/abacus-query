@@ -1366,7 +1366,7 @@ public class CriteriaTest extends TestBase {
         Criteria criteria = Criteria.builder().where(Filters.eq("id", 1)).where(Filters.eq("id", 2)).build(); // Should replace the first where
 
         Clause where = criteria.getWhere();
-        Equal eq = where.getCondition();
+        Equal eq = (Equal) where.getCondition();
         Assertions.assertEquals(2, (Integer) eq.getPropValue());
     }
 

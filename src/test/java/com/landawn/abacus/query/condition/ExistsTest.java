@@ -43,7 +43,7 @@ class Exists2025Test extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
         Exists condition = new Exists(subQuery);
-        SubQuery retrieved = condition.getCondition();
+        SubQuery retrieved = (SubQuery) condition.getCondition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -198,7 +198,7 @@ public class ExistsTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM reviews WHERE reviews.product_id = products.id");
         Exists exists = Filters.exists(subQuery);
 
-        SubQuery retrieved = exists.getCondition();
+        SubQuery retrieved = (SubQuery) exists.getCondition();
         Assertions.assertEquals(subQuery, retrieved);
     }
 

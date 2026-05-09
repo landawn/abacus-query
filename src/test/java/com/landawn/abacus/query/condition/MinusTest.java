@@ -29,7 +29,7 @@ class Minus2025Test extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Minus minus = new Minus(subQuery);
-        SubQuery retrieved = minus.getCondition();
+        SubQuery retrieved = (SubQuery) minus.getCondition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }

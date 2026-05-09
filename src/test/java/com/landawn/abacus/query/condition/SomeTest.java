@@ -43,7 +43,7 @@ class Some2025Test extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT budget FROM departments");
         Some condition = new Some(subQuery);
-        SubQuery retrieved = condition.getCondition();
+        SubQuery retrieved = (SubQuery) condition.getCondition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }

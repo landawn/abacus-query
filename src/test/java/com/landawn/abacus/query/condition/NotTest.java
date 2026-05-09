@@ -37,7 +37,7 @@ class Not2025Test extends TestBase {
         Equal innerCondition = new Equal("age", 25);
         Not condition = new Not(innerCondition);
 
-        Equal retrieved = condition.getCondition();
+        Equal retrieved = (Equal) condition.getCondition();
         assertSame(innerCondition, retrieved);
     }
 
@@ -46,7 +46,7 @@ class Not2025Test extends TestBase {
         And innerAnd = new And(new Equal("a", 1), new Equal("b", 2));
         Not condition = new Not(innerAnd);
 
-        And retrieved = condition.getCondition();
+        And retrieved = (And) condition.getCondition();
         assertSame(innerAnd, retrieved);
     }
 

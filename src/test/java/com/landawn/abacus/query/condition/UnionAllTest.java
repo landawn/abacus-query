@@ -29,7 +29,7 @@ class UnionAll2025Test extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM orders");
         UnionAll unionAll = new UnionAll(subQuery);
-        SubQuery retrieved = unionAll.getCondition();
+        SubQuery retrieved = (SubQuery) unionAll.getCondition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }

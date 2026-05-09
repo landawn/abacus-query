@@ -60,23 +60,20 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Gets the wrapped condition, cast to the requested type.
-     * Type-checking of {@code <T>} is the caller's responsibility; an incorrect type parameter will
-     * cause a {@link ClassCastException} at the call site when the returned value is used.
+     * Gets the wrapped condition.
+     * Callers that need a more specific subtype must cast explicitly.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition eq = Filters.equal("status", "active");
      * Not notCond = new Not(eq);
-     * Equal inner = notCond.getCondition();   // Returns the Equal condition
+     * Equal inner = (Equal) notCond.getCondition();
      * }</pre>
      *
-     * @param <T> the type of condition to return
-     * @return the wrapped condition, cast to the specified type
+     * @return the wrapped condition
      */
-    @SuppressWarnings("unchecked")
-    public <T extends Condition> T getCondition() {
-        return (T) condition;
+    public Condition getCondition() {
+        return condition;
     }
 
     /**

@@ -32,7 +32,7 @@ class Except2025Test extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Except except = new Except(subQuery);
-        SubQuery retrieved = except.getCondition();
+        SubQuery retrieved = (SubQuery) except.getCondition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -151,7 +151,7 @@ public class ExceptTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT product_id FROM discontinued_products");
         Except except = Filters.except(subQuery);
 
-        SubQuery retrieved = except.getCondition();
+        SubQuery retrieved = (SubQuery) except.getCondition();
         Assertions.assertEquals(subQuery, retrieved);
     }
 

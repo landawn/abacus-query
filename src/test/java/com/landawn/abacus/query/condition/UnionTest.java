@@ -28,7 +28,7 @@ class Union2025Test extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM orders");
         Union union = new Union(subQuery);
-        SubQuery retrieved = union.getCondition();
+        SubQuery retrieved = (SubQuery) union.getCondition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
