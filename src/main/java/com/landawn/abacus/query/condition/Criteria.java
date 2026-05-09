@@ -1153,11 +1153,11 @@ public class Criteria extends AbstractCondition {
          *     .groupBy(grouping);
          * }</pre>
          * 
-         * @param orders a map of property names to sort directions
+         * @param groupings a map of property names to sort directions
          * @return this Builder instance for method chaining
          */
-        public Builder groupBy(final Map<String, SortDirection> orders) {
-            add(new GroupBy(orders));
+        public Builder groupBy(final Map<String, SortDirection> groupings) {
+            add(new GroupBy(groupings));
 
             return this;
         }

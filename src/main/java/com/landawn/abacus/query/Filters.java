@@ -2062,11 +2062,11 @@ public class Filters {
      * GroupBy groupBy = Filters.groupBy(orders);
      * }</pre>
      *
-     * @param orders map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
+     * @param groupings map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
      * @return a {@link GroupBy} clause
      */
-    public static GroupBy groupBy(final Map<String, SortDirection> orders) {
-        return new GroupBy(orders);
+    public static GroupBy groupBy(final Map<String, SortDirection> groupings) {
+        return new GroupBy(groupings);
     }
 
     /**

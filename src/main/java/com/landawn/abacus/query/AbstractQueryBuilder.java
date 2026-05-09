@@ -2488,14 +2488,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand DESC
      * }</pre>
      * 
-     * @param orders map of columns to their sort directions
+     * @param groupings map of columns to their sort directions
      * @return this SqlBuilder instance for method chaining
      */
-    public This groupBy(final Map<String, SortDirection> orders) {
-        checkSqlFragmentKeysNotBlank(orders, "orders");
+    public This groupBy(final Map<String, SortDirection> groupings) {
+        checkSqlFragmentKeysNotBlank(groupings, "groupings");
 
-        for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
-            N.checkArgNotNull(entry.getValue(), "Value in orders");
+        for (final Map.Entry<String, SortDirection> entry : groupings.entrySet()) {
+            N.checkArgNotNull(entry.getValue(), "Value in groupings");
         }
 
         checkIfAlreadyCalled(SK.GROUP_BY);
@@ -2503,7 +2503,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         int i = 0;
-        for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+        for (final Map.Entry<String, SortDirection> entry : groupings.entrySet()) {
             if (i++ > 0) {
 
                 _sb.append(_COMMA_SPACE);
